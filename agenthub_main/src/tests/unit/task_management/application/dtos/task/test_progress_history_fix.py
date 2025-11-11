@@ -21,7 +21,7 @@ class TestProgressHistoryFix(unittest.TestCase):
             description="Test task with progress history",
             assignees=["coding-agent"],
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         # Add progress entries
@@ -62,7 +62,7 @@ class TestProgressHistoryFix(unittest.TestCase):
             description="Task with no progress",
             assignees=["coding-agent"],
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         response = TaskResponse.from_domain(task)
@@ -76,6 +76,7 @@ class TestProgressHistoryFix(unittest.TestCase):
         self.assertEqual(response_dict["progress_history"], {})
         self.assertEqual(response_dict["progress_count"], 0)
         self.assertEqual(response_dict["details"], "")
+
 
 if __name__ == "__main__":
     unittest.main()

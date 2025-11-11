@@ -35,30 +35,37 @@ class TestDatabaseSSLModeValidation:
         """Clean up after each test"""
         DatabaseConfig.reset_instance()
 
-    @pytest.mark.parametrize("ssl_mode,expected_in_url", [
-        ("disable", ""),  # No sslmode in URL for disable
-        ("require", "sslmode=require"),
-        ("prefer", "sslmode=prefer"),
-        ("allow", "sslmode=allow"),
-        ("verify-full", "sslmode=verify-full"),
-        ("verify-ca", "sslmode=verify-ca"),
-    ])
+    @pytest.mark.parametrize(
+        "ssl_mode,expected_in_url",
+        [
+            ("disable", ""),  # No sslmode in URL for disable
+            ("require", "sslmode=require"),
+            ("prefer", "sslmode=prefer"),
+            ("allow", "sslmode=allow"),
+            ("verify-full", "sslmode=verify-full"),
+            ("verify-ca", "sslmode=verify-ca"),
+        ],
+    )
     def test_ssl_mode_parsing_postgresql(self, ssl_mode, expected_in_url):
         """Test that different SSL modes are properly parsed and applied to PostgreSQL URLs"""
         config = DatabaseConfig.__new__(DatabaseConfig)
         config._initialized = False
         config.database_type = "postgresql"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "test_db",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-            "DATABASE_SSL_MODE": ssl_mode,
-            "DATABASE_URL": ""  # Clear to force component construction
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "test_db",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+                "DATABASE_SSL_MODE": ssl_mode,
+                "DATABASE_URL": "",  # Clear to force component construction
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             if ssl_mode == "disable":
@@ -75,14 +82,18 @@ class TestDatabaseSSLModeValidation:
         config._initialized = False
         config.database_type = "postgresql"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-            "DATABASE_URL": ""  # Clear to force component construction
-            # Intentionally omit DATABASE_SSL_MODE to test default
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+                "DATABASE_URL": "",  # Clear to force component construction
+                # Intentionally omit DATABASE_SSL_MODE to test default
+            },
+            clear=False,
+        ):
             # Remove DATABASE_SSL_MODE if it exists
             if "DATABASE_SSL_MODE" in os.environ:
                 del os.environ["DATABASE_SSL_MODE"]
@@ -98,13 +109,17 @@ class TestDatabaseSSLModeValidation:
         config._initialized = False
         config.database_type = "supabase"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "supabase",
-            "SUPABASE_DB_HOST": "test.supabase.co",
-            "SUPABASE_DB_USER": "test_user",
-            "SUPABASE_DB_PASSWORD": "test_pass",
-            "DATABASE_URL": ""  # Clear to force component construction
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "supabase",
+                "SUPABASE_DB_HOST": "test.supabase.co",
+                "SUPABASE_DB_USER": "test_user",
+                "SUPABASE_DB_PASSWORD": "test_pass",
+                "DATABASE_URL": "",  # Clear to force component construction
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             # Supabase should always use SSL require
@@ -117,16 +132,20 @@ class TestDatabaseSSLModeValidation:
         config.database_type = "postgresql"
 
         # Simulate CapRover environment variables
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "srv-captain--postgres",  # CapRover internal hostname
-            "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "agenthub",
-            "DATABASE_USER": "postgres",
-            "DATABASE_PASSWORD": "caprover_password",
-            "DATABASE_SSL_MODE": "disable",  # CapRover PostgreSQL doesn't support SSL
-            "DATABASE_URL": ""
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "srv-captain--postgres",  # CapRover internal hostname
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "agenthub",
+                "DATABASE_USER": "postgres",
+                "DATABASE_PASSWORD": "caprover_password",
+                "DATABASE_SSL_MODE": "disable",  # CapRover PostgreSQL doesn't support SSL
+                "DATABASE_URL": "",
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             # Should not contain any SSL mode for CapRover
@@ -140,16 +159,20 @@ class TestDatabaseSSLModeValidation:
         config.database_type = "postgresql"
 
         # Simulate managed PostgreSQL (AWS RDS, Google Cloud SQL, etc.)
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "mydb.abc123.us-east-1.rds.amazonaws.com",
-            "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "agenthub",
-            "DATABASE_USER": "postgres",
-            "DATABASE_PASSWORD": "secure_password",
-            "DATABASE_SSL_MODE": "require",  # Managed services require SSL
-            "DATABASE_URL": ""
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "mydb.abc123.us-east-1.rds.amazonaws.com",
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "agenthub",
+                "DATABASE_USER": "postgres",
+                "DATABASE_PASSWORD": "secure_password",
+                "DATABASE_SSL_MODE": "require",  # Managed services require SSL
+                "DATABASE_URL": "",
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             # Should enforce SSL for managed services
@@ -162,14 +185,18 @@ class TestDatabaseSSLModeValidation:
         config._initialized = False
         config.database_type = "postgresql"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-            "DATABASE_SSL_MODE": "invalid_mode",  # Invalid SSL mode
-            "DATABASE_URL": ""
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+                "DATABASE_SSL_MODE": "invalid_mode",  # Invalid SSL mode
+                "DATABASE_URL": "",
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             # Should still include the invalid mode (PostgreSQL will reject it)
@@ -179,16 +206,19 @@ class TestDatabaseSSLModeValidation:
 class TestLogLevelValidation:
     """Test APP_LOG_LEVEL environment variable case conversion and validation"""
 
-    @pytest.mark.parametrize("input_level,expected_output", [
-        ("INFO", "info"),
-        ("DEBUG", "debug"),
-        ("WARNING", "warning"),
-        ("ERROR", "error"),
-        ("CRITICAL", "critical"),
-        ("info", "info"),  # Already lowercase
-        ("Debug", "debug"),  # Mixed case
-        ("WaRnInG", "warning"),  # Random case
-    ])
+    @pytest.mark.parametrize(
+        "input_level,expected_output",
+        [
+            ("INFO", "info"),
+            ("DEBUG", "debug"),
+            ("WARNING", "warning"),
+            ("ERROR", "error"),
+            ("CRITICAL", "critical"),
+            ("info", "info"),  # Already lowercase
+            ("Debug", "debug"),  # Mixed case
+            ("WaRnInG", "warning"),  # Random case
+        ],
+    )
     def test_log_level_case_conversion(self, input_level, expected_output):
         """Test that log levels are properly converted to lowercase"""
         # Simulate the shell command used in Docker entrypoint
@@ -232,11 +262,12 @@ class TestDockerEntrypointValidation:
     def teardown_method(self):
         """Clean up test files"""
         import shutil
+
         shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def create_test_entrypoint_script(self):
         """Create a test version of the Docker entrypoint script"""
-        script_content = '''#!/bin/sh
+        script_content = """#!/bin/sh
 set -e
 
 echo "Testing environment variable validation..."
@@ -269,7 +300,7 @@ LOG_LEVEL=$(echo "${APP_LOG_LEVEL:-info}" | tr "[:upper:]" "[:lower:]")
 echo "✅ Log level: $LOG_LEVEL"
 
 echo "✅ All environment variables validated successfully"
-'''
+"""
 
         self.entrypoint_script.write_text(script_content)
         self.entrypoint_script.chmod(0o755)
@@ -288,14 +319,14 @@ echo "✅ All environment variables validated successfully"
             "DATABASE_PASSWORD": "test_password",
             "FASTMCP_PORT": "8000",
             "JWT_SECRET_KEY": "a_very_secure_jwt_secret_key_that_is_at_least_32_characters_long",
-            "APP_LOG_LEVEL": "INFO"
+            "APP_LOG_LEVEL": "INFO",
         }
 
         result = subprocess.run(
             [str(self.entrypoint_script)],
             env={**os.environ, **env},
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
@@ -315,7 +346,7 @@ echo "✅ All environment variables validated successfully"
             "DATABASE_USER": "test_user",
             # Missing DATABASE_PASSWORD
             "FASTMCP_PORT": "8000",
-            "JWT_SECRET_KEY": "a_very_secure_jwt_secret_key_that_is_at_least_32_characters_long"
+            "JWT_SECRET_KEY": "a_very_secure_jwt_secret_key_that_is_at_least_32_characters_long",
         }
 
         # Create a clean environment without the missing variable
@@ -327,7 +358,7 @@ echo "✅ All environment variables validated successfully"
             [str(self.entrypoint_script)],
             env=clean_env,  # Use only the clean environment without inheritance
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 1
@@ -348,18 +379,21 @@ echo "✅ All environment variables validated successfully"
             "DATABASE_PASSWORD": "test_password",
             "FASTMCP_PORT": "8000",
             "JWT_SECRET_KEY": "weak",  # Too short
-            "APP_LOG_LEVEL": "DEBUG"
+            "APP_LOG_LEVEL": "DEBUG",
         }
 
         result = subprocess.run(
             [str(self.entrypoint_script)],
             env={**os.environ, **env},
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 1
-        assert "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production" in result.stdout
+        assert (
+            "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"
+            in result.stdout
+        )
 
     def test_log_level_conversion_in_entrypoint(self):
         """Test that log level case conversion works in entrypoint script"""
@@ -370,7 +404,7 @@ echo "✅ All environment variables validated successfully"
             ("DEBUG", "debug"),
             ("WARNING", "warning"),
             ("Error", "error"),
-            ("critical", "critical")  # Already lowercase
+            ("critical", "critical"),  # Already lowercase
         ]
 
         for input_level, expected_output in test_cases:
@@ -383,14 +417,14 @@ echo "✅ All environment variables validated successfully"
                 "DATABASE_PASSWORD": "test_password",
                 "FASTMCP_PORT": "8000",
                 "JWT_SECRET_KEY": "a_very_secure_jwt_secret_key_that_is_at_least_32_characters_long",
-                "APP_LOG_LEVEL": input_level
+                "APP_LOG_LEVEL": input_level,
             }
 
             result = subprocess.run(
                 [str(self.entrypoint_script)],
                 env={**os.environ, **env},
                 capture_output=True,
-                text=True
+                text=True,
             )
 
             assert result.returncode == 0
@@ -416,7 +450,7 @@ class TestProductionDeploymentScenarios:
             "JWT_SECRET_KEY": "caprover_jwt_secret_key_at_least_32_characters_long",
             "APP_LOG_LEVEL": "INFO",
             "CORS_ORIGINS": "https://app.captain.example.com",
-            "KEYCLOAK_URL": "https://auth.captain.example.com"
+            "KEYCLOAK_URL": "https://auth.captain.example.com",
         }
 
         # Validate that this environment would work
@@ -448,7 +482,7 @@ class TestProductionDeploymentScenarios:
             "JWT_SECRET_KEY": "production_jwt_secret_key_at_least_32_characters_long",
             "APP_LOG_LEVEL": "WARNING",  # Higher log level for production
             "CORS_ORIGINS": "https://app.example.com,https://api.example.com",
-            "KEYCLOAK_URL": "https://auth.example.com"
+            "KEYCLOAK_URL": "https://auth.example.com",
         }
 
         # Validate that this environment would work
@@ -471,7 +505,7 @@ class TestProductionDeploymentScenarios:
             "ENV": "development",
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "localhost",
-            "DATABASE_SSL_MODE": "disable"
+            "DATABASE_SSL_MODE": "disable",
         }
 
         # Production: Should prefer/require SSL
@@ -479,7 +513,7 @@ class TestProductionDeploymentScenarios:
             "ENV": "production",
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "prod-db.example.com",
-            "DATABASE_SSL_MODE": "require"
+            "DATABASE_SSL_MODE": "require",
         }
 
         for env_name, env_vars in [("development", dev_env), ("production", prod_env)]:
@@ -490,7 +524,7 @@ class TestProductionDeploymentScenarios:
             base_vars = {
                 "DATABASE_USER": "postgres",
                 "DATABASE_PASSWORD": "password",
-                "DATABASE_URL": ""
+                "DATABASE_URL": "",
             }
 
             with patch.dict(os.environ, {**base_vars, **env_vars}, clear=False):
@@ -511,14 +545,18 @@ class TestErrorScenarios:
         config._initialized = False
         config.database_type = "postgresql"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "postgres",
-            "DATABASE_PASSWORD": "password",
-            "DATABASE_URL": "",
-            # Intentionally omit DATABASE_SSL_MODE
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "postgres",
+                "DATABASE_PASSWORD": "password",
+                "DATABASE_URL": "",
+                # Intentionally omit DATABASE_SSL_MODE
+            },
+            clear=False,
+        ):
             # Make sure DATABASE_SSL_MODE is not set
             if "DATABASE_SSL_MODE" in os.environ:
                 del os.environ["DATABASE_SSL_MODE"]
@@ -534,14 +572,18 @@ class TestErrorScenarios:
         config._initialized = False
         config.database_type = "postgresql"
 
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "postgres",
-            "DATABASE_PASSWORD": "password",
-            "DATABASE_SSL_MODE": "",  # Empty SSL mode
-            "DATABASE_URL": ""
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "postgres",
+                "DATABASE_PASSWORD": "password",
+                "DATABASE_SSL_MODE": "",  # Empty SSL mode
+                "DATABASE_URL": "",
+            },
+            clear=False,
+        ):
             url = config._get_secure_database_url()
 
             # Empty should be treated as not set, default to 'prefer'

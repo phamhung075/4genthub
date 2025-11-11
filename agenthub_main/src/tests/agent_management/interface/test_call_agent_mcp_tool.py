@@ -19,14 +19,18 @@ from fastmcp.agent_management.interface.mcp_controllers.call_agent import (
 @pytest.fixture
 def mock_auth_service():
     """Mock authentication service"""
-    with patch('fastmcp.agent_management.interface.mcp_controllers.call_agent.AuthenticationService') as mock:
+    with patch(
+        "fastmcp.agent_management.interface.mcp_controllers.call_agent.AuthenticationService"
+    ) as mock:
         yield mock
 
 
 @pytest.fixture
 def mock_facade():
     """Mock AgentManagementFacade"""
-    with patch('fastmcp.agent_management.interface.mcp_controllers.call_agent.AgentManagementFacade') as mock:
+    with patch(
+        "fastmcp.agent_management.interface.mcp_controllers.call_agent.AgentManagementFacade"
+    ) as mock:
         yield mock
 
 
@@ -41,7 +45,7 @@ def sample_agent_config():
         "tools": ["Read", "Write", "Edit", "Bash", "Grep"],
         "capabilities": {
             "languages": ["Python", "JavaScript", "TypeScript"],
-            "frameworks": ["FastAPI", "React", "Next.js"]
+            "frameworks": ["FastAPI", "React", "Next.js"],
         },
         "rules": ["Write clean code", "Follow DRY principles"],
         "output_format": "markdown",
@@ -54,15 +58,17 @@ def sample_agent_config():
             "author": "test",
             "created_at": "2025-11-01T12:00:00+00:00",
             "last_used": None,
-            "customizations": {}
-        }
+            "customizations": {},
+        },
     }
 
 
 class TestCallAgentMCPToolSuccess:
     """Tests for successful call_agent MCP tool invocations"""
 
-    def test_success_with_existing_instance(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_success_with_existing_instance(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test successful call when user has existing agent instance"""
         # Arrange
         agent_name = "coding-agent"
@@ -86,8 +92,7 @@ class TestCallAgentMCPToolSuccess:
 
         # Verify authentication was called
         auth_instance.get_authenticated_user_id.assert_called_once_with(
-            provided_user_id=None,
-            operation_name="call_agent"
+            provided_user_id=None, operation_name="call_agent"
         )
 
         # Verify facade was called correctly
@@ -96,7 +101,9 @@ class TestCallAgentMCPToolSuccess:
         assert call_args[1]["agent_slug"] == agent_name
         assert isinstance(call_args[1]["user_id"], UserId)
 
-    def test_success_with_auto_created_instance(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_success_with_auto_created_instance(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test successful call when agent instance is auto-created"""
         # Arrange
         agent_name = "test-orchestrator-agent"
@@ -114,8 +121,8 @@ class TestCallAgentMCPToolSuccess:
             "is_customized": False,  # Newly created, not customized
             "metadata": {
                 **sample_agent_config["metadata"],
-                "created_at": datetime.now(UTC).isoformat()
-            }
+                "created_at": datetime.now(UTC).isoformat(),
+            },
         }
 
         facade_instance = mock_facade.return_value
@@ -130,7 +137,9 @@ class TestCallAgentMCPToolSuccess:
         assert result["agent"]["is_customized"] is False
         assert "created_at" in result["agent"]["metadata"]
 
-    def test_success_with_provided_user_id(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_success_with_provided_user_id(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test successful call when user_id is explicitly provided"""
         # Arrange
         agent_name = "coding-agent"
@@ -152,11 +161,12 @@ class TestCallAgentMCPToolSuccess:
 
         # Verify authentication was called with provided user_id
         auth_instance.get_authenticated_user_id.assert_called_once_with(
-            provided_user_id=provided_user_id,
-            operation_name="call_agent"
+            provided_user_id=provided_user_id, operation_name="call_agent"
         )
 
-    def test_success_with_customized_instance(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_success_with_customized_instance(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test successful call with user-customized agent instance"""
         # Arrange
         agent_name = "coding-agent"
@@ -175,11 +185,8 @@ class TestCallAgentMCPToolSuccess:
             "is_customized": True,
             "metadata": {
                 **sample_agent_config["metadata"],
-                "customizations": {
-                    "added_tools": ["Glob"],
-                    "modified_prompt": True
-                }
-            }
+                "customizations": {"added_tools": ["Glob"], "modified_prompt": True},
+            },
         }
 
         facade_instance = mock_facade.return_value
@@ -294,7 +301,9 @@ class TestCallAgentMCPToolFailure:
 class TestCallAgentMCPToolEdgeCases:
     """Tests for edge cases and special scenarios"""
 
-    def test_concurrent_calls_same_agent(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_concurrent_calls_same_agent(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test multiple concurrent calls for same agent (race condition)"""
         # Arrange
         agent_name = "coding-agent"
@@ -370,7 +379,9 @@ class TestCallAgentMCPToolEdgeCases:
 class TestCallAgentMCPToolResponseFormat:
     """Tests for response format validation"""
 
-    def test_response_has_required_fields(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_response_has_required_fields(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test that response contains all required fields"""
         # Arrange
         agent_name = "coding-agent"
@@ -395,15 +406,26 @@ class TestCallAgentMCPToolResponseFormat:
         # Check agent configuration fields
         agent = result["agent"]
         required_fields = [
-            "name", "slug", "description", "system_prompt", "tools",
-            "capabilities", "category", "version", "is_customized",
-            "instance_id", "template_id", "metadata"
+            "name",
+            "slug",
+            "description",
+            "system_prompt",
+            "tools",
+            "capabilities",
+            "category",
+            "version",
+            "is_customized",
+            "instance_id",
+            "template_id",
+            "metadata",
         ]
 
         for field in required_fields:
             assert field in agent, f"Missing required field: {field}"
 
-    def test_response_agent_tools_is_list(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_response_agent_tools_is_list(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test that tools field is a list"""
         # Arrange
         agent_name = "coding-agent"
@@ -424,7 +446,9 @@ class TestCallAgentMCPToolResponseFormat:
         assert isinstance(result["agent"]["tools"], list)
         assert len(result["agent"]["tools"]) > 0
 
-    def test_response_capabilities_is_dict(self, mock_auth_service, mock_facade, sample_agent_config):
+    def test_response_capabilities_is_dict(
+        self, mock_auth_service, mock_facade, sample_agent_config
+    ):
         """Test that capabilities field is a dictionary"""
         # Arrange
         agent_name = "coding-agent"

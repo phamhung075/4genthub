@@ -27,7 +27,7 @@ def sample_project(user_id: str):
     """Create a sample project for testing API contract."""
     project = Project.create(
         name="Sample Project for API Contract Testing",
-        description="Test project with multiple fields populated"
+        description="Test project with multiple fields populated",
     )
     return project
 
@@ -45,7 +45,9 @@ class TestProjectAPIContractBasicFields:
 
         # Convert to string for UUID validation
         id_str = str(sample_project.id)
-        assert isinstance(id_str, str), "Project id must be string or convertible to string"
+        assert isinstance(id_str, str), (
+            "Project id must be string or convertible to string"
+        )
 
         # Verify it's a valid UUID format
         try:
@@ -68,7 +70,9 @@ class TestProjectAPIContractBasicFields:
         Verify project includes description field.
         Status: ✅ SHOULD PASS - Standard field.
         """
-        assert hasattr(sample_project, "description"), "Project must have 'description' field"
+        assert hasattr(sample_project, "description"), (
+            "Project must have 'description' field"
+        )
         # Description can be string or None
         if sample_project.description is not None:
             assert isinstance(sample_project.description, str), (
@@ -87,12 +91,16 @@ class TestProjectAPIContractTimestamps:
         Frontend expects: created_at?: string
         Backend returns: created_at: datetime → serialized as ISO string
         """
-        assert hasattr(sample_project, "created_at"), "Project must have 'created_at' field"
+        assert hasattr(sample_project, "created_at"), (
+            "Project must have 'created_at' field"
+        )
 
         # Handle both datetime objects and string representations
         if isinstance(sample_project.created_at, datetime):
             iso_string = sample_project.created_at.isoformat()
-            assert "T" in iso_string, "created_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "created_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_project.created_at, str):
             assert "T" in sample_project.created_at, (
                 "created_at must be ISO 8601 format (contains 'T')"
@@ -116,12 +124,16 @@ class TestProjectAPIContractTimestamps:
         Frontend expects: updated_at?: string
         Backend returns: updated_at: datetime → serialized as ISO string
         """
-        assert hasattr(sample_project, "updated_at"), "Project must have 'updated_at' field"
+        assert hasattr(sample_project, "updated_at"), (
+            "Project must have 'updated_at' field"
+        )
 
         # Handle both datetime objects and string representations
         if isinstance(sample_project.updated_at, datetime):
             iso_string = sample_project.updated_at.isoformat()
-            assert "T" in iso_string, "updated_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "updated_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_project.updated_at, str):
             assert "T" in sample_project.updated_at, (
                 "updated_at must be ISO 8601 format (contains 'T')"
@@ -240,7 +252,9 @@ class TestProjectAPIContractCompleteStructure:
 class TestProjectAPIContractBusinessLogic:
     """Test project business logic and rich domain model methods."""
 
-    def test_project_calculate_health_returns_valid_structure(self, sample_project: Project):
+    def test_project_calculate_health_returns_valid_structure(
+        self, sample_project: Project
+    ):
         """
         Verify project health calculation returns expected structure.
         Status: ✅ SHOULD PASS - Rich domain model method.
@@ -254,7 +268,9 @@ class TestProjectAPIContractBusinessLogic:
         health = sample_project.calculate_project_health()
 
         assert isinstance(health, dict), "Health calculation must return dict"
-        assert "overall_health_score" in health, "Health must include overall_health_score"
+        assert "overall_health_score" in health, (
+            "Health must include overall_health_score"
+        )
         assert "health_status" in health, "Health must include health_status"
         assert "metrics" in health, "Health must include metrics"
         assert "counts" in health, "Health must include counts"
@@ -270,7 +286,9 @@ class TestProjectAPIContractBusinessLogic:
             f"Health status must be one of {valid_statuses}, got {health['health_status']}"
         )
 
-    def test_project_get_orchestration_status_returns_valid_structure(self, sample_project: Project):
+    def test_project_get_orchestration_status_returns_valid_structure(
+        self, sample_project: Project
+    ):
         """
         Verify orchestration status returns expected structure.
         Status: ✅ SHOULD PASS - Rich domain model method.
@@ -295,11 +313,15 @@ class TestProjectAPIContractBusinessLogic:
 
         # Verify types
         assert isinstance(status["total_branches"], int), "total_branches must be int"
-        assert isinstance(status["registered_agents"], int), "registered_agents must be int"
+        assert isinstance(status["registered_agents"], int), (
+            "registered_agents must be int"
+        )
         assert isinstance(status["branches"], dict), "branches must be dict"
         assert isinstance(status["agents"], dict), "agents must be dict"
 
-    def test_project_check_deadline_risk_returns_valid_structure(self, sample_project: Project):
+    def test_project_check_deadline_risk_returns_valid_structure(
+        self, sample_project: Project
+    ):
         """
         Verify deadline risk check returns expected structure.
         Status: ✅ SHOULD PASS - Rich domain model method.
@@ -319,7 +341,11 @@ class TestProjectAPIContractBusinessLogic:
 
         # Verify risk level values
         valid_risk_levels = [
-            "no_risk", "low_risk", "medium_risk", "high_risk", "critical_risk"
+            "no_risk",
+            "low_risk",
+            "medium_risk",
+            "high_risk",
+            "critical_risk",
         ]
         assert risk["risk_level"] in valid_risk_levels, (
             f"Risk level must be one of {valid_risk_levels}, got {risk['risk_level']}"
@@ -341,14 +367,16 @@ class TestProjectAPIContractGitBranchManagement:
         branch = sample_project.create_git_branch(
             git_branch_name="feature/test",
             name="Test Branch",
-            description="Test branch for API contract"
+            description="Test branch for API contract",
         )
 
         assert branch is not None, "create_git_branch must return GitBranch"
         assert branch.name == "Test Branch", "Branch name must match"
         assert branch.git_branch_name == "feature/test", "Git branch name must match"
 
-    def test_project_git_branchs_is_dict_with_string_keys(self, sample_project: Project):
+    def test_project_git_branchs_is_dict_with_string_keys(
+        self, sample_project: Project
+    ):
         """
         Verify git_branchs is dictionary with string keys (UUIDs).
         Status: ✅ SHOULD PASS - Required structure for frontend.

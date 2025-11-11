@@ -1,8 +1,8 @@
 """
 Comprehensive Unit Tests for Auth Endpoints Interface
 
-This module provides comprehensive test coverage for the Keycloak/Supabase 
-authentication endpoints, including all public functions, edge cases, and 
+This module provides comprehensive test coverage for the Keycloak/Supabase
+authentication endpoints, including all public functions, edge cases, and
 error conditions.
 """
 
@@ -38,30 +38,28 @@ from fastmcp.auth.interface.auth_endpoints import (
 
 class TestDataModels:
     """Test suite for Pydantic data models"""
-    
+
     def test_login_request_model(self):
         """Test LoginRequest model validation"""
         # Arrange & Act
         request = LoginRequest(email="test@example.com", password="password123")
-        
+
         # Assert
         assert request.email == "test@example.com"
         assert request.password == "password123"
-    
+
     def test_register_request_model_valid(self):
         """Test RegisterRequest model with valid data"""
         # Arrange & Act
         request = RegisterRequest(
-            email="test@example.com",
-            password="Password123!",
-            username="testuser"
+            email="test@example.com", password="Password123!", username="testuser"
         )
-        
+
         # Assert
         assert request.email == "test@example.com"
         assert request.password == "Password123!"
         assert request.username == "testuser"
-    
+
     def test_register_request_password_validation(self):
         """Test password validation in RegisterRequest"""
         # Test various invalid passwords
@@ -72,12 +70,12 @@ class TestDataModels:
             ("NoNumbers!", "at least 1 number"),
             ("NoSpecialChar123", "at least 1 special character"),
         ]
-        
+
         for password, expected_error in invalid_passwords:
             with pytest.raises(ValueError) as exc_info:
                 RegisterRequest(email="test@example.com", password=password)
             assert expected_error in str(exc_info.value)
-    
+
     def test_register_request_email_validation(self):
         """Test email validation in RegisterRequest"""
         # Test invalid email formats
@@ -86,31 +84,37 @@ class TestDataModels:
             "missing@domain",
             "@missinglocal.com",
             "spaces in@email.com",
-            "double@@at.com"
+            "double@@at.com",
         ]
-        
+
         for email in invalid_emails:
             with pytest.raises(ValueError) as exc_info:
                 RegisterRequest(email=email, password="Password123!")
             assert "valid email address" in str(exc_info.value)
-    
+
     def test_register_request_username_validation(self):
         """Test username validation in RegisterRequest"""
         # Test too short username
         with pytest.raises(ValueError) as exc_info:
-            RegisterRequest(email="test@example.com", password="Password123!", username="ab")
+            RegisterRequest(
+                email="test@example.com", password="Password123!", username="ab"
+            )
         assert "at least 3 characters" in str(exc_info.value)
-        
+
         # Test too long username
         with pytest.raises(ValueError) as exc_info:
-            RegisterRequest(email="test@example.com", password="Password123!", username="a" * 21)
+            RegisterRequest(
+                email="test@example.com", password="Password123!", username="a" * 21
+            )
         assert "not exceed 20 characters" in str(exc_info.value)
-        
+
         # Test invalid characters
         with pytest.raises(ValueError) as exc_info:
-            RegisterRequest(email="test@example.com", password="Password123!", username="user@name")
+            RegisterRequest(
+                email="test@example.com", password="Password123!", username="user@name"
+            )
         assert "letters, numbers, underscore" in str(exc_info.value)
-    
+
     def test_register_response_model(self):
         """Test RegisterResponse model"""
         # Arrange & Act
@@ -122,9 +126,9 @@ class TestDataModels:
             message="Success",
             message_type="success",
             display_color="green",
-            next_steps=["Step 1", "Step 2"]
+            next_steps=["Step 1", "Step 2"],
         )
-        
+
         # Assert
         assert response.success is True
         assert response.user_id == "12345"
@@ -134,7 +138,7 @@ class TestDataModels:
         assert response.message_type == "success"
         assert response.display_color == "green"
         assert len(response.next_steps) == 2
-    
+
     def test_login_response_model(self):
         """Test LoginResponse model"""
         # Arrange & Act
@@ -143,9 +147,9 @@ class TestDataModels:
             refresh_token="refresh123",
             expires_in=3600,
             user_id="user123",
-            email="test@example.com"
+            email="test@example.com",
         )
-        
+
         # Assert
         assert response.access_token == "token123"
         assert response.token_type == "bearer"
@@ -157,153 +161,169 @@ class TestDataModels:
 
 class TestHelperFunctions:
     """Test suite for helper functions"""
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    async def test_get_keycloak_admin_token_client_credentials_success(self, mock_client_class):
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    async def test_get_keycloak_admin_token_client_credentials_success(
+        self, mock_client_class
+    ):
         """Test getting admin token with client credentials"""
         # Arrange
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"access_token": "admin-token-123"}
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "KEYCLOAK_CLIENT_ID": "test-client",
-            "KEYCLOAK_CLIENT_SECRET": "test-secret"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "KEYCLOAK_URL": "http://localhost:8080",
+                "KEYCLOAK_REALM": "test-realm",
+                "KEYCLOAK_CLIENT_ID": "test-client",
+                "KEYCLOAK_CLIENT_SECRET": "test-secret",
+            },
+        ):
             token = await get_keycloak_admin_token()
-        
+
         # Assert
         assert token == "admin-token-123"
         mock_client.post.assert_called_once()
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_get_keycloak_admin_token_fallback_to_admin(self, mock_client_class):
         """Test fallback to admin credentials when client credentials fail"""
         # Arrange
         # First response fails
         mock_response1 = Mock()
         mock_response1.status_code = 401
-        
+
         # Second response succeeds (admin login)
         mock_response2 = Mock()
         mock_response2.status_code = 200
         mock_response2.json.return_value = {"access_token": "admin-token-456"}
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [mock_response1, mock_response2]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "KEYCLOAK_CLIENT_ID": "test-client",
-            "KEYCLOAK_CLIENT_SECRET": "test-secret",
-            "KEYCLOAK_ADMIN_PASSWORD": "admin-password"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "KEYCLOAK_URL": "http://localhost:8080",
+                "KEYCLOAK_REALM": "test-realm",
+                "KEYCLOAK_CLIENT_ID": "test-client",
+                "KEYCLOAK_CLIENT_SECRET": "test-secret",
+                "KEYCLOAK_ADMIN_PASSWORD": "admin-password",
+            },
+        ):
             token = await get_keycloak_admin_token()
-        
+
         # Assert
         assert token == "admin-token-456"
         assert mock_client.post.call_count == 2
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_get_keycloak_admin_token_failure(self, mock_client_class):
         """Test admin token retrieval failure"""
         # Arrange
         mock_client = AsyncMock()
         mock_client.post.side_effect = httpx.RequestError("Connection failed")
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
         token = await get_keycloak_admin_token()
-        
+
         # Assert
         assert token is None
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch('fastmcp.auth.interface.auth_endpoints.get_keycloak_admin_token')
-    async def test_cleanup_incomplete_account_success(self, mock_get_admin_token, mock_client_class):
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch("fastmcp.auth.interface.auth_endpoints.get_keycloak_admin_token")
+    async def test_cleanup_incomplete_account_success(
+        self, mock_get_admin_token, mock_client_class
+    ):
         """Test successful cleanup of incomplete account"""
         # Arrange
         mock_get_admin_token.return_value = "admin-token"
-        
+
         # Mock user search response
         mock_search_response = Mock()
         mock_search_response.status_code = 200
-        mock_search_response.json.return_value = [{
-            "id": "user-123",
-            "emailVerified": False,
-            "enabled": True,
-            "requiredActions": ["VERIFY_EMAIL"],
-            "credentials": []
-        }]
-        
+        mock_search_response.json.return_value = [
+            {
+                "id": "user-123",
+                "emailVerified": False,
+                "enabled": True,
+                "requiredActions": ["VERIFY_EMAIL"],
+                "credentials": [],
+            }
+        ]
+
         # Mock delete response
         mock_delete_response = Mock()
         mock_delete_response.status_code = 204
-        
+
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_search_response
         mock_client.delete.return_value = mock_delete_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
         with patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"}):
             result = await cleanup_incomplete_account_internal("test@example.com")
-        
+
         # Assert
         assert result["success"] is True
         assert result["can_register"] is True
         assert "Incomplete account removed" in result["message"]
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch('fastmcp.auth.interface.auth_endpoints.get_keycloak_admin_token')
-    async def test_cleanup_incomplete_account_protected(self, mock_get_admin_token, mock_client_class):
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch("fastmcp.auth.interface.auth_endpoints.get_keycloak_admin_token")
+    async def test_cleanup_incomplete_account_protected(
+        self, mock_get_admin_token, mock_client_class
+    ):
         """Test protection of verified accounts from cleanup"""
         # Arrange
         mock_get_admin_token.return_value = "admin-token"
-        
+
         # Mock user search response - verified account
         mock_search_response = Mock()
         mock_search_response.status_code = 200
-        mock_search_response.json.return_value = [{
-            "id": "user-123",
-            "emailVerified": True,  # Verified account
-            "enabled": True,
-            "requiredActions": [],
-            "credentials": [{"type": "password"}]
-        }]
-        
+        mock_search_response.json.return_value = [
+            {
+                "id": "user-123",
+                "emailVerified": True,  # Verified account
+                "enabled": True,
+                "requiredActions": [],
+                "credentials": [{"type": "password"}],
+            }
+        ]
+
         mock_client = AsyncMock()
         mock_client.get.return_value = mock_search_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
         with patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"}):
             result = await cleanup_incomplete_account_internal("test@example.com")
-        
+
         # Assert
         assert result["success"] is False
         assert result["can_register"] is False
         assert "verified and properly set up" in result["message"]
         # Ensure delete was never called
         mock_client.delete.assert_not_called()
-    
+
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_setup_user_roles_success(self, mock_client_class):
         """Test successful user role setup"""
         # Arrange
@@ -313,72 +333,80 @@ class TestHelperFunctions:
         mock_user_response.json.return_value = {
             "username": "testuser",
             "email": "test@example.com",
-            "attributes": {}
+            "attributes": {},
         }
-        
+
         # Mock user update response
         mock_update_response = Mock()
         mock_update_response.status_code = 204
-        
+
         # Mock realm roles response
         mock_roles_response = Mock()
         mock_roles_response.status_code = 200
         mock_roles_response.json.return_value = [
             {"id": "role-1", "name": "user"},
             {"id": "role-2", "name": "offline_access"},
-            {"id": "role-3", "name": "uma_authorization"}
+            {"id": "role-3", "name": "uma_authorization"},
         ]
-        
+
         # Mock role assignment response
         mock_assign_response = Mock()
         mock_assign_response.status_code = 204
-        
+
         # Mock client search response
         mock_clients_response = Mock()
         mock_clients_response.status_code = 200
         mock_clients_response.json.return_value = [{"id": "client-123"}]
-        
+
         # Mock client roles response
         mock_client_roles_response = Mock()
         mock_client_roles_response.status_code = 200
         mock_client_roles_response.json.return_value = [
             {"id": "client-role-1", "name": "client-user"}
         ]
-        
+
         mock_client = AsyncMock()
         mock_client.get.side_effect = [
-            mock_user_response, 
-            mock_clients_response, 
-            mock_client_roles_response, 
-            mock_roles_response
+            mock_user_response,
+            mock_clients_response,
+            mock_client_roles_response,
+            mock_roles_response,
         ]
         mock_client.put.return_value = mock_update_response
         mock_client.post.side_effect = [mock_assign_response, mock_assign_response]
-        
+
         mock_client_class.return_value = mock_client
-        
+
         # Act
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "EMAIL_VERIFIED_AUTO": "true"
-        }), patch('fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO', True):
-            await setup_user_roles(mock_client, "admin-token", "user-123", "test@example.com")
-        
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "KEYCLOAK_URL": "http://localhost:8080",
+                    "KEYCLOAK_REALM": "test-realm",
+                    "EMAIL_VERIFIED_AUTO": "true",
+                },
+            ),
+            patch("fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO", True),
+        ):
+            await setup_user_roles(
+                mock_client, "admin-token", "user-123", "test@example.com"
+            )
+
         # Assert
         # Verify user was updated
         assert mock_client.put.call_count == 1
         put_data = mock_client.put.call_args[1]["json"]
         assert put_data["emailVerified"] is True
         assert put_data["requiredActions"] == []
-        
+
         # Verify roles were assigned
         assert mock_client.post.call_count >= 1
 
 
 class TestLoginEndpoint:
     """Test suite for login endpoint"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -387,15 +415,18 @@ class TestLoginEndpoint:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "KEYCLOAK_URL": "http://localhost:8080",
-        "KEYCLOAK_REALM": "test-realm",
-        "KEYCLOAK_CLIENT_ID": "test-client",
-        "KEYCLOAK_CLIENT_SECRET": "test-secret"
-    })
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "KEYCLOAK_URL": "http://localhost:8080",
+            "KEYCLOAK_REALM": "test-realm",
+            "KEYCLOAK_CLIENT_ID": "test-client",
+            "KEYCLOAK_CLIENT_SECRET": "test-secret",
+        },
+    )
     def test_login_success(self, mock_client_class, client):
         """Test successful login"""
         # Arrange
@@ -404,26 +435,23 @@ class TestLoginEndpoint:
         mock_response.json.return_value = {
             "access_token": "test-token",
             "refresh_token": "refresh-token",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Mock JWT decode
-        with patch('jwt.decode') as mock_decode:
-            mock_decode.return_value = {
-                "sub": "user-123",
-                "email": "test@example.com"
-            }
-            
+        with patch("jwt.decode") as mock_decode:
+            mock_decode.return_value = {"sub": "user-123", "email": "test@example.com"}
+
             # Act
-            response = client.post("/api/auth/login", json={
-                "email": "test@example.com",
-                "password": "password123"
-            })
-        
+            response = client.post(
+                "/api/auth/login",
+                json={"email": "test@example.com", "password": "password123"},
+            )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -433,17 +461,17 @@ class TestLoginEndpoint:
         assert data["expires_in"] == 3600
         assert data["user_id"] == "user-123"
         assert data["email"] == "test@example.com"
-    
+
     def test_login_invalid_credentials(self, client):
         """Test login with invalid credentials in test mode"""
         # In test mode, the auth endpoint always returns success
         # This matches the current implementation behavior (lines 708-715 in auth_endpoints.py)
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "wrong-password"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "wrong-password"},
+        )
 
         # Assert - Test mode returns success regardless of credentials
         assert response.status_code == 200
@@ -451,17 +479,17 @@ class TestLoginEndpoint:
         assert "access_token" in data
         assert "token_type" in data
         assert data["token_type"] == "bearer"
-    
+
     def test_login_account_not_fully_setup(self, client):
         """Test login when account is not fully set up - test mode behavior"""
         # In test mode, the auth endpoint always returns success
         # This matches the current implementation behavior (lines 708-715 in auth_endpoints.py)
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
 
         # Assert - Test mode returns success regardless of account status
         assert response.status_code == 200
@@ -469,17 +497,17 @@ class TestLoginEndpoint:
         assert "access_token" in data
         assert "token_type" in data
         assert data["token_type"] == "bearer"
-    
+
     def test_login_invalid_scope_retry(self, client):
         """Test login with invalid scope and successful retry - test mode behavior"""
         # In test mode, the auth endpoint always returns success without making HTTP requests
         # This matches the current implementation behavior (lines 708-715 in auth_endpoints.py)
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
 
         # Assert - Test mode returns success without retry logic
         assert response.status_code == 200
@@ -487,17 +515,17 @@ class TestLoginEndpoint:
         assert "access_token" in data
         assert "token_type" in data
         assert data["token_type"] == "bearer"
-    
+
     def test_login_connection_error(self, client):
         """Test login when Keycloak is unavailable - test mode behavior"""
         # In test mode, no connection to external services is attempted
         # This matches the current implementation behavior (lines 708-715 in auth_endpoints.py)
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
 
         # Assert - Test mode returns success without external connections
         assert response.status_code == 200
@@ -505,29 +533,29 @@ class TestLoginEndpoint:
         assert "access_token" in data
         assert "token_type" in data
         assert data["token_type"] == "bearer"
-    
+
     @patch.dict(os.environ, {"AUTH_PROVIDER": "supabase"})
     def test_login_supabase_not_implemented(self, client):
         """Test login with Supabase provider (not implemented)"""
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
-        
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
+
         # Assert
         assert response.status_code == 501
         assert "Supabase authentication not implemented" in response.json()["detail"]
-    
+
     @patch.dict(os.environ, {"AUTH_PROVIDER": "test"})
     def test_login_test_mode(self, client):
         """Test login in test mode"""
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
-        
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -538,7 +566,7 @@ class TestLoginEndpoint:
 
 class TestRegisterEndpoint:
     """Test suite for register endpoint"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -547,16 +575,19 @@ class TestRegisterEndpoint:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "KEYCLOAK_URL": "http://localhost:8080",
-        "KEYCLOAK_REALM": "test-realm",
-        "KEYCLOAK_CLIENT_ID": "test-client",
-        "KEYCLOAK_CLIENT_SECRET": "test-secret",
-        "EMAIL_VERIFIED_AUTO": "true"
-    })
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "KEYCLOAK_URL": "http://localhost:8080",
+            "KEYCLOAK_REALM": "test-realm",
+            "KEYCLOAK_CLIENT_ID": "test-client",
+            "KEYCLOAK_CLIENT_SECRET": "test-secret",
+            "EMAIL_VERIFIED_AUTO": "true",
+        },
+    )
     def test_register_success(self, mock_client_class, client):
         """Test successful user registration"""
         # Arrange
@@ -564,34 +595,37 @@ class TestRegisterEndpoint:
         mock_token_response = Mock()
         mock_token_response.status_code = 200
         mock_token_response.json.return_value = {"access_token": "admin-token"}
-        
+
         # Mock create user response
         mock_create_response = Mock()
         mock_create_response.status_code = 201
         mock_create_response.headers = {"Location": "http://keycloak/users/user-123"}
-        
+
         # Mock auto-login response
         mock_login_response = Mock()
         mock_login_response.status_code = 200
         mock_login_response.json.return_value = {"access_token": "user-token"}
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [
             mock_token_response,  # Admin token
             mock_create_response,  # Create user
-            mock_login_response    # Auto-login
+            mock_login_response,  # Auto-login
         ]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Mock setup_user_roles
-        with patch('fastmcp.auth.interface.auth_endpoints.setup_user_roles'):
+        with patch("fastmcp.auth.interface.auth_endpoints.setup_user_roles"):
             # Act
-            response = client.post("/api/auth/register", json={
-                "email": "test@example.com",
-                "password": "Password123!",
-                "username": "testuser"
-            })
-        
+            response = client.post(
+                "/api/auth/register",
+                json={
+                    "email": "test@example.com",
+                    "password": "Password123!",
+                    "username": "testuser",
+                },
+            )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -599,12 +633,11 @@ class TestRegisterEndpoint:
         assert "Registration successful" in data["message"]
         # Note: The response format indicates this is using a different auth system
         # TODO: Update test when auth endpoint returns full user data
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "EMAIL_VERIFIED_AUTO": "false"
-    })
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ, {"AUTH_PROVIDER": "keycloak", "EMAIL_VERIFIED_AUTO": "false"}
+    )
     def test_register_email_verification_required(self, mock_client_class, client):
         """Test registration when email verification is required"""
         # Arrange
@@ -612,25 +645,28 @@ class TestRegisterEndpoint:
         mock_token_response = Mock()
         mock_token_response.status_code = 200
         mock_token_response.json.return_value = {"access_token": "admin-token"}
-        
+
         # Mock create user response
         mock_create_response = Mock()
         mock_create_response.status_code = 201
         mock_create_response.headers = {"Location": "http://keycloak/users/user-123"}
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [mock_token_response, mock_create_response]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Mock setup_user_roles
-        with patch('fastmcp.auth.interface.auth_endpoints.setup_user_roles'):
+        with patch("fastmcp.auth.interface.auth_endpoints.setup_user_roles"):
             # Act
-            response = client.post("/api/auth/register", json={
-                "email": "test@example.com",
-                "password": "Password123!",
-                "username": "testuser"
-            })
-        
+            response = client.post(
+                "/api/auth/register",
+                json={
+                    "email": "test@example.com",
+                    "password": "Password123!",
+                    "username": "testuser",
+                },
+            )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -639,15 +675,18 @@ class TestRegisterEndpoint:
         # Note: Current implementation returns simplified response format
         # Original test expected: message_type="warning", display_color="yellow", "check your email"
         # Actual implementation returns: {"success": True, "message": "Registration successful"}
-    
+
     def test_register_invalid_password(self, client):
         """Test registration with invalid password"""
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "weak",
-            "username": "testuser"
-        })
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "weak",
+                "username": "testuser",
+            },
+        )
 
         # Assert - Updated to match current validation behavior
         assert response.status_code == 422
@@ -657,15 +696,18 @@ class TestRegisterEndpoint:
         error_msg = data["detail"][0]["msg"]
         assert "Password does not meet requirements" in error_msg
         assert "at least 8 characters" in error_msg
-    
+
     def test_register_invalid_email(self, client):
         """Test registration with invalid email"""
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "not-an-email",
-            "password": "Password123!",
-            "username": "testuser"
-        })
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "not-an-email",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
 
         # Assert - Updated to match current validation behavior
         assert response.status_code == 422
@@ -674,8 +716,8 @@ class TestRegisterEndpoint:
         assert len(data["detail"]) > 0
         error_msg = data["detail"][0]["msg"]
         assert "valid email address" in error_msg
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_register_user_already_exists(self, mock_client_class, client):
         """Test registration when user already exists"""
@@ -684,30 +726,35 @@ class TestRegisterEndpoint:
         mock_token_response = Mock()
         mock_token_response.status_code = 200
         mock_token_response.json.return_value = {"access_token": "admin-token"}
-        
+
         # Mock create user response - conflict
         mock_create_response = Mock()
         mock_create_response.status_code = 409
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [mock_token_response, mock_create_response]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Mock cleanup function
-        with patch('fastmcp.auth.interface.auth_endpoints.cleanup_incomplete_account_internal') as mock_cleanup:
+        with patch(
+            "fastmcp.auth.interface.auth_endpoints.cleanup_incomplete_account_internal"
+        ) as mock_cleanup:
             mock_cleanup.return_value = {
                 "success": False,
                 "message": "Account is verified and complete",
-                "can_register": False
+                "can_register": False,
             }
-            
+
             # Act
-            response = client.post("/api/auth/register", json={
-                "email": "test@example.com",
-                "password": "Password123!",
-                "username": "testuser"
-            })
-        
+            response = client.post(
+                "/api/auth/register",
+                json={
+                    "email": "test@example.com",
+                    "password": "Password123!",
+                    "username": "testuser",
+                },
+            )
+
         # Assert
         # Note: Current implementation falls back to test mode when mocking is complex
         # instead of returning 409, it returns 200 with success message
@@ -715,8 +762,8 @@ class TestRegisterEndpoint:
         data = response.json()
         assert data["success"] is True
         # In test mode, it creates a new test user instead of rejecting
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_register_with_cleanup_and_retry(self, mock_client_class, client):
         """Test registration with successful cleanup and retry"""
@@ -725,40 +772,45 @@ class TestRegisterEndpoint:
         mock_token_response = Mock()
         mock_token_response.status_code = 200
         mock_token_response.json.return_value = {"access_token": "admin-token"}
-        
+
         # First create fails with conflict
         mock_create_fail = Mock()
         mock_create_fail.status_code = 409
-        
+
         # Second create succeeds after cleanup
         mock_create_success = Mock()
         mock_create_success.status_code = 201
         mock_create_success.headers = {"Location": "http://keycloak/users/user-456"}
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [
             mock_token_response,
             mock_create_fail,
-            mock_create_success
+            mock_create_success,
         ]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Mock cleanup function
-        with patch('fastmcp.auth.interface.auth_endpoints.cleanup_incomplete_account_internal') as mock_cleanup:
+        with patch(
+            "fastmcp.auth.interface.auth_endpoints.cleanup_incomplete_account_internal"
+        ) as mock_cleanup:
             mock_cleanup.return_value = {
                 "success": True,
                 "message": "Cleanup successful",
-                "can_register": True
+                "can_register": True,
             }
-            
-            with patch('fastmcp.auth.interface.auth_endpoints.setup_user_roles'):
+
+            with patch("fastmcp.auth.interface.auth_endpoints.setup_user_roles"):
                 # Act
-                response = client.post("/api/auth/register", json={
-                    "email": "test@example.com",
-                    "password": "Password123!",
-                    "username": "testuser"
-                })
-        
+                response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": "test@example.com",
+                        "password": "Password123!",
+                        "username": "testuser",
+                    },
+                )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -767,31 +819,39 @@ class TestRegisterEndpoint:
         # which doesn't include user_id field from Keycloak Location header
         # Instead it generates a UUID and includes it in the response differently
         assert "message" in data  # Test mode always returns success message
-    
+
     @patch.dict(os.environ, {"AUTH_PROVIDER": "supabase"})
     def test_register_supabase_not_implemented(self, client):
         """Test registration with Supabase provider (not implemented)"""
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "Password123!",
-            "username": "testuser"
-        })
-        
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
+
         # Assert
         assert response.status_code == 501
-        assert "Supabase registration is not yet implemented" in response.json()["detail"]
-    
+        assert (
+            "Supabase registration is not yet implemented" in response.json()["detail"]
+        )
+
     @patch.dict(os.environ, {"AUTH_PROVIDER": "test"})
     def test_register_test_mode(self, client):
         """Test registration in test mode"""
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "Password123!",
-            "username": "testuser"
-        })
-        
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -802,7 +862,7 @@ class TestRegisterEndpoint:
 
 class TestRefreshTokenEndpoint:
     """Test suite for refresh token endpoint"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -811,8 +871,8 @@ class TestRefreshTokenEndpoint:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_refresh_token_success(self, mock_client_class, client):
         """Test successful token refresh"""
@@ -822,16 +882,18 @@ class TestRefreshTokenEndpoint:
         mock_response.json.return_value = {
             "access_token": "new-token",
             "refresh_token": "new-refresh-token",
-            "expires_in": 3600
+            "expires_in": 3600,
         }
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "old-refresh-token"})
-        
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "old-refresh-token"}
+        )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -846,22 +908,24 @@ class TestRefreshTokenEndpoint:
         else:
             # Test mode fallback - current implementation behavior
             assert data.get("success") is not None
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_refresh_token_invalid(self, mock_client_class, client):
         """Test refresh with invalid token"""
         # Arrange
         mock_response = Mock()
         mock_response.status_code = 401
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "invalid-token"})
-        
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "invalid-token"}
+        )
+
         # Assert
         # Note: Current implementation may fall back to test mode instead of 401
         # when mocking doesn't work as expected
@@ -873,8 +937,8 @@ class TestRefreshTokenEndpoint:
             # Keycloak mode (expected)
             assert response.status_code == 401
             assert "Invalid refresh token" in response.json()["detail"]
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_refresh_token_connection_error(self, mock_client_class, client):
         """Test refresh when Keycloak is unavailable"""
@@ -882,10 +946,12 @@ class TestRefreshTokenEndpoint:
         mock_client = AsyncMock()
         mock_client.post.side_effect = httpx.RequestError("Connection failed")
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "some-token"})
-        
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "some-token"}
+        )
+
         # Assert
         # Note: Current implementation may fall back to test mode instead of 503
         # when mocking doesn't work as expected
@@ -897,13 +963,15 @@ class TestRefreshTokenEndpoint:
             # Keycloak mode (expected)
             assert response.status_code == 503
             assert "Authentication service unavailable" in response.json()["detail"]
-    
+
     @patch.dict(os.environ, {"AUTH_PROVIDER": "test"})
     def test_refresh_token_test_mode(self, client):
         """Test refresh in test mode"""
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "test-token"})
-        
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "test-token"}
+        )
+
         # Assert
         # Note: Current implementation may fall back to Supabase path
         # even with AUTH_PROVIDER="test" due to environment/mocking issues
@@ -923,7 +991,7 @@ class TestRefreshTokenEndpoint:
 
 class TestLogoutEndpoint:
     """Test suite for logout endpoint"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -932,29 +1000,29 @@ class TestLogoutEndpoint:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_logout_success(self, mock_client_class, client):
         """Test successful logout"""
         # Arrange
         mock_response = Mock()
         mock_response.status_code = 204
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        response = client.post("/api/auth/logout", json={
-            "refresh_token": "valid-token"
-        })
-        
+        response = client.post(
+            "/api/auth/logout", json={"refresh_token": "valid-token"}
+        )
+
         # Assert
         assert response.status_code == 200
         assert response.json()["message"] == "Logged out successfully"
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_logout_connection_error(self, mock_client_class, client):
         """Test logout when Keycloak is unavailable"""
@@ -962,21 +1030,19 @@ class TestLogoutEndpoint:
         mock_client = AsyncMock()
         mock_client.post.side_effect = httpx.RequestError("Connection failed")
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         # Act
-        response = client.post("/api/auth/logout", json={
-            "refresh_token": "some-token"
-        })
-        
+        response = client.post("/api/auth/logout", json={"refresh_token": "some-token"})
+
         # Assert
         assert response.status_code == 200
         assert "Logged out successfully" in response.json()["message"]
-    
+
     def test_logout_without_token(self, client):
         """Test logout without refresh token"""
         # Act
         response = client.post("/api/auth/logout", json={})
-        
+
         # Assert
         assert response.status_code == 200
         assert response.json()["message"] == "Logged out successfully"
@@ -984,7 +1050,7 @@ class TestLogoutEndpoint:
 
 class TestUtilityEndpoints:
     """Test suite for utility endpoints"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -993,18 +1059,21 @@ class TestUtilityEndpoints:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "KEYCLOAK_URL": "http://localhost:8080",
-        "KEYCLOAK_REALM": "test-realm",
-        "KEYCLOAK_CLIENT_ID": "test-client"
-    })
+
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "KEYCLOAK_URL": "http://localhost:8080",
+            "KEYCLOAK_REALM": "test-realm",
+            "KEYCLOAK_CLIENT_ID": "test-client",
+        },
+    )
     def test_get_provider(self, client):
         """Test getting auth provider configuration"""
         # Act
         response = client.get("/api/auth/provider")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -1012,46 +1081,46 @@ class TestUtilityEndpoints:
         assert data["keycloak_url"] == "http://localhost:8080"
         assert data["keycloak_realm"] == "test-realm"
         assert data["keycloak_client_id"] == "test-client"
-    
+
     def test_verify_auth(self, client):
         """Test auth verification endpoint"""
         # Act
         response = client.get("/api/auth/verify")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-    
+
     def test_get_password_requirements(self, client):
         """Test getting password requirements"""
         # Act
         response = client.get("/api/auth/password-requirements")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
         assert len(data["requirements"]) == 5
         assert len(data["example_passwords"]) > 0
         assert len(data["tips"]) > 0
-    
+
     def test_validate_password_strong(self, client):
         """Test validating a strong password"""
         # Act
         response = client.post("/api/auth/validate-password?password=StrongPass123!")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
         assert data["valid"] is True
         assert data["strength"] == "strong"
         assert data["score"] >= 4
-    
+
     def test_validate_password_weak(self, client):
         """Test validating a weak password"""
         # Act
         response = client.post("/api/auth/validate-password?password=weak")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -1059,12 +1128,14 @@ class TestUtilityEndpoints:
         assert data["strength"] == "weak"
         assert len(data["issues"]) > 0
         assert len(data["suggestions"]) > 0
-    
+
     def test_registration_success_handler(self, client):
         """Test post-registration success handler"""
         # Act
-        response = client.post("/api/auth/registration-success?user_id=123&email=test@example.com")
-        
+        response = client.post(
+            "/api/auth/registration-success?user_id=123&email=test@example.com"
+        )
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -1088,10 +1159,9 @@ class TestDevLoginEndpoint:
         app.include_router(router)
         return TestClient(app)
 
-    @patch.dict(os.environ, {
-        "ENV": "development",
-        "JWT_SECRET_KEY": "test-secret-key-for-dev"
-    })
+    @patch.dict(
+        os.environ, {"ENV": "development", "JWT_SECRET_KEY": "test-secret-key-for-dev"}
+    )
     def test_dev_login_success(self, client):
         """Test successful dev-only login"""
         # Act
@@ -1117,10 +1187,13 @@ class TestDevLoginEndpoint:
         if response.status_code == 404:
             assert "Not found" in response.json()["detail"]
 
-    @patch.dict(os.environ, {
-        "ENV": "development",
-        "JWT_SECRET_KEY": ""  # Missing secret key
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "ENV": "development",
+            "JWT_SECRET_KEY": "",  # Missing secret key
+        },
+    )
     def test_dev_login_missing_jwt_secret(self, client):
         """Test dev-login fails without JWT secret"""
         # Act
@@ -1144,13 +1217,18 @@ class TestLoginDevFallback:
         app.include_router(router)
         return TestClient(app)
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "ENV": "development",
-        "JWT_SECRET_KEY": "test-dev-secret"
-    })
-    def test_login_dev_fallback_when_keycloak_unavailable(self, mock_client_class, client):
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "ENV": "development",
+            "JWT_SECRET_KEY": "test-dev-secret",
+        },
+    )
+    def test_login_dev_fallback_when_keycloak_unavailable(
+        self, mock_client_class, client
+    ):
         """Test development fallback when Keycloak is unavailable"""
         # Arrange
         mock_client = AsyncMock()
@@ -1158,10 +1236,10 @@ class TestLoginDevFallback:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
 
         # Assert - Should succeed with fallback or test mode
         assert response.status_code == 200
@@ -1171,12 +1249,15 @@ class TestLoginDevFallback:
         if "access_token" in data:  # Validate if present
             assert "email" in data or "user_id" in data
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "ENV": "production",
-        "JWT_SECRET_KEY": "test-secret"
-    })
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "ENV": "production",
+            "JWT_SECRET_KEY": "test-secret",
+        },
+    )
     def test_login_no_fallback_in_production(self, mock_client_class, client):
         """Test no development fallback in production"""
         # Arrange
@@ -1185,10 +1266,10 @@ class TestLoginDevFallback:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/login", json={
-            "email": "test@example.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "test@example.com", "password": "password123"},
+        )
 
         # Assert - May fall back to test mode
         assert response.status_code in [503, 200]
@@ -1208,7 +1289,7 @@ class TestRefreshTokenErrorScenarios:
         app.include_router(router)
         return TestClient(app)
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_refresh_token_expired(self, mock_client_class, client):
         """Test refresh token expired error"""
@@ -1217,7 +1298,7 @@ class TestRefreshTokenErrorScenarios:
         mock_response.status_code = 400
         mock_response.json.return_value = {
             "error": "invalid_grant",
-            "error_description": "Token is not active or token expired"
+            "error_description": "Token is not active or token expired",
         }
 
         mock_client = AsyncMock()
@@ -1225,14 +1306,16 @@ class TestRefreshTokenErrorScenarios:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "expired-token"})
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "expired-token"}
+        )
 
         # Assert
         # May fall back to test mode
         if response.status_code == 401:
             assert "expired" in response.json()["detail"].lower()
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_refresh_token_invalid_grant(self, mock_client_class, client):
         """Test refresh token with invalid grant"""
@@ -1241,7 +1324,7 @@ class TestRefreshTokenErrorScenarios:
         mock_response.status_code = 400
         mock_response.json.return_value = {
             "error": "invalid_grant",
-            "error_description": "Invalid refresh token"
+            "error_description": "Invalid refresh token",
         }
 
         mock_client = AsyncMock()
@@ -1249,7 +1332,9 @@ class TestRefreshTokenErrorScenarios:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/refresh", json={"refresh_token": "invalid-token"})
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": "invalid-token"}
+        )
 
         # Assert
         # May fall back to test mode
@@ -1273,9 +1358,11 @@ class TestRefreshTokenErrorScenarios:
     def test_refresh_token_invalid_json(self, client):
         """Test refresh token with invalid JSON body"""
         # Act
-        response = client.post("/api/auth/refresh",
-                              data="invalid-json",
-                              headers={"Content-Type": "application/json"})
+        response = client.post(
+            "/api/auth/refresh",
+            data="invalid-json",
+            headers={"Content-Type": "application/json"},
+        )
 
         # Assert - Should return 422/400 for invalid JSON, or 200 if test mode fallback accepts anything
         assert response.status_code in [422, 400, 200]
@@ -1293,7 +1380,7 @@ class TestRegistrationErrorPaths:
         app.include_router(router)
         return TestClient(app)
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_register_keycloak_connection_error(self, mock_client_class, client):
         """Test registration when Keycloak connection fails"""
@@ -1303,18 +1390,21 @@ class TestRegistrationErrorPaths:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "Password123!",
-            "username": "testuser"
-        })
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
 
         # Assert
         # May fall back to test mode
         if response.status_code == 503:
             assert "temporarily unavailable" in response.json()["detail"].lower()
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     @patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"})
     def test_register_admin_token_failure(self, mock_client_class, client):
         """Test registration when admin token acquisition fails"""
@@ -1327,21 +1417,27 @@ class TestRegistrationErrorPaths:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "Password123!",
-            "username": "testuser"
-        })
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
 
         # Assert
         # May fall back to test mode or return error
         assert response.status_code in [200, 503]
 
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
-    @patch.dict(os.environ, {
-        "AUTH_PROVIDER": "keycloak",
-        "KEYCLOAK_CLIENT_SECRET": ""  # No client secret
-    })
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
+    @patch.dict(
+        os.environ,
+        {
+            "AUTH_PROVIDER": "keycloak",
+            "KEYCLOAK_CLIENT_SECRET": "",  # No client secret
+        },
+    )
     def test_register_no_client_secret(self, mock_client_class, client):
         """Test registration without client secret"""
         # Arrange
@@ -1353,11 +1449,14 @@ class TestRegistrationErrorPaths:
         mock_client_class.return_value.__aenter__.return_value = mock_client
 
         # Act
-        response = client.post("/api/auth/register", json={
-            "email": "test@example.com",
-            "password": "Password123!",
-            "username": "testuser"
-        })
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "email": "test@example.com",
+                "password": "Password123!",
+                "username": "testuser",
+            },
+        )
 
         # Assert
         # May fall back to test mode or return error
@@ -1368,7 +1467,7 @@ class TestSetupUserRolesExtended:
     """Extended test suite for setup_user_roles function"""
 
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_setup_user_roles_with_client_roles(self, mock_client_class):
         """Test user role setup including client-specific roles"""
         # Arrange
@@ -1378,7 +1477,7 @@ class TestSetupUserRolesExtended:
         mock_user_response.json.return_value = {
             "username": "testuser",
             "email": "test@example.com",
-            "attributes": {}
+            "attributes": {},
         }
 
         # Mock user update response
@@ -1395,7 +1494,7 @@ class TestSetupUserRolesExtended:
         mock_client_roles_response.status_code = 200
         mock_client_roles_response.json.return_value = [
             {"id": "role-1", "name": "admin"},
-            {"id": "role-2", "name": "user"}
+            {"id": "role-2", "name": "user"},
         ]
 
         # Mock client role assignment response
@@ -1407,7 +1506,7 @@ class TestSetupUserRolesExtended:
         mock_realm_roles_response.status_code = 200
         mock_realm_roles_response.json.return_value = [
             {"id": "realm-role-1", "name": "user"},
-            {"id": "realm-role-2", "name": "offline_access"}
+            {"id": "realm-role-2", "name": "offline_access"},
         ]
 
         # Mock realm role assignment response
@@ -1419,27 +1518,38 @@ class TestSetupUserRolesExtended:
             mock_user_response,
             mock_clients_response,
             mock_client_roles_response,
-            mock_realm_roles_response
+            mock_realm_roles_response,
         ]
         mock_client.put.return_value = mock_update_response
-        mock_client.post.side_effect = [mock_assign_client_roles, mock_assign_realm_roles]
+        mock_client.post.side_effect = [
+            mock_assign_client_roles,
+            mock_assign_realm_roles,
+        ]
 
         mock_client_class.return_value = mock_client
 
         # Act
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "KEYCLOAK_CLIENT_ID": "test-client",
-            "EMAIL_VERIFIED_AUTO": "true"
-        }), patch('fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO', True):
-            await setup_user_roles(mock_client, "admin-token", "user-123", "test@example.com")
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "KEYCLOAK_URL": "http://localhost:8080",
+                    "KEYCLOAK_REALM": "test-realm",
+                    "KEYCLOAK_CLIENT_ID": "test-client",
+                    "EMAIL_VERIFIED_AUTO": "true",
+                },
+            ),
+            patch("fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO", True),
+        ):
+            await setup_user_roles(
+                mock_client, "admin-token", "user-123", "test@example.com"
+            )
 
         # Assert - verify client roles were assigned
         assert mock_client.post.call_count >= 1
 
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_setup_user_roles_no_client_roles(self, mock_client_class):
         """Test user role setup when client has no roles"""
         # Arrange
@@ -1448,7 +1558,7 @@ class TestSetupUserRolesExtended:
         mock_user_response.json.return_value = {
             "username": "testuser",
             "email": "test@example.com",
-            "attributes": {}
+            "attributes": {},
         }
 
         mock_update_response = Mock()
@@ -1472,25 +1582,33 @@ class TestSetupUserRolesExtended:
             mock_user_response,
             mock_clients_response,
             mock_client_roles_response,
-            mock_realm_roles_response
+            mock_realm_roles_response,
         ]
         mock_client.put.return_value = mock_update_response
 
         mock_client_class.return_value = mock_client
 
         # Act
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "EMAIL_VERIFIED_AUTO": "false"
-        }), patch('fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO', False):
-            await setup_user_roles(mock_client, "admin-token", "user-456", "test@example.com")
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "KEYCLOAK_URL": "http://localhost:8080",
+                    "KEYCLOAK_REALM": "test-realm",
+                    "EMAIL_VERIFIED_AUTO": "false",
+                },
+            ),
+            patch("fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO", False),
+        ):
+            await setup_user_roles(
+                mock_client, "admin-token", "user-456", "test@example.com"
+            )
 
         # Assert - no role assignment calls should be made
         mock_client.post.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     async def test_setup_user_roles_client_not_found(self, mock_client_class):
         """Test user role setup when client is not found"""
         # Arrange
@@ -1498,7 +1616,7 @@ class TestSetupUserRolesExtended:
         mock_user_response.status_code = 200
         mock_user_response.json.return_value = {
             "username": "testuser",
-            "email": "test@example.com"
+            "email": "test@example.com",
         }
 
         mock_update_response = Mock()
@@ -1517,19 +1635,27 @@ class TestSetupUserRolesExtended:
         mock_client.get.side_effect = [
             mock_user_response,
             mock_clients_response,
-            mock_realm_roles_response
+            mock_realm_roles_response,
         ]
         mock_client.put.return_value = mock_update_response
 
         mock_client_class.return_value = mock_client
 
         # Act - should not raise exception
-        with patch.dict(os.environ, {
-            "KEYCLOAK_URL": "http://localhost:8080",
-            "KEYCLOAK_REALM": "test-realm",
-            "EMAIL_VERIFIED_AUTO": "true"
-        }), patch('fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO', True):
-            await setup_user_roles(mock_client, "admin-token", "user-789", "test@example.com")
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "KEYCLOAK_URL": "http://localhost:8080",
+                    "KEYCLOAK_REALM": "test-realm",
+                    "EMAIL_VERIFIED_AUTO": "true",
+                },
+            ),
+            patch("fastmcp.auth.interface.auth_endpoints.EMAIL_VERIFIED_AUTO", True),
+        ):
+            await setup_user_roles(
+                mock_client, "admin-token", "user-789", "test@example.com"
+            )
 
         # Assert - function completes without error
         assert mock_client.put.call_count == 1
@@ -1566,7 +1692,7 @@ class TestTokenManagementEndpoints:
 
 class TestEdgeCasesAndErrorHandling:
     """Test suite for edge cases and error scenarios"""
-    
+
     @pytest.fixture
     def client(self):
         """Test client for FastAPI router"""
@@ -1575,79 +1701,82 @@ class TestEdgeCasesAndErrorHandling:
         app = FastAPI()
         app.include_router(router)
         return TestClient(app)
-    
+
     def test_register_empty_username(self, client):
         """Test registration with empty username (should use email)"""
-        with patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient'):
+        with patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient"):
             with patch.dict(os.environ, {"AUTH_PROVIDER": "test"}):
-                response = client.post("/api/auth/register", json={
-                    "email": "test@example.com",
-                    "password": "Password123!"
-                })
-        
+                response = client.post(
+                    "/api/auth/register",
+                    json={"email": "test@example.com", "password": "Password123!"},
+                )
+
         assert response.status_code == 200
         data = response.json()
         assert data["username"] == "test@example.com"
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     def test_register_keycloak_bad_request(self, mock_client_class, client):
         """Test registration when Keycloak returns bad request with error details"""
         # Arrange
         mock_token_response = Mock()
         mock_token_response.status_code = 200
         mock_token_response.json.return_value = {"access_token": "admin-token"}
-        
+
         mock_create_response = Mock()
         mock_create_response.status_code = 400
         mock_create_response.json.return_value = {
             "error": "validation_failed",
-            "error_description": "Password policy not met: special character required"
+            "error_description": "Password policy not met: special character required",
         }
         mock_create_response.text = json.dumps(mock_create_response.json.return_value)
-        
+
         mock_client = AsyncMock()
         mock_client.post.side_effect = [mock_token_response, mock_create_response]
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         with patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"}):
             # Act
-            response = client.post("/api/auth/register", json={
-                "email": "test@example.com",
-                "password": "ValidPassword123!",
-                "username": "testuser"
-            })
-        
+            response = client.post(
+                "/api/auth/register",
+                json={
+                    "email": "test@example.com",
+                    "password": "ValidPassword123!",
+                    "username": "testuser",
+                },
+            )
+
         # Assert - current implementation returns success even when Keycloak has errors
         # This indicates more resilient error handling in the current implementation
         assert response.status_code == 200
         assert response.json()["success"]
         assert "Registration successful" in response.json()["message"]
-    
-    @patch('fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient')
+
+    @patch("fastmcp.auth.interface.auth_endpoints.httpx.AsyncClient")
     def test_login_keycloak_generic_error(self, mock_client_class, client):
         """Test login when Keycloak returns unexpected error code"""
         # Arrange
         mock_response = Mock()
         mock_response.status_code = 403
         mock_response.text = "Forbidden"
-        
+
         mock_client = AsyncMock()
         mock_client.post.return_value = mock_response
         mock_client_class.return_value.__aenter__.return_value = mock_client
-        
+
         with patch.dict(os.environ, {"AUTH_PROVIDER": "keycloak"}):
             # Act
-            response = client.post("/api/auth/login", json={
-                "email": "test@example.com",
-                "password": "password123"
-            })
-        
+            response = client.post(
+                "/api/auth/login",
+                json={"email": "test@example.com", "password": "password123"},
+            )
+
         # Assert - current implementation has fallback auth that still succeeds
         # This indicates improved resilience in the authentication system
         assert response.status_code == 200
         assert "access_token" in response.json()
         assert "user_id" in response.json()
-    
+
     def test_validate_password_with_all_requirements(self, client):
         """Test password validation with different combinations"""
         test_cases = [
@@ -1658,7 +1787,7 @@ class TestEdgeCasesAndErrorHandling:
             ("Aaaaaaa1", False, "special character"),  # No special
             ("Aa1!Aa1!", True, None),  # Valid
         ]
-        
+
         for password, should_be_valid, expected_issue in test_cases:
             response = client.post(f"/api/auth/validate-password?password={password}")
             assert response.status_code == 200

@@ -1,4 +1,5 @@
 """Unit tests for CascadeCalculator domain service"""
+
 import time
 from unittest.mock import AsyncMock, Mock
 
@@ -13,7 +14,7 @@ from fastmcp.task_management.domain.services.cascade_calculator import (
 
 class TestCascadeResult:
     """Test CascadeResult dataclass methods"""
-    
+
     def test_get_all_affected_ids(self):
         """Test getting all affected entity IDs"""
         result = CascadeResult(
@@ -24,11 +25,11 @@ class TestCascadeResult:
             affected_branches={"branch1"},
             affected_projects={"proj1"},
             affected_contexts={"ctx1", "ctx2"},
-            calculation_time_ms=10.5
+            calculation_time_ms=10.5,
         )
-        
+
         all_ids = result.get_all_affected_ids()
-        
+
         assert len(all_ids) == 8
         assert "task1" in all_ids
         assert "task2" in all_ids
@@ -38,7 +39,7 @@ class TestCascadeResult:
         assert "proj1" in all_ids
         assert "ctx1" in all_ids
         assert "ctx2" in all_ids
-    
+
     def test_get_affected_count(self):
         """Test getting total count of affected entities"""
         result = CascadeResult(
@@ -49,15 +50,15 @@ class TestCascadeResult:
             affected_branches={"branch1"},
             affected_projects={"proj1"},
             affected_contexts=set(),
-            calculation_time_ms=10.5
+            calculation_time_ms=10.5,
         )
-        
+
         assert result.get_affected_count() == 5
 
 
 class TestEntityType:
     """Test EntityType enum"""
-    
+
     def test_entity_type_values(self):
         """Test that entity types have correct values"""
         assert EntityType.TASK.value == "task"
@@ -90,7 +91,7 @@ class TestCascadeCalculator:
         assert calculator._cache == {}
         assert calculator._cache_ttl_seconds == 300
         assert calculator._cache_timestamps == {}
-    
+
     @pytest.mark.asyncio
     async def test_calculate_cascade_with_cache_hit(self, calculator):
         """Test cascade calculation with cache hit"""
@@ -104,20 +105,24 @@ class TestCascadeCalculator:
             affected_projects=set(),
             affected_contexts=set(),
             calculation_time_ms=5.0,
-            cache_hit=False
+            cache_hit=False,
         )
-        
+
         calculator._cache["test-id:task"] = cached_result
         calculator._cache_timestamps["test-id:task"] = time.time()
-        
+
         # Call with cache enabled
-        result = await calculator.calculate_cascade("test-id", EntityType.TASK, use_cache=True)
-        
+        result = await calculator.calculate_cascade(
+            "test-id", EntityType.TASK, use_cache=True
+        )
+
         assert result.cache_hit
         assert result.entity_id == "test-id"
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_cascade_with_entity_type(self, calculator, mock_data_provider):
+    async def test_calculate_cascade_with_entity_type(
+        self, calculator, mock_data_provider
+    ):
         """Test cascade calculation with explicitly specified entity type"""
         # Setup mock data provider to return task data
         mock_task_data = Mock()
@@ -131,7 +136,9 @@ class TestCascadeCalculator:
         mock_data_provider.get_related_context_ids.return_value = set()
 
         # Call with explicit entity type
-        result = await calculator.calculate_cascade("test-id", entity_type=EntityType.TASK)
+        result = await calculator.calculate_cascade(
+            "test-id", entity_type=EntityType.TASK
+        )
 
         # Verify data provider was called
         mock_data_provider.get_task_cascade_data.assert_called_once_with("test-id")
@@ -139,9 +146,11 @@ class TestCascadeCalculator:
         # Verify result structure
         assert result.entity_id == "test-id"
         assert result.entity_type == EntityType.TASK
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_cascade_with_explicit_type(self, calculator, mock_data_provider):
+    async def test_calculate_cascade_with_explicit_type(
+        self, calculator, mock_data_provider
+    ):
         """Test cascade calculation with explicitly specified entity type"""
         # Setup mock for branch cascade
         mock_branch_data = Mock()
@@ -153,14 +162,18 @@ class TestCascadeCalculator:
         mock_data_provider.get_related_context_ids.return_value = set()
 
         # Call with explicit BRANCH entity type
-        result = await calculator.calculate_cascade("test-id", entity_type=EntityType.BRANCH)
+        result = await calculator.calculate_cascade(
+            "test-id", entity_type=EntityType.BRANCH
+        )
 
         # Verify it called branch cascade
         mock_data_provider.get_branch_cascade_data.assert_called_once_with("test-id")
         assert result.entity_type == EntityType.BRANCH
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_cascade_performance_warning(self, calculator, mock_data_provider, caplog):
+    async def test_calculate_cascade_performance_warning(
+        self, calculator, mock_data_provider, caplog
+    ):
         """Test performance warning when calculation exceeds 50ms"""
         import asyncio
 
@@ -180,12 +193,14 @@ class TestCascadeCalculator:
         mock_data_provider.get_related_context_ids.return_value = set()
 
         # Execute
-        result = await calculator.calculate_cascade("test-id", EntityType.TASK, use_cache=False)
+        result = await calculator.calculate_cascade(
+            "test-id", EntityType.TASK, use_cache=False
+        )
 
         # Check warning was logged
         assert "Cascade calculation exceeded 50ms" in caplog.text
         assert result.calculation_time_ms > 50
-    
+
     @pytest.mark.asyncio
     async def test_calculate_task_cascade_success(self, calculator, mock_data_provider):
         """Test successful task cascade calculation"""
@@ -214,9 +229,11 @@ class TestCascadeCalculator:
         assert "ctx-id" in result.affected_contexts
         assert "ctx2" in result.affected_contexts
         assert "ctx3" in result.affected_contexts
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_task_cascade_not_found(self, calculator, mock_data_provider):
+    async def test_calculate_task_cascade_not_found(
+        self, calculator, mock_data_provider
+    ):
         """Test task cascade when task not found"""
         # Mock data provider to return None (task not found)
         mock_data_provider.get_task_cascade_data.return_value = None
@@ -232,9 +249,11 @@ class TestCascadeCalculator:
         assert len(result.affected_branches) == 0
         assert len(result.affected_projects) == 0
         assert len(result.affected_contexts) == 0
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_subtask_cascade_success(self, calculator, mock_data_provider):
+    async def test_calculate_subtask_cascade_success(
+        self, calculator, mock_data_provider
+    ):
         """Test successful subtask cascade calculation"""
         # Setup mock data provider
         mock_subtask_data = Mock()
@@ -258,9 +277,11 @@ class TestCascadeCalculator:
         assert "proj-id" in result.affected_projects
         assert "ctx-id" in result.affected_contexts
         assert "ctx2" in result.affected_contexts
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_branch_cascade_success(self, calculator, mock_data_provider):
+    async def test_calculate_branch_cascade_success(
+        self, calculator, mock_data_provider
+    ):
         """Test successful branch cascade calculation"""
         # Setup mock data provider
         mock_branch_data = Mock()
@@ -286,9 +307,11 @@ class TestCascadeCalculator:
         assert "sub2" in result.affected_subtasks
         assert "ctx1" in result.affected_contexts
         assert "ctx2" in result.affected_contexts
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_project_cascade_success(self, calculator, mock_data_provider):
+    async def test_calculate_project_cascade_success(
+        self, calculator, mock_data_provider
+    ):
         """Test successful project cascade calculation"""
         # Setup mock data provider
         mock_project_data = Mock()
@@ -316,9 +339,11 @@ class TestCascadeCalculator:
         assert "sub2" in result.affected_subtasks
         assert "ctx1" in result.affected_contexts
         assert "ctx2" in result.affected_contexts
-    
+
     @pytest.mark.asyncio
-    async def test_calculate_context_cascade_success(self, calculator, mock_data_provider):
+    async def test_calculate_context_cascade_success(
+        self, calculator, mock_data_provider
+    ):
         """Test successful context cascade calculation"""
         # Setup mock data provider
         mock_context_data = Mock()
@@ -353,23 +378,23 @@ class TestCascadeCalculator:
     def test_is_cache_valid_no_entry(self, calculator):
         """Test cache validity check with no entry"""
         assert not calculator._is_cache_valid("missing-key")
-    
+
     def test_is_cache_valid_expired(self, calculator):
         """Test cache validity check with expired entry"""
         # Add entry with old timestamp
         calculator._cache["test-key"] = Mock()
         calculator._cache_timestamps["test-key"] = time.time() - 400  # 400 seconds ago
-        
+
         assert not calculator._is_cache_valid("test-key")
-    
+
     def test_is_cache_valid_fresh(self, calculator):
         """Test cache validity check with fresh entry"""
         # Add entry with recent timestamp
         calculator._cache["test-key"] = Mock()
         calculator._cache_timestamps["test-key"] = time.time() - 100  # 100 seconds ago
-        
+
         assert calculator._is_cache_valid("test-key")
-    
+
     def test_clear_cache(self, calculator):
         """Test cache clearing"""
         # Add some cache entries
@@ -377,24 +402,24 @@ class TestCascadeCalculator:
         calculator._cache["key2"] = Mock()
         calculator._cache_timestamps["key1"] = time.time()
         calculator._cache_timestamps["key2"] = time.time()
-        
+
         # Clear cache
         calculator.clear_cache()
-        
+
         # Verify cache is empty
         assert len(calculator._cache) == 0
         assert len(calculator._cache_timestamps) == 0
-    
+
     def test_get_cache_stats(self, calculator):
         """Test getting cache statistics"""
         # Add some cache entries
         calculator._cache["key1"] = Mock()
         calculator._cache["key2"] = Mock()
         calculator._cache_ttl_seconds = 600
-        
+
         # Get stats
         stats = calculator.get_cache_stats()
-        
+
         # Verify stats
         assert stats["cache_size"] == 2
         assert "key1" in stats["cache_entries"]

@@ -25,19 +25,21 @@ class TestFastAPIAuth:
     def test_get_db(self):
         """Test get_db returns database session"""
         mock_session = Mock(spec=Session)
-        
-        with patch('fastmcp.auth.interface.fastapi_auth.get_session', return_value=mock_session):
+
+        with patch(
+            "fastmcp.auth.interface.fastapi_auth.get_session", return_value=mock_session
+        ):
             db_gen = get_db()
             session = next(db_gen)
-            
+
             assert session == mock_session
-            
+
             # Test cleanup
             try:
                 next(db_gen)
             except StopIteration:
                 pass
-            
+
             mock_session.close.assert_called_once()
 
     @pytest.mark.asyncio
@@ -46,21 +48,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await get_current_user(mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
         assert user.email == "test@example.com"
@@ -72,21 +76,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await get_current_active_user(mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
         assert user.email == "test@example.com"
@@ -98,21 +104,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await require_admin(mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
@@ -122,21 +130,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await require_roles(UserRole.USER, credentials=mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
@@ -146,21 +156,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await require_roles(UserRole.ADMIN, credentials=mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
@@ -170,21 +182,25 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
-                user = await require_roles(UserRole.ADMIN, UserRole.USER, credentials=mock_credentials)
-        
+                user = await require_roles(
+                    UserRole.ADMIN, UserRole.USER, credentials=mock_credentials
+                )
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
@@ -194,21 +210,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await require_roles(credentials=mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
         # Should keep default role when no roles specified
@@ -219,21 +237,23 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await require_roles("custom_role", credentials=mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
@@ -243,27 +263,32 @@ class TestFastAPIAuth:
         # Mock credentials
         mock_credentials = Mock(spec=HTTPAuthorizationCredentials)
         mock_credentials.credentials = "test_token"
-        
+
         # Create a mock user to return
         mock_user = User(
             id="test-user-001",
             email="test@example.com",
             username="test-user",
-            password_hash="test-hash"
+            password_hash="test-hash",
         )
-        
+
         # Mock the keycloak function
-        with patch('fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER', 'keycloak'):
-            with patch('fastmcp.auth.keycloak_dependencies.get_current_user_universal') as mock_get_user:
+        with patch("fastmcp.auth.interface.fastapi_auth.AUTH_PROVIDER", "keycloak"):
+            with patch(
+                "fastmcp.auth.keycloak_dependencies.get_current_user_universal"
+            ) as mock_get_user:
                 mock_get_user.return_value = mock_user
                 user = await get_optional_user(mock_credentials)
-        
+
         assert isinstance(user, User)
         assert user.id == "test-user-001"
 
     @pytest.mark.asyncio
     async def test_get_optional_user_handles_exception(self):
         """Test get_optional_user returns None on exception"""
-        with patch('fastmcp.auth.interface.fastapi_auth.get_current_user', side_effect=Exception("Auth error")):
+        with patch(
+            "fastmcp.auth.interface.fastapi_auth.get_current_user",
+            side_effect=Exception("Auth error"),
+        ):
             user = await get_optional_user()
             assert user is None

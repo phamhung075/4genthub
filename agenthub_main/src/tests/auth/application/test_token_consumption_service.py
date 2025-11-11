@@ -67,7 +67,7 @@ class TestTokenConsumptionService:
         # Execute
         result = await service.consume_tokens_for_operation(
             user_id="user123",
-            operation="create_project"  # Costs 10 tokens
+            operation="create_project",  # Costs 10 tokens
         )
 
         # Verify
@@ -81,7 +81,9 @@ class TestTokenConsumptionService:
         mock_repository.consume_tokens.assert_called_once_with("user123", 10)
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_custom_cost(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_custom_cost(
+        self, service, mock_repository
+    ):
         """Test token consumption with custom cost override"""
         # Setup
         mock_repository.get_balance.return_value = {"available_tokens": 5000}
@@ -91,7 +93,7 @@ class TestTokenConsumptionService:
         result = await service.consume_tokens_for_operation(
             user_id="user123",
             operation="create_project",
-            custom_cost=25  # Override default 10 tokens
+            custom_cost=25,  # Override default 10 tokens
         )
 
         # Verify
@@ -100,12 +102,13 @@ class TestTokenConsumptionService:
         mock_repository.consume_tokens.assert_called_once_with("user123", 25)
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_free_operation(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_free_operation(
+        self, service, mock_repository
+    ):
         """Test that free operations don't consume tokens"""
         # Execute (login is free - 0 tokens)
         result = await service.consume_tokens_for_operation(
-            user_id="user123",
-            operation="login"
+            user_id="user123", operation="login"
         )
 
         # Verify
@@ -117,7 +120,9 @@ class TestTokenConsumptionService:
         mock_repository.consume_tokens.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_auto_create_balance(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_auto_create_balance(
+        self, service, mock_repository
+    ):
         """Test auto-creation of balance for new users"""
         # Setup - user has no balance
         mock_repository.get_balance.return_value = None
@@ -126,8 +131,7 @@ class TestTokenConsumptionService:
 
         # Execute
         result = await service.consume_tokens_for_operation(
-            user_id="new_user",
-            operation="create_task"
+            user_id="new_user", operation="create_task"
         )
 
         # Verify balance was auto-created
@@ -135,19 +139,20 @@ class TestTokenConsumptionService:
         assert result.success is True
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_insufficient_tokens(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_insufficient_tokens(
+        self, service, mock_repository
+    ):
         """Test error when user has insufficient tokens"""
         # Setup
         mock_repository.get_balance.side_effect = [
             {"available_tokens": 5000},  # First call (before consume)
-            {"available_tokens": 3}       # Second call (after failed consume)
+            {"available_tokens": 3},  # Second call (after failed consume)
         ]
         mock_repository.consume_tokens.return_value = False
 
         # Execute (call_agent costs 20 tokens)
         result = await service.consume_tokens_for_operation(
-            user_id="user123",
-            operation="call_agent"
+            user_id="user123", operation="call_agent"
         )
 
         # Verify
@@ -156,7 +161,9 @@ class TestTokenConsumptionService:
         assert "Required: 20, Available: 3" in result.error_message
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_unknown_operation(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_unknown_operation(
+        self, service, mock_repository
+    ):
         """Test token consumption for unknown operation uses default cost"""
         # Setup
         mock_repository.get_balance.return_value = {"available_tokens": 5000}
@@ -164,8 +171,7 @@ class TestTokenConsumptionService:
 
         # Execute with unknown operation (should use default cost of 1)
         result = await service.consume_tokens_for_operation(
-            user_id="user123",
-            operation="unknown_operation"
+            user_id="user123", operation="unknown_operation"
         )
 
         # Verify default cost of 1 token was used
@@ -174,15 +180,16 @@ class TestTokenConsumptionService:
         mock_repository.consume_tokens.assert_called_once_with("user123", 1)
 
     @pytest.mark.asyncio
-    async def test_consume_tokens_for_operation_error_handling(self, service, mock_repository):
+    async def test_consume_tokens_for_operation_error_handling(
+        self, service, mock_repository
+    ):
         """Test error handling when repository raises exception"""
         # Setup
         mock_repository.get_balance.side_effect = Exception("Database connection error")
 
         # Execute
         result = await service.consume_tokens_for_operation(
-            user_id="user123",
-            operation="create_project"
+            user_id="user123", operation="create_project"
         )
 
         # Verify
@@ -203,9 +210,7 @@ class TestTokenConsumptionService:
 
         # Execute
         result = await service.consume_tokens(
-            user_id="user123",
-            amount=150,
-            operation="custom_operation"
+            user_id="user123", amount=150, operation="custom_operation"
         )
 
         # Verify
@@ -217,10 +222,7 @@ class TestTokenConsumptionService:
     async def test_consume_tokens_zero_amount(self, service, mock_repository):
         """Test that zero amount is rejected"""
         # Execute
-        result = await service.consume_tokens(
-            user_id="user123",
-            amount=0
-        )
+        result = await service.consume_tokens(user_id="user123", amount=0)
 
         # Verify
         assert result.success is False
@@ -231,10 +233,7 @@ class TestTokenConsumptionService:
     async def test_consume_tokens_negative_amount(self, service, mock_repository):
         """Test that negative amount is rejected"""
         # Execute
-        result = await service.consume_tokens(
-            user_id="user123",
-            amount=-50
-        )
+        result = await service.consume_tokens(user_id="user123", amount=-50)
 
         # Verify
         assert result.success is False
@@ -250,15 +249,13 @@ class TestTokenConsumptionService:
         # Setup
         mock_repository.get_balance.side_effect = [
             {"available_tokens": 1000},  # Before add
-            {"available_tokens": 1500}   # After add
+            {"available_tokens": 1500},  # After add
         ]
         mock_repository.add_tokens.return_value = True
 
         # Execute
         result = await service.add_tokens(
-            user_id="user123",
-            amount=500,
-            reason="Token purchase"
+            user_id="user123", amount=500, reason="Token purchase"
         )
 
         # Verify
@@ -271,10 +268,7 @@ class TestTokenConsumptionService:
     async def test_add_tokens_negative_amount(self, service, mock_repository):
         """Test that negative amount is rejected"""
         # Execute
-        result = await service.add_tokens(
-            user_id="user123",
-            amount=-100
-        )
+        result = await service.add_tokens(user_id="user123", amount=-100)
 
         # Verify
         assert result.success is False
@@ -286,21 +280,21 @@ class TestTokenConsumptionService:
         # Setup - no existing balance
         mock_repository.get_balance.side_effect = [
             None,  # Before create
-            {"available_tokens": 1000}  # After create with initial tokens
+            {"available_tokens": 1000},  # After create with initial tokens
         ]
         mock_repository.create_balance.return_value = None
 
         # Execute
         result = await service.add_tokens(
-            user_id="new_user",
-            amount=1000,
-            reason="Welcome bonus"
+            user_id="new_user", amount=1000, reason="Welcome bonus"
         )
 
         # Verify balance was created with initial tokens
         assert result.success is True
         assert result.new_balance == 1000
-        mock_repository.create_balance.assert_called_once_with("new_user", initial_tokens=1000)
+        mock_repository.create_balance.assert_called_once_with(
+            "new_user", initial_tokens=1000
+        )
 
     # ============================================================================
     # GET BALANCE TESTS
@@ -313,7 +307,7 @@ class TestTokenConsumptionService:
         mock_repository.get_balance.return_value = {
             "available_tokens": 7500,
             "monthly_quota": 10000,
-            "user_id": "user123"
+            "user_id": "user123",
         }
 
         # Execute
@@ -330,7 +324,7 @@ class TestTokenConsumptionService:
         # Setup
         mock_repository.get_balance.side_effect = [
             None,  # First call - no balance
-            {"available_tokens": 10000, "monthly_quota": 10000}  # After creation
+            {"available_tokens": 10000, "monthly_quota": 10000},  # After creation
         ]
 
         # Execute
@@ -354,7 +348,7 @@ class TestTokenConsumptionService:
             "tokens_consumed_today": 100,
             "tokens_consumed_this_month": 1500,
             "total_tokens_consumed": 5000,
-            "usage_percentage": 15.0
+            "usage_percentage": 15.0,
         }
 
         # Execute
@@ -376,14 +370,12 @@ class TestTokenConsumptionService:
         mock_repository.update_quota.return_value = True
         mock_repository.get_balance.return_value = {
             "available_tokens": 20000,
-            "monthly_quota": 20000
+            "monthly_quota": 20000,
         }
 
         # Execute
         result = await service.update_quota(
-            user_id="user123",
-            new_quota=20000,
-            reason="Upgraded plan"
+            user_id="user123", new_quota=20000, reason="Upgraded plan"
         )
 
         # Verify
@@ -395,10 +387,7 @@ class TestTokenConsumptionService:
     async def test_update_quota_negative_value(self, service, mock_repository):
         """Test that negative quota is rejected"""
         # Execute
-        result = await service.update_quota(
-            user_id="user123",
-            new_quota=-1000
-        )
+        result = await service.update_quota(user_id="user123", new_quota=-1000)
 
         # Verify
         assert result.success is False
@@ -415,7 +404,7 @@ class TestTokenConsumptionService:
         mock_repository.reset_monthly_quota.return_value = True
         mock_repository.get_balance.return_value = {
             "available_tokens": 10000,
-            "monthly_quota": 10000
+            "monthly_quota": 10000,
         }
 
         # Execute
@@ -438,8 +427,7 @@ class TestTokenConsumptionService:
 
         # Execute (create_project costs 10 tokens)
         has_sufficient, required, available = await service.check_sufficient_balance(
-            user_id="user123",
-            operation="create_project"
+            user_id="user123", operation="create_project"
         )
 
         # Verify
@@ -448,15 +436,16 @@ class TestTokenConsumptionService:
         assert available == 1000
 
     @pytest.mark.asyncio
-    async def test_check_sufficient_balance_insufficient(self, service, mock_repository):
+    async def test_check_sufficient_balance_insufficient(
+        self, service, mock_repository
+    ):
         """Test checking balance when user has insufficient tokens"""
         # Setup
         mock_repository.get_balance.return_value = {"available_tokens": 5}
 
         # Execute (call_agent costs 20 tokens)
         has_sufficient, required, available = await service.check_sufficient_balance(
-            user_id="user123",
-            operation="call_agent"
+            user_id="user123", operation="call_agent"
         )
 
         # Verify
@@ -472,9 +461,7 @@ class TestTokenConsumptionService:
 
         # Execute with custom cost
         has_sufficient, required, available = await service.check_sufficient_balance(
-            user_id="user123",
-            operation="create_project",
-            custom_cost=150
+            user_id="user123", operation="create_project", custom_cost=150
         )
 
         # Verify
@@ -490,8 +477,7 @@ class TestTokenConsumptionService:
 
         # Execute
         has_sufficient, required, available = await service.check_sufficient_balance(
-            user_id="user123",
-            operation="create_task"
+            user_id="user123", operation="create_task"
         )
 
         # Verify

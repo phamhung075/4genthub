@@ -37,7 +37,9 @@ class TestResponseValidator:
 
         # Should have no errors for complete, valid task
         errors = [i for i in issues if i.severity == "error"]
-        assert len(errors) == 0, f"Valid task should have no errors: {[e.message for e in errors]}"
+        assert len(errors) == 0, (
+            f"Valid task should have no errors: {[e.message for e in errors]}"
+        )
 
     def test_validate_task_missing_required_field(self):
         """Test validation detects missing required fields"""
@@ -113,7 +115,9 @@ class TestResponseValidator:
         issues = ResponseValidator.validate_task_response(task_data)
 
         # Should detect null title
-        errors = [i for i in issues if i.severity == "error" and "title" in i.field_path]
+        errors = [
+            i for i in issues if i.severity == "error" and "title" in i.field_path
+        ]
         assert len(errors) > 0, "Should detect null title"
 
     def test_validate_subtask_complete(self):
@@ -134,7 +138,9 @@ class TestResponseValidator:
 
         # Should have no errors
         errors = [i for i in issues if i.severity == "error"]
-        assert len(errors) == 0, f"Valid subtask should have no errors: {[e.message for e in errors]}"
+        assert len(errors) == 0, (
+            f"Valid subtask should have no errors: {[e.message for e in errors]}"
+        )
 
     def test_validate_subtask_missing_parent_task_id(self):
         """Test validation detects missing parent_task_id in subtask"""
@@ -153,7 +159,11 @@ class TestResponseValidator:
         issues = ResponseValidator.validate_subtask_response(subtask_data)
 
         # Should detect missing parent_task_id
-        errors = [i for i in issues if i.severity == "error" and "parent_task_id" in i.field_path]
+        errors = [
+            i
+            for i in issues
+            if i.severity == "error" and "parent_task_id" in i.field_path
+        ]
         assert len(errors) > 0, "Should detect missing parent_task_id"
 
     def test_validate_list_response(self):
@@ -190,9 +200,7 @@ class TestResponseValidator:
         ]
 
         issues = ResponseValidator.validate_list_response(
-            tasks,
-            ResponseValidator.TASK_SCHEMA,
-            "task"
+            tasks, ResponseValidator.TASK_SCHEMA, "task"
         )
 
         # Should find error in second task

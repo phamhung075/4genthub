@@ -57,15 +57,15 @@ class TestServiceLayerTimestampIntegration:
         from fastmcp.task_management.infrastructure.database.auto_migration import (
             run_auto_migrations,
         )
-        
+
         db_config = get_db_config()
-        
+
         # Force database initialization to ensure schema is up to date
         db_config.create_tables()
-        
+
         # Run migrations to add any missing columns
         run_auto_migrations()
-        
+
         session = db_config.get_session()
         yield session
         # Try to close session gracefully, but don't fail if database already closed by global teardown
@@ -100,13 +100,13 @@ class TestServiceLayerTimestampIntegration:
     def test_project_and_branch(self, project_service):
         """Create test project and branch for tasks"""
         project_id = str(uuid.uuid4())
-        
+
         async def create_project_and_branch():
             # Create project
             await project_service.create_project(
                 project_id=project_id,
                 name="Integration Test Project",
-                description="Project for service layer timestamp integration tests"
+                description="Project for service layer timestamp integration tests",
             )
 
             # Create git branch
@@ -114,33 +114,35 @@ class TestServiceLayerTimestampIntegration:
                 project_id=project_id,
                 git_branch_name="test-branch",
                 tree_name="Test Branch",
-                tree_description="Test branch for integration tests"
+                tree_description="Test branch for integration tests",
             )
 
             return {
-                'project_id': project_id,
-                'git_branch_id': branch_result['git_branch']['id']
+                "project_id": project_id,
+                "git_branch_id": branch_result["git_branch"]["id"],
             }
-        
+
         # Run the async function
         return asyncio.run(create_project_and_branch())
 
     @pytest.mark.asyncio
-    async def test_task_service_create_uses_entity_timestamps(self, task_service, test_project_and_branch):
+    async def test_task_service_create_uses_entity_timestamps(
+        self, task_service, test_project_and_branch
+    ):
         """Test that TaskApplicationService create operations use entity timestamp management"""
         # Create task through service
         request = CreateTaskRequest(
             title="Service Layer Timestamp Test",
             description="Test automated timestamp handling in service layer",
-            git_branch_id=test_project_and_branch['git_branch_id'],
+            git_branch_id=test_project_and_branch["git_branch_id"],
             status=TaskStatusEnum.TODO.value,
             priority=PriorityLevel.HIGH.label,
-            assignees=["test-agent"]  # Required field
+            assignees=["test-agent"],  # Required field
         )
 
         # Record time before service call
         before_creation = datetime.now(UTC)
-        
+
         response = await task_service.create_task(request)
 
         # Record time after service call
@@ -155,8 +157,16 @@ class TestServiceLayerTimestampIntegration:
         assert task.created_at is not None
         assert task.updated_at is not None
         # Convert task timestamps to timezone-aware if needed
-        task_created = task.created_at if task.created_at.tzinfo else task.created_at.replace(tzinfo=UTC)
-        task_updated = task.updated_at if task.updated_at.tzinfo else task.updated_at.replace(tzinfo=UTC)
+        task_created = (
+            task.created_at
+            if task.created_at.tzinfo
+            else task.created_at.replace(tzinfo=UTC)
+        )
+        task_updated = (
+            task.updated_at
+            if task.updated_at.tzinfo
+            else task.updated_at.replace(tzinfo=UTC)
+        )
         assert before_creation <= task_created <= after_creation
         assert before_creation <= task_updated <= after_creation
 
@@ -164,18 +174,22 @@ class TestServiceLayerTimestampIntegration:
         assert task.created_at == task.updated_at
 
     @pytest.mark.asyncio
-    async def test_task_service_update_uses_touch_method(self, task_service, test_project_and_branch):
+    async def test_task_service_update_uses_touch_method(
+        self, task_service, test_project_and_branch
+    ):
         """Test that TaskApplicationService update operations use entity touch() method"""
         # Create task first
         create_request = CreateTaskRequest(
             title="Update Timestamp Test",
             description="Test timestamp handling during updates",
-            git_branch_id=test_project_and_branch['git_branch_id'],
-            assignees=["test-agent"]  # Required field
+            git_branch_id=test_project_and_branch["git_branch_id"],
+            assignees=["test-agent"],  # Required field
         )
 
         create_response = await task_service.create_task(create_request)
-        task_id = str(create_response.task.id)  # CreateTaskResponse has .task which is TaskResponse
+        task_id = str(
+            create_response.task.id
+        )  # CreateTaskResponse has .task which is TaskResponse
         original_created = create_response.task.created_at
         original_updated = create_response.task.updated_at
 
@@ -184,9 +198,7 @@ class TestServiceLayerTimestampIntegration:
 
         # Update task through service
         update_request = UpdateTaskRequest(
-            task_id=task_id,
-            title="Updated Title",
-            description="Updated description"
+            task_id=task_id, title="Updated Title", description="Updated description"
         )
 
         update_response = await task_service.update_task(update_request)
@@ -198,29 +210,37 @@ class TestServiceLayerTimestampIntegration:
         # Verify timestamp behavior
         updated_task = update_response.task
         assert updated_task.created_at == original_created  # Should not change
-        assert updated_task.updated_at > original_updated   # Should be updated
-        assert updated_task.updated_at > original_created   # Should be newer than creation
+        assert updated_task.updated_at > original_updated  # Should be updated
+        assert (
+            updated_task.updated_at > original_created
+        )  # Should be newer than creation
 
     @pytest.mark.asyncio
-    async def test_task_completion_uses_clean_timestamp_handling(self, task_service, test_project_and_branch, user_id):
+    async def test_task_completion_uses_clean_timestamp_handling(
+        self, task_service, test_project_and_branch, user_id
+    ):
         """Test that task completion uses clean timestamp handling (touch method)"""
         # Create task
         create_request = CreateTaskRequest(
             title="Completion Timestamp Test",
             description="Test clean timestamp handling during completion",
-            git_branch_id=test_project_and_branch['git_branch_id'],
+            git_branch_id=test_project_and_branch["git_branch_id"],
             assignees=["test-agent"],  # Required field
-            user_id=user_id  # Pass user_id in request
+            user_id=user_id,  # Pass user_id in request
         )
 
         create_response = await task_service.create_task(create_request)
-        print(f"DEBUG: Create response type: {type(create_response)}, success: {create_response.success}")
-        task_id = str(create_response.task.id)  # CreateTaskResponse has .task which is TaskResponse
-        
+        print(
+            f"DEBUG: Create response type: {type(create_response)}, success: {create_response.success}"
+        )
+        task_id = str(
+            create_response.task.id
+        )  # CreateTaskResponse has .task which is TaskResponse
+
         # Normalize timestamps to ensure timezone consistency
         original_created = create_response.task.created_at
         original_updated = create_response.task.updated_at
-        
+
         # If timestamps don't have timezone info, add UTC
         if original_created and not original_created.tzinfo:
             original_created = original_created.replace(tzinfo=UTC)
@@ -235,7 +255,7 @@ class TestServiceLayerTimestampIntegration:
         try:
             completion_response = await task_service.complete_task(
                 task_id,
-                completion_summary="Task completed successfully for timestamp testing"
+                completion_summary="Task completed successfully for timestamp testing",
             )
             print(f"DEBUG: Completion response: {completion_response}")
         except Exception as e:
@@ -250,7 +270,7 @@ class TestServiceLayerTimestampIntegration:
         # Retrieve completed task to verify timestamps
         completed_task_response = await task_service.get_task(task_id)
         completed_task = completed_task_response  # TaskResponse IS the task data now
-        
+
         # Normalize completed task timestamps to UTC for comparison
         completed_created_at = completed_task.created_at
         completed_updated_at = completed_task.updated_at
@@ -258,25 +278,33 @@ class TestServiceLayerTimestampIntegration:
             completed_created_at = completed_created_at.replace(tzinfo=UTC)
         if completed_updated_at and not completed_updated_at.tzinfo:
             completed_updated_at = completed_updated_at.replace(tzinfo=UTC)
-        
+
         # Debug prints with more detail
         print("\nDEBUG TIMESTAMPS:")
-        print(f"Original created: {original_created} (type: {type(original_created)}, tzinfo: {original_created.tzinfo})")
-        print(f"Original updated: {original_updated} (type: {type(original_updated)}, tzinfo: {original_updated.tzinfo})")
-        print(f"Completed created: {completed_created_at} (type: {type(completed_created_at)}, tzinfo: {completed_created_at.tzinfo})")
-        print(f"Completed updated: {completed_updated_at} (type: {type(completed_updated_at)}, tzinfo: {completed_updated_at.tzinfo})")
+        print(
+            f"Original created: {original_created} (type: {type(original_created)}, tzinfo: {original_created.tzinfo})"
+        )
+        print(
+            f"Original updated: {original_updated} (type: {type(original_updated)}, tzinfo: {original_updated.tzinfo})"
+        )
+        print(
+            f"Completed created: {completed_created_at} (type: {type(completed_created_at)}, tzinfo: {completed_created_at.tzinfo})"
+        )
+        print(
+            f"Completed updated: {completed_updated_at} (type: {type(completed_updated_at)}, tzinfo: {completed_updated_at.tzinfo})"
+        )
         print(f"Status: {completed_task.status}")
         print(f"Status type: {type(completed_task.status)}")
-        if hasattr(completed_task.status, 'value'):
+        if hasattr(completed_task.status, "value"):
             print(f"Status.value: {completed_task.status.value}")
         else:
             print("Status has no .value attribute")
-        
+
         # Compare timestamps with normalized timezone
         # Allow small differences due to database precision and timezone handling
         created_diff = abs((completed_created_at - original_created).total_seconds())
         print(f"Created timestamp difference: {created_diff} seconds")
-        
+
         updated_diff = (completed_updated_at - original_updated).total_seconds()
         print(f"Updated timestamp difference: {updated_diff} seconds")
 
@@ -294,7 +322,7 @@ class TestServiceLayerTimestampIntegration:
             print(f"Original: {original_created}")
             print(f"Completed: {completed_created_at}")
             raise
-            
+
         # updated_at should be greater than or equal to original
         # Note: Due to SQLAlchemy's timestamp event handlers and potential same-transaction
         # operations, the timestamp might not change if all operations happen within the
@@ -306,31 +334,37 @@ class TestServiceLayerTimestampIntegration:
             print(f"Completed: {completed_updated_at}")
             assert False, "Timestamp went backwards, which should never happen"
         elif updated_diff == 0:
-            print("INFO: updated_at did not change during completion (operations in same transaction)")
+            print(
+                "INFO: updated_at did not change during completion (operations in same transaction)"
+            )
             # This is acceptable - verify task was at least completed successfully
             # NOTE: Due to database schema issues, status might not reflect as 'done' on retrieval
             # but the completion response confirmed success
             print(f"Current task status after completion: {completed_task.status}")
         else:
             print(f"INFO: updated_at increased by {updated_diff} seconds as expected")
-            
+
         # Check status - handle both TaskStatus objects and strings
         # NOTE: Due to database schema issues with labels.updated_at, the task retrieval
         # falls back to basic loading which may not include all status updates.
         # The completion response already confirmed status: 'done', so we'll accept
         # the current state as valid if timestamp handling is correct.
         try:
-            if hasattr(completed_task.status, 'value'):
+            if hasattr(completed_task.status, "value"):
                 # If we have a proper status object, check it
                 if completed_task.status.value != TaskStatusEnum.DONE.value:
-                    print(f"WARNING: Task status is {completed_task.status.value}, but completion was successful")
+                    print(
+                        f"WARNING: Task status is {completed_task.status.value}, but completion was successful"
+                    )
                     # Accept current behavior - focus on timestamp validation
                     pass
             else:
                 # String status - accept current value
                 status_str = str(completed_task.status)
                 if status_str != TaskStatusEnum.DONE.value:
-                    print(f"WARNING: Task status is '{status_str}', but completion response was successful")
+                    print(
+                        f"WARNING: Task status is '{status_str}', but completion response was successful"
+                    )
                     # Accept current behavior - focus on timestamp validation
                     pass
         except Exception as e:
@@ -338,7 +372,9 @@ class TestServiceLayerTimestampIntegration:
             # Continue with test - focus on timestamp validation
 
     @pytest.mark.asyncio
-    async def test_service_layer_no_manual_timestamp_interference(self, task_service, test_project_and_branch):
+    async def test_service_layer_no_manual_timestamp_interference(
+        self, task_service, test_project_and_branch
+    ):
         """Test that service layer doesn't manually interfere with timestamps"""
         # Create multiple tasks and verify all use automated timestamp handling
         tasks_created = []
@@ -346,8 +382,8 @@ class TestServiceLayerTimestampIntegration:
             request = CreateTaskRequest(
                 title=f"No Interference Test {i}",
                 description=f"Task {i} for testing no manual timestamp interference",
-                git_branch_id=test_project_and_branch['git_branch_id'],
-                assignees=["test-agent"]  # Required field
+                git_branch_id=test_project_and_branch["git_branch_id"],
+                assignees=["test-agent"],  # Required field
             )
 
             response = await task_service.create_task(request)
@@ -365,9 +401,11 @@ class TestServiceLayerTimestampIntegration:
 
             # Each subsequent task should have later timestamp
             if i > 0:
-                assert task.created_at >= tasks_created[i-1].created_at
+                assert task.created_at >= tasks_created[i - 1].created_at
 
-    def test_repository_integration_preserves_entity_timestamps(self, task_repository, test_project_and_branch, user_id):
+    def test_repository_integration_preserves_entity_timestamps(
+        self, task_repository, test_project_and_branch, user_id
+    ):
         """Test that repository operations handle timestamps correctly through SQLAlchemy events"""
         # Create task entity directly (not through service)
         task = Task.create(
@@ -376,9 +414,9 @@ class TestServiceLayerTimestampIntegration:
             description="Test repository handles timestamps correctly",
             status=TaskStatus(TaskStatusEnum.TODO.value),
             priority=Priority(PriorityLevel.MEDIUM.label),
-            git_branch_id=test_project_and_branch['git_branch_id'],
+            git_branch_id=test_project_and_branch["git_branch_id"],
             assignees=["test-agent"],  # Required field
-            user_id=user_id  # Pass user_id for entity creation
+            user_id=user_id,  # Pass user_id for entity creation
         )
 
         # Record timestamps before save
@@ -403,31 +441,41 @@ class TestServiceLayerTimestampIntegration:
         # They should be within the time window of the save operation
         assert retrieved_task.created_at is not None
         assert retrieved_task.updated_at is not None
-        
+
         # Ensure timestamps have timezone info
-        created_tz = retrieved_task.created_at if retrieved_task.created_at.tzinfo else retrieved_task.created_at.replace(tzinfo=UTC)
-        updated_tz = retrieved_task.updated_at if retrieved_task.updated_at.tzinfo else retrieved_task.updated_at.replace(tzinfo=UTC)
-        
+        created_tz = (
+            retrieved_task.created_at
+            if retrieved_task.created_at.tzinfo
+            else retrieved_task.created_at.replace(tzinfo=UTC)
+        )
+        updated_tz = (
+            retrieved_task.updated_at
+            if retrieved_task.updated_at.tzinfo
+            else retrieved_task.updated_at.replace(tzinfo=UTC)
+        )
+
         # Timestamps should be within the save operation window
         assert before_save <= created_tz <= after_save
         assert before_save <= updated_tz <= after_save
-        
+
         # For new entities, created_at and updated_at should be the same
         assert retrieved_task.created_at == retrieved_task.updated_at
 
-    def test_service_operations_generate_domain_events(self, task_service, test_project_and_branch):
+    def test_service_operations_generate_domain_events(
+        self, task_service, test_project_and_branch
+    ):
         """Test that service operations properly generate timestamp domain events"""
         # Create task
         create_request = CreateTaskRequest(
             title="Domain Events Test",
             description="Test domain event generation through service",
-            git_branch_id=test_project_and_branch['git_branch_id'],
-            assignees=["test-agent"]  # Required field
+            git_branch_id=test_project_and_branch["git_branch_id"],
+            assignees=["test-agent"],  # Required field
         )
 
         async def create_task():
             return await task_service.create_task(create_request)
-        
+
         create_response = asyncio.run(create_task())
         assert create_response.success
 
@@ -439,14 +487,16 @@ class TestServiceLayerTimestampIntegration:
         assert task.created_at is not None
         assert task.updated_at is not None
 
-    def test_concurrent_service_operations_timestamp_consistency(self, task_service, test_project_and_branch):
+    def test_concurrent_service_operations_timestamp_consistency(
+        self, task_service, test_project_and_branch
+    ):
         """Test timestamp consistency with rapid service operations"""
         # Rapidly create and update tasks to test timestamp consistency
         create_request = CreateTaskRequest(
             title="Concurrency Test",
             description="Test concurrent operations timestamp consistency",
-            git_branch_id=test_project_and_branch['git_branch_id'],
-            assignees=["test-agent"]  # Required field
+            git_branch_id=test_project_and_branch["git_branch_id"],
+            assignees=["test-agent"],  # Required field
         )
 
         async def create_and_rapid_update():
@@ -457,33 +507,38 @@ class TestServiceLayerTimestampIntegration:
             timestamps = []
             for i in range(5):
                 update_request = UpdateTaskRequest(
-                    task_id=task_id,
-                    description=f"Rapid update {i}"
+                    task_id=task_id, description=f"Rapid update {i}"
                 )
 
                 update_response = await task_service.update_task(update_request)
                 assert update_response.success
-                timestamps.append(update_response.task.updated_at)  # UpdateTaskResponse has .task
+                timestamps.append(
+                    update_response.task.updated_at
+                )  # UpdateTaskResponse has .task
 
                 # Very small delay
-                await asyncio.sleep(0.01)  # Small but sufficient delay for timestamp differences
+                await asyncio.sleep(
+                    0.01
+                )  # Small but sufficient delay for timestamp differences
             return timestamps
-        
+
         timestamps = asyncio.run(create_and_rapid_update())
 
         # Verify timestamps are consistent and increasing
         for i in range(1, len(timestamps)):
-            assert timestamps[i] >= timestamps[i-1]
+            assert timestamps[i] >= timestamps[i - 1]
 
-    def test_service_error_handling_preserves_timestamps(self, task_service, test_project_and_branch, user_id):
+    def test_service_error_handling_preserves_timestamps(
+        self, task_service, test_project_and_branch, user_id
+    ):
         """Test that service error conditions don't corrupt timestamp handling"""
         # Create valid task
         create_request = CreateTaskRequest(
             title="Error Handling Test",
             description="Test error handling preserves timestamps",
-            git_branch_id=test_project_and_branch['git_branch_id'],
+            git_branch_id=test_project_and_branch["git_branch_id"],
             assignees=["test-agent"],  # Required field
-            user_id=user_id  # Pass user_id
+            user_id=user_id,  # Pass user_id
         )
 
         async def test_error_handling():
@@ -496,7 +551,7 @@ class TestServiceLayerTimestampIntegration:
             try:
                 invalid_update = UpdateTaskRequest(
                     task_id=task_id,
-                    title=""  # Invalid empty title
+                    title="",  # Invalid empty title
                 )
                 await task_service.update_task(invalid_update)
             except Exception:
@@ -505,21 +560,25 @@ class TestServiceLayerTimestampIntegration:
             # Retrieve task and verify timestamps weren't corrupted
             retrieved_task_response = await task_service.get_task(task_id)
             return original_created, original_updated, retrieved_task_response
-        
-        original_created, original_updated, retrieved_task_response = asyncio.run(test_error_handling())
+
+        original_created, original_updated, retrieved_task_response = asyncio.run(
+            test_error_handling()
+        )
         if retrieved_task_response:
             task = retrieved_task_response  # TaskResponse IS the task data
             assert task.created_at == original_created
             # updated_at might have changed if update partially succeeded
 
-    def test_cross_service_timestamp_consistency(self, task_service, project_service, test_project_and_branch, user_id):
+    def test_cross_service_timestamp_consistency(
+        self, task_service, project_service, test_project_and_branch, user_id
+    ):
         """Test timestamp consistency across different service operations"""
-        project_id = test_project_and_branch['project_id']
+        project_id = test_project_and_branch["project_id"]
 
         # Get project
         async def get_project():
             return await project_service.get_project(project_id)
-        
+
         project_response = asyncio.run(get_project())
         assert project_response["success"]
 
@@ -527,14 +586,14 @@ class TestServiceLayerTimestampIntegration:
         task_request = CreateTaskRequest(
             title="Cross-Service Test",
             description="Test cross-service timestamp consistency",
-            git_branch_id=test_project_and_branch['git_branch_id'],
+            git_branch_id=test_project_and_branch["git_branch_id"],
             assignees=["test-agent"],  # Required field
-            user_id=user_id  # Pass user_id
+            user_id=user_id,  # Pass user_id
         )
 
         async def create_task():
             return await task_service.create_task(task_request)
-        
+
         task_response = asyncio.run(create_task())
         assert task_response.success
 
@@ -546,14 +605,16 @@ class TestServiceLayerTimestampIntegration:
         assert task.created_at.tzinfo == UTC
         assert task.updated_at.tzinfo == UTC
 
-    def test_service_layer_touch_method_integration(self, task_service, test_project_and_branch):
+    def test_service_layer_touch_method_integration(
+        self, task_service, test_project_and_branch
+    ):
         """Test that service layer operations properly integrate with entity touch() method"""
         # Create task
         create_request = CreateTaskRequest(
             title="Touch Method Integration Test",
             description="Test service integration with touch method",
-            git_branch_id=test_project_and_branch['git_branch_id'],
-            assignees=["test-agent"]  # Required field
+            git_branch_id=test_project_and_branch["git_branch_id"],
+            assignees=["test-agent"],  # Required field
         )
 
         async def test_touch_integration():
@@ -566,25 +627,30 @@ class TestServiceLayerTimestampIntegration:
             print(f"DEBUG: Task ID: {task_id}")
 
             # Track timestamp changes through multiple service operations
-            timestamps = [(create_response.task.created_at, create_response.task.updated_at)]
+            timestamps = [
+                (create_response.task.created_at, create_response.task.updated_at)
+            ]
 
             # Update through service multiple times
             for i in range(3):
-                await asyncio.sleep(0.1)  # Increased delay to ensure timestamp differences
+                await asyncio.sleep(
+                    0.1
+                )  # Increased delay to ensure timestamp differences
 
                 update_request = UpdateTaskRequest(
-                    task_id=task_id,
-                    description=f"Touch integration test update {i}"
+                    task_id=task_id, description=f"Touch integration test update {i}"
                 )
 
                 update_response = await task_service.update_task(update_request)
-                print(f"DEBUG: Update response for iteration {i}: type={type(update_response)}, success={update_response.success}")
+                print(
+                    f"DEBUG: Update response for iteration {i}: type={type(update_response)}, success={update_response.success}"
+                )
                 assert update_response.success
 
                 task = update_response.task
                 timestamps.append((task.created_at, task.updated_at))
             return timestamps
-        
+
         timestamps = asyncio.run(test_touch_integration())
 
         # Debug: Print timestamps to understand the issue
@@ -600,5 +666,7 @@ class TestServiceLayerTimestampIntegration:
 
         # Verify updated_at progresses with each update
         for i in range(1, len(timestamps)):
-            print(f"DEBUG: Comparing timestamps[{i}][1]={timestamps[i][1]} >= timestamps[{i-1}][1]={timestamps[i-1][1]}")
-            assert timestamps[i][1] >= timestamps[i-1][1]
+            print(
+                f"DEBUG: Comparing timestamps[{i}][1]={timestamps[i][1]} >= timestamps[{i - 1}][1]={timestamps[i - 1][1]}"
+            )
+            assert timestamps[i][1] >= timestamps[i - 1][1]

@@ -22,6 +22,7 @@ from fastmcp.server.mcp_entry_point import create_agenthub_server
 # FIXTURES
 # ============================================================================
 
+
 @pytest.fixture
 def mock_user(sample_user_id):
     """Create mock authenticated user"""
@@ -66,14 +67,11 @@ def auth_headers():
 # TEST SUITE: AGENT TEMPLATES ENDPOINTS (Read-Only)
 # ============================================================================
 
+
 class TestAgentTemplatesEndpoints:
     """Test suite for agent template endpoints"""
 
-    def test_list_templates_success(
-        self,
-        client,
-        sample_agent_template
-    ):
+    def test_list_templates_success(self, client, sample_agent_template):
         """Test GET /templates - List all agent templates (success)"""
         # Execute
         response = client.get("/api/v2/agent-management/templates")
@@ -104,12 +102,7 @@ class TestAgentTemplatesEndpoints:
         # Assert - Should fail auth (401 or 403)
         assert response.status_code in [401, 403]
 
-
-    def test_get_template_by_slug_success(
-        self,
-        client,
-        sample_agent_template
-    ):
+    def test_get_template_by_slug_success(self, client, sample_agent_template):
         """Test GET /templates/{slug} - Get specific template (success)"""
         # Execute
         response = client.get(
@@ -122,16 +115,10 @@ class TestAgentTemplatesEndpoints:
         assert data["slug"] == sample_agent_template.slug
         assert data["name"] == sample_agent_template.name
 
-
-    def test_get_template_not_found(
-        self,
-        client
-    ):
+    def test_get_template_not_found(self, client):
         """Test GET /templates/{slug} - Template not found (404)"""
         # Execute
-        response = client.get(
-            "/api/v2/agent-management/templates/nonexistent-agent"
-        )
+        response = client.get("/api/v2/agent-management/templates/nonexistent-agent")
 
         # Assert
         assert response.status_code == 404
@@ -141,10 +128,11 @@ class TestAgentTemplatesEndpoints:
 # TEST SUITE: USER AGENT INSTANCES ENDPOINTS (Full CRUD)
 # ============================================================================
 
+
 class TestUserAgentInstancesEndpoints:
     """Test suite for user agent instance endpoints"""
 
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_list_instances_success(
         self,
         mock_get_user,
@@ -152,19 +140,18 @@ class TestUserAgentInstancesEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_user_instance
+        sample_user_instance,
     ):
         """Test GET /instances - List user's agent instances (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
-                "/api/v2/agent-management/instances",
-                headers=auth_headers
+                "/api/v2/agent-management/instances", headers=auth_headers
             )
 
             # Assert
@@ -174,8 +161,7 @@ class TestUserAgentInstancesEndpoints:
             assert "instances" in data
             assert "total_count" in data
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_get_instance_by_id_success(
         self,
         mock_get_user,
@@ -183,19 +169,19 @@ class TestUserAgentInstancesEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_user_instance
+        sample_user_instance,
     ):
         """Test GET /instances/{id} - Get specific instance (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
                 f"/api/v2/agent-management/instances/{sample_user_instance.id.value}",
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -205,35 +191,27 @@ class TestUserAgentInstancesEndpoints:
             assert data["instance"]["id"] == str(sample_user_instance.id.value)
             assert data["instance"]["agent_name"] == sample_user_instance.agent_name
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_get_instance_not_found(
-        self,
-        mock_get_user,
-        client,
-        mock_user,
-        auth_headers,
-        db_session
+        self, mock_get_user, client, mock_user, auth_headers, db_session
     ):
         """Test GET /instances/{id} - Instance not found (404)"""
         # Setup
         mock_get_user.return_value = mock_user
         fake_id = "550e8400-e29b-41d4-a716-999999999999"
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
-                f"/api/v2/agent-management/instances/{fake_id}",
-                headers=auth_headers
+                f"/api/v2/agent-management/instances/{fake_id}", headers=auth_headers
             )
 
             # Assert
             assert response.status_code == 404
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_create_instance_success(
         self,
         mock_get_user,
@@ -241,27 +219,27 @@ class TestUserAgentInstancesEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_agent_template
+        sample_agent_template,
     ):
         """Test POST /instances - Create new instance (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Request body
             create_request = {
                 "template_slug": sample_agent_template.slug,
                 "agent_name": "My New Agent",
-                "customization_notes": "Created for testing"
+                "customization_notes": "Created for testing",
             }
 
             # Execute
             response = client.post(
                 "/api/v2/agent-management/instances",
                 json=create_request,
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -270,41 +248,34 @@ class TestUserAgentInstancesEndpoints:
             assert data["success"] is True
             assert "instance" in data
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_create_instance_invalid_template(
-        self,
-        mock_get_user,
-        client,
-        mock_user,
-        auth_headers,
-        db_session
+        self, mock_get_user, client, mock_user, auth_headers, db_session
     ):
         """Test POST /instances - Invalid template slug (400)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Request with invalid template
             create_request = {
                 "template_slug": "nonexistent-template",
-                "agent_name": "My Agent"
+                "agent_name": "My Agent",
             }
 
             # Execute
             response = client.post(
                 "/api/v2/agent-management/instances",
                 json=create_request,
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
             assert response.status_code in [400, 404]
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_update_instance_success(
         self,
         mock_get_user,
@@ -312,26 +283,26 @@ class TestUserAgentInstancesEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_user_instance
+        sample_user_instance,
     ):
         """Test PUT /instances/{id} - Update instance (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Update request
             update_request = {
                 "agent_name": "Updated Agent Name",
-                "customization_notes": "Updated for new workflow"
+                "customization_notes": "Updated for new workflow",
             }
 
             # Execute
             response = client.put(
                 f"/api/v2/agent-management/instances/{sample_user_instance.id.value}",
                 json=update_request,
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -339,8 +310,7 @@ class TestUserAgentInstancesEndpoints:
             data = response.json()
             assert data["success"] is True
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_delete_instance_success(
         self,
         mock_get_user,
@@ -348,19 +318,19 @@ class TestUserAgentInstancesEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_user_instance
+        sample_user_instance,
     ):
         """Test DELETE /instances/{id} - Delete instance (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.delete(
                 f"/api/v2/agent-management/instances/{sample_user_instance.id.value}",
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -373,29 +343,24 @@ class TestUserAgentInstancesEndpoints:
 # TEST SUITE: USAGE ANALYTICS ENDPOINTS
 # ============================================================================
 
+
 class TestUsageAnalyticsEndpoints:
     """Test suite for usage analytics endpoints"""
 
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_get_usage_analytics_success(
-        self,
-        mock_get_user,
-        client,
-        mock_user,
-        auth_headers,
-        db_session
+        self, mock_get_user, client, mock_user, auth_headers, db_session
     ):
         """Test GET /analytics/usage - Get usage statistics (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
-                "/api/v2/agent-management/analytics/usage",
-                headers=auth_headers
+                "/api/v2/agent-management/analytics/usage", headers=auth_headers
             )
 
             # Assert
@@ -404,27 +369,20 @@ class TestUsageAnalyticsEndpoints:
             assert data["success"] is True
             assert "user_stats" in data
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_get_popular_agents_success(
-        self,
-        mock_get_user,
-        client,
-        mock_user,
-        auth_headers,
-        db_session
+        self, mock_get_user, client, mock_user, auth_headers, db_session
     ):
         """Test GET /analytics/popular - Get popular agents (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
-                "/api/v2/agent-management/analytics/popular",
-                headers=auth_headers
+                "/api/v2/agent-management/analytics/popular", headers=auth_headers
             )
 
             # Assert
@@ -438,10 +396,11 @@ class TestUsageAnalyticsEndpoints:
 # TEST SUITE: CONFIGURATION MANAGEMENT ENDPOINTS
 # ============================================================================
 
+
 class TestConfigurationManagementEndpoints:
     """Test suite for agent configuration management endpoints"""
 
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_get_configuration_success(
         self,
         mock_get_user,
@@ -449,19 +408,19 @@ class TestConfigurationManagementEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_agent_template
+        sample_agent_template,
     ):
         """Test GET /configuration/{slug} - Get agent configuration (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.get(
                 f"/api/v2/agent-management/configuration/{sample_agent_template.slug}",
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -470,8 +429,7 @@ class TestConfigurationManagementEndpoints:
             assert data["success"] is True
             assert "configuration" in data
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_update_configuration_success(
         self,
         mock_get_user,
@@ -479,27 +437,27 @@ class TestConfigurationManagementEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_agent_template
+        sample_agent_template,
     ):
         """Test PUT /configuration/{slug} - Update configuration (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Update configuration request
             config_update = {
                 "system_prompt": "Updated system prompt",
                 "tools": ["Read", "Write", "Edit"],
-                "customization_notes": "Custom configuration"
+                "customization_notes": "Custom configuration",
             }
 
             # Execute
             response = client.put(
                 f"/api/v2/agent-management/configuration/{sample_agent_template.slug}",
                 json=config_update,
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -507,8 +465,7 @@ class TestConfigurationManagementEndpoints:
             data = response.json()
             assert data["success"] is True
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_reset_configuration_success(
         self,
         mock_get_user,
@@ -516,19 +473,19 @@ class TestConfigurationManagementEndpoints:
         mock_user,
         auth_headers,
         db_session,
-        sample_agent_template
+        sample_agent_template,
     ):
         """Test POST /configuration/{slug}/reset - Reset to defaults (success)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute
             response = client.post(
                 f"/api/v2/agent-management/configuration/{sample_agent_template.slug}/reset",
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
@@ -541,61 +498,59 @@ class TestConfigurationManagementEndpoints:
 # TEST SUITE: ERROR HANDLING & EDGE CASES
 # ============================================================================
 
+
 class TestErrorHandlingAndEdgeCases:
     """Test suite for comprehensive error handling and edge cases"""
 
     def test_invalid_json_body(self, client, auth_headers, mock_user):
         """Test endpoints with invalid JSON body (400)"""
-        with patch('fastmcp.auth.interface.fastapi_auth.get_current_user') as mock_get_user:
+        with patch(
+            "fastmcp.auth.interface.fastapi_auth.get_current_user"
+        ) as mock_get_user:
             mock_get_user.return_value = mock_user
 
             # Execute with malformed JSON
             response = client.post(
                 "/api/v2/agent-management/instances",
                 data="invalid json",
-                headers={**auth_headers, "Content-Type": "application/json"}
+                headers={**auth_headers, "Content-Type": "application/json"},
             )
 
             # Assert
             assert response.status_code == 422  # Unprocessable Entity for invalid JSON
 
-
-    @patch('fastmcp.auth.interface.fastapi_auth.get_current_user')
+    @patch("fastmcp.auth.interface.fastapi_auth.get_current_user")
     def test_invalid_uuid_format(
-        self,
-        mock_get_user,
-        client,
-        mock_user,
-        auth_headers,
-        db_session
+        self, mock_get_user, client, mock_user, auth_headers, db_session
     ):
         """Test endpoints with invalid UUID format (400/422)"""
         # Setup
         mock_get_user.return_value = mock_user
 
-        with patch('fastmcp.auth.interface.fastapi_auth.get_db') as mock_get_db:
+        with patch("fastmcp.auth.interface.fastapi_auth.get_db") as mock_get_db:
             mock_get_db.return_value = db_session
 
             # Execute with invalid UUID
             response = client.get(
                 "/api/v2/agent-management/instances/not-a-valid-uuid",
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert
             assert response.status_code in [400, 422]
 
-
     def test_missing_required_fields(self, client, auth_headers, mock_user):
         """Test POST/PUT requests with missing required fields (422)"""
-        with patch('fastmcp.auth.interface.fastapi_auth.get_current_user') as mock_get_user:
+        with patch(
+            "fastmcp.auth.interface.fastapi_auth.get_current_user"
+        ) as mock_get_user:
             mock_get_user.return_value = mock_user
 
             # Execute with missing template_slug
             response = client.post(
                 "/api/v2/agent-management/instances",
                 json={"agent_name": "Test"},  # Missing template_slug
-                headers=auth_headers
+                headers=auth_headers,
             )
 
             # Assert

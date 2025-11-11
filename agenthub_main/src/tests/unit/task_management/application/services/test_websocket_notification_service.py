@@ -32,6 +32,7 @@ import pytest
 # WebSocket functionality is working correctly - this is a test infrastructure issue
 try:
     from freezegun import freeze_time
+
     FREEZEGUN_AVAILABLE = True
 except ImportError:
     FREEZEGUN_AVAILABLE = False
@@ -40,7 +41,7 @@ except ImportError:
 # Skip entire test module if freezegun not available in CI environment
 pytestmark = pytest.mark.skipif(
     not FREEZEGUN_AVAILABLE,
-    reason="freezegun dependency not available in CI environment - WebSocket functionality verified working"
+    reason="freezegun dependency not available in CI environment - WebSocket functionality verified working",
 )
 
 from fastmcp.task_management.application.services.websocket_notification_service import (  # noqa: E402 - Import after pytestmark skip marker
@@ -87,13 +88,17 @@ class TestWebSocketPayloadStructure:
     @pytest.mark.asyncio
     async def test_broadcast_task_event_payload_structure(self):
         """Test that broadcast_task_event creates correctly structured payload"""
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
-            with patch.object(WebSocketNotificationService, '_get_task_context') as mock_context:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
+            with patch.object(
+                WebSocketNotificationService, "_get_task_context"
+            ) as mock_context:
                 mock_context.return_value = {
                     "task_title": "Test Task",
                     "parent_branch_id": "branch-123",
                     "parent_branch_title": "Main Branch",
-                    "task_user_id": "user-123"
+                    "task_user_id": "user-123",
                 }
 
                 # Call the method
@@ -103,7 +108,7 @@ class TestWebSocketPayloadStructure:
                     user_id="user-123",
                     task_data={"title": "Test Task"},
                     git_branch_id="branch-123",
-                    project_id="project-123"
+                    project_id="project-123",
                 )
 
                 # Verify broadcast was called
@@ -127,7 +132,9 @@ class TestWebSocketPayloadStructure:
 
                 # Validate timestamp format (ISO 8601)
                 timestamp = metadata["timestamp"]
-                datetime.fromisoformat(timestamp.replace('Z', '+00:00'))  # Should not raise
+                datetime.fromisoformat(
+                    timestamp.replace("Z", "+00:00")
+                )  # Should not raise
 
     def test_payload_includes_cascade_data_for_create_delete(self):
         """Test that create/delete events include cascade data for frontend animations"""
@@ -135,15 +142,21 @@ class TestWebSocketPayloadStructure:
         _notification_cache.clear()
 
         # Note: Cascade data is only included in sync_broadcast_task_event, not the async version
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
             mock_broadcast.return_value = AsyncMock()  # Make it awaitable
-            with patch.object(WebSocketNotificationService, '_get_task_context') as mock_context:
-                with patch.object(WebSocketNotificationService, '_get_branch_cascade_data') as mock_cascade:
+            with patch.object(
+                WebSocketNotificationService, "_get_task_context"
+            ) as mock_context:
+                with patch.object(
+                    WebSocketNotificationService, "_get_branch_cascade_data"
+                ) as mock_cascade:
                     mock_context.return_value = {
                         "task_title": "Test Task",
                         "parent_branch_id": "branch-123",
                         "parent_branch_title": "Main Branch",
-                        "task_user_id": "user-123"
+                        "task_user_id": "user-123",
                     }
 
                     mock_cascade.return_value = {
@@ -152,7 +165,7 @@ class TestWebSocketPayloadStructure:
                         "task_count": 5,
                         "completed_tasks": 2,
                         "todo_tasks": 3,
-                        "progress_percentage": 40.0
+                        "progress_percentage": 40.0,
                     }
 
                     # Test CREATE event using SYNC method (which includes cascade data)
@@ -161,29 +174,35 @@ class TestWebSocketPayloadStructure:
                         event_type="created",
                         task_id="task-cascade-unique",  # Use unique ID to avoid duplicates
                         user_id="user-123",
-                        git_branch_id="branch-123"
+                        git_branch_id="branch-123",
                     )
 
                     # Verify cascade data was fetched
-                    assert mock_cascade.called, "Cascade data should be fetched for create/delete events"
+                    assert mock_cascade.called, (
+                        "Cascade data should be fetched for create/delete events"
+                    )
 
     @pytest.mark.asyncio
     async def test_payload_data_types_match_typescript_interface(self):
         """Test that all payload field types match TypeScript interface"""
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
-            with patch.object(WebSocketNotificationService, '_get_task_context') as mock_context:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
+            with patch.object(
+                WebSocketNotificationService, "_get_task_context"
+            ) as mock_context:
                 mock_context.return_value = {
                     "task_title": "Test Task",
                     "parent_branch_id": "branch-123",
                     "parent_branch_title": "Main Branch",
-                    "task_user_id": "user-123"
+                    "task_user_id": "user-123",
                 }
 
                 await WebSocketNotificationService.broadcast_task_event(
                     event_type="updated",
                     task_id="task-456",
                     user_id="user-789",
-                    task_data={"status": "in_progress"}
+                    task_data={"status": "in_progress"},
                 )
 
                 call_args = mock_broadcast.call_args
@@ -217,7 +236,7 @@ class TestDeduplicationLogic:
             event_type="created",
             entity_type="task",
             entity_id="task-123",
-            user_id="user-123"
+            user_id="user-123",
         )
 
         assert is_duplicate is False
@@ -228,7 +247,9 @@ class TestDeduplicationLogic:
         _is_duplicate_notification("created", "task", "task-123", "user-123")
 
         # Try to send duplicate immediately
-        is_duplicate = _is_duplicate_notification("created", "task", "task-123", "user-123")
+        is_duplicate = _is_duplicate_notification(
+            "created", "task", "task-123", "user-123"
+        )
 
         assert is_duplicate is True
 
@@ -242,7 +263,9 @@ class TestDeduplicationLogic:
             frozen_time.tick(delta=6)
 
             # Should be allowed now
-            is_duplicate = _is_duplicate_notification("created", "task", "task-123", "user-123")
+            is_duplicate = _is_duplicate_notification(
+                "created", "task", "task-123", "user-123"
+            )
 
             assert is_duplicate is False
 
@@ -266,7 +289,9 @@ class TestDeduplicationLogic:
         """Test that different event types for same entity are not duplicates"""
         _is_duplicate_notification("created", "task", "task-123", "user-123")
 
-        is_duplicate = _is_duplicate_notification("updated", "task", "task-123", "user-123")
+        is_duplicate = _is_duplicate_notification(
+            "updated", "task", "task-123", "user-123"
+        )
 
         assert is_duplicate is False
 
@@ -274,7 +299,9 @@ class TestDeduplicationLogic:
         """Test that same event for different users are not duplicates"""
         _is_duplicate_notification("created", "task", "task-123", "user-1")
 
-        is_duplicate = _is_duplicate_notification("created", "task", "task-123", "user-2")
+        is_duplicate = _is_duplicate_notification(
+            "created", "task", "task-123", "user-2"
+        )
 
         assert is_duplicate is False
 
@@ -285,7 +312,9 @@ class TestContextFetching:
     Validates that task/branch metadata is fetched correctly.
     """
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_get_task_context_returns_correct_data(self, mock_get_session):
         """Test that _get_task_context returns correct task metadata"""
         # Setup mock database session
@@ -306,7 +335,9 @@ class TestContextFetching:
         mock_query = Mock()
         mock_query.first.return_value = (mock_task, mock_branch)
         mock_query.filter.return_value = mock_query  # Allow filter chaining
-        mock_session.query.return_value.join.return_value.filter.return_value = mock_query
+        mock_session.query.return_value.join.return_value.filter.return_value = (
+            mock_query
+        )
 
         # Call the method
         result = WebSocketNotificationService._get_task_context("task-123", "user-123")
@@ -317,14 +348,18 @@ class TestContextFetching:
         assert result["parent_branch_title"] == "Main Branch"
         assert result["task_user_id"] == "user-123"
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_get_task_context_handles_not_found(self, mock_get_session):
         """Test that _get_task_context handles missing tasks gracefully"""
         mock_session = MagicMock()
         mock_get_session.return_value.__enter__.return_value = mock_session
         mock_session.query.return_value.join.return_value.filter.return_value.first.return_value = None
 
-        result = WebSocketNotificationService._get_task_context("nonexistent-task", "user-123")
+        result = WebSocketNotificationService._get_task_context(
+            "nonexistent-task", "user-123"
+        )
 
         # Should return default values
         assert "task_title" in result
@@ -332,7 +367,9 @@ class TestContextFetching:
         assert result["parent_branch_id"] is None
         assert result["task_user_id"] is None
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_get_branch_cascade_data_returns_accurate_counts(self, mock_get_session):
         """Test that _get_branch_cascade_data returns accurate task counts"""
         mock_session = MagicMock()
@@ -349,12 +386,14 @@ class TestContextFetching:
             6,  # completed_tasks
             4,  # todo_tasks
             60.0,  # progress_percentage
-            "2025-01-01T12:00:00"  # last_activity
+            "2025-01-01T12:00:00",  # last_activity
         )
 
         mock_session.execute.return_value.fetchone.return_value = mock_result
 
-        result = WebSocketNotificationService._get_branch_cascade_data("branch-123", "user-123")
+        result = WebSocketNotificationService._get_branch_cascade_data(
+            "branch-123", "user-123"
+        )
 
         assert result["id"] == "branch-123"
         assert result["task_count"] == 10
@@ -362,7 +401,9 @@ class TestContextFetching:
         assert result["todo_tasks"] == 4
         assert result["progress_percentage"] == 60.0
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_get_branch_cascade_data_filters_by_user_id(self, mock_get_session):
         """Test that cascade data respects user_id filtering for multi-tenant isolation"""
         mock_session = MagicMock()
@@ -385,19 +426,21 @@ class TestBroadcastMethods:
     @pytest.mark.asyncio
     async def test_broadcast_task_event_calls_broadcast_function(self):
         """Test that broadcast_task_event calls the broadcast function"""
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
-            with patch.object(WebSocketNotificationService, '_get_task_context') as mock_context:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
+            with patch.object(
+                WebSocketNotificationService, "_get_task_context"
+            ) as mock_context:
                 mock_context.return_value = {
                     "task_title": "Test",
                     "parent_branch_id": "branch-123",
                     "parent_branch_title": "Main",
-                    "task_user_id": "user-123"
+                    "task_user_id": "user-123",
                 }
 
                 await WebSocketNotificationService.broadcast_task_event(
-                    event_type="created",
-                    task_id="task-123",
-                    user_id="user-123"
+                    event_type="created", task_id="task-123", user_id="user-123"
                 )
 
                 assert mock_broadcast.called
@@ -406,19 +449,23 @@ class TestBroadcastMethods:
     @pytest.mark.asyncio
     async def test_broadcast_subtask_event_includes_parent_task_id(self):
         """Test that subtask events include parent task ID in metadata"""
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
-            with patch.object(WebSocketNotificationService, '_get_subtask_context') as mock_context:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
+            with patch.object(
+                WebSocketNotificationService, "_get_subtask_context"
+            ) as mock_context:
                 mock_context.return_value = {
                     "subtask_title": "Test Subtask",
                     "parent_task_id": "task-123",
-                    "parent_task_title": "Parent Task"
+                    "parent_task_title": "Parent Task",
                 }
 
                 await WebSocketNotificationService.broadcast_subtask_event(
                     event_type="created",
                     subtask_id="subtask-123",
                     task_id="task-123",
-                    user_id="user-123"
+                    user_id="user-123",
                 )
 
                 call_args = mock_broadcast.call_args
@@ -428,8 +475,12 @@ class TestBroadcastMethods:
     @pytest.mark.asyncio
     async def test_broadcast_branch_event_includes_project_id(self):
         """Test that branch events include project ID in metadata"""
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change') as mock_broadcast:
-            with patch.object(WebSocketNotificationService, '_get_branch_context') as mock_context:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change"
+        ) as mock_broadcast:
+            with patch.object(
+                WebSocketNotificationService, "_get_branch_context"
+            ) as mock_context:
                 mock_context.return_value = {"branch_title": "Main Branch"}
 
                 await WebSocketNotificationService.broadcast_branch_event(
@@ -437,7 +488,7 @@ class TestBroadcastMethods:
                     branch_id="branch-123",
                     project_id="project-123",
                     user_id="user-123",
-                    branch_data={"name": "Main Branch"}
+                    branch_data={"name": "Main Branch"},
                 )
 
                 call_args = mock_broadcast.call_args
@@ -456,14 +507,16 @@ class TestPreFetchedContext:
         # Clear the deduplication cache to prevent interference from other tests
         _notification_cache.clear()
 
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change'):
-            with patch.object(WebSocketNotificationService, '_get_task_context') as mock_fetch:
+        with patch("fastmcp.server.routes.websocket_routes.broadcast_data_change"):
+            with patch.object(
+                WebSocketNotificationService, "_get_task_context"
+            ) as mock_fetch:
                 # Pre-fetched context (captured before deletion)
                 pre_fetched = {
                     "task_title": "Deleted Task",
                     "parent_branch_id": "branch-123",
                     "parent_branch_title": "Main Branch",
-                    "task_user_id": "user-123"
+                    "task_user_id": "user-123",
                 }
 
                 # Call sync method with pre-fetched context
@@ -471,7 +524,7 @@ class TestPreFetchedContext:
                     event_type="deleted",
                     task_id="task-prefetch-unique",  # Use unique ID to avoid duplicates
                     user_id="user-123",
-                    pre_fetched_context=pre_fetched
+                    pre_fetched_context=pre_fetched,
                 )
 
                 # Verify database was NOT queried (pre-fetched context was used)
@@ -490,22 +543,27 @@ class TestHTTPFallback:
         _notification_cache.clear()
 
         # Mock the import to fail
-        with patch('fastmcp.server.routes.websocket_routes.broadcast_data_change', side_effect=ImportError("WebSocket not available")):
-            with patch('requests.post') as mock_post:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.broadcast_data_change",
+            side_effect=ImportError("WebSocket not available"),
+        ):
+            with patch("requests.post") as mock_post:
                 mock_post.return_value.status_code = 200
 
-                with patch.object(WebSocketNotificationService, '_get_task_context') as mock_context:
+                with patch.object(
+                    WebSocketNotificationService, "_get_task_context"
+                ) as mock_context:
                     mock_context.return_value = {
                         "task_title": "Test",
                         "parent_branch_id": "branch-123",
                         "parent_branch_title": "Main",
-                        "task_user_id": "user-123"
+                        "task_user_id": "user-123",
                     }
 
                     WebSocketNotificationService.sync_broadcast_task_event(
                         event_type="created",
                         task_id="task-http-fallback-unique",  # Use unique ID to avoid duplicates
-                        user_id="user-123"
+                        user_id="user-123",
                     )
 
                     # Verify HTTP fallback was used
@@ -522,7 +580,9 @@ class TestMultiTenantIsolation:
     Ensures user_id filtering works correctly in all operations.
     """
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_task_context_filtering_by_user_id(self, mock_get_session):
         """Test that task context fetching filters by user_id"""
         mock_session = MagicMock()
@@ -534,7 +594,9 @@ class TestMultiTenantIsolation:
         # User filter should be in the filter calls
         assert mock_session.query.return_value.join.return_value.filter.called
 
-    @patch('fastmcp.task_management.infrastructure.database.database_config.get_session')
+    @patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    )
     def test_branch_context_filtering_by_user_id(self, mock_get_session):
         """Test that branch context fetching filters by user_id"""
         mock_session = MagicMock()

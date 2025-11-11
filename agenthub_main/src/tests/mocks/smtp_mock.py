@@ -42,7 +42,7 @@ class MockEmailCapture:
         body: str,
         html: str | None = None,
         cc: list[str | None] = None,
-        bcc: list[str | None] = None
+        bcc: list[str | None] = None,
     ):
         """Capture an email without actually sending it.
 
@@ -65,7 +65,7 @@ class MockEmailCapture:
                 "cc": cc or [],
                 "bcc": bcc or [],
                 "timestamp": datetime.now(UTC).isoformat(),
-                "sent": True
+                "sent": True,
             }
             self._emails.append(email)
 

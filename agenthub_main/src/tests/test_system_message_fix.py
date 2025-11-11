@@ -28,8 +28,12 @@ async def test_system_message_authorization():
     print("=" * 60)
 
     # Create mock users with required fields
-    user1 = User(id="user123", email="user1@example.com", username="user1", password_hash="hash1")
-    user2 = User(id="user456", email="user2@example.com", username="user2", password_hash="hash2")
+    user1 = User(
+        id="user123", email="user1@example.com", username="user1", password_hash="hash1"
+    )
+    user2 = User(
+        id="user456", email="user2@example.com", username="user2", password_hash="hash2"
+    )
 
     # Create mock WebSocket connections
     websocket1 = Mock()
@@ -37,10 +41,8 @@ async def test_system_message_authorization():
 
     # Mock the connection_users dictionary
     from fastmcp.server.routes import websocket_routes
-    websocket_routes.connection_users = {
-        websocket1: user1,
-        websocket2: user2
-    }
+
+    websocket_routes.connection_users = {websocket1: user1, websocket2: user2}
 
     # Test 1: User receives their own messages (existing behavior)
     print("Test 1: User receives their own messages")
@@ -48,7 +50,7 @@ async def test_system_message_authorization():
         websocket=websocket1,
         entity_type="task",
         entity_id="task123",
-        triggering_user_id="user123"  # Same as websocket1 user
+        triggering_user_id="user123",  # Same as websocket1 user
     )
     print(f"  Result: {result} (Expected: True)")
     assert result, "User should receive their own messages"
@@ -60,7 +62,7 @@ async def test_system_message_authorization():
         websocket=websocket1,
         entity_type="task",
         entity_id="task123",
-        triggering_user_id="user456"  # Different from websocket1 user
+        triggering_user_id="user456",  # Different from websocket1 user
     )
     print(f"  Result: {result} (Expected: False)")
     assert not result, "User should NOT receive other user's messages"
@@ -72,7 +74,9 @@ async def test_system_message_authorization():
     # Mock the database session to simulate task ownership
     from unittest.mock import patch
 
-    with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+    with patch(
+        "fastmcp.task_management.infrastructure.database.database_config.get_session"
+    ) as mock_get_session:
         # Create mock database objects
         mock_session = MagicMock()
         mock_get_session.return_value.__enter__.return_value = mock_session
@@ -89,7 +93,7 @@ async def test_system_message_authorization():
             websocket=websocket1,  # user123's connection
             entity_type="task",
             entity_id="task123",
-            triggering_user_id="system"  # System message
+            triggering_user_id="system",  # System message
         )
         print(f"    Result: {result} (Expected: True)")
         assert result, "User should receive system messages about their own tasks"
@@ -97,12 +101,14 @@ async def test_system_message_authorization():
 
         # Test: User2 should NOT receive system message about user1's task
         print("  Subtest 3b: User does NOT receive system message about other's task")
-        mock_session.query().filter().first.return_value = None  # No task found for user2
+        mock_session.query().filter().first.return_value = (
+            None  # No task found for user2
+        )
         result = await is_user_authorized_for_message(
             websocket=websocket2,  # user456's connection
             entity_type="task",
             entity_id="task123",
-            triggering_user_id="system"  # System message
+            triggering_user_id="system",  # System message
         )
         print(f"    Result: {result} (Expected: False)")
         assert not result, "User should NOT receive system messages about other's tasks"
@@ -115,6 +121,7 @@ async def test_system_message_authorization():
     print("- ✅ System messages reach only resource owners")
     print("- ✅ System messages blocked for non-owners")
     print("- ✅ Proper data isolation maintained")
+
 
 if __name__ == "__main__":
     asyncio.run(test_system_message_authorization())

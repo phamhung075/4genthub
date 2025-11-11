@@ -2,7 +2,6 @@
 Tests for auth middleware package imports and exports
 """
 
-
 import pytest
 
 
@@ -12,7 +11,7 @@ class TestMiddlewarePackageImports:
     def test_imports_jwt_auth_middleware(self):
         """Test that JWT auth middleware components are imported"""
         from fastmcp.auth.middleware import JWTAuthMiddleware, UserContextManager
-        
+
         assert JWTAuthMiddleware is not None
         assert UserContextManager is not None
 
@@ -22,7 +21,7 @@ class TestMiddlewarePackageImports:
             DualAuthMiddleware,
             create_dual_auth_middleware,
         )
-        
+
         assert DualAuthMiddleware is not None
         assert create_dual_auth_middleware is not None
 
@@ -37,7 +36,7 @@ class TestMiddlewarePackageImports:
             get_current_user_id,
             is_request_authenticated,
         )
-        
+
         assert RequestContextMiddleware is not None
         assert create_request_context_middleware is not None
         assert get_current_user_id is not None
@@ -49,7 +48,7 @@ class TestMiddlewarePackageImports:
     def test_all_exports(self):
         """Test __all__ exports the expected names"""
         from fastmcp.auth import middleware
-        
+
         expected_exports = [
             "JWTAuthMiddleware",
             "UserContextManager",
@@ -61,11 +60,11 @@ class TestMiddlewarePackageImports:
             "get_current_user_email",
             "get_current_auth_method",
             "is_request_authenticated",
-            "get_authentication_context"
+            "get_authentication_context",
         ]
-        
+
         assert set(middleware.__all__) == set(expected_exports)
-        
+
         # Verify all exported names exist in module
         for export in expected_exports:
             assert hasattr(middleware, export), f"Missing export: {export}"
@@ -73,11 +72,11 @@ class TestMiddlewarePackageImports:
     def test_module_structure(self):
         """Test the module can be imported and has expected structure"""
         import fastmcp.auth.middleware as middleware
-        
+
         # Check module attributes
-        assert hasattr(middleware, '__all__')
+        assert hasattr(middleware, "__all__")
         assert isinstance(middleware.__all__, list)
-        
+
         # Check all exported names exist in module
         for name in middleware.__all__:
             assert hasattr(middleware, name), f"Export {name} not found in module"
@@ -87,12 +86,14 @@ class TestMiddlewarePackageImports:
         # Test that commonly used imports still work
         try:
             from fastmcp.auth.middleware import JWTAuthMiddleware
+
             assert JWTAuthMiddleware is not None
         except ImportError:
             pytest.fail("Failed to import JWTAuthMiddleware")
 
         try:
             from fastmcp.auth.middleware import RequestContextMiddleware
+
             assert RequestContextMiddleware is not None
         except ImportError:
             pytest.fail("Failed to import RequestContextMiddleware")
@@ -100,14 +101,14 @@ class TestMiddlewarePackageImports:
     def test_function_imports(self):
         """Test that helper functions can be imported"""
         from fastmcp.auth import middleware
-        
+
         # Test context helper functions
         assert callable(middleware.get_current_user_id)
         assert callable(middleware.get_current_user_email)
         assert callable(middleware.get_current_auth_method)
         assert callable(middleware.is_request_authenticated)
         assert callable(middleware.get_authentication_context)
-        
+
         # Test factory functions
         assert callable(middleware.create_dual_auth_middleware)
         assert callable(middleware.create_request_context_middleware)

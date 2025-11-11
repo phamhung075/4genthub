@@ -19,32 +19,32 @@ class ProjectBuilder:
         self.updated_at = datetime.now(UTC)
         self.metadata: dict[str, Any] = {}
 
-    def with_id(self, project_id: str) -> 'ProjectBuilder':
+    def with_id(self, project_id: str) -> "ProjectBuilder":
         """Set project ID."""
         self.project_id = project_id
         return self
 
-    def with_name(self, name: str) -> 'ProjectBuilder':
+    def with_name(self, name: str) -> "ProjectBuilder":
         """Set project name."""
         self.name = name
         return self
 
-    def with_description(self, description: str) -> 'ProjectBuilder':
+    def with_description(self, description: str) -> "ProjectBuilder":
         """Set project description."""
         self.description = description
         return self
 
-    def with_user_id(self, user_id: str) -> 'ProjectBuilder':
+    def with_user_id(self, user_id: str) -> "ProjectBuilder":
         """Set owner user ID."""
         self.user_id = user_id
         return self
 
-    def with_status(self, status: str) -> 'ProjectBuilder':
+    def with_status(self, status: str) -> "ProjectBuilder":
         """Set project status."""
         self.status = status
         return self
 
-    def with_metadata(self, key: str, value: Any) -> 'ProjectBuilder':
+    def with_metadata(self, key: str, value: Any) -> "ProjectBuilder":
         """Add custom metadata."""
         self.metadata[key] = value
         return self
@@ -59,5 +59,5 @@ class ProjectBuilder:
             "status": self.status,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }

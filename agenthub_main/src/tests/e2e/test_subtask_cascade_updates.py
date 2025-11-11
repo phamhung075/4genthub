@@ -14,7 +14,6 @@ Key Test Areas:
 Related Investigation: Task 51155169-3077-4c5c-bd2a-9e086aaadd50 Phase 2
 """
 
-
 import pytest
 from sqlalchemy import text
 
@@ -68,7 +67,7 @@ def subtask_facade(task_repository, subtask_repository, user_id):
     return SubtaskApplicationFacade(
         task_repository=task_repository,
         subtask_repository=subtask_repository,
-        user_id=user_id
+        user_id=user_id,
     )
 
 
@@ -90,13 +89,15 @@ class TestSubtaskCascadeCountUpdates:
         """
 
         # Create parent task
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent Task",
-            description="E2E test for subtask cascade - Parent Task",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent Task",
+                description="E2E test for subtask cascade - Parent Task",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -107,27 +108,27 @@ class TestSubtaskCascadeCountUpdates:
         # Add subtasks one by one, verifying count each time
         for i in range(1, 6):
             subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask {i}", user_id=user_id
             )
 
             # Get task immediately after subtask creation
             current = task_facade.get_task(task_id)["task"]
 
             # CRITICAL: Count should match number of subtasks created
-            assert current["subtask_count"] == i, \
+            assert current["subtask_count"] == i, (
                 f"After creating {i} subtasks, count is {current['subtask_count']}"
+            )
 
             # Verify database consistency
             with db_config.get_session() as session:
                 result = session.execute(
                     text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                    {"task_id": task_id}
+                    {"task_id": task_id},
                 )
                 db_count = result.scalar()
-                assert db_count == i, \
+                assert db_count == i, (
                     f"Database shows {db_count} subtasks, expected {i}"
+                )
 
     def test_parent_subtask_count_decrements_on_subtask_deletion(
         self, task_facade, subtask_facade, git_branch_id, db_config, user_id
@@ -137,22 +138,22 @@ class TestSubtaskCascadeCountUpdates:
         """
 
         # Create parent with 5 subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent for deletion test",
-            description="E2E test for subtask cascade - Parent for deletion test",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent for deletion test",
+                description="E2E test for subtask cascade - Parent for deletion test",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         subtask_ids = []
         for i in range(5):
             result = subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask to delete {i}",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask to delete {i}", user_id=user_id
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -163,18 +164,16 @@ class TestSubtaskCascadeCountUpdates:
         # Delete subtasks one by one
         for i, subtask_id in enumerate(subtask_ids):
             subtask_facade.handle_manage_subtask(
-                action="delete",
-                task_id=task_id,
-                subtask_id=subtask_id,
-                user_id=user_id
+                action="delete", task_id=task_id, subtask_id=subtask_id, user_id=user_id
             )
 
             remaining = 5 - (i + 1)
             current = task_facade.get_task(task_id)["task"]
 
             # CRITICAL: Count must decrement correctly
-            assert current["subtask_count"] == remaining, \
-                f"After deleting {i+1} subtasks, count is {current['subtask_count']}, expected {remaining}"
+            assert current["subtask_count"] == remaining, (
+                f"After deleting {i + 1} subtasks, count is {current['subtask_count']}, expected {remaining}"
+            )
 
     def test_completed_subtasks_count_updates_on_completion(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -184,23 +183,22 @@ class TestSubtaskCascadeCountUpdates:
         """
 
         # Create parent with 4 subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent for completion test",
-            description="E2E test for subtask cascade - Parent for completion test",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent for completion test",
+                description="E2E test for subtask cascade - Parent for completion test",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         subtask_ids = []
         for i in range(4):
             result = subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                status="todo",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask {i}", status="todo", user_id=user_id
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -214,15 +212,16 @@ class TestSubtaskCascadeCountUpdates:
                 task_id=task_id,
                 subtask_id=subtask_id,
                 completion_summary=f"Done with subtask {i}",
-                user_id=user_id
+                user_id=user_id,
             )
 
             current = task_facade.get_task(task_id)["task"]
             expected_completed = i + 1
 
             # CRITICAL: Completed count must increment
-            assert current["completed_subtasks"] == expected_completed, \
+            assert current["completed_subtasks"] == expected_completed, (
                 f"After completing {expected_completed} subtasks, count is {current['completed_subtasks']}"
+            )
 
             # Total count should remain the same
             assert current["subtask_count"] == 4
@@ -237,13 +236,15 @@ class TestSubtaskCascadeCountUpdates:
         """
 
         # Create parent with 3 subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Delete completed subtask test",
-            description="E2E test for subtask cascade - Delete completed subtask test",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Delete completed subtask test",
+                description="E2E test for subtask cascade - Delete completed subtask test",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -251,9 +252,7 @@ class TestSubtaskCascadeCountUpdates:
         subtask_ids = []
         for i in range(3):
             result = subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask {i}", user_id=user_id
             )
             subtask_id = result["subtask"]["id"]
             subtask_ids.append(subtask_id)
@@ -263,7 +262,7 @@ class TestSubtaskCascadeCountUpdates:
                 task_id=task_id,
                 subtask_id=subtask_id,
                 completion_summary=f"Completed {i}",
-                user_id=user_id
+                user_id=user_id,
             )
 
         # Verify all completed
@@ -273,19 +272,16 @@ class TestSubtaskCascadeCountUpdates:
 
         # Delete one completed subtask
         subtask_facade.handle_manage_subtask(
-            action="delete",
-            task_id=task_id,
-            subtask_id=subtask_ids[0],
-            user_id=user_id
+            action="delete", task_id=task_id, subtask_id=subtask_ids[0], user_id=user_id
         )
 
         after_delete = task_facade.get_task(task_id)["task"]
 
         # Both counts should decrement
-        assert after_delete["subtask_count"] == 2, \
-            "Total count should decrement"
-        assert after_delete["completed_subtasks"] == 2, \
+        assert after_delete["subtask_count"] == 2, "Total count should decrement"
+        assert after_delete["completed_subtasks"] == 2, (
             "Completed count should also decrement when deleting completed subtask"
+        )
 
 
 @pytest.mark.e2e
@@ -301,14 +297,16 @@ class TestSubtaskProgressCascade:
         """
 
         # Create parent
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Progress cascade test",
-            description="E2E test for subtask cascade - Progress cascade test",
-            status="in_progress",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Progress cascade test",
+                description="E2E test for subtask cascade - Progress cascade test",
+                status="in_progress",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -319,7 +317,7 @@ class TestSubtaskProgressCascade:
                 task_id=task_id,
                 title=f"Progress subtask {i}",
                 status="todo",
-                user_id=user_id
+                user_id=user_id,
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -329,7 +327,7 @@ class TestSubtaskProgressCascade:
                 task_id=task_id,
                 subtask_id=subtask_ids[i],
                 completion_summary=f"Done {i}",
-                user_id=user_id
+                user_id=user_id,
             )
 
         # Check parent progress
@@ -337,8 +335,7 @@ class TestSubtaskProgressCascade:
         progress_50 = task_50["progress_percentage"]
 
         # Should be approximately 50% (allow tolerance for rounding)
-        assert 45 <= progress_50 <= 55, \
-            f"Expected ~50% progress, got {progress_50}%"
+        assert 45 <= progress_50 <= 55, f"Expected ~50% progress, got {progress_50}%"
 
         # Complete 3 more (80% total)
         for i in range(5, 8):
@@ -346,15 +343,14 @@ class TestSubtaskProgressCascade:
                 task_id=task_id,
                 subtask_id=subtask_ids[i],
                 completion_summary=f"Done {i}",
-                user_id=user_id
+                user_id=user_id,
             )
 
         task_80 = task_facade.get_task(task_id)["task"]
         progress_80 = task_80["progress_percentage"]
 
         # Should be approximately 80%
-        assert 75 <= progress_80 <= 85, \
-            f"Expected ~80% progress, got {progress_80}%"
+        assert 75 <= progress_80 <= 85, f"Expected ~80% progress, got {progress_80}%"
 
     def test_parent_progress_updates_on_subtask_progress_percentage_change(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -363,14 +359,16 @@ class TestSubtaskProgressCascade:
         Verify parent progress updates when subtask progress_percentage changes.
         """
 
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Subtask progress percentage test",
-            description="E2E test for subtask cascade - Subtask progress percentage test",
-            status="in_progress",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Subtask progress percentage test",
+                description="E2E test for subtask cascade - Subtask progress percentage test",
+                status="in_progress",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -378,10 +376,7 @@ class TestSubtaskProgressCascade:
         subtask_ids = []
         for i in range(2):
             result = subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                status="todo",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask {i}", status="todo", user_id=user_id
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -390,11 +385,8 @@ class TestSubtaskProgressCascade:
             action="update",
             task_id=task_id,
             subtask_id=subtask_ids[0],
-            subtask_data={
-                "progress_percentage": 50,
-                "progress_notes": "Halfway done"
-            },
-            user_id=user_id
+            subtask_data={"progress_percentage": 50, "progress_notes": "Halfway done"},
+            user_id=user_id,
         )
 
         # Get parent task
@@ -403,27 +395,26 @@ class TestSubtaskProgressCascade:
 
         # Parent should show ~25% (first subtask 50% + second subtask 0% = avg 25%)
         # Allow tolerance
-        assert 20 <= progress_after_first <= 30, \
+        assert 20 <= progress_after_first <= 30, (
             f"Expected ~25% parent progress, got {progress_after_first}%"
+        )
 
         # Update second subtask to 100%
         subtask_facade.handle_manage_subtask(
             action="update",
             task_id=task_id,
             subtask_id=subtask_ids[1],
-            subtask_data={
-                "progress_percentage": 100,
-                "progress_notes": "Fully done"
-            },
-            user_id=user_id
+            subtask_data={"progress_percentage": 100, "progress_notes": "Fully done"},
+            user_id=user_id,
         )
 
         task_after_second = task_facade.get_task(task_id)["task"]
         progress_after_second = task_after_second["progress_percentage"]
 
         # Parent should show ~75% (50% + 100% = avg 75%)
-        assert 70 <= progress_after_second <= 80, \
+        assert 70 <= progress_after_second <= 80, (
             f"Expected ~75% parent progress, got {progress_after_second}%"
+        )
 
 
 @pytest.mark.e2e
@@ -438,21 +429,21 @@ class TestSubtaskContextCascade:
         Verify insights from subtask completion cascade to parent task context.
         """
 
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Context cascade test",
-            description="E2E test for subtask cascade - Context cascade test",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Context cascade test",
+                description="E2E test for subtask cascade - Context cascade test",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         # Create subtask
         subtask_result = subtask_facade.create_subtask(
-            task_id=task_id,
-            title="Subtask with insights",
-            user_id=user_id
+            task_id=task_id, title="Subtask with insights", user_id=user_id
         )
         subtask_id = subtask_result["subtask"]["id"]
 
@@ -462,7 +453,7 @@ class TestSubtaskContextCascade:
             subtask_id=subtask_id,
             completion_summary="Completed implementation",
             insights_found=["Found better algorithm", "Performance improved 2x"],
-            user_id=user_id
+            user_id=user_id,
         )
 
         # Get parent task
@@ -486,13 +477,15 @@ class TestSubtaskContextCascade:
         """
         from time import sleep
 
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Timestamp cascade test",
-            description="E2E test for subtask cascade - Timestamp cascade test",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Timestamp cascade test",
+                description="E2E test for subtask cascade - Timestamp cascade test",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -503,9 +496,7 @@ class TestSubtaskContextCascade:
 
         # Create subtask
         subtask_facade.create_subtask(
-            task_id=task_id,
-            title="Trigger parent update",
-            user_id=user_id
+            task_id=task_id, title="Trigger parent update", user_id=user_id
         )
 
         # Get parent again
@@ -513,16 +504,21 @@ class TestSubtaskContextCascade:
         updated_at_after_subtask = parent_after_subtask["updated_at"]
 
         # Parent's updated_at should have changed
-        assert updated_at_after_subtask != initial_updated_at, \
+        assert updated_at_after_subtask != initial_updated_at, (
             "Parent updated_at should change when subtask is created"
+        )
 
         # Parse timestamps to ensure it's actually later
         from datetime import datetime
-        initial_dt = datetime.fromisoformat(initial_updated_at.replace('Z', '+00:00'))
-        after_dt = datetime.fromisoformat(updated_at_after_subtask.replace('Z', '+00:00'))
 
-        assert after_dt > initial_dt, \
+        initial_dt = datetime.fromisoformat(initial_updated_at.replace("Z", "+00:00"))
+        after_dt = datetime.fromisoformat(
+            updated_at_after_subtask.replace("Z", "+00:00")
+        )
+
+        assert after_dt > initial_dt, (
             "Parent updated_at timestamp should be later after subtask creation"
+        )
 
 
 @pytest.mark.e2e
@@ -538,13 +534,15 @@ class TestCascadeDeletion:
         """
 
         # Create parent with subtasks
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent to delete",
-            description="E2E test for subtask cascade - Parent to delete",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent to delete",
+                description="E2E test for subtask cascade - Parent to delete",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
@@ -552,9 +550,7 @@ class TestCascadeDeletion:
         subtask_ids = []
         for i in range(3):
             result = subtask_facade.create_subtask(
-                task_id=task_id,
-                title=f"Subtask {i}",
-                user_id=user_id
+                task_id=task_id, title=f"Subtask {i}", user_id=user_id
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -562,7 +558,7 @@ class TestCascadeDeletion:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             count_before = result.scalar()
             assert count_before == 3
@@ -575,11 +571,12 @@ class TestCascadeDeletion:
         with db_config.get_session() as session:
             result = session.execute(
                 text("SELECT COUNT(*) FROM subtasks WHERE task_id = :task_id"),
-                {"task_id": task_id}
+                {"task_id": task_id},
             )
             count_after = result.scalar()
-            assert count_after == 0, \
+            assert count_after == 0, (
                 "Subtasks should be cascade deleted when parent is deleted"
+            )
 
     def test_cannot_access_subtasks_after_parent_deletion(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -588,20 +585,20 @@ class TestCascadeDeletion:
         Verify subtasks cannot be accessed after parent task is deleted.
         """
 
-        parent = task_facade.create_task(CreateTaskRequest(
-            git_branch_id=git_branch_id,
-            title="Parent to delete",
-            description="E2E test for subtask cascade - Parent to delete",
-            assignees=["@test-agent"],
-            user_id=user_id
-        ))
+        parent = task_facade.create_task(
+            CreateTaskRequest(
+                git_branch_id=git_branch_id,
+                title="Parent to delete",
+                description="E2E test for subtask cascade - Parent to delete",
+                assignees=["@test-agent"],
+                user_id=user_id,
+            )
+        )
         assert parent["success"] is True
         task_id = parent["task"]["id"]
 
         subtask_result = subtask_facade.create_subtask(
-            task_id=task_id,
-            title="Orphaned subtask",
-            user_id=user_id
+            task_id=task_id, title="Orphaned subtask", user_id=user_id
         )
         assert subtask_result["success"] is True
         subtask_id = subtask_result["subtask"]["id"]
@@ -613,14 +610,12 @@ class TestCascadeDeletion:
         # Try to access subtask (should fail or return empty)
         try:
             get_subtask_result = subtask_facade.handle_manage_subtask(
-                action="get",
-                task_id=task_id,
-                subtask_id=subtask_id,
-                user_id=user_id
+                action="get", task_id=task_id, subtask_id=subtask_id, user_id=user_id
             )
             # If it doesn't raise an error, it should at least return success=False
-            assert get_subtask_result["success"] is False, \
+            assert get_subtask_result["success"] is False, (
                 "Should not be able to access subtask after parent deletion"
+            )
         except Exception:
             # Expected - subtask no longer exists
             pass

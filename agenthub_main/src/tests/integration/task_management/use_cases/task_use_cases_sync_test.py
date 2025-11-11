@@ -46,8 +46,7 @@ def context_service():
 def facade(task_repository, context_service):
     """Create task application facade with mocked dependencies."""
     return TaskApplicationFacade(
-        task_repository=task_repository,
-        context_service=context_service
+        task_repository=task_repository, context_service=context_service
     )
 
 
@@ -65,7 +64,7 @@ class TestCreateTaskSyncsMetadataOnCreation:
             description="Test Description",
             status="todo",
             priority="high",
-            assignees="test-agent"
+            assignees="test-agent",
         )
 
         # Act
@@ -90,13 +89,15 @@ class TestCreateTaskSyncsMetadataOnCreation:
         assert context_data["objective"]["title"] == "Test Task"
         assert context_data["objective"]["description"] == "Test Description"
 
-    async def test_create_task_initializes_subtask_counts(self, facade, task_repository):
+    async def test_create_task_initializes_subtask_counts(
+        self, facade, task_repository
+    ):
         """Verify create_task initializes subtask counts to zero."""
         # Arrange
         create_request = CreateTaskRequest(
             git_branch_id=str(uuid4()),
             title="Task with Subtasks",
-            assignees="test-agent"
+            assignees="test-agent",
         )
 
         # Act
@@ -124,7 +125,7 @@ class TestUpdateTaskSyncsOnUpdate:
             git_branch_id=str(uuid4()),
             title="Original Title",
             assignees=["original-agent"],
-            user_id=str(uuid4())
+            user_id=str(uuid4()),
         )
         task_repository.save(task)
 
@@ -133,7 +134,7 @@ class TestUpdateTaskSyncsOnUpdate:
             task_id=str(task.id),
             title="Updated Title",
             priority="urgent",
-            status="in_progress"
+            status="in_progress",
         )
         result = await facade.update_task(update_request)
 
@@ -148,7 +149,9 @@ class TestUpdateTaskSyncsOnUpdate:
         assert context_data["metadata"]["priority"] == "urgent"
         assert context_data["metadata"]["status"] == "in_progress"
 
-    async def test_update_task_preserves_unmodified_fields(self, facade, task_repository):
+    async def test_update_task_preserves_unmodified_fields(
+        self, facade, task_repository
+    ):
         """Verify update_task preserves fields not being updated."""
         # Arrange
         task = Task.create(
@@ -156,15 +159,12 @@ class TestUpdateTaskSyncsOnUpdate:
             title="Original",
             description="Keep this description",
             assignees=["keep-agent"],
-            user_id=str(uuid4())
+            user_id=str(uuid4()),
         )
         task_repository.save(task)
 
         # Act - Update only title
-        update_request = UpdateTaskRequest(
-            task_id=str(task.id),
-            title="New Title"
-        )
+        update_request = UpdateTaskRequest(task_id=str(task.id), title="New Title")
         await facade.update_task(update_request)
 
         # Assert
@@ -190,7 +190,7 @@ class TestCompleteTaskSyncsStatusAndMetadata:
             git_branch_id=str(uuid4()),
             title="Task to Complete",
             assignees=["test-agent"],
-            user_id=str(uuid4())
+            user_id=str(uuid4()),
         )
         task_repository.save(task)
 
@@ -198,7 +198,7 @@ class TestCompleteTaskSyncsStatusAndMetadata:
         result = await facade.complete_task(
             task_id=str(task.id),
             completion_summary="Successfully completed all requirements",
-            testing_notes="All tests passing"
+            testing_notes="All tests passing",
         )
 
         # Assert
@@ -217,7 +217,7 @@ class TestCompleteTaskSyncsStatusAndMetadata:
             git_branch_id=str(uuid4()),
             title="Task to Complete",
             assignees=["test-agent"],
-            user_id=str(uuid4())
+            user_id=str(uuid4()),
         )
         task_repository.save(task)
 
@@ -228,7 +228,7 @@ class TestCompleteTaskSyncsStatusAndMetadata:
         await facade.complete_task(
             task_id=str(task.id),
             completion_summary=completion_summary,
-            testing_notes=testing_notes
+            testing_notes=testing_notes,
         )
 
         # Assert
@@ -250,15 +250,14 @@ class TestSyncFailuresDontBreakTaskOperations:
         )
 
         facade = TaskApplicationFacade(
-            task_repository=task_repository,
-            context_service=failing_context_service
+            task_repository=task_repository, context_service=failing_context_service
         )
 
         # Act
         create_request = CreateTaskRequest(
             git_branch_id=str(uuid4()),
             title="Task with Sync Failure",
-            assignees="test-agent"
+            assignees="test-agent",
         )
 
         # Should not raise exception
@@ -279,7 +278,7 @@ class TestSyncFailuresDontBreakTaskOperations:
             git_branch_id=str(uuid4()),
             title="Original",
             assignees=["test-agent"],
-            user_id=str(uuid4())
+            user_id=str(uuid4()),
         )
         task_repository.save(task)
 
@@ -290,14 +289,12 @@ class TestSyncFailuresDontBreakTaskOperations:
         )
 
         facade = TaskApplicationFacade(
-            task_repository=task_repository,
-            context_service=failing_context_service
+            task_repository=task_repository, context_service=failing_context_service
         )
 
         # Act
         update_request = UpdateTaskRequest(
-            task_id=str(task.id),
-            title="Updated Despite Sync Failure"
+            task_id=str(task.id), title="Updated Despite Sync Failure"
         )
 
         result = await facade.update_task(update_request)
@@ -317,16 +314,13 @@ class TestSyncFailuresDontBreakTaskOperations:
         )
 
         facade = TaskApplicationFacade(
-            task_repository=task_repository,
-            context_service=failing_context_service
+            task_repository=task_repository, context_service=failing_context_service
         )
 
         # Act
         with caplog.at_level("WARNING"):
             create_request = CreateTaskRequest(
-                git_branch_id=str(uuid4()),
-                title="Test Logging",
-                assignees="test-agent"
+                git_branch_id=str(uuid4()), title="Test Logging", assignees="test-agent"
             )
 
             result = await facade.create_task(create_request)

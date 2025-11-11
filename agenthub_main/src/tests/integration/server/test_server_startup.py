@@ -27,7 +27,7 @@ import pytest
 # Test markers
 pytestmark = [
     pytest.mark.integration,
-    pytest.mark.unit  # Skip database setup since we're testing startup logic
+    pytest.mark.unit,  # Skip database setup since we're testing startup logic
 ]
 
 
@@ -43,7 +43,7 @@ def capture_logs():
     root_logger.addHandler(handler)
 
     # Also add to known fastmcp loggers
-    fastmcp_logger = logging.getLogger('fastmcp')
+    fastmcp_logger = logging.getLogger("fastmcp")
     fastmcp_logger.addHandler(handler)
 
     try:
@@ -60,36 +60,49 @@ class TestServerStartupSuccess:
         """Test server starts successfully when all dependencies are available"""
         # Mock environment variables
         env_vars = {
-            'FASTMCP_LOG_LEVEL': 'INFO',
-            'ENABLE_FILE_LOGGING': 'true',
-            'AUTH_ENABLED': 'true',
-            'AUTH_PROVIDER': 'local',
-            'JWT_SECRET_KEY': 'test-secret-key-32-characters-long-minimum',
-            'DATABASE_TYPE': 'postgresql',
-            'DATABASE_HOST': 'localhost',
-            'DATABASE_USER': 'test_user',
-            'DATABASE_PASSWORD': 'test_password',
-            'DATABASE_NAME': 'test_db'
+            "FASTMCP_LOG_LEVEL": "INFO",
+            "ENABLE_FILE_LOGGING": "true",
+            "AUTH_ENABLED": "true",
+            "AUTH_PROVIDER": "local",
+            "JWT_SECRET_KEY": "test-secret-key-32-characters-long-minimum",
+            "DATABASE_TYPE": "postgresql",
+            "DATABASE_HOST": "localhost",
+            "DATABASE_USER": "test_user",
+            "DATABASE_PASSWORD": "test_password",
+            "DATABASE_NAME": "test_db",
         }
 
         for key, value in env_vars.items():
             monkeypatch.setenv(key, value)
 
         # Mock database initialization with correct import paths
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database') as mock_init_db, \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db_config, \
-             patch('asyncio.run') as mock_asyncio_run, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd_tools, \
-             patch('fastmcp.config.ToolRegistry') as mock_tool_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware') as mock_auth_middleware, \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools') as mock_register_conn_tools, \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration') as mock_setup_ws, \
-             capture_logs():
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ) as mock_init_db,
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db_config,
+            patch("asyncio.run") as mock_asyncio_run,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd_tools,
+            patch("fastmcp.config.ToolRegistry") as mock_tool_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware") as mock_auth_middleware,
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ) as mock_register_conn_tools,
+            patch(
+                "fastmcp.websocket.fastapi_integration.setup_websocket_integration"
+            ) as mock_setup_ws,
+            capture_logs(),
+        ):
             # Configure mocks
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
@@ -104,9 +117,9 @@ class TestServerStartupSuccess:
             mock_registry = Mock()
             mock_registry.load_configuration.return_value = None
             mock_registry.mount_tools_to_server.return_value = {
-                'mounted_tools': 10,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 10,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_tool_registry.return_value = mock_registry
 
@@ -138,24 +151,35 @@ class TestServerStartupSuccess:
 
     def test_server_initializes_all_services(self, monkeypatch):
         """Test all required services are initialized on startup"""
-        monkeypatch.setenv('AUTH_ENABLED', 'true')
-        monkeypatch.setenv('AUTH_PROVIDER', 'local')
-        monkeypatch.setenv('JWT_SECRET_KEY', 'test-secret-key')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("AUTH_ENABLED", "true")
+        monkeypatch.setenv("AUTH_PROVIDER", "local")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools') as mock_ddd, \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'):
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ) as mock_ddd,
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+        ):
             # Setup mocks
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
@@ -169,9 +193,9 @@ class TestServerStartupSuccess:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 5,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 5,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -186,22 +210,33 @@ class TestServerStartupSuccess:
 
     def test_health_check_endpoint_responds(self, monkeypatch):
         """Test health check endpoint is accessible and returns correct status"""
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("AUTH_ENABLED", "false")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'):
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -215,9 +250,9 @@ class TestServerStartupSuccess:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -229,7 +264,9 @@ class TestServerStartupSuccess:
             # The server was created successfully
             assert server is not None
             # The custom_route is a decorator, so we verify the server has it available
-            assert hasattr(mock_server, 'custom_route'), "Server should have custom_route method"
+            assert hasattr(mock_server, "custom_route"), (
+                "Server should have custom_route method"
+            )
 
 
 class TestGracefulDegradation:
@@ -237,23 +274,34 @@ class TestGracefulDegradation:
 
     def test_server_handles_missing_redis(self, monkeypatch):
         """Test server starts with caching disabled when Redis unavailable"""
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("AUTH_ENABLED", "false")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs():
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+            capture_logs(),
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -266,9 +314,9 @@ class TestGracefulDegradation:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -280,23 +328,34 @@ class TestGracefulDegradation:
 
     def test_auth_disabled_when_configured(self, monkeypatch):
         """Test server runs in open access mode when AUTH_ENABLED=false"""
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("AUTH_ENABLED", "false")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools') as mock_create_auth, \
-             patch('fastmcp.auth.AuthMiddleware') as mock_auth_middleware, \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools") as mock_create_auth,
+            patch("fastmcp.auth.AuthMiddleware") as mock_auth_middleware,
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -309,9 +368,9 @@ class TestGracefulDegradation:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -336,21 +395,32 @@ class TestEnvironmentValidation:
     def test_required_env_vars_present(self, monkeypatch):
         """Test server validates required environment variables"""
         # Set minimal required vars
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'):
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -363,9 +433,9 @@ class TestEnvironmentValidation:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -377,21 +447,34 @@ class TestEnvironmentValidation:
 
     def test_default_values_applied(self, monkeypatch):
         """Test default values are applied for optional environment variables"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging') as mock_setup_logging, \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'):
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch(
+                "fastmcp.utilities.logging.setup_comprehensive_logging"
+            ) as mock_setup_logging,
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -404,9 +487,9 @@ class TestEnvironmentValidation:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -419,10 +502,18 @@ class TestEnvironmentValidation:
 
             # If setup_comprehensive_logging was called, verify the log level
             if mock_setup_logging.called:
-                call_kwargs = mock_setup_logging.call_args.kwargs if mock_setup_logging.call_args else {}
-                log_level = call_kwargs.get('log_level', os.environ.get('FASTMCP_LOG_LEVEL', 'INFO'))
+                call_kwargs = (
+                    mock_setup_logging.call_args.kwargs
+                    if mock_setup_logging.call_args
+                    else {}
+                )
+                log_level = call_kwargs.get(
+                    "log_level", os.environ.get("FASTMCP_LOG_LEVEL", "INFO")
+                )
                 # Default value should be INFO
-                assert log_level in ['INFO', 'DEBUG'], f"Log level should be INFO or DEBUG, got '{log_level}'"
+                assert log_level in ["INFO", "DEBUG"], (
+                    f"Log level should be INFO or DEBUG, got '{log_level}'"
+                )
 
 
 class TestSecurityMeasures:
@@ -430,26 +521,37 @@ class TestSecurityMeasures:
 
     def test_no_secrets_logged(self, monkeypatch):
         """Test that secrets are not logged during startup"""
-        secret_key = 'super-secret-jwt-key-that-should-not-appear-in-logs'
-        monkeypatch.setenv('JWT_SECRET_KEY', secret_key)
-        monkeypatch.setenv('AUTH_ENABLED', 'true')
-        monkeypatch.setenv('AUTH_PROVIDER', 'local')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        secret_key = "super-secret-jwt-key-that-should-not-appear-in-logs"
+        monkeypatch.setenv("JWT_SECRET_KEY", secret_key)
+        monkeypatch.setenv("AUTH_ENABLED", "true")
+        monkeypatch.setenv("AUTH_PROVIDER", "local")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -462,9 +564,9 @@ class TestSecurityMeasures:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -481,25 +583,36 @@ class TestSecurityMeasures:
 
     def test_default_credentials_rejected(self, monkeypatch):
         """Test default credentials are flagged as insecure"""
-        monkeypatch.setenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-        monkeypatch.setenv('AUTH_ENABLED', 'true')
-        monkeypatch.setenv('AUTH_PROVIDER', 'local')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+        monkeypatch.setenv("AUTH_ENABLED", "true")
+        monkeypatch.setenv("AUTH_PROVIDER", "local")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -512,9 +625,9 @@ class TestSecurityMeasures:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -532,12 +645,15 @@ class TestErrorHandling:
 
     def test_database_init_failure_logged(self, monkeypatch):
         """Test database initialization failures are logged clearly"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database') as mock_init_db, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ) as mock_init_db,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            capture_logs() as log_capture,
+        ):
             # Simulate database initialization failure
             mock_init_db.side_effect = Exception("Database connection failed")
 
@@ -556,15 +672,22 @@ class TestErrorHandling:
 
     def test_schema_validation_failure_logged(self, monkeypatch):
         """Test schema validation failures are logged with clear messages"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -585,22 +708,33 @@ class TestErrorHandling:
 
     def test_tool_dependency_failure_logged(self, monkeypatch):
         """Test tool dependency failures prevent server startup"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch("fastmcp.websocket.fastapi_integration.setup_websocket_integration"),
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -614,9 +748,9 @@ class TestErrorHandling:
             # Simulate tool dependency failures
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 5,
-                'disabled_tools': 0,
-                'dependency_failures': 3  # Some tools failed to mount
+                "mounted_tools": 5,
+                "disabled_tools": 0,
+                "dependency_failures": 3,  # Some tools failed to mount
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -632,22 +766,35 @@ class TestErrorHandling:
 
     def test_websocket_init_failure_logged(self, monkeypatch):
         """Test WebSocket initialization failures prevent server startup"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.task_management.infrastructure.database.init_database.init_database'), \
-             patch('fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup'), \
-             patch('fastmcp.task_management.infrastructure.database.database_config.get_db_config') as mock_get_db, \
-             patch('asyncio.run') as mock_async, \
-             patch('fastmcp.server.server.FastMCP') as mock_fastmcp, \
-             patch('fastmcp.utilities.logging.setup_comprehensive_logging'), \
-             patch('fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools'), \
-             patch('fastmcp.config.ToolRegistry') as mock_registry, \
-             patch('fastmcp.config.create_authentication_tools'), \
-             patch('fastmcp.auth.AuthMiddleware'), \
-             patch('fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools'), \
-             patch('fastmcp.websocket.fastapi_integration.setup_websocket_integration') as mock_setup_ws, \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.task_management.infrastructure.database.init_database.init_database"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.schema_validator.validate_schema_on_startup"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.database.database_config.get_db_config"
+            ) as mock_get_db,
+            patch("asyncio.run") as mock_async,
+            patch("fastmcp.server.server.FastMCP") as mock_fastmcp,
+            patch("fastmcp.utilities.logging.setup_comprehensive_logging"),
+            patch(
+                "fastmcp.task_management.interface.ddd_compliant_mcp_tools.DDDCompliantMCPTools"
+            ),
+            patch("fastmcp.config.ToolRegistry") as mock_registry,
+            patch("fastmcp.config.create_authentication_tools"),
+            patch("fastmcp.auth.AuthMiddleware"),
+            patch(
+                "fastmcp.connection_management.interface.ddd_compliant_connection_tools.register_ddd_connection_tools"
+            ),
+            patch(
+                "fastmcp.websocket.fastapi_integration.setup_websocket_integration"
+            ) as mock_setup_ws,
+            capture_logs() as log_capture,
+        ):
             mock_db_config = Mock()
             mock_db_config.engine = Mock()
             mock_get_db.return_value = mock_db_config
@@ -660,9 +807,9 @@ class TestErrorHandling:
 
             mock_tool_reg = Mock()
             mock_tool_reg.mount_tools_to_server.return_value = {
-                'mounted_tools': 1,
-                'disabled_tools': 0,
-                'dependency_failures': 0
+                "mounted_tools": 1,
+                "disabled_tools": 0,
+                "dependency_failures": 0,
             }
             mock_registry.return_value = mock_tool_reg
 
@@ -685,13 +832,22 @@ class TestMainEntryPoint:
 
     def test_main_runs_migrations(self, monkeypatch):
         """Test main() runs database migrations before starting server"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
             mock_server = Mock()
@@ -710,13 +866,22 @@ class TestMainEntryPoint:
 
     def test_main_initializes_event_handlers(self, monkeypatch):
         """Test main() initializes domain event handlers"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
             mock_server = Mock()
@@ -733,14 +898,21 @@ class TestMainEntryPoint:
 
     def test_main_handles_event_handler_failure(self, monkeypatch):
         """Test main() fails fast when event handler initialization fails"""
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server'), \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch("fastmcp.server.mcp_entry_point.create_agenthub_server"),
+            capture_logs() as log_capture,
+        ):
             mock_migrations.return_value = True
             # Simulate event handler initialization failure
             mock_events.return_value = False
@@ -763,6 +935,7 @@ class TestMainEntryPoint:
 # COVERAGE VERIFICATION TESTS
 # =============================================
 
+
 class TestCoverageVerification:
     """Verify test coverage meets the 80% goal"""
 
@@ -770,6 +943,7 @@ class TestCoverageVerification:
         """Verify coverage analysis tools are available"""
         try:
             import coverage
+
             assert coverage is not None
         except ImportError:
             pytest.skip("Coverage module not available")
@@ -778,24 +952,27 @@ class TestCoverageVerification:
         """Verify all critical startup paths are tested"""
         # This is a meta-test to ensure we have tests for critical scenarios
         critical_scenarios = [
-            'test_server_starts_with_all_dependencies',
-            'test_database_init_failure_logged',
-            'test_schema_validation_failure_logged',
-            'test_no_secrets_logged',
-            'test_auth_disabled_when_configured'
+            "test_server_starts_with_all_dependencies",
+            "test_database_init_failure_logged",
+            "test_schema_validation_failure_logged",
+            "test_no_secrets_logged",
+            "test_auth_disabled_when_configured",
         ]
 
         # Get all test methods in this module
         import inspect
+
         current_module = sys.modules[__name__]
 
         test_methods = []
         for name, obj in inspect.getmembers(current_module):
-            if inspect.isclass(obj) and name.startswith('Test'):
+            if inspect.isclass(obj) and name.startswith("Test"):
                 for method_name, method_obj in inspect.getmembers(obj):
-                    if method_name.startswith('test_'):
+                    if method_name.startswith("test_"):
                         test_methods.append(method_name)
 
         # Verify all critical scenarios have tests
         for scenario in critical_scenarios:
-            assert scenario in test_methods, f"Missing test for critical scenario: {scenario}"
+            assert scenario in test_methods, (
+                f"Missing test for critical scenario: {scenario}"
+            )

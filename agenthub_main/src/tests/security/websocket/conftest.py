@@ -31,10 +31,10 @@ from fastmcp.server.routes.websocket_routes import (
 )
 
 # Store original environment state for restoration
-_original_auth_enabled = os.environ.get('AUTH_ENABLED')
-_original_jwt_secret = os.environ.get('JWT_SECRET_KEY')
-_original_keycloak_url = os.environ.get('KEYCLOAK_URL')
-_original_auth_provider = os.environ.get('AUTH_PROVIDER')
+_original_auth_enabled = os.environ.get("AUTH_ENABLED")
+_original_jwt_secret = os.environ.get("JWT_SECRET_KEY")
+_original_keycloak_url = os.environ.get("KEYCLOAK_URL")
+_original_auth_provider = os.environ.get("AUTH_PROVIDER")
 
 logger = logging.getLogger(__name__)
 
@@ -50,33 +50,33 @@ def setup_websocket_security_environment():
     3. Prevents environment pollution to other test modules
     """
     # Set up test environment for WebSocket security tests
-    os.environ['AUTH_ENABLED'] = 'true'
-    os.environ['JWT_SECRET_KEY'] = 'websocket-security-test-secret-key'
-    os.environ['KEYCLOAK_URL'] = 'http://localhost:8080'
-    os.environ['AUTH_PROVIDER'] = 'keycloak'
+    os.environ["AUTH_ENABLED"] = "true"
+    os.environ["JWT_SECRET_KEY"] = "websocket-security-test-secret-key"
+    os.environ["KEYCLOAK_URL"] = "http://localhost:8080"
+    os.environ["AUTH_PROVIDER"] = "keycloak"
 
     yield
 
     # Restore original environment after all WebSocket security tests
     if _original_auth_enabled is not None:
-        os.environ['AUTH_ENABLED'] = _original_auth_enabled
+        os.environ["AUTH_ENABLED"] = _original_auth_enabled
     else:
-        os.environ.pop('AUTH_ENABLED', None)
+        os.environ.pop("AUTH_ENABLED", None)
 
     if _original_jwt_secret is not None:
-        os.environ['JWT_SECRET_KEY'] = _original_jwt_secret
+        os.environ["JWT_SECRET_KEY"] = _original_jwt_secret
     else:
-        os.environ.pop('JWT_SECRET_KEY', None)
+        os.environ.pop("JWT_SECRET_KEY", None)
 
     if _original_keycloak_url is not None:
-        os.environ['KEYCLOAK_URL'] = _original_keycloak_url
+        os.environ["KEYCLOAK_URL"] = _original_keycloak_url
     else:
-        os.environ.pop('KEYCLOAK_URL', None)
+        os.environ.pop("KEYCLOAK_URL", None)
 
     if _original_auth_provider is not None:
-        os.environ['AUTH_PROVIDER'] = _original_auth_provider
+        os.environ["AUTH_PROVIDER"] = _original_auth_provider
     else:
-        os.environ.pop('AUTH_PROVIDER', None)
+        os.environ.pop("AUTH_PROVIDER", None)
 
 
 class SecurityTestConfig:
@@ -104,7 +104,7 @@ class SecurityTestConfig:
     SENSITIVE_DATA = {
         "classified": "top_secret_data",
         "personal": "user_private_information",
-        "financial": "payment_details"
+        "financial": "payment_details",
     }
 
 
@@ -133,7 +133,9 @@ def cleanup_websocket_state():
 @pytest.fixture
 def mock_database_session():
     """Mock database session for testing authorization"""
-    with patch('fastmcp.server.routes.websocket_routes.get_session') as mock_get_session:
+    with patch(
+        "fastmcp.server.routes.websocket_routes.get_session"
+    ) as mock_get_session:
         mock_session = MagicMock()
         mock_get_session.return_value.__enter__.return_value = mock_session
         yield mock_session
@@ -142,12 +144,15 @@ def mock_database_session():
 @pytest.fixture
 def mock_authentication():
     """Mock authentication functions for testing"""
-    with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_keycloak, \
-         patch('fastmcp.server.routes.websocket_routes.validate_local_token') as mock_local:
-        yield {
-            'keycloak': mock_keycloak,
-            'local': mock_local
-        }
+    with (
+        patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_keycloak,
+        patch(
+            "fastmcp.server.routes.websocket_routes.validate_local_token"
+        ) as mock_local,
+    ):
+        yield {"keycloak": mock_keycloak, "local": mock_local}
 
 
 class TestUserFactory:
@@ -162,10 +167,12 @@ class TestUserFactory:
             id=user_id,
             email=email or f"{user_id}@test.com",
             username=user_id,
-            role=role
+            role=role,
         )
 
-    def create_token(self, user_id: str, expires_in_minutes: int = None, **claims) -> str:
+    def create_token(
+        self, user_id: str, expires_in_minutes: int = None, **claims
+    ) -> str:
         """Create JWT token for testing"""
         if expires_in_minutes is None:
             expires_in_minutes = self.config.VALID_TOKEN_DURATION
@@ -179,9 +186,11 @@ class TestUserFactory:
             "exp": datetime.now(UTC).timestamp() + (expires_in_minutes * 60),
             "iat": datetime.now(UTC).timestamp(),
             "role": "authenticated",
-            **claims
+            **claims,
         }
-        return jwt.encode(payload, self.config.TEST_JWT_SECRET, algorithm=self.config.TEST_ALGORITHM)
+        return jwt.encode(
+            payload, self.config.TEST_JWT_SECRET, algorithm=self.config.TEST_ALGORITHM
+        )
 
     def create_admin_user(self) -> tuple[User, str]:
         """Create admin user and token"""
@@ -203,7 +212,9 @@ class TestUserFactory:
 
     def create_expired_token(self, user_id: str) -> str:
         """Create expired token"""
-        return self.create_token(user_id, expires_in_minutes=self.config.EXPIRED_TOKEN_DURATION)
+        return self.create_token(
+            user_id, expires_in_minutes=self.config.EXPIRED_TOKEN_DURATION
+        )
 
     def create_malformed_token(self) -> str:
         """Create malformed token"""
@@ -236,7 +247,9 @@ class MockWebSocketFactory:
         return mock_ws
 
     @staticmethod
-    def setup_authenticated_connection(websocket: AsyncMock, user: User, client_id: str = None):
+    def setup_authenticated_connection(
+        websocket: AsyncMock, user: User, client_id: str = None
+    ):
         """Set up authenticated WebSocket connection state"""
         if not client_id:
             client_id = f"{user.id}_test_conn"
@@ -250,7 +263,7 @@ class MockWebSocketFactory:
             "user_id": user.id,
             "user_email": user.email,
             "scope": "branch",
-            "filters": {}
+            "filters": {},
         }
 
         # Add user data
@@ -273,55 +286,76 @@ class SecurityTestMetrics:
         self.performance_metrics = []
         self.vulnerability_reports = []
 
-    def record_test_result(self, test_name: str, passed: bool, duration: float, details: dict = None):
+    def record_test_result(
+        self, test_name: str, passed: bool, duration: float, details: dict = None
+    ):
         """Record test execution result"""
-        self.test_results.append({
-            "test_name": test_name,
-            "passed": passed,
-            "duration": duration,
-            "timestamp": datetime.now(UTC).isoformat(),
-            "details": details or {}
-        })
+        self.test_results.append(
+            {
+                "test_name": test_name,
+                "passed": passed,
+                "duration": duration,
+                "timestamp": datetime.now(UTC).isoformat(),
+                "details": details or {},
+            }
+        )
 
-    def record_performance_metric(self, metric_name: str, value: float, unit: str = "ms"):
+    def record_performance_metric(
+        self, metric_name: str, value: float, unit: str = "ms"
+    ):
         """Record performance metric"""
-        self.performance_metrics.append({
-            "metric": metric_name,
-            "value": value,
-            "unit": unit,
-            "timestamp": datetime.now(UTC).isoformat()
-        })
+        self.performance_metrics.append(
+            {
+                "metric": metric_name,
+                "value": value,
+                "unit": unit,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
 
-    def record_vulnerability(self, vulnerability_type: str, severity: str, description: str, exploitable: bool):
+    def record_vulnerability(
+        self,
+        vulnerability_type: str,
+        severity: str,
+        description: str,
+        exploitable: bool,
+    ):
         """Record vulnerability finding"""
-        self.vulnerability_reports.append({
-            "type": vulnerability_type,
-            "severity": severity,
-            "description": description,
-            "exploitable": exploitable,
-            "timestamp": datetime.now(UTC).isoformat()
-        })
+        self.vulnerability_reports.append(
+            {
+                "type": vulnerability_type,
+                "severity": severity,
+                "description": description,
+                "exploitable": exploitable,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
 
     def generate_security_report(self) -> dict:
         """Generate comprehensive security test report"""
         passed_tests = sum(1 for result in self.test_results if result["passed"])
         total_tests = len(self.test_results)
 
-        critical_vulnerabilities = sum(1 for vuln in self.vulnerability_reports
-                                     if vuln["severity"] == "critical" and vuln["exploitable"])
+        critical_vulnerabilities = sum(
+            1
+            for vuln in self.vulnerability_reports
+            if vuln["severity"] == "critical" and vuln["exploitable"]
+        )
 
         return {
             "summary": {
                 "total_tests": total_tests,
                 "passed_tests": passed_tests,
                 "failed_tests": total_tests - passed_tests,
-                "success_rate": (passed_tests / total_tests * 100) if total_tests > 0 else 0,
-                "critical_vulnerabilities": critical_vulnerabilities
+                "success_rate": (passed_tests / total_tests * 100)
+                if total_tests > 0
+                else 0,
+                "critical_vulnerabilities": critical_vulnerabilities,
             },
             "test_results": self.test_results,
             "performance_metrics": self.performance_metrics,
             "vulnerability_reports": self.vulnerability_reports,
-            "generated_at": datetime.now(UTC).isoformat()
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -339,11 +373,9 @@ def record_test_metrics(request, security_metrics):
     duration = time.time() - start_time
 
     # Record test result
-    test_passed = not hasattr(request.node, 'rep_failed') or not request.node.rep_failed
+    test_passed = not hasattr(request.node, "rep_failed") or not request.node.rep_failed
     security_metrics.record_test_result(
-        test_name=request.node.name,
-        passed=test_passed,
-        duration=duration
+        test_name=request.node.name, passed=test_passed, duration=duration
     )
 
 
@@ -378,7 +410,9 @@ class PerformanceTestUtils:
             "failed": failed,
             "duration": duration,
             "requests_per_second": len(results) / duration if duration > 0 else 0,
-            "errors": [str(result) for result in results if isinstance(result, Exception)]
+            "errors": [
+                str(result) for result in results if isinstance(result, Exception)
+            ],
         }
 
 
@@ -393,12 +427,12 @@ def configure_security_test_logging():
     """Configure logging for security tests"""
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Set specific log levels for security testing
-    logging.getLogger('fastmcp.server.routes.websocket_routes').setLevel(logging.DEBUG)
-    logging.getLogger('fastmcp.auth').setLevel(logging.DEBUG)
+    logging.getLogger("fastmcp.server.routes.websocket_routes").setLevel(logging.DEBUG)
+    logging.getLogger("fastmcp.auth").setLevel(logging.DEBUG)
 
 
 # Configure logging when module is imported
@@ -429,8 +463,8 @@ class TestDataGenerator:
             "data": {
                 "classification": "confidential",
                 "owner": user_id,
-                "sensitive_fields": ["ssn", "credit_card", "api_key"]
-            }
+                "sensitive_fields": ["ssn", "credit_card", "api_key"],
+            },
         }
 
     @staticmethod

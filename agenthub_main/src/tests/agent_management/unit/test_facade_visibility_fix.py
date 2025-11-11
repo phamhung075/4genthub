@@ -45,22 +45,26 @@ class TestFacadeVisibilityUpdate:
             agent_name="Test Agent",
             is_customized=False,
             is_enabled=True,
-            configuration=AgentConfiguration.from_dict({
-                "system_prompt": "Test prompt",
-                "tools": [],
-                "capabilities": {},
-                "rules": [],
-                "output_format": {}
-            }),
+            configuration=AgentConfiguration.from_dict(
+                {
+                    "system_prompt": "Test prompt",
+                    "tools": [],
+                    "capabilities": {},
+                    "rules": [],
+                    "output_format": {},
+                }
+            ),
             visibility="private",
-            share_token=None
+            share_token=None,
         )
 
         # Mock repository to return our test instance
         mock_instance_repo.find_by_id.return_value = test_instance
 
         # Mock sharing service to return a token
-        mock_sharing_service.generate_share_token.return_value = "a" * 64  # 64-char token
+        mock_sharing_service.generate_share_token.return_value = (
+            "a" * 64
+        )  # 64-char token
 
         # After sharing service is called, simulate the instance being updated
         updated_instance = UserAgentInstance(
@@ -72,7 +76,7 @@ class TestFacadeVisibilityUpdate:
             is_enabled=True,
             configuration=test_instance.configuration,
             visibility="public",
-            share_token="a" * 64
+            share_token="a" * 64,
         )
 
         # Mock save to return updated instance
@@ -83,14 +87,12 @@ class TestFacadeVisibilityUpdate:
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
             instantiation_service=mock_instantiation_service,
-            sharing_service=mock_sharing_service
+            sharing_service=mock_sharing_service,
         )
 
         # Execute: Update visibility to 'public'
         result = facade.update_instance(
-            user_id=user_id,
-            instance_id=str(instance_id),
-            visibility="public"
+            user_id=user_id, instance_id=str(instance_id), visibility="public"
         )
 
         # Verify: Sharing service was called to generate token
@@ -107,7 +109,6 @@ class TestFacadeVisibilityUpdate:
         # Verify: Result has public visibility and share_token
         assert result.visibility == "public"
         assert result.share_token == "a" * 64
-
 
     def test_update_visibility_to_private_revokes_share_token(self):
         """Test that setting visibility='private' revokes the share_token"""
@@ -130,15 +131,17 @@ class TestFacadeVisibilityUpdate:
             agent_name="Test Agent",
             is_customized=False,
             is_enabled=True,
-            configuration=AgentConfiguration.from_dict({
-                "system_prompt": "Test prompt",
-                "tools": [],
-                "capabilities": {},
-                "rules": [],
-                "output_format": {}
-            }),
+            configuration=AgentConfiguration.from_dict(
+                {
+                    "system_prompt": "Test prompt",
+                    "tools": [],
+                    "capabilities": {},
+                    "rules": [],
+                    "output_format": {},
+                }
+            ),
             visibility="public",
-            share_token="a" * 64
+            share_token="a" * 64,
         )
 
         # Mock repository to return our test instance
@@ -157,7 +160,7 @@ class TestFacadeVisibilityUpdate:
             is_enabled=True,
             configuration=test_instance.configuration,
             visibility="private",
-            share_token=None
+            share_token=None,
         )
 
         # Mock save to return updated instance
@@ -168,14 +171,12 @@ class TestFacadeVisibilityUpdate:
             template_repository=mock_template_repo,
             instance_repository=mock_instance_repo,
             instantiation_service=mock_instantiation_service,
-            sharing_service=mock_sharing_service
+            sharing_service=mock_sharing_service,
         )
 
         # Execute: Update visibility to 'private'
         result = facade.update_instance(
-            user_id=user_id,
-            instance_id=str(instance_id),
-            visibility="private"
+            user_id=user_id, instance_id=str(instance_id), visibility="private"
         )
 
         # Verify: Sharing service was called to revoke token

@@ -11,11 +11,13 @@ env_dev_path = project_root / ".env.dev"
 
 if env_dev_path.exists():
     from dotenv import load_dotenv
+
     print(f"📄 Loading environment from: {env_dev_path}")
     load_dotenv(env_dev_path, override=True)
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 
 def test_database_initialization():
     """Test that SessionLocal is properly initialized"""
@@ -25,9 +27,9 @@ def test_database_initialization():
     )
 
     try:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("Testing Database Initialization Fix")
-        print("="*60)
+        print("=" * 60)
 
         # Reset singleton to force re-initialization
         DatabaseConfig.reset_instance()
@@ -37,12 +39,12 @@ def test_database_initialization():
         db_config = get_db_config()
 
         # Check that SessionLocal is initialized
-        assert hasattr(db_config, 'SessionLocal'), "SessionLocal attribute missing"
+        assert hasattr(db_config, "SessionLocal"), "SessionLocal attribute missing"
         assert db_config.SessionLocal is not None, "SessionLocal is None"
         print("✅ SessionLocal is properly initialized")
 
         # Check that engine is initialized
-        assert hasattr(db_config, 'engine'), "engine attribute missing"
+        assert hasattr(db_config, "engine"), "engine attribute missing"
         assert db_config.engine is not None, "engine is None"
         print("✅ Engine is properly initialized")
 
@@ -54,6 +56,7 @@ def test_database_initialization():
 
         # Test a query
         from sqlalchemy import text
+
         result = session.execute(text("SELECT 1"))
         assert result.scalar() == 1, "Query failed"
         print("✅ Query executed successfully")
@@ -67,8 +70,10 @@ def test_database_initialization():
         print("\n❌ Database initialization test FAILED!")
         print(f"Error: {e}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 if __name__ == "__main__":
     success = test_database_initialization()

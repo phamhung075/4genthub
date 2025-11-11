@@ -16,7 +16,6 @@ Reference: Task 51155169 - Phase 3 Investigation
 User reported: Progress calculations incorrect, not updating properly
 """
 
-
 import pytest
 
 from fastmcp.task_management.application.dtos.subtask import (
@@ -42,6 +41,7 @@ def task_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.task_repository import (
         ORMTaskRepository,
     )
+
     return ORMTaskRepository(user_id=user_id)
 
 
@@ -51,6 +51,7 @@ def subtask_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
         ORMSubtaskRepository,
     )
+
     return ORMSubtaskRepository(user_id=user_id)
 
 
@@ -60,6 +61,7 @@ def git_branch_repository(shared_test_db, user_id):
     from fastmcp.task_management.infrastructure.repositories.orm.git_branch_repository import (
         ORMGitBranchRepository,
     )
+
     return ORMGitBranchRepository(user_id=user_id)
 
 
@@ -71,16 +73,14 @@ def create_task_use_case(task_repository):
 @pytest.fixture
 def add_subtask_use_case(task_repository, subtask_repository):
     return AddSubtaskUseCase(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
 @pytest.fixture
 def update_subtask_use_case(task_repository, subtask_repository):
     return UpdateSubtaskUseCase(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -92,8 +92,7 @@ def update_task_use_case(task_repository):
 @pytest.fixture
 def get_task_use_case(task_repository, git_branch_repository):
     return GetTaskUseCase(
-        task_repository=task_repository,
-        git_branch_repository=git_branch_repository
+        task_repository=task_repository, git_branch_repository=git_branch_repository
     )
 
 
@@ -118,12 +117,14 @@ class TestProgressCalculationWithoutSubtasks:
             assignees=["@test-orchestrator-agent"],
         )
         result = create_task_use_case.execute(request)
-        task = result.task if hasattr(result, 'task') else result
+        task = result.task if hasattr(result, "task") else result
 
         assert task.progress_percentage == 0, (
             f"New task without subtasks should have 0% progress, got {task.progress_percentage}"
         )
-        assert isinstance(task.progress_percentage, int), "progress_percentage must be integer"
+        assert isinstance(task.progress_percentage, int), (
+            "progress_percentage must be integer"
+        )
         assert 0 <= task.progress_percentage <= 100, "progress_percentage must be 0-100"
 
     def test_task_without_subtasks_progress_updates_with_status(
@@ -147,7 +148,7 @@ class TestProgressCalculationWithoutSubtasks:
             assignees=["@test-orchestrator-agent"],
         )
         create_result = create_task_use_case.execute(create_request)
-        task = create_result.task if hasattr(create_result, 'task') else create_result
+        task = create_result.task if hasattr(create_result, "task") else create_result
         task_id = task.id
 
         # Initial: todo status
@@ -163,9 +164,14 @@ class TestProgressCalculationWithoutSubtasks:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=task_id, user_id=user_id)
         in_progress_task = get_task_use_case.execute(get_request)
-        in_progress_task = in_progress_task.task if hasattr(in_progress_task, 'task') else in_progress_task
+        in_progress_task = (
+            in_progress_task.task
+            if hasattr(in_progress_task, "task")
+            else in_progress_task
+        )
 
         # Progress should reflect in_progress status (implementation-specific)
         assert in_progress_task.status == "in_progress"
@@ -196,14 +202,16 @@ class TestProgressCalculationWithSubtasks:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 5 subtasks (all default to todo)
         for i in range(5):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Incomplete subtask",
                 user_id=user_id,
             )
@@ -211,9 +219,12 @@ class TestProgressCalculationWithSubtasks:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # With 0 completed subtasks, progress should be low or zero
         assert fresh_task.completed_subtasks == 0
@@ -243,7 +254,9 @@ class TestProgressCalculationWithSubtasks:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 4 subtasks
@@ -251,12 +264,12 @@ class TestProgressCalculationWithSubtasks:
         for i in range(4):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
-                description=f"Test subtask {i+1}",
+                title=f"Subtask {i + 1}",
+                description=f"Test subtask {i + 1}",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete 2 subtasks (50%)
@@ -271,9 +284,12 @@ class TestProgressCalculationWithSubtasks:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # Verify counts
         assert fresh_task.subtask_count == 4
@@ -308,7 +324,9 @@ class TestProgressCalculationWithSubtasks:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 3 subtasks
@@ -316,12 +334,12 @@ class TestProgressCalculationWithSubtasks:
         for i in range(3):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Will complete all",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete ALL subtasks
@@ -336,9 +354,12 @@ class TestProgressCalculationWithSubtasks:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         fresh_result = get_task_use_case.execute(get_request)
-        fresh_task = fresh_result.task if hasattr(fresh_result, 'task') else fresh_result
+        fresh_task = (
+            fresh_result.task if hasattr(fresh_result, "task") else fresh_result
+        )
 
         # Verify all completed
         assert fresh_task.subtask_count == 3
@@ -376,7 +397,9 @@ class TestProgressCalculationEdgeCases:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 1 subtask
@@ -387,13 +410,20 @@ class TestProgressCalculationEdgeCases:
             user_id=user_id,
         )
         subtask_result = add_subtask_use_case.execute(subtask_request)
-        subtask = subtask_result.subtask if hasattr(subtask_result, 'subtask') else subtask_result
+        subtask = (
+            subtask_result.subtask
+            if hasattr(subtask_result, "subtask")
+            else subtask_result
+        )
 
         # Check progress before completion
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         before_result = get_task_use_case.execute(get_request)
-        before_task = before_result.task if hasattr(before_result, 'task') else before_result
+        before_task = (
+            before_result.task if hasattr(before_result, "task") else before_result
+        )
 
         assert before_task.completed_subtasks == 0
         progress_before = before_task.progress_percentage
@@ -409,7 +439,9 @@ class TestProgressCalculationEdgeCases:
 
         # Check progress after completion
         after_result = get_task_use_case.execute(get_request)
-        after_task = after_result.task if hasattr(after_result, 'task') else after_result
+        after_task = (
+            after_result.task if hasattr(after_result, "task") else after_result
+        )
 
         assert after_task.completed_subtasks == 1
         progress_after = after_task.progress_percentage
@@ -443,7 +475,9 @@ class TestProgressCalculationEdgeCases:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 3 subtasks (will create 33.33% when 1 completed)
@@ -451,12 +485,12 @@ class TestProgressCalculationEdgeCases:
         for i in range(3):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Testing integer calculation",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete 1 subtask (33.333...%)
@@ -470,9 +504,10 @@ class TestProgressCalculationEdgeCases:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         result = get_task_use_case.execute(get_request)
-        task = result.task if hasattr(result, 'task') else result
+        task = result.task if hasattr(result, "task") else result
 
         # CRITICAL: Must be integer
         assert isinstance(task.progress_percentage, int), (
@@ -502,7 +537,9 @@ class TestProgressCalculationEdgeCases:
             assignees=["@test-orchestrator-agent"],
         )
         parent_result = create_task_use_case.execute(parent_request)
-        parent_task = parent_result.task if hasattr(parent_result, 'task') else parent_result
+        parent_task = (
+            parent_result.task if hasattr(parent_result, "task") else parent_result
+        )
         parent_id = parent_task.id
 
         # Add 2 subtasks
@@ -510,12 +547,12 @@ class TestProgressCalculationEdgeCases:
         for i in range(2):
             request = AddSubtaskRequest(
                 task_id=parent_id,
-                title=f"Subtask {i+1}",
+                title=f"Subtask {i + 1}",
                 description="Testing max progress",
                 user_id=user_id,
             )
             result = add_subtask_use_case.execute(request)
-            subtask = result.subtask if hasattr(result, 'subtask') else result
+            subtask = result.subtask if hasattr(result, "subtask") else result
             subtask_ids.append(subtask.id)
 
         # Complete all subtasks
@@ -530,9 +567,10 @@ class TestProgressCalculationEdgeCases:
 
         # Get fresh data
         from fastmcp.task_management.application.dtos.task import GetTaskRequest
+
         get_request = GetTaskRequest(task_id=parent_id, user_id=user_id)
         result = get_task_use_case.execute(get_request)
-        task = result.task if hasattr(result, 'task') else result
+        task = result.task if hasattr(result, "task") else result
 
         # Progress must not exceed 100
         assert task.progress_percentage <= 100, (

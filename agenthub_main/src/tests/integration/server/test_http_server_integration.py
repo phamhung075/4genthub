@@ -16,10 +16,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Test markers
-pytestmark = [
-    pytest.mark.integration,
-    pytest.mark.unit
-]
+pytestmark = [pytest.mark.integration, pytest.mark.unit]
 
 
 @contextmanager
@@ -53,26 +50,37 @@ class TestHTTPServerIntegration:
         - CORS origins configured correctly
         """
         # Configure environment for HTTP transport with auth enabled
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'streamable-http')
-        monkeypatch.setenv('FASTMCP_HOST', '0.0.0.0')
-        monkeypatch.setenv('FASTMCP_PORT', '8000')
-        monkeypatch.setenv('AUTH_ENABLED', 'true')
-        monkeypatch.setenv('AUTH_PROVIDER', 'local')
-        monkeypatch.setenv('JWT_SECRET_KEY', 'test-secret-key-32-chars-min')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
-        monkeypatch.setenv('FASTMCP_LOG_LEVEL', 'DEBUG')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "streamable-http")
+        monkeypatch.setenv("FASTMCP_HOST", "0.0.0.0")
+        monkeypatch.setenv("FASTMCP_PORT", "8000")
+        monkeypatch.setenv("AUTH_ENABLED", "true")
+        monkeypatch.setenv("AUTH_PROVIDER", "local")
+        monkeypatch.setenv("JWT_SECRET_KEY", "test-secret-key-32-chars-min")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
+        monkeypatch.setenv("FASTMCP_LOG_LEVEL", "DEBUG")
 
         # Mock all the dependencies
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware'), \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch("fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware"),
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+            capture_logs() as log_capture,
+        ):
             # Configure mocks
             mock_migrations.return_value = True
             mock_events.return_value = True
@@ -83,7 +91,9 @@ class TestHTTPServerIntegration:
             mock_create_server.return_value = mock_server
 
             # Mock CORS factory
-            mock_cors_factory.get_allowed_origins.return_value = ['http://localhost:3800']
+            mock_cors_factory.get_allowed_origins.return_value = [
+                "http://localhost:3800"
+            ]
 
             from fastmcp.server.mcp_entry_point import main
 
@@ -99,26 +109,26 @@ class TestHTTPServerIntegration:
             call_kwargs = mock_server.run.call_args.kwargs
 
             # Verify transport configuration
-            assert call_kwargs['transport'] == 'streamable-http'
-            assert call_kwargs['host'] == '0.0.0.0'
-            assert call_kwargs['port'] == 8000
-            assert call_kwargs['log_level'] == 'DEBUG'
+            assert call_kwargs["transport"] == "streamable-http"
+            assert call_kwargs["host"] == "0.0.0.0"
+            assert call_kwargs["port"] == 8000
+            assert call_kwargs["log_level"] == "DEBUG"
 
             # Verify middleware stack was passed
-            assert 'middleware' in call_kwargs
-            middleware_stack = call_kwargs['middleware']
+            assert "middleware" in call_kwargs
+            middleware_stack = call_kwargs["middleware"]
             assert len(middleware_stack) == 3  # DualAuth, RequestContext, Debug
 
             # Verify CORS origins were configured
-            assert call_kwargs['cors_origins'] == ['http://localhost:3800']
+            assert call_kwargs["cors_origins"] == ["http://localhost:3800"]
 
             # Verify logging messages
             logs = log_capture.getvalue()
-            assert 'Starting server with transport: streamable-http' in logs
-            assert 'HTTP server will bind to 0.0.0.0:8000' in logs
-            assert 'DualAuthMiddleware added' in logs
-            assert 'RequestContextMiddleware added' in logs
-            assert 'CORS origins configured via factory' in logs
+            assert "Starting server with transport: streamable-http" in logs
+            assert "HTTP server will bind to 0.0.0.0:8000" in logs
+            assert "DualAuthMiddleware added" in logs
+            assert "RequestContextMiddleware added" in logs
+            assert "CORS origins configured via factory" in logs
 
     def test_http_transport_without_auth_skips_dual_auth_middleware(self, monkeypatch):
         """
@@ -132,22 +142,35 @@ class TestHTTPServerIntegration:
         - Server runs successfully without auth middleware
         """
         # Configure environment for HTTP transport with auth disabled
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'streamable-http')
-        monkeypatch.setenv('FASTMCP_HOST', 'localhost')
-        monkeypatch.setenv('FASTMCP_PORT', '9000')
-        monkeypatch.setenv('AUTH_ENABLED', 'false')  # Auth disabled
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "streamable-http")
+        monkeypatch.setenv("FASTMCP_HOST", "localhost")
+        monkeypatch.setenv("FASTMCP_PORT", "9000")
+        monkeypatch.setenv("AUTH_ENABLED", "false")  # Auth disabled
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware') as mock_dual_auth, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware"
+            ) as mock_dual_auth,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+            capture_logs() as log_capture,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -155,7 +178,7 @@ class TestHTTPServerIntegration:
             mock_server.run = Mock(side_effect=SystemExit(0))
             mock_create_server.return_value = mock_server
 
-            mock_cors_factory.get_allowed_origins.return_value = ['*']
+            mock_cors_factory.get_allowed_origins.return_value = ["*"]
 
             from fastmcp.server.mcp_entry_point import main
 
@@ -166,7 +189,7 @@ class TestHTTPServerIntegration:
             call_kwargs = mock_server.run.call_args.kwargs
 
             # Verify middleware stack has only 2 items (no DualAuth)
-            middleware_stack = call_kwargs['middleware']
+            middleware_stack = call_kwargs["middleware"]
             assert len(middleware_stack) == 2  # RequestContext and Debug only
 
             # Verify DualAuthMiddleware was NOT instantiated
@@ -174,7 +197,10 @@ class TestHTTPServerIntegration:
 
             # Verify logs don't mention DualAuthMiddleware
             logs = log_capture.getvalue()
-            assert 'DualAuthMiddleware' not in logs or 'DualAuthMiddleware added' not in logs
+            assert (
+                "DualAuthMiddleware" not in logs
+                or "DualAuthMiddleware added" not in logs
+            )
 
     def test_stdio_transport_bypasses_http_middleware_configuration(self, monkeypatch):
         """
@@ -188,20 +214,33 @@ class TestHTTPServerIntegration:
         - Appropriate logging for stdio mode
         """
         # Configure environment for stdio transport (default)
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'stdio')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "stdio")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
         # Ensure AUTH_ENABLED has a default value
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
+        monkeypatch.setenv("AUTH_ENABLED", "false")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware') as mock_dual_auth, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware') as mock_request_ctx, \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.dual_auth_middleware.DualAuthMiddleware"
+            ) as mock_dual_auth,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ) as mock_request_ctx,
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+            capture_logs() as log_capture,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -216,13 +255,13 @@ class TestHTTPServerIntegration:
 
             # Verify server.run() was called with stdio transport
             call_kwargs = mock_server.run.call_args.kwargs
-            assert call_kwargs['transport'] == 'stdio'
+            assert call_kwargs["transport"] == "stdio"
 
             # Verify NO middleware or CORS configuration
-            assert 'middleware' not in call_kwargs
-            assert 'cors_origins' not in call_kwargs
-            assert 'host' not in call_kwargs
-            assert 'port' not in call_kwargs
+            assert "middleware" not in call_kwargs
+            assert "cors_origins" not in call_kwargs
+            assert "host" not in call_kwargs
+            assert "port" not in call_kwargs
 
             # Verify middleware classes were NOT instantiated
             mock_dual_auth.assert_not_called()
@@ -231,8 +270,8 @@ class TestHTTPServerIntegration:
 
             # Verify appropriate logging
             logs = log_capture.getvalue()
-            assert 'Starting server in stdio mode' in logs
-            assert 'HTTP server will bind' not in logs
+            assert "Starting server in stdio mode" in logs
+            assert "HTTP server will bind" not in logs
 
 
 class TestHTTPTransportCommandLineArgs:
@@ -245,20 +284,33 @@ class TestHTTPTransportCommandLineArgs:
         Covers lines 728-733: Command line argument parsing.
         """
         # Set environment to stdio
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'stdio')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "stdio")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
+        monkeypatch.setenv("AUTH_ENABLED", "false")
 
         # Mock sys.argv to include --transport streamable-http
-        with patch.object(sys, 'argv', ['mcp_entry_point.py', '--transport', 'streamable-http']), \
-             patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory:
-
+        with (
+            patch.object(
+                sys, "argv", ["mcp_entry_point.py", "--transport", "streamable-http"]
+            ),
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -275,7 +327,7 @@ class TestHTTPTransportCommandLineArgs:
 
             # Verify transport was overridden to streamable-http
             call_kwargs = mock_server.run.call_args.kwargs
-            assert call_kwargs['transport'] == 'streamable-http'
+            assert call_kwargs["transport"] == "streamable-http"
 
     def test_command_line_transport_override_equals_format(self, monkeypatch):
         """
@@ -283,20 +335,33 @@ class TestHTTPTransportCommandLineArgs:
 
         Covers lines 732-733: Alternative command line format.
         """
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'stdio')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "stdio")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
+        monkeypatch.setenv("AUTH_ENABLED", "false")
 
         # Mock sys.argv with --transport=streamable-http format
-        with patch.object(sys, 'argv', ['mcp_entry_point.py', '--transport=streamable-http']), \
-             patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory:
-
+        with (
+            patch.object(
+                sys, "argv", ["mcp_entry_point.py", "--transport=streamable-http"]
+            ),
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -313,7 +378,7 @@ class TestHTTPTransportCommandLineArgs:
 
             # Verify transport was overridden to streamable-http
             call_kwargs = mock_server.run.call_args.kwargs
-            assert call_kwargs['transport'] == 'streamable-http'
+            assert call_kwargs["transport"] == "streamable-http"
 
 
 class TestHTTPMiddlewareFailureHandling:
@@ -329,19 +394,30 @@ class TestHTTPMiddlewareFailureHandling:
         - CORS origins passed to server.run()
         - Appropriate logging for CORS configuration
         """
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'streamable-http')
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "streamable-http")
+        monkeypatch.setenv("AUTH_ENABLED", "false")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory, \
-             capture_logs() as log_capture:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+            capture_logs() as log_capture,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -350,7 +426,7 @@ class TestHTTPMiddlewareFailureHandling:
             mock_create_server.return_value = mock_server
 
             # Configure CORS factory with specific origins
-            test_origins = ['https://app.example.com', 'https://api.example.com']
+            test_origins = ["https://app.example.com", "https://api.example.com"]
             mock_cors_factory.get_allowed_origins.return_value = test_origins
 
             from fastmcp.server.mcp_entry_point import main
@@ -363,12 +439,12 @@ class TestHTTPMiddlewareFailureHandling:
 
             # Verify CORS origins passed to server
             call_kwargs = mock_server.run.call_args.kwargs
-            assert call_kwargs['cors_origins'] == test_origins
+            assert call_kwargs["cors_origins"] == test_origins
 
             # Verify logging
             logs = log_capture.getvalue()
-            assert 'CORS origins configured via factory' in logs
-            assert 'https://app.example.com' in logs
+            assert "CORS origins configured via factory" in logs
+            assert "https://app.example.com" in logs
 
     def test_http_server_log_level_configuration(self, monkeypatch):
         """
@@ -380,19 +456,30 @@ class TestHTTPMiddlewareFailureHandling:
         - Log level is passed to server.run()
         - Default to INFO if not specified
         """
-        monkeypatch.setenv('FASTMCP_TRANSPORT', 'streamable-http')
-        monkeypatch.setenv('AUTH_ENABLED', 'false')
-        monkeypatch.setenv('DATABASE_PATH', ':memory:')
-        monkeypatch.setenv('FASTMCP_LOG_LEVEL', 'WARNING')  # Custom log level
+        monkeypatch.setenv("FASTMCP_TRANSPORT", "streamable-http")
+        monkeypatch.setenv("AUTH_ENABLED", "false")
+        monkeypatch.setenv("DATABASE_PATH", ":memory:")
+        monkeypatch.setenv("FASTMCP_LOG_LEVEL", "WARNING")  # Custom log level
 
-        with patch('fastmcp.database_migrations.run_startup_migrations') as mock_migrations, \
-             patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer'), \
-             patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers') as mock_events, \
-             patch('fastmcp.server.mcp_entry_point.create_agenthub_server') as mock_create_server, \
-             patch('fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware'), \
-             patch('fastmcp.server.mcp_entry_point.DebugLoggingMiddleware'), \
-             patch('fastmcp.config.cors_factory.cors_factory') as mock_cors_factory:
-
+        with (
+            patch(
+                "fastmcp.database_migrations.run_startup_migrations"
+            ) as mock_migrations,
+            patch(
+                "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer"
+            ),
+            patch(
+                "fastmcp.task_management.infrastructure.events.initialize_event_handlers"
+            ) as mock_events,
+            patch(
+                "fastmcp.server.mcp_entry_point.create_agenthub_server"
+            ) as mock_create_server,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.RequestContextMiddleware"
+            ),
+            patch("fastmcp.server.mcp_entry_point.DebugLoggingMiddleware"),
+            patch("fastmcp.config.cors_factory.cors_factory") as mock_cors_factory,
+        ):
             mock_migrations.return_value = True
             mock_events.return_value = True
 
@@ -409,4 +496,4 @@ class TestHTTPMiddlewareFailureHandling:
 
             # Verify log level was passed correctly (uppercased)
             call_kwargs = mock_server.run.call_args.kwargs
-            assert call_kwargs['log_level'] == 'WARNING'
+            assert call_kwargs["log_level"] == "WARNING"

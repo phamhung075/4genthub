@@ -31,12 +31,14 @@ def test_unified_context_data():
     try:
         # Test 1: Check if column exists
         print("\n2. Checking if unified_context_data column exists...")
-        result = session.execute(text("""
+        result = session.execute(
+            text("""
             SELECT column_name, data_type
             FROM information_schema.columns
             WHERE table_name = 'global_contexts'
             AND column_name = 'unified_context_data'
-        """))
+        """)
+        )
         column_info = result.fetchone()
         if column_info:
             print(f"   ✅ Column exists: {column_info[0]} ({column_info[1]})")
@@ -46,11 +48,13 @@ def test_unified_context_data():
 
         # Test 2: Read current data
         print("\n3. Reading current unified_context_data...")
-        result = session.execute(text("""
+        result = session.execute(
+            text("""
             SELECT id, unified_context_data, user_id
             FROM global_contexts
             LIMIT 1
-        """))
+        """)
+        )
         row = result.fetchone()
         if row:
             print(f"   ID: {row[0]}")
@@ -68,54 +72,62 @@ def test_unified_context_data():
             "test_timestamp": "2025-09-16T12:00:00Z",
             "nested_structure": {
                 "level1": {
-                    "level2": {
-                        "level3": "deep nested value"
-                    },
+                    "level2": {"level3": "deep nested value"},
                     "array_field": [1, 2, 3, 4, 5],
                     "boolean_field": True,
-                    "null_field": None
+                    "null_field": None,
                 }
             },
             "unified_api_data": {
                 "description": "This tests the unified context API compatibility",
                 "features": ["flexible storage", "json support", "nested structures"],
-                "status": "working"
-            }
+                "status": "working",
+            },
         }
 
         session.execute(
-            text("UPDATE global_contexts SET unified_context_data = :data WHERE id = :id"),
-            {"data": json.dumps(test_data), "id": context_id}
+            text(
+                "UPDATE global_contexts SET unified_context_data = :data WHERE id = :id"
+            ),
+            {"data": json.dumps(test_data), "id": context_id},
         )
         session.commit()
         print("   ✅ Update successful")
 
         # Test 4: Verify the update
         print("\n5. Verifying the update...")
-        result = session.execute(text("""
+        result = session.execute(
+            text("""
             SELECT unified_context_data
             FROM global_contexts
             WHERE id = :id
-        """), {"id": context_id})
+        """),
+            {"id": context_id},
+        )
         updated_data = result.fetchone()[0]
         print(f"   Updated Data: {json.dumps(updated_data, indent=2)}")
 
         # Test 5: Test JSON query capabilities
         print("\n6. Testing JSON query capabilities...")
-        result = session.execute(text("""
+        result = session.execute(
+            text("""
             SELECT
                 unified_context_data->>'test_suite' as test_suite,
                 unified_context_data->'nested_structure'->'level1'->>'boolean_field' as bool_field,
                 jsonb_array_length((unified_context_data->'unified_api_data'->'features')::jsonb) as feature_count
             FROM global_contexts
             WHERE id = :id
-        """), {"id": context_id})
+        """),
+            {"id": context_id},
+        )
         query_result = result.fetchone()
         print(f"   Test Suite: {query_result[0]}")
         print(f"   Boolean Field: {query_result[1]}")
         print(f"   Feature Count: {query_result[2]}")
 
-        print("\n✅ All tests passed! The unified_context_data column is working correctly.")
+        print(
+            "\n✅ All tests passed! The unified_context_data column is working correctly."
+        )
         print("\nSummary:")
         print("- Column exists and is of type JSON")
         print("- Can store complex nested JSON structures")
@@ -125,10 +137,12 @@ def test_unified_context_data():
     except Exception as e:
         print(f"\n❌ Error during testing: {e}")
         import traceback
+
         traceback.print_exc()
     finally:
         session.close()
         print("\n7. Database connection closed.")
+
 
 if __name__ == "__main__":
     test_unified_context_data()

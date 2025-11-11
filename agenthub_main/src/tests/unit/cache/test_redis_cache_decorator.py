@@ -42,6 +42,7 @@ from fastmcp.server.cache.redis_cache_decorator import (
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def mock_redis_client():
     """Mock Redis client for testing"""
@@ -72,7 +73,7 @@ async def cache_manager(mock_redis_client, mock_sync_redis_client):
         redis_url="redis://localhost:6379",
         redis_password="",
         default_ttl=300,
-        prefix="test_cache"
+        prefix="test_cache",
     )
 
     # Inject mocked clients
@@ -92,7 +93,7 @@ def sync_cache_manager(mock_redis_client, mock_sync_redis_client):
         redis_url="redis://localhost:6379",
         redis_password="",
         default_ttl=300,
-        prefix="test_cache"
+        prefix="test_cache",
     )
 
     # Inject mocked clients
@@ -124,6 +125,7 @@ def reset_cache_metrics():
 # TEST 1: CACHE HIT/MISS SCENARIOS
 # =============================================================================
 
+
 class TestCacheHitMiss:
     """Test cache hit and miss scenarios"""
 
@@ -143,7 +145,10 @@ class TestCacheHitMiss:
             return x * 2
 
         # First call should execute function
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await expensive_function(5)
 
         assert result == 10
@@ -166,7 +171,10 @@ class TestCacheHitMiss:
         cached_value = json.dumps(10)
         cache_manager._client.get = AsyncMock(side_effect=[None, cached_value])
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             # First call - cache miss
             result1 = await expensive_function(5)
             # Second call - cache hit
@@ -189,7 +197,10 @@ class TestCacheHitMiss:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result1 = await expensive_function(5)
             result2 = await expensive_function(10)
 
@@ -210,7 +221,10 @@ class TestCacheHitMiss:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result1 = await expensive_function(5, multiplier=2)
             result2 = await expensive_function(5, multiplier=3)
 
@@ -222,6 +236,7 @@ class TestCacheHitMiss:
 # =============================================================================
 # TEST 2: TTL (TIME-TO-LIVE) TESTS
 # =============================================================================
+
 
 class TestTTLExpiration:
     """Test TTL and cache expiration behavior"""
@@ -240,7 +255,10 @@ class TestTTLExpiration:
         # First call returns None (miss), second call simulates expiry by returning None
         cache_manager._client.get = AsyncMock(side_effect=[None, None])
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             # First call
             result1 = await expensive_function(5)
 
@@ -254,6 +272,7 @@ class TestTTLExpiration:
     @pytest.mark.asyncio
     async def test_ttl_configurable_per_decorator(self, cache_manager):
         """TTL should be configurable per decorator instance"""
+
         @redis_cache(ttl=60)
         async def func_60s(x: int) -> int:
             return x * 2
@@ -264,7 +283,10 @@ class TestTTLExpiration:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             await func_60s(5)
             await func_300s(5)
 
@@ -278,13 +300,17 @@ class TestTTLExpiration:
     @pytest.mark.asyncio
     async def test_default_ttl_used_when_not_specified(self, cache_manager):
         """Default TTL should be used when not specified in decorator"""
+
         @redis_cache()
         async def expensive_function(x: int) -> int:
             return x * 2
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             await expensive_function(5)
 
         # Verify default TTL (300) was used
@@ -296,6 +322,7 @@ class TestTTLExpiration:
 # =============================================================================
 # TEST 3: REDIS FAILURE HANDLING
 # =============================================================================
+
 
 class TestRedisFailureHandling:
     """Test graceful degradation when Redis fails"""
@@ -312,9 +339,14 @@ class TestRedisFailureHandling:
             return x * 2
 
         # Simulate Redis connection error
-        cache_manager._client.get = AsyncMock(side_effect=Exception("Redis connection failed"))
+        cache_manager._client.get = AsyncMock(
+            side_effect=Exception("Redis connection failed")
+        )
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await expensive_function(5)
 
         assert result == 10
@@ -323,14 +355,20 @@ class TestRedisFailureHandling:
     @pytest.mark.asyncio
     async def test_redis_set_error_does_not_break_function(self, cache_manager):
         """Cache SET errors should not prevent function execution"""
+
         @redis_cache(ttl=300)
         async def expensive_function(x: int) -> int:
             return x * 2
 
         cache_manager._client.get = AsyncMock(return_value=None)
-        cache_manager._client.setex = AsyncMock(side_effect=Exception("Redis SET failed"))
+        cache_manager._client.setex = AsyncMock(
+            side_effect=Exception("Redis SET failed")
+        )
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await expensive_function(5)
 
         assert result == 10  # Function result returned despite cache error
@@ -338,6 +376,7 @@ class TestRedisFailureHandling:
     @pytest.mark.asyncio
     async def test_redis_timeout_graceful_degradation(self, cache_manager):
         """Redis timeout should fall back gracefully"""
+
         @redis_cache(ttl=300)
         async def expensive_function(x: int) -> int:
             return x * 2
@@ -345,7 +384,10 @@ class TestRedisFailureHandling:
         # Simulate timeout
         cache_manager._client.get = AsyncMock(side_effect=TimeoutError())
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await expensive_function(5)
 
         assert result == 10
@@ -363,7 +405,10 @@ class TestRedisFailureHandling:
         # Simulate Redis error on sync client
         sync_cache_manager._sync_client.get = Mock(side_effect=Exception("Redis error"))
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=sync_cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=sync_cache_manager,
+        ):
             result = expensive_function(5)
 
         assert result == 10
@@ -373,6 +418,7 @@ class TestRedisFailureHandling:
 # =============================================================================
 # TEST 4: SERIALIZATION TESTS
 # =============================================================================
+
 
 class TestSerialization:
     """Test serialization of various data types"""
@@ -385,17 +431,21 @@ class TestSerialization:
             ("hello", "str"),
             (True, "bool"),
             (3.14, "float"),
-            (None, "None")
+            (None, "None"),
         ]
 
         for value, type_name in test_cases:
+
             @redis_cache(ttl=300, key_prefix=f"test_{type_name}")
             async def func() -> Any:
                 return value
 
             cache_manager._client.get = AsyncMock(return_value=None)
 
-            with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+            with patch(
+                "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+                return_value=cache_manager,
+            ):
                 result = await func()
 
             assert result == value
@@ -404,12 +454,9 @@ class TestSerialization:
     async def test_complex_dict_serialization(self, cache_manager):
         """Complex dictionaries should serialize correctly"""
         complex_dict = {
-            "nested": {
-                "data": [1, 2, 3],
-                "name": "test"
-            },
+            "nested": {"data": [1, 2, 3], "name": "test"},
             "items": ["a", "b", "c"],
-            "count": 42
+            "count": 42,
         }
 
         @redis_cache(ttl=300)
@@ -418,7 +465,10 @@ class TestSerialization:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await func()
 
         assert result == complex_dict
@@ -434,7 +484,10 @@ class TestSerialization:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await func()
 
         assert result == test_list
@@ -452,7 +505,10 @@ class TestSerialization:
         # Simulate cache hit
         cache_manager._client.get = AsyncMock(return_value=cached_json)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await func()
 
         assert result == original_value
@@ -461,6 +517,7 @@ class TestSerialization:
 # =============================================================================
 # TEST 5: CACHE KEY GENERATION
 # =============================================================================
+
 
 class TestCacheKeyGeneration:
     """Test cache key generation and uniqueness"""
@@ -475,7 +532,9 @@ class TestCacheKeyGeneration:
 
         assert key1 == key2
 
-    def test_generate_cache_key_unique_for_different_endpoints(self, sync_cache_manager):
+    def test_generate_cache_key_unique_for_different_endpoints(
+        self, sync_cache_manager
+    ):
         """Different endpoints should generate different keys"""
         params = {"arg1": "value1"}
 
@@ -513,12 +572,14 @@ class TestCacheKeyGeneration:
 # TEST 6: MANUAL CACHE INVALIDATION
 # =============================================================================
 
+
 class TestCacheInvalidation:
     """Test manual cache invalidation"""
 
     @pytest.mark.asyncio
     async def test_invalidate_specific_pattern(self, cache_manager):
         """Should invalidate cache entries matching pattern"""
+
         # Mock scan_iter to return some keys
         async def mock_scan_iter(match):
             keys = ["test_cache:endpoint:key1", "test_cache:endpoint:key2"]
@@ -536,6 +597,7 @@ class TestCacheInvalidation:
     @pytest.mark.asyncio
     async def test_flush_all_cache(self, cache_manager):
         """Should flush all cache entries with prefix"""
+
         # Mock scan_iter
         async def mock_scan_iter(match):
             keys = ["test_cache:a", "test_cache:b", "test_cache:c"]
@@ -553,7 +615,9 @@ class TestCacheInvalidation:
     @pytest.mark.asyncio
     async def test_cache_invalidator_task_cache(self):
         """CacheInvalidator should invalidate task-related caches"""
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager') as mock_get_manager:
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager"
+        ) as mock_get_manager:
             mock_manager = AsyncMock()
             mock_manager.invalidate = AsyncMock(return_value=5)
             mock_get_manager.return_value = mock_manager
@@ -566,7 +630,9 @@ class TestCacheInvalidation:
     @pytest.mark.asyncio
     async def test_cache_invalidator_subtask_cache(self):
         """CacheInvalidator should invalidate subtask-related caches"""
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager') as mock_get_manager:
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager"
+        ) as mock_get_manager:
             mock_manager = AsyncMock()
             mock_manager.invalidate = AsyncMock(return_value=3)
             mock_get_manager.return_value = mock_manager
@@ -580,6 +646,7 @@ class TestCacheInvalidation:
 # =============================================================================
 # TEST 7: ASYNC FUNCTION SUPPORT
 # =============================================================================
+
 
 class TestAsyncFunctionSupport:
     """Test async function caching"""
@@ -598,7 +665,10 @@ class TestAsyncFunctionSupport:
 
         cache_manager._client.get = AsyncMock(side_effect=[None, json.dumps(10)])
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result1 = await async_expensive(5)
             result2 = await async_expensive(5)
 
@@ -620,13 +690,12 @@ class TestAsyncFunctionSupport:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             # Run multiple calls concurrently
-            results = await asyncio.gather(
-                async_func(5),
-                async_func(10),
-                async_func(5)
-            )
+            results = await asyncio.gather(async_func(5), async_func(10), async_func(5))
 
         assert results == [10, 20, 10]
         # Note: Due to race conditions, both calls with x=5 might execute
@@ -636,6 +705,7 @@ class TestAsyncFunctionSupport:
 # =============================================================================
 # TEST 8: SYNC FUNCTION SUPPORT
 # =============================================================================
+
 
 class TestSyncFunctionSupport:
     """Test synchronous function caching"""
@@ -653,7 +723,10 @@ class TestSyncFunctionSupport:
         # First call misses, second hits
         sync_cache_manager._sync_client.get = Mock(side_effect=[None, json.dumps(10)])
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=sync_cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=sync_cache_manager,
+        ):
             result1 = sync_expensive(5)
             result2 = sync_expensive(5)
 
@@ -663,13 +736,17 @@ class TestSyncFunctionSupport:
 
     def test_sync_function_with_kwargs(self, sync_cache_manager):
         """Sync functions with kwargs should cache correctly"""
+
         @redis_cache(ttl=300)
         def func(a: int, b: int = 2) -> int:
             return a * b
 
         sync_cache_manager._sync_client.get = Mock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=sync_cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=sync_cache_manager,
+        ):
             result = func(5, b=3)
 
         assert result == 15
@@ -679,19 +756,24 @@ class TestSyncFunctionSupport:
 # TEST 9: DECORATOR CONFIGURATION
 # =============================================================================
 
+
 class TestDecoratorConfiguration:
     """Test decorator configuration options"""
 
     @pytest.mark.asyncio
     async def test_custom_key_prefix(self, cache_manager):
         """Custom key prefix should be used in cache keys"""
+
         @redis_cache(ttl=300, key_prefix="custom_prefix")
         async def func(x: int) -> int:
             return x * 2
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             await func(5)
 
         # Check that setex was called with a key containing custom prefix
@@ -702,13 +784,17 @@ class TestDecoratorConfiguration:
     @pytest.mark.asyncio
     async def test_function_name_as_default_prefix(self, cache_manager):
         """Function name should be used as default key prefix"""
+
         @redis_cache(ttl=300)
         async def my_special_function(x: int) -> int:
             return x * 2
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             await my_special_function(5)
 
         cache_key = cache_manager._client.setex.call_args[0][0]
@@ -718,6 +804,7 @@ class TestDecoratorConfiguration:
 # =============================================================================
 # TEST 10: CACHE MANAGER LIFECYCLE
 # =============================================================================
+
 
 class TestCacheManagerLifecycle:
     """Test cache manager initialization and cleanup"""
@@ -729,7 +816,7 @@ class TestCacheManagerLifecycle:
             redis_url="redis://test:6379",
             redis_password="secret",
             default_ttl=600,
-            prefix="custom"
+            prefix="custom",
         )
 
         assert manager.redis_url == "redis://test:6379"
@@ -760,6 +847,7 @@ class TestCacheManagerLifecycle:
 # =============================================================================
 # TEST 11: CACHE METRICS
 # =============================================================================
+
 
 class TestCacheMetrics:
     """Test cache metrics tracking"""
@@ -813,19 +901,24 @@ class TestCacheMetrics:
 # TEST 12: EDGE CASES AND ERROR HANDLING
 # =============================================================================
 
+
 class TestEdgeCases:
     """Test edge cases and error conditions"""
 
     @pytest.mark.asyncio
     async def test_empty_result_not_cached(self, cache_manager):
         """Empty/falsy results should not be cached"""
+
         @redis_cache(ttl=300)
         async def func() -> None:
             return None
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await func()
 
         assert result is None
@@ -843,7 +936,10 @@ class TestEdgeCases:
 
         cache_manager._client.get = AsyncMock(return_value=None)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             result = await func()
 
         assert result == large_list
@@ -852,6 +948,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_invalidate_no_matching_keys(self, cache_manager):
         """Invalidate with no matching keys should return 0"""
+
         # Mock scan_iter to return empty
         async def mock_scan_iter(match):
             return
@@ -882,6 +979,7 @@ class TestEdgeCases:
 # INTEGRATION TESTS
 # =============================================================================
 
+
 class TestIntegration:
     """Integration tests combining multiple features"""
 
@@ -907,7 +1005,10 @@ class TestIntegration:
         cache_manager._client.scan_iter = mock_scan_iter
         cache_manager._client.delete = AsyncMock(return_value=1)
 
-        with patch('fastmcp.server.cache.redis_cache_decorator.get_cache_manager', return_value=cache_manager):
+        with patch(
+            "fastmcp.server.cache.redis_cache_decorator.get_cache_manager",
+            return_value=cache_manager,
+        ):
             # First call - cache miss
             result1 = await expensive_operation(5)
             assert result1 == {"result": 10, "computed": True}
@@ -930,6 +1031,7 @@ class TestIntegration:
 # =============================================================================
 # COVERAGE VALIDATION
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_coverage_validation():

@@ -70,7 +70,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Update with naive datetime format
@@ -78,7 +78,11 @@ class TestTaskDueDateHandling:
 
         # Should be stored as UTC-aware ISO string
         assert task.due_date is not None
-        assert "+00:00" in task.due_date or "Z" in task.due_date or task.due_date.endswith("T00:00:00")
+        assert (
+            "+00:00" in task.due_date
+            or "Z" in task.due_date
+            or task.due_date.endswith("T00:00:00")
+        )
 
         # Should be parseable as UTC-aware datetime
         parsed = datetime.fromisoformat(task.due_date)
@@ -92,7 +96,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Update with aware datetime format
@@ -114,7 +118,7 @@ class TestTaskDueDateHandling:
             status=TaskStatus.todo(),
             priority=Priority.medium(),
             git_branch_id=str(uuid4()),
-            due_date="2025-10-29"
+            due_date="2025-10-29",
         )
 
         # Clear due_date
@@ -129,7 +133,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Invalid format should raise ValueError
@@ -144,7 +148,7 @@ class TestTaskDueDateHandling:
             description="Test description 1",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
         task1.update_due_date("2025-10-29")
 
@@ -154,7 +158,7 @@ class TestTaskDueDateHandling:
             description="Test description 2",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
         task2.update_due_date("2025-10-30T00:00:00+00:00")
 
@@ -171,7 +175,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Set due_date to a past date
@@ -188,7 +192,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Set due_date to a future date
@@ -205,7 +209,7 @@ class TestTaskDueDateHandling:
             description="Test description",
             status=TaskStatus.done(),
             priority=Priority.medium(),
-            git_branch_id=str(uuid4())
+            git_branch_id=str(uuid4()),
         )
 
         # Set due_date to a past date

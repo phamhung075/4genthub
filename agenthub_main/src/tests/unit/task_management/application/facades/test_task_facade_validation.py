@@ -26,6 +26,7 @@ Related Documentation:
 - Bug report: ai_docs/issues/git-branch-validation-bug.md
 - Test report: ai_docs/reports-status/mcp-comprehensive-testing-report-2025-10-30.md
 """
+
 import asyncio
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
@@ -55,8 +56,8 @@ class TestGitBranchIdValidation(unittest.TestCase):
 
         # Method must exist
         self.assertTrue(
-            hasattr(TaskApplicationFacade, '_derive_context_from_git_branch_id'),
-            "CRITICAL: TaskApplicationFacade must have _derive_context_from_git_branch_id method"
+            hasattr(TaskApplicationFacade, "_derive_context_from_git_branch_id"),
+            "CRITICAL: TaskApplicationFacade must have _derive_context_from_git_branch_id method",
         )
 
     def test_validation_raises_value_error_not_returns_none(self):
@@ -71,22 +72,24 @@ class TestGitBranchIdValidation(unittest.TestCase):
         )
 
         # Get source code of the validation method
-        source = inspect.getsource(TaskApplicationFacade._derive_context_from_git_branch_id)
+        source = inspect.getsource(
+            TaskApplicationFacade._derive_context_from_git_branch_id
+        )
 
         # Must contain raise ValueError
         self.assertIn(
-            'raise ValueError',
+            "raise ValueError",
             source,
-            "CRITICAL: Validation must raise ValueError when branch not found"
+            "CRITICAL: Validation must raise ValueError when branch not found",
         )
 
         # Should not silently return None in error cases
         # Check for patterns that would return None inappropriately
-        lines = source.split('\n')
+        lines = source.split("\n")
         for line in lines:
             # If we see "return None" it should only be in legitimate cases
             # (not when handling "not found" scenario)
-            if 'return None' in line and 'not found' not in line.lower():
+            if "return None" in line and "not found" not in line.lower():
                 # This is okay - might be legitimate None return
                 pass
 
@@ -108,17 +111,18 @@ class TestGitBranchIdValidation(unittest.TestCase):
 
             # Create facade with mocked repositories (correct constructor signature)
             facade = TaskApplicationFacade(
-                task_repository=mock_task_repo,
-                git_branch_repository=mock_branch_repo
+                task_repository=mock_task_repo, git_branch_repository=mock_branch_repo
             )
 
             # Execute validation
-            result = await facade._derive_context_from_git_branch_id(self.valid_branch_id)
+            result = await facade._derive_context_from_git_branch_id(
+                self.valid_branch_id
+            )
 
             # Assertions
             self.assertIsNotNone(result, "Valid branch ID should return context")
-            self.assertEqual(result['project_id'], self.valid_project_id)
-            self.assertEqual(result['git_branch_name'], "main")
+            self.assertEqual(result["project_id"], self.valid_project_id)
+            self.assertEqual(result["git_branch_name"], "main")
             mock_branch_repo.find_by_id.assert_called_once_with(self.valid_branch_id)
 
         # Run async test
@@ -138,14 +142,16 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_branch_repo.find_by_id = AsyncMock(return_value=None)
 
             # Mock ProjectManagementService to return failure
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(return_value={"success": False})
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 # Execute and expect ValueError
@@ -175,19 +181,23 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_branch_repo.find_by_id = AsyncMock(return_value=None)
 
             # Mock ProjectManagementService to also return failure
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(return_value={"success": False})
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 # Execute and expect ValueError
                 with self.assertRaises(ValueError) as context:
-                    await facade._derive_context_from_git_branch_id(self.nonexistent_branch_id)
+                    await facade._derive_context_from_git_branch_id(
+                        self.nonexistent_branch_id
+                    )
 
                 # Verify error message is helpful
                 error_message = str(context.exception)
@@ -195,8 +205,9 @@ class TestGitBranchIdValidation(unittest.TestCase):
                 self.assertIn(self.nonexistent_branch_id, error_message)
                 # Check for helpful guidance
                 self.assertTrue(
-                    "manage_git_branch" in error_message or "create" in error_message.lower(),
-                    "Error message should provide guidance on how to fix the issue"
+                    "manage_git_branch" in error_message
+                    or "create" in error_message.lower(),
+                    "Error message should provide guidance on how to fix the issue",
                 )
 
         asyncio.run(run_test())
@@ -213,16 +224,22 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_task_repo = AsyncMock()
             mock_branch_repo = AsyncMock()
             # Make repository raise TypeError when None is passed (realistic behavior)
-            mock_branch_repo.find_by_id = AsyncMock(side_effect=TypeError("Cannot use None as branch_id"))
+            mock_branch_repo.find_by_id = AsyncMock(
+                side_effect=TypeError("Cannot use None as branch_id")
+            )
 
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
-                mock_pms.get_git_branch_by_id = Mock(side_effect=TypeError("Cannot use None as branch_id"))
+                mock_pms.get_git_branch_by_id = Mock(
+                    side_effect=TypeError("Cannot use None as branch_id")
+                )
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 # Execute and expect ValueError, AttributeError, or TypeError
@@ -244,14 +261,16 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_branch_repo = AsyncMock()
             mock_branch_repo.find_by_id = AsyncMock(return_value=None)
 
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(return_value={"success": False})
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 # Execute and expect ValueError
@@ -274,7 +293,7 @@ class TestGitBranchIdValidation(unittest.TestCase):
             # Create facade with correct constructor signature
             facade = TaskApplicationFacade(
                 task_repository=mock_task_repo,
-                git_branch_repository=None  # Explicitly set to None
+                git_branch_repository=None,  # Explicitly set to None
             )
 
             # Execute and expect ValueError
@@ -302,15 +321,15 @@ class TestGitBranchIdValidation(unittest.TestCase):
         source = inspect.getsource(TaskApplicationFacade.create_task)
 
         # Find positions of key method calls
-        derive_context_pos = source.find('_derive_context_from_git_branch_id')
-        ensure_context_pos = source.find('_ensure_branch_context_exists')
+        derive_context_pos = source.find("_derive_context_from_git_branch_id")
+        ensure_context_pos = source.find("_ensure_branch_context_exists")
 
         # If both exist, derive should come before ensure
         if derive_context_pos != -1 and ensure_context_pos != -1:
             self.assertLess(
                 derive_context_pos,
                 ensure_context_pos,
-                "CRITICAL: Validation (_derive_context) must occur before auto-creation (_ensure_context)"
+                "CRITICAL: Validation (_derive_context) must occur before auto-creation (_ensure_context)",
             )
 
     def test_error_message_quality(self):
@@ -326,29 +345,47 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_branch_repo = AsyncMock()
             mock_branch_repo.find_by_id = AsyncMock(return_value=None)
 
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(return_value={"success": False})
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 try:
-                    await facade._derive_context_from_git_branch_id(self.nonexistent_branch_id)
+                    await facade._derive_context_from_git_branch_id(
+                        self.nonexistent_branch_id
+                    )
                     self.fail("Should have raised ValueError")
                 except ValueError as e:
                     error_msg = str(e)
 
                     # Error message quality checks
-                    self.assertIn(self.nonexistent_branch_id, error_msg, "Error should mention the invalid ID")
-                    self.assertIn("not found", error_msg.lower(), "Error should clearly state branch not found")
+                    self.assertIn(
+                        self.nonexistent_branch_id,
+                        error_msg,
+                        "Error should mention the invalid ID",
+                    )
+                    self.assertIn(
+                        "not found",
+                        error_msg.lower(),
+                        "Error should clearly state branch not found",
+                    )
 
                     # Should provide actionable guidance
-                    has_guidance = any(word in error_msg.lower() for word in ['create', 'list', 'manage_git_branch'])
-                    self.assertTrue(has_guidance, "Error should provide guidance on how to fix the issue")
+                    has_guidance = any(
+                        word in error_msg.lower()
+                        for word in ["create", "list", "manage_git_branch"]
+                    )
+                    self.assertTrue(
+                        has_guidance,
+                        "Error should provide guidance on how to fix the issue",
+                    )
 
         asyncio.run(run_test())
 
@@ -368,23 +405,31 @@ class TestGitBranchIdValidation(unittest.TestCase):
             mock_branch_repo = AsyncMock()
             # Simulate authentication error
             mock_branch_repo.find_by_id = AsyncMock(
-                side_effect=UserAuthenticationRequiredError("User authentication is required")
+                side_effect=UserAuthenticationRequiredError(
+                    "User authentication is required"
+                )
             )
 
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(
-                    side_effect=UserAuthenticationRequiredError("User authentication is required")
+                    side_effect=UserAuthenticationRequiredError(
+                        "User authentication is required"
+                    )
                 )
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 try:
-                    await facade._derive_context_from_git_branch_id(self.valid_branch_id)
+                    await facade._derive_context_from_git_branch_id(
+                        self.valid_branch_id
+                    )
                     self.fail("Should have raised ValueError")
                 except ValueError as e:
                     error_msg = str(e)
@@ -412,25 +457,31 @@ class TestGitBranchIdValidation(unittest.TestCase):
             custom_exception = RuntimeError("Database connection timeout")
             mock_branch_repo.find_by_id = AsyncMock(side_effect=custom_exception)
 
-            with patch('fastmcp.task_management.application.services.project_management_service.ProjectManagementService') as MockPMS:
+            with patch(
+                "fastmcp.task_management.application.services.project_management_service.ProjectManagementService"
+            ) as MockPMS:
                 mock_pms = MockPMS.return_value
                 mock_pms.get_git_branch_by_id = Mock(side_effect=custom_exception)
 
                 # Create facade with correct constructor signature
                 facade = TaskApplicationFacade(
                     task_repository=mock_task_repo,
-                    git_branch_repository=mock_branch_repo
+                    git_branch_repository=mock_branch_repo,
                 )
 
                 try:
-                    await facade._derive_context_from_git_branch_id(self.valid_branch_id)
+                    await facade._derive_context_from_git_branch_id(
+                        self.valid_branch_id
+                    )
                     self.fail("Should have raised ValueError")
                 except ValueError as e:
                     error_msg = str(e)
 
                     # Verify error message contains exception type
                     self.assertIn("Unexpected error", error_msg)
-                    self.assertIn("RuntimeError", error_msg, "Error should include exception type")
+                    self.assertIn(
+                        "RuntimeError", error_msg, "Error should include exception type"
+                    )
                     self.assertIn("Database connection timeout", error_msg)
                     self.assertIn(self.valid_branch_id, error_msg)
 
@@ -455,9 +506,9 @@ class TestValidationImpact(unittest.TestCase):
 
         # Should contain validation call
         self.assertIn(
-            '_derive_context_from_git_branch_id',
+            "_derive_context_from_git_branch_id",
             source,
-            "CRITICAL: Task creation must call validation method"
+            "CRITICAL: Task creation must call validation method",
         )
 
     def test_validation_method_signature(self):
@@ -469,21 +520,27 @@ class TestValidationImpact(unittest.TestCase):
         )
 
         # Get method signature
-        sig = inspect.signature(TaskApplicationFacade._derive_context_from_git_branch_id)
+        sig = inspect.signature(
+            TaskApplicationFacade._derive_context_from_git_branch_id
+        )
 
         # Should have git_branch_id parameter
-        self.assertIn('git_branch_id', sig.parameters, "Method must accept git_branch_id parameter")
+        self.assertIn(
+            "git_branch_id",
+            sig.parameters,
+            "Method must accept git_branch_id parameter",
+        )
 
         # Check return type annotation if present
         if sig.return_annotation != inspect.Parameter.empty:
             # Should indicate it returns a Dict
             return_type_str = str(sig.return_annotation)
             self.assertTrue(
-                'Dict' in return_type_str or 'dict' in return_type_str,
-                "Method should return a dictionary"
+                "Dict" in return_type_str or "dict" in return_type_str,
+                "Method should return a dictionary",
             )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run tests with verbose output
     unittest.main(verbosity=2)

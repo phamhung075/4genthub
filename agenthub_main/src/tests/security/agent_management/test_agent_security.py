@@ -49,6 +49,7 @@ try:
     from sqlalchemy.orm import Session
 
     from fastmcp.auth.domain.value_objects.user_id import UserId
+
     IMPORTS_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     IMPORTS_AVAILABLE = False
@@ -59,6 +60,7 @@ except (ImportError, ModuleNotFoundError):
 # ============================================================================
 # OWASP A03:2021 - Injection (SQL Injection)
 # ============================================================================
+
 
 class TestSQLInjection:
     """
@@ -72,7 +74,7 @@ class TestSQLInjection:
         self,
         db_session: Session,
         sample_agent_template: AgentTemplate,
-        sample_user_id: UserId
+        sample_user_id: UserId,
     ):
         """
         Test SQL injection via name filter in list_shared_agents.
@@ -96,11 +98,7 @@ class TestSQLInjection:
         for payload in sql_injection_payloads:
             # Should NOT raise SQL errors or execute malicious SQL
             try:
-                result = use_case.execute(
-                    name_filter=payload,
-                    limit=10,
-                    offset=0
-                )
+                result = use_case.execute(name_filter=payload, limit=10, offset=0)
                 # Result should be empty or valid data (never error)
                 assert isinstance(result, dict)
                 assert "agents" in result
@@ -110,9 +108,7 @@ class TestSQLInjection:
                 assert "syntax error" not in str(e).lower()
 
     def test_sql_injection_in_tag_filter(
-        self,
-        db_session: Session,
-        sample_agent_template: AgentTemplate
+        self, db_session: Session, sample_agent_template: AgentTemplate
     ):
         """
         Test SQL injection via tag filter.
@@ -137,10 +133,7 @@ class TestSQLInjection:
             template_count = db_session.query(AgentTemplate).count()
             assert template_count > 0  # Data still intact
 
-    def test_sql_injection_in_order_by(
-        self,
-        db_session: Session
-    ):
+    def test_sql_injection_in_order_by(self, db_session: Session):
         """
         Test SQL injection via order_by parameter.
 
@@ -165,13 +158,14 @@ class TestSQLInjection:
                     tag_filter=None,
                     order_by=order,
                     limit=10,
-                    offset=0
+                    offset=0,
                 )
 
 
 # ============================================================================
 # OWASP A03:2021 - Injection (XSS)
 # ============================================================================
+
 
 class TestXSSVulnerabilities:
     """
@@ -185,7 +179,7 @@ class TestXSSVulnerabilities:
         self,
         db_session: Session,
         sample_agent_template: AgentTemplate,
-        sample_user_id: UserId
+        sample_user_id: UserId,
     ):
         """
         Test XSS injection in agent description field.
@@ -212,7 +206,7 @@ class TestXSSVulnerabilities:
                 template_id=sample_agent_template.id,
                 custom_name=f"Test Agent {uuid4()}",
                 custom_description=payload,
-                is_public=False
+                is_public=False,
             )
 
             # Verify malicious scripts are NOT stored verbatim
@@ -228,7 +222,7 @@ class TestXSSVulnerabilities:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test XSS in markdown instructions field.
@@ -257,7 +251,7 @@ Normal instructions here.
         updated_instance = use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            custom_instructions=malicious_markdown
+            custom_instructions=malicious_markdown,
         )
 
         # Verify scripts are escaped
@@ -271,6 +265,7 @@ Normal instructions here.
 # OWASP A01:2021 - Broken Access Control (CSRF)
 # ============================================================================
 
+
 class TestCSRFProtection:
     """
     Test CSRF protection on state-changing operations.
@@ -283,7 +278,7 @@ class TestCSRFProtection:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test CSRF protection on share_user_agent endpoint.
@@ -302,7 +297,7 @@ class TestCSRFProtection:
         result = use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=True
+            share_publicly=True,
         )
 
         # Verify share was created (with proper auth)
@@ -316,7 +311,7 @@ class TestCSRFProtection:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test CSRF on import_shared_agent endpoint.
@@ -331,7 +326,7 @@ class TestCSRFProtection:
         share_result = share_use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=True
+            share_publicly=True,
         )
         share_token = share_result["share_token"]
 
@@ -342,7 +337,7 @@ class TestCSRFProtection:
         imported = import_use_case.execute(
             share_token=share_token,
             importing_user_id=different_user,
-            custom_name="Imported Agent"
+            custom_name="Imported Agent",
         )
 
         assert imported.user_id == different_user
@@ -353,6 +348,7 @@ class TestCSRFProtection:
 # OWASP A01:2021 - Broken Access Control (Authorization)
 # ============================================================================
 
+
 class TestAuthorizationControls:
     """
     Test authorization and access control mechanisms.
@@ -362,9 +358,7 @@ class TestAuthorizationControls:
     """
 
     def test_cannot_access_other_users_private_agent(
-        self,
-        db_session: Session,
-        sample_agent_template: AgentTemplate
+        self, db_session: Session, sample_agent_template: AgentTemplate
     ):
         """
         Test that User B cannot access User A's private agent.
@@ -383,7 +377,7 @@ class TestAuthorizationControls:
             user_id=user_a,
             template_id=sample_agent_template.id,
             custom_name="User A Private Agent",
-            is_public=False
+            is_public=False,
         )
 
         # User B tries to access User A's private agent
@@ -393,7 +387,7 @@ class TestAuthorizationControls:
             update_use_case.execute(
                 instance_id=instance_a.id,
                 user_id=user_b,  # Different user!
-                custom_name="Hacked by User B"
+                custom_name="Hacked by User B",
             )
 
         # Verify instance was NOT modified
@@ -405,7 +399,7 @@ class TestAuthorizationControls:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test that users cannot share agents they don't own.
@@ -423,14 +417,14 @@ class TestAuthorizationControls:
             use_case.execute(
                 instance_id=sample_user_instance.id,
                 user_id=attacker_user,  # Not the owner!
-                share_publicly=True
+                share_publicly=True,
             )
 
     def test_cannot_access_revoked_shared_agent(
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test that revoked share tokens cannot be used.
@@ -446,7 +440,7 @@ class TestAuthorizationControls:
         share_result = share_use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=True
+            share_publicly=True,
         )
         share_token = share_result["share_token"]
 
@@ -454,7 +448,7 @@ class TestAuthorizationControls:
         share_use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=False  # Revoke
+            share_publicly=False,  # Revoke
         )
 
         # Try to import with old token
@@ -464,13 +458,14 @@ class TestAuthorizationControls:
             import_use_case.execute(
                 share_token=share_token,
                 importing_user_id=different_user,
-                custom_name="Should Fail"
+                custom_name="Should Fail",
             )
 
 
 # ============================================================================
 # OWASP A02:2021 - Cryptographic Failures
 # ============================================================================
+
 
 class TestCryptographicSecurity:
     """
@@ -484,7 +479,7 @@ class TestCryptographicSecurity:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_agent_template: AgentTemplate
+        sample_agent_template: AgentTemplate,
     ):
         """
         Test that share tokens have sufficient entropy.
@@ -504,13 +499,11 @@ class TestCryptographicSecurity:
                 user_id=sample_user_id,
                 template_id=sample_agent_template.id,
                 custom_name=f"Agent {i}",
-                is_public=False
+                is_public=False,
             )
 
             share_result = share_use_case.execute(
-                instance_id=instance.id,
-                user_id=sample_user_id,
-                share_publicly=True
+                instance_id=instance.id, user_id=sample_user_id, share_publicly=True
             )
             tokens.append(share_result["share_token"])
 
@@ -528,14 +521,14 @@ class TestCryptographicSecurity:
         # Verify randomness (no sequential patterns)
         for i in range(len(tokens) - 1):
             # Hamming distance should be high between sequential tokens
-            differences = sum(c1 != c2 for c1, c2 in zip(tokens[i], tokens[i+1]))
+            differences = sum(c1 != c2 for c1, c2 in zip(tokens[i], tokens[i + 1]))
             assert differences > 10, "Tokens should differ significantly"
 
     def test_share_token_brute_force_resistance(
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test resistance to brute force attacks on share tokens.
@@ -551,7 +544,7 @@ class TestCryptographicSecurity:
         share_result = share_use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=True
+            share_publicly=True,
         )
         valid_token = share_result["share_token"]
 
@@ -564,7 +557,7 @@ class TestCryptographicSecurity:
 
         for _ in range(100):
             # Generate random 32-char token
-            random_token = ''.join(
+            random_token = "".join(
                 random.choices(string.ascii_letters + string.digits, k=32)
             )
 
@@ -575,7 +568,7 @@ class TestCryptographicSecurity:
                 import_use_case.execute(
                     share_token=random_token,
                     importing_user_id=different_user,
-                    custom_name="Brute Force Attempt"
+                    custom_name="Brute Force Attempt",
                 )
                 # Should NEVER succeed
                 pytest.fail("Brute force attack succeeded - token space too small!")
@@ -590,7 +583,7 @@ class TestCryptographicSecurity:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_agent_template: AgentTemplate
+        sample_agent_template: AgentTemplate,
     ):
         """
         Test that share tokens cannot be derived from instance IDs.
@@ -610,19 +603,19 @@ class TestCryptographicSecurity:
                 user_id=sample_user_id,
                 template_id=sample_agent_template.id,
                 custom_name=f"Predictability Test {i}",
-                is_public=False
+                is_public=False,
             )
 
             share_result = share_use_case.execute(
-                instance_id=instance.id,
-                user_id=sample_user_id,
-                share_publicly=True
+                instance_id=instance.id, user_id=sample_user_id, share_publicly=True
             )
 
-            instances_and_tokens.append({
-                "instance_id": str(instance.id),
-                "share_token": share_result["share_token"]
-            })
+            instances_and_tokens.append(
+                {
+                    "instance_id": str(instance.id),
+                    "share_token": share_result["share_token"],
+                }
+            )
 
         # Verify no correlation between instance ID and token
         for data in instances_and_tokens:
@@ -631,14 +624,16 @@ class TestCryptographicSecurity:
 
             # Token should NOT contain instance ID fragments
             # Check first 8 chars of UUID
-            uuid_fragment = instance_id.split('-')[0]
-            assert uuid_fragment.lower() not in token.lower(), \
+            uuid_fragment = instance_id.split("-")[0]
+            assert uuid_fragment.lower() not in token.lower(), (
                 "Share token should not contain instance ID fragments"
+            )
 
 
 # ============================================================================
 # OWASP A01:2021 - Insecure Direct Object References (IDOR)
 # ============================================================================
+
 
 class TestIDORVulnerabilities:
     """
@@ -649,9 +644,7 @@ class TestIDORVulnerabilities:
     """
 
     def test_idor_on_agent_instance_update(
-        self,
-        db_session: Session,
-        sample_agent_template: AgentTemplate
+        self, db_session: Session, sample_agent_template: AgentTemplate
     ):
         """
         Test IDOR by referencing another user's instance ID.
@@ -670,7 +663,7 @@ class TestIDORVulnerabilities:
             user_id=user_a,
             template_id=sample_agent_template.id,
             custom_name="User A Instance",
-            is_public=False
+            is_public=False,
         )
 
         # User B tries to modify using direct instance ID reference
@@ -680,13 +673,11 @@ class TestIDORVulnerabilities:
             update_use_case.execute(
                 instance_id=instance_a.id,  # IDOR attempt
                 user_id=user_b,
-                custom_name="Hacked by User B"
+                custom_name="Hacked by User B",
             )
 
     def test_idor_on_share_token_creation(
-        self,
-        db_session: Session,
-        sample_agent_template: AgentTemplate
+        self, db_session: Session, sample_agent_template: AgentTemplate
     ):
         """
         Test IDOR by creating share for another user's agent.
@@ -705,7 +696,7 @@ class TestIDORVulnerabilities:
             user_id=user_a,
             template_id=sample_agent_template.id,
             custom_name="User A Private Agent",
-            is_public=False
+            is_public=False,
         )
 
         # User B attempts IDOR attack
@@ -715,13 +706,14 @@ class TestIDORVulnerabilities:
             share_use_case.execute(
                 instance_id=instance_a.id,  # IDOR - not User B's agent
                 user_id=user_b,
-                share_publicly=True
+                share_publicly=True,
             )
 
 
 # ============================================================================
 # Additional Security Tests
 # ============================================================================
+
 
 class TestRateLimiting:
     """
@@ -735,7 +727,7 @@ class TestRateLimiting:
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Verify that rapid-fire imports are possible (for testing).
@@ -752,7 +744,7 @@ class TestRateLimiting:
         share_result = share_use_case.execute(
             instance_id=sample_user_instance.id,
             user_id=sample_user_id,
-            share_publicly=True
+            share_publicly=True,
         )
         token = share_result["share_token"]
 
@@ -763,7 +755,7 @@ class TestRateLimiting:
             imported = import_use_case.execute(
                 share_token=token,
                 importing_user_id=importing_user,
-                custom_name=f"Import Attempt {i}"
+                custom_name=f"Import Attempt {i}",
             )
             assert imported is not None
 
@@ -783,7 +775,7 @@ class TestInputValidation:
         self,
         db_session: Session,
         sample_agent_template: AgentTemplate,
-        sample_user_id: UserId
+        sample_user_id: UserId,
     ):
         """
         Test that excessively long agent names are rejected.
@@ -803,14 +795,14 @@ class TestInputValidation:
                 user_id=sample_user_id,
                 template_id=sample_agent_template.id,
                 custom_name=long_name,
-                is_public=False
+                is_public=False,
             )
 
     def test_description_length_validation(
         self,
         db_session: Session,
         sample_user_id: UserId,
-        sample_user_instance: UserAgentInstance
+        sample_user_instance: UserAgentInstance,
     ):
         """
         Test description length limits.
@@ -828,5 +820,5 @@ class TestInputValidation:
             use_case.execute(
                 instance_id=sample_user_instance.id,
                 user_id=sample_user_id,
-                custom_description=huge_description
+                custom_description=huge_description,
             )

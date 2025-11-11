@@ -67,12 +67,8 @@ class TestWebSocketAuthorizationAllEntities:
                 entity_id=task_id,
                 user_id=owner_user_id,
                 data={
-                    "primary": {
-                        "id": task_id,
-                        "title": "Test Task",
-                        "status": "todo"
-                    }
-                }
+                    "primary": {"id": task_id, "title": "Test Task", "status": "todo"}
+                },
             )
 
             # Assert owner received the message
@@ -110,16 +106,14 @@ class TestWebSocketAuthorizationAllEntities:
                 entity_id=task_id,
                 user_id=owner_user_id,  # Owner is different user
                 data={
-                    "primary": {
-                        "id": task_id,
-                        "title": "Test Task",
-                        "status": "todo"
-                    }
-                }
+                    "primary": {"id": task_id, "title": "Test Task", "status": "todo"}
+                },
             )
 
             # Assert non-owner did NOT receive the message
-            assert not mock_other_ws.send_json.called, "Non-owner should not receive task events"
+            assert not mock_other_ws.send_json.called, (
+                "Non-owner should not receive task events"
+            )
 
         finally:
             # Cleanup
@@ -153,9 +147,9 @@ class TestWebSocketAuthorizationAllEntities:
                         "id": subtask_id,
                         "task_id": task_id,
                         "title": "Test Subtask",
-                        "status": "todo"
+                        "status": "todo",
                     }
-                }
+                },
             )
 
             # Assert owner received the message
@@ -197,9 +191,9 @@ class TestWebSocketAuthorizationAllEntities:
                         "id": branch_id,
                         "project_id": project_id,
                         "name": "feature/new-feature",
-                        "git_branch_name": "feature/new-feature"
+                        "git_branch_name": "feature/new-feature",
                     }
-                }
+                },
             )
 
             # Assert owner received the message
@@ -239,9 +233,9 @@ class TestWebSocketAuthorizationAllEntities:
                     "primary": {
                         "id": project_id,
                         "name": "Test Project",
-                        "description": "Project for authorization testing"
+                        "description": "Project for authorization testing",
                     }
-                }
+                },
             )
 
             # Assert owner received the message
@@ -281,9 +275,17 @@ class TestWebSocketAuthorizationAllEntities:
             # Test all entity types
             test_cases = [
                 ("task", "task-123", {"id": "task-123", "title": "Test Task"}),
-                ("subtask", "subtask-456", {"id": "subtask-456", "title": "Test Subtask"}),
+                (
+                    "subtask",
+                    "subtask-456",
+                    {"id": "subtask-456", "title": "Test Subtask"},
+                ),
                 ("branch", "branch-789", {"id": "branch-789", "name": "feature/test"}),
-                ("project", "project-012", {"id": "project-012", "name": "Test Project"}),
+                (
+                    "project",
+                    "project-012",
+                    {"id": "project-012", "name": "Test Project"},
+                ),
             ]
 
             for entity_type, entity_id, entity_data in test_cases:
@@ -297,16 +299,18 @@ class TestWebSocketAuthorizationAllEntities:
                     entity_type=entity_type,
                     entity_id=entity_id,
                     user_id=owner_user_id,
-                    data={"primary": entity_data}
+                    data={"primary": entity_data},
                 )
 
                 # Assert owner received event
-                assert mock_owner_ws.send_json.called, \
+                assert mock_owner_ws.send_json.called, (
                     f"Owner should receive {entity_type} event"
+                )
 
                 # Assert non-owner did NOT receive event
-                assert not mock_other_ws.send_json.called, \
+                assert not mock_other_ws.send_json.called, (
                     f"Non-owner should NOT receive {entity_type} event"
+                )
 
                 # Verify event content
                 sent_message = mock_owner_ws.send_json.call_args[0][0]
@@ -351,14 +355,15 @@ class TestWebSocketAuthorizationAllEntities:
                         "primary": {
                             "id": task_id,
                             "title": "Test Task",
-                            "status": "completed" if action == "completed" else "todo"
+                            "status": "completed" if action == "completed" else "todo",
                         }
-                    }
+                    },
                 )
 
                 # Assert owner received event
-                assert mock_owner_ws.send_json.called, \
+                assert mock_owner_ws.send_json.called, (
                     f"Owner should receive {action} event"
+                )
 
                 # Verify action in message
                 sent_message = mock_owner_ws.send_json.call_args[0][0]

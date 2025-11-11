@@ -35,7 +35,9 @@ class TestRepositoryProviderFailFast:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_provider.side_effect = Exception("Provider service unavailable")
 
             # Act & Assert: Should raise RepositoryProviderError, not return None
@@ -43,7 +45,9 @@ class TestRepositoryProviderFailFast:
                 TaskApplicationService(mock_task_repo)
 
             # Verify error message is clear
-            assert "Cannot fetch project_id without git_branch_repository" in str(exc_info.value)
+            assert "Cannot fetch project_id without git_branch_repository" in str(
+                exc_info.value
+            )
             assert "Provider service unavailable" in str(exc_info.value)
 
     def test_task_application_service_should_raise_when_provider_returns_none(self):
@@ -54,7 +58,9 @@ class TestRepositoryProviderFailFast:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_instance = Mock()
             mock_instance.get_git_branch_repository.return_value = None
             mock_provider.return_value = mock_instance
@@ -74,7 +80,9 @@ class TestRepositoryProviderFailFast:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_provider.side_effect = Exception("Provider service unavailable")
 
             # Act & Assert: Should raise RepositoryProviderError
@@ -82,14 +90,18 @@ class TestRepositoryProviderFailFast:
                 TaskContextSyncService(mock_task_repo)
 
             # Verify error message is clear
-            assert "Cannot fetch project_id without git_branch_repository" in str(exc_info.value)
+            assert "Cannot fetch project_id without git_branch_repository" in str(
+                exc_info.value
+            )
 
     def test_task_context_sync_service_should_raise_when_provider_returns_none(self):
         """Verify TaskContextSyncService fails fast when provider returns None."""
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_instance = Mock()
             mock_instance.get_git_branch_repository.return_value = None
             mock_provider.return_value = mock_instance
@@ -110,8 +122,10 @@ class TestRepositoryProviderFailFast:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
-            with patch('logging.getLogger') as mock_get_logger:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
+            with patch("logging.getLogger") as mock_get_logger:
                 mock_logger = Mock()
                 mock_get_logger.return_value = mock_logger
 
@@ -132,7 +146,7 @@ class TestRepositoryProviderFailFast:
                 assert "Failed to get git_branch_repository" in error_call[0][0]
 
                 # Verify exc_info=True for stack trace
-                assert error_call[1].get('exc_info') is True
+                assert error_call[1].get("exc_info") is True
 
                 # Verify WARNING was NOT called
                 mock_logger.warning.assert_not_called()
@@ -145,8 +159,10 @@ class TestRepositoryProviderFailFast:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
-            with patch('logging.getLogger') as mock_get_logger:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
+            with patch("logging.getLogger") as mock_get_logger:
                 mock_logger = Mock()
                 mock_get_logger.return_value = mock_logger
 
@@ -161,7 +177,9 @@ class TestRepositoryProviderFailFast:
                 # Assert: exc_info=True was passed
                 error_call = mock_logger.error.call_args
                 assert error_call is not None, "logger.error should have been called"
-                assert error_call[1].get('exc_info') is True, "exc_info should be True for stack traces"
+                assert error_call[1].get("exc_info") is True, (
+                    "exc_info should be True for stack traces"
+                )
 
     def test_error_should_preserve_original_exception_chain(self):
         """Verify 'raise ... from e' preserves exception chain for debugging.
@@ -172,7 +190,9 @@ class TestRepositoryProviderFailFast:
         mock_task_repo = Mock()
         original_error = RuntimeError("Original infrastructure error")
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_provider.side_effect = original_error
 
             # Act & Assert
@@ -196,7 +216,9 @@ class TestRepositoryProviderSuccessPath:
 
         mock_git_branch_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_instance = Mock()
             mock_instance.get_git_branch_repository.return_value = mock_git_branch_repo
             mock_provider.return_value = mock_instance
@@ -220,13 +242,17 @@ class TestRepositoryProviderSuccessPath:
 
         mock_git_branch_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
-            with patch('logging.getLogger') as mock_get_logger:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
+            with patch("logging.getLogger") as mock_get_logger:
                 mock_logger = Mock()
                 mock_get_logger.return_value = mock_logger
 
                 mock_instance = Mock()
-                mock_instance.get_git_branch_repository.return_value = mock_git_branch_repo
+                mock_instance.get_git_branch_repository.return_value = (
+                    mock_git_branch_repo
+                )
                 mock_provider.return_value = mock_instance
 
                 # Act: Create service
@@ -245,7 +271,9 @@ class TestErrorHandlingDocumentation:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_provider.side_effect = Exception("Provider unavailable")
 
             # Act & Assert
@@ -262,7 +290,9 @@ class TestErrorHandlingDocumentation:
         # Arrange
         mock_task_repo = Mock()
 
-        with patch('fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance') as mock_provider:
+        with patch(
+            "fastmcp.task_management.application.services.repository_provider_service.RepositoryProviderService.get_instance"
+        ) as mock_provider:
             mock_provider.side_effect = Exception("Provider unavailable")
 
             # Act & Assert

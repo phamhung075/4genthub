@@ -14,9 +14,9 @@ class TestLabelInitialization:
         """Test creating label with minimal required parameters"""
         label_id = 1
         name = "Bug"
-        
+
         label = Label(id=label_id, name=name)
-        
+
         assert label.id == label_id
         assert label.name == name
         assert label.color == "#0066cc"  # Default color
@@ -32,15 +32,15 @@ class TestLabelInitialization:
         color = "#00ff00"
         description = "New feature implementation"
         created_at = datetime.now(UTC)
-        
+
         label = Label(
             id=label_id,
             name=name,
             color=color,
             description=description,
-            created_at=created_at
+            created_at=created_at,
         )
-        
+
         assert label.id == label_id
         assert label.name == name
         assert label.color == color
@@ -55,10 +55,10 @@ class TestLabelInitialization:
             "#0000ff",  # Blue
             "#ffffff",  # White
             "#000000",  # Black
-            "#abc",     # Short form
-            "#123456"   # Full form
+            "#abc",  # Short form
+            "#123456",  # Full form
         ]
-        
+
         for color in colors:
             label = Label(id=1, name="Test", color=color)
             assert label.color == color
@@ -91,16 +91,16 @@ class TestLabelValidation:
     def test_invalid_color_format_raises_error(self):
         """Test that invalid color format raises ValueError"""
         invalid_colors = [
-            "red",          # Named color
-            "rgb(255,0,0)", # RGB format
-            "#zzzzzz",      # Invalid hex characters
-            "#12345",       # Invalid length (5 characters)
-            "#1234567",     # Invalid length (7 characters)
-            "123456",       # Missing #
-            "#",            # Just #
+            "red",  # Named color
+            "rgb(255,0,0)",  # RGB format
+            "#zzzzzz",  # Invalid hex characters
+            "#12345",  # Invalid length (5 characters)
+            "#1234567",  # Invalid length (7 characters)
+            "123456",  # Missing #
+            "#",  # Just #
             # Note: Empty string is accepted by current implementation
         ]
-        
+
         for invalid_color in invalid_colors:
             with pytest.raises(ValueError, match="Invalid color format"):
                 Label(id=1, name="Test", color=invalid_color)
@@ -113,13 +113,13 @@ class TestLabelValidation:
             "#ff0000",  # Red
             "#00ff00",  # Green
             "#0000ff",  # Blue
-            "#abc",     # Short form (3 chars)
-            "#123",     # Short form numbers
-            "#AbC",     # Mixed case
+            "#abc",  # Short form (3 chars)
+            "#123",  # Short form numbers
+            "#AbC",  # Mixed case
             "#FFFFFF",  # Uppercase
-            "",         # Empty string is accepted by current implementation
+            "",  # Empty string is accepted by current implementation
         ]
-        
+
         for valid_color in valid_colors:
             label = Label(id=1, name="Test", color=valid_color)
             assert label.color == valid_color
@@ -144,41 +144,41 @@ class TestLabelColorValidation:
             "#123456",
             "#abcdef",
             "#ABCDEF",
-            "#123ABC"
+            "#123ABC",
         ]
-        
+
         for color in valid_colors:
             assert self.label._is_valid_hex_color(color) is True
 
     def test_is_valid_hex_color_invalid_formats(self):
         """Test _is_valid_hex_color with invalid formats"""
         invalid_colors = [
-            "000",          # Missing #
-            "#",            # Just #
-            "#12",          # Too short
-            "#12345",       # Invalid length
-            "#1234567",     # Too long
-            "#gggggg",      # Invalid hex characters
-            "#xyz",         # Invalid hex characters
-            "red",          # Named color
-            "",             # Empty
-            None,           # None
+            "000",  # Missing #
+            "#",  # Just #
+            "#12",  # Too short
+            "#12345",  # Invalid length
+            "#1234567",  # Too long
+            "#gggggg",  # Invalid hex characters
+            "#xyz",  # Invalid hex characters
+            "red",  # Named color
+            "",  # Empty
+            None,  # None
         ]
-        
+
         for color in invalid_colors:
             assert self.label._is_valid_hex_color(color) is False
 
     def test_is_valid_hex_color_edge_cases(self):
         """Test _is_valid_hex_color with edge cases"""
         edge_cases = [
-            ("#000", True),    # Minimum valid 3-char
-            ("#FFF", True),    # Maximum valid 3-char
-            ("#000000", True), # Minimum valid 6-char
-            ("#FFFFFF", True), # Maximum valid 6-char
-            ("#aA1", True),    # Mixed case 3-char
-            ("#aA1bB2", True), # Mixed case 6-char
+            ("#000", True),  # Minimum valid 3-char
+            ("#FFF", True),  # Maximum valid 3-char
+            ("#000000", True),  # Minimum valid 6-char
+            ("#FFFFFF", True),  # Maximum valid 6-char
+            ("#aA1", True),  # Mixed case 3-char
+            ("#aA1bB2", True),  # Mixed case 6-char
         ]
-        
+
         for color, expected in edge_cases:
             assert self.label._is_valid_hex_color(color) is expected
 
@@ -189,28 +189,28 @@ class TestLabelStringRepresentation:
     def test_str_representation(self):
         """Test __str__ method"""
         label = Label(id=1, name="Bug Fix")
-        
+
         str_repr = str(label)
         assert str_repr == "Label(Bug Fix)"
 
     def test_str_representation_with_special_characters(self):
         """Test __str__ with special characters in name"""
         label = Label(id=1, name="Feature/Enhancement #1")
-        
+
         str_repr = str(label)
         assert str_repr == "Label(Feature/Enhancement #1)"
 
     def test_repr_representation(self):
         """Test __repr__ method"""
         label = Label(id=42, name="Documentation", color="#ffaa00")
-        
+
         repr_str = repr(label)
         assert repr_str == "Label(id=42, name='Documentation', color='#ffaa00')"
 
     def test_repr_representation_with_quotes_in_name(self):
         """Test __repr__ with quotes in name"""
         label = Label(id=1, name="Test's Label", color="#123456")
-        
+
         repr_str = repr(label)
         assert repr_str == "Label(id=1, name='Test's Label', color='#123456')"
 
@@ -223,46 +223,46 @@ class TestLabelEquality:
         # Use timezone-aware datetime as required by BaseTimestampEntity
         created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         updated_at = datetime(2024, 1, 1, 12, 0, 1, tzinfo=UTC)
-        
+
         label1 = Label(
             id=1,
             name="Feature",
             color="#ff0000",
             description="Feature label",
             created_at=created_at,
-            updated_at=updated_at
+            updated_at=updated_at,
         )
-        
+
         label2 = Label(
             id=1,
             name="Feature",
             color="#ff0000",
             description="Feature label",
             created_at=created_at,
-            updated_at=updated_at
+            updated_at=updated_at,
         )
-        
+
         assert label1 == label2
 
     def test_labels_with_different_ids_are_not_equal(self):
         """Test that labels with different IDs are not equal"""
         label1 = Label(id=1, name="Test")
         label2 = Label(id=2, name="Test")
-        
+
         assert label1 != label2
 
     def test_labels_with_different_names_are_not_equal(self):
         """Test that labels with different names are not equal"""
         label1 = Label(id=1, name="Bug")
         label2 = Label(id=1, name="Feature")
-        
+
         assert label1 != label2
 
     def test_labels_with_different_colors_are_not_equal(self):
         """Test that labels with different colors are not equal"""
         label1 = Label(id=1, name="Test", color="#ff0000")
         label2 = Label(id=1, name="Test", color="#00ff00")
-        
+
         assert label1 != label2
 
 
@@ -276,19 +276,14 @@ class TestLabelBusinessLogic:
             ("feature", "#00ff00", "New feature implementation"),
             ("documentation", "#0066cc", "Documentation updates"),
             ("testing", "#ffaa00", "Testing and QA"),
-            ("security", "#800080", "Security-related issues")
+            ("security", "#800080", "Security-related issues"),
         ]
-        
+
         labels = []
         for i, (name, color, description) in enumerate(categories, 1):
-            label = Label(
-                id=i,
-                name=name.title(),
-                color=color,
-                description=description
-            )
+            label = Label(id=i, name=name.title(), color=color, description=description)
             labels.append(label)
-            
+
             assert label.name == name.title()
             assert label.color == color
             assert label.description == description
@@ -300,33 +295,29 @@ class TestLabelBusinessLogic:
             "detailed information about what this label represents and how "
             "it should be used in the context of task management and organization."
         )
-        
-        label = Label(
-            id=1,
-            name="Detailed Label",
-            description=long_description
-        )
-        
+
+        label = Label(id=1, name="Detailed Label", description=long_description)
+
         assert label.description == long_description
 
     def test_label_id_can_be_large_number(self):
         """Test that label can have large ID numbers"""
         large_id = 999999999
-        
+
         label = Label(id=large_id, name="Large ID Test")
-        
+
         assert label.id == large_id
 
     def test_label_name_can_contain_unicode(self):
         """Test that label name can contain unicode characters"""
         unicode_names = [
-            "优先级",       # Chinese
-            "Priorité",     # French
-            "Приоритет",    # Russian
-            "🐛 Bug",       # Emoji
-            "Feature ⭐",   # Emoji
+            "优先级",  # Chinese
+            "Priorité",  # French
+            "Приоритет",  # Russian
+            "🐛 Bug",  # Emoji
+            "Feature ⭐",  # Emoji
         ]
-        
+
         for i, name in enumerate(unicode_names, 1):
             label = Label(id=i, name=name)
             assert label.name == name
@@ -338,7 +329,7 @@ class TestLabelEdgeCases:
     def test_label_with_minimum_values(self):
         """Test label with minimum possible values"""
         label = Label(id=0, name="a")  # Minimum valid name
-        
+
         assert label.id == 0
         assert label.name == "a"
         assert label.color == "#0066cc"
@@ -346,21 +337,14 @@ class TestLabelEdgeCases:
     def test_label_with_negative_id(self):
         """Test label with negative ID (should be allowed)"""
         label = Label(id=-1, name="Negative ID")
-        
+
         assert label.id == -1
         assert label.name == "Negative ID"
 
     def test_label_color_case_insensitive_validation(self):
         """Test that color validation is case insensitive"""
-        colors = [
-            "#abc",
-            "#ABC",
-            "#aBc",
-            "#123def",
-            "#123DEF",
-            "#123dEf"
-        ]
-        
+        colors = ["#abc", "#ABC", "#aBc", "#123def", "#123DEF", "#123dEf"]
+
         for color in colors:
             label = Label(id=1, name="Case Test", color=color)
             assert label.color == color
@@ -368,32 +352,32 @@ class TestLabelEdgeCases:
     def test_label_with_very_long_name(self):
         """Test label with very long name"""
         long_name = "x" * 1000
-        
+
         label = Label(id=1, name=long_name)
-        
+
         assert label.name == long_name
         assert len(label.name) == 1000
 
     def test_label_name_with_leading_trailing_spaces(self):
         """Test that label name preserves leading/trailing spaces"""
         name_with_spaces = "  Label Name  "
-        
+
         # Note: Current implementation doesn't trim spaces in validation
         # This test documents the current behavior
         label = Label(id=1, name=name_with_spaces)
-        
+
         assert label.name == name_with_spaces
 
     def test_label_description_can_be_empty(self):
         """Test that empty description is allowed"""
         label = Label(id=1, name="Test", description="")
-        
+
         assert label.description == ""
 
     def test_label_created_at_can_be_none(self):
         """Test that created_at is automatically set when None is provided"""
         label = Label(id=1, name="Test", created_at=None)
-        
+
         # BaseTimestampEntity ensures created_at is never None
         assert label.created_at is not None
         assert isinstance(label.created_at, datetime)
@@ -404,19 +388,21 @@ class TestLabelEdgeCases:
         future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=UTC)
         # updated_at must be >= created_at per BaseTimestampEntity validation
         future_updated = datetime(2030, 12, 31, 23, 59, 59, tzinfo=UTC)
-        
-        label = Label(id=1, name="Future", created_at=future_date, updated_at=future_updated)
-        
+
+        label = Label(
+            id=1, name="Future", created_at=future_date, updated_at=future_updated
+        )
+
         assert label.created_at == future_date
         assert label.updated_at == future_updated
 
     def test_multiple_labels_with_same_name_different_ids(self):
         """Test creating multiple labels with same name but different IDs"""
         name = "Duplicate Name"
-        
+
         label1 = Label(id=1, name=name, color="#ff0000")
         label2 = Label(id=2, name=name, color="#00ff00")
-        
+
         assert label1.name == label2.name
         assert label1.id != label2.id
         assert label1.color != label2.color
@@ -429,22 +415,22 @@ class TestLabelSerializationScenarios:
     def test_label_attributes_are_accessible(self):
         """Test that all label attributes are accessible"""
         created_at = datetime.now(UTC)
-        
+
         label = Label(
             id=123,
             name="Serialization Test",
             color="#abcdef",
             description="Test description",
-            created_at=created_at
+            created_at=created_at,
         )
-        
+
         # All attributes should be accessible
-        assert hasattr(label, 'id')
-        assert hasattr(label, 'name')
-        assert hasattr(label, 'color')
-        assert hasattr(label, 'description')
-        assert hasattr(label, 'created_at')
-        
+        assert hasattr(label, "id")
+        assert hasattr(label, "name")
+        assert hasattr(label, "color")
+        assert hasattr(label, "description")
+        assert hasattr(label, "created_at")
+
         # Values should match
         assert label.id == 123
         assert label.name == "Serialization Test"
@@ -458,35 +444,37 @@ class TestLabelSerializationScenarios:
             id=456,
             name="Dict Test",
             color="#123456",
-            description="Dictionary conversion test"
+            description="Dictionary conversion test",
         )
-        
+
         # Manual dict conversion
         label_dict = {
-            'id': label.id,
-            'name': label.name,
-            'color': label.color,
-            'description': label.description,
-            'created_at': label.created_at
+            "id": label.id,
+            "name": label.name,
+            "color": label.color,
+            "description": label.description,
+            "created_at": label.created_at,
         }
-        
-        assert label_dict['id'] == 456
-        assert label_dict['name'] == "Dict Test"
-        assert label_dict['color'] == "#123456"
-        assert label_dict['description'] == "Dictionary conversion test"
-        assert label_dict['created_at'] is not None  # BaseTimestampEntity auto-sets timestamps
-        assert isinstance(label_dict['created_at'], datetime)
+
+        assert label_dict["id"] == 456
+        assert label_dict["name"] == "Dict Test"
+        assert label_dict["color"] == "#123456"
+        assert label_dict["description"] == "Dictionary conversion test"
+        assert (
+            label_dict["created_at"] is not None
+        )  # BaseTimestampEntity auto-sets timestamps
+        assert isinstance(label_dict["created_at"], datetime)
 
     def test_label_fields_are_mutable(self):
         """Test that label fields can be modified after creation"""
         label = Label(id=1, name="Mutable Test")
-        
+
         # Modify fields
         label.name = "Updated Name"
         label.color = "#ff00ff"
         label.description = "Updated description"
         label.created_at = datetime.now(UTC)
-        
+
         assert label.name == "Updated Name"
         assert label.color == "#ff00ff"
         assert label.description == "Updated description"
@@ -494,19 +482,21 @@ class TestLabelSerializationScenarios:
 
     def test_label_modification_preserves_other_fields(self):
         """Test that modifying one field doesn't affect others"""
-        original_created_at = datetime(2024, 1, 1, tzinfo=UTC)  # BaseTimestampEntity requires timezone-aware
-        
+        original_created_at = datetime(
+            2024, 1, 1, tzinfo=UTC
+        )  # BaseTimestampEntity requires timezone-aware
+
         label = Label(
             id=789,
             name="Preservation Test",
             color="#fedcba",
             description="Original description",
-            created_at=original_created_at
+            created_at=original_created_at,
         )
-        
+
         # Modify only the name
         label.name = "Modified Name"
-        
+
         # Other fields should remain unchanged
         assert label.id == 789
         assert label.color == "#fedcba"

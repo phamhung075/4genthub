@@ -79,17 +79,17 @@ class TestRequestContextMiddleware:
         mock_request.state.user_id = None
         mock_request.state.auth_type = None
         mock_request.state.auth_info = None
-        
+
         # Create a mock response
         expected_response = Response("OK")
-        
+
         # Mock call_next
         async def call_next(request):
             # Context should be empty
             assert get_current_user_id() is None
             assert not is_request_authenticated()
             return expected_response
-        
+
         response = await middleware.dispatch(mock_request, call_next)
         assert response == expected_response
 
@@ -100,14 +100,14 @@ class TestRequestContextMiddleware:
         mock_request.state.user_id = "test-user-123"
         mock_request.state.auth_type = "unified"
         mock_request.state.auth_info = {
-            'user_id': 'test-user-123',
-            'email': 'user@example.com',
-            'auth_method': 'api_token'
+            "user_id": "test-user-123",
+            "email": "user@example.com",
+            "auth_method": "api_token",
         }
-        
+
         # Create a mock response
         expected_response = Response("OK")
-        
+
         # Mock call_next
         async def call_next(request):
             # Context should be set
@@ -116,7 +116,7 @@ class TestRequestContextMiddleware:
             assert get_current_auth_method() == "api_token"
             assert is_request_authenticated() is True
             return expected_response
-        
+
         response = await middleware.dispatch(mock_request, call_next)
         assert response == expected_response
 
@@ -128,22 +128,22 @@ class TestRequestContextMiddleware:
         mock_request.state.user_id = "mcp-user-456"
         mock_request.state.auth_type = "mcp_token"
         mock_request.state.auth_info = {
-            'user_id': 'mcp-user-456',
-            'email': 'mcp@example.com',
-            'auth_method': 'mcp_token'
+            "user_id": "mcp-user-456",
+            "email": "mcp@example.com",
+            "auth_method": "mcp_token",
         }
-        
+
         # Create a mock response
         expected_response = Response("OK")
-        
+
         # Mock call_next
         async def call_next(request):
             # Check that user was set in ASGI scope
-            assert 'user' in request.scope
-            assert request.scope['user']['user_id'] == 'mcp-user-456'
-            assert request.scope['user']['auth_method'] == 'mcp_token'
+            assert "user" in request.scope
+            assert request.scope["user"]["user_id"] == "mcp-user-456"
+            assert request.scope["user"]["auth_method"] == "mcp_token"
             return expected_response
-        
+
         response = await middleware.dispatch(mock_request, call_next)
         assert response == expected_response
 
@@ -151,14 +151,14 @@ class TestRequestContextMiddleware:
     async def test_dispatch_error_handling(self, middleware, mock_request):
         """Test dispatch handles errors properly"""
         mock_request.state.user_id = "test-user"
-        
+
         # Mock call_next to raise an error
         async def call_next(request):
             raise RuntimeError("Test error")
-        
+
         with pytest.raises(RuntimeError):
             await middleware.dispatch(mock_request, call_next)
-        
+
         # Context should be cleared after error
         assert get_current_user_id() is None
         assert not is_request_authenticated()
@@ -169,14 +169,14 @@ class TestRequestContextMiddleware:
         mock_request.state.user_id = "captured-user"
         mock_request.state.auth_type = "supabase"
         mock_request.state.auth_info = {
-            'user_id': 'captured-user',
-            'email': 'captured@example.com',
-            'auth_method': 'supabase_jwt'
+            "user_id": "captured-user",
+            "email": "captured@example.com",
+            "auth_method": "supabase_jwt",
         }
-        
+
         # Capture context
         middleware._capture_auth_context_from_request_state(mock_request)
-        
+
         # Verify context was set
         assert get_current_user_id() == "captured-user"
         assert get_current_user_email() == "captured@example.com"
@@ -187,13 +187,15 @@ class TestRequestContextMiddleware:
         """Test capturing auth context when request has no state"""
         request = MagicMock()
         # Remove state attribute
-        if hasattr(request, 'state'):
-            delattr(request, 'state')
-        
-        with patch('fastmcp.auth.middleware.request_context_middleware.logger') as mock_logger:
+        if hasattr(request, "state"):
+            delattr(request, "state")
+
+        with patch(
+            "fastmcp.auth.middleware.request_context_middleware.logger"
+        ) as mock_logger:
             middleware._capture_auth_context_from_request_state(request)
             mock_logger.warning.assert_called_once()
-        
+
         # Context should remain empty
         assert get_current_user_id() is None
         assert not is_request_authenticated()
@@ -202,12 +204,19 @@ class TestRequestContextMiddleware:
         """Test error handling in capture auth context"""
         # Set up request state to raise error when getattr is called
         mock_request.state = MagicMock()
-        
-        with patch('fastmcp.auth.middleware.request_context_middleware.logger') as mock_logger, \
-             patch('fastmcp.auth.middleware.request_context_middleware.getattr', side_effect=Exception("Test error")):
+
+        with (
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.logger"
+            ) as mock_logger,
+            patch(
+                "fastmcp.auth.middleware.request_context_middleware.getattr",
+                side_effect=Exception("Test error"),
+            ),
+        ):
             middleware._capture_auth_context_from_request_state(mock_request)
             mock_logger.error.assert_called()
-        
+
         # Context should be cleared
         assert get_current_user_id() is None
 
@@ -217,10 +226,10 @@ class TestRequestContextMiddleware:
         _current_user_id.set("user-to-clear")
         _current_user_email.set("clear@example.com")
         _request_authenticated.set(True)
-        
+
         # Clear context
         middleware._clear_auth_context()
-        
+
         # Verify cleared
         assert get_current_user_id() is None
         assert get_current_user_email() is None
@@ -230,7 +239,7 @@ class TestRequestContextMiddleware:
         """Test get_current_user_id helper"""
         # Initially None
         assert get_current_user_id() is None
-        
+
         # Set a value
         _current_user_id.set("helper-user")
         assert get_current_user_id() == "helper-user"
@@ -239,7 +248,7 @@ class TestRequestContextMiddleware:
         """Test get_current_user_email helper"""
         # Initially None
         assert get_current_user_email() is None
-        
+
         # Set a value
         _current_user_email.set("helper@example.com")
         assert get_current_user_email() == "helper@example.com"
@@ -248,7 +257,7 @@ class TestRequestContextMiddleware:
         """Test get_current_auth_method helper"""
         # Initially None
         assert get_current_auth_method() is None
-        
+
         # Set a value
         _current_auth_method.set("jwt_token")
         assert get_current_auth_method() == "jwt_token"
@@ -257,9 +266,9 @@ class TestRequestContextMiddleware:
         """Test get_current_auth_info helper"""
         # Initially None
         assert get_current_auth_info() is None
-        
+
         # Set a value
-        auth_info = {'user_id': 'test', 'scopes': ['read']}
+        auth_info = {"user_id": "test", "scopes": ["read"]}
         _current_auth_info.set(auth_info)
         assert get_current_auth_info() == auth_info
 
@@ -267,7 +276,7 @@ class TestRequestContextMiddleware:
         """Test is_request_authenticated helper"""
         # Initially False
         assert is_request_authenticated() is False
-        
+
         # Set to True
         _request_authenticated.set(True)
         assert is_request_authenticated() is True
@@ -278,37 +287,39 @@ class TestRequestContextMiddleware:
         _current_user_id.set("context-user")
         _current_user_email.set("context@example.com")
         _current_auth_method.set("api_token")
-        _current_auth_info.set({'extra': 'data'})
+        _current_auth_info.set({"extra": "data"})
         _request_authenticated.set(True)
-        
+
         context = get_authentication_context()
-        
-        assert context['user_id'] == "context-user"
-        assert context['email'] == "context@example.com"
-        assert context['auth_method'] == "api_token"
-        assert context['auth_info'] == {'extra': 'data'}
-        assert context['authenticated'] is True
+
+        assert context["user_id"] == "context-user"
+        assert context["email"] == "context@example.com"
+        assert context["auth_method"] == "api_token"
+        assert context["auth_info"] == {"extra": "data"}
+        assert context["authenticated"] is True
 
     def test_get_authentication_context_error(self):
         """Test get_authentication_context with error"""
         # Mock error in get_current_user_id
-        with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', 
-                  side_effect=Exception("Test error")):
+        with patch(
+            "fastmcp.auth.middleware.request_context_middleware.get_current_user_id",
+            side_effect=Exception("Test error"),
+        ):
             context = get_authentication_context()
-            
+
             # Should return default values
-            assert context['user_id'] is None
-            assert context['authenticated'] is False
+            assert context["user_id"] is None
+            assert context["authenticated"] is False
 
     def test_get_current_user_context_backward_compat(self):
         """Test backward compatibility function"""
         # No user
         assert get_current_user_context() is None
-        
+
         # Set user context
         _current_user_id.set("compat-user")
         _current_user_email.set("compat@example.com")
-        
+
         user_context = get_current_user_context()
         assert user_context is not None
         assert user_context.user_id == "compat-user"
@@ -319,15 +330,15 @@ class TestRequestContextMiddleware:
         """Test that context variables handle unset state gracefully"""
         # Context variables should return None by default when not set
         # The get_current_* functions have built-in error handling
-        
+
         # In a fresh context where nothing is set, these should return safe defaults
         # Note: These functions already have try/except blocks that return None/False on errors
-        
+
         # Test that functions don't raise exceptions and return sensible defaults
         user_id = get_current_user_id()  # Should be None or a valid value
         user_email = get_current_user_email()  # Should be None or a valid value
         is_auth = is_request_authenticated()  # Should be boolean
-        
+
         # These should not raise exceptions
         assert user_id is None or isinstance(user_id, str)
         assert user_email is None or isinstance(user_email, str)
@@ -345,13 +356,13 @@ class TestRequestContextMiddleware:
         mock_request.url.path = "/api/v2/users"
         mock_request.state.user_id = "api-user"
         mock_request.scope = {}
-        
+
         async def check_non_mcp(request):
-            assert 'user' not in request.scope
+            assert "user" not in request.scope
             return Response("OK")
-        
+
         await middleware.dispatch(mock_request, check_non_mcp)
-        
+
         # Test 2: MCP path without user_id shouldn't set scope
         mock_request.url.path = "/mcp/tools"
         mock_request.state = MagicMock()  # No user_id
@@ -359,21 +370,21 @@ class TestRequestContextMiddleware:
         mock_request.state.auth_type = None
         mock_request.state.auth_info = None
         mock_request.scope = {}
-        
+
         async def check_no_user(request):
-            assert 'user' not in request.scope
+            assert "user" not in request.scope
             return Response("OK")
-        
+
         await middleware.dispatch(mock_request, check_no_user)
-        
+
         # Test 3: Missing scope attribute shouldn't crash
         mock_request.url.path = "/mcp/tools"
         mock_request.state.user_id = "mcp-user"
-        delattr(mock_request, 'scope')  # Remove scope
-        
+        delattr(mock_request, "scope")  # Remove scope
+
         async def check_no_scope(request):
             # Should not crash
             return Response("OK")
-        
+
         # Should not raise exception
         await middleware.dispatch(mock_request, check_no_scope)

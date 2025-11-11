@@ -43,6 +43,7 @@ from fastmcp.task_management.infrastructure.database.database_config import get_
 @dataclass
 class PerformanceMetrics:
     """Container for performance measurement data."""
+
     operation_name: str
     baseline_target_ms: float
     optimized_target_ms: float
@@ -105,10 +106,12 @@ class Week1BaselineTester:
         self.metrics[operation_name] = PerformanceMetrics(
             operation_name=operation_name,
             baseline_target_ms=baseline_ms,
-            optimized_target_ms=target_ms
+            optimized_target_ms=target_ms,
         )
 
-    async def measure_operation(self, operation_name: str, operation_func, *args, **kwargs) -> float:
+    async def measure_operation(
+        self, operation_name: str, operation_func, *args, **kwargs
+    ) -> float:
         """
         Measure the execution time of an operation.
 
@@ -141,8 +144,7 @@ class Week1BaselineTester:
             try:
                 # Delete task and its subtasks (cascading should handle this)
                 session.execute(
-                    "DELETE FROM tasks WHERE id = :task_id",
-                    {"task_id": task_id}
+                    "DELETE FROM tasks WHERE id = :task_id", {"task_id": task_id}
                 )
             except Exception:
                 pass  # Ignore cleanup errors
@@ -165,8 +167,8 @@ class Week1BaselineTester:
                 "total_operations": len(self.metrics),
                 "operations_meeting_target": 0,
                 "operations_failing_target": 0,
-                "overall_success": False
-            }
+                "overall_success": False,
+            },
         }
 
         for name, metric in self.metrics.items():
@@ -180,7 +182,7 @@ class Week1BaselineTester:
                 "p95_ms": round(metric.p95_ms, 2),
                 "improvement_factor": round(metric.improvement_factor, 2),
                 "meets_target": metric.meets_target,
-                "measurements_count": len(metric.measurements)
+                "measurements_count": len(metric.measurements),
             }
 
             if metric.meets_target:
@@ -228,7 +230,7 @@ def git_branch_id(db_session):
         description="Project for performance testing",
         user_id="test-user-perf",
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
     db_session.add(project)
 
@@ -240,7 +242,7 @@ def git_branch_id(db_session):
         project_id=project.id,
         user_id="test-user-perf",
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
     db_session.add(branch)
     db_session.commit()
@@ -276,7 +278,7 @@ def task_facade(db_session):
     return TaskApplicationFacade(
         task_repository=task_repo,
         subtask_repository=subtask_repo,
-        git_branch_repository=branch_repo
+        git_branch_repository=branch_repo,
     )
 
 
@@ -284,12 +286,16 @@ class TestWeek1BaselinePerformance:
     """Test suite for Week 1 baseline performance measurements."""
 
     @pytest.mark.performance
-    def test_task_creation_performance(self, baseline_tester, db_session, task_facade, git_branch_id):
+    def test_task_creation_performance(
+        self, baseline_tester, db_session, task_facade, git_branch_id
+    ):
         """
         Test task creation performance.
         Target: 150ms → 50ms (3x improvement)
         """
-        baseline_tester.create_metric("task_creation", baseline_ms=150.0, target_ms=50.0)
+        baseline_tester.create_metric(
+            "task_creation", baseline_ms=150.0, target_ms=50.0
+        )
 
         for i in range(baseline_tester.iterations):
             # Measure task creation
@@ -301,14 +307,16 @@ class TestWeek1BaselinePerformance:
                 git_branch_id=git_branch_id,
                 status="pending",
                 assignees=["@test-agent"],
-                user_id="test-user-perf"
+                user_id="test-user-perf",
             )
             result = task_facade.create_task(request)
 
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
-            baseline_tester.metrics["task_creation"].measurements.append(execution_time_ms)
+            baseline_tester.metrics["task_creation"].measurements.append(
+                execution_time_ms
+            )
             if result.get("success") and result.get("task"):
                 baseline_tester.test_data.append(result["task"]["id"])
 
@@ -323,12 +331,16 @@ class TestWeek1BaselinePerformance:
         )
 
     @pytest.mark.performance
-    def test_task_retrieval_performance(self, baseline_tester, db_session, task_facade, git_branch_id):
+    def test_task_retrieval_performance(
+        self, baseline_tester, db_session, task_facade, git_branch_id
+    ):
         """
         Test task retrieval performance.
         Target: 100ms → 33ms (3x improvement)
         """
-        baseline_tester.create_metric("task_retrieval", baseline_ms=100.0, target_ms=33.0)
+        baseline_tester.create_metric(
+            "task_retrieval", baseline_ms=100.0, target_ms=33.0
+        )
 
         # Create test task
         request = CreateTaskRequest(
@@ -337,10 +349,12 @@ class TestWeek1BaselinePerformance:
             git_branch_id=git_branch_id,
             status="in_progress",
             assignees=["@test-agent"],
-            user_id="test-user-perf"
+            user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), f"Failed to create test task: {create_result.get('error')}"
+        assert create_result.get("success"), (
+            f"Failed to create test task: {create_result.get('error')}"
+        )
         task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(task_id)
 
@@ -353,7 +367,9 @@ class TestWeek1BaselinePerformance:
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
-            baseline_tester.metrics["task_retrieval"].measurements.append(execution_time_ms)
+            baseline_tester.metrics["task_retrieval"].measurements.append(
+                execution_time_ms
+            )
             assert retrieved_result.get("success"), "Task retrieval failed"
             assert retrieved_result["task"]["id"] == task_id
 
@@ -368,7 +384,9 @@ class TestWeek1BaselinePerformance:
         )
 
     @pytest.mark.performance
-    def test_task_listing_performance(self, baseline_tester, db_session, task_facade, git_branch_id):
+    def test_task_listing_performance(
+        self, baseline_tester, db_session, task_facade, git_branch_id
+    ):
         """
         Test task listing performance.
         Target: 200ms → 67ms (3x improvement)
@@ -387,7 +405,7 @@ class TestWeek1BaselinePerformance:
                 git_branch_id=git_branch_id,
                 status="todo" if i % 2 == 0 else "in_progress",
                 assignees=["@test-agent"],
-                user_id="test-user-perf"
+                user_id="test-user-perf",
             )
             result = task_facade.create_task(request)
             if result.get("success") and result.get("task"):
@@ -399,16 +417,20 @@ class TestWeek1BaselinePerformance:
 
             list_request = ListTasksRequest(
                 git_branch_id=git_branch_id,
-                limit=20  # Increased limit to ensure we get all test tasks
+                limit=20,  # Increased limit to ensure we get all test tasks
             )
             result = task_facade.list_tasks(list_request, minimal=True)
 
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
-            baseline_tester.metrics["task_listing"].measurements.append(execution_time_ms)
+            baseline_tester.metrics["task_listing"].measurements.append(
+                execution_time_ms
+            )
             assert result.get("success"), "Task listing failed"
-            assert len(result.get("tasks", [])) >= 10, f"Expected at least 10 tasks, got {len(result.get('tasks', []))}"
+            assert len(result.get("tasks", [])) >= 10, (
+                f"Expected at least 10 tasks, got {len(result.get('tasks', []))}"
+            )
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)
@@ -421,7 +443,9 @@ class TestWeek1BaselinePerformance:
         )
 
     @pytest.mark.performance
-    def test_task_update_performance(self, baseline_tester, db_session, task_facade, git_branch_id):
+    def test_task_update_performance(
+        self, baseline_tester, db_session, task_facade, git_branch_id
+    ):
         """
         Test task update performance.
         Target: 120ms → 40ms (3x improvement)
@@ -435,10 +459,12 @@ class TestWeek1BaselinePerformance:
             git_branch_id=git_branch_id,
             status="todo",
             assignees=["@test-agent"],
-            user_id="test-user-perf"
+            user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), f"Failed to create test task: {create_result.get('error')}"
+        assert create_result.get("success"), (
+            f"Failed to create test task: {create_result.get('error')}"
+        )
         task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(task_id)
 
@@ -449,14 +475,16 @@ class TestWeek1BaselinePerformance:
             update_request = UpdateTaskRequest(
                 task_id=task_id,
                 title=f"Updated Task {i}",
-                status="in_progress" if i % 2 == 0 else "completed"
+                status="in_progress" if i % 2 == 0 else "completed",
             )
             task_facade.update_task(task_id, update_request)
 
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
-            baseline_tester.metrics["task_update"].measurements.append(execution_time_ms)
+            baseline_tester.metrics["task_update"].measurements.append(
+                execution_time_ms
+            )
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)
@@ -469,12 +497,16 @@ class TestWeek1BaselinePerformance:
         )
 
     @pytest.mark.performance
-    def test_subtask_operations_performance(self, baseline_tester, db_session, task_facade, git_branch_id):
+    def test_subtask_operations_performance(
+        self, baseline_tester, db_session, task_facade, git_branch_id
+    ):
         """
         Test subtask operations performance.
         Target: 80ms → 27ms (3x improvement)
         """
-        baseline_tester.create_metric("subtask_operations", baseline_ms=80.0, target_ms=27.0)
+        baseline_tester.create_metric(
+            "subtask_operations", baseline_ms=80.0, target_ms=27.0
+        )
 
         # Create parent task
         request = CreateTaskRequest(
@@ -483,10 +515,12 @@ class TestWeek1BaselinePerformance:
             git_branch_id=git_branch_id,
             status="in_progress",
             assignees=["@test-agent"],
-            user_id="test-user-perf"
+            user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), f"Failed to create parent task: {create_result.get('error')}"
+        assert create_result.get("success"), (
+            f"Failed to create parent task: {create_result.get('error')}"
+        )
         parent_task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(parent_task_id)
 
@@ -501,12 +535,14 @@ class TestWeek1BaselinePerformance:
             ORMTaskRepository,
         )
 
-        task_repo = ORMTaskRepository(git_branch_id=git_branch_id, performance_mode=True)
+        task_repo = ORMTaskRepository(
+            git_branch_id=git_branch_id, performance_mode=True
+        )
         subtask_repo = ORMSubtaskRepository()
         subtask_facade = SubtaskApplicationFacade(
             task_repository=task_repo,
             subtask_repository=subtask_repo,
-            user_id="test-user-perf"
+            user_id="test-user-perf",
         )
 
         # Measure subtask creation performance
@@ -519,15 +555,19 @@ class TestWeek1BaselinePerformance:
                 task_id=parent_task_id,
                 subtask_data={
                     "title": f"Subtask {i}",
-                    "description": f"Test subtask {i} for performance measurement"
-                }
+                    "description": f"Test subtask {i} for performance measurement",
+                },
             )
 
             end_time = time.perf_counter()
             execution_time_ms = (end_time - start_time) * 1000
 
-            baseline_tester.metrics["subtask_operations"].measurements.append(execution_time_ms)
-            assert result.get("success"), f"Failed to create subtask: {result.get('error')}"
+            baseline_tester.metrics["subtask_operations"].measurements.append(
+                execution_time_ms
+            )
+            assert result.get("success"), (
+                f"Failed to create subtask: {result.get('error')}"
+            )
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)
@@ -544,15 +584,15 @@ class TestWeek1BaselinePerformance:
         """Generate and display comprehensive baseline performance report."""
         report = baseline_tester.generate_report()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("WEEK 1 BASELINE PERFORMANCE REPORT")
-        print("="*80)
+        print("=" * 80)
         print(f"Test Timestamp: {report['test_timestamp']}")
         print(f"Iterations: {report['iterations']}")
         print()
 
         print("OPERATION PERFORMANCE:")
-        print("-"*80)
+        print("-" * 80)
         for op_name, op_data in report["operations"].items():
             status = "✅ PASS" if op_data["meets_target"] else "❌ FAIL"
             print(f"\n{op_name.upper().replace('_', ' ')}:")
@@ -564,13 +604,19 @@ class TestWeek1BaselinePerformance:
             print(f"  P95: {op_data['p95_ms']}ms")
             print(f"  Improvement Factor: {op_data['improvement_factor']}x")
 
-        print("\n" + "-"*80)
+        print("\n" + "-" * 80)
         print("SUMMARY:")
         print(f"  Total Operations: {report['summary']['total_operations']}")
-        print(f"  Operations Meeting Target: {report['summary']['operations_meeting_target']}")
-        print(f"  Operations Failing Target: {report['summary']['operations_failing_target']}")
-        print(f"  Overall Success: {'✅ YES' if report['summary']['overall_success'] else '❌ NO'}")
-        print("="*80)
+        print(
+            f"  Operations Meeting Target: {report['summary']['operations_meeting_target']}"
+        )
+        print(
+            f"  Operations Failing Target: {report['summary']['operations_failing_target']}"
+        )
+        print(
+            f"  Overall Success: {'✅ YES' if report['summary']['overall_success'] else '❌ NO'}"
+        )
+        print("=" * 80)
 
         # Assert overall success
         assert report["summary"]["overall_success"], (

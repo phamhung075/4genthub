@@ -24,6 +24,7 @@ from fastmcp.task_management.infrastructure.events.event_worker import (
 @dataclass(frozen=True)
 class SampleEvent(BaseDomainEvent):
     """Sample event for worker tests."""
+
     message: str = "test"
 
 
@@ -80,8 +81,8 @@ class TestEventWorker:
 
         # Check stats
         stats = worker.get_stats()
-        assert stats['events_processed'] == 1
-        assert stats['events_failed'] == 0
+        assert stats["events_processed"] == 1
+        assert stats["events_failed"] == 0
 
         worker.stop()
 
@@ -111,13 +112,14 @@ class TestEventWorker:
 
         # Check stats
         stats = worker.get_stats()
-        assert stats['events_retried'] >= 2
-        assert stats['events_processed'] == 1
+        assert stats["events_retried"] >= 2
+        assert stats["events_processed"] == 1
 
         worker.stop()
 
     def test_event_moved_to_dead_letter_queue(self):
         """Test failed event moved to Dead Letter Queue after max retries."""
+
         def always_failing_handler(event: SampleEvent):
             raise Exception("Always fails")
 
@@ -144,7 +146,7 @@ class TestEventWorker:
         # Event should be in DLQ after 5 failed attempts or still retrying
         # Since we only wait 8s, it might still be in retry queue
         # So we check that retries have occurred
-        assert stats['events_retried'] >= 2 or stats['events_failed'] >= 1
+        assert stats["events_retried"] >= 2 or stats["events_failed"] >= 1
 
         # If it made it to DLQ, verify the details
         if len(dlq) >= 1:
@@ -159,7 +161,9 @@ class TestEventWorker:
 
     def test_queue_full_handling(self):
         """Test queue full condition is handled."""
-        handlers = {SampleEvent: [lambda e: time.sleep(2)]}  # Slow handler to block queue
+        handlers = {
+            SampleEvent: [lambda e: time.sleep(2)]
+        }  # Slow handler to block queue
         worker = EventWorker(handlers, max_queue_size=2)  # Small queue
         worker.start()
 
@@ -183,11 +187,13 @@ class TestEventWorker:
             successes.append(success)
 
         # At least one should fail due to queue full
-        assert False in successes, "Expected at least one enqueue to fail due to full queue"
+        assert False in successes, (
+            "Expected at least one enqueue to fail due to full queue"
+        )
 
         # Check stats
         stats = worker.get_stats()
-        assert stats['queue_overflow_count'] >= 1
+        assert stats["queue_overflow_count"] >= 1
 
         worker.stop(timeout=15)
 
@@ -267,17 +273,17 @@ class TestEventWorker:
 
         stats = worker.get_stats()
 
-        assert 'events_processed' in stats
-        assert 'events_failed' in stats
-        assert 'events_retried' in stats
-        assert 'queue_overflow_count' in stats
-        assert 'queue_size' in stats
-        assert 'queue_max_size' in stats
-        assert 'is_running' in stats
-        assert 'dead_letter_queue_size' in stats
+        assert "events_processed" in stats
+        assert "events_failed" in stats
+        assert "events_retried" in stats
+        assert "queue_overflow_count" in stats
+        assert "queue_size" in stats
+        assert "queue_max_size" in stats
+        assert "is_running" in stats
+        assert "dead_letter_queue_size" in stats
 
-        assert stats['queue_max_size'] == 100
-        assert stats['is_running'] is True
+        assert stats["queue_max_size"] == 100
+        assert stats["is_running"] is True
 
         worker.stop()
 

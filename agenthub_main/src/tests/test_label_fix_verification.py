@@ -8,7 +8,7 @@ Tests all label scenarios to verify the fix for timestamp constraint violations.
 import os
 import sys
 
-sys.path.append(os.path.dirname(__file__) + '/..')
+sys.path.append(os.path.dirname(__file__) + "/..")
 
 import uuid
 from datetime import datetime
@@ -29,41 +29,31 @@ def test_label_creation():
     user_id = "test_user"
 
     test_cases = [
-        {
-            "name": "Single Label",
-            "labels": "backend"
-        },
+        {"name": "Single Label", "labels": "backend"},
         {
             "name": "Multiple Labels (comma-separated)",
-            "labels": "backend,security,critical"
+            "labels": "backend,security,critical",
         },
         {
             "name": "Complex Labels (with hyphens)",
-            "labels": "api-integration,frontend-ui,database-optimization"
+            "labels": "api-integration,frontend-ui,database-optimization",
         },
-        {
-            "name": "Mixed Case Labels",
-            "labels": "API,Backend,Frontend,Testing"
-        },
-        {
-            "name": "Labels with Numbers",
-            "labels": "v1-api,backend-v2,test-phase-3"
-        }
+        {"name": "Mixed Case Labels", "labels": "API,Backend,Frontend,Testing"},
+        {"name": "Labels with Numbers", "labels": "v1-api,backend-v2,test-phase-3"},
     ]
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("LABEL CREATION FIX VERIFICATION TEST")
-    print("="*80)
+    print("=" * 80)
     print(f"Test Branch: test-flow ({git_branch_id})")
     print(f"User ID: {user_id}")
     print(f"Total Test Cases: {len(test_cases)}")
-    print("="*80 + "\n")
+    print("=" * 80 + "\n")
 
     session = get_session()
     repo = ORMTaskRepository(session=session, user_id=user_id)
 
     try:
-
         for idx, test_case in enumerate(test_cases, 1):
             print(f"\nTest Case #{idx}: {test_case['name']}")
             print(f"Labels: {test_case['labels']}")
@@ -77,22 +67,22 @@ def test_label_creation():
                     title=f"Test {test_case['name']} - {datetime.now().isoformat()}",
                     description=f"Testing label creation: {test_case['labels']}",
                     git_branch_id=git_branch_id,
-                    labels=test_case['labels'],
+                    labels=test_case["labels"],
                     assignees="test-orchestrator-agent",
                     priority="medium",
                     status="todo",
-                    details="Automated test for label creation fix"
+                    details="Automated test for label creation fix",
                 )
 
                 # Verify labels were created
                 label_count = len(task_orm.labels)
-                expected_count = len(test_case['labels'].split(','))
+                expected_count = len(test_case["labels"].split(","))
 
                 # Verify timestamps
                 all_have_timestamps = all(
-                    label.created_at is not None and
-                    label.updated_at is not None and
-                    label.created_at.tzinfo is not None  # UTC aware
+                    label.created_at is not None
+                    and label.updated_at is not None
+                    and label.created_at.tzinfo is not None  # UTC aware
                     for label in task_orm.labels
                 )
 
@@ -100,18 +90,24 @@ def test_label_creation():
                     result = "✅ PASS"
                     test_results.append(True)
                     print(f"Status: {result}")
-                    print(f"  ✓ Created {label_count} labels (expected {expected_count})")
+                    print(
+                        f"  ✓ Created {label_count} labels (expected {expected_count})"
+                    )
                     print("  ✓ All labels have UTC timestamps")
                     print(f"  ✓ Task ID: {task_id}")
 
                     # Show label details
                     for label in task_orm.labels:
-                        print(f"    - {label.name}: created_at={label.created_at}, updated_at={label.updated_at}")
+                        print(
+                            f"    - {label.name}: created_at={label.created_at}, updated_at={label.updated_at}"
+                        )
                 else:
                     result = "⚠️ PARTIAL"
                     test_results.append(False)
                     print(f"Status: {result}")
-                    print(f"  ! Created {label_count} labels (expected {expected_count})")
+                    print(
+                        f"  ! Created {label_count} labels (expected {expected_count})"
+                    )
                     print(f"  ! Timestamp check: {all_have_timestamps}")
 
             except Exception as e:
@@ -120,15 +116,16 @@ def test_label_creation():
                 print(f"Status: {result}")
                 print(f"Error: {type(e).__name__}: {str(e)}")
                 import traceback
+
                 print(traceback.format_exc())
 
     finally:
         session.close()
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST SUMMARY")
-    print("="*80)
+    print("=" * 80)
     total = len(test_results)
     passed = sum(test_results)
     failed = total - passed
@@ -138,7 +135,7 @@ def test_label_creation():
     print(f"Passed: {passed} ✅")
     print(f"Failed: {failed} ❌")
     print(f"Success Rate: {success_rate:.1f}%")
-    print("="*80)
+    print("=" * 80)
 
     if passed == total:
         print("\n🎉 ALL TESTS PASSED! Label creation fix is working correctly.")
@@ -146,6 +143,7 @@ def test_label_creation():
     else:
         print(f"\n⚠️ {failed} test(s) failed. Review errors above.")
         return 1
+
 
 if __name__ == "__main__":
     exit_code = test_label_creation()

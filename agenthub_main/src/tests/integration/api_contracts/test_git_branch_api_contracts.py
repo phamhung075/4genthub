@@ -31,7 +31,7 @@ def sample_git_branch(project_id: str):
     git_branch = GitBranch.create(
         name="Test Branch",
         description="Test git branch for API contract testing",
-        project_id=project_id
+        project_id=project_id,
     )
     git_branch.git_branch_name = "feature/test-api-contract"
     return git_branch
@@ -51,9 +51,14 @@ class TestGitBranchAPIContractBasicFields:
         assert sample_git_branch.id is not None, "GitBranch id must not be None"
 
         # Convert to string for UUID validation
-        id_str = str(sample_git_branch.id.value if hasattr(sample_git_branch.id, 'value')
-                     else sample_git_branch.id)
-        assert isinstance(id_str, str), "GitBranch id must be string or convertible to string"
+        id_str = str(
+            sample_git_branch.id.value
+            if hasattr(sample_git_branch.id, "value")
+            else sample_git_branch.id
+        )
+        assert isinstance(id_str, str), (
+            "GitBranch id must be string or convertible to string"
+        )
 
         # Verify it's a valid UUID format
         try:
@@ -62,7 +67,9 @@ class TestGitBranchAPIContractBasicFields:
         except ValueError:
             pytest.fail(f"GitBranch id '{id_str}' is not a valid UUID")
 
-    def test_git_branch_has_required_project_id_field(self, sample_git_branch: GitBranch):
+    def test_git_branch_has_required_project_id_field(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify git branch includes project_id field.
         Status: ✅ SHOULD PASS - Required for project association.
@@ -111,7 +118,9 @@ class TestGitBranchAPIContractBasicFields:
 class TestGitBranchAPIContractTimestamps:
     """Test timestamp fields - ISO 8601 format."""
 
-    def test_git_branch_created_at_is_iso8601_compatible(self, sample_git_branch: GitBranch):
+    def test_git_branch_created_at_is_iso8601_compatible(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify created_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
@@ -126,13 +135,17 @@ class TestGitBranchAPIContractTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(sample_git_branch.created_at, datetime):
             iso_string = sample_git_branch.created_at.isoformat()
-            assert "T" in iso_string, "created_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "created_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_git_branch.created_at, str):
             assert "T" in sample_git_branch.created_at, (
                 "created_at must be ISO 8601 format (contains 'T')"
             )
             try:
-                datetime.fromisoformat(sample_git_branch.created_at.replace("Z", "+00:00"))
+                datetime.fromisoformat(
+                    sample_git_branch.created_at.replace("Z", "+00:00")
+                )
             except (ValueError, AttributeError):
                 pytest.fail(
                     f"created_at '{sample_git_branch.created_at}' is not valid ISO 8601 format"
@@ -142,7 +155,9 @@ class TestGitBranchAPIContractTimestamps:
                 f"created_at must be datetime or string, got {type(sample_git_branch.created_at)}"
             )
 
-    def test_git_branch_updated_at_is_iso8601_compatible(self, sample_git_branch: GitBranch):
+    def test_git_branch_updated_at_is_iso8601_compatible(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify updated_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
@@ -157,13 +172,17 @@ class TestGitBranchAPIContractTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(sample_git_branch.updated_at, datetime):
             iso_string = sample_git_branch.updated_at.isoformat()
-            assert "T" in iso_string, "updated_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "updated_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_git_branch.updated_at, str):
             assert "T" in sample_git_branch.updated_at, (
                 "updated_at must be ISO 8601 format (contains 'T')"
             )
             try:
-                datetime.fromisoformat(sample_git_branch.updated_at.replace("Z", "+00:00"))
+                datetime.fromisoformat(
+                    sample_git_branch.updated_at.replace("Z", "+00:00")
+                )
             except (ValueError, AttributeError):
                 pytest.fail(
                     f"updated_at '{sample_git_branch.updated_at}' is not valid ISO 8601 format"
@@ -185,14 +204,27 @@ class TestGitBranchAPIContractStatusFields:
         Frontend expects: status?: string
         Backend has: status: TaskStatus
         """
-        assert hasattr(sample_git_branch, "status"), "GitBranch must have 'status' field"
+        assert hasattr(sample_git_branch, "status"), (
+            "GitBranch must have 'status' field"
+        )
 
         # Status may be a value object or string
-        status_str = (sample_git_branch.status.value if hasattr(sample_git_branch.status, 'value')
-                      else str(sample_git_branch.status))
+        status_str = (
+            sample_git_branch.status.value
+            if hasattr(sample_git_branch.status, "value")
+            else str(sample_git_branch.status)
+        )
 
-        valid_statuses = ["todo", "in_progress", "done", "blocked", "cancelled",
-                          "review", "testing", "archived"]
+        valid_statuses = [
+            "todo",
+            "in_progress",
+            "done",
+            "blocked",
+            "cancelled",
+            "review",
+            "testing",
+            "archived",
+        ]
         assert status_str in valid_statuses, (
             f"GitBranch status '{status_str}' must be one of {valid_statuses}"
         )
@@ -204,7 +236,9 @@ class TestGitBranchAPIContractStatusFields:
 
         Backend has: archived: bool
         """
-        assert hasattr(sample_git_branch, "archived"), "GitBranch must have 'archived' field"
+        assert hasattr(sample_git_branch, "archived"), (
+            "GitBranch must have 'archived' field"
+        )
         assert isinstance(sample_git_branch.archived, bool), (
             "GitBranch archived must be boolean"
         )
@@ -216,12 +250,16 @@ class TestGitBranchAPIContractStatusFields:
 
         Backend has: priority: Priority
         """
-        assert hasattr(sample_git_branch, "priority"), "GitBranch must have 'priority' field"
+        assert hasattr(sample_git_branch, "priority"), (
+            "GitBranch must have 'priority' field"
+        )
 
         # Priority may be a value object or string
-        priority_str = (sample_git_branch.priority.value if
-                        hasattr(sample_git_branch.priority, 'value')
-                        else str(sample_git_branch.priority))
+        priority_str = (
+            sample_git_branch.priority.value
+            if hasattr(sample_git_branch.priority, "value")
+            else str(sample_git_branch.priority)
+        )
 
         valid_priorities = ["low", "medium", "high", "urgent", "critical"]
         assert priority_str in valid_priorities, (
@@ -306,16 +344,22 @@ class TestGitBranchAPIContractTaskManagement:
         assert isinstance(task_count, int), "get_task_count must return int"
         assert task_count >= 0, "task_count must be non-negative"
 
-    def test_git_branch_get_completed_task_count_method(self, sample_git_branch: GitBranch):
+    def test_git_branch_get_completed_task_count_method(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify git branch can calculate completed task count.
         Status: ✅ SHOULD PASS - Required for progress tracking.
         """
         completed_count = sample_git_branch.get_completed_task_count()
-        assert isinstance(completed_count, int), "get_completed_task_count must return int"
+        assert isinstance(completed_count, int), (
+            "get_completed_task_count must return int"
+        )
         assert completed_count >= 0, "completed_count must be non-negative"
 
-    def test_git_branch_get_progress_percentage_method(self, sample_git_branch: GitBranch):
+    def test_git_branch_get_progress_percentage_method(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify git branch can calculate progress percentage.
         Status: ✅ SHOULD PASS - Required for progress tracking.
@@ -344,11 +388,15 @@ class TestGitBranchAPIContractTaskManagement:
         assert isinstance(tree_status, dict), "get_tree_status must return dict"
         assert "tree_name" in tree_status, "tree_status must include tree_name"
         assert "total_tasks" in tree_status, "tree_status must include total_tasks"
-        assert "completed_tasks" in tree_status, "tree_status must include completed_tasks"
+        assert "completed_tasks" in tree_status, (
+            "tree_status must include completed_tasks"
+        )
         assert "progress_percentage" in tree_status, (
             "tree_status must include progress_percentage"
         )
-        assert "status_breakdown" in tree_status, "tree_status must include status_breakdown"
+        assert "status_breakdown" in tree_status, (
+            "tree_status must include status_breakdown"
+        )
         assert "priority_breakdown" in tree_status, (
             "tree_status must include priority_breakdown"
         )
@@ -375,8 +423,12 @@ class TestGitBranchAPIContractSerialization:
         assert isinstance(branch_dict["id"], str), "Serialized id must be string"
 
         # Verify timestamps are ISO 8601 strings in serialized form
-        assert isinstance(branch_dict["created_at"], str), "Serialized created_at must be string"
-        assert isinstance(branch_dict["updated_at"], str), "Serialized updated_at must be string"
+        assert isinstance(branch_dict["created_at"], str), (
+            "Serialized created_at must be string"
+        )
+        assert isinstance(branch_dict["updated_at"], str), (
+            "Serialized updated_at must be string"
+        )
         assert "T" in branch_dict["created_at"], "created_at must be ISO 8601 format"
         assert "T" in branch_dict["updated_at"], "updated_at must be ISO 8601 format"
 
@@ -388,9 +440,13 @@ class TestGitBranchAPIContractSerialization:
         branch_dict = sample_git_branch.to_dict()
 
         assert "status" in branch_dict, "Serialized branch must include status"
-        assert isinstance(branch_dict["status"], str), "Serialized status must be string"
+        assert isinstance(branch_dict["status"], str), (
+            "Serialized status must be string"
+        )
 
-    def test_git_branch_serialized_priority_is_string(self, sample_git_branch: GitBranch):
+    def test_git_branch_serialized_priority_is_string(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify priority is serialized as string, not value object.
         Status: ✅ SHOULD PASS - Frontend expects string.
@@ -398,13 +454,17 @@ class TestGitBranchAPIContractSerialization:
         branch_dict = sample_git_branch.to_dict()
 
         assert "priority" in branch_dict, "Serialized branch must include priority"
-        assert isinstance(branch_dict["priority"], str), "Serialized priority must be string"
+        assert isinstance(branch_dict["priority"], str), (
+            "Serialized priority must be string"
+        )
 
 
 class TestGitBranchAPIContractCompleteStructure:
     """Test that GitBranch matches complete frontend expectations."""
 
-    def test_git_branch_matches_frontend_branch_interface(self, sample_git_branch: GitBranch):
+    def test_git_branch_matches_frontend_branch_interface(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify GitBranch entity includes ALL fields expected by frontend.
 
@@ -449,7 +509,9 @@ class TestGitBranchAPIContractCompleteStructure:
 class TestGitBranchAPIContractFrontendSummaryFields:
     """Test fields needed for BranchSummary frontend type."""
 
-    def test_git_branch_provides_branch_summary_data(self, sample_git_branch: GitBranch):
+    def test_git_branch_provides_branch_summary_data(
+        self, sample_git_branch: GitBranch
+    ):
         """
         Verify GitBranch can provide data for BranchSummary frontend type.
 

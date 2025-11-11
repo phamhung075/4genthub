@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Direct test runner without pytest to avoid hook issues."""
+
 import importlib
 import os
 import sys
@@ -12,8 +13,9 @@ src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
 # Set test environment
-os.environ['TESTING'] = 'true'
-os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
+os.environ["TESTING"] = "true"
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
 
 def run_test_imports():
     """Try to import test modules to find failures."""
@@ -41,6 +43,7 @@ def run_test_imports():
 
     return test_results
 
+
 def run_unittest_tests(test_module):
     """Run unittest tests from a module."""
     loader = unittest.TestLoader()
@@ -48,6 +51,7 @@ def run_unittest_tests(test_module):
     runner = unittest.TextTestRunner(verbosity=1)
     result = runner.run(suite)
     return result.wasSuccessful(), len(result.failures), len(result.errors)
+
 
 def main():
     print("=" * 60)
@@ -104,6 +108,7 @@ def main():
     print(f"Error tests: {error_tests}")
 
     return 0 if (failed_tests == 0 and error_tests == 0) else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

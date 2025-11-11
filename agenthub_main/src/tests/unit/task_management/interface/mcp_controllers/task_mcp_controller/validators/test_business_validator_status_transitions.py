@@ -47,14 +47,14 @@ class TestBusinessValidatorStatusTransitions:
         current_task_data = {
             "status": "in_progress",
             "priority": "medium",
-            "title": "Test task"
+            "title": "Test task",
         }
 
         # This should NOT create a business rule violation
         is_valid, error = validator.validate_task_update_rules(
             task_id="test-123",
             current_task_data=current_task_data,
-            status="in_progress"  # Same status - this should be allowed now
+            status="in_progress",  # Same status - this should be allowed now
         )
 
         assert is_valid

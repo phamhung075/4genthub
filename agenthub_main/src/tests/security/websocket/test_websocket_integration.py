@@ -40,7 +40,9 @@ class WebSocketTestClient:
     def __init__(self):
         self.secret_key = "test-secret-integration"
 
-    def create_user_token(self, user_id: str, email: str, expires_in_minutes: int = 30) -> str:
+    def create_user_token(
+        self, user_id: str, email: str, expires_in_minutes: int = 30
+    ) -> str:
         """Create a valid JWT token for a test user"""
         payload = {
             "sub": user_id,
@@ -50,7 +52,7 @@ class WebSocketTestClient:
             "iss": "test-issuer",
             "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
             "iat": datetime.now(UTC),
-            "role": "authenticated"
+            "role": "authenticated",
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
 
@@ -59,8 +61,8 @@ class WebSocketTestClient:
         return User(
             id=user_id,
             email=email,
-            username=email.split('@')[0],
-            password_hash="test_password_hash_123"  # Required field for User entity
+            username=email.split("@")[0],
+            password_hash="test_password_hash_123",  # Required field for User entity
         )
 
 
@@ -112,7 +114,9 @@ class TestWebSocketAuthenticationIntegration:
         mock_websocket.query_params = {"token": token}
 
         # Mock authentication
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = test_user
 
             # Import and call the WebSocket endpoint
@@ -139,17 +143,23 @@ class TestWebSocketAuthenticationIntegration:
             assert welcome_message["payload"]["entity"] == "connection"
             assert welcome_message["payload"]["action"] == "welcome"
             assert welcome_message["payload"]["data"]["primary"]["user_id"] == user_id
-            assert welcome_message["payload"]["data"]["primary"]["authenticated"] is True
+            assert (
+                welcome_message["payload"]["data"]["primary"]["authenticated"] is True
+            )
 
     @pytest.mark.asyncio
-    async def test_connection_rejected_for_invalid_token(self, ws_client, mock_websocket):
+    async def test_connection_rejected_for_invalid_token(
+        self, ws_client, mock_websocket
+    ):
         """Test WebSocket connection rejection for invalid token"""
         # Setup with invalid token
         invalid_token = "invalid.jwt.token"
         mock_websocket.query_params = {"token": invalid_token}
 
         # Mock authentication failure
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = None  # Authentication failed
 
             from fastmcp.server.routes.websocket_routes import realtime_updates
@@ -162,7 +172,9 @@ class TestWebSocketAuthenticationIntegration:
 
             # Verify connection was rejected
             mock_websocket.accept.assert_not_called()
-            mock_websocket.close.assert_called_once_with(code=4001, reason="Authentication required")
+            mock_websocket.close.assert_called_once_with(
+                code=4001, reason="Authentication required"
+            )
 
     @pytest.mark.asyncio
     async def test_connection_rejected_for_missing_token(self, mock_websocket):
@@ -170,7 +182,9 @@ class TestWebSocketAuthenticationIntegration:
         # Setup without token
         mock_websocket.query_params = {}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = None  # No token provided
 
             from fastmcp.server.routes.websocket_routes import realtime_updates
@@ -183,7 +197,9 @@ class TestWebSocketAuthenticationIntegration:
 
             # Verify connection was rejected
             mock_websocket.accept.assert_not_called()
-            mock_websocket.close.assert_called_once_with(code=4001, reason="Authentication required")
+            mock_websocket.close.assert_called_once_with(
+                code=4001, reason="Authentication required"
+            )
 
 
 class TestWebSocketAuthorizationIntegration:
@@ -204,14 +220,22 @@ class TestWebSocketAuthorizationIntegration:
         active_connections["user_1_conn"] = {ws1}
         active_connections["user_2_conn"] = {ws2}
 
-        connection_subscriptions[ws1] = {"client_id": "user_1_conn", "user_id": "user_1"}
-        connection_subscriptions[ws2] = {"client_id": "user_2_conn", "user_id": "user_2"}
+        connection_subscriptions[ws1] = {
+            "client_id": "user_1_conn",
+            "user_id": "user_1",
+        }
+        connection_subscriptions[ws2] = {
+            "client_id": "user_2_conn",
+            "user_id": "user_2",
+        }
 
         connection_users[ws1] = user1
         connection_users[ws2] = user2
 
         # Mock database query for task ownership
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -220,7 +244,9 @@ class TestWebSocketAuthorizationIntegration:
             mock_task.id = "task_123"
             mock_task.user_id = "user_1"
 
-            mock_session.query.return_value.filter.return_value.first.return_value = mock_task
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                mock_task
+            )
 
             # Broadcast task update from user_1
             await broadcast_data_change(
@@ -228,7 +254,7 @@ class TestWebSocketAuthorizationIntegration:
                 entity_type="task",
                 entity_id="task_123",
                 user_id="user_1",
-                data={"title": "Updated task"}
+                data={"title": "Updated task"},
             )
 
             # Verify user_1 received the message (v2.0 format)
@@ -260,26 +286,30 @@ class TestWebSocketAuthorizationIntegration:
             entity_type="task",
             entity_id="task_123",
             triggering_user_id="user_1",  # Same user
-            metadata={}
+            metadata={},
         )
 
         # User should be authorized for their own actions
         assert is_authorized is True
 
         # Test authorization for other user's action
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
             # Mock no task found (user doesn't own it)
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                None
+            )
 
             is_authorized = await is_user_authorized_for_message(
                 websocket=ws1,
                 entity_type="task",
                 entity_id="task_456",
                 triggering_user_id="user_2",  # Different user
-                metadata={}
+                metadata={},
             )
 
             # User should NOT be authorized for other user's tasks
@@ -296,7 +326,7 @@ class TestWebSocketAuthorizationIntegration:
             entity_type="task",
             entity_id="task_123",
             triggering_user_id="user_1",
-            metadata={}
+            metadata={},
         )
 
         # Should be denied
@@ -317,7 +347,9 @@ class TestWebSocketSessionManagement:
 
         mock_websocket.query_params = {"token": token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = test_user
 
             # Simulate disconnect after connection
@@ -359,7 +391,7 @@ class TestWebSocketSessionManagement:
             entity_type="task",
             entity_id="task_123",
             user_id=user_id,
-            data={"title": "New task"}
+            data={"title": "New task"},
         )
 
         # All connections should receive the message
@@ -378,7 +410,9 @@ class TestWebSocketAttackScenarios:
         email = "victim@example.com"
 
         # Create expired token
-        expired_token = ws_client.create_user_token(user_id, email, expires_in_minutes=-30)
+        expired_token = ws_client.create_user_token(
+            user_id, email, expires_in_minutes=-30
+        )
 
         mock_websocket = AsyncMock()
         mock_websocket.query_params = {"token": expired_token}
@@ -390,7 +424,9 @@ class TestWebSocketAttackScenarios:
         mock_websocket.close = AsyncMock()
 
         # Mock authentication to simulate expired token detection
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token"
+        ) as mock_validate:
             mock_validate.return_value = None  # Expired token rejected
 
             from fastmcp.server.routes.websocket_routes import realtime_updates
@@ -400,7 +436,9 @@ class TestWebSocketAttackScenarios:
 
             # Connection should be rejected
             mock_websocket.accept.assert_not_called()
-            mock_websocket.close.assert_called_once_with(code=4001, reason="Authentication required")
+            mock_websocket.close.assert_called_once_with(
+                code=4001, reason="Authentication required"
+            )
 
     @pytest.mark.asyncio
     async def test_attack_scenario_cross_user_data_access(self, ws_client):
@@ -414,12 +452,16 @@ class TestWebSocketAttackScenarios:
         connection_users[ws1] = user1
 
         # Mock database to simulate user_1 doesn't own task_456
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
             # No task found for user_1 (they don't own task_456)
-            mock_session.query.return_value.filter.return_value.first.return_value = None
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                None
+            )
 
             # Test authorization
             is_authorized = await is_user_authorized_for_message(
@@ -427,7 +469,7 @@ class TestWebSocketAttackScenarios:
                 entity_type="task",
                 entity_id="task_456",  # Owned by user_2
                 triggering_user_id="user_2",
-                metadata={}
+                metadata={},
             )
 
             # Should be denied
@@ -450,7 +492,9 @@ class TestWebSocketAttackScenarios:
         connection_users[ws_admin] = admin_user
 
         # Mock database to show admin owns sensitive data
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = MagicMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -473,7 +517,7 @@ class TestWebSocketAttackScenarios:
                 entity_type="task",
                 entity_id="admin_task_123",
                 user_id="admin_user",
-                data={"sensitive": "admin_only_data"}
+                data={"sensitive": "admin_only_data"},
             )
 
             # Admin should receive the message

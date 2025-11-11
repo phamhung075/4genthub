@@ -28,8 +28,7 @@ from pathlib import Path
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -44,7 +43,7 @@ class WebSocketSecurityTestRunner:
             "summary": {},
             "test_results": {},
             "security_report": {},
-            "recommendations": []
+            "recommendations": [],
         }
 
     def run_test_category(self, category: str, verbose: bool = False) -> dict:
@@ -55,14 +54,14 @@ class WebSocketSecurityTestRunner:
                 "test_websocket_security.py",
                 "test_token_validation.py",
                 "test_websocket_integration.py",
-                "test_penetration_scenarios.py"
+                "test_penetration_scenarios.py",
             ],
             "auth": ["test_websocket_security.py::TestWebSocketAuthentication"],
             "authz": ["test_websocket_integration.py::TestWebSocketAuthorization"],
             "token": ["test_token_validation.py"],
             "integration": ["test_websocket_integration.py"],
             "penetration": ["test_penetration_scenarios.py"],
-            "performance": ["test_penetration_scenarios.py::TestPerformanceAttacks"]
+            "performance": ["test_penetration_scenarios.py::TestPerformanceAttacks"],
         }
 
         if category not in test_files:
@@ -80,23 +79,20 @@ class WebSocketSecurityTestRunner:
         cmd.extend(test_files[category])
 
         # Add additional flags
-        cmd.extend([
-            "--tb=short",
-            "--json-report",
-            "--json-report-file=security_test_results.json"
-        ])
+        cmd.extend(
+            [
+                "--tb=short",
+                "--json-report",
+                "--json-report-file=security_test_results.json",
+            ]
+        )
 
         logger.info(f"Running {category} security tests...")
         logger.info(f"Command: {' '.join(cmd)}")
 
         # Execute tests
         start_time = datetime.now(UTC)
-        result = subprocess.run(
-            cmd,
-            cwd=self.test_dir,
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(cmd, cwd=self.test_dir, capture_output=True, text=True)
         end_time = datetime.now(UTC)
 
         execution_time = (end_time - start_time).total_seconds()
@@ -109,7 +105,7 @@ class WebSocketSecurityTestRunner:
             "stdout": result.stdout,
             "stderr": result.stderr,
             "started_at": start_time.isoformat(),
-            "completed_at": end_time.isoformat()
+            "completed_at": end_time.isoformat(),
         }
 
         # Load JSON report if available
@@ -133,7 +129,7 @@ class WebSocketSecurityTestRunner:
             "vulnerabilities_found": [],
             "tests_passed": 0,
             "tests_failed": 0,
-            "security_score": 0
+            "security_score": 0,
         }
 
         # Parse detailed results if available
@@ -145,9 +141,14 @@ class WebSocketSecurityTestRunner:
                 security_analysis["tests_passed"] = summary.get("passed", 0)
                 security_analysis["tests_failed"] = summary.get("failed", 0)
 
-                total_tests = security_analysis["tests_passed"] + security_analysis["tests_failed"]
+                total_tests = (
+                    security_analysis["tests_passed"]
+                    + security_analysis["tests_failed"]
+                )
                 if total_tests > 0:
-                    security_analysis["security_score"] = (security_analysis["tests_passed"] / total_tests) * 100
+                    security_analysis["security_score"] = (
+                        security_analysis["tests_passed"] / total_tests
+                    ) * 100
 
             # Analyze individual test results
             if "tests" in detailed:
@@ -156,28 +157,41 @@ class WebSocketSecurityTestRunner:
                         test_name = test.get("nodeid", "unknown")
 
                         # Identify critical security failures
-                        if any(keyword in test_name.lower() for keyword in [
-                            "attack", "bypass", "escalation", "hijacking", "injection"
-                        ]):
-                            security_analysis["critical_issues"].append({
-                                "test": test_name,
-                                "category": "Security Bypass",
-                                "description": "Critical security test failed - vulnerability may exist"
-                            })
+                        if any(
+                            keyword in test_name.lower()
+                            for keyword in [
+                                "attack",
+                                "bypass",
+                                "escalation",
+                                "hijacking",
+                                "injection",
+                            ]
+                        ):
+                            security_analysis["critical_issues"].append(
+                                {
+                                    "test": test_name,
+                                    "category": "Security Bypass",
+                                    "description": "Critical security test failed - vulnerability may exist",
+                                }
+                            )
 
                         # Identify specific vulnerabilities
                         if "expired_token" in test_name.lower():
-                            security_analysis["vulnerabilities_found"].append({
-                                "type": "Token Expiry Vulnerability",
-                                "test": test_name,
-                                "severity": "HIGH"
-                            })
+                            security_analysis["vulnerabilities_found"].append(
+                                {
+                                    "type": "Token Expiry Vulnerability",
+                                    "test": test_name,
+                                    "severity": "HIGH",
+                                }
+                            )
                         elif "unauthorized" in test_name.lower():
-                            security_analysis["vulnerabilities_found"].append({
-                                "type": "Authorization Bypass",
-                                "test": test_name,
-                                "severity": "CRITICAL"
-                            })
+                            security_analysis["vulnerabilities_found"].append(
+                                {
+                                    "type": "Authorization Bypass",
+                                    "test": test_name,
+                                    "severity": "CRITICAL",
+                                }
+                            )
 
         # Determine overall security status
         if security_analysis["security_score"] >= 95:
@@ -198,73 +212,83 @@ class WebSocketSecurityTestRunner:
 
         # Critical issues recommendations
         if security_analysis["critical_issues"]:
-            recommendations.append({
-                "priority": "IMMEDIATE",
-                "category": "Critical Security",
-                "title": "Address Critical Security Test Failures",
-                "description": f"Found {len(security_analysis['critical_issues'])} critical security test failures",
-                "actions": [
-                    "Review failed penetration tests immediately",
-                    "Implement missing security controls",
-                    "Re-run tests to verify fixes"
-                ]
-            })
+            recommendations.append(
+                {
+                    "priority": "IMMEDIATE",
+                    "category": "Critical Security",
+                    "title": "Address Critical Security Test Failures",
+                    "description": f"Found {len(security_analysis['critical_issues'])} critical security test failures",
+                    "actions": [
+                        "Review failed penetration tests immediately",
+                        "Implement missing security controls",
+                        "Re-run tests to verify fixes",
+                    ],
+                }
+            )
 
         # Vulnerability-specific recommendations
         for vuln in security_analysis["vulnerabilities_found"]:
             if vuln["type"] == "Token Expiry Vulnerability":
-                recommendations.append({
-                    "priority": "HIGH",
-                    "category": "Authentication",
-                    "title": "Implement Token Expiry Handling",
-                    "description": "WebSocket connections not properly handling token expiry",
-                    "actions": [
-                        "Add periodic token validation to WebSocket connections",
-                        "Implement automatic disconnection on token expiry",
-                        "Add token refresh mechanism for long-lived connections"
-                    ]
-                })
+                recommendations.append(
+                    {
+                        "priority": "HIGH",
+                        "category": "Authentication",
+                        "title": "Implement Token Expiry Handling",
+                        "description": "WebSocket connections not properly handling token expiry",
+                        "actions": [
+                            "Add periodic token validation to WebSocket connections",
+                            "Implement automatic disconnection on token expiry",
+                            "Add token refresh mechanism for long-lived connections",
+                        ],
+                    }
+                )
             elif vuln["type"] == "Authorization Bypass":
-                recommendations.append({
-                    "priority": "CRITICAL",
-                    "category": "Authorization",
-                    "title": "Fix Authorization Controls",
-                    "description": "Users receiving unauthorized data through WebSocket",
-                    "actions": [
-                        "Implement user-scoped message filtering",
-                        "Add entity-level permission checks",
-                        "Verify tenant isolation in multi-tenant environments"
-                    ]
-                })
+                recommendations.append(
+                    {
+                        "priority": "CRITICAL",
+                        "category": "Authorization",
+                        "title": "Fix Authorization Controls",
+                        "description": "Users receiving unauthorized data through WebSocket",
+                        "actions": [
+                            "Implement user-scoped message filtering",
+                            "Add entity-level permission checks",
+                            "Verify tenant isolation in multi-tenant environments",
+                        ],
+                    }
+                )
 
         # General security recommendations
         if security_analysis["security_score"] < 100:
-            recommendations.append({
-                "priority": "MEDIUM",
-                "category": "General Security",
-                "title": "Improve Overall Security Posture",
-                "description": f"Security score: {security_analysis['security_score']:.1f}%",
-                "actions": [
-                    "Review and fix all failed security tests",
-                    "Implement comprehensive logging for security events",
-                    "Add monitoring for suspicious WebSocket activity",
-                    "Conduct regular security testing"
-                ]
-            })
+            recommendations.append(
+                {
+                    "priority": "MEDIUM",
+                    "category": "General Security",
+                    "title": "Improve Overall Security Posture",
+                    "description": f"Security score: {security_analysis['security_score']:.1f}%",
+                    "actions": [
+                        "Review and fix all failed security tests",
+                        "Implement comprehensive logging for security events",
+                        "Add monitoring for suspicious WebSocket activity",
+                        "Conduct regular security testing",
+                    ],
+                }
+            )
 
         # Performance security recommendations
-        recommendations.append({
-            "priority": "MEDIUM",
-            "category": "Performance Security",
-            "title": "Implement Rate Limiting and DoS Protection",
-            "description": "Protect against connection flooding and message spam",
-            "actions": [
-                "Implement connection rate limiting per IP/user",
-                "Add message rate limiting for WebSocket connections",
-                "Set maximum concurrent connections per user",
-                "Monitor and alert on unusual connection patterns"
-            ]
-        })
+        recommendations.append(
+            {
+                "priority": "MEDIUM",
+                "category": "Performance Security",
+                "title": "Implement Rate Limiting and DoS Protection",
+                "description": "Protect against connection flooding and message spam",
+                "actions": [
+                    "Implement connection rate limiting per IP/user",
+                    "Add message rate limiting for WebSocket connections",
+                    "Set maximum concurrent connections per user",
+                    "Monitor and alert on unusual connection patterns",
+                ],
+            }
+        )
 
         return recommendations
 
@@ -297,58 +321,65 @@ class WebSocketSecurityTestRunner:
 <body>
     <div class="header">
         <h1>WebSocket Security Test Report</h1>
-        <p><strong>Generated:</strong> {results['execution_time']}</p>
+        <p><strong>Generated:</strong> {results["execution_time"]}</p>
         <p><strong>Overall Status:</strong>
-            <span class="status-{results['security_report']['overall_status'].lower()}">
-                {results['security_report']['overall_status']}
+            <span class="status-{results["security_report"]["overall_status"].lower()}">
+                {results["security_report"]["overall_status"]}
             </span>
         </p>
-        <p><strong>Security Score:</strong> {results['security_report']['security_score']:.1f}%</p>
+        <p><strong>Security Score:</strong> {results["security_report"]["security_score"]:.1f}%</p>
     </div>
 
     <div class="section">
         <h2>Executive Summary</h2>
         <ul>
-            <li><strong>Tests Passed:</strong> {results['security_report']['tests_passed']}</li>
-            <li><strong>Tests Failed:</strong> {results['security_report']['tests_failed']}</li>
-            <li><strong>Critical Issues:</strong> {len(results['security_report']['critical_issues'])}</li>
-            <li><strong>Vulnerabilities Found:</strong> {len(results['security_report']['vulnerabilities_found'])}</li>
+            <li><strong>Tests Passed:</strong> {results["security_report"]["tests_passed"]}</li>
+            <li><strong>Tests Failed:</strong> {results["security_report"]["tests_failed"]}</li>
+            <li><strong>Critical Issues:</strong> {len(results["security_report"]["critical_issues"])}</li>
+            <li><strong>Vulnerabilities Found:</strong> {len(results["security_report"]["vulnerabilities_found"])}</li>
         </ul>
     </div>
         """
 
         # Add critical issues if any
-        if results['security_report']['critical_issues']:
-            html += '<div class="section critical"><h2>🚨 Critical Security Issues</h2><ul>'
-            for issue in results['security_report']['critical_issues']:
-                html += f'<li><strong>{issue["category"]}:</strong> {issue["description"]}</li>'
-            html += '</ul></div>'
+        if results["security_report"]["critical_issues"]:
+            html += (
+                '<div class="section critical"><h2>🚨 Critical Security Issues</h2><ul>'
+            )
+            for issue in results["security_report"]["critical_issues"]:
+                html += f"<li><strong>{issue['category']}:</strong> {issue['description']}</li>"
+            html += "</ul></div>"
 
         # Add vulnerabilities if any
-        if results['security_report']['vulnerabilities_found']:
+        if results["security_report"]["vulnerabilities_found"]:
             html += '<div class="section high"><h2>🛡️ Vulnerabilities Found</h2><ul>'
-            for vuln in results['security_report']['vulnerabilities_found']:
-                html += f'<li><strong>{vuln["type"]}</strong> (Severity: {vuln["severity"]})</li>'
-            html += '</ul></div>'
+            for vuln in results["security_report"]["vulnerabilities_found"]:
+                html += f"<li><strong>{vuln['type']}</strong> (Severity: {vuln['severity']})</li>"
+            html += "</ul></div>"
 
         # Add recommendations
         html += '<div class="section"><h2>📋 Security Recommendations</h2>'
-        for rec in results['recommendations']:
-            priority_class = rec['priority'].lower()
-            html += f'''
+        for rec in results["recommendations"]:
+            priority_class = rec["priority"].lower()
+            html += f"""
             <div class="recommendation {priority_class}">
-                <h3>{rec['title']} ({rec['priority']} Priority)</h3>
-                <p>{rec['description']}</p>
+                <h3>{rec["title"]} ({rec["priority"]} Priority)</h3>
+                <p>{rec["description"]}</p>
                 <ul>
-            '''
-            for action in rec['actions']:
-                html += f'<li>{action}</li>'
-            html += '</ul></div>'
+            """
+            for action in rec["actions"]:
+                html += f"<li>{action}</li>"
+            html += "</ul></div>"
 
-        html += '</div></body></html>'
+        html += "</div></body></html>"
         return html
 
-    def run_security_tests(self, category: str = "all", verbose: bool = False, generate_report: bool = False):
+    def run_security_tests(
+        self,
+        category: str = "all",
+        verbose: bool = False,
+        generate_report: bool = False,
+    ):
         """Run complete security test suite"""
 
         logger.info("🔒 Starting WebSocket Security Test Suite")
@@ -372,11 +403,11 @@ class WebSocketSecurityTestRunner:
                 "summary": {
                     "category": category,
                     "total_execution_time": test_results["execution_time"],
-                    "return_code": test_results["return_code"]
+                    "return_code": test_results["return_code"],
                 },
                 "test_results": test_results,
                 "security_report": security_analysis,
-                "recommendations": recommendations
+                "recommendations": recommendations,
             }
 
             # Print summary
@@ -393,33 +424,37 @@ class WebSocketSecurityTestRunner:
     def print_security_summary(self):
         """Print security test summary to console"""
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("🔒 WEBSOCKET SECURITY TEST SUMMARY")
-        print("="*60)
+        print("=" * 60)
 
-        status = self.results['security_report']['overall_status']
-        score = self.results['security_report']['security_score']
+        status = self.results["security_report"]["overall_status"]
+        score = self.results["security_report"]["security_score"]
 
         print(f"Overall Status: {status}")
         print(f"Security Score: {score:.1f}%")
         print(f"Tests Passed: {self.results['security_report']['tests_passed']}")
         print(f"Tests Failed: {self.results['security_report']['tests_failed']}")
 
-        if self.results['security_report']['critical_issues']:
-            print(f"\n🚨 CRITICAL ISSUES: {len(self.results['security_report']['critical_issues'])}")
-            for issue in self.results['security_report']['critical_issues']:
+        if self.results["security_report"]["critical_issues"]:
+            print(
+                f"\n🚨 CRITICAL ISSUES: {len(self.results['security_report']['critical_issues'])}"
+            )
+            for issue in self.results["security_report"]["critical_issues"]:
                 print(f"  - {issue['category']}: {issue['description']}")
 
-        if self.results['security_report']['vulnerabilities_found']:
-            print(f"\n🛡️ VULNERABILITIES: {len(self.results['security_report']['vulnerabilities_found'])}")
-            for vuln in self.results['security_report']['vulnerabilities_found']:
+        if self.results["security_report"]["vulnerabilities_found"]:
+            print(
+                f"\n🛡️ VULNERABILITIES: {len(self.results['security_report']['vulnerabilities_found'])}"
+            )
+            for vuln in self.results["security_report"]["vulnerabilities_found"]:
                 print(f"  - {vuln['type']} (Severity: {vuln['severity']})")
 
         print(f"\n📋 RECOMMENDATIONS: {len(self.results['recommendations'])}")
-        for rec in self.results['recommendations'][:3]:  # Show top 3
+        for rec in self.results["recommendations"][:3]:  # Show top 3
             print(f"  - {rec['priority']}: {rec['title']}")
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
 
     def generate_reports(self):
         """Generate detailed security reports"""
@@ -428,14 +463,14 @@ class WebSocketSecurityTestRunner:
 
         # JSON report
         json_file = self.test_dir / f"security_report_{timestamp}.json"
-        with open(json_file, 'w') as f:
+        with open(json_file, "w") as f:
             json.dump(self.results, f, indent=2)
         logger.info(f"JSON report saved: {json_file}")
 
         # HTML report
         html_content = self.generate_html_report(self.results)
         html_file = self.test_dir / f"security_report_{timestamp}.html"
-        with open(html_file, 'w') as f:
+        with open(html_file, "w") as f:
             f.write(html_content)
         logger.info(f"HTML report saved: {html_file}")
 
@@ -460,26 +495,33 @@ Examples:
   python run_security_tests.py
   python run_security_tests.py --category penetration --verbose
   python run_security_tests.py --category all --report
-        """
+        """,
     )
 
     parser.add_argument(
         "--category",
-        choices=["all", "auth", "authz", "token", "integration", "penetration", "performance"],
+        choices=[
+            "all",
+            "auth",
+            "authz",
+            "token",
+            "integration",
+            "penetration",
+            "performance",
+        ],
         default="all",
-        help="Test category to run (default: all)"
+        help="Test category to run (default: all)",
     )
 
     parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose output"
+        "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
 
     parser.add_argument(
-        "--report", "-r",
+        "--report",
+        "-r",
         action="store_true",
-        help="Generate detailed HTML and JSON reports"
+        help="Generate detailed HTML and JSON reports",
     )
 
     args = parser.parse_args()
@@ -487,13 +529,11 @@ Examples:
     try:
         runner = WebSocketSecurityTestRunner()
         runner.run_security_tests(
-            category=args.category,
-            verbose=args.verbose,
-            generate_report=args.report
+            category=args.category, verbose=args.verbose, generate_report=args.report
         )
 
         # Exit with appropriate code
-        return_code = runner.results['summary']['return_code']
+        return_code = runner.results["summary"]["return_code"]
         if return_code == 0:
             logger.info("✅ All security tests passed!")
         else:

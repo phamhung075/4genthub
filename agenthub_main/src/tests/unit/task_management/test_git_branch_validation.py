@@ -9,7 +9,7 @@ This confirms that:
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../../'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../../"))
 
 from fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.validators.context_validator import (
     ContextValidator,
@@ -29,8 +29,7 @@ def test_context_validation():
     require_git_branch_ops = ["create", "next"]
     for op in require_git_branch_ops:
         result, error = validator.validate_context_requirements(
-            operation=op,
-            git_branch_id=None
+            operation=op, git_branch_id=None
         )
         print(f"\n{op.upper()} without git_branch_id:")
         print(f"  Valid: {result}")
@@ -40,8 +39,7 @@ def test_context_validation():
 
         # Test with git_branch_id
         result, error = validator.validate_context_requirements(
-            operation=op,
-            git_branch_id="branch-123"
+            operation=op, git_branch_id="branch-123"
         )
         print(f"\n{op.upper()} with git_branch_id:")
         print(f"  Valid: {result}")
@@ -51,9 +49,7 @@ def test_context_validation():
     no_git_branch_ops = ["get", "update", "complete", "delete", "list", "search"]
     for op in no_git_branch_ops:
         result, error = validator.validate_context_requirements(
-            operation=op,
-            task_id="task-123",
-            git_branch_id=None
+            operation=op, task_id="task-123", git_branch_id=None
         )
         print(f"\n{op.upper()} without git_branch_id:")
         print(f"  Valid: {result}")
@@ -65,7 +61,10 @@ def test_context_validation():
     print("✅ All validation tests passed!")
     print("\nSummary:")
     print("- 'create' and 'next' operations require git_branch_id")
-    print("- 'get', 'update', 'complete', 'delete', 'list', 'search' operations don't require git_branch_id")
+    print(
+        "- 'get', 'update', 'complete', 'delete', 'list', 'search' operations don't require git_branch_id"
+    )
+
 
 if __name__ == "__main__":
     test_context_validation()

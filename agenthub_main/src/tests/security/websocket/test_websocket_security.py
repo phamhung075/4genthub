@@ -66,7 +66,7 @@ class WebSocketSecurityTester:
             "iss": "test-issuer",
             "exp": datetime.now(UTC) + timedelta(minutes=expires_in_minutes),
             "iat": datetime.now(UTC),
-            "role": "authenticated"
+            "role": "authenticated",
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
@@ -78,7 +78,7 @@ class WebSocketSecurityTester:
             "aud": "authenticated",
             "exp": datetime.now(UTC) - timedelta(minutes=30),  # Expired 30 minutes ago
             "iat": datetime.now(UTC) - timedelta(hours=1),
-            "role": "authenticated"
+            "role": "authenticated",
         }
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
@@ -90,7 +90,7 @@ class WebSocketSecurityTester:
             "aud": "authenticated",
             "exp": datetime.now(UTC) + timedelta(minutes=30),
             "iat": datetime.now(UTC),
-            "role": "authenticated"
+            "role": "authenticated",
         }
         # Sign with wrong secret
         return jwt.encode(payload, "wrong-secret", algorithm=self.algorithm)
@@ -122,7 +122,9 @@ class TestWebSocketAuthentication:
     """Test WebSocket JWT authentication and token validation"""
 
     @pytest.mark.asyncio
-    async def test_websocket_connection_requires_valid_token(self, security_tester, mock_websocket):
+    async def test_websocket_connection_requires_valid_token(
+        self, security_tester, mock_websocket
+    ):
         """
         SECURITY TEST: WebSocket connection should require valid JWT token
 
@@ -132,7 +134,9 @@ class TestWebSocketAuthentication:
         valid_token = security_tester.create_valid_token("test_user_123")
         mock_websocket.query_params = {"token": valid_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = ("test_user_123", True)
 
             # This should succeed (tested in integration test)
@@ -140,7 +144,9 @@ class TestWebSocketAuthentication:
             assert mock_validate.call_count == 0  # Not called yet
 
     @pytest.mark.asyncio
-    async def test_websocket_rejects_expired_token(self, security_tester, mock_websocket):
+    async def test_websocket_rejects_expired_token(
+        self, security_tester, mock_websocket
+    ):
         """
         SECURITY TEST: WebSocket should reject expired tokens
 
@@ -149,7 +155,9 @@ class TestWebSocketAuthentication:
         expired_token = security_tester.create_expired_token("test_user_123")
         mock_websocket.query_params = {"token": expired_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = (None, False)  # Expired token validation fails
 
             # Connection should be rejected
@@ -157,7 +165,9 @@ class TestWebSocketAuthentication:
             pass
 
     @pytest.mark.asyncio
-    async def test_websocket_rejects_invalid_token(self, security_tester, mock_websocket):
+    async def test_websocket_rejects_invalid_token(
+        self, security_tester, mock_websocket
+    ):
         """
         SECURITY TEST: WebSocket should reject invalid tokens
 
@@ -166,14 +176,18 @@ class TestWebSocketAuthentication:
         invalid_token = security_tester.create_invalid_token()
         mock_websocket.query_params = {"token": invalid_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = (None, False)  # Invalid token validation fails
 
             # Connection should be rejected
             pass
 
     @pytest.mark.asyncio
-    async def test_websocket_rejects_malformed_token(self, security_tester, mock_websocket):
+    async def test_websocket_rejects_malformed_token(
+        self, security_tester, mock_websocket
+    ):
         """
         SECURITY TEST: WebSocket should reject malformed tokens
 
@@ -182,7 +196,9 @@ class TestWebSocketAuthentication:
         malformed_token = security_tester.create_malformed_token()
         mock_websocket.query_params = {"token": malformed_token}
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.side_effect = Exception("Invalid token format")
 
             # Connection should be rejected
@@ -229,21 +245,27 @@ class TestWebSocketAuthorization:
         active_connections["user_1"] = {mock_ws1}
         active_connections["user_2"] = {mock_ws2}
 
-        connection_subscriptions[mock_ws1] = {"client_id": "user_1", "user_id": "user_1"}
-        connection_subscriptions[mock_ws2] = {"client_id": "user_2", "user_id": "user_2"}
+        connection_subscriptions[mock_ws1] = {
+            "client_id": "user_1",
+            "user_id": "user_1",
+        }
+        connection_subscriptions[mock_ws2] = {
+            "client_id": "user_2",
+            "user_id": "user_2",
+        }
 
         # Create User objects for authentication
         user1 = User(
             id="user_1",
             email="user1@test.com",
             username="user_1",
-            password_hash="dummy_hash"
+            password_hash="dummy_hash",
         )
         user2 = User(
             id="user_2",
             email="user2@test.com",
             username="user_2",
-            password_hash="dummy_hash"
+            password_hash="dummy_hash",
         )
 
         # Set up connection_users mapping for authorization
@@ -256,7 +278,7 @@ class TestWebSocketAuthorization:
             entity_type="task",
             entity_id="task_123",
             user_id="user_1",  # Only user_1 should receive this
-            data={"sensitive": "data_for_user_1_only"}
+            data={"sensitive": "data_for_user_1_only"},
         )
 
         # Verify SECURE behavior: only user_1 should receive the message
@@ -264,7 +286,9 @@ class TestWebSocketAuthorization:
         assert mock_ws1.send_json.called, "user_1 should receive their own message"
 
         # user_2 should NOT receive the message (security filtering working)
-        assert not mock_ws2.send_json.called, "user_2 should NOT receive user_1's message"
+        assert not mock_ws2.send_json.called, (
+            "user_2 should NOT receive user_1's message"
+        )
 
         # Verify the message content for user_1 (v2.0 format)
         mock_ws1.send_json.assert_called_once()
@@ -274,10 +298,15 @@ class TestWebSocketAuthorization:
         assert call_args["payload"]["entity"] == "task"
         assert call_args["payload"]["action"] == "updated"
         assert call_args["metadata"]["userId"] == "user_1"
-        assert call_args["payload"]["data"]["primary"]["sensitive"] == "data_for_user_1_only"
+        assert (
+            call_args["payload"]["data"]["primary"]["sensitive"]
+            == "data_for_user_1_only"
+        )
 
     @pytest.mark.asyncio
-    async def test_unauthorized_user_cannot_receive_sensitive_data(self, security_tester):
+    async def test_unauthorized_user_cannot_receive_sensitive_data(
+        self, security_tester
+    ):
         """
         SECURITY TEST: Users without proper permissions should not receive sensitive data
 
@@ -469,7 +498,9 @@ class TestIntegrationSecurity:
         pass
 
     @pytest.mark.asyncio
-    async def test_integration_jwt_middleware_websocket_validation(self, security_tester):
+    async def test_integration_jwt_middleware_websocket_validation(
+        self, security_tester
+    ):
         """
         INTEGRATION TEST: JWT middleware integration with WebSocket validation
 
@@ -479,7 +510,9 @@ class TestIntegrationSecurity:
         pass
 
     @pytest.mark.asyncio
-    async def test_integration_user_permissions_broadcast_filtering(self, security_tester):
+    async def test_integration_user_permissions_broadcast_filtering(
+        self, security_tester
+    ):
         """
         INTEGRATION TEST: User permissions integration with broadcast filtering
 

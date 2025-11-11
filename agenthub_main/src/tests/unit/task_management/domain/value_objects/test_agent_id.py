@@ -25,10 +25,10 @@ class TestAgentIdCreation:
     def test_create_from_uuid_without_hyphens(self):
         """Should accept UUID without hyphens and add them"""
         uuid_obj = uuid.uuid4()
-        uuid_no_hyphens = str(uuid_obj).replace('-', '')
+        uuid_no_hyphens = str(uuid_obj).replace("-", "")
         agent_id = AgentId(uuid_no_hyphens)
         assert agent_id.value == str(uuid_obj)
-        assert '-' in agent_id.value
+        assert "-" in agent_id.value
 
     def test_reject_none_value(self):
         """Should raise ValueError when value is None"""
@@ -153,17 +153,17 @@ class TestAgentIdStringRepresentation:
         agent_id = AgentId.generate_new()
         canonical = agent_id.to_canonical_format()
         assert canonical == agent_id.value
-        assert '-' in canonical
+        assert "-" in canonical
         assert len(canonical) == 36
 
     def test_to_hex_format(self):
         """Should return hex format without hyphens"""
         agent_id = AgentId.generate_new()
         hex_format = agent_id.to_hex_format()
-        assert '-' not in hex_format
+        assert "-" not in hex_format
         assert len(hex_format) == 32
         # Verify it's the same UUID
-        assert hex_format == agent_id.value.replace('-', '')
+        assert hex_format == agent_id.value.replace("-", "")
 
 
 class TestAgentIdImmutability:
@@ -178,5 +178,7 @@ class TestAgentIdImmutability:
     def test_frozen_dataclass(self):
         """Should be a frozen dataclass"""
         agent_id = AgentId.generate_new()
-        assert agent_id.__dataclass_fields__['value'].metadata.get('frozen', False) or \
-               getattr(agent_id.__class__, '__dataclass_params__').frozen
+        assert (
+            agent_id.__dataclass_fields__["value"].metadata.get("frozen", False)
+            or getattr(agent_id.__class__, "__dataclass_params__").frozen
+        )

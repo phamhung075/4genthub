@@ -65,19 +65,25 @@ class TestGlobalContextNestedData:
 
     def test_get_nested_value_missing_returns_default(self, schema):
         """Test getting nested value returns default when not found."""
-        value = schema.get_nested_value("preferences.nonexistent", default="default_value")
+        value = schema.get_nested_value(
+            "preferences.nonexistent", default="default_value"
+        )
         assert value == "default_value"
 
     def test_get_nested_value_three_parts_missing(self, schema):
         """Test getting 3-part nested value returns default when not found."""
-        value = schema.get_nested_value("development.patterns.nonexistent", default="default")
+        value = schema.get_nested_value(
+            "development.patterns.nonexistent", default="default"
+        )
         assert value == "default"
 
     def test_set_get_roundtrip(self, schema):
         """Test setting and getting values roundtrip."""
         # Two-part path
         schema.set_nested_value("preferences.user_interface", {"language": "en"})
-        assert schema.get_nested_value("preferences.user_interface") == {"language": "en"}
+        assert schema.get_nested_value("preferences.user_interface") == {
+            "language": "en"
+        }
 
         # Three-part path
         schema.set_nested_value("development.tools.github", "connected")

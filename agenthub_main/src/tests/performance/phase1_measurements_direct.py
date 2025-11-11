@@ -16,7 +16,7 @@ sys.path.insert(0, str(src_path))
 
 def calculate_json_size(data: dict) -> int:
     """Calculate JSON string size in characters"""
-    return len(json.dumps(data, separators=(',', ':')))
+    return len(json.dumps(data, separators=(",", ":")))
 
 
 def estimate_tokens(char_count: int) -> int:
@@ -33,9 +33,9 @@ def measure_emoji_field_savings():
     tokens_saved = estimate_tokens(chars_saved)
 
     return {
-        'fields_removed': ['priority_emoji', 'status_emoji'],
-        'chars_saved_per_response': chars_saved,
-        'tokens_saved_per_response': tokens_saved
+        "fields_removed": ["priority_emoji", "status_emoji"],
+        "chars_saved_per_response": chars_saved,
+        "tokens_saved_per_response": tokens_saved,
     }
 
 
@@ -48,9 +48,9 @@ def measure_count_field_savings():
     tokens_saved = estimate_tokens(chars_saved)
 
     return {
-        'fields_removed': ['subtask_count', 'assignees_count', 'dependency_count'],
-        'chars_saved_per_response': chars_saved,
-        'tokens_saved_per_response': tokens_saved
+        "fields_removed": ["subtask_count", "assignees_count", "dependency_count"],
+        "chars_saved_per_response": chars_saved,
+        "tokens_saved_per_response": tokens_saved,
     }
 
 
@@ -63,9 +63,9 @@ def measure_context_opt_in_savings():
     estimated_context_tokens = estimate_tokens(estimated_context_chars)
 
     return {
-        'feature': 'include_context parameter (default false)',
-        'chars_saved_when_not_included': estimated_context_chars,
-        'tokens_saved_when_not_included': estimated_context_tokens
+        "feature": "include_context parameter (default false)",
+        "chars_saved_when_not_included": estimated_context_chars,
+        "tokens_saved_when_not_included": estimated_context_tokens,
     }
 
 
@@ -77,8 +77,8 @@ def calculate_aggregate_savings():
 
     # Calculate total for typical task GET operation
     total_chars_saved = (
-        emoji_savings['chars_saved_per_response'] +
-        count_savings['chars_saved_per_response']
+        emoji_savings["chars_saved_per_response"]
+        + count_savings["chars_saved_per_response"]
         # Context is optional, not counted in base savings
     )
     total_tokens_saved = estimate_tokens(total_chars_saved)
@@ -101,26 +101,26 @@ def calculate_aggregate_savings():
     predicted_percentage = 28.8
 
     return {
-        'emoji_savings': emoji_savings,
-        'count_savings': count_savings,
-        'context_savings': context_savings,
-        'total_chars_saved': total_chars_saved,
-        'total_tokens_saved': total_tokens_saved,
-        'estimated_baseline_chars': estimated_baseline_size,
-        'estimated_baseline_tokens': estimated_baseline_tokens,
-        'estimated_current_chars': estimated_current_size,
-        'estimated_current_tokens': estimated_current_tokens,
-        'percentage_reduction': percentage_reduction,
-        'predictions': {
-            'baseline_tokens': predicted_baseline,
-            'after_phase1_tokens': predicted_after,
-            'predicted_reduction_tokens': predicted_reduction,
-            'predicted_percentage': predicted_percentage
+        "emoji_savings": emoji_savings,
+        "count_savings": count_savings,
+        "context_savings": context_savings,
+        "total_chars_saved": total_chars_saved,
+        "total_tokens_saved": total_tokens_saved,
+        "estimated_baseline_chars": estimated_baseline_size,
+        "estimated_baseline_tokens": estimated_baseline_tokens,
+        "estimated_current_chars": estimated_current_size,
+        "estimated_current_tokens": estimated_current_tokens,
+        "percentage_reduction": percentage_reduction,
+        "predictions": {
+            "baseline_tokens": predicted_baseline,
+            "after_phase1_tokens": predicted_after,
+            "predicted_reduction_tokens": predicted_reduction,
+            "predicted_percentage": predicted_percentage,
         },
-        'comparison': {
-            'actual_vs_predicted_percentage': f"{percentage_reduction:.1f}% vs {predicted_percentage}%",
-            'within_tolerance': abs(percentage_reduction - predicted_percentage) <= 5.0
-        }
+        "comparison": {
+            "actual_vs_predicted_percentage": f"{percentage_reduction:.1f}% vs {predicted_percentage}%",
+            "within_tolerance": abs(percentage_reduction - predicted_percentage) <= 5.0,
+        },
     }
 
 
@@ -151,29 +151,41 @@ def generate_report():
     context_data = measure_context_opt_in_savings()
     print("3. CONTEXT OPT-IN OPTIMIZATION:")
     print(f"   Feature: {context_data['feature']}")
-    print(f"   Characters saved when not included: ~{context_data['chars_saved_when_not_included']}")
-    print(f"   Tokens saved when not included: ~{context_data['tokens_saved_when_not_included']}")
+    print(
+        f"   Characters saved when not included: ~{context_data['chars_saved_when_not_included']}"
+    )
+    print(
+        f"   Tokens saved when not included: ~{context_data['tokens_saved_when_not_included']}"
+    )
     print()
 
     # Aggregate savings
     aggregate_data = calculate_aggregate_savings()
     print("4. AGGREGATE SAVINGS:")
-    print(f"   Total fields removed: {len(emoji_data['fields_removed']) + len(count_data['fields_removed'])}")
+    print(
+        f"   Total fields removed: {len(emoji_data['fields_removed']) + len(count_data['fields_removed'])}"
+    )
     print(f"   Total chars saved (base): {aggregate_data['total_chars_saved']}")
     print(f"   Total tokens saved (base): ~{aggregate_data['total_tokens_saved']}")
     print()
-    print(f"   Estimated baseline (before Phase 1): {aggregate_data['estimated_baseline_chars']} chars = ~{aggregate_data['estimated_baseline_tokens']} tokens")
-    print(f"   Estimated current (after Phase 1): {aggregate_data['estimated_current_chars']} chars = ~{aggregate_data['estimated_current_tokens']} tokens")
+    print(
+        f"   Estimated baseline (before Phase 1): {aggregate_data['estimated_baseline_chars']} chars = ~{aggregate_data['estimated_baseline_tokens']} tokens"
+    )
+    print(
+        f"   Estimated current (after Phase 1): {aggregate_data['estimated_current_chars']} chars = ~{aggregate_data['estimated_current_tokens']} tokens"
+    )
     print(f"   Percentage reduction: {aggregate_data['percentage_reduction']:.1f}%")
     print()
 
     # Comparison with predictions
-    predictions = aggregate_data['predictions']
-    comparison = aggregate_data['comparison']
+    predictions = aggregate_data["predictions"]
+    comparison = aggregate_data["comparison"]
     print("5. COMPARISON WITH PREDICTIONS:")
     print(f"   Predicted baseline: ~{predictions['baseline_tokens']} tokens")
     print(f"   Predicted after Phase 1: ~{predictions['after_phase1_tokens']} tokens")
-    print(f"   Predicted reduction: ~{predictions['predicted_reduction_tokens']} tokens ({predictions['predicted_percentage']}%)")
+    print(
+        f"   Predicted reduction: ~{predictions['predicted_reduction_tokens']} tokens ({predictions['predicted_percentage']}%)"
+    )
     print(f"   Actual vs Predicted: {comparison['actual_vs_predicted_percentage']}")
     print(f"   Within ±5% tolerance: {comparison['within_tolerance']}")
     print()
@@ -183,7 +195,9 @@ def generate_report():
     print(f"   ✓ Emoji fields removed: {len(emoji_data['fields_removed'])} fields")
     print(f"   ✓ Count fields removed: {len(count_data['fields_removed'])} fields")
     print("   ✓ Context opt-in implemented: Yes")
-    print(f"   ✓ Token savings achieved: ~{aggregate_data['total_tokens_saved']} tokens per response")
+    print(
+        f"   ✓ Token savings achieved: ~{aggregate_data['total_tokens_saved']} tokens per response"
+    )
     print(f"   ✓ Percentage reduction: {aggregate_data['percentage_reduction']:.1f}%")
     print(f"   ✓ Predictions validated: {comparison['within_tolerance']}")
     print()
@@ -191,15 +205,27 @@ def generate_report():
     print("=" * 80)
     print("SUMMARY")
     print("=" * 80)
-    print(f"Phase 1 successfully removed {len(emoji_data['fields_removed']) + len(count_data['fields_removed'])} redundant fields")
-    print(f"from API responses, achieving approximately {aggregate_data['total_tokens_saved']} tokens")
-    print(f"of savings per operation ({aggregate_data['percentage_reduction']:.1f}% reduction).")
+    print(
+        f"Phase 1 successfully removed {len(emoji_data['fields_removed']) + len(count_data['fields_removed'])} redundant fields"
+    )
+    print(
+        f"from API responses, achieving approximately {aggregate_data['total_tokens_saved']} tokens"
+    )
+    print(
+        f"of savings per operation ({aggregate_data['percentage_reduction']:.1f}% reduction)."
+    )
     print()
-    print(f"The opt-in context parameter provides an additional ~{context_data['tokens_saved_when_not_included']}")
+    print(
+        f"The opt-in context parameter provides an additional ~{context_data['tokens_saved_when_not_included']}"
+    )
     print("tokens of savings when context is not needed, bringing total potential")
-    print(f"savings to ~{aggregate_data['total_tokens_saved'] + context_data['tokens_saved_when_not_included']} tokens per operation when fully utilized.")
+    print(
+        f"savings to ~{aggregate_data['total_tokens_saved'] + context_data['tokens_saved_when_not_included']} tokens per operation when fully utilized."
+    )
     print()
-    print(f"Predictions were {'validated' if comparison['within_tolerance'] else 'not validated'} within ±5% tolerance.")
+    print(
+        f"Predictions were {'validated' if comparison['within_tolerance'] else 'not validated'} within ±5% tolerance."
+    )
     print("=" * 80)
 
     return aggregate_data
@@ -208,7 +234,7 @@ def generate_report():
 def export_json_report(data: dict, filename: str = "phase1_measurements.json"):
     """Export measurements as JSON"""
     output_path = Path(__file__).parent / filename
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dumps(data, f, indent=2)
     print(f"\nMeasurements exported to: {output_path}")
 

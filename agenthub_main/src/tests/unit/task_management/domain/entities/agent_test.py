@@ -52,7 +52,7 @@ class TestAgentCapability:
         """Test AgentCapability enumeration completeness"""
         capabilities = list(AgentCapability)
         assert len(capabilities) == 10
-        
+
         expected_capabilities = {
             AgentCapability.FRONTEND_DEVELOPMENT,
             AgentCapability.BACKEND_DEVELOPMENT,
@@ -63,9 +63,9 @@ class TestAgentCapability:
             AgentCapability.ARCHITECTURE,
             AgentCapability.CODE_REVIEW,
             AgentCapability.PROJECT_MANAGEMENT,
-            AgentCapability.DATA_ANALYSIS
+            AgentCapability.DATA_ANALYSIS,
         }
-        
+
         assert set(capabilities) == expected_capabilities
 
 
@@ -76,9 +76,9 @@ class TestAgentInitialization:
         """Test creating agent with minimal required parameters"""
         agent_id = "agent_123"
         name = "Test Agent"
-        
+
         agent = Agent(id=agent_id, name=name)
-        
+
         assert agent.id == agent_id
         assert agent.name == name
         assert agent.description == ""
@@ -100,7 +100,7 @@ class TestAgentInitialization:
         specializations = ["React", "Jest"]
         preferred_languages = ["JavaScript", "TypeScript"]
         preferred_frameworks = ["React", "Next.js"]
-        
+
         agent = Agent(
             id=agent_id,
             name=name,
@@ -112,9 +112,9 @@ class TestAgentInitialization:
             preferred_frameworks=preferred_frameworks,
             max_concurrent_tasks=3,
             timezone="America/New_York",
-            priority_preference="high"
+            priority_preference="high",
         )
-        
+
         assert agent.id == agent_id
         assert agent.name == name
         assert agent.description == description
@@ -131,13 +131,15 @@ class TestAgentInitialization:
         """Test that __post_init__ sets default timestamps"""
         # The BaseTimestampEntity uses datetime.now(UTC) internally
         # We should patch it at the base entity level
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             agent = Agent(id="test", name="Test Agent")
-            
+
             assert agent.created_at == mock_now
             assert agent.updated_at == mock_now
             # BaseTimestampEntity calls datetime.now(UTC) once in _ensure_clean_timestamps
@@ -146,14 +148,11 @@ class TestAgentInitialization:
         """Test that __post_init__ preserves existing timestamps"""
         created_at = datetime(2023, 12, 1, 10, 0, 0, tzinfo=UTC)
         updated_at = datetime(2023, 12, 2, 11, 0, 0, tzinfo=UTC)
-        
+
         agent = Agent(
-            id="test",
-            name="Test Agent",
-            created_at=created_at,
-            updated_at=updated_at
+            id="test", name="Test Agent", created_at=created_at, updated_at=updated_at
         )
-        
+
         assert agent.created_at == created_at
         assert agent.updated_at == updated_at
 
@@ -168,71 +167,75 @@ class TestAgentCapabilityManagement:
     def test_add_capability(self):
         """Test adding capability to agent"""
         capability = AgentCapability.FRONTEND_DEVELOPMENT
-        
+
         # Patch at the base entity level where touch() is implemented
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.add_capability(capability)
-            
+
             assert capability in self.agent.capabilities
             assert self.agent.updated_at == mock_now
 
     def test_add_duplicate_capability(self):
         """Test adding duplicate capability (should not duplicate)"""
         capability = AgentCapability.TESTING
-        
+
         self.agent.add_capability(capability)
         initial_count = len(self.agent.capabilities)
-        
+
         self.agent.add_capability(capability)  # Add again
-        
+
         assert len(self.agent.capabilities) == initial_count
         assert capability in self.agent.capabilities
 
     def test_remove_capability(self):
         """Test removing capability from agent"""
         capability = AgentCapability.BACKEND_DEVELOPMENT
-        
+
         # Add capability first
         self.agent.add_capability(capability)
         assert capability in self.agent.capabilities
-        
+
         # Patch at the base entity level where touch() is implemented
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.remove_capability(capability)
-            
+
             assert capability not in self.agent.capabilities
             assert self.agent.updated_at == mock_now
 
     def test_remove_nonexistent_capability(self):
         """Test removing capability that agent doesn't have"""
         capability = AgentCapability.DEVOPS
-        
+
         # Ensure capability is not present
         assert capability not in self.agent.capabilities
-        
+
         # Remove should not raise error
         self.agent.remove_capability(capability)
-        
+
         assert capability not in self.agent.capabilities
 
     def test_has_capability(self):
         """Test checking if agent has capability"""
         capability = AgentCapability.SECURITY
-        
+
         # Initially should not have capability
         assert not self.agent.has_capability(capability)
-        
+
         # Add capability
         self.agent.add_capability(capability)
-        
+
         # Now should have capability
         assert self.agent.has_capability(capability)
 
@@ -245,9 +248,12 @@ class TestAgentTaskHandling:
         self.agent = Agent(
             id="task_agent",
             name="Task Handler",
-            capabilities={AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.TESTING},
+            capabilities={
+                AgentCapability.FRONTEND_DEVELOPMENT,
+                AgentCapability.TESTING,
+            },
             preferred_languages=["JavaScript", "Python"],
-            preferred_frameworks=["React", "Django"]
+            preferred_frameworks=["React", "Django"],
         )
 
     def test_can_handle_task_with_matching_capabilities(self):
@@ -255,9 +261,9 @@ class TestAgentTaskHandling:
         task_requirements = {
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "languages": ["JavaScript"],
-            "frameworks": ["React"]
+            "frameworks": ["React"],
         }
-        
+
         assert self.agent.can_handle_task(task_requirements) is True
 
     def test_can_handle_task_with_missing_capability(self):
@@ -265,9 +271,9 @@ class TestAgentTaskHandling:
         task_requirements = {
             "capabilities": [AgentCapability.DEVOPS],
             "languages": ["JavaScript"],
-            "frameworks": ["React"]
+            "frameworks": ["React"],
         }
-        
+
         assert self.agent.can_handle_task(task_requirements) is False
 
     def test_can_handle_task_with_missing_language(self):
@@ -275,9 +281,9 @@ class TestAgentTaskHandling:
         task_requirements = {
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "languages": ["Go"],
-            "frameworks": ["React"]
+            "frameworks": ["React"],
         }
-        
+
         assert self.agent.can_handle_task(task_requirements) is False
 
     def test_can_handle_task_with_missing_framework(self):
@@ -285,9 +291,9 @@ class TestAgentTaskHandling:
         task_requirements = {
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "languages": ["JavaScript"],
-            "frameworks": ["Vue.js"]
+            "frameworks": ["Vue.js"],
         }
-        
+
         assert self.agent.can_handle_task(task_requirements) is False
 
     def test_can_handle_task_with_string_capabilities(self):
@@ -295,15 +301,15 @@ class TestAgentTaskHandling:
         task_requirements = {
             "capabilities": ["frontend_development", "unknown_capability"],
             "languages": ["JavaScript"],
-            "frameworks": ["React"]
+            "frameworks": ["React"],
         }
-        
+
         assert self.agent.can_handle_task(task_requirements) is True
 
     def test_can_handle_task_with_no_requirements(self):
         """Test can_handle_task with empty requirements"""
         task_requirements = {}
-        
+
         assert self.agent.can_handle_task(task_requirements) is True
 
     def test_can_handle_task_with_partial_language_match(self):
@@ -312,8 +318,10 @@ class TestAgentTaskHandling:
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "languages": ["Python", "Go"],  # Agent has Python but not Go
         }
-        
-        assert self.agent.can_handle_task(task_requirements) is True  # Any match is sufficient
+
+        assert (
+            self.agent.can_handle_task(task_requirements) is True
+        )  # Any match is sufficient
 
     def test_can_handle_task_with_partial_framework_match(self):
         """Test can_handle_task with partial framework match"""
@@ -321,8 +329,10 @@ class TestAgentTaskHandling:
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "frameworks": ["Django", "Flask"],  # Agent has Django but not Flask
         }
-        
-        assert self.agent.can_handle_task(task_requirements) is True  # Any match is sufficient
+
+        assert (
+            self.agent.can_handle_task(task_requirements) is True
+        )  # Any match is sufficient
 
 
 class TestAgentAvailability:
@@ -330,33 +340,35 @@ class TestAgentAvailability:
 
     def setup_method(self):
         """Set up test fixtures"""
-        self.agent = Agent(id="availability_agent", name="Availability Test", max_concurrent_tasks=2)
+        self.agent = Agent(
+            id="availability_agent", name="Availability Test", max_concurrent_tasks=2
+        )
 
     def test_is_available_when_under_capacity(self):
         """Test is_available returns True when under capacity"""
         assert self.agent.current_workload == 0
         assert self.agent.max_concurrent_tasks == 2
         assert self.agent.status == AgentStatus.AVAILABLE
-        
+
         assert self.agent.is_available() is True
 
     def test_is_available_when_at_capacity(self):
         """Test is_available returns False when at capacity"""
         self.agent.current_workload = 2
         self.agent.status = AgentStatus.BUSY
-        
+
         assert self.agent.is_available() is False
 
     def test_is_available_when_paused(self):
         """Test is_available returns False when paused"""
         self.agent.status = AgentStatus.PAUSED
-        
+
         assert self.agent.is_available() is False
 
     def test_is_available_when_offline(self):
         """Test is_available returns False when offline"""
         self.agent.status = AgentStatus.OFFLINE
-        
+
         assert self.agent.is_available() is False
 
 
@@ -365,19 +377,23 @@ class TestAgentTaskAssignment:
 
     def setup_method(self):
         """Set up test fixtures"""
-        self.agent = Agent(id="task_mgmt_agent", name="Task Management Test", max_concurrent_tasks=2)
+        self.agent = Agent(
+            id="task_mgmt_agent", name="Task Management Test", max_concurrent_tasks=2
+        )
 
     def test_start_task_when_available(self):
         """Test starting task when agent is available"""
         task_id = "task_123"
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.start_task(task_id)
-            
+
             assert task_id in self.agent.active_tasks
             assert self.agent.current_workload == 1
             assert self.agent.status == AgentStatus.AVAILABLE  # Still under capacity
@@ -387,11 +403,11 @@ class TestAgentTaskAssignment:
         """Test starting task that reaches capacity"""
         task_id1 = "task_1"
         task_id2 = "task_2"
-        
+
         # Start first task
         self.agent.start_task(task_id1)
         assert self.agent.status == AgentStatus.AVAILABLE
-        
+
         # Start second task (reaches capacity)
         self.agent.start_task(task_id2)
         assert self.agent.current_workload == 2
@@ -400,7 +416,7 @@ class TestAgentTaskAssignment:
     def test_start_task_when_unavailable(self):
         """Test starting task when agent is unavailable"""
         self.agent.status = AgentStatus.OFFLINE
-        
+
         with pytest.raises(ValueError, match="Agent .* is not available for new tasks"):
             self.agent.start_task("task_123")
 
@@ -410,43 +426,47 @@ class TestAgentTaskAssignment:
         self.agent.start_task("task_1")
         self.agent.start_task("task_2")
         assert self.agent.current_workload == 2
-        
+
         with pytest.raises(ValueError, match="Agent .* is not available for new tasks"):
             self.agent.start_task("task_3")
 
     def test_complete_task_success(self):
         """Test completing task successfully"""
         task_id = "task_success"
-        
+
         # Start task
         self.agent.start_task(task_id)
         initial_completed = self.agent.completed_tasks
         initial_success_rate = self.agent.success_rate
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.complete_task(task_id, success=True)
-            
+
             assert task_id not in self.agent.active_tasks
             assert self.agent.current_workload == 0
             assert self.agent.completed_tasks == initial_completed + 1
-            assert self.agent.success_rate >= initial_success_rate  # Should maintain/improve
+            assert (
+                self.agent.success_rate >= initial_success_rate
+            )  # Should maintain/improve
             assert self.agent.status == AgentStatus.AVAILABLE
             assert self.agent.updated_at == mock_now
 
     def test_complete_task_failure(self):
         """Test completing task with failure"""
         task_id = "task_failure"
-        
+
         # Start task
         self.agent.start_task(task_id)
         initial_success_rate = self.agent.success_rate
-        
+
         self.agent.complete_task(task_id, success=False)
-        
+
         assert task_id not in self.agent.active_tasks
         assert self.agent.current_workload == 0
         assert self.agent.success_rate < initial_success_rate  # Should decrease
@@ -454,7 +474,7 @@ class TestAgentTaskAssignment:
     def test_complete_task_not_assigned(self):
         """Test completing task that wasn't assigned to agent"""
         task_id = "unassigned_task"
-        
+
         with pytest.raises(ValueError, match="Task .* not assigned to agent"):
             self.agent.complete_task(task_id)
 
@@ -464,10 +484,10 @@ class TestAgentTaskAssignment:
         self.agent.start_task("task_1")
         self.agent.start_task("task_2")
         assert self.agent.status == AgentStatus.BUSY
-        
+
         # Complete one task
         self.agent.complete_task("task_1")
-        
+
         assert self.agent.current_workload == 1
         assert self.agent.status == AgentStatus.AVAILABLE
 
@@ -482,24 +502,26 @@ class TestAgentProjectAndTreeAssignment:
     def test_assign_to_project(self):
         """Test assigning agent to project"""
         project_id = "project_123"
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.assign_to_project(project_id)
-            
+
             assert project_id in self.agent.assigned_projects
             assert self.agent.updated_at == mock_now
 
     def test_assign_to_multiple_projects(self):
         """Test assigning agent to multiple projects"""
         projects = ["project_1", "project_2", "project_3"]
-        
+
         for project_id in projects:
             self.agent.assign_to_project(project_id)
-        
+
         assert len(self.agent.assigned_projects) == 3
         for project_id in projects:
             assert project_id in self.agent.assigned_projects
@@ -507,24 +529,26 @@ class TestAgentProjectAndTreeAssignment:
     def test_assign_to_tree(self):
         """Test assigning agent to task tree"""
         git_branch_name = "feature/auth-system"
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.assign_to_tree(git_branch_name)
-            
+
             assert git_branch_name in self.agent.assigned_trees
             assert self.agent.updated_at == mock_now
 
     def test_assign_to_multiple_trees(self):
         """Test assigning agent to multiple trees"""
         trees = ["feature/auth", "bugfix/login", "feature/dashboard"]
-        
+
         for tree in trees:
             self.agent.assign_to_tree(tree)
-        
+
         assert len(self.agent.assigned_trees) == 3
         for tree in trees:
             assert tree in self.agent.assigned_trees
@@ -539,13 +563,15 @@ class TestAgentStatusManagement:
 
     def test_pause_work(self):
         """Test pausing agent work"""
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.pause_work()
-            
+
             assert self.agent.status == AgentStatus.PAUSED
             assert self.agent.updated_at == mock_now
 
@@ -553,14 +579,16 @@ class TestAgentStatusManagement:
         """Test resuming work when under capacity"""
         self.agent.pause_work()
         assert self.agent.status == AgentStatus.PAUSED
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.resume_work()
-            
+
             assert self.agent.status == AgentStatus.AVAILABLE
             assert self.agent.updated_at == mock_now
 
@@ -569,20 +597,22 @@ class TestAgentStatusManagement:
         self.agent.max_concurrent_tasks = 1
         self.agent.current_workload = 1
         self.agent.pause_work()
-        
+
         self.agent.resume_work()
-        
+
         assert self.agent.status == AgentStatus.BUSY
 
     def test_go_offline(self):
         """Test setting agent offline"""
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.go_offline()
-            
+
             assert self.agent.status == AgentStatus.OFFLINE
             assert self.agent.updated_at == mock_now
 
@@ -590,14 +620,16 @@ class TestAgentStatusManagement:
         """Test setting agent online"""
         self.agent.go_offline()
         assert self.agent.status == AgentStatus.OFFLINE
-        
-        with patch('fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime') as mock_datetime:
+
+        with patch(
+            "fastmcp.task_management.domain.entities.base.base_timestamp_entity.datetime"
+        ) as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
             mock_datetime.timezone = timezone
-            
+
             self.agent.go_online()
-            
+
             assert self.agent.status == AgentStatus.AVAILABLE
             assert self.agent.updated_at == mock_now
 
@@ -607,7 +639,9 @@ class TestAgentMetrics:
 
     def setup_method(self):
         """Set up test fixtures"""
-        self.agent = Agent(id="metrics_agent", name="Metrics Test", max_concurrent_tasks=4)
+        self.agent = Agent(
+            id="metrics_agent", name="Metrics Test", max_concurrent_tasks=4
+        )
 
     def test_get_workload_percentage_empty(self):
         """Test workload percentage when no tasks"""
@@ -635,7 +669,7 @@ class TestAgentMetrics:
             "capabilities": [AgentCapability.DEVOPS],
             "languages": ["Go"],
         }
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
         assert score == 0.0
 
@@ -643,12 +677,12 @@ class TestAgentMetrics:
         """Test suitability score for basic task match"""
         self.agent.add_capability(AgentCapability.FRONTEND_DEVELOPMENT)
         self.agent.preferred_languages = ["JavaScript"]
-        
+
         task_requirements = {
             "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT],
             "languages": ["JavaScript"],
         }
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
         assert score > 50.0  # Base score plus bonuses
 
@@ -656,11 +690,11 @@ class TestAgentMetrics:
         """Test suitability score with high workload"""
         self.agent.add_capability(AgentCapability.TESTING)
         self.agent.current_workload = 3  # 75% capacity
-        
+
         task_requirements = {"capabilities": [AgentCapability.TESTING]}
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
-        
+
         # Should have lower workload bonus
         assert 50.0 <= score < 100.0
 
@@ -668,14 +702,14 @@ class TestAgentMetrics:
         """Test suitability score with matching priority preference"""
         self.agent.add_capability(AgentCapability.ARCHITECTURE)
         self.agent.priority_preference = "high"
-        
+
         task_requirements = {
             "capabilities": [AgentCapability.ARCHITECTURE],
-            "priority": "high"
+            "priority": "high",
         }
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
-        
+
         # Should get priority bonus
         assert score > 70.0
 
@@ -683,11 +717,11 @@ class TestAgentMetrics:
         """Test suitability score with low success rate"""
         self.agent.add_capability(AgentCapability.CODE_REVIEW)
         self.agent.success_rate = 60.0
-        
+
         task_requirements = {"capabilities": [AgentCapability.CODE_REVIEW]}
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
-        
+
         # Should have reduced success bonus
         assert score < 100.0
 
@@ -697,12 +731,12 @@ class TestAgentMetrics:
         self.agent.success_rate = 100.0
         self.agent.current_workload = 0
         self.agent.priority_preference = "high"
-        
+
         task_requirements = {
             "capabilities": [AgentCapability.PROJECT_MANAGEMENT],
-            "priority": "high"
+            "priority": "high",
         }
-        
+
         score = self.agent.calculate_task_suitability_score(task_requirements)
         assert score <= 100.0
 
@@ -716,7 +750,10 @@ class TestAgentProfile:
             id="profile_agent",
             name="Profile Test",
             description="Test agent for profile",
-            capabilities={AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.TESTING},
+            capabilities={
+                AgentCapability.FRONTEND_DEVELOPMENT,
+                AgentCapability.TESTING,
+            },
             specializations=["React Testing"],
             preferred_languages=["JavaScript", "TypeScript"],
             preferred_frameworks=["React", "Jest"],
@@ -726,7 +763,7 @@ class TestAgentProfile:
             success_rate=95.5,
             average_task_duration=4.5,
             timezone="America/Los_Angeles",
-            priority_preference="medium"
+            priority_preference="medium",
         )
         self.agent.assign_to_project("project_1")
         self.agent.assign_to_tree("feature/branch")
@@ -735,31 +772,41 @@ class TestAgentProfile:
     def test_get_agent_profile_structure(self):
         """Test agent profile has correct structure"""
         profile = self.agent.get_agent_profile()
-        
+
         expected_keys = {
-            "id", "name", "description", "status", "capabilities",
-            "specializations", "preferred_languages", "preferred_frameworks",
-            "workload", "performance", "assignments", "preferences",
-            "created_at", "updated_at"
+            "id",
+            "name",
+            "description",
+            "status",
+            "capabilities",
+            "specializations",
+            "preferred_languages",
+            "preferred_frameworks",
+            "workload",
+            "performance",
+            "assignments",
+            "preferences",
+            "created_at",
+            "updated_at",
         }
-        
+
         assert set(profile.keys()) == expected_keys
 
     def test_get_agent_profile_workload_section(self):
         """Test agent profile workload section"""
         profile = self.agent.get_agent_profile()
         workload = profile["workload"]
-        
+
         assert workload["current"] == 1
         assert workload["max"] == 3
-        assert workload["percentage"] == (1/3) * 100
+        assert workload["percentage"] == (1 / 3) * 100
         assert workload["available"]
 
     def test_get_agent_profile_performance_section(self):
         """Test agent profile performance section"""
         profile = self.agent.get_agent_profile()
         performance = profile["performance"]
-        
+
         assert performance["completed_tasks"] == 10
         assert performance["success_rate"] == 95.5
         assert performance["average_duration"] == 4.5
@@ -768,7 +815,7 @@ class TestAgentProfile:
         """Test agent profile assignments section"""
         profile = self.agent.get_agent_profile()
         assignments = profile["assignments"]
-        
+
         assert "project_1" in assignments["projects"]
         assert "feature/branch" in assignments["trees"]
         assert "active_task_1" in assignments["active_tasks"]
@@ -777,7 +824,7 @@ class TestAgentProfile:
         """Test that capabilities are serialized as strings"""
         profile = self.agent.get_agent_profile()
         capabilities = profile["capabilities"]
-        
+
         assert "frontend_development" in capabilities
         assert "testing" in capabilities
         assert all(isinstance(cap, str) for cap in capabilities)
@@ -785,11 +832,11 @@ class TestAgentProfile:
     def test_get_agent_profile_timestamps_serialization(self):
         """Test that timestamps are serialized as ISO format"""
         profile = self.agent.get_agent_profile()
-        
+
         # Should be ISO format strings
         assert isinstance(profile["created_at"], str)
         assert isinstance(profile["updated_at"], str)
-        
+
         # Should be parseable as datetime
         datetime.fromisoformat(profile["created_at"])
         datetime.fromisoformat(profile["updated_at"])
@@ -827,7 +874,7 @@ class TestAgentFactoryMethod:
             "Factory with all options",
             capabilities=capabilities,
             specializations=specializations,
-            preferred_languages=preferred_languages
+            preferred_languages=preferred_languages,
         )
 
         assert agent.capabilities == set(capabilities)
@@ -843,7 +890,7 @@ class TestAgentFactoryMethod:
             "Testing None parameters",
             capabilities=None,
             specializations=None,
-            preferred_languages=None
+            preferred_languages=None,
         )
 
         assert agent.capabilities == set()
@@ -861,11 +908,11 @@ class TestAgentEdgeCases:
     def test_success_rate_calculation_with_failures(self):
         """Test success rate calculation with multiple failures"""
         initial_rate = 100.0
-        
+
         # Start and complete task with failure
         self.agent.start_task("task_1")
         self.agent.complete_task("task_1", success=False)
-        
+
         # Success rate should decrease but be weighted
         assert self.agent.success_rate < initial_rate
         assert self.agent.success_rate > 0.0  # Should not be zero due to weighting
@@ -879,36 +926,32 @@ class TestAgentEdgeCases:
         # Complete task that would make workload negative
         self.agent.start_task("task_1")
         self.agent.complete_task("task_1")
-        
+
         # Try to decrement below zero manually
         self.agent.current_workload = 0
         task = Mock()
         task.id = "fake_task"
         self.agent.active_tasks.add("fake_task")
         self.agent.complete_task("fake_task")
-        
+
         assert self.agent.current_workload >= 0
 
     def test_agent_with_zero_max_concurrent_tasks(self):
         """Test agent with zero max concurrent tasks"""
         self.agent.max_concurrent_tasks = 0
-        
+
         assert not self.agent.is_available()
         assert self.agent.get_workload_percentage() == 100.0
 
     def test_very_long_agent_name_and_description(self):
         """Test agent with very long name and description"""
         long_text = "x" * 1000
-        
-        agent = Agent(
-            id="long_text_agent",
-            name=long_text,
-            description=long_text
-        )
-        
+
+        agent = Agent(id="long_text_agent", name=long_text, description=long_text)
+
         assert agent.name == long_text
         assert agent.description == long_text
-        
+
         # Profile should still work
         profile = agent.get_agent_profile()
         assert len(profile["name"]) == 1000
@@ -917,21 +960,22 @@ class TestAgentEdgeCases:
     def test_agent_with_many_capabilities(self):
         """Test agent with all available capabilities"""
         all_capabilities = set(AgentCapability)
-        
+
         agent = Agent(
-            id="all_cap_agent",
-            name="All Capabilities",
-            capabilities=all_capabilities
+            id="all_cap_agent", name="All Capabilities", capabilities=all_capabilities
         )
-        
+
         assert len(agent.capabilities) == len(all_capabilities)
-        
+
         for capability in all_capabilities:
             assert agent.has_capability(capability)
-        
+
         # Should handle any task requirements
         task_requirements = {
-            "capabilities": [AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.SECURITY]
+            "capabilities": [
+                AgentCapability.FRONTEND_DEVELOPMENT,
+                AgentCapability.SECURITY,
+            ]
         }
         assert agent.can_handle_task(task_requirements)
 
@@ -960,8 +1004,11 @@ class TestAgentRichDomainModelValidateCapabilityMatch:
         self.agent = Agent(
             id="capability_test_agent",
             name="Capability Test Agent",
-            capabilities={AgentCapability.FRONTEND_DEVELOPMENT, AgentCapability.TESTING},
-            specializations=["React", "Jest", "Cypress"]
+            capabilities={
+                AgentCapability.FRONTEND_DEVELOPMENT,
+                AgentCapability.TESTING,
+            },
+            specializations=["React", "Jest", "Cypress"],
         )
 
     def test_validate_capability_match_legacy_mode_with_match(self):
@@ -1055,9 +1102,7 @@ class TestAgentRichDomainModelCalculateWorkloadScore:
     def setup_method(self):
         """Set up test fixtures"""
         self.agent = Agent(
-            id="workload_test_agent",
-            name="Workload Test Agent",
-            max_concurrent_tasks=4
+            id="workload_test_agent", name="Workload Test Agent", max_concurrent_tasks=4
         )
 
     def test_calculate_workload_score_legacy_mode_idle(self):
@@ -1167,7 +1212,7 @@ class TestAgentRichDomainModelCheckAvailability:
             max_concurrent_tasks=3,
             completed_tasks=50,
             success_rate=92.5,
-            average_task_duration=3.2
+            average_task_duration=3.2,
         )
 
     def test_check_availability_when_available(self):
@@ -1202,7 +1247,7 @@ class TestAgentRichDomainModelCheckAvailability:
 
         assert result["available"] is True
         assert result["status"] == "available"
-        assert result["workload_score"] == round(1/3, 3)
+        assert result["workload_score"] == round(1 / 3, 3)
         assert result["current_tasks"] == 1
         assert result["capacity"] == 3
         assert result["blocking_reasons"] == []

@@ -300,7 +300,9 @@ class DatabaseConfig:
                 database_url,
                 echo=os.getenv("SQL_DEBUG", "false").lower() == "true",
                 future=True,  # Use SQLAlchemy 2.0 style
-                connect_args={"check_same_thread": False}  # Allow SQLite to be used across threads
+                connect_args={
+                    "check_same_thread": False
+                },  # Allow SQLite to be used across threads
             )
             logger.info("✅ SQLite engine created successfully")
             return engine

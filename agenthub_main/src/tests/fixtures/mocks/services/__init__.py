@@ -2,6 +2,4 @@
 
 from .mock_unified_context_service import MockUnifiedContextService
 
-__all__ = [
-    'MockUnifiedContextService'
-]
+__all__ = ["MockUnifiedContextService"]

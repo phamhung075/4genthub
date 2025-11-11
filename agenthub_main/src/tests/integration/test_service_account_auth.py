@@ -27,8 +27,9 @@ TEST_CONFIG = ServiceAccountConfig(
     realm="test-realm",
     client_id="test-service-account",
     client_secret="test-secret",
-    scopes=["openid", "profile", "mcp:read", "mcp:write"]
+    scopes=["openid", "profile", "mcp:read", "mcp:write"],
 )
+
 
 class TestServiceAccountAuth:
     """Test service account authentication functionality"""
@@ -51,39 +52,37 @@ class TestServiceAccountAuth:
             "KEYCLOAK_URL": "https://env-keycloak.com",
             "KEYCLOAK_REALM": "env-realm",
             "KEYCLOAK_SERVICE_CLIENT_ID": "env-client",
-            "KEYCLOAK_SERVICE_CLIENT_SECRET": "env-secret"
+            "KEYCLOAK_SERVICE_CLIENT_SECRET": "env-secret",
         }
-        
+
         with patch.dict(os.environ, env_vars):
             auth = ServiceAccountAuth()
-            
+
             assert auth.config.keycloak_url == "https://env-keycloak.com"
             assert auth.config.realm == "env-realm"
             assert auth.config.client_id == "env-client"
             assert auth.config.client_secret == "env-secret"
-            
+
             await auth.close()
 
     def test_service_token_expiry_logic(self):
         """Test service token expiry calculation"""
         # Create token that expires in 300 seconds
         token = ServiceToken(
-            access_token="test-token",
-            expires_in=300,
-            created_at=datetime.now(UTC)
+            access_token="test-token", expires_in=300, created_at=datetime.now(UTC)
         )
-        
+
         # Token should not be expired
         assert not token.is_expired
         assert token.seconds_until_expiry > 250  # Account for test execution time
-        
+
         # Create expired token
         expired_token = ServiceToken(
             access_token="expired-token",
             expires_in=60,
-            created_at=datetime.now(UTC) - timedelta(seconds=120)
+            created_at=datetime.now(UTC) - timedelta(seconds=120),
         )
-        
+
         # Token should be expired
         assert expired_token.is_expired
         assert expired_token.seconds_until_expiry == 0
@@ -92,12 +91,11 @@ class TestServiceAccountAuth:
     async def test_config_validation(self):
         """Test configuration validation"""
         # Missing keycloak_url
-        with pytest.raises(ValueError, match="Missing required service account configuration"):
+        with pytest.raises(
+            ValueError, match="Missing required service account configuration"
+        ):
             invalid_config = ServiceAccountConfig(
-                keycloak_url="",
-                realm="test",
-                client_id="test",
-                client_secret="test"
+                keycloak_url="", realm="test", client_id="test", client_secret="test"
             )
             ServiceAccountAuth(invalid_config)
 
@@ -111,12 +109,12 @@ class TestServiceAccountAuth:
             "access_token": "test-access-token",
             "token_type": "Bearer",
             "expires_in": 300,
-            "scope": "openid profile mcp:read mcp:write"
+            "scope": "openid profile mcp:read mcp:write",
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response):
+
+        with patch.object(self.auth.client, "post", return_value=mock_response):
             token = await self.auth.authenticate()
-            
+
             assert token is not None
             assert token.access_token == "test-access-token"
             assert token.token_type == "Bearer"
@@ -131,12 +129,12 @@ class TestServiceAccountAuth:
         mock_response.status_code = 401
         mock_response.json.return_value = {
             "error": "invalid_client",
-            "error_description": "Invalid client credentials"
+            "error_description": "Invalid client credentials",
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response):
+
+        with patch.object(self.auth.client, "post", return_value=mock_response):
             token = await self.auth.authenticate()
-            
+
             assert token is None
 
     @pytest.mark.asyncio
@@ -147,18 +145,20 @@ class TestServiceAccountAuth:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "access_token": "cached-token",
-            "expires_in": 300
+            "expires_in": 300,
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response) as mock_post:
+
+        with patch.object(
+            self.auth.client, "post", return_value=mock_response
+        ) as mock_post:
             # First authentication
             token1 = await self.auth.authenticate()
             assert token1.access_token == "cached-token"
-            
+
             # Second authentication should use cached token
             token2 = await self.auth.authenticate()
             assert token2 is token1  # Same object
-            
+
             # Should only have called the endpoint once
             assert mock_post.call_count == 1
 
@@ -170,17 +170,19 @@ class TestServiceAccountAuth:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "access_token": "refreshed-token",
-            "expires_in": 300
+            "expires_in": 300,
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response) as mock_post:
+
+        with patch.object(
+            self.auth.client, "post", return_value=mock_response
+        ) as mock_post:
             # First authentication
             await self.auth.authenticate()
-            
+
             # Force refresh should make new request
             token = await self.auth.authenticate(force_refresh=True)
             assert token.access_token == "refreshed-token"
-            
+
             # Should have called endpoint twice
             assert mock_post.call_count == 2
 
@@ -192,10 +194,10 @@ class TestServiceAccountAuth:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "access_token": "valid-token-string",
-            "expires_in": 300
+            "expires_in": 300,
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_response):
+
+        with patch.object(self.auth.client, "post", return_value=mock_response):
             token_string = await self.auth.get_valid_token()
             assert token_string == "valid-token-string"
 
@@ -205,15 +207,15 @@ class TestServiceAccountAuth:
         # Mock Keycloak well-known endpoint
         mock_response = MagicMock()
         mock_response.status_code = 200
-        
-        with patch.object(self.auth.client, 'get', return_value=mock_response):
+
+        with patch.object(self.auth.client, "get", return_value=mock_response):
             health = await self.auth.health_check()
-            
+
             assert isinstance(health, dict)
             assert "service_account_configured" in health
             assert "keycloak_reachable" in health
             assert "configuration" in health
-            
+
             # Should be configured with test config
             assert health["service_account_configured"] is True
             assert health["keycloak_reachable"] is True
@@ -226,9 +228,9 @@ class TestServiceAccountAuth:
         mock_auth_response.status_code = 200
         mock_auth_response.json.return_value = {
             "access_token": "info-token",
-            "expires_in": 300
+            "expires_in": 300,
         }
-        
+
         # Mock userinfo response
         mock_info_response = MagicMock()
         mock_info_response.status_code = 200
@@ -236,13 +238,13 @@ class TestServiceAccountAuth:
             "sub": "service-account-client-id",
             "preferred_username": "service-account-test-service-account",
             "email_verified": False,
-            "client_id": "test-service-account"
+            "client_id": "test-service-account",
         }
-        
-        with patch.object(self.auth.client, 'post', return_value=mock_auth_response):
-            with patch.object(self.auth.client, 'get', return_value=mock_info_response):
+
+        with patch.object(self.auth.client, "post", return_value=mock_auth_response):
+            with patch.object(self.auth.client, "get", return_value=mock_info_response):
                 info = await self.auth.get_service_info()
-                
+
                 assert info is not None
                 assert info["client_id"] == "test-service-account"
                 assert "service-account" in info["preferred_username"]
@@ -251,16 +253,16 @@ class TestServiceAccountAuth:
     async def test_rate_limiting(self):
         """Test rate limiting functionality"""
         import time
-        
+
         start_time = time.time()
-        
+
         # Make multiple rate-limited calls
         await self.auth._rate_limit()
         await self.auth._rate_limit()
-        
+
         end_time = time.time()
         elapsed = end_time - start_time
-        
+
         # Should have added some delay (with tolerance for timing precision)
         assert elapsed >= 0.95  # At least 0.95 seconds delay (allowing 50ms tolerance)
 
@@ -269,24 +271,23 @@ class TestServiceAccountAuth:
         # Test without token
         headers = self.auth.get_auth_headers()
         assert headers == {}
-        
+
         # Set a valid token
         self.auth._current_token = ServiceToken(
-            access_token="header-test-token",
-            expires_in=300
+            access_token="header-test-token", expires_in=300
         )
-        
+
         headers = self.auth.get_auth_headers()
         assert headers == {"Authorization": "Bearer header-test-token"}
-        
+
         # Test with expired token
         expired_token = ServiceToken(
             access_token="expired-header-token",
             expires_in=60,
-            created_at=datetime.now(UTC) - timedelta(seconds=120)
+            created_at=datetime.now(UTC) - timedelta(seconds=120),
         )
         self.auth._current_token = expired_token
-        
+
         headers = self.auth.get_auth_headers()
         assert headers == {}
 
@@ -298,13 +299,13 @@ class TestServiceAccountAuth:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "access_token": "context-token",
-            "expires_in": 300
+            "expires_in": 300,
         }
 
         # Create a new auth instance for context manager test
         test_auth = ServiceAccountAuth(TEST_CONFIG)
 
-        with patch.object(test_auth.client, 'post', return_value=mock_response):
+        with patch.object(test_auth.client, "post", return_value=mock_response):
             async with test_auth as auth:
                 assert auth._current_token is not None
                 assert auth._current_token.access_token == "context-token"
@@ -314,44 +315,46 @@ class TestServiceAccountAuth:
         """Test singleton pattern for service account auth"""
         # First ensure the singleton is reset from any previous test
         import fastmcp.auth.service_account
-        
+
         # Save the current state and reset singleton
         saved_instance = fastmcp.auth.service_account._service_auth_instance
         fastmcp.auth.service_account._service_auth_instance = None
-        
+
         try:
             # Mock environment variables
             env_vars = {
                 "KEYCLOAK_URL": "https://singleton-test.com",
-                "KEYCLOAK_SERVICE_CLIENT_SECRET": "singleton-secret"
+                "KEYCLOAK_SERVICE_CLIENT_SECRET": "singleton-secret",
             }
-            
+
             with patch.dict(os.environ, env_vars):
                 # Mock the httpx client to avoid real network calls
                 # Create a single mock client instance that will be returned every time
                 mock_client = AsyncMock()
                 mock_client.aclose = AsyncMock()
-                
+
                 # Create a mock class that returns the same client instance
                 mock_client_class = MagicMock()
                 mock_client_class.return_value = mock_client
-                
-                with patch('fastmcp.auth.service_account.httpx.AsyncClient', mock_client_class):
+
+                with patch(
+                    "fastmcp.auth.service_account.httpx.AsyncClient", mock_client_class
+                ):
                     auth1 = get_service_account_auth()
                     auth2 = get_service_account_auth()
-                    
+
                     # Should be the same instance
                     assert auth1 is auth2
-                    
+
                     # The httpx.AsyncClient should only be called once due to singleton
                     assert mock_client_class.call_count == 1
-                    
+
                     # Ensure auth1 is using the mocked client
                     assert isinstance(auth1.client, AsyncMock)
-                    
+
                     await auth1.close()
                     mock_client.aclose.assert_awaited_once()
-                    
+
         finally:
             # Always restore the original singleton state
             fastmcp.auth.service_account._service_auth_instance = saved_instance
@@ -368,16 +371,18 @@ class TestAuthenticationHelper:
             "azp": "test-client",
             "sub": "service-account-test",
             "scope": "openid mcp:read mcp:write",
-            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp())
+            "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
         }
-        
-        with patch('fastmcp.auth.service_account.get_service_account_auth') as mock_get_auth:
+
+        with patch(
+            "fastmcp.auth.service_account.get_service_account_auth"
+        ) as mock_get_auth:
             mock_auth = AsyncMock()
             mock_auth.validate_token.return_value = mock_payload
             mock_get_auth.return_value = mock_auth
-            
+
             result = await authenticate_service_request("Bearer test-token")
-            
+
             assert result is not None
             assert result["service_account"] is True
             assert result["client_id"] == "test-client"
@@ -391,11 +396,11 @@ class TestAuthenticationHelper:
         # No header
         result = await authenticate_service_request(None)
         assert result is None
-        
+
         # Invalid format
         result = await authenticate_service_request("Invalid-Header")
         assert result is None
-        
+
         # Wrong scheme
         result = await authenticate_service_request("Basic dGVzdA==")
         assert result is None
@@ -403,11 +408,13 @@ class TestAuthenticationHelper:
     @pytest.mark.asyncio
     async def test_authenticate_service_request_invalid_token(self):
         """Test service request authentication with invalid token"""
-        with patch('fastmcp.auth.service_account.get_service_account_auth') as mock_get_auth:
+        with patch(
+            "fastmcp.auth.service_account.get_service_account_auth"
+        ) as mock_get_auth:
             mock_auth = AsyncMock()
             mock_auth.validate_token.return_value = None
             mock_get_auth.return_value = mock_auth
-            
+
             result = await authenticate_service_request("Bearer invalid-token")
             assert result is None
 
@@ -419,28 +426,28 @@ class TestErrorHandling:
     async def test_network_error_handling(self):
         """Test handling of network errors"""
         auth = ServiceAccountAuth(TEST_CONFIG)
-        
-        with patch.object(auth.client, 'post', side_effect=Exception("Network error")):
+
+        with patch.object(auth.client, "post", side_effect=Exception("Network error")):
             token = await auth.authenticate()
             assert token is None
-        
+
         await auth.close()
 
     @pytest.mark.asyncio
     async def test_malformed_response_handling(self):
         """Test handling of malformed responses"""
         auth = ServiceAccountAuth(TEST_CONFIG)
-        
+
         # Mock response with missing required fields
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"invalid": "response"}
-        
-        with patch.object(auth.client, 'post', return_value=mock_response):
+
+        with patch.object(auth.client, "post", return_value=mock_response):
             token = await auth.authenticate()
             # Should handle gracefully and return None or default values
             assert token is None or token.access_token is None
-        
+
         await auth.close()
 
 
@@ -448,25 +455,27 @@ class TestErrorHandling:
 class TestRealKeycloakIntegration:
     """
     Integration tests with real Keycloak instance.
-    
+
     These tests are marked as integration and require:
     - Running Keycloak instance
     - Proper environment configuration
     - Valid service account setup
-    
+
     Run with: pytest -m integration
     """
 
     def setup_method(self):
         """Setup for integration tests"""
         # Check if integration test environment is configured
-        if not all([
-            os.getenv("KEYCLOAK_URL"),
-            os.getenv("KEYCLOAK_SERVICE_CLIENT_ID"), 
-            os.getenv("KEYCLOAK_SERVICE_CLIENT_SECRET")
-        ]):
+        if not all(
+            [
+                os.getenv("KEYCLOAK_URL"),
+                os.getenv("KEYCLOAK_SERVICE_CLIENT_ID"),
+                os.getenv("KEYCLOAK_SERVICE_CLIENT_SECRET"),
+            ]
+        ):
             pytest.skip("Integration test environment not configured")
-        
+
         self.auth = ServiceAccountAuth()
 
     def teardown_method(self):
@@ -480,8 +489,10 @@ class TestRealKeycloakIntegration:
     async def test_real_authentication(self):
         """Test authentication against real Keycloak instance"""
         token = await self.auth.authenticate()
-        
-        assert token is not None, "Authentication should succeed with proper configuration"
+
+        assert token is not None, (
+            "Authentication should succeed with proper configuration"
+        )
         assert token.access_token, "Should receive access token"
         assert not token.is_expired, "Token should not be expired"
 
@@ -491,7 +502,7 @@ class TestRealKeycloakIntegration:
         # First authenticate to get a token
         token = await self.auth.authenticate()
         assert token is not None
-        
+
         # Validate the token
         payload = await self.auth.validate_token(token.access_token)
         assert payload is not None, "Token should be valid"
@@ -502,14 +513,14 @@ class TestRealKeycloakIntegration:
     async def test_real_health_check(self):
         """Test health check against real Keycloak instance"""
         health = await self.auth.health_check()
-        
+
         assert health["service_account_configured"] is True
         assert health["keycloak_reachable"] is True
-        
+
         # Try to authenticate to get more complete health info
         await self.auth.authenticate()
         health = await self.auth.health_check()
-        
+
         assert health["token_available"] is True
         assert health["token_valid"] is True
 

@@ -31,60 +31,78 @@ class TestAgentAssignmentAtCreation:
         self.mock_task_repo = Mock()
         self.mock_subtask_repo = Mock()
         self.mock_context_service = Mock()
-        
+
         # Create facade with mocked dependencies
         self.task_facade = TaskApplicationFacade(
             task_repository=self.mock_task_repo,
             subtask_repository=self.mock_subtask_repo,
-            context_service=self.mock_context_service
+            context_service=self.mock_context_service,
         )
-        
+
         self.subtask_facade = SubtaskApplicationFacade(
             task_repository=self.mock_task_repo,
-            subtask_repository=self.mock_subtask_repo
+            subtask_repository=self.mock_subtask_repo,
         )
-        
+
         # Create handlers
         self.response_formatter = StandardResponseFormatter()
         self.task_handler = CRUDHandler(self.response_formatter)
         self.subtask_handler = SubtaskCRUDHandler(self.response_formatter)
 
-    @patch('fastmcp.task_management.domain.constants.validate_user_id')
-    @patch('fastmcp.task_management.application.facades.task_application_facade.TaskApplicationFacade._await_if_coroutine')
-    def test_create_task_with_multiple_assignees_success(self, mock_await, mock_validate_user):
+    @patch("fastmcp.task_management.domain.constants.validate_user_id")
+    @patch(
+        "fastmcp.task_management.application.facades.task_application_facade.TaskApplicationFacade._await_if_coroutine"
+    )
+    def test_create_task_with_multiple_assignees_success(
+        self, mock_await, mock_validate_user
+    ):
         """Test successful task creation with multiple valid assignees"""
         # Setup mocks
         mock_validate_user.return_value = "test-user"
+
         # Mock _await_if_coroutine to handle the async context derivation
         def await_side_effect(coro):
             # Check if this is the context derivation call
-            if hasattr(coro, '__name__') and '_derive_context' in str(coro):
+            if hasattr(coro, "__name__") and "_derive_context" in str(coro):
                 return {"project_id": "test-project", "git_branch_name": "main"}
             # For other coroutines, return a default dict
             return {"project_id": "test-project", "git_branch_name": "main"}
+
         mock_await.side_effect = await_side_effect
-        
+
         # Mock successful task creation
         created_task = Task(
             id=TaskId("550e8400-e29b-41d4-a716-446655440000"),
             title="Test Task",
             description="Test Description",
-            assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+            assignees=[
+                "coding-agent",
+                "@test-orchestrator-agent",
+                "documentation-agent",
+            ],
         )
-        
+
         mock_task_response = Mock()
         mock_task_response.success = True
         mock_task_response.task = created_task
 
-        with patch.object(self.task_facade._create_task_use_case, 'execute', return_value=mock_task_response):
+        with patch.object(
+            self.task_facade._create_task_use_case,
+            "execute",
+            return_value=mock_task_response,
+        ):
             result = self.task_handler.create_task(
                 facade=self.task_facade,
                 git_branch_id="test-branch",
                 title="Test Task",
                 description="Test Description",
-                assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+                assignees=[
+                    "coding-agent",
+                    "@test-orchestrator-agent",
+                    "documentation-agent",
+                ],
             )
-        
+
         assert result["success"] is True
         assert result["action"] == "create"
         assert "task" in result
@@ -96,15 +114,23 @@ class TestAgentAssignmentAtCreation:
             git_branch_id="test-branch",
             title="Test Task",
             description="Test Description",
-            assignees=["invalid-agent", "another-invalid"]
+            assignees=["invalid-agent", "another-invalid"],
         )
 
         assert result["success"] is False
         # The error message will contain information about invalid assignees
         # Check for the actual error format returned by _create_standardized_error
         # With response optimization, error is structured as {"message": "...", "code": "..."}
-        error_message = result.get("error", {}).get("message", "") if isinstance(result.get("error"), dict) else result.get("error", "")
-        assert "assignees" in error_message or (result.get("metadata") and result["metadata"].get("hint") and "Invalid assignees" in result["metadata"]["hint"])
+        error_message = (
+            result.get("error", {}).get("message", "")
+            if isinstance(result.get("error"), dict)
+            else result.get("error", "")
+        )
+        assert "assignees" in error_message or (
+            result.get("metadata")
+            and result["metadata"].get("hint")
+            and "Invalid assignees" in result["metadata"]["hint"]
+        )
 
     def test_create_task_empty_assignees(self):
         """Test task creation with empty assignees list - should fail as at least one assignee is required"""
@@ -112,14 +138,20 @@ class TestAgentAssignmentAtCreation:
             facade=self.task_facade,
             git_branch_id="test-branch",
             title="Test Task",
-            assignees=[]  # Empty list
+            assignees=[],  # Empty list
         )
 
         # Empty assignees list should fail validation
         assert result["success"] is False
         # With response optimization, error is structured as {"message": "...", "code": "..."}
-        error_message = result.get("error", {}).get("message", "") if isinstance(result.get("error"), dict) else result.get("error", "")
-        assert "assignees" in error_message or (result.get("metadata") and result["metadata"].get("field") == "assignees")
+        error_message = (
+            result.get("error", {}).get("message", "")
+            if isinstance(result.get("error"), dict)
+            else result.get("error", "")
+        )
+        assert "assignees" in error_message or (
+            result.get("metadata") and result["metadata"].get("field") == "assignees"
+        )
 
 
 class TestAgentInheritanceFlow:
@@ -129,30 +161,30 @@ class TestAgentInheritanceFlow:
         """Setup test environment"""
         self.mock_task_repo = Mock()
         self.mock_subtask_repo = Mock()
-        
+
         # Create parent task with assignees
         self.parent_task = Task(
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"],
         )
-        
+
         # Setup repository mocks
         self.mock_task_repo.find_by_id.return_value = self.parent_task
-        
+
         self.subtask_facade = SubtaskApplicationFacade(
             task_repository=self.mock_task_repo,
-            subtask_repository=self.mock_subtask_repo
+            subtask_repository=self.mock_subtask_repo,
         )
-        
+
         self.response_formatter = StandardResponseFormatter()
         self.subtask_handler = SubtaskCRUDHandler(self.response_formatter)
 
     def test_create_subtask_inherits_parent_assignees(self):
         """Test subtask creation inherits assignees from parent when none provided"""
         # Mock the handle_manage_subtask method to simulate inheritance
-        with patch.object(self.subtask_facade, 'handle_manage_subtask') as mock_handle:
+        with patch.object(self.subtask_facade, "handle_manage_subtask") as mock_handle:
             mock_response = {
                 "success": True,
                 "action": "create",
@@ -160,31 +192,34 @@ class TestAgentInheritanceFlow:
                 "subtask": {
                     "id": "subtask-456",
                     "title": "Test Subtask",
-                    "assignees": ["coding-agent", "@test-orchestrator-agent"]
+                    "assignees": ["coding-agent", "@test-orchestrator-agent"],
                 },
                 "task_id": "parent-task-123",
                 "progress": {},
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"]
+                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"],
             }
             mock_handle.return_value = mock_response
-            
+
             result = self.subtask_handler.create_subtask(
                 facade=self.subtask_facade,
                 task_id="parent-task-123",
                 title="Test Subtask",
-                assignees=None  # No assignees provided
+                assignees=None,  # No assignees provided
             )
-        
+
         assert result["success"] is True
         assert result.get("agent_inheritance_applied") is True
-        assert result.get("inherited_assignees") == ["coding-agent", "@test-orchestrator-agent"]
+        assert result.get("inherited_assignees") == [
+            "coding-agent",
+            "@test-orchestrator-agent",
+        ]
         assert "inheritance_info" in result
         assert result["inheritance_info"]["applied"] is True
 
     def test_create_subtask_with_explicit_assignees_no_inheritance(self):
         """Test subtask creation with explicit assignees does not inherit"""
-        with patch.object(self.subtask_facade, 'handle_manage_subtask') as mock_handle:
+        with patch.object(self.subtask_facade, "handle_manage_subtask") as mock_handle:
             mock_response = {
                 "success": True,
                 "action": "create",
@@ -192,11 +227,11 @@ class TestAgentInheritanceFlow:
                 "subtask": {
                     "id": "subtask-456",
                     "title": "Test Subtask",
-                    "assignees": ["security-auditor-agent"]
+                    "assignees": ["security-auditor-agent"],
                 },
                 "task_id": "parent-task-123",
                 "progress": {},
-                "agent_inheritance_applied": False
+                "agent_inheritance_applied": False,
             }
             mock_handle.return_value = mock_response
 
@@ -204,7 +239,9 @@ class TestAgentInheritanceFlow:
                 facade=self.subtask_facade,
                 task_id="parent-task-123",
                 title="Test Subtask",
-                assignees=["security-auditor-agent"]  # Explicit assignees - no @ prefix needed
+                assignees=[
+                    "security-auditor-agent"
+                ],  # Explicit assignees - no @ prefix needed
             )
 
         assert result["success"] is True
@@ -219,15 +256,20 @@ class TestAgentInheritanceFlow:
             facade=self.subtask_facade,
             task_id="parent-task-123",
             title="Test Subtask",
-            assignees=["invalid-agent"]
+            assignees=["invalid-agent"],
         )
 
         assert result["success"] is False
         # Check for assignees validation error in multiple possible locations
         # With response optimization, error is structured as {"message": "...", "code": "..."}
-        error_message = result.get("error", {}).get("message", "") if isinstance(result.get("error"), dict) else result.get("error", "")
-        assert "assignees" in error_message.lower() or \
-               (result.get("metadata") and "assignees" in str(result.get("metadata", {})))
+        error_message = (
+            result.get("error", {}).get("message", "")
+            if isinstance(result.get("error"), dict)
+            else result.get("error", "")
+        )
+        assert "assignees" in error_message.lower() or (
+            result.get("metadata") and "assignees" in str(result.get("metadata", {}))
+        )
 
 
 class TestEndToEndAgentFlow:
@@ -238,61 +280,76 @@ class TestEndToEndAgentFlow:
         self.mock_task_repo = Mock()
         self.mock_subtask_repo = Mock()
         self.mock_context_service = Mock()
-        
+
         self.task_facade = TaskApplicationFacade(
             task_repository=self.mock_task_repo,
             subtask_repository=self.mock_subtask_repo,
-            context_service=self.mock_context_service
+            context_service=self.mock_context_service,
         )
-        
+
         self.subtask_facade = SubtaskApplicationFacade(
             task_repository=self.mock_task_repo,
-            subtask_repository=self.mock_subtask_repo
+            subtask_repository=self.mock_subtask_repo,
         )
-        
+
         self.response_formatter = StandardResponseFormatter()
         self.task_handler = CRUDHandler(self.response_formatter)
         self.subtask_handler = SubtaskCRUDHandler(self.response_formatter)
 
-    @patch('fastmcp.task_management.domain.constants.validate_user_id')
+    @patch("fastmcp.task_management.domain.constants.validate_user_id")
     def test_complete_task_to_subtask_flow(self, mock_validate_user):
         """Test complete flow: create task with agents, then create subtask that inherits"""
         mock_validate_user.return_value = "test-user"
-        
+
         # Step 1: Create parent task with multiple assignees
         created_task = Task(
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+            assignees=[
+                "coding-agent",
+                "@test-orchestrator-agent",
+                "documentation-agent",
+            ],
         )
-        
+
         # Mock task creation
         mock_task_response = Mock()
         mock_task_response.success = True
         mock_task_response.task = created_task
-        
-        with patch.object(self.task_facade._create_task_use_case, 'execute', return_value=mock_task_response):
-            with patch.object(self.task_facade, '_await_if_coroutine') as mock_await:
+
+        with patch.object(
+            self.task_facade._create_task_use_case,
+            "execute",
+            return_value=mock_task_response,
+        ):
+            with patch.object(self.task_facade, "_await_if_coroutine") as mock_await:
                 mock_await.side_effect = [
-                    {"project_id": "test-project", "git_branch_name": "main"},  # Context derivation
-                    None  # Context sync
+                    {
+                        "project_id": "test-project",
+                        "git_branch_name": "main",
+                    },  # Context derivation
+                    None,  # Context sync
                 ]
-                
+
                 task_result = self.task_handler.create_task(
                     facade=self.task_facade,
                     git_branch_id="test-branch",
                     title="Parent Task",
                     description="Parent Description",
-                    assignees=["coding-agent", "test-orchestrator-agent", "documentation-agent"]
+                    assignees=[
+                        "coding-agent",
+                        "test-orchestrator-agent",
+                        "documentation-agent",
+                    ],
                 )
-        
+
         assert task_result["success"] is True
-        
+
         # Step 2: Create subtask without assignees (should inherit)
         self.mock_task_repo.find_by_id.return_value = created_task
-        
-        with patch.object(self.subtask_facade, 'handle_manage_subtask') as mock_handle:
+
+        with patch.object(self.subtask_facade, "handle_manage_subtask") as mock_handle:
             mock_subtask_response = {
                 "success": True,
                 "action": "create",
@@ -300,22 +357,30 @@ class TestEndToEndAgentFlow:
                 "subtask": {
                     "id": "subtask-456",
                     "title": "Child Subtask",
-                    "assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+                    "assignees": [
+                        "coding-agent",
+                        "@test-orchestrator-agent",
+                        "documentation-agent",
+                    ],
                 },
                 "task_id": "parent-task-123",
                 "progress": {},
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent", "documentation-agent"]
+                "inherited_assignees": [
+                    "coding-agent",
+                    "@test-orchestrator-agent",
+                    "documentation-agent",
+                ],
             }
             mock_handle.return_value = mock_subtask_response
-            
+
             subtask_result = self.subtask_handler.create_subtask(
                 facade=self.subtask_facade,
                 task_id="parent-task-123",
                 title="Child Subtask",
-                assignees=None  # Should inherit from parent
+                assignees=None,  # Should inherit from parent
             )
-        
+
         assert subtask_result["success"] is True
         assert subtask_result["agent_inheritance_applied"] is True
         assert len(subtask_result["inherited_assignees"]) == 3
@@ -328,40 +393,40 @@ class TestEndToEndAgentFlow:
             id=TaskId("parent-task-123"),
             title="Parent Task",
             description="Parent Description",
-            assignees=["coding-agent", "@test-orchestrator-agent"]
+            assignees=["coding-agent", "@test-orchestrator-agent"],
         )
-        
+
         self.mock_task_repo.find_by_id.return_value = parent_task
-        
+
         # Scenario 1: Subtask with no assignees (should inherit)
-        with patch.object(self.subtask_facade, 'handle_manage_subtask') as mock_handle:
+        with patch.object(self.subtask_facade, "handle_manage_subtask") as mock_handle:
             mock_handle.return_value = {
                 "success": True,
                 "agent_inheritance_applied": True,
-                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"]
+                "inherited_assignees": ["coding-agent", "@test-orchestrator-agent"],
             }
-            
+
             result1 = self.subtask_handler.create_subtask(
                 facade=self.subtask_facade,
                 task_id="parent-task-123",
                 title="Subtask 1",
-                assignees=None
+                assignees=None,
             )
-            
+
             assert result1.get("agent_inheritance_applied") is True
 
         # Scenario 2: Subtask with explicit assignees (should not inherit)
-        with patch.object(self.subtask_facade, 'handle_manage_subtask') as mock_handle:
+        with patch.object(self.subtask_facade, "handle_manage_subtask") as mock_handle:
             mock_handle.return_value = {
                 "success": True,
-                "agent_inheritance_applied": False
+                "agent_inheritance_applied": False,
             }
 
             result2 = self.subtask_handler.create_subtask(
                 facade=self.subtask_facade,
                 task_id="parent-task-123",
                 title="Subtask 2",
-                assignees=["security-auditor-agent"]  # No @ prefix needed
+                assignees=["security-auditor-agent"],  # No @ prefix needed
             )
 
             # When explicit assignees are provided, inheritance should not be applied
@@ -386,31 +451,42 @@ class TestEdgeCasesAndErrorHandling:
             facade=mock_facade,
             git_branch_id="test-branch",
             title="Test Task",
-            assignees=["coding-agent", "invalid-agent", "test-orchestrator-agent"]
+            assignees=["coding-agent", "invalid-agent", "test-orchestrator-agent"],
         )
 
         assert result["success"] is False
         # Check that the error mentions assignees validation
         # With response optimization, error is structured as {"message": "...", "code": "..."}
-        error_message = result.get("error", {}).get("message", "") if isinstance(result.get("error"), dict) else result.get("error", "")
-        assert "assignees" in error_message or \
-               (result.get("metadata") and result["metadata"].get("hint") and "invalid-agent" in result["metadata"]["hint"])
+        error_message = (
+            result.get("error", {}).get("message", "")
+            if isinstance(result.get("error"), dict)
+            else result.get("error", "")
+        )
+        assert "assignees" in error_message or (
+            result.get("metadata")
+            and result["metadata"].get("hint")
+            and "invalid-agent" in result["metadata"]["hint"]
+        )
 
     def test_create_subtask_parent_task_not_found(self):
         """Test subtask creation when parent task is not found"""
         mock_facade = Mock()
-        mock_facade.handle_manage_subtask.side_effect = ValueError("Task parent-task-123 not found")
+        mock_facade.handle_manage_subtask.side_effect = ValueError(
+            "Task parent-task-123 not found"
+        )
 
         result = self.subtask_handler.create_subtask(
-            facade=mock_facade,
-            task_id="nonexistent-task",
-            title="Test Subtask"
+            facade=mock_facade, task_id="nonexistent-task", title="Test Subtask"
         )
 
         assert result["success"] is False
         # Error message will be about the task not being found or a generic failure
         # With response optimization, error is structured as {"message": "...", "code": "..."}
-        error_message = result.get("error", {}).get("message", "") if isinstance(result.get("error"), dict) else result.get("error", "")
+        error_message = (
+            result.get("error", {}).get("message", "")
+            if isinstance(result.get("error"), dict)
+            else result.get("error", "")
+        )
         assert "failed" in error_message.lower() or "not found" in error_message.lower()
 
     def test_create_subtask_inheritance_service_failure(self):
@@ -419,15 +495,13 @@ class TestEdgeCasesAndErrorHandling:
         mock_facade.handle_manage_subtask.return_value = {
             "success": True,
             "agent_inheritance_applied": False,
-            "warning": "Inheritance service failed"
+            "warning": "Inheritance service failed",
         }
-        
+
         result = self.subtask_handler.create_subtask(
-            facade=mock_facade,
-            task_id="parent-task-123",
-            title="Test Subtask"
+            facade=mock_facade, task_id="parent-task-123", title="Test Subtask"
         )
-        
+
         assert result["success"] is True
         assert result.get("agent_inheritance_applied") is False
 
@@ -435,10 +509,16 @@ class TestEdgeCasesAndErrorHandling:
         """Test validation with large number of assignees"""
         # Create list of 10 valid assignees - note: ui-designer-agent may not be valid
         large_assignee_list = [
-            "coding-agent", "test-orchestrator-agent", "documentation-agent",
-            "security-auditor-agent", "devops-agent", "shadcn-ui-expert-agent",  # Fixed agent name
-            "system-architect-agent", "performance-load-tester-agent",
-            "code-reviewer-agent", "debugger-agent"
+            "coding-agent",
+            "test-orchestrator-agent",
+            "documentation-agent",
+            "security-auditor-agent",
+            "devops-agent",
+            "shadcn-ui-expert-agent",  # Fixed agent name
+            "system-architect-agent",
+            "performance-load-tester-agent",
+            "code-reviewer-agent",
+            "debugger-agent",
         ]
 
         mock_facade = Mock()
@@ -448,21 +528,30 @@ class TestEdgeCasesAndErrorHandling:
             id=TaskId("test-task"),
             title="Test Task",
             description="Test",
-            assignees=large_assignee_list  # No @ prefix needed in list
+            assignees=large_assignee_list,  # No @ prefix needed in list
         )
 
         # Mock the _create_task_use_case attribute
         mock_facade._create_task_use_case = Mock()
-        mock_facade._create_task_use_case.execute = Mock(return_value=mock_task_response)
-        mock_facade._await_if_coroutine = Mock(return_value={"project_id": "test", "git_branch_name": "main"})
-        mock_facade.create_task = Mock(return_value={"success": True, "task": mock_task_response.task})
+        mock_facade._create_task_use_case.execute = Mock(
+            return_value=mock_task_response
+        )
+        mock_facade._await_if_coroutine = Mock(
+            return_value={"project_id": "test", "git_branch_name": "main"}
+        )
+        mock_facade.create_task = Mock(
+            return_value={"success": True, "task": mock_task_response.task}
+        )
 
-        with patch('fastmcp.task_management.domain.constants.validate_user_id', return_value="test-user"):
+        with patch(
+            "fastmcp.task_management.domain.constants.validate_user_id",
+            return_value="test-user",
+        ):
             result = self.task_handler.create_task(
                 facade=mock_facade,
                 git_branch_id="test-branch",
                 title="Test Task",
-                assignees=large_assignee_list
+                assignees=large_assignee_list,
             )
 
         assert result["success"] is True

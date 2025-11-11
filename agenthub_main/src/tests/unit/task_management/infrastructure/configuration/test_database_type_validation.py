@@ -30,22 +30,29 @@ class TestDatabaseTypeValidation:
         """Clean up after each test."""
         DatabaseConfig.reset_instance()
 
-    @pytest.mark.parametrize("valid_type", [
-        "postgresql",
-        "supabase",
-        "PostgreSQL",  # Case insensitive
-        "SUPABASE",    # Case insensitive
-        "PoStGrEsQl",  # Mixed case
-    ])
+    @pytest.mark.parametrize(
+        "valid_type",
+        [
+            "postgresql",
+            "supabase",
+            "PostgreSQL",  # Case insensitive
+            "SUPABASE",  # Case insensitive
+            "PoStGrEsQl",  # Mixed case
+        ],
+    )
     def test_valid_database_types_accepted(self, valid_type):
         """Test that valid DATABASE_TYPE values are accepted (case-insensitive)."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": valid_type,
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-            "DATABASE_NAME": "test_db"
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": valid_type,
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+                "DATABASE_NAME": "test_db",
+            },
+            clear=True,
+        ):
             try:
                 config = DatabaseConfig()
                 # Should not raise - verify type was normalized to lowercase
@@ -53,29 +60,31 @@ class TestDatabaseTypeValidation:
             except ValueError as e:
                 pytest.fail(f"Valid DATABASE_TYPE '{valid_type}' was rejected: {e}")
 
-    @pytest.mark.parametrize("invalid_type,error_substring", [
-        ("sqlite", "Invalid DATABASE_TYPE: sqlite"),
-        ("mysql", "Invalid DATABASE_TYPE: mysql"),
-        ("oracle", "Invalid DATABASE_TYPE: oracle"),
-        ("mongodb", "Invalid DATABASE_TYPE: mongodb"),
-        ("mariadb", "Invalid DATABASE_TYPE: mariadb"),
-        ("mssql", "Invalid DATABASE_TYPE: mssql"),
-        ("cockroachdb", "Invalid DATABASE_TYPE: cockroachdb"),
-        ("invalid", "Invalid DATABASE_TYPE: invalid"),
-        ("", "DATABASE_TYPE environment variable is NOT configured"),
-        ("   ", "Invalid DATABASE_TYPE"),  # Whitespace only
-    ])
+    @pytest.mark.parametrize(
+        "invalid_type,error_substring",
+        [
+            ("sqlite", "Invalid DATABASE_TYPE: sqlite"),
+            ("mysql", "Invalid DATABASE_TYPE: mysql"),
+            ("oracle", "Invalid DATABASE_TYPE: oracle"),
+            ("mongodb", "Invalid DATABASE_TYPE: mongodb"),
+            ("mariadb", "Invalid DATABASE_TYPE: mariadb"),
+            ("mssql", "Invalid DATABASE_TYPE: mssql"),
+            ("cockroachdb", "Invalid DATABASE_TYPE: cockroachdb"),
+            ("invalid", "Invalid DATABASE_TYPE: invalid"),
+            ("", "DATABASE_TYPE environment variable is NOT configured"),
+            ("   ", "Invalid DATABASE_TYPE"),  # Whitespace only
+        ],
+    )
     def test_invalid_database_types_rejected(self, invalid_type, error_substring):
         """Test that invalid DATABASE_TYPE values are rejected with clear error messages."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": invalid_type
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": invalid_type}, clear=True):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
             # Verify error message contains expected substring
-            assert error_substring in str(exc_info.value), \
+            assert error_substring in str(exc_info.value), (
                 f"Expected error message to contain '{error_substring}', got: {exc_info.value}"
+            )
 
     def test_missing_database_type_raises_error(self):
         """Test that missing DATABASE_TYPE raises clear error message."""
@@ -100,35 +109,48 @@ class TestDatabaseTypeValidation:
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
-            assert "DATABASE_TYPE environment variable is NOT configured" in str(exc_info.value)
+            assert "DATABASE_TYPE environment variable is NOT configured" in str(
+                exc_info.value
+            )
 
     def test_postgresql_requires_connection_details(self):
         """Test that postgresql DATABASE_TYPE requires host, user, password."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            # Missing DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                # Missing DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD
+            },
+            clear=True,
+        ):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
             error_msg = str(exc_info.value)
             # Should mention missing configuration
-            assert "configuration missing" in error_msg.lower() or \
-                   "required" in error_msg.lower()
+            assert (
+                "configuration missing" in error_msg.lower()
+                or "required" in error_msg.lower()
+            )
 
     def test_supabase_requires_connection_details(self):
         """Test that supabase DATABASE_TYPE requires host and password."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "supabase",
-            # Missing SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "supabase",
+                # Missing SUPABASE_DB_HOST, SUPABASE_DB_PASSWORD
+            },
+            clear=True,
+        ):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
             error_msg = str(exc_info.value)
             # Should mention Supabase configuration or missing details
-            assert "supabase" in error_msg.lower() or \
-                   "configuration" in error_msg.lower()
+            assert (
+                "supabase" in error_msg.lower() or "configuration" in error_msg.lower()
+            )
 
     def test_case_insensitive_normalization(self):
         """Test that DATABASE_TYPE is normalized to lowercase."""
@@ -142,16 +164,21 @@ class TestDatabaseTypeValidation:
         for input_type, expected_normalized in test_cases:
             DatabaseConfig.reset_instance()
 
-            with patch.dict(os.environ, {
-                "DATABASE_TYPE": input_type,
-                "DATABASE_HOST": "localhost",
-                "DATABASE_USER": "test_user",
-                "DATABASE_PASSWORD": "test_pass",
-            }, clear=True):
+            with patch.dict(
+                os.environ,
+                {
+                    "DATABASE_TYPE": input_type,
+                    "DATABASE_HOST": "localhost",
+                    "DATABASE_USER": "test_user",
+                    "DATABASE_PASSWORD": "test_pass",
+                },
+                clear=True,
+            ):
                 config = DatabaseConfig()
-                assert config.database_type == expected_normalized, \
-                    f"Expected '{input_type}' to be normalized to '{expected_normalized}', " \
+                assert config.database_type == expected_normalized, (
+                    f"Expected '{input_type}' to be normalized to '{expected_normalized}', "
                     f"got '{config.database_type}'"
+                )
 
 
 class TestDatabaseTypeErrorMessages:
@@ -167,9 +194,7 @@ class TestDatabaseTypeErrorMessages:
 
     def test_sqlite_rejection_message(self):
         """Test that sqlite rejection provides clear migration guidance."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "sqlite"
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": "sqlite"}, clear=True):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
@@ -187,20 +212,19 @@ class TestDatabaseTypeErrorMessages:
 
             error_msg = str(exc_info.value)
             # Should provide examples of how to configure
-            assert "DATABASE_TYPE=postgresql" in error_msg or \
-                   "DATABASE_TYPE=supabase" in error_msg
+            assert (
+                "DATABASE_TYPE=postgresql" in error_msg
+                or "DATABASE_TYPE=supabase" in error_msg
+            )
 
     def test_error_prevents_fallback(self):
         """Test that invalid DATABASE_TYPE prevents fallback behavior."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "sqlite"
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": "sqlite"}, clear=True):
             with pytest.raises(ValueError):
                 DatabaseConfig()
 
             # Verify no instance was created (no fallback)
-            assert DatabaseConfig._instance is None or \
-                   not DatabaseConfig._initialized
+            assert DatabaseConfig._instance is None or not DatabaseConfig._initialized
 
 
 class TestDatabaseConfigurationConstructor:
@@ -216,9 +240,7 @@ class TestDatabaseConfigurationConstructor:
 
     def test_constructor_validates_type_before_connection(self):
         """Test that DATABASE_TYPE is validated before attempting connection."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "invalid_type"
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": "invalid_type"}, clear=True):
             # Should fail during type validation, not during connection
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
@@ -229,12 +251,16 @@ class TestDatabaseConfigurationConstructor:
 
     def test_singleton_pattern_preserved(self):
         """Test that singleton pattern still works after validation changes."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+            },
+            clear=True,
+        ):
             config1 = DatabaseConfig()
             config2 = DatabaseConfig()
 
@@ -244,12 +270,16 @@ class TestDatabaseConfigurationConstructor:
     def test_reset_instance_clears_validation_state(self):
         """Test that reset_instance properly clears validation state."""
         # First create with valid config
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_USER": "test_user",
-            "DATABASE_PASSWORD": "test_pass",
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_USER": "test_user",
+                "DATABASE_PASSWORD": "test_pass",
+            },
+            clear=True,
+        ):
             config1 = DatabaseConfig()
             assert config1 is not None
 
@@ -257,9 +287,7 @@ class TestDatabaseConfigurationConstructor:
         DatabaseConfig.reset_instance()
 
         # Try to create with invalid config - should fail validation
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "sqlite"
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": "sqlite"}, clear=True):
             with pytest.raises(ValueError):
                 DatabaseConfig()
 
@@ -286,9 +314,7 @@ class TestEnvironmentVariableValidation:
 
     def test_empty_string_treated_as_missing(self):
         """Test that empty string DATABASE_TYPE is treated as missing."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": ""
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": ""}, clear=True):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
@@ -298,16 +324,13 @@ class TestEnvironmentVariableValidation:
 
     def test_whitespace_only_rejected(self):
         """Test that whitespace-only DATABASE_TYPE is rejected."""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "   "
-        }, clear=True):
+        with patch.dict(os.environ, {"DATABASE_TYPE": "   "}, clear=True):
             with pytest.raises(ValueError) as exc_info:
                 DatabaseConfig()
 
             # Should be rejected as invalid type after strip/lower
             error_msg = str(exc_info.value)
-            assert "Invalid DATABASE_TYPE" in error_msg or \
-                   "NOT configured" in error_msg
+            assert "Invalid DATABASE_TYPE" in error_msg or "NOT configured" in error_msg
 
 
 if __name__ == "__main__":

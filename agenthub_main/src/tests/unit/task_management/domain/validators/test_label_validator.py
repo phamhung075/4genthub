@@ -97,13 +97,7 @@ class TestNameValidation:
         """Test that alphanumeric names pass validation."""
         validator = LabelValidator()
 
-        valid_names = [
-            "backend",
-            "frontend",
-            "api",
-            "Backend123",
-            "test_123"
-        ]
+        valid_names = ["backend", "frontend", "api", "Backend123", "test_123"]
 
         for name in valid_names:
             validator.validate_name(name)  # Should not raise
@@ -116,7 +110,7 @@ class TestNameValidation:
             "api-integration",
             "frontend-ui",
             "db-optimization",
-            "multi-word-label"
+            "multi-word-label",
         ]
 
         for name in valid_names:
@@ -130,7 +124,7 @@ class TestNameValidation:
             "api_integration",
             "frontend_ui",
             "db_optimization",
-            "multi_word_label"
+            "multi_word_label",
         ]
 
         for name in valid_names:
@@ -140,11 +134,7 @@ class TestNameValidation:
         """Test that names with spaces pass validation."""
         validator = LabelValidator()
 
-        valid_names = [
-            "API Integration",
-            "Frontend UI",
-            "Database Optimization"
-        ]
+        valid_names = ["API Integration", "Frontend UI", "Database Optimization"]
 
         for name in valid_names:
             validator.validate_name(name)  # Should not raise
@@ -188,7 +178,7 @@ class TestNameValidation:
             "label#tag",
             "label$tag",
             "label%tag",
-            "label!tag"
+            "label!tag",
         ]
 
         for name in invalid_names:
@@ -211,7 +201,7 @@ class TestColorValidation:
             "#0000ff",
             "#ffffff",
             "#000000",
-            "#abc123"
+            "#abc123",
         ]
 
         for color in valid_colors:
@@ -221,14 +211,7 @@ class TestColorValidation:
         """Test that 3-digit hex colors pass validation."""
         validator = LabelValidator()
 
-        valid_colors = [
-            "#f00",
-            "#0f0",
-            "#00f",
-            "#fff",
-            "#000",
-            "#abc"
-        ]
+        valid_colors = ["#f00", "#0f0", "#00f", "#fff", "#000", "#abc"]
 
         for color in valid_colors:
             validator.validate_color(color)  # Should not raise
@@ -254,12 +237,12 @@ class TestColorValidation:
         validator = LabelValidator()
 
         invalid_colors = [
-            "#ff",       # Too short
-            "#ffff",     # Invalid length
-            "#fffff",    # Invalid length
+            "#ff",  # Too short
+            "#ffff",  # Invalid length
+            "#fffff",  # Invalid length
             "#fffffff",  # Too long
-            "#gggggg",   # Invalid hex characters
-            "#zzzzzz"    # Invalid hex characters
+            "#gggggg",  # Invalid hex characters
+            "#zzzzzz",  # Invalid hex characters
         ]
 
         for color in invalid_colors:
@@ -289,7 +272,7 @@ class TestDescriptionValidation:
             "Backend API tasks",
             "Frontend UI components",
             "x" * 100,  # Long but valid
-            "Description with special chars: @#$%^&*()"
+            "Description with special chars: @#$%^&*()",
         ]
 
         for desc in valid_descriptions:
@@ -340,7 +323,7 @@ class TestLabelCreationValidation:
             color="#ff0000",
             description="Backend API tasks",
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         assert success is True
@@ -361,7 +344,7 @@ class TestLabelCreationValidation:
 
         success, error = validator.validate_label_creation(
             name="",  # Empty name
-            color="#ff0000"
+            color="#ff0000",
         )
 
         assert success is False
@@ -374,7 +357,7 @@ class TestLabelCreationValidation:
 
         success, error = validator.validate_label_creation(
             name="backend",
-            color="#zzz"  # Invalid hex characters
+            color="#zzz",  # Invalid hex characters
         )
 
         assert success is False
@@ -389,9 +372,7 @@ class TestLabelCreationValidation:
         updated = created - timedelta(seconds=1)  # Earlier than created
 
         success, error = validator.validate_label_creation(
-            name="backend",
-            created_at=created,
-            updated_at=updated
+            name="backend", created_at=created, updated_at=updated
         )
 
         assert success is False
@@ -436,9 +417,7 @@ class TestLabelUpdateValidation:
         validator = LabelValidator()
 
         success, error = validator.validate_label_update(
-            name="updated-name",
-            color="#0000ff",
-            description="Updated description"
+            name="updated-name", color="#0000ff", description="Updated description"
         )
 
         assert success is True
@@ -469,10 +448,7 @@ class TestLabelValidationError:
 
     def test_validation_error_with_field_and_message(self):
         """Test that validation error stores field and message."""
-        error = LabelValidationError(
-            field="name",
-            message="Name is invalid"
-        )
+        error = LabelValidationError(field="name", message="Name is invalid")
 
         assert error.field == "name"
         assert error.message == "Name is invalid"
@@ -482,9 +458,7 @@ class TestLabelValidationError:
     def test_validation_error_with_hint(self):
         """Test that validation error includes hint when provided."""
         error = LabelValidationError(
-            field="color",
-            message="Invalid color",
-            hint="Use hex format like #ff0000"
+            field="color", message="Invalid color", hint="Use hex format like #ff0000"
         )
 
         assert error.hint == "Use hex format like #ff0000"

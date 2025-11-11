@@ -19,11 +19,13 @@ from fastmcp.task_management.infrastructure.database.database_config import (
 
 # Set up environment for testing
 # Note: This manual test is deprecated - use proper unit/integration tests instead
-os.environ['DATABASE_TYPE'] = 'postgresql'
-os.environ['DATABASE_HOST'] = 'localhost'
-os.environ['DATABASE_USER'] = 'test_user'
-os.environ['DATABASE_PASSWORD'] = 'test_password'
-os.environ['PYTEST_CURRENT_TEST'] = 'test_completion_summary_manual.py::test_completion_summary_storage'
+os.environ["DATABASE_TYPE"] = "postgresql"
+os.environ["DATABASE_HOST"] = "localhost"
+os.environ["DATABASE_USER"] = "test_user"
+os.environ["DATABASE_PASSWORD"] = "test_password"
+os.environ["PYTEST_CURRENT_TEST"] = (
+    "test_completion_summary_manual.py::test_completion_summary_storage"
+)
 
 # Add the project to Python path
 project_root = Path(__file__).resolve().parents[2]
@@ -40,6 +42,7 @@ def test_completion_summary_storage():
 
         # Initialize database schema for test
         from fastmcp.task_management.infrastructure.database.models import Base
+
         Base.metadata.create_all(bind=db.engine)
 
         print("✅ Database connected and schema initialized")
@@ -63,13 +66,15 @@ def test_completion_summary_storage():
             assignees=[],
             labels=[],
             dependencies=[],
-            git_branch_id=str(uuid.uuid4())
+            git_branch_id=str(uuid.uuid4()),
         )
 
         print(f"✅ Created test task entity: {task.id}")
 
         # Test completion_summary functionality directly on the entity
-        completion_summary = "Task completed successfully with proper context storage validation"
+        completion_summary = (
+            "Task completed successfully with proper context storage validation"
+        )
 
         # Complete the task with completion_summary
         task.complete_task(completion_summary=completion_summary)
@@ -82,12 +87,14 @@ def test_completion_summary_storage():
         print(f"🔍 Retrieved completion_summary: {actual_completion_summary}")
 
         # Assert that completion_summary was stored correctly
-        assert actual_completion_summary == completion_summary, \
+        assert actual_completion_summary == completion_summary, (
             f"Expected completion_summary '{completion_summary}', got '{actual_completion_summary}'"
+        )
 
         # Assert that task status is completed
-        assert task.status.value == "done", \
+        assert task.status.value == "done", (
             f"Expected task status to be done, got {task.status.value}"
+        )
 
         print("✅ All assertions passed!")
         print("✅ completion_summary is stored and retrieved correctly")
@@ -96,8 +103,10 @@ def test_completion_summary_storage():
     except Exception as e:
         print(f"❌ Test failed with error: {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise
+
 
 if __name__ == "__main__":
     test_completion_summary_storage()

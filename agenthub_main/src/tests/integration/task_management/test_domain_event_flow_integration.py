@@ -65,6 +65,7 @@ from fastmcp.task_management.infrastructure.event_bus import (
 # Test Fixtures
 # ==============================================================================
 
+
 @pytest.fixture
 def event_bus():
     """Event bus fixture with clean state"""
@@ -134,6 +135,7 @@ def project_event_handler(mock_event_store, mock_project_repository):
 # ==============================================================================
 # Test Class 1: End-to-End Event Flow Tests
 # ==============================================================================
+
 
 class TestEndToEndEventFlow:
     """Test complete event flow from entity to handlers"""
@@ -264,6 +266,7 @@ class TestEndToEndEventFlow:
 # Test Class 2: Task Lifecycle Event Tests
 # ==============================================================================
 
+
 class TestTaskLifecycleEvents:
     """Test task lifecycle event structure and behavior"""
 
@@ -376,6 +379,7 @@ class TestTaskLifecycleEvents:
 # Test Class 3: Agent Coordination Event Tests
 # ==============================================================================
 
+
 class TestAgentCoordinationEvents:
     """Test agent coordination event flow"""
 
@@ -481,6 +485,7 @@ class TestAgentCoordinationEvents:
 # Test Class 4: Project Lifecycle Event Tests
 # ==============================================================================
 
+
 class TestProjectLifecycleEvents:
     """Test project lifecycle event flow"""
 
@@ -584,6 +589,7 @@ class TestProjectLifecycleEvents:
 # ==============================================================================
 # Test Class 5: Event Bus Integration Tests
 # ==============================================================================
+
 
 class TestEventBusIntegration:
     """Test event bus integration with repositories"""
@@ -716,6 +722,7 @@ class TestEventBusIntegration:
 # Test Class 6: Event Persistence Tests
 # ==============================================================================
 
+
 class TestEventPersistence:
     """Test event persistence to event store"""
 
@@ -744,8 +751,20 @@ class TestEventPersistence:
         """Events can be replayed"""
         # Mock stored events
         stored_events = [
-            TaskCreatedEvent(task_id="task-1", branch_id="b1", title="T1", status="todo", priority="low"),
-            TaskCreatedEvent(task_id="task-2", branch_id="b1", title="T2", status="todo", priority="low"),
+            TaskCreatedEvent(
+                task_id="task-1",
+                branch_id="b1",
+                title="T1",
+                status="todo",
+                priority="low",
+            ),
+            TaskCreatedEvent(
+                task_id="task-2",
+                branch_id="b1",
+                title="T2",
+                status="todo",
+                priority="low",
+            ),
         ]
         mock_event_store.get_events.return_value = stored_events
 
@@ -773,9 +792,22 @@ class TestEventPersistence:
 
         # Mock historical events
         historical_events = [
-            TaskCreatedEvent(task_id=task_id, branch_id="b1", title="T", status="todo", priority="low"),
-            TaskUpdatedEvent(task_id=task_id, branch_id="b1", old_status="todo", new_status="in_progress"),
-            TaskCompletedEvent(task_id=task_id, branch_id="b1", title="T", completion_summary="Done"),
+            TaskCreatedEvent(
+                task_id=task_id,
+                branch_id="b1",
+                title="T",
+                status="todo",
+                priority="low",
+            ),
+            TaskUpdatedEvent(
+                task_id=task_id,
+                branch_id="b1",
+                old_status="todo",
+                new_status="in_progress",
+            ),
+            TaskCompletedEvent(
+                task_id=task_id, branch_id="b1", title="T", completion_summary="Done"
+            ),
         ]
         mock_event_store.get_events_by_aggregate.return_value = historical_events
 
@@ -814,6 +846,7 @@ class TestEventPersistence:
 # ==============================================================================
 # Test Class 7: Cross-Aggregate Event Tests
 # ==============================================================================
+
 
 class TestCrossAggregateEvents:
     """Test events that coordinate across multiple aggregates"""
@@ -886,16 +919,31 @@ class TestCrossAggregateEvents:
         event_bus.subscribe(ProjectStatisticsUpdatedEvent, universal_handler)
 
         # Publish events from different aggregates
-        await event_bus.publish(TaskCreatedEvent(
-            task_id="task-1", branch_id="b1", title="T", status="todo", priority="low"
-        ))
-        await event_bus.publish(AgentAssigned(
-            agent_id="a1", task_id="task-1", role="impl", assigned_by="user"
-        ))
-        await event_bus.publish(ProjectStatisticsUpdatedEvent(
-            project_id="p1", branch_count=1, total_tasks=1, completed_tasks=0,
-            in_progress_tasks=1, todo_tasks=0, overall_progress_percentage=0.0
-        ))
+        await event_bus.publish(
+            TaskCreatedEvent(
+                task_id="task-1",
+                branch_id="b1",
+                title="T",
+                status="todo",
+                priority="low",
+            )
+        )
+        await event_bus.publish(
+            AgentAssigned(
+                agent_id="a1", task_id="task-1", role="impl", assigned_by="user"
+            )
+        )
+        await event_bus.publish(
+            ProjectStatisticsUpdatedEvent(
+                project_id="p1",
+                branch_count=1,
+                total_tasks=1,
+                completed_tasks=0,
+                in_progress_tasks=1,
+                todo_tasks=0,
+                overall_progress_percentage=0.0,
+            )
+        )
 
         assert len(all_events) == 3
 
@@ -903,6 +951,7 @@ class TestCrossAggregateEvents:
 # ==============================================================================
 # Test Class 8: Error Handling and Edge Cases
 # ==============================================================================
+
 
 class TestEventErrorHandling:
     """Test error handling and edge cases"""

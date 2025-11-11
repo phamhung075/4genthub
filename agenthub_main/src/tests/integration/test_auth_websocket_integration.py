@@ -36,7 +36,7 @@ class TestAuthWebSocketIntegration:
             email="test@example.com",
             username="testuser",
             password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5",
-            roles=["user"]
+            roles=["user"],
         )
         return user
 
@@ -53,12 +53,25 @@ class TestAuthWebSocketIntegration:
     @pytest.mark.asyncio
     async def test_websocket_token_validation_success(self, mock_user, valid_jwt_token):
         """Test that valid JWT tokens are accepted for WebSocket connections."""
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token', return_value=mock_user):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token', return_value=mock_user):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token",
+            return_value=mock_user,
+        ):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token",
+                return_value=mock_user,
+            ):
                 # Mock jwt.decode to return a valid payload structure
-                with patch('jwt.decode', return_value={'iss': 'local', 'sub': 'test-user-123', 'email': 'test@example.com'}):
+                with patch(
+                    "jwt.decode",
+                    return_value={
+                        "iss": "local",
+                        "sub": "test-user-123",
+                        "email": "test@example.com",
+                    },
+                ):
                     # Mock environment variables for local auth
-                    with patch.dict('os.environ', {'AUTH_PROVIDER': 'local'}):
+                    with patch.dict("os.environ", {"AUTH_PROVIDER": "local"}):
                         result = await validate_websocket_token(valid_jwt_token)
 
                         assert result is not None
@@ -68,8 +81,14 @@ class TestAuthWebSocketIntegration:
     @pytest.mark.asyncio
     async def test_websocket_token_validation_failure(self, invalid_jwt_token):
         """Test that invalid JWT tokens are rejected for WebSocket connections."""
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token', side_effect=Exception("Invalid token")):
-            with patch('fastmcp.server.routes.websocket_routes.validate_local_token', side_effect=Exception("Invalid token")):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token",
+            side_effect=Exception("Invalid token"),
+        ):
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_local_token",
+                side_effect=Exception("Invalid token"),
+            ):
                 result = await validate_websocket_token(invalid_jwt_token)
 
                 assert result is None
@@ -84,7 +103,9 @@ class TestAuthWebSocketIntegration:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_websocket_connection_requires_authentication(self, invalid_jwt_token):
+    async def test_websocket_connection_requires_authentication(
+        self, invalid_jwt_token
+    ):
         """Test that WebSocket connections are rejected without valid authentication."""
         # Mock WebSocket object
         mock_websocket = MagicMock()
@@ -92,15 +113,22 @@ class TestAuthWebSocketIntegration:
         mock_websocket.close = AsyncMock()
 
         # Mock the token validation to return None (invalid token)
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token', return_value=None):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token",
+            return_value=None,
+        ):
             # Call the WebSocket endpoint
             await realtime_updates(mock_websocket)
 
             # Verify that the connection was closed with authentication error
-            mock_websocket.close.assert_called_once_with(code=4001, reason="Authentication required")
+            mock_websocket.close.assert_called_once_with(
+                code=4001, reason="Authentication required"
+            )
 
     @pytest.mark.asyncio
-    async def test_websocket_connection_success_with_valid_token(self, mock_user, valid_jwt_token):
+    async def test_websocket_connection_success_with_valid_token(
+        self, mock_user, valid_jwt_token
+    ):
         """Test that WebSocket connections succeed with valid authentication."""
         # Mock WebSocket object
         mock_websocket = MagicMock()
@@ -110,7 +138,10 @@ class TestAuthWebSocketIntegration:
         mock_websocket.receive_json = AsyncMock(side_effect=WebSocketDisconnect())
 
         # Mock the token validation to return valid user
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token', return_value=mock_user):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token",
+            return_value=mock_user,
+        ):
             # Call the WebSocket endpoint
             await realtime_updates(mock_websocket)
 
@@ -121,7 +152,9 @@ class TestAuthWebSocketIntegration:
             mock_websocket.send_json.assert_called()
             welcome_call = mock_websocket.send_json.call_args[0][0]
             assert welcome_call["type"] == "sync"  # v2.0 format uses "sync" type
-            assert welcome_call["payload"]["action"] == "welcome"  # action is in payload
+            assert (
+                welcome_call["payload"]["action"] == "welcome"
+            )  # action is in payload
             assert welcome_call["payload"]["data"]["primary"]["authenticated"]
             assert welcome_call["payload"]["data"]["primary"]["user_id"] == mock_user.id
 
@@ -147,7 +180,10 @@ class TestAuthWebSocketIntegration:
         mock_websocket.receive_json = AsyncMock(side_effect=WebSocketDisconnect())
 
         # Mock the token validation to return valid user
-        with patch('fastmcp.server.routes.websocket_routes.validate_websocket_token', return_value=mock_user):
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_websocket_token",
+            return_value=mock_user,
+        ):
             # Call the WebSocket endpoint
             await realtime_updates(mock_websocket)
 
@@ -199,8 +235,20 @@ class TestAuthWebSocketIntegration:
         )
 
         # Create two different users
-        user1 = User(id="user1", email="user1@example.com", username="user1", password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5", roles=["user"])
-        user2 = User(id="user2", email="user2@example.com", username="user2", password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5", roles=["user"])
+        user1 = User(
+            id="user1",
+            email="user1@example.com",
+            username="user1",
+            password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5",
+            roles=["user"],
+        )
+        user2 = User(
+            id="user2",
+            email="user2@example.com",
+            username="user2",
+            password_hash="$2b$12$KXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5vXxG7rXLKJ5",
+            roles=["user"],
+        )
 
         # Mock WebSocket connections for both users
         mock_websocket1 = MagicMock()

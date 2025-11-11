@@ -15,6 +15,7 @@ class TestAuthTokenBuilder:
     def test_import_auth_token_builder(self):
         """Verify AuthTokenBuilder can be imported."""
         from tests.utils.auth_token_builder import AuthTokenBuilder
+
         assert AuthTokenBuilder is not None
 
     def test_create_basic_token(self):
@@ -58,6 +59,7 @@ class TestTestDataBuilders:
     def test_import_user_builder(self):
         """Verify UserBuilder can be imported."""
         from tests.utils.builders import UserBuilder
+
         assert UserBuilder is not None
 
     def test_user_builder_basic(self):
@@ -91,11 +93,13 @@ class TestTestDataBuilders:
         """Verify task builder."""
         from tests.utils.builders import TaskBuilder
 
-        task = (TaskBuilder()
+        task = (
+            TaskBuilder()
             .with_title("Test Task")
             .with_priority("high")
             .with_progress(50)
-            .build())
+            .build()
+        )
 
         assert task["title"] == "Test Task"
         assert task["priority"] == "high"
@@ -105,10 +109,7 @@ class TestTestDataBuilders:
         """Verify context builder."""
         from tests.utils.builders import ContextBuilder
 
-        context = (ContextBuilder()
-            .with_level("task")
-            .with_progress(75)
-            .build())
+        context = ContextBuilder().with_level("task").with_progress(75).build()
 
         assert context["level"] == "task"
         assert context["data"]["progress"]["completion_percentage"] == 75
@@ -120,6 +121,7 @@ class TestMockServices:
     def test_import_keycloak_mock(self):
         """Verify KeycloakMock can be imported."""
         from tests.mocks import MockKeycloakClient, MockKeycloakServer
+
         assert MockKeycloakServer is not None
         assert MockKeycloakClient is not None
 
@@ -181,10 +183,7 @@ class TestMockServices:
         try:
             capture = smtp.get_capture()
             capture.send_email(
-                "from@test.com",
-                "to@test.com",
-                "Test Subject",
-                "Test Body"
+                "from@test.com", "to@test.com", "Test Subject", "Test Body"
             )
 
             emails = capture.get_sent_emails()
@@ -201,6 +200,7 @@ class TestMCPMessageFixtures:
     def test_import_mcp_fixtures(self):
         """Verify MCPMessageFixtures can be imported."""
         from tests.fixtures.mcp_message_fixtures import MCPMessageFixtures
+
         assert MCPMessageFixtures is not None
 
     def test_task_create_request(self):
@@ -260,10 +260,9 @@ def test_integration_all_components():
     user = UserBuilder().with_email("integration@test.com").build()
 
     # Generate token
-    token = (AuthTokenBuilder()
-        .with_user_id(user["id"])
-        .with_email(user["email"])
-        .build())
+    token = (
+        AuthTokenBuilder().with_user_id(user["id"]).with_email(user["email"]).build()
+    )
 
     # Mock authentication
     server = MockKeycloakServer()
@@ -282,10 +281,12 @@ def test_integration_all_components():
         assert cached == token
 
         # Create task
-        task = (TaskBuilder()
+        task = (
+            TaskBuilder()
             .with_title("Integration Test Task")
             .with_assignee("coding-agent")
-            .build())
+            .build()
+        )
 
         assert task["title"] == "Integration Test Task"
 

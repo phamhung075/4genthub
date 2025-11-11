@@ -46,7 +46,7 @@ def test_user(session):
         email="test@example.com",
         username="testuser",
         password_hash="hashed_password",
-        status="active"
+        status="active",
     )
     session.add(user)
     session.commit()
@@ -73,7 +73,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance is not None
         assert balance.available_tokens == 10000
         assert balance.monthly_quota == 10000
@@ -87,7 +89,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 5000
         assert balance.monthly_quota == 10000  # Default quota
 
@@ -135,7 +139,9 @@ class TestTokenBalanceRepository:
         assert result is True
 
         # Verify balance updated
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 900
         assert balance.tokens_consumed_today == 100
         assert balance.tokens_consumed_this_month == 100
@@ -157,7 +163,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 0
 
     def test_consume_tokens_negative_amount(self, repository, test_user):
@@ -185,7 +193,9 @@ class TestTokenBalanceRepository:
         # Consume 50 more tokens
         repository.consume_tokens(test_user.id, 50)
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 650
         assert balance.total_tokens_consumed == 350
 
@@ -201,7 +211,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 750
 
     def test_add_tokens_negative_amount(self, repository, test_user):
@@ -226,7 +238,9 @@ class TestTokenBalanceRepository:
         repository.create_balance(test_user.id, initial_tokens=500)
 
         # Set next_reset_at to future date
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         balance.next_reset_at = datetime.now(UTC) + timedelta(days=10)
         balance.tokens_consumed_this_month = 300
         session.commit()
@@ -236,7 +250,9 @@ class TestTokenBalanceRepository:
         assert result is False
 
         # Balance should not change
-        balance_after = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance_after = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance_after.available_tokens == 500
         assert balance_after.tokens_consumed_this_month == 300
 
@@ -245,7 +261,9 @@ class TestTokenBalanceRepository:
         repository.create_balance(test_user.id, initial_tokens=500)
 
         # Set next_reset_at to past date
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         balance.next_reset_at = datetime.now(UTC) - timedelta(days=1)
         balance.tokens_consumed_this_month = 300
         balance.monthly_quota = 10000
@@ -256,7 +274,9 @@ class TestTokenBalanceRepository:
         assert result is True
 
         # Balance should reset to quota
-        balance_after = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance_after = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance_after.available_tokens == 10000
         assert balance_after.tokens_consumed_this_month == 0
         assert balance_after.last_reset_at is not None
@@ -274,7 +294,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.monthly_quota == 20000
 
     def test_update_quota_user_not_found(self, repository):
@@ -292,7 +314,9 @@ class TestTokenBalanceRepository:
         repository.create_balance(test_user.id, initial_tokens=8000)
 
         # Simulate some consumption
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         balance.tokens_consumed_today = 150
         balance.tokens_consumed_this_month = 450
         balance.total_tokens_consumed = 2000
@@ -329,7 +353,9 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance.available_tokens == 10000  # Reset to quota
         assert balance.tokens_consumed_this_month == 0
         assert balance.last_reset_at is not None
@@ -343,7 +369,9 @@ class TestTokenBalanceRepository:
         repository.create_balance(test_user.id)
 
         # Simulate daily consumption
-        balance = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         balance.tokens_consumed_today = 500
         session.commit()
 
@@ -351,5 +379,7 @@ class TestTokenBalanceRepository:
 
         assert result is True
 
-        balance_after = session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        balance_after = (
+            session.query(UserTokenBalance).filter_by(user_id=test_user.id).first()
+        )
         assert balance_after.tokens_consumed_today == 0

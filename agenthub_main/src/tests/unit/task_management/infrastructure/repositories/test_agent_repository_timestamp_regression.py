@@ -56,14 +56,20 @@ class TestAgentRepositoryTimestampRegression:
         agent = AgentEntity(
             id=AgentId(str(uuid.uuid4())),
             name="test-agent",
-            description="Test agent for timestamp regression"
+            description="Test agent for timestamp regression",
         )
         # Timestamps should be automatically initialized by BaseTimestampEntity
-        assert agent.created_at is not None, "Agent entity should have created_at initialized"
-        assert agent.updated_at is not None, "Agent entity should have updated_at initialized"
+        assert agent.created_at is not None, (
+            "Agent entity should have created_at initialized"
+        )
+        assert agent.updated_at is not None, (
+            "Agent entity should have updated_at initialized"
+        )
         return agent
 
-    def test_entity_to_model_dict_includes_timestamps(self, agent_repository, sample_agent_entity):
+    def test_entity_to_model_dict_includes_timestamps(
+        self, agent_repository, sample_agent_entity
+    ):
         """
         REGRESSION TEST: Verify _entity_to_model_dict includes timestamps
 
@@ -96,7 +102,9 @@ class TestAgentRepositoryTimestampRegression:
         assert model_dict["created_at"] == sample_agent_entity.created_at
         assert model_dict["updated_at"] == sample_agent_entity.updated_at
 
-    def test_entity_to_model_dict_timestamps_are_utc(self, agent_repository, sample_agent_entity):
+    def test_entity_to_model_dict_timestamps_are_utc(
+        self, agent_repository, sample_agent_entity
+    ):
         """
         Verify that timestamps in model dict are timezone-aware UTC
 
@@ -113,8 +121,14 @@ class TestAgentRepositoryTimestampRegression:
         assert updated_at.tzinfo is not None, "updated_at should be timezone-aware"
 
         # Verify UTC timezone
-        assert created_at.tzinfo == UTC or created_at.tzinfo.utcoffset(None).total_seconds() == 0
-        assert updated_at.tzinfo == UTC or updated_at.tzinfo.utcoffset(None).total_seconds() == 0
+        assert (
+            created_at.tzinfo == UTC
+            or created_at.tzinfo.utcoffset(None).total_seconds() == 0
+        )
+        assert (
+            updated_at.tzinfo == UTC
+            or updated_at.tzinfo.utcoffset(None).total_seconds() == 0
+        )
 
     def test_entity_timestamps_initialized_by_base_class(self):
         """
@@ -127,12 +141,16 @@ class TestAgentRepositoryTimestampRegression:
         agent = AgentEntity(
             id=AgentId(str(uuid.uuid4())),
             name="timestamp-test-agent",
-            description="Testing timestamp initialization"
+            description="Testing timestamp initialization",
         )
 
         # Verify BaseTimestampEntity.__post_init__() set timestamps
-        assert agent.created_at is not None, "BaseTimestampEntity should initialize created_at"
-        assert agent.updated_at is not None, "BaseTimestampEntity should initialize updated_at"
+        assert agent.created_at is not None, (
+            "BaseTimestampEntity should initialize created_at"
+        )
+        assert agent.updated_at is not None, (
+            "BaseTimestampEntity should initialize updated_at"
+        )
 
         # Verify timestamps are recent (within last second)
         now = datetime.now(UTC)
@@ -166,7 +184,7 @@ class TestAgentRepositoryTimestampRegression:
             updated_at=now,
             capabilities=[],
             status="available",
-            model_metadata={}
+            model_metadata={},
         )
 
         # Convert to entity
@@ -176,7 +194,9 @@ class TestAgentRepositoryTimestampRegression:
         assert agent_entity.created_at == agent_model.created_at
         assert agent_entity.updated_at == agent_model.updated_at
 
-    def test_full_entity_to_model_dict_structure(self, agent_repository, sample_agent_entity):
+    def test_full_entity_to_model_dict_structure(
+        self, agent_repository, sample_agent_entity
+    ):
         """
         Verify complete structure of entity-to-model conversion
 
@@ -195,7 +215,7 @@ class TestAgentRepositoryTimestampRegression:
             "availability_score",
             "created_at",  # CRITICAL: Must be present
             "updated_at",  # CRITICAL: Must be present
-            "model_metadata"
+            "model_metadata",
         ]
 
         for field in required_fields:
@@ -204,14 +224,16 @@ class TestAgentRepositoryTimestampRegression:
                 f"This may cause database errors during agent operations."
             )
 
-    def test_agent_registration_with_timestamps_integration(self, agent_repository, sample_agent_entity, mock_session):
+    def test_agent_registration_with_timestamps_integration(
+        self, agent_repository, sample_agent_entity, mock_session
+    ):
         """
         Integration test: Verify agent registration doesn't fail due to missing timestamps
 
         This test simulates the actual registration flow that was failing before the fix.
         """
         # Mock the create method to simulate database INSERT
-        with patch.object(agent_repository, 'create') as mock_create:
+        with patch.object(agent_repository, "create") as mock_create:
             # Create a mock Agent model that would be returned from database
             from fastmcp.task_management.infrastructure.database.models import (
                 Agent as AgentModel,
@@ -225,14 +247,14 @@ class TestAgentRepositoryTimestampRegression:
                 updated_at=sample_agent_entity.updated_at,
                 capabilities=[],
                 status="available",
-                model_metadata={}
+                model_metadata={},
             )
             mock_create.return_value = mock_agent_model
 
             # Mock exists check
-            with patch.object(agent_repository, 'exists', return_value=False):
+            with patch.object(agent_repository, "exists", return_value=False):
                 # Mock find_by_name check
-                with patch.object(agent_repository, 'find_by_name', return_value=None):
+                with patch.object(agent_repository, "find_by_name", return_value=None):
                     # Attempt registration
                     agent_repository.register_agent(sample_agent_entity)
 
@@ -260,7 +282,7 @@ class TestAgentRepositoryTimestampRegression:
         agent = AgentEntity(
             id=AgentId(str(uuid.uuid4())),
             name="consistency-test-agent",
-            description="Testing timestamp consistency"
+            description="Testing timestamp consistency",
         )
 
         # Get initial model dict
@@ -270,6 +292,7 @@ class TestAgentRepositoryTimestampRegression:
 
         # Simulate time passing and entity touch
         import time
+
         time.sleep(0.01)
         agent.touch("test_update")
 
@@ -332,5 +355,5 @@ pytestmark = [
     pytest.mark.unit,
     pytest.mark.regression,
     pytest.mark.agent_repository,
-    pytest.mark.timestamp_bug_fix
+    pytest.mark.timestamp_bug_fix,
 ]

@@ -37,12 +37,7 @@ try:
     # Use JSONRPCRequest as the default message type for testing
     def create_test_message(method="test", params=None):
         """Helper to create test JSONRPC messages"""
-        return JSONRPCRequest(
-            jsonrpc="2.0",
-            method=method,
-            params=params or {},
-            id=1
-        )
+        return JSONRPCRequest(jsonrpc="2.0", method=method, params=params or {}, id=1)
 
 except ImportError:
     # Create mock classes for testing
@@ -62,17 +57,13 @@ except ImportError:
 
     def create_test_message(method="test", params=None):
         """Helper to create test JSONRPC messages"""
-        return JSONRPCRequest(
-            jsonrpc="2.0",
-            method=method,
-            params=params or {},
-            id=1
-        )
+        return JSONRPCRequest(jsonrpc="2.0", method=method, params=params or {}, id=1)
 
 
 # ============================================================================
 # SessionEvent Tests (Lines 38-74)
 # ============================================================================
+
 
 class TestSessionEvent:
     """Test SessionEvent dataclass functionality"""
@@ -86,7 +77,7 @@ class TestSessionEvent:
             event_type="message",
             event_data={"key": "value"},
             timestamp=time.time(),
-            ttl=3600.0
+            ttl=3600.0,
         )
 
         assert event.session_id == "sess_123"
@@ -106,7 +97,7 @@ class TestSessionEvent:
             event_type="test",
             event_data={"data": "test"},
             timestamp=timestamp,
-            ttl=100.0
+            ttl=100.0,
         )
 
         event_dict = event.to_dict()
@@ -128,7 +119,7 @@ class TestSessionEvent:
             "event_type": "status",
             "event_data": {"status": "ok"},
             "timestamp": 1234567890.0,
-            "ttl": 200.0
+            "ttl": 200.0,
         }
 
         event = SessionEvent.from_dict(data)
@@ -150,7 +141,7 @@ class TestSessionEvent:
             event_type="test",
             event_data={},
             timestamp=time.time() - 10000,  # Very old timestamp
-            ttl=None  # No TTL
+            ttl=None,  # No TTL
         )
 
         assert event.is_expired() is False
@@ -164,7 +155,7 @@ class TestSessionEvent:
             event_type="test",
             event_data={},
             timestamp=time.time(),  # Current time
-            ttl=3600.0  # 1 hour TTL
+            ttl=3600.0,  # 1 hour TTL
         )
 
         assert event.is_expired() is False
@@ -178,7 +169,7 @@ class TestSessionEvent:
             event_type="test",
             event_data={},
             timestamp=time.time() - 7200,  # 2 hours ago
-            ttl=3600.0  # 1 hour TTL
+            ttl=3600.0,  # 1 hour TTL
         )
 
         assert event.is_expired() is True
@@ -191,7 +182,7 @@ class TestSessionEvent:
             event_id="stream_6:1234567890:000001",  # Standard format
             event_type="test",
             event_data={},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         numeric_id = event.get_numeric_id()
@@ -205,7 +196,7 @@ class TestSessionEvent:
             event_id="invalid_format",
             event_type="test",
             event_data={},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         numeric_id = event.get_numeric_id()
@@ -217,6 +208,7 @@ class TestSessionEvent:
 # ============================================================================
 # RedisEventStore Tests (Lines 76-625)
 # ============================================================================
+
 
 class TestRedisEventStore:
     """Test RedisEventStore functionality"""
@@ -246,7 +238,7 @@ class TestRedisEventStore:
             max_events_per_session=500,
             compression_enabled=False,
             fallback_to_memory=False,
-            event_id_sequence=100
+            event_id_sequence=100,
         )
 
         assert store.redis_url == "redis://custom:6380"
@@ -281,7 +273,7 @@ class TestRedisEventStore:
         """Test connect() when Redis is not available"""
         store = RedisEventStore(fallback_to_memory=True)
 
-        with patch('fastmcp.server.session_store.REDIS_AVAILABLE', False):
+        with patch("fastmcp.server.session_store.REDIS_AVAILABLE", False):
             result = await store.connect()
 
             assert result is True  # Fallback enabled
@@ -295,8 +287,7 @@ class TestRedisEventStore:
             pytest.skip("Redis module not available")
 
         store = RedisEventStore(
-            redis_url="redis://invalid:9999",
-            fallback_to_memory=True
+            redis_url="redis://invalid:9999", fallback_to_memory=True
         )
 
         result = await store.connect()
@@ -312,8 +303,7 @@ class TestRedisEventStore:
             pytest.skip("Redis module not available")
 
         store = RedisEventStore(
-            redis_url="redis://invalid:9999",
-            fallback_to_memory=False
+            redis_url="redis://invalid:9999", fallback_to_memory=False
         )
 
         result = await store.connect()
@@ -402,14 +392,14 @@ class TestRedisEventStore:
             event_id="evt_1",
             event_type="test",
             event_data={"data": "value"},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         serialized = store._serialize_event(event)
 
         assert isinstance(serialized, bytes)
         # Should be JSON
-        deserialized = json.loads(serialized.decode('utf-8'))
+        deserialized = json.loads(serialized.decode("utf-8"))
         assert deserialized["session_id"] == "sess_1"
 
     def test_serialize_event_with_compression(self):
@@ -422,14 +412,14 @@ class TestRedisEventStore:
             event_id="evt_2",
             event_type="test",
             event_data={"data": "value"},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         serialized = store._serialize_event(event)
 
         assert isinstance(serialized, bytes)
         # Should be compressed (gzip magic bytes)
-        assert serialized[:2] == b'\x1f\x8b'
+        assert serialized[:2] == b"\x1f\x8b"
 
     def test_deserialize_event_without_compression(self):
         """Test _deserialize_event() without compression"""
@@ -441,7 +431,7 @@ class TestRedisEventStore:
             event_id="evt_3",
             event_type="test",
             event_data={"test": "data"},
-            timestamp=12345.0
+            timestamp=12345.0,
         )
 
         serialized = store._serialize_event(event)
@@ -462,7 +452,7 @@ class TestRedisEventStore:
             event_id="evt_4",
             event_type="test",
             event_data={"test": "compressed"},
-            timestamp=67890.0
+            timestamp=67890.0,
         )
 
         serialized = store._serialize_event(event)
@@ -498,7 +488,7 @@ class TestRedisEventStore:
             event_id="stream_mem:1000:000001",
             event_type="test",
             event_data={"test": "memory"},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         result = await store._store_event_memory(event)
@@ -521,7 +511,7 @@ class TestRedisEventStore:
             event_id="stream_order:1000:000001",
             event_type="test",
             event_data={},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         event2 = SessionEvent(
@@ -530,7 +520,7 @@ class TestRedisEventStore:
             event_id="stream_order:2000:000002",
             event_type="test",
             event_data={},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         event3 = SessionEvent(
@@ -539,7 +529,7 @@ class TestRedisEventStore:
             event_id="stream_order:1500:000003",  # Middle timestamp
             event_type="test",
             event_data={},
-            timestamp=time.time()
+            timestamp=time.time(),
         )
 
         # Store in non-chronological order
@@ -565,10 +555,10 @@ class TestRedisEventStore:
             event = SessionEvent(
                 session_id="sess_limit",
                 stream_id="stream_limit",
-                event_id=f"stream_limit:{1000+i}:00000{i}",
+                event_id=f"stream_limit:{1000 + i}:00000{i}",
                 event_type="test",
                 event_data={},
-                timestamp=time.time()
+                timestamp=time.time(),
             )
             await store._store_event_memory(event)
 
@@ -612,12 +602,14 @@ class TestRedisEventStore:
                 event_id=f"evt_{i}",
                 event_type="test",
                 event_data={},
-                timestamp=time.time()
+                timestamp=time.time(),
             )
             await store._store_event_memory(event)
 
         # Get with limit
-        events = await store._get_events_memory("sess_limit_get", "stream_limit_get", limit=3)
+        events = await store._get_events_memory(
+            "sess_limit_get", "stream_limit_get", limit=3
+        )
 
         assert len(events) == 3
 
@@ -634,7 +626,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={},
             timestamp=time.time() - 7200,  # 2 hours ago
-            ttl=3600.0  # 1 hour TTL - expired
+            ttl=3600.0,  # 1 hour TTL - expired
         )
 
         # Store valid event
@@ -645,7 +637,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={},
             timestamp=time.time(),
-            ttl=3600.0
+            ttl=3600.0,
         )
 
         await store._store_event_memory(expired_event)
@@ -694,7 +686,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={},
             timestamp=time.time() - 7200,
-            ttl=3600.0  # Expired
+            ttl=3600.0,  # Expired
         )
         await store._store_event_memory(expired_event)
 
@@ -751,7 +743,9 @@ class TestRedisEventStore:
         pipeline_mock.zadd = MagicMock(return_value=pipeline_mock)
         pipeline_mock.zremrangebyrank = MagicMock(return_value=pipeline_mock)
         pipeline_mock.expire = MagicMock(return_value=pipeline_mock)
-        pipeline_mock.execute = AsyncMock(side_effect=Exception("Pipeline execution failed"))
+        pipeline_mock.execute = AsyncMock(
+            side_effect=Exception("Pipeline execution failed")
+        )
 
         store._redis.pipeline = MagicMock(return_value=pipeline_mock)
 
@@ -763,7 +757,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={"test": "data"},
             timestamp=time.time(),
-            ttl=3600.0
+            ttl=3600.0,
         )
 
         # Store event - should catch exception and fall back to memory
@@ -796,7 +790,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={},
             timestamp=current_time - 7200,  # 2 hours ago
-            ttl=3600.0  # 1 hour TTL - should be expired
+            ttl=3600.0,  # 1 hour TTL - should be expired
         )
 
         # Create valid event
@@ -807,7 +801,7 @@ class TestRedisEventStore:
             event_type="test",
             event_data={},
             timestamp=current_time,
-            ttl=3600.0
+            ttl=3600.0,
         )
 
         # Store both events
@@ -825,6 +819,7 @@ class TestRedisEventStore:
 # ============================================================================
 # MemoryEventStore Tests (Lines 628-840)
 # ============================================================================
+
 
 class TestMemoryEventStore:
     """Test MemoryEventStore functionality"""
@@ -918,12 +913,13 @@ class TestMemoryEventStore:
 # Factory Function Tests (Lines 843-902)
 # ============================================================================
 
+
 class TestFactoryFunctions:
     """Test factory functions and global store management"""
 
     def test_create_event_store_memory_fallback(self):
         """Test create_event_store() creates MemoryEventStore when Redis unavailable"""
-        with patch('fastmcp.server.session_store.REDIS_AVAILABLE', False):
+        with patch("fastmcp.server.session_store.REDIS_AVAILABLE", False):
             store = create_event_store()
 
             assert isinstance(store, MemoryEventStore)
@@ -943,7 +939,7 @@ class TestFactoryFunctions:
         if not REDIS_AVAILABLE:
             pytest.skip("Redis module not available")
 
-        with patch.dict('os.environ', {'REDIS_URL': 'redis://env:6381'}):
+        with patch.dict("os.environ", {"REDIS_URL": "redis://env:6381"}):
             store = create_event_store(redis_url=None)
 
             assert isinstance(store, RedisEventStore)

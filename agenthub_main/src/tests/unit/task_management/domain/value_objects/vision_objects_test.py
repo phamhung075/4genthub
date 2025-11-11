@@ -28,7 +28,7 @@ from fastmcp.task_management.domain.value_objects.vision_objects import (
 
 class TestEnums:
     """Test cases for vision system enums."""
-    
+
     def test_vision_hierarchy_level_values(self):
         """Test VisionHierarchyLevel enum values."""
         assert VisionHierarchyLevel.ORGANIZATION == "organization"
@@ -36,7 +36,7 @@ class TestEnums:
         assert VisionHierarchyLevel.TEAM == "team"
         assert VisionHierarchyLevel.PROJECT == "project"
         assert VisionHierarchyLevel.MILESTONE == "milestone"
-    
+
     def test_contribution_type_values(self):
         """Test ContributionType enum values."""
         assert ContributionType.DIRECT == "direct"
@@ -44,7 +44,7 @@ class TestEnums:
         assert ContributionType.ENABLING == "enabling"
         assert ContributionType.EXPLORATORY == "exploratory"
         assert ContributionType.MAINTENANCE == "maintenance"
-    
+
     def test_metric_type_values(self):
         """Test MetricType enum values."""
         assert MetricType.PERCENTAGE == "percentage"
@@ -57,16 +57,13 @@ class TestEnums:
 
 class TestVisionMetric:
     """Test cases for VisionMetric value object."""
-    
+
     def test_create_vision_metric_minimal(self):
         """Test creating vision metric with minimal data."""
         metric = VisionMetric(
-            name="Revenue",
-            current_value=100000.0,
-            target_value=150000.0,
-            unit="USD"
+            name="Revenue", current_value=100000.0, target_value=150000.0, unit="USD"
         )
-        
+
         assert metric.name == "Revenue"
         assert metric.current_value == 100000.0
         assert metric.target_value == 150000.0
@@ -74,11 +71,11 @@ class TestVisionMetric:
         assert metric.metric_type == MetricType.CUSTOM
         assert metric.baseline_value == 0.0
         assert isinstance(metric.last_updated, datetime)
-    
+
     def test_create_vision_metric_full(self):
         """Test creating vision metric with all fields."""
         now = datetime.now(UTC)
-        
+
         metric = VisionMetric(
             name="User Satisfaction",
             current_value=4.2,
@@ -86,25 +83,22 @@ class TestVisionMetric:
             unit="stars",
             metric_type=MetricType.RATING,
             baseline_value=3.0,
-            last_updated=now
+            last_updated=now,
         )
-        
+
         assert metric.metric_type == MetricType.RATING
         assert metric.baseline_value == 3.0
         assert metric.last_updated == now
-    
+
     def test_vision_metric_immutable(self):
         """Test that vision metric is immutable."""
         metric = VisionMetric(
-            name="Test",
-            current_value=50.0,
-            target_value=100.0,
-            unit="units"
+            name="Test", current_value=50.0, target_value=100.0, unit="units"
         )
-        
+
         with pytest.raises(AttributeError):
             metric.current_value = 75.0
-    
+
     def test_progress_percentage_normal(self):
         """Test progress percentage calculation with normal values."""
         metric = VisionMetric(
@@ -112,11 +106,11 @@ class TestVisionMetric:
             current_value=75.0,
             target_value=100.0,
             unit="percent",
-            baseline_value=0.0
+            baseline_value=0.0,
         )
-        
+
         assert metric.progress_percentage == 75.0
-    
+
     def test_progress_percentage_over_target(self):
         """Test progress percentage when current exceeds target."""
         metric = VisionMetric(
@@ -124,11 +118,11 @@ class TestVisionMetric:
             current_value=120.0,
             target_value=100.0,
             unit="percent",
-            baseline_value=0.0
+            baseline_value=0.0,
         )
-        
+
         assert metric.progress_percentage == 100.0
-    
+
     def test_progress_percentage_below_baseline(self):
         """Test progress percentage when current is below baseline."""
         metric = VisionMetric(
@@ -136,11 +130,11 @@ class TestVisionMetric:
             current_value=50.0,
             target_value=100.0,
             unit="USD",
-            baseline_value=75.0
+            baseline_value=75.0,
         )
-        
+
         assert metric.progress_percentage == 0.0
-    
+
     def test_progress_percentage_same_baseline_target(self):
         """Test progress percentage when baseline equals target."""
         metric = VisionMetric(
@@ -148,48 +142,42 @@ class TestVisionMetric:
             current_value=100.0,
             target_value=90.0,
             unit="units",
-            baseline_value=90.0
+            baseline_value=90.0,
         )
-        
+
         assert metric.progress_percentage == 100.0
-        
+
         # Test when current is below target
         metric2 = VisionMetric(
             name="Maintain2",
             current_value=80.0,
             target_value=90.0,
             unit="units",
-            baseline_value=90.0
+            baseline_value=90.0,
         )
-        
+
         assert metric2.progress_percentage == 0.0
-    
+
     def test_is_achieved_true(self):
         """Test is_achieved when target is reached."""
         metric = VisionMetric(
-            name="Goal",
-            current_value=100.0,
-            target_value=100.0,
-            unit="points"
+            name="Goal", current_value=100.0, target_value=100.0, unit="points"
         )
-        
+
         assert metric.is_achieved
-    
+
     def test_is_achieved_false(self):
         """Test is_achieved when target is not reached."""
         metric = VisionMetric(
-            name="Goal",
-            current_value=90.0,
-            target_value=100.0,
-            unit="points"
+            name="Goal", current_value=90.0, target_value=100.0, unit="points"
         )
-        
+
         assert not metric.is_achieved
-    
+
     def test_to_dict(self):
         """Test converting metric to dictionary."""
         now = datetime.now(UTC)
-        
+
         metric = VisionMetric(
             name="Performance",
             current_value=85.0,
@@ -197,11 +185,11 @@ class TestVisionMetric:
             unit="percent",
             metric_type=MetricType.PERCENTAGE,
             baseline_value=50.0,
-            last_updated=now
+            last_updated=now,
         )
-        
+
         result = metric.to_dict()
-        
+
         assert result["name"] == "Performance"
         assert result["current_value"] == 85.0
         assert result["target_value"] == 100.0
@@ -215,11 +203,11 @@ class TestVisionMetric:
 
 class TestVisionObjective:
     """Test cases for VisionObjective value object."""
-    
+
     def test_create_vision_objective_minimal(self):
         """Test creating vision objective with minimal data."""
         objective = VisionObjective()
-        
+
         assert isinstance(objective.id, UUID)
         assert objective.title == ""
         assert objective.description == ""
@@ -233,19 +221,23 @@ class TestVisionObjective:
         assert objective.metrics == []
         assert objective.tags == []
         assert objective.metadata == {}
-    
+
     def test_create_vision_objective_full(self):
         """Test creating vision objective with all fields."""
         objective_id = uuid4()
         parent_id = uuid4()
         now = datetime.now(UTC)
         due_date = now + timedelta(days=30)
-        
+
         metrics = [
-            VisionMetric(name="Metric1", current_value=50.0, target_value=100.0, unit="units"),
-            VisionMetric(name="Metric2", current_value=75.0, target_value=100.0, unit="percent")
+            VisionMetric(
+                name="Metric1", current_value=50.0, target_value=100.0, unit="units"
+            ),
+            VisionMetric(
+                name="Metric2", current_value=75.0, target_value=100.0, unit="percent"
+            ),
         ]
-        
+
         objective = VisionObjective(
             id=objective_id,
             title="Improve User Experience",
@@ -259,12 +251,15 @@ class TestVisionObjective:
             due_date=due_date,
             metrics=metrics,
             tags=["ux", "quality"],
-            metadata={"budget": 50000, "team_size": 5}
+            metadata={"budget": 50000, "team_size": 5},
         )
-        
+
         assert objective.id == objective_id
         assert objective.title == "Improve User Experience"
-        assert objective.description == "Enhance the overall user experience of our application"
+        assert (
+            objective.description
+            == "Enhance the overall user experience of our application"
+        )
         assert objective.level == VisionHierarchyLevel.DEPARTMENT
         assert objective.parent_id == parent_id
         assert objective.owner == "product_team"
@@ -275,92 +270,111 @@ class TestVisionObjective:
         assert len(objective.metrics) == 2
         assert objective.tags == ["ux", "quality"]
         assert objective.metadata == {"budget": 50000, "team_size": 5}
-    
+
     def test_vision_objective_immutable(self):
         """Test that vision objective is immutable."""
         objective = VisionObjective(title="Test")
-        
+
         with pytest.raises(AttributeError):
             objective.title = "New Title"
-    
+
     def test_overall_progress_no_metrics(self):
         """Test overall progress calculation with no metrics."""
         objective = VisionObjective()
-        
+
         assert objective.overall_progress == 0.0
-    
+
     def test_overall_progress_with_metrics(self):
         """Test overall progress calculation with metrics."""
         metrics = [
-            VisionMetric(name="M1", current_value=50.0, target_value=100.0, unit="units"),  # 50%
-            VisionMetric(name="M2", current_value=75.0, target_value=100.0, unit="units"),  # 75%
-            VisionMetric(name="M3", current_value=100.0, target_value=100.0, unit="units")  # 100%
+            VisionMetric(
+                name="M1", current_value=50.0, target_value=100.0, unit="units"
+            ),  # 50%
+            VisionMetric(
+                name="M2", current_value=75.0, target_value=100.0, unit="units"
+            ),  # 75%
+            VisionMetric(
+                name="M3", current_value=100.0, target_value=100.0, unit="units"
+            ),  # 100%
         ]
-        
+
         objective = VisionObjective(metrics=metrics)
-        
+
         assert objective.overall_progress == 75.0  # (50 + 75 + 100) / 3
-    
+
     def test_is_completed_no_metrics(self):
         """Test is_completed with no metrics."""
         objective = VisionObjective()
-        
+
         assert not objective.is_completed
-    
+
     def test_is_completed_all_achieved(self):
         """Test is_completed when all metrics are achieved."""
         metrics = [
-            VisionMetric(name="M1", current_value=100.0, target_value=100.0, unit="units"),
-            VisionMetric(name="M2", current_value=200.0, target_value=100.0, unit="units")
+            VisionMetric(
+                name="M1", current_value=100.0, target_value=100.0, unit="units"
+            ),
+            VisionMetric(
+                name="M2", current_value=200.0, target_value=100.0, unit="units"
+            ),
         ]
-        
+
         objective = VisionObjective(metrics=metrics)
-        
+
         assert objective.is_completed
-    
+
     def test_is_completed_not_all_achieved(self):
         """Test is_completed when not all metrics are achieved."""
         metrics = [
-            VisionMetric(name="M1", current_value=100.0, target_value=100.0, unit="units"),
-            VisionMetric(name="M2", current_value=50.0, target_value=100.0, unit="units")
+            VisionMetric(
+                name="M1", current_value=100.0, target_value=100.0, unit="units"
+            ),
+            VisionMetric(
+                name="M2", current_value=50.0, target_value=100.0, unit="units"
+            ),
         ]
-        
+
         objective = VisionObjective(metrics=metrics)
-        
+
         assert not objective.is_completed
-    
+
     def test_days_remaining_no_due_date(self):
         """Test days remaining when no due date is set."""
         objective = VisionObjective()
-        
+
         assert objective.days_remaining is None
-    
+
     def test_days_remaining_future_date(self):
         """Test days remaining with future due date."""
         future_date = datetime.now(UTC) + timedelta(days=10)
         objective = VisionObjective(due_date=future_date)
-        
+
         # Should be around 10, but account for test execution time
         assert 9 <= objective.days_remaining <= 10
-    
+
     def test_days_remaining_past_date(self):
         """Test days remaining with past due date."""
         past_date = datetime.now(UTC) - timedelta(days=5)
         objective = VisionObjective(due_date=past_date)
-        
+
         assert objective.days_remaining == 0
-    
+
     def test_to_dict(self):
         """Test converting objective to dictionary."""
         objective_id = uuid4()
         parent_id = uuid4()
         now = datetime.now(UTC)
         due_date = now + timedelta(days=30)
-        
+
         metrics = [
-            VisionMetric(name="Test Metric", current_value=80.0, target_value=100.0, unit="percent")
+            VisionMetric(
+                name="Test Metric",
+                current_value=80.0,
+                target_value=100.0,
+                unit="percent",
+            )
         ]
-        
+
         objective = VisionObjective(
             id=objective_id,
             title="Test Objective",
@@ -374,11 +388,11 @@ class TestVisionObjective:
             due_date=due_date,
             metrics=metrics,
             tags=["test", "example"],
-            metadata={"key": "value"}
+            metadata={"key": "value"},
         )
-        
+
         result = objective.to_dict()
-        
+
         assert result["id"] == str(objective_id)
         assert result["title"] == "Test Objective"
         assert result["description"] == "Test Description"
@@ -399,19 +413,19 @@ class TestVisionObjective:
 
 class TestVisionAlignment:
     """Test cases for VisionAlignment value object."""
-    
+
     def test_create_vision_alignment_minimal(self):
         """Test creating vision alignment with minimal data."""
         task_id = uuid4()
         objective_id = uuid4()
-        
+
         alignment = VisionAlignment(
             task_id=task_id,
             objective_id=objective_id,
             alignment_score=0.8,
-            contribution_type=ContributionType.DIRECT
+            contribution_type=ContributionType.DIRECT,
         )
-        
+
         assert alignment.task_id == task_id
         assert alignment.objective_id == objective_id
         assert alignment.alignment_score == 0.8
@@ -420,13 +434,13 @@ class TestVisionAlignment:
         assert alignment.rationale == ""
         assert isinstance(alignment.calculated_at, datetime)
         assert alignment.factors == {}
-    
+
     def test_create_vision_alignment_full(self):
         """Test creating vision alignment with all fields."""
         task_id = uuid4()
         objective_id = uuid4()
         now = datetime.now(UTC)
-        
+
         alignment = VisionAlignment(
             task_id=task_id,
             objective_id=objective_id,
@@ -435,76 +449,76 @@ class TestVisionAlignment:
             confidence=0.95,
             rationale="Task directly supports objective implementation",
             calculated_at=now,
-            factors={"scope_match": 0.9, "skill_alignment": 0.85}
+            factors={"scope_match": 0.9, "skill_alignment": 0.85},
         )
-        
+
         assert alignment.confidence == 0.95
         assert alignment.rationale == "Task directly supports objective implementation"
         assert alignment.calculated_at == now
         assert alignment.factors == {"scope_match": 0.9, "skill_alignment": 0.85}
-    
+
     def test_vision_alignment_immutable(self):
         """Test that vision alignment is immutable."""
         alignment = VisionAlignment(
             task_id=uuid4(),
             objective_id=uuid4(),
             alignment_score=0.5,
-            contribution_type=ContributionType.ENABLING
+            contribution_type=ContributionType.ENABLING,
         )
-        
+
         with pytest.raises(AttributeError):
             alignment.alignment_score = 0.9
-    
+
     def test_is_strong_alignment_true(self):
         """Test is_strong_alignment when score is >= 0.7."""
         alignment = VisionAlignment(
             task_id=uuid4(),
             objective_id=uuid4(),
             alignment_score=0.8,
-            contribution_type=ContributionType.DIRECT
+            contribution_type=ContributionType.DIRECT,
         )
-        
+
         assert alignment.is_strong_alignment
-    
+
     def test_is_strong_alignment_false(self):
         """Test is_strong_alignment when score is < 0.7."""
         alignment = VisionAlignment(
             task_id=uuid4(),
             objective_id=uuid4(),
             alignment_score=0.6,
-            contribution_type=ContributionType.EXPLORATORY
+            contribution_type=ContributionType.EXPLORATORY,
         )
-        
+
         assert not alignment.is_strong_alignment
-    
+
     def test_is_weak_alignment_true(self):
         """Test is_weak_alignment when score is < 0.3."""
         alignment = VisionAlignment(
             task_id=uuid4(),
             objective_id=uuid4(),
             alignment_score=0.2,
-            contribution_type=ContributionType.MAINTENANCE
+            contribution_type=ContributionType.MAINTENANCE,
         )
-        
+
         assert alignment.is_weak_alignment
-    
+
     def test_is_weak_alignment_false(self):
         """Test is_weak_alignment when score is >= 0.3."""
         alignment = VisionAlignment(
             task_id=uuid4(),
             objective_id=uuid4(),
             alignment_score=0.4,
-            contribution_type=ContributionType.SUPPORTING
+            contribution_type=ContributionType.SUPPORTING,
         )
-        
+
         assert not alignment.is_weak_alignment
-    
+
     def test_to_dict(self):
         """Test converting alignment to dictionary."""
         task_id = uuid4()
         objective_id = uuid4()
         now = datetime.now(UTC)
-        
+
         alignment = VisionAlignment(
             task_id=task_id,
             objective_id=objective_id,
@@ -513,11 +527,11 @@ class TestVisionAlignment:
             confidence=0.9,
             rationale="Strong alignment",
             calculated_at=now,
-            factors={"relevance": 0.8, "impact": 0.7}
+            factors={"relevance": 0.8, "impact": 0.7},
         )
-        
+
         result = alignment.to_dict()
-        
+
         assert result["task_id"] == str(task_id)
         assert result["objective_id"] == str(objective_id)
         assert result["alignment_score"] == 0.75
@@ -532,11 +546,11 @@ class TestVisionAlignment:
 
 class TestVisionInsight:
     """Test cases for VisionInsight value object."""
-    
+
     def test_create_vision_insight_minimal(self):
         """Test creating vision insight with minimal data."""
         insight = VisionInsight()
-        
+
         assert isinstance(insight.id, UUID)
         assert insight.type == "recommendation"
         assert insight.title == ""
@@ -548,7 +562,7 @@ class TestVisionInsight:
         assert isinstance(insight.created_at, datetime)
         assert insight.expires_at is None
         assert insight.metadata == {}
-    
+
     def test_create_vision_insight_full(self):
         """Test creating vision insight with all fields."""
         insight_id = uuid4()
@@ -556,7 +570,7 @@ class TestVisionInsight:
         task_id = uuid4()
         now = datetime.now(UTC)
         expires_at = now + timedelta(days=7)
-        
+
         insight = VisionInsight(
             id=insight_id,
             type="warning",
@@ -568,13 +582,16 @@ class TestVisionInsight:
             suggested_actions=["Hire more developers", "Reduce scope"],
             created_at=now,
             expires_at=expires_at,
-            metadata={"urgency": "high", "cost": 100000}
+            metadata={"urgency": "high", "cost": 100000},
         )
-        
+
         assert insight.id == insight_id
         assert insight.type == "warning"
         assert insight.title == "Resource Shortage"
-        assert insight.description == "Team capacity is insufficient for current objectives"
+        assert (
+            insight.description
+            == "Team capacity is insufficient for current objectives"
+        )
         assert insight.impact == "high"
         assert insight.affected_objectives == [objective_id]
         assert insight.affected_tasks == [task_id]
@@ -582,90 +599,90 @@ class TestVisionInsight:
         assert insight.created_at == now
         assert insight.expires_at == expires_at
         assert insight.metadata == {"urgency": "high", "cost": 100000}
-    
+
     def test_vision_insight_immutable(self):
         """Test that vision insight is immutable."""
         insight = VisionInsight(title="Test")
-        
+
         with pytest.raises(AttributeError):
             insight.title = "New Title"
-    
+
     def test_is_expired_no_expiry(self):
         """Test is_expired when no expiry date is set."""
         insight = VisionInsight()
-        
+
         assert not insight.is_expired
-    
+
     def test_is_expired_future_expiry(self):
         """Test is_expired with future expiry date."""
         future_date = datetime.now(UTC) + timedelta(days=1)
         insight = VisionInsight(expires_at=future_date)
-        
+
         assert not insight.is_expired
-    
+
     def test_is_expired_past_expiry(self):
         """Test is_expired with past expiry date."""
         past_date = datetime.now(UTC) - timedelta(days=1)
         insight = VisionInsight(expires_at=past_date)
-        
+
         assert insight.is_expired
-    
+
     def test_urgency_score_low_impact(self):
         """Test urgency score with low impact."""
         insight = VisionInsight(impact="low")
-        
+
         assert insight.urgency_score == 0.25
-    
+
     def test_urgency_score_medium_impact(self):
         """Test urgency score with medium impact."""
         insight = VisionInsight(impact="medium")
-        
+
         assert insight.urgency_score == 0.5
-    
+
     def test_urgency_score_high_impact(self):
         """Test urgency score with high impact."""
         insight = VisionInsight(impact="high")
-        
+
         assert insight.urgency_score == 0.75
-    
+
     def test_urgency_score_critical_impact(self):
         """Test urgency score with critical impact."""
         insight = VisionInsight(impact="critical")
-        
+
         assert insight.urgency_score == 1.0
-    
+
     def test_urgency_score_expires_tomorrow(self):
         """Test urgency score when expiring within 1 day."""
         expires_at = datetime.now(UTC) + timedelta(hours=12)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
-        
+
         # medium (0.5) * 1.5 = 0.75
         assert insight.urgency_score == 0.75
-    
+
     def test_urgency_score_expires_this_week(self):
         """Test urgency score when expiring within 7 days."""
         expires_at = datetime.now(UTC) + timedelta(days=5)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
-        
+
         # medium (0.5) * 1.2 = 0.6
         assert insight.urgency_score == 0.6
-    
+
     def test_urgency_score_expires_later(self):
         """Test urgency score when expiring later."""
         expires_at = datetime.now(UTC) + timedelta(days=30)
         insight = VisionInsight(impact="medium", expires_at=expires_at)
-        
+
         # No urgency multiplier
         assert insight.urgency_score == 0.5
-    
+
     def test_urgency_score_capped_at_one(self):
         """Test urgency score is capped at 1.0."""
         expires_at = datetime.now(UTC) + timedelta(hours=1)
         insight = VisionInsight(impact="critical", expires_at=expires_at)
-        
+
         # critical (1.0) * 1.5 = 1.5, but capped at 1.0
         assert insight.urgency_score == 1.0
-    
+
     def test_to_dict(self):
         """Test converting insight to dictionary."""
         insight_id = uuid4()
@@ -673,7 +690,7 @@ class TestVisionInsight:
         task_id = uuid4()
         now = datetime.now(UTC)
         expires_at = now + timedelta(days=3)
-        
+
         insight = VisionInsight(
             id=insight_id,
             type="opportunity",
@@ -685,11 +702,11 @@ class TestVisionInsight:
             suggested_actions=["Review cloud usage"],
             created_at=now,
             expires_at=expires_at,
-            metadata={"estimated_savings": 10000}
+            metadata={"estimated_savings": 10000},
         )
-        
+
         result = insight.to_dict()
-        
+
         assert result["id"] == str(insight_id)
         assert result["type"] == "opportunity"
         assert result["title"] == "Cost Savings"
@@ -701,17 +718,19 @@ class TestVisionInsight:
         assert result["created_at"] == now.isoformat()
         assert result["expires_at"] == expires_at.isoformat()
         assert result["is_expired"] is False
-        assert result["urgency_score"] == 0.6  # medium impact (0.5) * 1.2 (expires within week)
+        assert (
+            result["urgency_score"] == 0.6
+        )  # medium impact (0.5) * 1.2 (expires within week)
         assert result["metadata"] == {"estimated_savings": 10000}
 
 
 class TestVisionDashboard:
     """Test cases for VisionDashboard value object."""
-    
+
     def test_create_vision_dashboard_minimal(self):
         """Test creating vision dashboard with minimal data."""
         dashboard = VisionDashboard()
-        
+
         assert isinstance(dashboard.timestamp, datetime)
         assert dashboard.total_objectives == 0
         assert dashboard.active_objectives == 0
@@ -724,12 +743,12 @@ class TestVisionDashboard:
         assert dashboard.recent_completions == []
         assert dashboard.active_insights == []
         assert dashboard.alignment_summary == {}
-    
+
     def test_create_vision_dashboard_full(self):
         """Test creating vision dashboard with all fields."""
         now = datetime.now(UTC)
         insight = VisionInsight(title="Test Insight", type="recommendation")
-        
+
         dashboard = VisionDashboard(
             timestamp=now,
             total_objectives=50,
@@ -742,9 +761,9 @@ class TestVisionDashboard:
             at_risk_objectives=[{"id": "obj-2", "days_overdue": 5}],
             recent_completions=[{"id": "obj-3", "completed_at": "2024-01-01"}],
             active_insights=[insight],
-            alignment_summary={"high_alignment": 25, "low_alignment": 5}
+            alignment_summary={"high_alignment": 25, "low_alignment": 5},
         )
-        
+
         assert dashboard.timestamp == now
         assert dashboard.total_objectives == 50
         assert dashboard.active_objectives == 40
@@ -754,22 +773,24 @@ class TestVisionDashboard:
         assert dashboard.objectives_by_status == {"active": 40, "completed": 10}
         assert dashboard.top_performing_objectives == [{"id": "obj-1", "progress": 95}]
         assert dashboard.at_risk_objectives == [{"id": "obj-2", "days_overdue": 5}]
-        assert dashboard.recent_completions == [{"id": "obj-3", "completed_at": "2024-01-01"}]
+        assert dashboard.recent_completions == [
+            {"id": "obj-3", "completed_at": "2024-01-01"}
+        ]
         assert len(dashboard.active_insights) == 1
         assert dashboard.alignment_summary == {"high_alignment": 25, "low_alignment": 5}
-    
+
     def test_vision_dashboard_immutable(self):
         """Test that vision dashboard is immutable."""
         dashboard = VisionDashboard(total_objectives=10)
-        
+
         with pytest.raises(AttributeError):
             dashboard.total_objectives = 20
-    
+
     def test_to_dict(self):
         """Test converting dashboard to dictionary."""
         now = datetime.now(UTC)
         insight = VisionInsight(title="Dashboard Insight", impact="high")
-        
+
         dashboard = VisionDashboard(
             timestamp=now,
             total_objectives=25,
@@ -782,31 +803,35 @@ class TestVisionDashboard:
             at_risk_objectives=[{"id": "risk-1", "issue": "delayed"}],
             recent_completions=[{"id": "done-1", "date": "2024-01-15"}],
             active_insights=[insight],
-            alignment_summary={"strong": 18, "weak": 2}
+            alignment_summary={"strong": 18, "weak": 2},
         )
-        
+
         result = dashboard.to_dict()
-        
+
         assert result["timestamp"] == now.isoformat()
-        
+
         # Summary section
         assert result["summary"]["total_objectives"] == 25
         assert result["summary"]["active_objectives"] == 20
         assert result["summary"]["completed_objectives"] == 5
         assert result["summary"]["overall_progress"] == 80.0
-        
+
         # Breakdowns section
         assert result["breakdowns"]["by_level"] == {"project": 15, "team": 10}
         assert result["breakdowns"]["by_status"] == {"active": 20, "completed": 5}
-        
+
         # Highlights section
-        assert result["highlights"]["top_performing"] == [{"id": "top-1", "progress": 98}]
+        assert result["highlights"]["top_performing"] == [
+            {"id": "top-1", "progress": 98}
+        ]
         assert result["highlights"]["at_risk"] == [{"id": "risk-1", "issue": "delayed"}]
-        assert result["highlights"]["recent_completions"] == [{"id": "done-1", "date": "2024-01-15"}]
-        
+        assert result["highlights"]["recent_completions"] == [
+            {"id": "done-1", "date": "2024-01-15"}
+        ]
+
         # Insights section
         assert len(result["insights"]) == 1
         assert result["insights"][0]["title"] == "Dashboard Insight"
-        
+
         # Alignment section
         assert result["alignment"] == {"strong": 18, "weak": 2}

@@ -1,7 +1,5 @@
 """Tests for append-only progress history functionality"""
 
-
-
 from fastmcp.task_management.domain.entities.task import Task
 from fastmcp.task_management.domain.value_objects.priority import Priority
 from fastmcp.task_management.domain.value_objects.task_id import TaskId
@@ -19,7 +17,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
 
         # Act
@@ -39,7 +37,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
 
         # Act
@@ -62,7 +60,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
 
         # Act
@@ -83,7 +81,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
 
         # Act
@@ -107,7 +105,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
 
         # Act
@@ -125,7 +123,7 @@ class TestAppendProgress:
             description="Test Description",
             status=TaskStatus.todo(),
             priority=Priority.medium(),
-            context_id="some-context-id"
+            context_id="some-context-id",
         )
 
         # Act
@@ -142,7 +140,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
         initial_time = task.updated_at
 
@@ -160,7 +158,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
         # Simulate case where progress_history might be None
         task.progress_history = None
@@ -181,7 +179,7 @@ class TestAppendProgress:
             title="Test Task",
             description="Test Description",
             status=TaskStatus.todo(),
-            priority=Priority.medium()
+            priority=Priority.medium(),
         )
         task.append_progress("Test progress")
 

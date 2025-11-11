@@ -28,9 +28,7 @@ class MockKeycloakServer:
     """Mock Keycloak server for testing authentication flows."""
 
     def __init__(
-        self,
-        realm: str = "agenthub",
-        base_url: str = "http://localhost:8080"
+        self, realm: str = "agenthub", base_url: str = "http://localhost:8080"
     ):
         """Initialize mock Keycloak server.
 
@@ -54,13 +52,13 @@ class MockKeycloakServer:
             email="test@example.com",
             password="password123",
             roles=["user"],
-            permissions=["mcp:read"]
+            permissions=["mcp:read"],
         )
         self.add_user(
             email="admin@example.com",
             password="admin123",
             roles=["admin", "user"],
-            permissions=["mcp:*", "admin:*"]
+            permissions=["mcp:*", "admin:*"],
         )
 
     def start(self):
@@ -82,7 +80,7 @@ class MockKeycloakServer:
         user_id: str | None = None,
         username: str | None = None,
         roles: list[str | None] = None,
-        permissions: list[str | None] = None
+        permissions: list[str | None] = None,
     ) -> str:
         """Add a user to the mock server.
 
@@ -98,7 +96,7 @@ class MockKeycloakServer:
             User ID
         """
         user_id = user_id or str(uuid.uuid4())
-        username = username or email.split('@')[0]
+        username = username or email.split("@")[0]
 
         self.users[email] = {
             "id": user_id,
@@ -108,7 +106,7 @@ class MockKeycloakServer:
             "roles": roles or ["user"],
             "permissions": permissions or ["mcp:read"],
             "enabled": True,
-            "created_at": datetime.now(UTC).isoformat()
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
         return user_id
@@ -119,10 +117,7 @@ class MockKeycloakServer:
             del self.users[email]
 
     def authenticate(
-        self,
-        email: str,
-        password: str,
-        client_id: str = "mcp-client"
+        self, email: str, password: str, client_id: str = "mcp-client"
     ) -> dict[str, Any | None]:
         """Authenticate a user and return tokens.
 
@@ -146,7 +141,7 @@ class MockKeycloakServer:
         self.tokens[access_token] = {
             "user_id": user["id"],
             "email": user["email"],
-            "expires_at": datetime.now(UTC) + timedelta(hours=1)
+            "expires_at": datetime.now(UTC) + timedelta(hours=1),
         }
         self.refresh_tokens[refresh_token] = access_token
 
@@ -156,21 +151,23 @@ class MockKeycloakServer:
             "refresh_token": refresh_token,
             "expires_in": 3600,
             "user_id": user["id"],
-            "email": user["email"]
+            "email": user["email"],
         }
 
     def _generate_access_token(self, user: dict[str, Any], client_id: str) -> str:
         """Generate a mock access token (in reality, this would be a JWT)."""
         from tests.utils.auth_token_builder import AuthTokenBuilder
 
-        return (AuthTokenBuilder()
-                .with_user_id(user["id"])
-                .with_email(user["email"])
-                .with_username(user["username"])
-                .with_roles(user["roles"])
-                .with_permissions(user["permissions"])
-                .with_audience(client_id)
-                .build())
+        return (
+            AuthTokenBuilder()
+            .with_user_id(user["id"])
+            .with_email(user["email"])
+            .with_username(user["username"])
+            .with_roles(user["roles"])
+            .with_permissions(user["permissions"])
+            .with_audience(client_id)
+            .build()
+        )
 
     def _generate_refresh_token(self, user: dict[str, Any]) -> str:
         """Generate a mock refresh token."""
@@ -232,7 +229,7 @@ class MockKeycloakServer:
         self.tokens[new_access_token] = {
             "user_id": user["id"],
             "email": user["email"],
-            "expires_at": datetime.now(UTC) + timedelta(hours=1)
+            "expires_at": datetime.now(UTC) + timedelta(hours=1),
         }
         self.refresh_tokens[new_refresh_token] = new_access_token
 
@@ -240,7 +237,7 @@ class MockKeycloakServer:
             "access_token": new_access_token,
             "token_type": "Bearer",
             "refresh_token": new_refresh_token,
-            "expires_in": 3600
+            "expires_in": 3600,
         }
 
     def logout(self, token: str):
@@ -295,7 +292,7 @@ class MockKeycloakServer:
             "email": user["email"],
             "preferred_username": user["username"],
             "email_verified": True,
-            "roles": user["roles"]
+            "roles": user["roles"],
         }
 
 

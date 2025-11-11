@@ -59,7 +59,7 @@ class PerformanceSecurityTester:
             "duration": end_time - start_time,
             "memory_delta": end_memory - start_memory,
             "success": success,
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         self.performance_metrics.append(metrics)
@@ -92,9 +92,11 @@ class PerformanceSecurityTester:
             "failed": failed,
             "total_duration": end_time - start_time,
             "avg_duration": (end_time - start_time) / count,
-            "operations_per_second": count / (end_time - start_time) if end_time > start_time else 0,
+            "operations_per_second": count / (end_time - start_time)
+            if end_time > start_time
+            else 0,
             "memory_delta": end_memory - start_memory,
-            "timestamp": datetime.now(UTC).isoformat()
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         self.performance_metrics.append(metrics)
@@ -116,7 +118,7 @@ def test_users():
             id=f"perf_user_{i}",
             email=f"user{i}@perf.test",
             username=f"perfuser{i}",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
         users.append(user)
     return users
@@ -134,16 +136,17 @@ class TestAuthenticationPerformance:
             id="test_user",
             email="test@example.com",
             username="testuser",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = mock_user
 
             # Single validation performance
             _, single_metrics = await perf_tester.measure_async_operation(
-                validate_websocket_token,
-                "valid.jwt.token"
+                validate_websocket_token, "valid.jwt.token"
             )
 
             assert single_metrics["duration"] < 0.1  # Should be under 100ms
@@ -153,10 +156,12 @@ class TestAuthenticationPerformance:
             _, concurrent_metrics = await perf_tester.measure_concurrent_operations(
                 validate_websocket_token,
                 100,  # 100 concurrent validations
-                "valid.jwt.token"
+                "valid.jwt.token",
             )
 
-            assert concurrent_metrics["operations_per_second"] > 100  # Should handle >100 ops/sec
+            assert (
+                concurrent_metrics["operations_per_second"] > 100
+            )  # Should handle >100 ops/sec
             assert concurrent_metrics["successful"] == 100  # All should succeed
 
     @pytest.mark.asyncio
@@ -169,21 +174,24 @@ class TestAuthenticationPerformance:
             "malformed.token",
             "expired.token.here",
             "",
-            None
+            None,
         ]
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = None  # All tokens invalid
 
             for token in invalid_tokens:
                 _, metrics = await perf_tester.measure_async_operation(
-                    validate_websocket_token,
-                    token
+                    validate_websocket_token, token
                 )
 
                 # Should quickly reject invalid tokens
                 assert metrics["duration"] < 0.05  # Under 50ms
-                assert metrics["success"] is True  # Function executes successfully (returns None)
+                assert (
+                    metrics["success"] is True
+                )  # Function executes successfully (returns None)
 
     @pytest.mark.asyncio
     async def test_memory_usage_under_authentication_load(self, perf_tester):
@@ -193,17 +201,19 @@ class TestAuthenticationPerformance:
             id="test_user",
             email="test@example.com",
             username="testuser",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
 
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = mock_user
 
             # Measure memory usage during high load
             _, metrics = await perf_tester.measure_concurrent_operations(
                 validate_websocket_token,
                 1000,  # High load
-                "valid.jwt.token"
+                "valid.jwt.token",
             )
 
             # Memory usage should be reasonable (less than 50MB for 1000 operations)
@@ -227,7 +237,9 @@ class TestAuthorizationPerformance:
         connection_users[mock_websocket] = user
 
         # Mock database for performance testing
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -235,7 +247,9 @@ class TestAuthorizationPerformance:
             mock_task = AsyncMock()
             mock_task.id = "test_task"
             mock_task.user_id = user.id
-            mock_session.query.return_value.filter.return_value.first.return_value = mock_task
+            mock_session.query.return_value.filter.return_value.first.return_value = (
+                mock_task
+            )
 
             # Single authorization check
             _, single_metrics = await perf_tester.measure_async_operation(
@@ -244,7 +258,7 @@ class TestAuthorizationPerformance:
                 "task",
                 "test_task",
                 user.id,
-                {}
+                {},
             )
 
             assert single_metrics["duration"] < 0.05  # Should be under 50ms
@@ -258,10 +272,12 @@ class TestAuthorizationPerformance:
                 "task",
                 "test_task",
                 user.id,
-                {}
+                {},
             )
 
-            assert concurrent_metrics["operations_per_second"] > 200  # Should handle >200 ops/sec
+            assert (
+                concurrent_metrics["operations_per_second"] > 200
+            )  # Should handle >200 ops/sec
 
     @pytest.mark.asyncio
     async def test_broadcast_filtering_performance(self, perf_tester, test_users):
@@ -276,7 +292,9 @@ class TestAuthorizationPerformance:
             websockets.append(ws)
 
         # Mock database for authorization
-        with patch('fastmcp.task_management.infrastructure.database.database_config.get_session') as mock_get_session:
+        with patch(
+            "fastmcp.task_management.infrastructure.database.database_config.get_session"
+        ) as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value.__enter__.return_value = mock_session
 
@@ -302,7 +320,7 @@ class TestAuthorizationPerformance:
                 "task",
                 "test_task",
                 "perf_user_0",
-                {"test": "data"}
+                {"test": "data"},
             )
 
             # Should complete quickly even with authorization filtering
@@ -325,7 +343,9 @@ class TestConnectionHandlingPerformance:
 
         async def authenticate_connection(user):
             """Simulate connection authentication"""
-            with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+            ) as mock_validate:
                 mock_validate.return_value = user
                 return await validate_websocket_token("valid.token")
 
@@ -333,11 +353,13 @@ class TestConnectionHandlingPerformance:
         _, metrics = await perf_tester.measure_concurrent_operations(
             authenticate_connection,
             len(mock_users),
-            mock_users[0]  # Use first user for all (simplified)
+            mock_users[0],  # Use first user for all (simplified)
         )
 
         # Should handle concurrent authentications efficiently
-        assert metrics["operations_per_second"] > 50  # Should handle >50 connections/sec
+        assert (
+            metrics["operations_per_second"] > 50
+        )  # Should handle >50 connections/sec
         assert metrics["successful"] == len(mock_users)
 
     @pytest.mark.asyncio
@@ -368,7 +390,9 @@ class TestConnectionHandlingPerformance:
         _, metrics = await perf_tester.measure_async_operation(cleanup_connections)
 
         # Cleanup should be fast even for many connections
-        assert metrics["duration"] < 1.0  # Should cleanup 100 connections in under 1 second
+        assert (
+            metrics["duration"] < 1.0
+        )  # Should cleanup 100 connections in under 1 second
         assert metrics["success"] is True
 
 
@@ -383,7 +407,7 @@ class TestRateLimitingPerformance:
             id="rate_test_user",
             email="rate@test.com",
             username="rateuser",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
         ws = AsyncMock()
         connection_users[ws] = user
@@ -394,21 +418,19 @@ class TestRateLimitingPerformance:
             # TODO: Implement actual rate limiting
             # For now, just simulate the broadcast
             await broadcast_data_change(
-                "created",
-                "task",
-                f"task_{time.time()}",
-                user.id,
-                {"rate_test": True}
+                "created", "task", f"task_{time.time()}", user.id, {"rate_test": True}
             )
 
         # Test message sending performance with rate limiting
         _, metrics = await perf_tester.measure_concurrent_operations(
             send_rate_limited_message,
-            100  # Try to send 100 messages rapidly
+            100,  # Try to send 100 messages rapidly
         )
 
         # Rate limiting should not severely impact performance for legitimate usage
-        assert metrics["operations_per_second"] > 10  # Should allow at least 10 messages/sec
+        assert (
+            metrics["operations_per_second"] > 10
+        )  # Should allow at least 10 messages/sec
 
     @pytest.mark.asyncio
     async def test_connection_rate_limiting_performance(self, perf_tester):
@@ -422,20 +444,24 @@ class TestRateLimitingPerformance:
                 id="conn_test",
                 email="conn@test.com",
                 username="connuser",
-                password_hash="hashed_password_123"
+                password_hash="hashed_password_123",
             )
-            with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+            ) as mock_validate:
                 mock_validate.return_value = user
                 return await validate_websocket_token("valid.token")
 
         # Test rapid connection attempts
         _, metrics = await perf_tester.measure_concurrent_operations(
             attempt_connection,
-            50  # Try 50 rapid connections
+            50,  # Try 50 rapid connections
         )
 
         # Rate limiting should handle burst connections efficiently
-        assert metrics["total_duration"] < 5.0  # Should handle 50 connections in under 5 seconds
+        assert (
+            metrics["total_duration"] < 5.0
+        )  # Should handle 50 connections in under 5 seconds
 
 
 class TestSecurityMemoryLeaks:
@@ -449,7 +475,7 @@ class TestSecurityMemoryLeaks:
             id="leak_test",
             email="leak@test.com",
             username="leakuser",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
 
         # Measure baseline memory
@@ -457,7 +483,9 @@ class TestSecurityMemoryLeaks:
         baseline_memory = psutil.Process().memory_info().rss
 
         # Perform many authentication operations
-        with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+        with patch(
+            "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+        ) as mock_validate:
             mock_validate.return_value = mock_user
 
             for _ in range(1000):
@@ -486,7 +514,7 @@ class TestSecurityMemoryLeaks:
                 id=f"temp_user_{i}",
                 email=f"temp{i}@test.com",
                 username=f"temp{i}",
-                password_hash="hashed_password_123"
+                password_hash="hashed_password_123",
             )
             ws = AsyncMock()
 
@@ -506,7 +534,9 @@ class TestSecurityMemoryLeaks:
         memory_growth_mb = (final_memory - baseline_memory) / (1024 * 1024)
 
         # Should not have significant memory leaks
-        assert memory_growth_mb < 20  # Less than 20MB growth for 500 connect/disconnect cycles
+        assert (
+            memory_growth_mb < 20
+        )  # Less than 20MB growth for 500 connect/disconnect cycles
 
 
 class TestDosResistance:
@@ -521,7 +551,9 @@ class TestDosResistance:
 
         async def attempt_dos_auth(token):
             """Simulate DoS authentication attempt"""
-            with patch('fastmcp.server.routes.websocket_routes.validate_keycloak_token') as mock_validate:
+            with patch(
+                "fastmcp.server.routes.websocket_routes.validate_keycloak_token"
+            ) as mock_validate:
                 mock_validate.return_value = None  # All tokens invalid
                 return await validate_websocket_token(token)
 
@@ -535,7 +567,9 @@ class TestDosResistance:
         total_time = end_time - start_time
 
         # System should handle DoS gracefully
-        assert total_time < 10.0  # Should reject 1000 invalid tokens in under 10 seconds
+        assert (
+            total_time < 10.0
+        )  # Should reject 1000 invalid tokens in under 10 seconds
         assert all(result is None for result in results)  # All should be rejected
 
     @pytest.mark.asyncio
@@ -547,7 +581,7 @@ class TestDosResistance:
             id="dos_target",
             email="dos@test.com",
             username="dostarget",
-            password_hash="hashed_password_123"
+            password_hash="hashed_password_123",
         )
         ws = AsyncMock()
         connection_users[ws] = user
@@ -563,7 +597,7 @@ class TestDosResistance:
                 "task",
                 f"flood_task_{i}",
                 user.id,
-                {"flood_data": f"message_{i}"}
+                {"flood_data": f"message_{i}"},
             )
 
         start_time = time.time()
@@ -572,7 +606,9 @@ class TestDosResistance:
         end_time = time.time()
 
         # System should handle message flood without crashing
-        assert end_time - start_time < 30.0  # Should handle 500 messages in under 30 seconds
+        assert (
+            end_time - start_time < 30.0
+        )  # Should handle 500 messages in under 30 seconds
 
 
 if __name__ == "__main__":

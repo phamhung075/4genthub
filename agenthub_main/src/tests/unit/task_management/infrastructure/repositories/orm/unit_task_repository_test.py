@@ -32,9 +32,11 @@ from fastmcp.task_management.infrastructure.repositories.orm.task_repository imp
 def create_mock_with_spec(spec_class):
     """Safely create a Mock with spec, handling already-mocked classes."""
     # Check if the class is actually a Mock or has been patched
-    if (hasattr(spec_class, '_mock_name') or
-        hasattr(spec_class, '_spec_class') or
-        hasattr(spec_class, '_mock_methods')):
+    if (
+        hasattr(spec_class, "_mock_name")
+        or hasattr(spec_class, "_spec_class")
+        or hasattr(spec_class, "_mock_methods")
+    ):
         # It's already a Mock, don't use spec
         return Mock()
     else:
@@ -64,7 +66,7 @@ class TestORMTaskRepositoryInitialization:
             git_branch_id="branch-123",
             project_id="project-456",
             git_branch_name="feature/auth",
-            user_id="user-789"
+            user_id="user-789",
         )
 
         assert repo.git_branch_id == "branch-123"
@@ -76,14 +78,11 @@ class TestORMTaskRepositoryInitialization:
         """Test repository properly inherits user scoped functionality."""
         # Inject mock session directly via constructor (get_session no longer exists)
         mock_session = Mock()
-        repo = ORMTaskRepository(
-            session=mock_session,
-            user_id="test-user"
-        )
+        repo = ORMTaskRepository(session=mock_session, user_id="test-user")
 
         # Should have user scoped methods
-        assert hasattr(repo, 'apply_user_filter')
-        assert hasattr(repo, 'user_id')
+        assert hasattr(repo, "apply_user_filter")
+        assert hasattr(repo, "user_id")
         assert repo.user_id == "test-user"
 
 
@@ -127,7 +126,9 @@ class TestORMTaskRepositoryTaskLoading:
         """Test fallback to basic loading when relationships fail."""
         # First query with relationships fails
         mock_query_with_relations = Mock()
-        mock_query_with_relations.options.side_effect = SQLAlchemyError("Relation error")
+        mock_query_with_relations.options.side_effect = SQLAlchemyError(
+            "Relation error"
+        )
 
         # Second query without relationships succeeds
         mock_task = create_mock_with_spec(Task)
@@ -139,7 +140,10 @@ class TestORMTaskRepositoryTaskLoading:
         mock_filter.first.return_value = mock_task
 
         # Mock session.query to return different queries on different calls
-        self.mock_session.query.side_effect = [mock_query_with_relations, mock_query_basic]
+        self.mock_session.query.side_effect = [
+            mock_query_with_relations,
+            mock_query_basic,
+        ]
 
         result = self.repo._load_task_with_relationships(self.mock_session, "task-123")
 
@@ -154,12 +158,17 @@ class TestORMTaskRepositoryTaskLoading:
         """Test complete failure to load task."""
         # Both queries fail
         mock_query_with_relations = Mock()
-        mock_query_with_relations.options.side_effect = SQLAlchemyError("Relation error")
+        mock_query_with_relations.options.side_effect = SQLAlchemyError(
+            "Relation error"
+        )
 
         mock_query_basic = Mock()
         mock_query_basic.filter.side_effect = SQLAlchemyError("Basic query error")
 
-        self.mock_session.query.side_effect = [mock_query_with_relations, mock_query_basic]
+        self.mock_session.query.side_effect = [
+            mock_query_with_relations,
+            mock_query_basic,
+        ]
 
         result = self.repo._load_task_with_relationships(self.mock_session, "task-123")
 
@@ -170,7 +179,9 @@ class TestORMTaskRepositoryTaskLoading:
         # Test the method directly with the mock session
         # First query with options fails
         mock_query_with_relations = Mock()
-        mock_query_with_relations.options.side_effect = SQLAlchemyError("Relation error")
+        mock_query_with_relations.options.side_effect = SQLAlchemyError(
+            "Relation error"
+        )
 
         # Second fallback query also returns None
         mock_query_basic = Mock()
@@ -179,9 +190,14 @@ class TestORMTaskRepositoryTaskLoading:
         mock_filter_basic.first.return_value = None  # Not found
 
         # Return different queries on different calls
-        self.mock_session.query.side_effect = [mock_query_with_relations, mock_query_basic]
+        self.mock_session.query.side_effect = [
+            mock_query_with_relations,
+            mock_query_basic,
+        ]
 
-        result = self.repo._load_task_with_relationships(self.mock_session, "nonexistent")
+        result = self.repo._load_task_with_relationships(
+            self.mock_session, "nonexistent"
+        )
 
         assert result is None
 
@@ -209,7 +225,7 @@ class TestORMTaskRepositoryConversion:
             estimated_effort="2 hours",
             due_date="2024-12-31",
             context_id="context-789",
-            user_id="user-123"
+            user_id="user-123",
         )
 
         # Convert entity to model dict
@@ -252,7 +268,7 @@ class TestORMTaskRepositoryConversion:
         mock_task_model.subtasks = []
         mock_task_model.dependencies = []
 
-        with patch.object(self.repo, '_model_to_entity') as mock_convert:
+        with patch.object(self.repo, "_model_to_entity") as mock_convert:
             mock_task_entity = create_mock_with_spec(TaskEntity)
             mock_convert.return_value = mock_task_entity
 
@@ -274,20 +290,20 @@ class TestORMTaskRepositoryCRUDOperations:
         """Test successful task creation."""
         task_id = TaskId("task-123")
         task_entity = TaskEntity(
-            id=task_id,
-            title="New Task",
-            description="New Description"
+            id=task_id, title="New Task", description="New Description"
         )
 
         # Mock get_db_session
-        with patch.object(self.repo, 'get_db_session') as mock_get_db:
+        with patch.object(self.repo, "get_db_session") as mock_get_db:
             mock_session = Mock()
             mock_get_db.return_value.__enter__.return_value = mock_session
 
             # Mock query for task existence check
             mock_query = Mock()
             mock_session.query.return_value = mock_query
-            mock_query.filter.return_value.first.return_value = None  # Task doesn't exist
+            mock_query.filter.return_value.first.return_value = (
+                None  # Task doesn't exist
+            )
 
             # Mock save operation
             result = self.repo.save(task_entity)
@@ -300,23 +316,25 @@ class TestORMTaskRepositoryCRUDOperations:
     def test_create_task_database_error(self):
         """Test task creation with database error."""
         task_entity = TaskEntity(
-            id=TaskId("task-123"),
-            title="New Task",
-            description="New Description"
+            id=TaskId("task-123"), title="New Task", description="New Description"
         )
 
         # Mock get_db_session with database error
-        with patch.object(self.repo, 'get_db_session') as mock_get_db:
+        with patch.object(self.repo, "get_db_session") as mock_get_db:
             mock_session = Mock()
             mock_get_db.return_value.__enter__.return_value = mock_session
 
             # Mock query for task existence check
             mock_query = Mock()
             mock_session.query.return_value = mock_query
-            mock_query.filter.return_value.first.return_value = None  # Task doesn't exist
+            mock_query.filter.return_value.first.return_value = (
+                None  # Task doesn't exist
+            )
 
             # Mock database error on add
-            mock_session.add.side_effect = IntegrityError("Constraint violation", None, None)
+            mock_session.add.side_effect = IntegrityError(
+                "Constraint violation", None, None
+            )
 
             # Should raise exception and handle rollback
             with pytest.raises(Exception):
@@ -328,32 +346,36 @@ class TestORMTaskRepositoryCRUDOperations:
         mock_task_model.id = "task-123"
 
         mock_task_entity = TaskEntity(
-            id=TaskId("task-123"),
-            title="Found Task",
-            description="Found Description"
+            id=TaskId("task-123"), title="Found Task", description="Found Description"
         )
 
-        with patch.object(self.repo, 'get_db_session') as mock_get_db:
+        with patch.object(self.repo, "get_db_session") as mock_get_db:
             mock_session = Mock()
             mock_get_db.return_value.__enter__.return_value = mock_session
 
-            with patch.object(self.repo, '_load_task_with_relationships', return_value=mock_task_model):
-                with patch.object(self.repo, '_model_to_entity', return_value=mock_task_entity):
-                    with patch.object(self.repo, 'is_system_mode', return_value=True):  # Skip user filter
-                        with patch.object(self.repo, 'log_access'):
-
+            with patch.object(
+                self.repo, "_load_task_with_relationships", return_value=mock_task_model
+            ):
+                with patch.object(
+                    self.repo, "_model_to_entity", return_value=mock_task_entity
+                ):
+                    with patch.object(
+                        self.repo, "is_system_mode", return_value=True
+                    ):  # Skip user filter
+                        with patch.object(self.repo, "log_access"):
                             result = self.repo.find_by_id(TaskId("task-123"))
 
                             assert result == mock_task_entity
 
     def test_get_task_by_id_not_found(self):
         """Test getting task by ID when it doesn't exist."""
-        with patch.object(self.repo, 'get_db_session') as mock_get_db:
+        with patch.object(self.repo, "get_db_session") as mock_get_db:
             mock_session = Mock()
             mock_get_db.return_value.__enter__.return_value = mock_session
 
-            with patch.object(self.repo, '_load_task_with_relationships', return_value=None):
-
+            with patch.object(
+                self.repo, "_load_task_with_relationships", return_value=None
+            ):
                 result = self.repo.find_by_id(TaskId("nonexistent"))
                 assert result is None  # find_by_id returns None, not exception
 
@@ -362,19 +384,24 @@ class TestORMTaskRepositoryCRUDOperations:
         mock_task_model = create_mock_with_spec(Task)
         mock_task_model.id = "task-123"
 
-        with patch.object(self.repo, 'get_db_session') as mock_get_db:
+        with patch.object(self.repo, "get_db_session") as mock_get_db:
             mock_session = Mock()
             mock_get_db.return_value.__enter__.return_value = mock_session
 
             # Mock user filter query that returns None (access denied)
             mock_query = Mock()
             mock_session.query.return_value = mock_query
-            with patch.object(self.repo, 'apply_user_filter', return_value=mock_query):
+            with patch.object(self.repo, "apply_user_filter", return_value=mock_query):
                 mock_query.filter.return_value.first.return_value = None
 
-                with patch.object(self.repo, '_load_task_with_relationships', return_value=mock_task_model):
-                    with patch.object(self.repo, 'is_system_mode', return_value=False):  # Enable user filter
-
+                with patch.object(
+                    self.repo,
+                    "_load_task_with_relationships",
+                    return_value=mock_task_model,
+                ):
+                    with patch.object(
+                        self.repo, "is_system_mode", return_value=False
+                    ):  # Enable user filter
                         result = self.repo.find_by_id(TaskId("task-123"))
                         assert result is None  # Access denied returns None
 
@@ -383,11 +410,11 @@ class TestORMTaskRepositoryCRUDOperations:
         task_entity = TaskEntity(
             id=TaskId("task-123"),
             title="Updated Task",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # ORMTaskRepository.update method doesn't exist, use save directly
-        with patch.object(self.repo, 'save', return_value=task_entity) as mock_save:
+        with patch.object(self.repo, "save", return_value=task_entity) as mock_save:
             result = self.repo.save(task_entity)
 
             mock_save.assert_called_once_with(task_entity)
@@ -398,12 +425,11 @@ class TestORMTaskRepositoryCRUDOperations:
         task_entity = TaskEntity(
             id=TaskId("nonexistent"),
             title="Updated Task",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # Mock save method to raise exception for non-existent task
-        with patch.object(self.repo, 'save', side_effect=Exception("Task not found")):
-
+        with patch.object(self.repo, "save", side_effect=Exception("Task not found")):
             with pytest.raises(Exception, match="Task not found"):
                 self.repo.save(task_entity)
 
@@ -412,20 +438,20 @@ class TestORMTaskRepositoryCRUDOperations:
         task_entity = TaskEntity(
             id=TaskId("task-123"),
             title="Updated Task",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # Mock save method to raise database error
-        with patch.object(self.repo, 'save', side_effect=SQLAlchemyError("Database error")):
-
+        with patch.object(
+            self.repo, "save", side_effect=SQLAlchemyError("Database error")
+        ):
             with pytest.raises(SQLAlchemyError, match="Database error"):
                 self.repo.save(task_entity)
 
     def test_delete_task_success(self):
         """Test successful task deletion."""
         # Mock delete_task method
-        with patch.object(self.repo, 'delete_task', return_value=True) as mock_delete:
-
+        with patch.object(self.repo, "delete_task", return_value=True) as mock_delete:
             result = self.repo.delete(TaskId("task-123"))
 
             mock_delete.assert_called_once_with("task-123")
@@ -434,8 +460,7 @@ class TestORMTaskRepositoryCRUDOperations:
     def test_delete_task_not_found(self):
         """Test deleting non-existent task."""
         # Mock delete_task method to return False for non-existent task
-        with patch.object(self.repo, 'delete_task', return_value=False) as mock_delete:
-
+        with patch.object(self.repo, "delete_task", return_value=False) as mock_delete:
             result = self.repo.delete(TaskId("nonexistent"))
 
             mock_delete.assert_called_once_with("nonexistent")
@@ -449,17 +474,16 @@ class TestORMTaskRepositoryQueryOperations:
         """Set up test fixtures."""
         self.mock_session = Mock()
         self.repo = ORMTaskRepository(
-            session=self.mock_session,
-            git_branch_id="branch-123",
-            user_id="test-user"
+            session=self.mock_session, git_branch_id="branch-123", user_id="test-user"
         )
 
     def test_list_tasks_with_filters(self):
         """Test listing tasks with various filters."""
         # Mock list_tasks method
         mock_entities = [Mock(), Mock()]
-        with patch.object(self.repo, 'list_tasks', return_value=mock_entities) as mock_list:
-
+        with patch.object(
+            self.repo, "list_tasks", return_value=mock_entities
+        ) as mock_list:
             result = self.repo.find_all()
 
             mock_list.assert_called_once_with()
@@ -472,8 +496,9 @@ class TestORMTaskRepositoryQueryOperations:
 
         # Mock search_tasks method
         mock_entities = [Mock()]
-        with patch.object(self.repo, 'search_tasks', return_value=mock_entities) as mock_search:
-
+        with patch.object(
+            self.repo, "search_tasks", return_value=mock_entities
+        ) as mock_search:
             result = self.repo.search(search_query)
 
             mock_search.assert_called_once_with(search_query, 10)
@@ -484,8 +509,9 @@ class TestORMTaskRepositoryQueryOperations:
         """Test finding tasks by git branch ID."""
         # Mock find_by_git_branch_id method
         mock_entities = [Mock()]
-        with patch.object(self.repo, 'find_by_git_branch_id', return_value=mock_entities) as mock_find:
-
+        with patch.object(
+            self.repo, "find_by_git_branch_id", return_value=mock_entities
+        ) as mock_find:
             result = self.repo.find_by_git_branch_id("branch-123")
 
             mock_find.assert_called_once_with("branch-123")
@@ -495,8 +521,7 @@ class TestORMTaskRepositoryQueryOperations:
     def test_count_tasks(self):
         """Test counting tasks with filters."""
         # Mock get_task_count method
-        with patch.object(self.repo, 'get_task_count', return_value=5) as mock_count:
-
+        with patch.object(self.repo, "get_task_count", return_value=5) as mock_count:
             result = self.repo.count()
 
             mock_count.assert_called_once_with(status=None)
@@ -514,17 +539,15 @@ class TestORMTaskRepositoryCacheIntegration:
     def test_cache_invalidation_on_create(self):
         """Test cache is invalidated on task creation."""
         task_entity = TaskEntity(
-            id=TaskId("task-123"),
-            title="New Task",
-            description="New Description"
+            id=TaskId("task-123"), title="New Task", description="New Description"
         )
 
         # Mock create_task method which has cache invalidation
-        with patch.object(self.repo, 'create_task', return_value=task_entity) as mock_create:
-
+        with patch.object(
+            self.repo, "create_task", return_value=task_entity
+        ) as mock_create:
             result = self.repo.create_task(
-                title="New Task",
-                description="New Description"
+                title="New Task", description="New Description"
             )
 
             mock_create.assert_called_once()
@@ -535,12 +558,13 @@ class TestORMTaskRepositoryCacheIntegration:
         task_entity = TaskEntity(
             id=TaskId("task-123"),
             title="Updated Task",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # Mock update_task method which has cache invalidation
-        with patch.object(self.repo, 'update_task', return_value=task_entity) as mock_update:
-
+        with patch.object(
+            self.repo, "update_task", return_value=task_entity
+        ) as mock_update:
             result = self.repo.update_task("task-123", title="Updated Task")
 
             mock_update.assert_called_once_with("task-123", title="Updated Task")
@@ -549,9 +573,8 @@ class TestORMTaskRepositoryCacheIntegration:
     def test_cache_invalidation_on_delete(self):
         """Test cache is invalidated on task deletion."""
         # Mock delete_task method with cache invalidation
-        with patch.object(self.repo, 'delete_task', return_value=True):
-            with patch.object(self.repo, 'invalidate_cache_for_entity'):
-
+        with patch.object(self.repo, "delete_task", return_value=True):
+            with patch.object(self.repo, "invalidate_cache_for_entity"):
                 result = self.repo.delete(TaskId("task-123"))
 
                 assert result is True
@@ -569,14 +592,13 @@ class TestORMTaskRepositoryErrorHandling:
     def test_session_rollback_on_error(self):
         """Test session rollback occurs on database errors."""
         task_entity = TaskEntity(
-            id=TaskId("task-123"),
-            title="New Task",
-            description="New Description"
+            id=TaskId("task-123"), title="New Task", description="New Description"
         )
 
         # Mock save to raise database error directly
-        with patch.object(self.repo, 'save', side_effect=SQLAlchemyError("Database connection lost")):
-
+        with patch.object(
+            self.repo, "save", side_effect=SQLAlchemyError("Database connection lost")
+        ):
             # Should raise exception
             with pytest.raises(SQLAlchemyError):
                 self.repo.save(task_entity)
@@ -584,10 +606,11 @@ class TestORMTaskRepositoryErrorHandling:
     def test_invalid_task_id_handling(self):
         """Test handling of invalid task IDs."""
         # Mock get_task method to return None for invalid IDs
-        with patch.object(self.repo, 'get_task', return_value=None):
-
+        with patch.object(self.repo, "get_task", return_value=None):
             # Test with valid but non-existent UUID
-            result2 = self.repo.find_by_id(TaskId("550e8400-e29b-41d4-a716-446655440000"))
+            result2 = self.repo.find_by_id(
+                TaskId("550e8400-e29b-41d4-a716-446655440000")
+            )
             assert result2 is None
 
             # TaskId validation prevents empty strings, so this test is valid
@@ -598,13 +621,18 @@ class TestORMTaskRepositoryErrorHandling:
         task_entity = TaskEntity(
             id=TaskId("task-123"),
             title="Updated Task",
-            description="Updated Description"
+            description="Updated Description",
         )
 
         # Mock save method to raise concurrent modification error
-        with patch.object(self.repo, 'save', side_effect=SQLAlchemyError("Row was updated by another transaction")):
-
-            with pytest.raises(SQLAlchemyError, match="Row was updated by another transaction"):
+        with patch.object(
+            self.repo,
+            "save",
+            side_effect=SQLAlchemyError("Row was updated by another transaction"),
+        ):
+            with pytest.raises(
+                SQLAlchemyError, match="Row was updated by another transaction"
+            ):
                 self.repo.save(task_entity)
 
 

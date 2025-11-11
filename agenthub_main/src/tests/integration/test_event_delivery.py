@@ -89,14 +89,16 @@ class TestEventDeliveryIntegration:
 
         # Verify event was processed
         with call_lock:
-            assert len(handler_calls) == 1, f"Expected 1 handler call, got {len(handler_calls)}"
+            assert len(handler_calls) == 1, (
+                f"Expected 1 handler call, got {len(handler_calls)}"
+            )
             assert handler_calls[0].task_id == "test-123"
             assert handler_calls[0].title == "Test Task"
 
         # Check worker stats
         stats = worker.get_stats()
-        assert stats['events_processed'] >= 1
-        assert stats['events_failed'] == 0
+        assert stats["events_processed"] >= 1
+        assert stats["events_failed"] == 0
         assert worker.is_healthy()
 
         # Cleanup
@@ -122,22 +124,22 @@ class TestEventDeliveryIntegration:
         handler2_calls = []
         handler3_calls = []
         call_locks = {
-            'h1': threading.Lock(),
-            'h2': threading.Lock(),
-            'h3': threading.Lock(),
+            "h1": threading.Lock(),
+            "h2": threading.Lock(),
+            "h3": threading.Lock(),
         }
 
         def handler1(event):
-            with call_locks['h1']:
+            with call_locks["h1"]:
                 handler1_calls.append(event)
 
         def handler2(event):
-            with call_locks['h2']:
+            with call_locks["h2"]:
                 handler2_calls.append(event)
 
         def handler3(event):
             """Handler that simulates occasional failures"""
-            with call_locks['h3']:
+            with call_locks["h3"]:
                 handler3_calls.append(event)
                 # Simulate processing work
                 time.sleep(0.01)
@@ -148,9 +150,7 @@ class TestEventDeliveryIntegration:
         event_bus.subscribe(TaskCreatedEvent, handler3)
 
         # Start worker with all handlers
-        event_handlers = {
-            TaskCreatedEvent: [handler1, handler2, handler3]
-        }
+        event_handlers = {TaskCreatedEvent: [handler1, handler2, handler3]}
         worker = EventWorker(event_handlers, max_queue_size=100)
         worker.start()
 
@@ -171,25 +171,29 @@ class TestEventDeliveryIntegration:
         # Wait for all handlers to process
         max_wait = 3.0
         start_time = time.time()
-        while (len(handler1_calls) == 0 or len(handler2_calls) == 0 or len(handler3_calls) == 0) and time.time() - start_time < max_wait:
+        while (
+            len(handler1_calls) == 0
+            or len(handler2_calls) == 0
+            or len(handler3_calls) == 0
+        ) and time.time() - start_time < max_wait:
             time.sleep(0.1)
 
         # Verify all handlers received the event
-        with call_locks['h1']:
+        with call_locks["h1"]:
             assert len(handler1_calls) == 1, "Handler 1 should receive event"
             assert handler1_calls[0].task_id == "test-multi"
 
-        with call_locks['h2']:
+        with call_locks["h2"]:
             assert len(handler2_calls) == 1, "Handler 2 should receive event"
             assert handler2_calls[0].task_id == "test-multi"
 
-        with call_locks['h3']:
+        with call_locks["h3"]:
             assert len(handler3_calls) == 1, "Handler 3 should receive event"
             assert handler3_calls[0].task_id == "test-multi"
 
         # Verify worker stats
         stats = worker.get_stats()
-        assert stats['events_processed'] >= 1
+        assert stats["events_processed"] >= 1
         assert worker.is_healthy()
 
         # Cleanup
@@ -244,7 +248,9 @@ class TestEventDeliveryIntegration:
         timeout = 5.0  # Give enough time for 50 events
         start = time.time()
 
-        while len(processed_events) < len(published_ids) and time.time() - start < timeout:
+        while (
+            len(processed_events) < len(published_ids) and time.time() - start < timeout
+        ):
             time.sleep(0.1)
 
         # Verify all events processed
@@ -264,10 +270,10 @@ class TestEventDeliveryIntegration:
 
         # Check worker stats
         stats = worker.get_stats()
-        assert stats['events_processed'] >= num_events, (
+        assert stats["events_processed"] >= num_events, (
             f"Expected at least {num_events} processed, got {stats['events_processed']}"
         )
-        assert stats['queue_overflow_count'] == 0, (
+        assert stats["queue_overflow_count"] == 0, (
             f"Queue overflow occurred {stats['queue_overflow_count']} times"
         )
         assert worker.is_healthy(), "Worker should be healthy after processing"
@@ -293,21 +299,21 @@ class TestEventDeliveryIntegration:
         updated_events = []
         completed_events = []
         locks = {
-            'created': threading.Lock(),
-            'updated': threading.Lock(),
-            'completed': threading.Lock(),
+            "created": threading.Lock(),
+            "updated": threading.Lock(),
+            "completed": threading.Lock(),
         }
 
         def created_handler(event):
-            with locks['created']:
+            with locks["created"]:
                 created_events.append(event)
 
         def updated_handler(event):
-            with locks['updated']:
+            with locks["updated"]:
                 updated_events.append(event)
 
         def completed_handler(event):
-            with locks['completed']:
+            with locks["completed"]:
                 completed_events.append(event)
 
         # Register handlers for different event types
@@ -360,24 +366,30 @@ class TestEventDeliveryIntegration:
         # Wait for processing
         max_wait = 2.0
         start_time = time.time()
-        while (len(created_events) == 0 or len(updated_events) == 0 or len(completed_events) == 0) and time.time() - start_time < max_wait:
+        while (
+            len(created_events) == 0
+            or len(updated_events) == 0
+            or len(completed_events) == 0
+        ) and time.time() - start_time < max_wait:
             time.sleep(0.1)
 
         # Verify correct routing
-        with locks['created']:
+        with locks["created"]:
             assert len(created_events) == 1
             assert created_events[0].task_id == "task-1"
             assert created_events[0].title == "New Task"
 
-        with locks['updated']:
+        with locks["updated"]:
             assert len(updated_events) == 1
             assert updated_events[0].task_id == "task-1"
             assert updated_events[0].new_status == "in_progress"
 
-        with locks['completed']:
+        with locks["completed"]:
             assert len(completed_events) == 1
             assert completed_events[0].task_id == "task-1"
-            assert completed_events[0].completion_summary == "Task completed successfully"
+            assert (
+                completed_events[0].completion_summary == "Task completed successfully"
+            )
 
         # Cleanup
         worker.stop(timeout=5)

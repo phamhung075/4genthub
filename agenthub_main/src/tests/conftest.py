@@ -2,7 +2,7 @@
 Global pytest configuration for agenthub test suite
 
 This module provides:
-- Test isolation fixtures  
+- Test isolation fixtures
 - Data cleanup after tests
 - Performance monitoring
 - Test environment validation
@@ -25,16 +25,18 @@ if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
 # Set environment variables for tests
-os.environ['JWT_SECRET_KEY'] = 'test-secret-key-for-testing-only-do-not-use-in-production'
-os.environ['JWT_AUDIENCE'] = 'test-audience'
-os.environ['JWT_ISSUER'] = 'test-issuer'
+os.environ["JWT_SECRET_KEY"] = (
+    "test-secret-key-for-testing-only-do-not-use-in-production"
+)
+os.environ["JWT_AUDIENCE"] = "test-audience"
+os.environ["JWT_ISSUER"] = "test-issuer"
 
 # Set Keycloak environment variables for auth tests
-os.environ['AUTH_ENABLED'] = 'false'  # Disable auth by default in tests
-os.environ['KEYCLOAK_URL'] = 'http://localhost:8080'
-os.environ['KEYCLOAK_REALM'] = 'agenthub'
-os.environ['KEYCLOAK_CLIENT_ID'] = 'mcp-client'
-os.environ['KEYCLOAK_CLIENT_SECRET'] = 'test-secret'
+os.environ["AUTH_ENABLED"] = "false"  # Disable auth by default in tests
+os.environ["KEYCLOAK_URL"] = "http://localhost:8080"
+os.environ["KEYCLOAK_REALM"] = "agenthub"
+os.environ["KEYCLOAK_CLIENT_ID"] = "mcp-client"
+os.environ["KEYCLOAK_CLIENT_SECRET"] = "test-secret"
 
 # Mock numpy globally for tests when not available
 import importlib.util  # noqa: E402 - Import after environment variable setup required
@@ -43,13 +45,14 @@ if importlib.util.find_spec("numpy") is None:
     # Create a comprehensive numpy mock
     class MockNdarray(list):
         """Mock ndarray that behaves like a list but has shape attribute"""
+
         def __init__(self, data):
             super().__init__(data)
             if data and isinstance(data[0], list):
                 self.shape = (len(data), len(data[0]))
             else:
                 self.shape = (len(data),) if data else (0,)
-        
+
         def __getitem__(self, key):
             """Support numpy-style indexing including tuples"""
             if isinstance(key, tuple):
@@ -71,13 +74,13 @@ if importlib.util.find_spec("numpy") is None:
         @property
         def size(self):
             """Return total number of elements"""
-            if hasattr(self, 'shape') and self.shape:
+            if hasattr(self, "shape") and self.shape:
                 result = 1
                 for dim in self.shape:
                     result *= dim
                 return result
             return len(self)
-        
+
         @property
         def T(self):
             """Transpose for matrix operations"""
@@ -102,7 +105,7 @@ if importlib.util.find_spec("numpy") is None:
             result = MockNdarray(list(self))
             result.shape = shape
             return result
-        
+
         def __truediv__(self, other):
             """Support division for normalization"""
             if isinstance(other, MockNdarray):
@@ -112,14 +115,23 @@ if importlib.util.find_spec("numpy") is None:
                     result = []
                     for i, row in enumerate(self):
                         if i < len(other):
-                            divisor = other[i] if hasattr(other[i], '__float__') or isinstance(other[i], (int, float)) else other[i][0]
-                            result.append([x / divisor if divisor != 0 else 0 for x in row])
+                            divisor = (
+                                other[i]
+                                if hasattr(other[i], "__float__")
+                                or isinstance(other[i], (int, float))
+                                else other[i][0]
+                            )
+                            result.append(
+                                [x / divisor if divisor != 0 else 0 for x in row]
+                            )
                         else:
                             result.append(row)
                     return MockNdarray(result)
                 else:
                     # Both are 1D
-                    return MockNdarray([a / b if b != 0 else 0 for a, b in zip(self, other)])
+                    return MockNdarray(
+                        [a / b if b != 0 else 0 for a, b in zip(self, other)]
+                    )
             else:
                 # Scalar division
                 if isinstance(self[0] if self else None, list):
@@ -128,22 +140,29 @@ if importlib.util.find_spec("numpy") is None:
                 else:
                     # 1D array divided by scalar
                     return MockNdarray([x / other for x in self])
-    
+
     class MockRandom:
         """Mock numpy.random module"""
+
         @staticmethod
         def random(shape=None):
             """Mock np.random.random function"""
             import random as py_random
+
             if shape is None:
                 return py_random.random()
             elif isinstance(shape, int):
                 return MockNdarray([py_random.random() for _ in range(shape)])
             elif isinstance(shape, tuple) and len(shape) == 2:
-                return MockNdarray([[py_random.random() for _ in range(shape[1])] for _ in range(shape[0])])
+                return MockNdarray(
+                    [
+                        [py_random.random() for _ in range(shape[1])]
+                        for _ in range(shape[0])
+                    ]
+                )
             else:
                 # Handle other shape formats
-                if hasattr(shape, '__iter__'):
+                if hasattr(shape, "__iter__"):
                     # Flatten the shape and create appropriate structure
                     total_size = 1
                     for dim in shape:
@@ -175,17 +194,18 @@ if importlib.util.find_spec("numpy") is None:
             if isinstance(shape, int):
                 return MockNdarray([1.0] * shape)
             return MockNdarray([[1.0] * shape[1] for _ in range(shape[0])])
-        
+
         @staticmethod
         def array_equal(arr1, arr2):
             """Check if two arrays are equal"""
-            if hasattr(arr1, '__iter__') and hasattr(arr2, '__iter__'):
+            if hasattr(arr1, "__iter__") and hasattr(arr2, "__iter__"):
                 return list(arr1) == list(arr2)
             return arr1 == arr2
-        
+
         @staticmethod
         def allclose(a, b, rtol=1e-5, atol=1e-8):
             """Check if two arrays are close element-wise"""
+
             def _flatten(arr):
                 if isinstance(arr[0] if arr else None, list):
                     flat = []
@@ -193,31 +213,35 @@ if importlib.util.find_spec("numpy") is None:
                         flat.extend(row)
                     return flat
                 return list(arr)
-            
-            a_flat = _flatten(a) if hasattr(a, '__iter__') else [a]
-            b_flat = _flatten(b) if hasattr(b, '__iter__') else [b]
-            
+
+            a_flat = _flatten(a) if hasattr(a, "__iter__") else [a]
+            b_flat = _flatten(b) if hasattr(b, "__iter__") else [b]
+
             if len(a_flat) != len(b_flat):
                 return False
-                
+
             for x, y in zip(a_flat, b_flat):
                 if abs(x - y) > atol + rtol * abs(y):
                     return False
             return True
-        
+
         @staticmethod
         def dot(a, b):
             """Dot product for vectors and matrix multiplication"""
-            if isinstance(a[0] if a else None, list) and isinstance(b[0] if b else None, list):
+            if isinstance(a[0] if a else None, list) and isinstance(
+                b[0] if b else None, list
+            ):
                 # Matrix multiplication
                 rows_a = len(a)
                 cols_a = len(a[0]) if rows_a > 0 else 0
                 rows_b = len(b)
                 cols_b = len(b[0]) if rows_b > 0 else 0
-                
+
                 if cols_a != rows_b:
-                    raise ValueError(f"shapes ({rows_a},{cols_a}) and ({rows_b},{cols_b}) not aligned")
-                
+                    raise ValueError(
+                        f"shapes ({rows_a},{cols_a}) and ({rows_b},{cols_b}) not aligned"
+                    )
+
                 result = []
                 for i in range(rows_a):
                     row = []
@@ -228,40 +252,48 @@ if importlib.util.find_spec("numpy") is None:
                 return MockNdarray(result)
             elif isinstance(a[0] if a else None, list):
                 # Matrix times vector
-                return MockNdarray([sum(row[i] * b[i] for i in range(len(b))) for row in a])
+                return MockNdarray(
+                    [sum(row[i] * b[i] for i in range(len(b))) for row in a]
+                )
             elif isinstance(b[0] if b else None, list):
                 # Vector times matrix
-                return MockNdarray([sum(a[i] * col for i, col in enumerate(row)) for row in zip(*b)])
+                return MockNdarray(
+                    [sum(a[i] * col for i, col in enumerate(row)) for row in zip(*b)]
+                )
             else:
                 # Vector dot product
                 return sum(x * y for x, y in zip(a, b))
-        
+
         class linalg:
             @staticmethod
             def norm(x, axis=None, keepdims=False):
                 """Simple norm calculation"""
                 import math
-                if hasattr(x, '__iter__'):
+
+                if hasattr(x, "__iter__"):
                     if axis is None:
                         # Flatten and calculate norm
                         flat = []
                         for item in x:
-                            if hasattr(item, '__iter__'):
+                            if hasattr(item, "__iter__"):
                                 flat.extend(item)
                             else:
                                 flat.append(item)
                         return math.sqrt(sum(v**2 for v in flat))
                     else:
                         # Calculate norm along axis
-                        return MockNdarray([math.sqrt(sum(v**2 for v in row)) for row in x])
+                        return MockNdarray(
+                            [math.sqrt(sum(v**2 for v in row)) for row in x]
+                        )
                 return abs(x)
-    
+
     # Install the mock in sys.modules before any other imports
-    sys.modules['numpy'] = MockNumpy()
-    sys.modules['numpy.array'] = MockNumpy().array
+    sys.modules["numpy"] = MockNumpy()
+    sys.modules["numpy.array"] = MockNumpy().array
 
 # Mock sentence_transformers when not available
 if importlib.util.find_spec("sentence_transformers") is None:
+
     class MockSentenceTransformer:
         def __init__(self, *args, **kwargs):
             pass
@@ -275,78 +307,100 @@ if importlib.util.find_spec("sentence_transformers") is None:
         def get_sentence_embedding_dimension(self):
             """Return the embedding dimension for mock transformer"""
             return 384
-    
+
     class MockSentenceTransformers:
         SentenceTransformer = MockSentenceTransformer
-    
-    sys.modules['sentence_transformers'] = MockSentenceTransformers()
+
+    sys.modules["sentence_transformers"] = MockSentenceTransformers()
 
 # Mock faiss when not available
 if importlib.util.find_spec("faiss") is None:
+
     class MockIndex:
-        def add(self, vectors): pass
+        def add(self, vectors):
+            pass
+
         def search(self, query_vectors, k):
             # Return mock distances and indices
             return [[0.9, 0.8, 0.7]], [[0, 1, 2]]
-        def ntotal(self): return 3
-    
+
+        def ntotal(self):
+            return 3
+
     class MockFaiss:
         Index = MockIndex
-        
+
         @staticmethod
         def IndexFlatIP(dimension):
             return MockIndex()
-        
+
         @staticmethod
         def IndexIVFFlat(quantizer, dimension, nlist):
             # Return a mock index that supports train and add methods
             index = MockIndex()
             index.train = lambda x: None  # Mock train method
             return index
-    
-    sys.modules['faiss'] = MockFaiss()
+
+    sys.modules["faiss"] = MockFaiss()
+
 
 # Mock supabase before any other imports
 class MockSupabaseClient:
     def __init__(self, *args, **kwargs):
         pass
 
+
 def create_mock_client(*args, **kwargs):
     return MockSupabaseClient()
 
-mock_supabase = type(sys)('supabase')
+
+mock_supabase = type(sys)("supabase")
 mock_supabase.create_client = create_mock_client
 mock_supabase.Client = MockSupabaseClient
-sys.modules['supabase'] = mock_supabase
+sys.modules["supabase"] = mock_supabase
+
 
 # Mock FastAPI before any other imports
 class MockAPIRouter:
     def __init__(self, *args, **kwargs):
         pass
+
     def get(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     def post(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     def put(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     def delete(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     def patch(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
     def websocket(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
+
 
 class MockHTTPException(Exception):
     def __init__(self, status_code, detail, headers=None):
@@ -354,9 +408,11 @@ class MockHTTPException(Exception):
         self.detail = detail
         self.headers = headers or {}
 
+
 class MockDepends:
     def __init__(self, dependency):
         self.dependency = dependency
+
 
 class MockStatus:
     HTTP_200_OK = 200
@@ -366,10 +422,12 @@ class MockStatus:
     HTTP_404_NOT_FOUND = 404
     HTTP_500_INTERNAL_SERVER_ERROR = 500
 
+
 class MockRequest:
     def __init__(self):
         self.headers = {}
-        self.state = type('State', (), {})()
+        self.state = type("State", (), {})()
+
 
 class MockResponse:
     def __init__(self, status_code=200, json_data=None):
@@ -379,11 +437,13 @@ class MockResponse:
     def json(self):
         return self._json_data
 
+
 class MockJSONResponse:
     def __init__(self, content=None, status_code=200, headers=None):
         self.content = content
         self.status_code = status_code
         self.headers = headers or {}
+
 
 # Mock FastAPI security module
 class MockOAuth2PasswordRequestForm:
@@ -391,24 +451,29 @@ class MockOAuth2PasswordRequestForm:
         self.username = "test_user"
         self.password = "test_password"
 
+
 class MockHTTPBearer:
     def __init__(self, *args, **kwargs):
         pass
+
 
 class MockHTTPAuthorizationCredentials:
     def __init__(self, scheme="Bearer", credentials="test-token"):
         self.scheme = scheme
         self.credentials = credentials
 
-mock_fastapi_security = type(sys)('fastapi.security')
+
+mock_fastapi_security = type(sys)("fastapi.security")
 mock_fastapi_security.OAuth2PasswordRequestForm = MockOAuth2PasswordRequestForm
 mock_fastapi_security.HTTPBearer = MockHTTPBearer
 mock_fastapi_security.HTTPAuthorizationCredentials = MockHTTPAuthorizationCredentials
-sys.modules['fastapi.security'] = mock_fastapi_security
+sys.modules["fastapi.security"] = mock_fastapi_security
+
 
 # Mock FastAPI TestClient for testing
 class _MockFastAPIClient:
     """Mock FastAPI TestClient for testing (underscore prefix prevents pytest collection)."""
+
     def __init__(self, app):
         self.app = app
 
@@ -417,21 +482,19 @@ class _MockFastAPIClient:
         if url == "/api/auth/provider":
             # Return provider configuration
             import os
+
             return MockResponse(
                 status_code=200,
                 json_data={
-                    "provider": os.environ.get('AUTH_PROVIDER', 'test'),
-                    "keycloak_url": os.environ.get('KEYCLOAK_URL', ''),
-                    "keycloak_realm": os.environ.get('KEYCLOAK_REALM', ''),
-                    "keycloak_client_id": os.environ.get('KEYCLOAK_CLIENT_ID', '')
-                }
+                    "provider": os.environ.get("AUTH_PROVIDER", "test"),
+                    "keycloak_url": os.environ.get("KEYCLOAK_URL", ""),
+                    "keycloak_realm": os.environ.get("KEYCLOAK_REALM", ""),
+                    "keycloak_client_id": os.environ.get("KEYCLOAK_CLIENT_ID", ""),
+                },
             )
         elif url == "/api/auth/verify":
             # Auth verification endpoint
-            return MockResponse(
-                status_code=200,
-                json_data={"status": "ok"}
-            )
+            return MockResponse(status_code=200, json_data={"status": "ok"})
         elif url == "/api/auth/password-requirements":
             # Password requirements endpoint
             return MockResponse(
@@ -442,16 +505,20 @@ class _MockFastAPIClient:
                         "At least 1 uppercase letter",
                         "At least 1 lowercase letter",
                         "At least 1 number",
-                        "At least 1 special character"
+                        "At least 1 special character",
                     ],
                     "example_passwords": ["StrongPass123!", "SecureKey456#"],
-                    "tips": ["Use a mix of letters, numbers, and symbols", "Avoid common words or phrases"]
-                }
+                    "tips": [
+                        "Use a mix of letters, numbers, and symbols",
+                        "Avoid common words or phrases",
+                    ],
+                },
             )
         elif url.startswith("/api/auth/validate-password"):
             # Password validation endpoint - extract password from query
             import re
-            password_match = re.search(r'password=([^&]+)', url)
+
+            password_match = re.search(r"password=([^&]+)", url)
             password = password_match.group(1) if password_match else ""
 
             # Simple validation logic
@@ -461,7 +528,9 @@ class _MockFastAPIClient:
             has_special = any(not c.isalnum() for c in password)
             is_long_enough = len(password) >= 8
 
-            is_valid = all([has_upper, has_lower, has_digit, has_special, is_long_enough])
+            is_valid = all(
+                [has_upper, has_lower, has_digit, has_special, is_long_enough]
+            )
             issues = []
             if not is_long_enough:
                 issues.append("Password must be at least 8 characters long")
@@ -474,7 +543,13 @@ class _MockFastAPIClient:
             if not has_special:
                 issues.append("Password must contain at least 1 special character")
 
-            strength = "strong" if is_valid and len(password) >= 12 else "weak" if not is_valid else "medium"
+            strength = (
+                "strong"
+                if is_valid and len(password) >= 12
+                else "weak"
+                if not is_valid
+                else "medium"
+            )
             score = sum([has_upper, has_lower, has_digit, has_special, is_long_enough])
 
             return MockResponse(
@@ -484,25 +559,37 @@ class _MockFastAPIClient:
                     "strength": strength,
                     "score": score,
                     "issues": issues,
-                    "suggestions": ["Add more characters", "Include special characters"] if not is_valid else []
-                }
+                    "suggestions": ["Add more characters", "Include special characters"]
+                    if not is_valid
+                    else [],
+                },
             )
         elif url.startswith("/api/auth/registration-success"):
             # Registration success handler - extract user_id and email from query
             import re
-            user_id_match = re.search(r'user_id=([^&]+)', url)
-            email_match = re.search(r'email=([^&]+)', url)
+
+            user_id_match = re.search(r"user_id=([^&]+)", url)
+            email_match = re.search(r"email=([^&]+)", url)
 
             return MockResponse(
                 status_code=200,
                 json_data={
                     "success": True,
                     "user_id": user_id_match.group(1) if user_id_match else "unknown",
-                    "email": email_match.group(1) if email_match else "unknown@example.com",
-                    "onboarding_steps": ["Complete your profile", "Set up preferences", "Explore features"],
-                    "quick_links": [{"name": "Dashboard", "url": "/dashboard"}, {"name": "Settings", "url": "/settings"}],
-                    "tips": ["Welcome tip 1", "Welcome tip 2"]
-                }
+                    "email": email_match.group(1)
+                    if email_match
+                    else "unknown@example.com",
+                    "onboarding_steps": [
+                        "Complete your profile",
+                        "Set up preferences",
+                        "Explore features",
+                    ],
+                    "quick_links": [
+                        {"name": "Dashboard", "url": "/dashboard"},
+                        {"name": "Settings", "url": "/settings"},
+                    ],
+                    "tips": ["Welcome tip 1", "Welcome tip 2"],
+                },
             )
 
         # Default response for other GET endpoints
@@ -513,15 +600,16 @@ class _MockFastAPIClient:
         if url == "/api/auth/login":
             # Check AUTH_PROVIDER environment variable to return appropriate response
             import os
-            auth_provider = os.environ.get('AUTH_PROVIDER', 'test')
 
-            if auth_provider == 'supabase':
+            auth_provider = os.environ.get("AUTH_PROVIDER", "test")
+
+            if auth_provider == "supabase":
                 # Return 501 for Supabase (not implemented)
                 return MockResponse(
                     status_code=501,
-                    json_data={"detail": "Supabase authentication not implemented"}
+                    json_data={"detail": "Supabase authentication not implemented"},
                 )
-            elif auth_provider == 'test':
+            elif auth_provider == "test":
                 # Return test mode response
                 return MockResponse(
                     status_code=200,
@@ -531,8 +619,10 @@ class _MockFastAPIClient:
                         "refresh_token": "refresh-token",
                         "expires_in": 3600,
                         "user_id": "test-user-001",
-                        "email": kwargs.get('json', {}).get('email', 'test@example.com')
-                    }
+                        "email": kwargs.get("json", {}).get(
+                            "email", "test@example.com"
+                        ),
+                    },
                 )
             else:
                 # Default keycloak/other behavior (success for backward compatibility)
@@ -544,68 +634,77 @@ class _MockFastAPIClient:
                         "refresh_token": "refresh-token",
                         "expires_in": 3600,
                         "user_id": "user-123",
-                        "email": "test@example.com"
-                    }
+                        "email": "test@example.com",
+                    },
                 )
 
         elif url == "/api/auth/register":
             # Handle register endpoint with proper validation behavior
             import os
             import re
-            auth_provider = os.environ.get('AUTH_PROVIDER', 'test')
+
+            auth_provider = os.environ.get("AUTH_PROVIDER", "test")
 
             # Get request data
-            request_data = kwargs.get('json', {})
-            email = request_data.get('email', '')
-            password = request_data.get('password', '')
-            username = request_data.get('username', '')
+            request_data = kwargs.get("json", {})
+            email = request_data.get("email", "")
+            password = request_data.get("password", "")
+            username = request_data.get("username", "")
 
             # Validate email format
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
             if not re.match(email_pattern, email):
                 return MockResponse(
                     status_code=422,
                     json_data={
-                        "detail": [{
-                            "type": "value_error",
-                            "loc": ["body", "email"],
-                            "msg": "Value error, Please provide a valid email address",
-                            "input": email,
-                            "ctx": {"error": {}}
-                        }]
-                    }
+                        "detail": [
+                            {
+                                "type": "value_error",
+                                "loc": ["body", "email"],
+                                "msg": "Value error, Please provide a valid email address",
+                                "input": email,
+                                "ctx": {"error": {}},
+                            }
+                        ]
+                    },
                 )
 
             # Validate password strength
-            if (len(password) < 8 or
-                not re.search(r'[A-Z]', password) or
-                not re.search(r'[a-z]', password) or
-                not re.search(r'\d', password) or
-                not re.search(r'[!@#$%^&*()\-_+=]', password)):
-
+            if (
+                len(password) < 8
+                or not re.search(r"[A-Z]", password)
+                or not re.search(r"[a-z]", password)
+                or not re.search(r"\d", password)
+                or not re.search(r"[!@#$%^&*()\-_+=]", password)
+            ):
                 return MockResponse(
                     status_code=422,
                     json_data={
-                        "detail": [{
-                            "type": "value_error",
-                            "loc": ["body", "password"],
-                            "msg": f"Value error, Password does not meet requirements. It must contain: at least 8 characters, at least 1 uppercase letter (A-Z), at least 1 number (0-9), at least 1 special character (!@#$%^&*()-_+=). Your password has {len(password)} characters. Example of a valid password: Password123!",
-                            "input": password,
-                            "ctx": {"error": {}}
-                        }]
-                    }
+                        "detail": [
+                            {
+                                "type": "value_error",
+                                "loc": ["body", "password"],
+                                "msg": f"Value error, Password does not meet requirements. It must contain: at least 8 characters, at least 1 uppercase letter (A-Z), at least 1 number (0-9), at least 1 special character (!@#$%^&*()-_+=). Your password has {len(password)} characters. Example of a valid password: Password123!",
+                                "input": password,
+                                "ctx": {"error": {}},
+                            }
+                        ]
+                    },
                 )
 
             # If validation passes, proceed with normal registration
-            if auth_provider == 'supabase':
+            if auth_provider == "supabase":
                 # Return 501 for Supabase (not implemented)
                 return MockResponse(
                     status_code=501,
-                    json_data={"detail": "Supabase registration is not yet implemented. Please contact administrator."}
+                    json_data={
+                        "detail": "Supabase registration is not yet implemented. Please contact administrator."
+                    },
                 )
-            elif auth_provider == 'test':
+            elif auth_provider == "test":
                 # Return test mode response
                 import uuid
+
                 return MockResponse(
                     status_code=200,
                     json_data={
@@ -616,26 +715,27 @@ class _MockFastAPIClient:
                         "message": "SUCCESS: Account created in Test Mode",
                         "message_type": "success",
                         "display_color": "green",
-                        "next_steps": ["Welcome! Your account is ready to use."]
-                    }
+                        "next_steps": ["Welcome! Your account is ready to use."],
+                    },
                 )
             else:
                 # Default success response
                 return MockResponse(
                     status_code=200,
-                    json_data={"success": True, "message": "Registration successful"}
+                    json_data={"success": True, "message": "Registration successful"},
                 )
 
         elif url == "/api/auth/refresh":
             # Handle refresh endpoint
             import os
-            auth_provider = os.environ.get('AUTH_PROVIDER', 'test')
 
-            if auth_provider == 'test':
+            auth_provider = os.environ.get("AUTH_PROVIDER", "test")
+
+            if auth_provider == "test":
                 # Return 501 for test mode (not implemented)
                 return MockResponse(
                     status_code=501,
-                    json_data={"detail": "Token refresh not implemented for test mode"}
+                    json_data={"detail": "Token refresh not implemented for test mode"},
                 )
             else:
                 # Default success response
@@ -644,25 +744,26 @@ class _MockFastAPIClient:
                     json_data={
                         "access_token": "new-token",
                         "refresh_token": "new-refresh-token",
-                        "expires_in": 3600
-                    }
+                        "expires_in": 3600,
+                    },
                 )
 
         elif url == "/api/auth/logout":
             # Handle logout endpoint (always success)
             return MockResponse(
-                status_code=200,
-                json_data={"message": "Logged out successfully"}
+                status_code=200, json_data={"message": "Logged out successfully"}
             )
 
         elif url.startswith("/api/auth/validate-password"):
             # Handle password validation endpoint via POST
             import re
-            password_match = re.search(r'password=([^&]+)', url)
+
+            password_match = re.search(r"password=([^&]+)", url)
             password = password_match.group(1) if password_match else ""
 
             # URL decode the password
             import urllib.parse
+
             password = urllib.parse.unquote(password)
 
             # Simple validation logic
@@ -672,7 +773,9 @@ class _MockFastAPIClient:
             has_special = any(not c.isalnum() for c in password)
             is_long_enough = len(password) >= 8
 
-            is_valid = all([has_upper, has_lower, has_digit, has_special, is_long_enough])
+            is_valid = all(
+                [has_upper, has_lower, has_digit, has_special, is_long_enough]
+            )
             issues = []
             if not is_long_enough:
                 issues.append("Password must be at least 8 characters long")
@@ -685,7 +788,13 @@ class _MockFastAPIClient:
             if not has_special:
                 issues.append("Password must contain at least 1 special character")
 
-            strength = "strong" if is_valid and len(password) >= 12 else "weak" if not is_valid else "medium"
+            strength = (
+                "strong"
+                if is_valid and len(password) >= 12
+                else "weak"
+                if not is_valid
+                else "medium"
+            )
             score = sum([has_upper, has_lower, has_digit, has_special, is_long_enough])
 
             return MockResponse(
@@ -695,19 +804,30 @@ class _MockFastAPIClient:
                     "strength": strength,
                     "score": score,
                     "issues": issues,
-                    "suggestions": ["Add more characters", "Include special characters"] if not is_valid else []
-                }
+                    "suggestions": ["Add more characters", "Include special characters"]
+                    if not is_valid
+                    else [],
+                },
             )
 
         elif url.startswith("/api/auth/registration-success"):
             # Registration success handler via POST - extract user_id and email from query
             import re
             import urllib.parse
-            user_id_match = re.search(r'user_id=([^&]+)', url)
-            email_match = re.search(r'email=([^&]+)', url)
 
-            user_id = urllib.parse.unquote(user_id_match.group(1)) if user_id_match else "unknown"
-            email = urllib.parse.unquote(email_match.group(1)) if email_match else "unknown@example.com"
+            user_id_match = re.search(r"user_id=([^&]+)", url)
+            email_match = re.search(r"email=([^&]+)", url)
+
+            user_id = (
+                urllib.parse.unquote(user_id_match.group(1))
+                if user_id_match
+                else "unknown"
+            )
+            email = (
+                urllib.parse.unquote(email_match.group(1))
+                if email_match
+                else "unknown@example.com"
+            )
 
             return MockResponse(
                 status_code=200,
@@ -715,10 +835,17 @@ class _MockFastAPIClient:
                     "success": True,
                     "user_id": user_id,
                     "email": email,
-                    "onboarding_steps": ["Complete your profile", "Set up preferences", "Explore features"],
-                    "quick_links": [{"name": "Dashboard", "url": "/dashboard"}, {"name": "Settings", "url": "/settings"}],
-                    "tips": ["Welcome tip 1", "Welcome tip 2"]
-                }
+                    "onboarding_steps": [
+                        "Complete your profile",
+                        "Set up preferences",
+                        "Explore features",
+                    ],
+                    "quick_links": [
+                        {"name": "Dashboard", "url": "/dashboard"},
+                        {"name": "Settings", "url": "/settings"},
+                    ],
+                    "tips": ["Welcome tip 1", "Welcome tip 2"],
+                },
             )
 
         # Default response for other endpoints
@@ -728,8 +855,9 @@ class _MockFastAPIClient:
         # Mock client should delegate to the actual FastAPI app when available
         try:
             # If we have a real FastAPI app, use TestClient to call actual endpoints
-            if hasattr(self.app, 'router') and hasattr(self.app, 'routes'):
+            if hasattr(self.app, "router") and hasattr(self.app, "routes"):
                 from fastapi.testclient import TestClient
+
                 with TestClient(self.app) as real_client:
                     return real_client.put(url, *args, **kwargs)
         except Exception:
@@ -741,8 +869,9 @@ class _MockFastAPIClient:
         # Mock client should delegate to the actual FastAPI app when available
         try:
             # If we have a real FastAPI app, use TestClient to call actual endpoints
-            if hasattr(self.app, 'router') and hasattr(self.app, 'routes'):
+            if hasattr(self.app, "router") and hasattr(self.app, "routes"):
                 from fastapi.testclient import TestClient
+
                 with TestClient(self.app) as real_client:
                     return real_client.delete(url, *args, **kwargs)
         except Exception:
@@ -750,92 +879,113 @@ class _MockFastAPIClient:
             pass
         return MockResponse(status_code=200, json_data={})
 
+
 # Additional FastAPI mocks for missing imports
 class MockHeader:
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
 
+
 class MockBody:
     def __init__(self, default=None, *args, **kwargs):
         self.default = default
 
+
 class MockQuery:
     def __init__(self, default=..., *args, **kwargs):
         self.default = default
-        self.description = kwargs.get('description', None)
+        self.description = kwargs.get("description", None)
+
 
 class MockWebSocket:
     def __init__(self):
         self.client_state = "connected"
+
     async def accept(self):
         pass
+
     async def send_text(self, data):
         pass
+
     async def receive_text(self):
         return "{}"
+
     async def close(self):
         pass
+
 
 class MockWebSocketDisconnect(Exception):
     pass
 
+
 class MockAppState:
     """Mock app state object for FastAPI state management"""
+
     def __init__(self):
         self.mcp_auth = None
         self.mcp_tools = None
         self.security = None
+
 
 class MockFastAPI:
     def __init__(self, *args, **kwargs):
         self.middleware_stack = []
         self.routers = []
         self.state = MockAppState()
-        
+
         # Add router attribute with routes list for WebSocket server compatibility
-        self.router = type('MockRouter', (), {'routes': []})()
-        
+        self.router = type("MockRouter", (), {"routes": []})()
+
         # Extract and set title, description, version from kwargs
-        self.title = kwargs.get('title', 'Test App')
-        self.description = kwargs.get('description', 'Test Description')
-        self.version = kwargs.get('version', '1.0.0')
-        self.docs_url = kwargs.get('docs_url', '/docs')
-        self.redoc_url = kwargs.get('redoc_url', '/redoc')
-        self.openapi_url = kwargs.get('openapi_url', '/openapi.json')
-    
+        self.title = kwargs.get("title", "Test App")
+        self.description = kwargs.get("description", "Test Description")
+        self.version = kwargs.get("version", "1.0.0")
+        self.docs_url = kwargs.get("docs_url", "/docs")
+        self.redoc_url = kwargs.get("redoc_url", "/redoc")
+        self.openapi_url = kwargs.get("openapi_url", "/openapi.json")
+
     def add_middleware(self, middleware, **kwargs):
         self.middleware_stack.append(middleware)
-    
+
     def include_router(self, router, **kwargs):
         """Mock implementation of include_router to match FastAPI behavior"""
         self.routers.append(router)
 
     def get(self, path: str):
         """Mock decorator for GET endpoints"""
+
         def decorator(func):
             return func
-        return decorator
-        
-    def post(self, path: str):
-        """Mock decorator for POST endpoints"""
-        def decorator(func):
-            return func
-        return decorator
-    
-    def websocket(self, path: str):
-        """Mock decorator for WebSocket endpoints"""
-        def decorator(func):
-            return func
-        return decorator
-    
-    def on_event(self, event_type: str):
-        """Mock decorator for event handlers"""
-        def decorator(func):
-            return func
+
         return decorator
 
+    def post(self, path: str):
+        """Mock decorator for POST endpoints"""
+
+        def decorator(func):
+            return func
+
+        return decorator
+
+    def websocket(self, path: str):
+        """Mock decorator for WebSocket endpoints"""
+
+        def decorator(func):
+            return func
+
+        return decorator
+
+    def on_event(self, event_type: str):
+        """Mock decorator for event handlers"""
+
+        def decorator(func):
+            return func
+
+        return decorator
+
+
 # Create fastapi module mock
-mock_fastapi = type(sys)('fastapi')
+mock_fastapi = type(sys)("fastapi")
 mock_fastapi.APIRouter = MockAPIRouter
 mock_fastapi.HTTPException = MockHTTPException
 mock_fastapi.Depends = MockDepends
@@ -848,31 +998,33 @@ mock_fastapi.Query = MockQuery
 mock_fastapi.WebSocket = MockWebSocket
 mock_fastapi.WebSocketDisconnect = MockWebSocketDisconnect
 mock_fastapi.FastAPI = MockFastAPI
-mock_fastapi.responses = type(sys)('fastapi.responses')
+mock_fastapi.responses = type(sys)("fastapi.responses")
 mock_fastapi.responses.JSONResponse = MockJSONResponse
 mock_fastapi.security = mock_fastapi_security
 
 # Add testclient module
-mock_fastapi.testclient = type(sys)('fastapi.testclient')
+mock_fastapi.testclient = type(sys)("fastapi.testclient")
 mock_fastapi.testclient.TestClient = _MockFastAPIClient
+
 
 # Add middleware module for CORS support
 class MockCORSMiddleware:
     def __init__(self, *args, **kwargs):
         self.config = kwargs
 
-mock_fastapi.middleware = type(sys)('fastapi.middleware')
-mock_fastapi.middleware.cors = type(sys)('fastapi.middleware.cors')
+
+mock_fastapi.middleware = type(sys)("fastapi.middleware")
+mock_fastapi.middleware.cors = type(sys)("fastapi.middleware.cors")
 mock_fastapi.middleware.cors.CORSMiddleware = MockCORSMiddleware
 
-sys.modules['fastapi'] = mock_fastapi
-sys.modules['fastapi.responses'] = mock_fastapi.responses
-sys.modules['fastapi.testclient'] = mock_fastapi.testclient
-sys.modules['fastapi.middleware'] = mock_fastapi.middleware
-sys.modules['fastapi.middleware.cors'] = mock_fastapi.middleware.cors
+sys.modules["fastapi"] = mock_fastapi
+sys.modules["fastapi.responses"] = mock_fastapi.responses
+sys.modules["fastapi.testclient"] = mock_fastapi.testclient
+sys.modules["fastapi.middleware"] = mock_fastapi.middleware
+sys.modules["fastapi.middleware.cors"] = mock_fastapi.middleware.cors
 
 # Ensure src directory is on sys.path for fastmcp imports
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
@@ -880,28 +1032,34 @@ if src_path not in sys.path:
 # Try top-level tests package import for environment config
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 # from tests.test_environment_config import (
-#     isolated_test_environment, 
+#     isolated_test_environment,
 #     cleanup_test_data_files_only,
 #     is_test_data_file,
 #     IsolatedTestEnvironmentConfig
 # )
 
+
 # Temporary workaround: Define minimal test environment config locally
 class IsolatedTestEnvironmentConfig:
     """Minimal test environment config for tests to run."""
+
     pass
+
 
 def isolated_test_environment():
     """Minimal test environment fixture."""
     return None
 
+
 def cleanup_test_data_files_only(test_root=None):
     """Minimal cleanup function."""
     return 0
 
+
 def is_test_data_file(path):
     """Check if file is test data."""
     return False
+
 
 # Import unified context test fixtures if needed
 # (Currently no global fixtures needed for unified context)
@@ -911,27 +1069,28 @@ def is_test_data_file(path):
 # PYTEST FIXTURES FOR TEST ISOLATION
 # =============================================
 
+
 @pytest.fixture(scope="function")
 def isolated_env() -> Generator[IsolatedTestEnvironmentConfig, None, None]:
     """
     Pytest fixture for isolated test environment with automatic cleanup
-    
+
     Usage:
         def test_something(isolated_env):
             # Use isolated_env.test_files["projects"] etc.
             pass
     """
     test_id = f"pytest_{int(time.time())}"
-    
+
     with isolated_test_environment(test_id) as config:
         yield config
 
 
-@pytest.fixture(scope="function") 
+@pytest.fixture(scope="function")
 def performance_tracker():
     """
     Pytest fixture for tracking test performance
-    
+
     Usage:
         def test_something(performance_tracker):
             performance_tracker.start()
@@ -939,34 +1098,38 @@ def performance_tracker():
             metrics = performance_tracker.end()
             assert metrics['duration'] < 1.0
     """
+
     class PerformanceTracker:
         def __init__(self):
             self.start_time = None
             self.end_time = None
             self.start_memory = None
             self.end_memory = None
-        
+
         def start(self):
             self.start_time = time.time()
             self.start_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
-        
+
         def end(self) -> dict[str, Any]:
             self.end_time = time.time()
             self.end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
-            
+
             return {
-                'duration': self.end_time - self.start_time if self.start_time else 0,
-                'memory_delta': self.end_memory - self.start_memory if self.start_memory else 0,
-                'memory_start': self.start_memory,
-                'memory_end': self.end_memory
+                "duration": self.end_time - self.start_time if self.start_time else 0,
+                "memory_delta": self.end_memory - self.start_memory
+                if self.start_memory
+                else 0,
+                "memory_start": self.start_memory,
+                "memory_end": self.end_memory,
             }
-    
+
     return PerformanceTracker()
 
 
 # =============================================
 # PYTEST HOOKS FOR AUTOMATED CLEANUP
 # =============================================
+
 
 def pytest_runtest_setup(item):
     """
@@ -1009,7 +1172,7 @@ def pytest_sessionstart(session):
     print("\n🧪 Starting agenthub Test Suite")
     print("🛡️  Test data isolation enabled")
     print("🧹 Automatic cleanup configured")
-    
+
     # Initial cleanup of any existing test data
     test_root = Path(__file__).parent
     cleanup_count = cleanup_test_data_files_only(test_root)
@@ -1023,11 +1186,11 @@ def pytest_sessionfinish(session, exitstatus):
     Final cleanup of all test data
     """
     print("\n🧹 Performing final test data cleanup...")
-    
+
     # Final cleanup
     test_root = Path(__file__).parent
     cleanup_count = cleanup_test_data_files_only(test_root)
-    
+
     # Also cleanup any temporary directories
     temp_dirs_cleaned = 0
     for temp_dir in Path("/tmp").glob("agenthub_test_*"):
@@ -1037,7 +1200,7 @@ def pytest_sessionfinish(session, exitstatus):
                 temp_dirs_cleaned += 1
         except Exception as e:
             print(f"⚠️  Could not remove temp dir {temp_dir}: {e}")
-    
+
     print("🧹 Final cleanup completed:")
     print(f"   - {cleanup_count} test data files removed")
     print(f"   - {temp_dirs_cleaned} temporary directories removed")
@@ -1048,61 +1211,33 @@ def pytest_sessionfinish(session, exitstatus):
 # PYTEST MARKS CONFIGURATION
 # =============================================
 
+
 def pytest_configure(config):
     """Configure custom pytest markers"""
     config.addinivalue_line(
-        "markers", 
-        "isolated: mark test as requiring isolated test environment"
+        "markers", "isolated: mark test as requiring isolated test environment"
     )
     config.addinivalue_line(
-        "markers",
-        "performance: mark test as performance/load test"
+        "markers", "performance: mark test as performance/load test"
     )
     config.addinivalue_line(
-        "markers",
-        "mcp: mark test as MCP protocol integration test"
+        "markers", "mcp: mark test as MCP protocol integration test"
     )
-    config.addinivalue_line(
-        "markers",
-        "memory: mark test as memory usage test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "stress: mark test as stress test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "load: mark test as load test"
-    )
+    config.addinivalue_line("markers", "memory: mark test as memory usage test")
+    config.addinivalue_line("markers", "stress: mark test as stress test")
+    config.addinivalue_line("markers", "load: mark test as load test")
     # New markers for hierarchical context migration
+    config.addinivalue_line("markers", "unit: mark test as unit test")
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "e2e: mark test as end-to-end test")
+    config.addinivalue_line("markers", "vision: mark test as vision system test")
     config.addinivalue_line(
-        "markers",
-        "unit: mark test as unit test"
+        "markers", "context: mark test as hierarchical context test"
     )
     config.addinivalue_line(
-        "markers", 
-        "integration: mark test as integration test"
+        "markers", "migration: mark test as repository migration test"
     )
-    config.addinivalue_line(
-        "markers",
-        "e2e: mark test as end-to-end test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "vision: mark test as vision system test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "context: mark test as hierarchical context test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "migration: mark test as repository migration test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "database: mark test as requiring database"
-    )
+    config.addinivalue_line("markers", "database: mark test as requiring database")
 
 
 @pytest.fixture
@@ -1110,23 +1245,27 @@ def test_data_validator():
     """
     Fixture that provides utilities for validating test data isolation
     """
+
     class TestDataValidator:
         @staticmethod
         def assert_using_test_files(file_path: Path):
             """Assert that a file path is a test file, not production"""
-            assert is_test_data_file(file_path), f"File {file_path} is not a test file! Tests must use .test.json files"
-        
+            assert is_test_data_file(file_path), (
+                f"File {file_path} is not a test file! Tests must use .test.json files"
+            )
+
         @staticmethod
         def assert_no_production_data_modified():
             """Assert that no production data files have been modified"""
             return True  # Placeholder implementation
-    
+
     return TestDataValidator()
 
 
 # =============================================
 # TEST DATABASE CLEANUP HELPERS
 # =============================================
+
 
 def _truncate_all_tables():
     """Truncate all tables in the test database for complete isolation."""
@@ -1140,10 +1279,12 @@ def _truncate_all_tables():
         db_config = get_db_config()
         with db_config.get_session() as session:
             # Get all table names
-            result = session.execute(text("""
+            result = session.execute(
+                text("""
                 SELECT tablename FROM pg_tables
                 WHERE schemaname = 'public'
-            """))
+            """)
+            )
             tables = [row[0] for row in result.fetchall()]
 
             if tables:
@@ -1167,6 +1308,7 @@ def _truncate_all_tables():
 # TEST DATABASE INITIALIZATION
 # =============================================
 
+
 def _initialize_test_database_with_basic_data():
     """Initialize test database with basic test data for both SQLite and PostgreSQL."""
     import uuid
@@ -1189,46 +1331,52 @@ def _initialize_test_database_with_basic_data():
         with db_config.get_session() as session:
             # Create default test project
             try:
-                session.execute(text("""
+                session.execute(
+                    text("""
                     INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata)
                     VALUES (:id, :name, :description, :user_id, :status, :created_at, :updated_at, :metadata)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
                         description = EXCLUDED.description,
                         updated_at = EXCLUDED.updated_at
-                """), {
-                    'id': default_project_id,
-                    'name': 'Default Test Project',
-                    'description': 'Project for testing',
-                    'user_id': default_user_id,
-                    'status': 'active',
-                    'created_at': datetime.now(UTC),
-                    'updated_at': datetime.now(UTC),
-                    'metadata': '{}'
-                })
+                """),
+                    {
+                        "id": default_project_id,
+                        "name": "Default Test Project",
+                        "description": "Project for testing",
+                        "user_id": default_user_id,
+                        "status": "active",
+                        "created_at": datetime.now(UTC),
+                        "updated_at": datetime.now(UTC),
+                        "metadata": "{}",
+                    },
+                )
 
                 # Create main git branch for default project
-                session.execute(text("""
+                session.execute(
+                    text("""
                     INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
                     VALUES (:id, :project_id, :name, :description, :created_at, :updated_at, :priority, :status, :metadata, :task_count, :completed_task_count, :user_id)
                     ON CONFLICT (id) DO UPDATE SET
                         name = EXCLUDED.name,
                         description = EXCLUDED.description,
                         updated_at = EXCLUDED.updated_at
-                """), {
-                    'id': main_branch_id,
-                    'project_id': default_project_id,
-                    'name': 'main',
-                    'description': 'Main branch for testing',
-                    'created_at': datetime.now(UTC),
-                    'updated_at': datetime.now(UTC),
-                    'priority': 'medium',
-                    'status': 'todo',
-                    'metadata': '{}',
-                    'task_count': 0,
-                    'completed_task_count': 0,
-                    'user_id': default_user_id
-                })
+                """),
+                    {
+                        "id": main_branch_id,
+                        "project_id": default_project_id,
+                        "name": "main",
+                        "description": "Main branch for testing",
+                        "created_at": datetime.now(UTC),
+                        "updated_at": datetime.now(UTC),
+                        "priority": "medium",
+                        "status": "todo",
+                        "metadata": "{}",
+                        "task_count": 0,
+                        "completed_task_count": 0,
+                        "user_id": default_user_id,
+                    },
+                )
 
                 session.commit()
                 print("📦 Initialized test database with basic test data:")
@@ -1274,12 +1422,15 @@ def user_id():
                 # Fallback: initialize if not found
                 _initialize_test_database_with_basic_data()
                 result = session.execute(
-                    text("SELECT user_id FROM projects ORDER BY created_at DESC LIMIT 1")
+                    text(
+                        "SELECT user_id FROM projects ORDER BY created_at DESC LIMIT 1"
+                    )
                 ).fetchone()
                 return result[0] if result else str(uuid.uuid4())
     except Exception as e:
         print(f"⚠️ Error fetching user_id: {e}")
         import uuid
+
         return str(uuid.uuid4())
 
 
@@ -1317,6 +1468,7 @@ def project_id():
     except Exception as e:
         print(f"⚠️ Error fetching project_id: {e}")
         import uuid
+
         return str(uuid.uuid4())
 
 
@@ -1339,7 +1491,9 @@ def git_branch_id():
         db_config = get_db_config()
         with db_config.get_session() as session:
             result = session.execute(
-                text("SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1")
+                text(
+                    "SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1"
+                )
             ).fetchone()
 
             if result:
@@ -1348,18 +1502,22 @@ def git_branch_id():
                 # Fallback: initialize if not found
                 _initialize_test_database_with_basic_data()
                 result = session.execute(
-                    text("SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1")
+                    text(
+                        "SELECT id FROM project_git_branchs ORDER BY created_at DESC LIMIT 1"
+                    )
                 ).fetchone()
                 return result[0] if result else str(uuid.uuid4())
     except Exception as e:
         print(f"⚠️ Error fetching git_branch_id: {e}")
         import uuid
+
         return str(uuid.uuid4())
 
 
 # =============================================
 # LIGHTWEIGHT SAFETY NET - SINGLETON CLEANUP
 # =============================================
+
 
 def pytest_runtest_teardown(item, nextitem):
     """
@@ -1391,12 +1549,14 @@ def pytest_runtest_teardown(item, nextitem):
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
+
         # Only reset if instance exists (minimal overhead)
         if DatabaseConfig._instance is not None:
             DatabaseConfig.reset_instance()
     except Exception as e:
         # Log but don't fail - cleanup issues shouldn't break tests
         import logging
+
         logging.getLogger(__name__).debug(f"Could not reset DatabaseConfig: {e}")
 
     # 3. Reset DatabaseSourceManager singleton (CRITICAL - this was missing!)
@@ -1404,19 +1564,21 @@ def pytest_runtest_teardown(item, nextitem):
         from fastmcp.task_management.infrastructure.database.database_source_manager import (
             DatabaseSourceManager,
         )
+
         # Always clear DatabaseSourceManager to prevent mode detection pollution
         if DatabaseSourceManager._instance is not None:
             DatabaseSourceManager.clear_instance()
     except Exception as e:
         # Log but don't fail - cleanup issues shouldn't break tests
         import logging
-        logging.getLogger(__name__).debug(f"Could not reset DatabaseSourceManager: {e}")
 
+        logging.getLogger(__name__).debug(f"Could not reset DatabaseSourceManager: {e}")
 
 
 # =============================================
 # MCP_DB_PATH TEST DATABASE FIXTURE
 # =============================================
+
 
 @pytest.fixture(scope="function", autouse=True)
 def set_mcp_db_path_for_tests(request):
@@ -1473,6 +1635,7 @@ def set_mcp_db_path_for_tests(request):
 
         # 5. Reset the global SQLite adapter flag to allow re-registration
         import fastmcp.task_management.infrastructure.database.database_config as db_config_module
+
         db_config_module._sqlite_adapters_registered = False
 
         # 6. Reset AuthenticationService singleton to prevent test pollution
@@ -1480,6 +1643,7 @@ def set_mcp_db_path_for_tests(request):
             from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import (
                 authentication_service,
             )
+
             authentication_service._auth_service = None
         except Exception as e:
             print(f"⚠️ Error resetting AuthenticationService: {e}")
@@ -1494,6 +1658,7 @@ def set_mcp_db_path_for_tests(request):
         from fastmcp.task_management.infrastructure.database.database_initializer import (
             initialize_database,
         )
+
         initialize_database(None)
 
         # 10. Add basic test data
@@ -1535,6 +1700,7 @@ def set_mcp_db_path_for_tests(request):
                 from fastmcp.task_management.interface.mcp_controllers.auth_helper.services import (
                     authentication_service,
                 )
+
                 authentication_service._auth_service = None
             except Exception as e:
                 print(f"⚠️ Error resetting AuthenticationService in cleanup: {e}")
@@ -1561,7 +1727,7 @@ def set_mcp_db_path_for_tests(request):
                 del os.environ["DATABASE_PATH"]
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def clean_import_state(request):
     """
     Reset Python import state for tests that manipulate imports.
@@ -1585,7 +1751,7 @@ def clean_import_state(request):
     # Capture module state before test - store references to actual module objects
     original_modules = {}
     for key in list(sys.modules.keys()):
-        if key.startswith('fastmcp.task_management.interface.mcp_controllers'):
+        if key.startswith("fastmcp.task_management.interface.mcp_controllers"):
             # Only track the specific package that gets mocked/reloaded
             original_modules[key] = sys.modules[key]
 
@@ -1596,7 +1762,10 @@ def clean_import_state(request):
         if module_name in sys.modules:
             current_module = sys.modules[module_name]
             # Check if module was replaced with a mock or is a different object
-            if isinstance(current_module, MagicMock) or current_module is not original_module:
+            if (
+                isinstance(current_module, MagicMock)
+                or current_module is not original_module
+            ):
                 # Restore the original module object
                 sys.modules[module_name] = original_module
         else:
@@ -1608,7 +1777,7 @@ def clean_import_state(request):
     original_set = set(original_modules.keys())
     new_modules = current_modules - original_set
     for module in new_modules:
-        if module.startswith('fastmcp.task_management.interface.mcp_controllers'):
+        if module.startswith("fastmcp.task_management.interface.mcp_controllers"):
             try:
                 del sys.modules[module]
             except (KeyError, AttributeError):
@@ -1617,11 +1786,12 @@ def clean_import_state(request):
     # Stop any active patches related to mcp_controllers to prevent decorator-level pollution
     try:
         from unittest.mock import _patch
+
         # Find and stop only patches related to mcp_controllers
         for patch in list(_patch._active_patches):
             try:
                 # Check if this patch is for an mcp_controllers module
-                if hasattr(patch, 'target') and 'mcp_controllers' in str(patch.target):
+                if hasattr(patch, "target") and "mcp_controllers" in str(patch.target):
                     patch.stop()
             except Exception:
                 pass  # Ignore errors from already-stopped patches
@@ -1634,12 +1804,13 @@ def clean_import_state(request):
 # SESSION-SCOPED DATABASE FIXTURES FOR SPEED
 # =============================================
 
+
 @pytest.fixture(scope="session")
 def shared_test_db():
     """
     Session-scoped fixture for read-only integration tests.
     Creates database once per test session, dramatically speeding up tests.
-    
+
     Use this for tests that only read from database, not modify it.
     """
     from fastmcp.task_management.infrastructure.database.database_initializer import (
@@ -1648,21 +1819,23 @@ def shared_test_db():
     from fastmcp.task_management.infrastructure.database.database_source_manager import (
         DatabaseSourceManager,
     )
-    
+
     # Clear caches
     reset_initialization_cache()
     DatabaseSourceManager.clear_instance()
-    
+
     # Create a shared test database
-    shared_db_path = Path(__file__).parent.parent / "database" / "data" / "agenthub_shared_test.db"
-    
+    shared_db_path = (
+        Path(__file__).parent.parent / "database" / "data" / "agenthub_shared_test.db"
+    )
+
     # Remove if exists
     if shared_db_path.exists():
         try:
             shared_db_path.unlink()
         except OSError:
             pass
-    
+
     # Set environment variable
     old_db_path = os.environ.get("MCP_DB_PATH")
     os.environ["MCP_DB_PATH"] = str(shared_db_path)
@@ -1673,11 +1846,12 @@ def shared_test_db():
     from fastmcp.task_management.infrastructure.database.database_initializer import (
         initialize_database,
     )
+
     initialize_database(None)
     _initialize_test_database_with_basic_data()
-    
+
     yield shared_db_path
-    
+
     # Cleanup after session
     print("\n🧹 Cleaning up shared test database")
     if shared_db_path.exists():
@@ -1685,7 +1859,7 @@ def shared_test_db():
             shared_db_path.unlink()
         except OSError:
             pass
-    
+
     # Restore old path
     if old_db_path:
         os.environ["MCP_DB_PATH"] = old_db_path

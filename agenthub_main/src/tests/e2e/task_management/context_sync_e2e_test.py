@@ -39,7 +39,10 @@ def user_id():
 @pytest.fixture(autouse=True)
 def mock_auth_context(user_id):
     """Mock authentication context for all tests in this file."""
-    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_user_id', return_value=user_id):
+    with patch(
+        "fastmcp.auth.middleware.request_context_middleware.get_current_user_id",
+        return_value=user_id,
+    ):
         yield
 
 
@@ -67,17 +70,14 @@ def context_service():
 @pytest.fixture
 def task_facade(task_repository):
     """Create task application facade."""
-    return TaskApplicationFacade(
-        task_repository=task_repository
-    )
+    return TaskApplicationFacade(task_repository=task_repository)
 
 
 @pytest.fixture
 def subtask_facade(task_repository, subtask_repository):
     """Create subtask application facade."""
     return SubtaskApplicationFacade(
-        task_repository=task_repository,
-        subtask_repository=subtask_repository
+        task_repository=task_repository, subtask_repository=subtask_repository
     )
 
 
@@ -106,7 +106,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             priority="medium",
             assignees=["test-agent"],
             estimated_effort="2 hours",
-            user_id=test_user_id
+            user_id=test_user_id,
         )
 
         create_result = task_facade.create_task(create_request)
@@ -128,7 +128,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             title="Updated E2E Task",
             status="in_progress",
             priority="high",
-            details="Added implementation details"
+            details="Added implementation details",
         )
 
         update_result = task_facade.update_task(update_request)
@@ -146,7 +146,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
         complete_result = task_facade.complete_task(
             task_id=task_id,
             completion_summary="Successfully completed all requirements",
-            testing_notes="All tests passing"
+            testing_notes="All tests passing",
         )
 
         assert complete_result["success"] is True
@@ -168,7 +168,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
             title="Multi-Update Task",
             description="E2E test for context sync - Multi-Update Task",
             assignees=["agent-1"],
-            user_id=test_user_id
+            user_id=test_user_id,
         )
 
         result = task_facade.create_task(create_request)
@@ -183,7 +183,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
                 task_id=task_id,
                 status=status,
                 priority=priority,
-                title=f"Update {i+1}"
+                title=f"Update {i + 1}",
             )
             task_facade.update_task(update_request)
 
@@ -193,7 +193,7 @@ class TestCompleteTaskLifecycleKeepsContextSynced:
 
             assert context_data["metadata"]["status"] == status
             assert context_data["metadata"]["priority"] == priority
-            assert context_data["objective"]["title"] == f"Update {i+1}"
+            assert context_data["objective"]["title"] == f"Update {i + 1}"
 
 
 @pytest.mark.asyncio
@@ -210,7 +210,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
             title="Parent Task with Subtasks",
             description="E2E test for context sync - Parent Task with Subtasks",
             assignees=["parent-agent"],
-            user_id=test_user_id
+            user_id=test_user_id,
         )
 
         parent_result = task_facade.create_task(create_request)
@@ -225,9 +225,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
         subtask_ids = []
         for i in range(3):
             subtask_result = subtask_facade.create_subtask(
-                task_id=parent_id,
-                title=f"Subtask {i+1}",
-                assignees=["subtask-agent"]
+                task_id=parent_id, title=f"Subtask {i + 1}", assignees=["subtask-agent"]
             )
             subtask_ids.append(subtask_result["subtask"]["id"])
 
@@ -241,7 +239,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
         subtask_facade.complete_subtask(
             task_id=parent_id,
             subtask_id=subtask_ids[0],
-            completion_summary="First subtask done"
+            completion_summary="First subtask done",
         )
 
         # Verify parent updated: 3 total, 1 completed (Phase 2: direct count fields)
@@ -255,7 +253,7 @@ class TestSubtaskWorkflowUpdatesParentContext:
             subtask_facade.complete_subtask(
                 task_id=parent_id,
                 subtask_id=subtask_id,
-                completion_summary="Subtask completed"
+                completion_summary="Subtask completed",
             )
 
         # Verify parent updated: 3 total, 3 completed (Phase 2: direct count fields)
@@ -278,10 +276,10 @@ class TestMixedOperationsMaintainConsistency:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Complex Workflow Task",
-            description="E2E test for context sync - Complex Workflow Task",
-            assignees=["orchestrator-agent"],
+                description="E2E test for context sync - Complex Workflow Task",
+                assignees=["orchestrator-agent"],
                 priority="high",
-                user_id=test_user_id
+                user_id=test_user_id,
             )
         )
         parent_id = parent_result["task"]["id"]
@@ -289,40 +287,28 @@ class TestMixedOperationsMaintainConsistency:
         # Interleaved operations
         # 1. Create subtask
         subtask1 = subtask_facade.create_subtask(
-            task_id=parent_id,
-            title="Subtask 1",
-            assignees=["agent-1"]
+            task_id=parent_id, title="Subtask 1", assignees=["agent-1"]
         )
 
         # 2. Update parent task
         task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=parent_id,
-                status="in_progress"
-            )
+            UpdateTaskRequest(task_id=parent_id, status="in_progress")
         )
 
         # 3. Create another subtask
         subtask_facade.create_subtask(
-            task_id=parent_id,
-            title="Subtask 2",
-            assignees=["agent-2"]
+            task_id=parent_id, title="Subtask 2", assignees=["agent-2"]
         )
 
         # 4. Complete first subtask
         subtask_facade.complete_subtask(
             task_id=parent_id,
             subtask_id=subtask1["subtask"]["id"],
-            completion_summary="Done"
+            completion_summary="Done",
         )
 
         # 5. Update parent priority
-        task_facade.update_task(
-            UpdateTaskRequest(
-                task_id=parent_id,
-                priority="urgent"
-            )
-        )
+        task_facade.update_task(UpdateTaskRequest(task_id=parent_id, priority="urgent"))
 
         # Final verification
         parent = task_repository.find_by_id(TaskId(parent_id))
@@ -350,9 +336,9 @@ class TestConcurrentOperationsDontCorruptData:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Concurrent Test Task",
-            description="E2E test for context sync - Concurrent Test Task",
-            assignees=["test-agent"],
-                user_id=test_user_id
+                description="E2E test for context sync - Concurrent Test Task",
+                assignees=["test-agent"],
+                user_id=test_user_id,
             )
         )
         parent_id = parent_result["task"]["id"]
@@ -360,9 +346,7 @@ class TestConcurrentOperationsDontCorruptData:
         # Create 10 subtasks concurrently
         async def create_subtask(i):
             return subtask_facade.create_subtask(
-                task_id=parent_id,
-                title=f"Concurrent Subtask {i}",
-                assignees=["agent"]
+                task_id=parent_id, title=f"Concurrent Subtask {i}", assignees=["agent"]
             )
 
         # Run concurrent operations
@@ -389,9 +373,9 @@ class TestConcurrentOperationsDontCorruptData:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Concurrent Update Test",
-            description="E2E test for context sync - Concurrent Update Test",
-            assignees=["test-agent"],
-                user_id=test_user_id
+                description="E2E test for context sync - Concurrent Update Test",
+                assignees=["test-agent"],
+                user_id=test_user_id,
             )
         )
         task_id = result["task"]["id"]
@@ -399,18 +383,12 @@ class TestConcurrentOperationsDontCorruptData:
         # Concurrent updates to different fields
         async def update_status(i):
             return task_facade.update_task(
-                UpdateTaskRequest(
-                    task_id=task_id,
-                    status="in_progress"
-                )
+                UpdateTaskRequest(task_id=task_id, status="in_progress")
             )
 
         async def update_priority(i):
             return task_facade.update_task(
-                UpdateTaskRequest(
-                    task_id=task_id,
-                    priority="high"
-                )
+                UpdateTaskRequest(task_id=task_id, priority="high")
             )
 
         # Run 5 status updates and 5 priority updates concurrently
@@ -430,7 +408,12 @@ class TestConcurrentOperationsDontCorruptData:
 
         # Should have valid status and priority (not corrupted)
         assert context_data["metadata"]["status"] in ["todo", "in_progress", "done"]
-        assert context_data["metadata"]["priority"] in ["low", "medium", "high", "urgent"]
+        assert context_data["metadata"]["priority"] in [
+            "low",
+            "medium",
+            "high",
+            "urgent",
+        ]
 
 
 @pytest.mark.asyncio
@@ -446,9 +429,9 @@ class TestLargeScaleWorkflow:
             CreateTaskRequest(
                 git_branch_id=str(uuid4()),
                 title="Large Task Tree",
-            description="E2E test for context sync - Large Task Tree",
-            assignees=["orchestrator"],
-                user_id=test_user_id
+                description="E2E test for context sync - Large Task Tree",
+                assignees=["orchestrator"],
+                user_id=test_user_id,
             )
         )
         parent_id = parent_result["task"]["id"]
@@ -457,9 +440,7 @@ class TestLargeScaleWorkflow:
         subtask_ids = []
         for i in range(50):
             result = subtask_facade.create_subtask(
-                task_id=parent_id,
-                title=f"Subtask {i+1}",
-                assignees=["worker-agent"]
+                task_id=parent_id, title=f"Subtask {i + 1}", assignees=["worker-agent"]
             )
             subtask_ids.append(result["subtask"]["id"])
 
@@ -470,9 +451,7 @@ class TestLargeScaleWorkflow:
         # Complete 25 subtasks
         for subtask_id in subtask_ids[:25]:
             subtask_facade.complete_subtask(
-                task_id=parent_id,
-                subtask_id=subtask_id,
-                completion_summary="Done"
+                task_id=parent_id, subtask_id=subtask_id, completion_summary="Done"
             )
 
         # Verify counts and progress (Phase 2: direct count fields)

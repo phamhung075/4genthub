@@ -8,7 +8,7 @@ class TestSharedInit:
 
     def test_module_imports(self):
         """Test that shared module can be imported"""
-        module = import_module('fastmcp.shared')
+        module = import_module("fastmcp.shared")
         assert module is not None
 
     def test_exported_items(self):
@@ -21,7 +21,7 @@ class TestSharedInit:
             get_event_bus,
             set_event_bus,
         )
-        
+
         # Verify imports exist
         assert EventBus is not None
         assert DomainEvent is not None
@@ -32,20 +32,20 @@ class TestSharedInit:
 
     def test_all_exports(self):
         """Test __all__ exports match actual exports"""
-        module = import_module('fastmcp.shared')
-        
+        module = import_module("fastmcp.shared")
+
         expected_exports = [
             "EventBus",
             "DomainEvent",
             "EventMetadata",
             "EventPriority",
             "get_event_bus",
-            "set_event_bus"
+            "set_event_bus",
         ]
-        
-        assert hasattr(module, '__all__')
+
+        assert hasattr(module, "__all__")
         assert set(module.__all__) == set(expected_exports)
-        
+
         # Verify each export is available
         for export in expected_exports:
             assert hasattr(module, export), f"Missing export: {export}"
@@ -59,7 +59,7 @@ class TestSharedInit:
         from fastmcp.shared.infrastructure.messaging.event_bus import (
             EventBus as DirectEventBus,
         )
-        
+
         # Verify same class references
         assert EventBus is DirectEventBus
         assert DomainEvent is DirectDomainEvent

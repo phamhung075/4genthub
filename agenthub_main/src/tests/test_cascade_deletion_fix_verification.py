@@ -15,7 +15,7 @@ import uuid
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-sys.path.append(os.path.dirname(__file__) + '/..')
+sys.path.append(os.path.dirname(__file__) + "/..")
 
 from fastmcp.task_management.infrastructure.database.database_config import Base
 from fastmcp.task_management.infrastructure.database.models import (
@@ -46,10 +46,7 @@ def test_sqlalchemy_cascade_deletion():
 
         branch_id = str(uuid.uuid4())
         git_branch = ProjectGitBranch(
-            id=branch_id,
-            project_id=project_id,
-            name="test-branch",
-            user_id="test-user"
+            id=branch_id, project_id=project_id, name="test-branch", user_id="test-user"
         )
         session.add(git_branch)
 
@@ -59,17 +56,14 @@ def test_sqlalchemy_cascade_deletion():
             title="Test Task",
             description="Task for testing cascade",
             git_branch_id=branch_id,
-            user_id="test-user"
+            user_id="test-user",
         )
         session.add(task)
 
         # Create task context
         context_id = str(uuid.uuid4())
         context = TaskContext(
-            id=context_id,
-            task_id=task_id,
-            data={"test": "data"},
-            user_id="test-user"
+            id=context_id, task_id=task_id, data={"test": "data"}, user_id="test-user"
         )
         session.add(context)
         session.commit()
@@ -78,19 +72,25 @@ def test_sqlalchemy_cascade_deletion():
         print(f"✅ Created context: {context_id} -> task_id: {task_id}")
 
         # Verify context exists
-        context_count_before = session.query(TaskContext).filter_by(task_id=task_id).count()
+        context_count_before = (
+            session.query(TaskContext).filter_by(task_id=task_id).count()
+        )
         print(f"📊 Contexts before deletion: {context_count_before}")
 
         # Load task with relationships to trigger cascade
         task_with_relationships = session.query(Task).filter_by(id=task_id).first()
-        print(f"✅ Task has context relationship: {task_with_relationships.task_context is not None}")
+        print(
+            f"✅ Task has context relationship: {task_with_relationships.task_context is not None}"
+        )
 
         # Delete using SQLAlchemy (should trigger relationship cascade)
         session.delete(task_with_relationships)
         session.commit()
 
         # Check if context was deleted via cascade
-        context_count_after = session.query(TaskContext).filter_by(task_id=task_id).count()
+        context_count_after = (
+            session.query(TaskContext).filter_by(task_id=task_id).count()
+        )
         print(f"📊 Contexts after deletion: {context_count_after}")
 
         if context_count_after == 0:
@@ -138,10 +138,7 @@ def test_database_foreign_key_cascade():
 
         branch_id = str(uuid.uuid4())
         git_branch = ProjectGitBranch(
-            id=branch_id,
-            project_id=project_id,
-            name="test-branch",
-            user_id="test-user"
+            id=branch_id, project_id=project_id, name="test-branch", user_id="test-user"
         )
         session.add(git_branch)
 
@@ -151,17 +148,14 @@ def test_database_foreign_key_cascade():
             title="Test Task",
             description="Task for testing FK cascade",
             git_branch_id=branch_id,
-            user_id="test-user"
+            user_id="test-user",
         )
         session.add(task)
 
         # Create task context
         context_id = str(uuid.uuid4())
         context = TaskContext(
-            id=context_id,
-            task_id=task_id,
-            data={"test": "data"},
-            user_id="test-user"
+            id=context_id, task_id=task_id, data={"test": "data"}, user_id="test-user"
         )
         session.add(context)
         session.commit()
@@ -170,7 +164,9 @@ def test_database_foreign_key_cascade():
         print(f"✅ Created context: {context_id} -> task_id: {task_id}")
 
         # Verify context exists
-        context_count_before = session.query(TaskContext).filter_by(task_id=task_id).count()
+        context_count_before = (
+            session.query(TaskContext).filter_by(task_id=task_id).count()
+        )
         print(f"📊 Contexts before deletion: {context_count_before}")
 
         # Delete task directly (should trigger database FK cascade)
@@ -179,7 +175,9 @@ def test_database_foreign_key_cascade():
         session.commit()
 
         # Check if context was deleted via database cascade
-        context_count_after = session.query(TaskContext).filter_by(task_id=task_id).count()
+        context_count_after = (
+            session.query(TaskContext).filter_by(task_id=task_id).count()
+        )
         print(f"📊 Contexts after deletion: {context_count_after}")
 
         if context_count_after == 0:
@@ -195,6 +193,7 @@ def test_database_foreign_key_cascade():
     except Exception as e:
         print(f"❌ Error during test: {e}")
         import traceback
+
         print(f"❌ Traceback: {traceback.format_exc()}")
         return False
     finally:
@@ -228,10 +227,7 @@ def test_repository_manual_deletion_still_works():
 
         branch_id = str(uuid.uuid4())
         git_branch = ProjectGitBranch(
-            id=branch_id,
-            project_id=project_id,
-            name="test-branch",
-            user_id="test-user"
+            id=branch_id, project_id=project_id, name="test-branch", user_id="test-user"
         )
         session.add(git_branch)
 
@@ -241,17 +237,14 @@ def test_repository_manual_deletion_still_works():
             title="Test Task",
             description="Task for testing repository deletion",
             git_branch_id=branch_id,
-            user_id="test-user"
+            user_id="test-user",
         )
         session.add(task)
 
         # Create task context
         context_id = str(uuid.uuid4())
         context = TaskContext(
-            id=context_id,
-            task_id=task_id,
-            data={"test": "data"},
-            user_id="test-user"
+            id=context_id, task_id=task_id, data={"test": "data"}, user_id="test-user"
         )
         session.add(context)
         session.commit()
@@ -260,18 +253,24 @@ def test_repository_manual_deletion_still_works():
         print(f"✅ Created context: {context_id} -> task_id: {task_id}")
 
         # Verify context exists
-        context_count_before = session.query(TaskContext).filter_by(task_id=task_id).count()
+        context_count_before = (
+            session.query(TaskContext).filter_by(task_id=task_id).count()
+        )
         print(f"📊 Contexts before deletion: {context_count_before}")
 
         # Create repository instance with session
-        repo = ORMTaskRepository(session=session, git_branch_id=branch_id, user_id="test-user")
+        repo = ORMTaskRepository(
+            session=session, git_branch_id=branch_id, user_id="test-user"
+        )
 
         # Delete using repository method (includes manual context deletion)
         success = repo.delete_task(task_id)
 
         if success:
             # Check if context was deleted
-            context_count_after = session.query(TaskContext).filter_by(task_id=task_id).count()
+            context_count_after = (
+                session.query(TaskContext).filter_by(task_id=task_id).count()
+            )
             print(f"📊 Contexts after deletion: {context_count_after}")
 
             if context_count_after == 0:
@@ -287,6 +286,7 @@ def test_repository_manual_deletion_still_works():
     except Exception as e:
         print(f"❌ Error during test: {e}")
         import traceback
+
         print(f"❌ Traceback: {traceback.format_exc()}")
         return False
     finally:
@@ -303,7 +303,9 @@ if __name__ == "__main__":
     # Run all tests
     test_results.append(("SQLAlchemy Cascade", test_sqlalchemy_cascade_deletion()))
     test_results.append(("Database FK Cascade", test_database_foreign_key_cascade()))
-    test_results.append(("Repository Manual Deletion", test_repository_manual_deletion_still_works()))
+    test_results.append(
+        ("Repository Manual Deletion", test_repository_manual_deletion_still_works())
+    )
 
     print("\n" + "=" * 70)
     print("TEST RESULTS SUMMARY")
@@ -319,7 +321,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     if all_passed:
         print("🎉 ALL TESTS PASSED - CASCADE DELETION FIXES ARE WORKING!")
-        print("✅ Both SQLAlchemy and database-level cascade deletion are properly configured")
+        print(
+            "✅ Both SQLAlchemy and database-level cascade deletion are properly configured"
+        )
         print("✅ Manual deletion continues to work as defensive programming")
     else:
         print("❌ SOME TESTS FAILED - CASCADE DELETION FIXES NEED INVESTIGATION")

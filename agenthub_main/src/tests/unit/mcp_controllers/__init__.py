@@ -6,7 +6,7 @@ Each controller has its own test file with proper mocking of all dependencies.
 
 Test Files:
 - test_task_mcp_controller.py: Tests for TaskMCPController
-- test_project_mcp_controller.py: Tests for ProjectMCPController  
+- test_project_mcp_controller.py: Tests for ProjectMCPController
 - test_subtask_mcp_controller.py: Tests for SubtaskMCPController
 - test_git_branch_mcp_controller.py: Tests for GitBranchMCPController
 - test_context_mcp_controller.py: Tests for ContextMCPController

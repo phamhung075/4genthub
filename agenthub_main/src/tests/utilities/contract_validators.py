@@ -36,6 +36,7 @@ import pytest
 # FIELD PRESENCE VALIDATORS
 # ============================================================================
 
+
 def assert_has_required_fields(obj: Any, fields: list[str]) -> None:
     """
     Assert that an object has all required fields.
@@ -88,6 +89,7 @@ def assert_has_optional_fields(obj: Any, fields: list[str]) -> list[str]:
 # ============================================================================
 # TYPE VALIDATORS
 # ============================================================================
+
 
 def assert_field_type(obj: Any, field: str, expected_type: type) -> None:
     """
@@ -166,6 +168,7 @@ def assert_list_item_type(obj: Any, field: str, item_type: type) -> None:
 # ============================================================================
 # FORMAT VALIDATORS
 # ============================================================================
+
 
 def validate_uuid_field(obj: Any, field: str) -> None:
     """
@@ -255,9 +258,7 @@ def validate_assignee_format(assignee: str) -> None:
         validate_assignee_format('@coding-agent')
     """
     assert isinstance(assignee, str), "Assignee must be string"
-    assert assignee.startswith("@"), (
-        f"Assignee '{assignee}' must start with @ prefix"
-    )
+    assert assignee.startswith("@"), f"Assignee '{assignee}' must start with @ prefix"
 
 
 def validate_assignees_format(obj: Any, field: str = "assignees") -> None:
@@ -286,11 +287,9 @@ def validate_assignees_format(obj: Any, field: str = "assignees") -> None:
 # ENUM VALIDATORS
 # ============================================================================
 
+
 def assert_valid_enum_value(
-    obj: Any,
-    field: str,
-    valid_values: list[str],
-    enum_name: str | None = None
+    obj: Any, field: str, valid_values: list[str], enum_name: str | None = None
 ) -> None:
     """
     Assert that a field value is one of the valid enum values.
@@ -356,11 +355,9 @@ def validate_task_priority(obj: Any, field: str = "priority") -> None:
 # RANGE VALIDATORS
 # ============================================================================
 
+
 def assert_value_in_range(
-    obj: Any,
-    field: str,
-    min_value: int | float,
-    max_value: int | float
+    obj: Any, field: str, min_value: int | float, max_value: int | float
 ) -> None:
     """
     Assert that a numeric field value is within a specified range.
@@ -407,10 +404,9 @@ def validate_progress_percentage(obj: Any, field: str = "progress_percentage") -
 # COMPLETE CONTRACT VALIDATORS
 # ============================================================================
 
+
 def validate_complete_task_contract(
-    task: Any,
-    expect_project_id: bool = False,
-    expect_subtask_counts: bool = False
+    task: Any, expect_project_id: bool = False, expect_subtask_counts: bool = False
 ) -> None:
     """
     Validate that a task response matches the complete frontend Task contract.
@@ -439,13 +435,16 @@ def validate_complete_task_contract(
     assert_has_required_fields(task, required_fields)
 
     # Validate field types
-    assert_field_types(task, {
-        "id": str,
-        "title": str,
-        "status": str,
-        "priority": str,
-        "git_branch_id": str,
-    })
+    assert_field_types(
+        task,
+        {
+            "id": str,
+            "title": str,
+            "status": str,
+            "priority": str,
+            "git_branch_id": str,
+        },
+    )
 
     # Validate UUID fields
     validate_uuid_field(task, "id")
@@ -457,9 +456,17 @@ def validate_complete_task_contract(
 
     # Validate optional fields if present
     optional_fields = [
-        "description", "assignees", "labels", "created_at", "updated_at",
-        "progress_percentage", "estimated_effort", "due_date", "details",
-        "context_id", "context_data"
+        "description",
+        "assignees",
+        "labels",
+        "created_at",
+        "updated_at",
+        "progress_percentage",
+        "estimated_effort",
+        "due_date",
+        "details",
+        "context_id",
+        "context_data",
     ]
 
     for field in optional_fields:
@@ -521,12 +528,15 @@ def validate_complete_subtask_contract(subtask: Any) -> None:
     assert_has_required_fields(subtask, required_fields)
 
     # Validate field types
-    assert_field_types(subtask, {
-        "id": str,
-        "task_id": str,
-        "title": str,
-        "status": str,
-    })
+    assert_field_types(
+        subtask,
+        {
+            "id": str,
+            "task_id": str,
+            "title": str,
+            "status": str,
+        },
+    )
 
     # Validate UUID fields
     validate_uuid_field(subtask, "id")
@@ -546,7 +556,10 @@ def validate_complete_subtask_contract(subtask: Any) -> None:
         assert_list_item_type(subtask, "assignees", str)
         validate_assignees_format(subtask)
 
-    if hasattr(subtask, "progress_percentage") and subtask.progress_percentage is not None:
+    if (
+        hasattr(subtask, "progress_percentage")
+        and subtask.progress_percentage is not None
+    ):
         validate_progress_percentage(subtask)
 
     if hasattr(subtask, "created_at") and subtask.created_at is not None:
@@ -560,7 +573,10 @@ def validate_complete_subtask_contract(subtask: Any) -> None:
 # NAMING CONVENTION VALIDATORS
 # ============================================================================
 
-def validate_snake_case_fields(obj_dict: dict[str, Any], expected_snake_case: list[str]) -> None:
+
+def validate_snake_case_fields(
+    obj_dict: dict[str, Any], expected_snake_case: list[str]
+) -> None:
     """
     Validate that serialized object uses snake_case for specified fields.
 
@@ -594,13 +610,14 @@ def validate_snake_case_fields(obj_dict: dict[str, Any], expected_snake_case: li
 
 def snake_to_camel(snake_str: str) -> str:
     """Convert snake_case to camelCase."""
-    components = snake_str.split('_')
-    return components[0] + ''.join(x.title() for x in components[1:])
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
 
 
 # ============================================================================
 # WEBSOCKET MESSAGE VALIDATORS
 # ============================================================================
+
 
 def validate_websocket_message_structure(message: dict[str, Any]) -> None:
     """
@@ -624,8 +641,7 @@ def validate_websocket_message_structure(message: dict[str, Any]) -> None:
 
 
 def validate_websocket_task_message(
-    message: dict[str, Any],
-    expect_complete_task: bool = True
+    message: dict[str, Any], expect_complete_task: bool = True
 ) -> None:
     """
     Validate that a WebSocket task message contains complete task data.

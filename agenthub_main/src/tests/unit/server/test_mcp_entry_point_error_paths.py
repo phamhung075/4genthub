@@ -19,16 +19,14 @@ from fastmcp.server.mcp_entry_point import main
 class TestMCPEntryPointErrorPaths:
     """Test error paths and edge cases in MCP entry point initialization"""
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_database_migration_failure_continues_execution(
-        self,
-        mock_migrations,
-        mock_stats,
-        mock_event_handlers,
-        mock_create_server
+        self, mock_migrations, mock_stats, mock_event_handlers, mock_create_server
     ):
         """Test that database migration failures log warning but don't stop server startup
 
@@ -44,7 +42,9 @@ class TestMCPEntryPointErrorPaths:
         mock_create_server.return_value = mock_server
 
         # Setup a mock logger to capture the warning
-        with patch('fastmcp.server.mcp_entry_point.logging.getLogger') as mock_get_logger:
+        with patch(
+            "fastmcp.server.mcp_entry_point.logging.getLogger"
+        ) as mock_get_logger:
             mock_logger = Mock()
             mock_get_logger.return_value = mock_logger
 
@@ -57,8 +57,9 @@ class TestMCPEntryPointErrorPaths:
 
             # Verify warning was logged
             warning_calls = [
-                call for call in mock_logger.warning.call_args_list
-                if 'Could not run database migrations' in str(call)
+                call
+                for call in mock_logger.warning.call_args_list
+                if "Could not run database migrations" in str(call)
             ]
             assert len(warning_calls) > 0, "Expected warning not logged"
 
@@ -67,17 +68,19 @@ class TestMCPEntryPointErrorPaths:
             mock_event_handlers.assert_called_once()
             mock_create_server.assert_called_once()
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_statistics_initialization_failure_continues_execution(
         self,
         mock_migrations,
         mock_stats,
         mock_event_handlers,
         mock_create_server,
-        caplog
+        caplog,
     ):
         """Test that statistics initialization failures log warning but don't stop server
 
@@ -109,17 +112,19 @@ class TestMCPEntryPointErrorPaths:
             mock_event_handlers.assert_called_once()
             mock_create_server.assert_called_once()
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_event_handler_initialization_false_raises_runtime_error(
         self,
         mock_migrations,
         mock_stats,
         mock_event_handlers,
         mock_create_server,
-        caplog
+        caplog,
     ):
         """Test that event handler initialization returning False raises RuntimeError
 
@@ -142,32 +147,30 @@ class TestMCPEntryPointErrorPaths:
 
             # Verify error was logged
             error_logs = [
-                record for record in caplog.records
-                if record.levelname == "ERROR"
+                record for record in caplog.records if record.levelname == "ERROR"
             ]
             assert any(
                 "Domain event handler initialization failed" in record.message
                 for record in error_logs
             )
-            assert any(
-                "SERVER CANNOT START" in record.message
-                for record in error_logs
-            )
+            assert any("SERVER CANNOT START" in record.message for record in error_logs)
 
             # Verify server was NOT created (fail fast)
             mock_create_server.assert_not_called()
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_event_handler_initialization_exception_raises_runtime_error(
         self,
         mock_migrations,
         mock_stats,
         mock_event_handlers,
         mock_create_server,
-        caplog
+        caplog,
     ):
         """Test that event handler initialization exception raises RuntimeError with chain
 
@@ -191,17 +194,13 @@ class TestMCPEntryPointErrorPaths:
 
             # Verify comprehensive error logging
             error_logs = [
-                record for record in caplog.records
-                if record.levelname == "ERROR"
+                record for record in caplog.records if record.levelname == "ERROR"
             ]
             assert any(
                 "CRITICAL: Failed to initialize domain event handlers" in record.message
                 for record in error_logs
             )
-            assert any(
-                "SERVER CANNOT START" in record.message
-                for record in error_logs
-            )
+            assert any("SERVER CANNOT START" in record.message for record in error_logs)
             assert any(
                 "Event handlers are mandatory" in record.message
                 for record in error_logs
@@ -210,17 +209,19 @@ class TestMCPEntryPointErrorPaths:
             # Verify server was NOT created (fail fast)
             mock_create_server.assert_not_called()
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_combined_non_critical_failures_with_critical_success(
         self,
         mock_migrations,
         mock_stats,
         mock_event_handlers,
         mock_create_server,
-        caplog
+        caplog,
     ):
         """Test that multiple non-critical failures don't prevent server start if critical succeeds
 
@@ -242,8 +243,7 @@ class TestMCPEntryPointErrorPaths:
             # Assert
             # Verify both non-critical failures were logged
             warnings = [
-                record for record in caplog.records
-                if record.levelname == "WARNING"
+                record for record in caplog.records if record.levelname == "WARNING"
             ]
             assert any(
                 "Could not run database migrations" in record.message
@@ -257,17 +257,19 @@ class TestMCPEntryPointErrorPaths:
             # Verify server still created (critical component succeeded)
             mock_create_server.assert_called_once()
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_logger_initialization_before_error_handling(
         self,
         mock_migrations,
         mock_stats,
         mock_event_handlers,
         mock_create_server,
-        caplog
+        caplog,
     ):
         """Test that logger is initialized before any error handling occurs
 
@@ -304,16 +306,14 @@ class TestMCPEntryPointErrorPaths:
 class TestMCPEntryPointParameterValidation:
     """Test parameter validation and edge cases"""
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_environment_variable_defaults_applied(
-        self,
-        mock_migrations,
-        mock_stats,
-        mock_event_handlers,
-        mock_create_server
+        self, mock_migrations, mock_stats, mock_event_handlers, mock_create_server
     ):
         """Test that environment variable defaults are properly applied
 
@@ -341,16 +341,14 @@ class TestMCPEntryPointParameterValidation:
 class TestMCPEntryPointDuplicateHandling:
     """Test duplicate operation handling and idempotency"""
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_migrations_called_exactly_once(
-        self,
-        mock_migrations,
-        mock_stats,
-        mock_event_handlers,
-        mock_create_server
+        self, mock_migrations, mock_stats, mock_event_handlers, mock_create_server
     ):
         """Test that database migrations are called exactly once during startup
 
@@ -370,16 +368,14 @@ class TestMCPEntryPointDuplicateHandling:
         # Assert
         assert mock_migrations.call_count == 1
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_statistics_initializer_called_exactly_once(
-        self,
-        mock_migrations,
-        mock_stats,
-        mock_event_handlers,
-        mock_create_server
+        self, mock_migrations, mock_stats, mock_event_handlers, mock_create_server
     ):
         """Test that statistics initializer is called exactly once during startup
 
@@ -399,16 +395,14 @@ class TestMCPEntryPointDuplicateHandling:
         # Assert
         assert mock_stats.call_count == 1
 
-    @patch('fastmcp.server.mcp_entry_point.create_agenthub_server')
-    @patch('fastmcp.task_management.infrastructure.events.initialize_event_handlers')
-    @patch('fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize')
-    @patch('fastmcp.database_migrations.run_startup_migrations')
+    @patch("fastmcp.server.mcp_entry_point.create_agenthub_server")
+    @patch("fastmcp.task_management.infrastructure.events.initialize_event_handlers")
+    @patch(
+        "fastmcp.task_management.application.services.statistics_initializer.StatisticsInitializer.initialize"
+    )
+    @patch("fastmcp.database_migrations.run_startup_migrations")
     def test_event_handlers_called_exactly_once(
-        self,
-        mock_migrations,
-        mock_stats,
-        mock_event_handlers,
-        mock_create_server
+        self, mock_migrations, mock_stats, mock_event_handlers, mock_create_server
     ):
         """Test that event handlers are initialized exactly once during startup
 

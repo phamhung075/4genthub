@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 # MOCK BROWSER CONTEXT - Reused from customization tests
 # ============================================================================
 
+
 class MockBrowserContext:
     """Mock browser context for simulating user interactions"""
 
@@ -92,15 +93,13 @@ class MockBrowserContext:
 # E2E TEST SUITE: AGENT SHARING COMPLETE WORKFLOW
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestAgentSharingE2EWorkflow:
     """Complete E2E test suite for agent sharing and import workflow"""
 
     async def test_complete_sharing_and_import_workflow(
-        self,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_template, agent_management_facade, db_session
     ):
         """
         Test COMPLETE sharing and import workflow:
@@ -128,7 +127,6 @@ class TestAgentSharingE2EWorkflow:
         logger.info(f"User B ID: {user_b_id.value}")
         logger.info("=" * 80)
 
-
         # ========================================================================
         # STEP 1: USER A - Create and Customize Agent
         # ========================================================================
@@ -141,7 +139,7 @@ class TestAgentSharingE2EWorkflow:
         instance_a = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_a_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         assert instance_a is not None
@@ -164,11 +162,10 @@ class TestAgentSharingE2EWorkflow:
             agent_management_facade.update_configuration,
             user_id=user_a_id,
             instance_id=instance_a.id,
-            instructions_markdown=custom_instructions
+            instructions_markdown=custom_instructions,
         )
 
         logger.info("✅ User A customized agent configuration")
-
 
         # ========================================================================
         # STEP 2: USER A - Share Agent (Generate Share Token)
@@ -186,7 +183,7 @@ class TestAgentSharingE2EWorkflow:
         share_result = await asyncio.to_thread(
             agent_management_facade.share_agent,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         assert share_result is not None
@@ -205,7 +202,6 @@ class TestAgentSharingE2EWorkflow:
 
         logger.info("✅ User A copied share URL to clipboard")
 
-
         # ========================================================================
         # STEP 3: USER B - Open Share Link and Preview
         # ========================================================================
@@ -220,19 +216,21 @@ class TestAgentSharingE2EWorkflow:
 
         # Simulate API call to GET /api/v2/marketplace/agents/{share_token}
         preview = await asyncio.to_thread(
-            agent_management_facade.get_shared_agent_preview,
-            share_token=share_token
+            agent_management_facade.get_shared_agent_preview, share_token=share_token
         )
 
         assert preview is not None
         assert preview["agent_name"] is not None
         assert preview["configuration"] is not None
         assert "creator_display_name" in preview
-        assert "MY CUSTOM AGENT FOR SHARING" in preview["configuration"].get("instructions", "")
+        assert "MY CUSTOM AGENT FOR SHARING" in preview["configuration"].get(
+            "instructions", ""
+        )
 
         logger.info(f"✅ User B previewed agent: {preview['agent_name']}")
-        logger.info(f"✅ Creator attribution: {preview.get('creator_display_name', 'N/A')}")
-
+        logger.info(
+            f"✅ Creator attribution: {preview.get('creator_display_name', 'N/A')}"
+        )
 
         # ========================================================================
         # STEP 4: USER B - Import Agent
@@ -249,7 +247,7 @@ class TestAgentSharingE2EWorkflow:
         import_result = await asyncio.to_thread(
             agent_management_facade.import_agent,
             importer_user_id=user_b_id,
-            share_token=share_token
+            share_token=share_token,
         )
 
         assert import_result is not None
@@ -260,7 +258,6 @@ class TestAgentSharingE2EWorkflow:
 
         logger.info(f"✅ Agent imported successfully: {imported_instance.id}")
         logger.info(f"✅ Import history ID: {import_result['import_history_id']}")
-
 
         # ========================================================================
         # STEP 5: VERIFY - Import Successful with Correct Data
@@ -275,7 +272,9 @@ class TestAgentSharingE2EWorkflow:
         logger.info("✅ Instance correctly assigned to User B")
 
         # Verify configuration was copied
-        assert "MY CUSTOM AGENT FOR SHARING" in imported_instance.configuration.get("instructions", "")
+        assert "MY CUSTOM AGENT FOR SHARING" in imported_instance.configuration.get(
+            "instructions", ""
+        )
         logger.info("✅ Configuration correctly copied")
 
         # Verify it's marked as customized
@@ -284,12 +283,13 @@ class TestAgentSharingE2EWorkflow:
 
         # Verify original creator attribution
         assert imported_instance.original_creator_id is not None
-        logger.info(f"✅ Original creator tracked: {imported_instance.original_creator_id}")
+        logger.info(
+            f"✅ Original creator tracked: {imported_instance.original_creator_id}"
+        )
 
         # Verify User B can see it in their agent list
         user_b_instances = await asyncio.to_thread(
-            agent_management_facade.list_user_instances,
-            user_id=user_b_id
+            agent_management_facade.list_user_instances, user_id=user_b_id
         )
 
         found = any(inst.id == imported_instance.id for inst in user_b_instances)
@@ -300,12 +300,8 @@ class TestAgentSharingE2EWorkflow:
         logger.info("SHARING AND IMPORT E2E TEST COMPLETE - ALL STEPS PASSED")
         logger.info("=" * 80)
 
-
     async def test_name_collision_handling(
-        self,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_template, agent_management_facade, db_session
     ):
         """
         Test name collision handling when importing:
@@ -324,13 +320,13 @@ class TestAgentSharingE2EWorkflow:
         instance_a = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_a_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         share_result = await asyncio.to_thread(
             agent_management_facade.share_agent,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         share_token = share_result["share_token"]
@@ -340,7 +336,7 @@ class TestAgentSharingE2EWorkflow:
         existing_instance_b = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_b_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         original_name = existing_instance_b.agent_name
@@ -350,7 +346,7 @@ class TestAgentSharingE2EWorkflow:
         import_result = await asyncio.to_thread(
             agent_management_facade.import_agent,
             importer_user_id=user_b_id,
-            share_token=share_token
+            share_token=share_token,
         )
 
         imported_instance = import_result["instance"]
@@ -363,12 +359,8 @@ class TestAgentSharingE2EWorkflow:
         logger.info(f"   Original name: {original_name}")
         logger.info(f"   Imported name: {imported_instance.agent_name}")
 
-
     async def test_public_private_visibility_toggling(
-        self,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_template, agent_management_facade, db_session
     ):
         """
         Test public/private visibility toggling:
@@ -388,7 +380,7 @@ class TestAgentSharingE2EWorkflow:
         instance_a = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_a_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         # Initially private
@@ -399,7 +391,7 @@ class TestAgentSharingE2EWorkflow:
         share_result = await asyncio.to_thread(
             agent_management_facade.share_agent,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         share_token = share_result["share_token"]
@@ -409,7 +401,7 @@ class TestAgentSharingE2EWorkflow:
         shared_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         assert shared_instance.visibility == "public"
@@ -420,7 +412,7 @@ class TestAgentSharingE2EWorkflow:
         import_result = await asyncio.to_thread(
             agent_management_facade.import_agent,
             importer_user_id=user_b_id,
-            share_token=share_token
+            share_token=share_token,
         )
 
         imported_instance_id = import_result["instance"].id
@@ -430,7 +422,7 @@ class TestAgentSharingE2EWorkflow:
         await asyncio.to_thread(
             agent_management_facade.unshare_agent,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         # Refresh instance
@@ -438,7 +430,7 @@ class TestAgentSharingE2EWorkflow:
         unshared_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         assert unshared_instance.visibility == "private"
@@ -449,7 +441,7 @@ class TestAgentSharingE2EWorkflow:
         user_b_instance = await asyncio.to_thread(
             agent_management_facade.get_instance_details,
             user_id=user_b_id,
-            instance_id=imported_instance_id
+            instance_id=imported_instance_id,
         )
 
         assert user_b_instance is not None
@@ -463,10 +455,13 @@ class TestAgentSharingE2EWorkflow:
             await asyncio.to_thread(
                 agent_management_facade.import_agent,
                 importer_user_id=user_c_id,
-                share_token=share_token  # Revoked token
+                share_token=share_token,  # Revoked token
             )
 
-        assert "not found" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
+        assert (
+            "not found" in str(exc_info.value).lower()
+            or "invalid" in str(exc_info.value).lower()
+        )
         logger.info("✅ Revoked token cannot be used for new imports")
 
 
@@ -474,15 +469,13 @@ class TestAgentSharingE2EWorkflow:
 # E2E TEST SUITE: MARKETPLACE BROWSING
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestMarketplaceBrowsingE2E:
     """Test marketplace browsing and discovery features"""
 
     async def test_browse_public_marketplace(
-        self,
-        test_template,
-        agent_management_facade,
-        db_session
+        self, test_template, agent_management_facade, db_session
     ):
         """
         Test marketplace browsing:
@@ -504,7 +497,7 @@ class TestMarketplaceBrowsingE2E:
             instance = await asyncio.to_thread(
                 agent_management_facade.get_or_create_instance,
                 user_id=user_id,
-                template_slug=test_template.slug
+                template_slug=test_template.slug,
             )
 
             # Customize with unique content
@@ -512,28 +505,29 @@ class TestMarketplaceBrowsingE2E:
                 agent_management_facade.update_configuration,
                 user_id=user_id,
                 instance_id=instance.id,
-                instructions_markdown=f"Shared agent #{i+1} from user {user_id.value}"
+                instructions_markdown=f"Shared agent #{i + 1} from user {user_id.value}",
             )
 
             # Share it
             share_result = await asyncio.to_thread(
                 agent_management_facade.share_agent,
                 user_id=user_id,
-                instance_id=instance.id
+                instance_id=instance.id,
             )
 
-            shared_instances.append({
-                "instance_id": instance.id,
-                "user_id": user_id,
-                "share_token": share_result["share_token"]
-            })
+            shared_instances.append(
+                {
+                    "instance_id": instance.id,
+                    "user_id": user_id,
+                    "share_token": share_result["share_token"],
+                }
+            )
 
-            logger.info(f"✅ User {i+1} shared agent")
+            logger.info(f"✅ User {i + 1} shared agent")
 
         # Browse marketplace
         marketplace_agents = await asyncio.to_thread(
-            agent_management_facade.browse_marketplace,
-            filters=None
+            agent_management_facade.browse_marketplace, filters=None
         )
 
         assert marketplace_agents is not None
@@ -553,14 +547,13 @@ class TestMarketplaceBrowsingE2E:
 # E2E TEST SUITE: EDGE CASES
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestSharingImportE2EEdgeCases:
     """Test edge cases and error scenarios"""
 
     async def test_import_own_shared_agent(
-        self,
-        test_template,
-        agent_management_facade
+        self, test_template, agent_management_facade
     ):
         """Test that user cannot import their own shared agent"""
 
@@ -570,13 +563,13 @@ class TestSharingImportE2EEdgeCases:
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         share_result = await asyncio.to_thread(
             agent_management_facade.share_agent,
             user_id=user_id,
-            instance_id=instance.id
+            instance_id=instance.id,
         )
 
         share_token = share_result["share_token"]
@@ -586,18 +579,16 @@ class TestSharingImportE2EEdgeCases:
             await asyncio.to_thread(
                 agent_management_facade.import_agent,
                 importer_user_id=user_id,  # Same user!
-                share_token=share_token
+                share_token=share_token,
             )
 
-        assert "cannot import your own" in str(exc_info.value).lower() or "already own" in str(exc_info.value).lower()
+        assert (
+            "cannot import your own" in str(exc_info.value).lower()
+            or "already own" in str(exc_info.value).lower()
+        )
         logger.info("✅ User correctly prevented from importing own agent")
 
-
-    async def test_import_multiple_times(
-        self,
-        test_template,
-        agent_management_facade
-    ):
+    async def test_import_multiple_times(self, test_template, agent_management_facade):
         """Test importing the same agent multiple times"""
 
         user_a_id = UserId(uuid4())
@@ -607,13 +598,13 @@ class TestSharingImportE2EEdgeCases:
         instance_a = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,
             user_id=user_a_id,
-            template_slug=test_template.slug
+            template_slug=test_template.slug,
         )
 
         share_result = await asyncio.to_thread(
             agent_management_facade.share_agent,
             user_id=user_a_id,
-            instance_id=instance_a.id
+            instance_id=instance_a.id,
         )
 
         share_token = share_result["share_token"]
@@ -622,7 +613,7 @@ class TestSharingImportE2EEdgeCases:
         import_1 = await asyncio.to_thread(
             agent_management_facade.import_agent,
             importer_user_id=user_b_id,
-            share_token=share_token
+            share_token=share_token,
         )
 
         # User B tries to import again (should either succeed with new copy or prevent duplicate)
@@ -630,7 +621,7 @@ class TestSharingImportE2EEdgeCases:
             import_2 = await asyncio.to_thread(
                 agent_management_facade.import_agent,
                 importer_user_id=user_b_id,
-                share_token=share_token
+                share_token=share_token,
             )
 
             # If allowed, should create different instance with collision-resolved name

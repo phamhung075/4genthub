@@ -56,14 +56,11 @@ def test_template(db_session):
             "instructions": "Original instructions for testing",
             "rules": ["Original rule 1", "Original rule 2"],
             "capabilities": ["capability1", "capability2"],
-            "output_format": "Original output format"
+            "output_format": "Original output format",
         },
-        metadata={
-            "description": "Agent for E2E testing",
-            "author": "Test Suite"
-        },
+        metadata={"description": "Agent for E2E testing", "author": "Test Suite"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
     template_repo.create(template)
@@ -94,7 +91,7 @@ def agent_management_facade(db_session):
         instance_repository=instance_repo,
         instantiation_service=instantiation_service,
         customization_service=customization_service,
-        sharing_service=sharing_service
+        sharing_service=sharing_service,
     )
 
     return facade

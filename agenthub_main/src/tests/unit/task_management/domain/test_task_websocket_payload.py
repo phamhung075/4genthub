@@ -28,16 +28,16 @@ class TestTaskDeletePayloadConversion:
         """Test conversion when task_data_snapshot has all required fields"""
         # Arrange: Full task snapshot from entity.to_dict()
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Implement authentication system',
-            'description': 'Add JWT auth with refresh tokens',
-            'status': 'in_progress',
-            'priority': 'high',
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f',
-            'assignees': ['coding-agent'],
-            'labels': ['backend', 'security'],
-            'created_at': '2025-11-06T19:00:00Z',
-            'updated_at': '2025-11-06T19:05:00Z'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Implement authentication system",
+            "description": "Add JWT auth with refresh tokens",
+            "status": "in_progress",
+            "priority": "high",
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
+            "assignees": ["coding-agent"],
+            "labels": ["backend", "security"],
+            "created_at": "2025-11-06T19:00:00Z",
+            "updated_at": "2025-11-06T19:05:00Z",
         }
 
         # Act: Convert using helper function
@@ -45,78 +45,76 @@ class TestTaskDeletePayloadConversion:
 
         # Assert: Payload has required fields
         assert isinstance(payload, TaskDeletePayload)
-        assert payload.id == '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        assert payload.title == 'Implement authentication system'
-        assert payload.git_branch_id == 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+        assert payload.id == "381291d6-fa7f-4e60-80c5-0d1b86664722"
+        assert payload.title == "Implement authentication system"
+        assert payload.git_branch_id == "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f"
 
     def test_convert_task_snapshot_minimal_fields(self):
         """Test conversion with only required fields (id)"""
         # Arrange: Minimal snapshot (e.g., from fallback scenario)
-        task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        }
+        task_snapshot = {"id": "381291d6-fa7f-4e60-80c5-0d1b86664722"}
 
         # Act: Convert with fallback title
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Uses fallback for missing title
-        assert payload.id == '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        assert payload.title == 'Task 381291d6'  # Fallback pattern
+        assert payload.id == "381291d6-fa7f-4e60-80c5-0d1b86664722"
+        assert payload.title == "Task 381291d6"  # Fallback pattern
         assert payload.git_branch_id is None  # Optional field
 
     def test_convert_task_snapshot_missing_git_branch_id(self):
         """Test conversion when git_branch_id is missing"""
         # Arrange: Task without git_branch_id
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Orphaned task',
-            'status': 'todo'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Orphaned task",
+            "status": "todo",
         }
 
         # Act
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: git_branch_id is None (optional field)
-        assert payload.id == '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        assert payload.title == 'Orphaned task'
+        assert payload.id == "381291d6-fa7f-4e60-80c5-0d1b86664722"
+        assert payload.title == "Orphaned task"
         assert payload.git_branch_id is None
 
     def test_convert_task_snapshot_empty_title_uses_fallback(self):
         """Test that empty title triggers fallback"""
         # Arrange: Empty title string
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': '',  # Empty string
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "",  # Empty string
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
         }
 
         # Act
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Uses fallback title
-        assert payload.title == 'Task 381291d6'
+        assert payload.title == "Task 381291d6"
 
     def test_convert_task_snapshot_none_title_uses_fallback(self):
         """Test that None title triggers fallback"""
         # Arrange: None title
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': None,
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": None,
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
         }
 
         # Act
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Uses fallback title
-        assert payload.title == 'Task 381291d6'
+        assert payload.title == "Task 381291d6"
 
     def test_payload_validation_rejects_empty_id(self):
         """Test that Pydantic validation rejects empty task ID"""
         # Arrange: Invalid snapshot with empty ID
         task_snapshot = {
-            'id': '',  # Invalid: empty string
-            'title': 'Some task'
+            "id": "",  # Invalid: empty string
+            "title": "Some task",
         }
 
         # Act & Assert: Should raise ValidationError
@@ -127,8 +125,8 @@ class TestTaskDeletePayloadConversion:
         """Test that Pydantic validation rejects whitespace-only ID"""
         # Arrange
         task_snapshot = {
-            'id': '   ',  # Invalid: whitespace only
-            'title': 'Some task'
+            "id": "   ",  # Invalid: whitespace only
+            "title": "Some task",
         }
 
         # Act & Assert
@@ -143,18 +141,18 @@ class TestTaskDeletePayloadConversion:
         # Act & Assert: Direct model instantiation with empty title
         with pytest.raises(ValueError, match="Task title cannot be empty"):
             TaskDeletePayload(
-                id='381291d6-fa7f-4e60-80c5-0d1b86664722',
-                title='',  # Empty after all fallbacks
-                git_branch_id=None
+                id="381291d6-fa7f-4e60-80c5-0d1b86664722",
+                title="",  # Empty after all fallbacks
+                git_branch_id=None,
             )
 
     def test_payload_dict_has_correct_structure(self):
         """Test that converted payload can be serialized to dict"""
         # Arrange
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Test task',
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Test task",
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
         }
 
         # Act
@@ -162,9 +160,9 @@ class TestTaskDeletePayloadConversion:
         payload_dict = payload.model_dump()
 
         # Assert: Dict has expected structure
-        assert payload_dict['id'] == '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        assert payload_dict['title'] == 'Test task'
-        assert payload_dict['git_branch_id'] == 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+        assert payload_dict["id"] == "381291d6-fa7f-4e60-80c5-0d1b86664722"
+        assert payload_dict["title"] == "Test task"
+        assert payload_dict["git_branch_id"] == "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f"
         assert len(payload_dict) == 3  # Only 3 fields
 
 
@@ -175,9 +173,9 @@ class TestTaskDeletePayloadLogging:
         """Test that successful conversion is logged"""
         # Arrange
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Test task',
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Test task",
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
         }
 
         # Act
@@ -191,16 +189,14 @@ class TestTaskDeletePayloadLogging:
     def test_logging_on_fallback_title_usage(self, caplog):
         """Test that fallback title usage is logged"""
         # Arrange: Missing title
-        task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        }
+        task_snapshot = {"id": "381291d6-fa7f-4e60-80c5-0d1b86664722"}
 
         # Act
         with caplog.at_level(logging.INFO):
             payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Fallback was used
-        assert payload.title == 'Task 381291d6'
+        assert payload.title == "Task 381291d6"
         # Note: Actual logging will be in facade implementation
 
 
@@ -211,9 +207,9 @@ class TestTaskDeletePayloadIntegration:
         """Test that payload can be used in WebSocket notification service"""
         # Arrange
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Test task for WebSocket',
-            'git_branch_id': 'cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Test task for WebSocket",
+            "git_branch_id": "cd482b1b-8d5f-4e60-9c3a-1a2b3c4d5e6f",
         }
 
         # Act: Convert to payload
@@ -227,39 +223,39 @@ class TestTaskDeletePayloadIntegration:
         # Can be serialized to dict for WebSocket transmission
         payload_dict = payload.model_dump()
         assert isinstance(payload_dict, dict)
-        assert 'id' in payload_dict
-        assert 'title' in payload_dict
+        assert "id" in payload_dict
+        assert "title" in payload_dict
 
     def test_payload_preserves_git_branch_id_for_cache_invalidation(self):
         """Test that git_branch_id is preserved for React Query cache invalidation"""
         # Arrange: Task with parent branch
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Child task',
-            'git_branch_id': 'parent-branch-uuid'
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Child task",
+            "git_branch_id": "parent-branch-uuid",
         }
 
         # Act
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Branch ID preserved for cache invalidation
-        assert payload.git_branch_id == 'parent-branch-uuid'
+        assert payload.git_branch_id == "parent-branch-uuid"
 
     def test_payload_handles_orphaned_task_without_branch(self):
         """Test that orphaned tasks (no git_branch_id) are handled gracefully"""
         # Arrange: Orphaned task
         task_snapshot = {
-            'id': '381291d6-fa7f-4e60-80c5-0d1b86664722',
-            'title': 'Orphaned task',
-            'git_branch_id': None
+            "id": "381291d6-fa7f-4e60-80c5-0d1b86664722",
+            "title": "Orphaned task",
+            "git_branch_id": None,
         }
 
         # Act
         payload = convert_task_delete_legacy(task_snapshot)
 
         # Assert: Payload valid even without branch ID
-        assert payload.id == '381291d6-fa7f-4e60-80c5-0d1b86664722'
-        assert payload.title == 'Orphaned task'
+        assert payload.id == "381291d6-fa7f-4e60-80c5-0d1b86664722"
+        assert payload.title == "Orphaned task"
         assert payload.git_branch_id is None  # No parent branch
 
 
@@ -283,29 +279,30 @@ class TestFallbackPattern:
         # The facade should create a fallback task_context when pre-fetch fails
 
         # Arrange: Minimal task info for fallback
-        task_id = '381291d6-fa7f-4e60-80c5-0d1b86664722'
+        task_id = "381291d6-fa7f-4e60-80c5-0d1b86664722"
 
         # Expected fallback structure (from facade code)
         fallback_context = {
             "task_title": f"Task {task_id[:8]}",
             "parent_branch_id": None,
             "parent_branch_title": "Unknown Branch",
-            "task_user_id": None
+            "task_user_id": None,
         }
 
         # Assert: Fallback provides minimal required info
-        assert fallback_context['task_title'] == 'Task 381291d6'
-        assert fallback_context['parent_branch_id'] is None
+        assert fallback_context["task_title"] == "Task 381291d6"
+        assert fallback_context["parent_branch_id"] is None
 
 
 # Test helper to verify convert_task_delete_legacy matches expected signature
 def test_convert_function_signature():
     """Verify convert_task_delete_legacy has expected signature"""
     import inspect
+
     sig = inspect.signature(convert_task_delete_legacy)
 
     # Should accept task_snapshot dict
-    assert 'task_snapshot' in sig.parameters
+    assert "task_snapshot" in sig.parameters
 
     # Should return TaskDeletePayload
     # This is validated by the function's return type annotation

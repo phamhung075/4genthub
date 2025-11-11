@@ -40,8 +40,10 @@ class TestContextLevel:
         """Test that from_string raises ValueError for invalid values."""
         with pytest.raises(ValueError, match="Invalid context level: invalid"):
             ContextLevel.from_string("invalid")
-        
-        with pytest.raises(ValueError, match="Valid levels are: global, project, branch, task"):
+
+        with pytest.raises(
+            ValueError, match="Valid levels are: global, project, branch, task"
+        ):
             ContextLevel.from_string("unknown")
 
     def test_get_parent_level_hierarchy(self):
@@ -56,12 +58,17 @@ class TestContextLevel:
         """Test traversing the full hierarchy from task to global."""
         levels = []
         current = ContextLevel.TASK
-        
+
         while current is not None:
             levels.append(current)
             current = current.get_parent_level()
-        
-        expected = [ContextLevel.TASK, ContextLevel.BRANCH, ContextLevel.PROJECT, ContextLevel.GLOBAL]
+
+        expected = [
+            ContextLevel.TASK,
+            ContextLevel.BRANCH,
+            ContextLevel.PROJECT,
+            ContextLevel.GLOBAL,
+        ]
         assert levels == expected
 
     def test_enum_comparison(self):
@@ -69,7 +76,7 @@ class TestContextLevel:
         # Enums support identity comparison
         assert ContextLevel.GLOBAL == ContextLevel.GLOBAL
         assert ContextLevel.PROJECT != ContextLevel.BRANCH
-        
+
         # Test with from_string
         assert ContextLevel.from_string("task") == ContextLevel.TASK
         assert ContextLevel.from_string("global") != ContextLevel.PROJECT
@@ -90,13 +97,14 @@ class TestContextLevel:
         assert "project" in [level.value for level in ContextLevel]
         assert "branch" in [level.value for level in ContextLevel]
         assert "task" in [level.value for level in ContextLevel]
-        
+
         # Invalid values
         assert "invalid" not in [level.value for level in ContextLevel]
         assert "unknown" not in [level.value for level in ContextLevel]
 
     def test_context_level_ordering_consistency(self):
         """Test that context level ordering is consistent with hierarchy."""
+
         # Create a mapping of levels to their hierarchy depth
         def get_depth(level: ContextLevel) -> int:
             depth = 0
@@ -105,9 +113,9 @@ class TestContextLevel:
                 depth += 1
                 current = current.get_parent_level()
             return depth
-        
+
         depths = {level: get_depth(level) for level in ContextLevel}
-        
+
         # Verify depths match expected hierarchy
         assert depths[ContextLevel.TASK] == 3
         assert depths[ContextLevel.BRANCH] == 2
@@ -124,10 +132,10 @@ class TestContextLevel:
         # Test with spaces - from_string calls lower() which doesn't strip
         with pytest.raises(ValueError, match="Invalid context level"):
             ContextLevel.from_string("  global  ")
-        
+
         with pytest.raises(ValueError, match="Invalid context level"):
             ContextLevel.from_string("\ttask\n")
-        
+
         # Test whitespace-only string
         with pytest.raises(ValueError):
             ContextLevel.from_string("   ")
@@ -137,20 +145,27 @@ class TestContextLevel:
         # Test in set
         level_set = {ContextLevel.GLOBAL, ContextLevel.PROJECT, ContextLevel.GLOBAL}
         assert len(level_set) == 2  # Duplicate GLOBAL should be removed
-        
+
         # Test as dict keys
         level_dict = {
             ContextLevel.GLOBAL: "Global level",
             ContextLevel.PROJECT: "Project level",
             ContextLevel.BRANCH: "Branch level",
-            ContextLevel.TASK: "Task level"
+            ContextLevel.TASK: "Task level",
         }
         assert level_dict[ContextLevel.TASK] == "Task level"
 
     def test_special_characters_in_from_string(self):
         """Test that from_string handles special characters properly."""
-        special_cases = ["global!", "project@", "#branch", "task$", "glo bal", "pro-ject"]
-        
+        special_cases = [
+            "global!",
+            "project@",
+            "#branch",
+            "task$",
+            "glo bal",
+            "pro-ject",
+        ]
+
         for case in special_cases:
             with pytest.raises(ValueError, match="Invalid context level"):
                 ContextLevel.from_string(case)
@@ -159,7 +174,7 @@ class TestContextLevel:
         """Test that get_parent_level doesn't modify the enum."""
         original_task = ContextLevel.TASK
         parent = original_task.get_parent_level()
-        
+
         # Ensure original is unchanged
         assert original_task == ContextLevel.TASK
         assert parent == ContextLevel.BRANCH

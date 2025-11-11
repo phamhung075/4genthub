@@ -38,6 +38,7 @@ from fastmcp.agent_management.infrastructure.repositories import (
 # HELPER FUNCTIONS FOR TEST SETUP
 # ============================================================================
 
+
 def create_test_template(slug: str = "test-agent") -> AgentTemplate:
     """Create a test agent template"""
     template_id = AgentTemplateId.generate_new()
@@ -46,7 +47,7 @@ def create_test_template(slug: str = "test-agent") -> AgentTemplate:
         tools=["Read", "Write"],
         capabilities={"test": True},
         rules=["Test rule"],
-        output_format=None
+        output_format=None,
     )
 
     return AgentTemplate(
@@ -59,7 +60,7 @@ def create_test_template(slug: str = "test-agent") -> AgentTemplate:
         default_configuration=configuration,
         metadata={"source": "test"},
         created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC)
+        updated_at=datetime.now(UTC),
     )
 
 
@@ -68,7 +69,7 @@ def create_test_instance(
     template_id: AgentTemplateId,
     visibility: str = "public",
     share_token: str = None,
-    original_creator_id: UserAgentInstanceId = None
+    original_creator_id: UserAgentInstanceId = None,
 ) -> UserAgentInstance:
     """Create a test user agent instance"""
     instance_id = UserAgentInstanceId.generate_new()
@@ -77,7 +78,7 @@ def create_test_instance(
         tools=["Read"],
         capabilities={},
         rules=[],
-        output_format=None
+        output_format=None,
     )
 
     return UserAgentInstance(
@@ -89,18 +90,20 @@ def create_test_instance(
         is_enabled=True,
         is_customized=False,
         visibility=visibility,
-        share_token=share_token or (str(uuid4())[:64] if visibility == "public" else None),
+        share_token=share_token
+        or (str(uuid4())[:64] if visibility == "public" else None),
         original_creator_id=original_creator_id,
         metadata={},
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
-        last_used_at=None
+        last_used_at=None,
     )
 
 
 # ============================================================================
 # TEST SUITE: find_public_instances() - MARKETPLACE FILTERING
 # ============================================================================
+
 
 class TestFindPublicInstances:
     """Test marketplace filtering excludes orphaned imports"""
@@ -121,7 +124,9 @@ class TestFindPublicInstances:
 
         # Create original agent
         user_a = UserId.from_string(str(uuid4()))
-        original_instance = create_test_instance(user_a, template.id, visibility="public")
+        original_instance = create_test_instance(
+            user_a, template.id, visibility="public"
+        )
         instance_repo.save(original_instance)
 
         # User B imports the agent
@@ -130,7 +135,7 @@ class TestFindPublicInstances:
             user_b,
             template.id,
             visibility="public",
-            original_creator_id=user_a  # User ID of original creator
+            original_creator_id=user_a,  # User ID of original creator
         )
         instance_repo.save(imported_instance)
 
@@ -142,8 +147,9 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Orphaned import NOT in marketplace
-        assert imported_instance.id.value not in public_ids, \
+        assert imported_instance.id.value not in public_ids, (
             "Orphaned import should be excluded from marketplace"
+        )
 
         # Cleanup
         if imported_instance.id.value not in public_ids:
@@ -167,7 +173,9 @@ class TestFindPublicInstances:
 
         # Create original agent
         user_a = UserId.from_string(str(uuid4()))
-        original_instance = create_test_instance(user_a, template.id, visibility="public")
+        original_instance = create_test_instance(
+            user_a, template.id, visibility="public"
+        )
         instance_repo.save(original_instance)
 
         # User B imports (original still exists - active import)
@@ -176,7 +184,7 @@ class TestFindPublicInstances:
             user_b,
             template.id,
             visibility="public",
-            original_creator_id=user_a  # User ID of the original creator
+            original_creator_id=user_a,  # User ID of the original creator
         )
         instance_repo.save(imported_instance)
 
@@ -185,10 +193,12 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Both original and import in marketplace
-        assert original_instance.id.value in public_ids, \
+        assert original_instance.id.value in public_ids, (
             "Original agent should be in marketplace"
-        assert imported_instance.id.value in public_ids, \
+        )
+        assert imported_instance.id.value in public_ids, (
             "Active import should be in marketplace"
+        )
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -212,7 +222,9 @@ class TestFindPublicInstances:
 
         # Create original agent (no original_creator_id)
         user_a = UserId.from_string(str(uuid4()))
-        original_instance = create_test_instance(user_a, template.id, visibility="public")
+        original_instance = create_test_instance(
+            user_a, template.id, visibility="public"
+        )
         instance_repo.save(original_instance)
 
         # Act - Query marketplace
@@ -220,8 +232,9 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Original agent in marketplace
-        assert original_instance.id.value in public_ids, \
+        assert original_instance.id.value in public_ids, (
             "Original public agent should be in marketplace"
+        )
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -233,6 +246,7 @@ class TestFindPublicInstances:
 # ============================================================================
 # TEST SUITE: is_orphaned() - ORPHANED DETECTION
 # ============================================================================
+
 
 class TestIsOrphaned:
     """Test orphaned detection method"""
@@ -259,7 +273,7 @@ class TestIsOrphaned:
         imported_instance = create_test_instance(
             user_b,
             template.id,
-            original_creator_id=user_a  # User ID of original creator
+            original_creator_id=user_a,  # User ID of original creator
         )
         instance_repo.save(imported_instance)
 
@@ -270,8 +284,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(imported_instance.id)
 
         # Assert
-        assert is_orphaned is True, \
+        assert is_orphaned is True, (
             "Instance with deleted original_creator_id should be orphaned"
+        )
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -300,8 +315,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(original_instance.id)
 
         # Assert
-        assert is_orphaned is False, \
+        assert is_orphaned is False, (
             "Original agent (no original_creator_id) should not be orphaned"
+        )
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -331,7 +347,7 @@ class TestIsOrphaned:
         imported_instance = create_test_instance(
             user_b,
             template.id,
-            original_creator_id=user_a  # User ID of original creator
+            original_creator_id=user_a,  # User ID of original creator
         )
         instance_repo.save(imported_instance)
 
@@ -339,8 +355,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(imported_instance.id)
 
         # Assert
-        assert is_orphaned is False, \
+        assert is_orphaned is False, (
             "Import with existing original should not be orphaned"
+        )
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -363,7 +380,8 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(fake_id)
 
         # Assert
-        assert is_orphaned is False, \
+        assert is_orphaned is False, (
             "Non-existent instance should return False (defensive)"
+        )
 
         print("✅ test_is_orphaned_returns_false_for_nonexistent_instance passed")

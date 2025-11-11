@@ -39,14 +39,17 @@ class TestDatabaseMigratorInit:
 
         assert migrator.database_url == test_url
 
-    @patch.dict(os.environ, {
-        "DATABASE_TYPE": "postgresql",
-        "DATABASE_HOST": "testhost",
-        "DATABASE_PORT": "5433",
-        "DATABASE_NAME": "customdb",
-        "DATABASE_USER": "testuser",
-        "DATABASE_PASSWORD": "testpass"
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "DATABASE_TYPE": "postgresql",
+            "DATABASE_HOST": "testhost",
+            "DATABASE_PORT": "5433",
+            "DATABASE_NAME": "customdb",
+            "DATABASE_USER": "testuser",
+            "DATABASE_PASSWORD": "testpass",
+        },
+    )
     def test_init_postgresql_from_environment(self):
         """Test PostgreSQL URL construction from environment variables"""
         migrator = DatabaseMigrator()
@@ -54,9 +57,7 @@ class TestDatabaseMigratorInit:
         expected_url = "postgresql://testuser:testpass@testhost:5433/customdb"
         assert migrator.database_url == expected_url
 
-    @patch.dict(os.environ, {
-        "DATABASE_TYPE": "postgresql"
-    }, clear=True)
+    @patch.dict(os.environ, {"DATABASE_TYPE": "postgresql"}, clear=True)
     def test_init_postgresql_with_defaults(self):
         """Test PostgreSQL initialization uses default values when env vars missing"""
         os.environ["DATABASE_TYPE"] = "postgresql"
@@ -70,10 +71,14 @@ class TestDatabaseMigratorInit:
         assert "agenthub_user" in migrator.database_url
         assert "agenthub_password" in migrator.database_url
 
-    @pytest.mark.skip(reason="SQLite is no longer supported - only postgresql/supabase are valid")
+    @pytest.mark.skip(
+        reason="SQLite is no longer supported - only postgresql/supabase are valid"
+    )
     def test_init_sqlite_from_environment_deprecated(self):
         """DEPRECATED: SQLite is no longer a supported DATABASE_TYPE"""
-        pytest.skip("SQLite support removed - DATABASE_TYPE must be 'postgresql' or 'supabase'")
+        pytest.skip(
+            "SQLite support removed - DATABASE_TYPE must be 'postgresql' or 'supabase'"
+        )
 
     @patch.dict(os.environ, {"DATABASE_TYPE": "other"}, clear=True)
     def test_init_other_database_type_uses_default(self):
@@ -100,7 +105,8 @@ class TestRunMigrations:
 
         # Create tasks table with old schema (without progress_history)
         with engine.connect() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
@@ -109,7 +115,8 @@ class TestRunMigrations:
                     created_at TIMESTAMP NOT NULL,
                     updated_at TIMESTAMP NOT NULL
                 )
-            """))
+            """)
+            )
             conn.commit()
 
         yield db_url
@@ -135,9 +142,10 @@ class TestRunMigrations:
             db_path = f.name
 
         try:
-
             # Mock as PostgreSQL
-            with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+            with patch(
+                "fastmcp.database_migrations.create_engine"
+            ) as mock_create_engine:
                 mock_engine = Mock()
                 mock_conn = Mock()
                 mock_result = Mock()
@@ -149,12 +157,14 @@ class TestRunMigrations:
                     commit=Mock(),
                     rollback=Mock(),
                     __enter__=Mock(return_value=Mock(commit=Mock())),
-                    __exit__=Mock(return_value=False)
+                    __exit__=Mock(return_value=False),
                 )
                 mock_engine.connect.return_value = mock_conn
                 mock_create_engine.return_value = mock_engine
 
-                migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+                migrator = DatabaseMigrator(
+                    database_url="postgresql://user:pass@localhost/db"
+                )
                 result = migrator.run_migrations()
 
                 assert result is True
@@ -175,17 +185,21 @@ class TestRunMigrations:
 
             # Create tasks table without progress_history
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS tasks (
                         id TEXT PRIMARY KEY,
                         title TEXT NOT NULL,
                         status TEXT NOT NULL
                     )
-                """))
+                """)
+                )
                 conn.commit()
 
             # Mock as PostgreSQL and run migrations
-            with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+            with patch(
+                "fastmcp.database_migrations.create_engine"
+            ) as mock_create_engine:
                 mock_engine = Mock()
                 mock_conn = Mock()
 
@@ -200,7 +214,9 @@ class TestRunMigrations:
                         return result
                     elif call_count[0] == 2:  # Column check
                         result = Mock()
-                        result.__iter__ = Mock(return_value=iter([]))  # No existing columns
+                        result.__iter__ = Mock(
+                            return_value=iter([])
+                        )  # No existing columns
                         return result
                     else:  # Other queries
                         return Mock()
@@ -217,7 +233,9 @@ class TestRunMigrations:
                 mock_engine.connect.return_value = mock_conn
                 mock_create_engine.return_value = mock_engine
 
-                migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+                migrator = DatabaseMigrator(
+                    database_url="postgresql://user:pass@localhost/db"
+                )
                 result = migrator.run_migrations()
 
                 assert result is True
@@ -240,16 +258,20 @@ class TestRunMigrations:
             engine = create_engine(db_url)
 
             with engine.connect() as conn:
-                conn.execute(text("""
+                conn.execute(
+                    text("""
                     CREATE TABLE IF NOT EXISTS tasks (
                         id TEXT PRIMARY KEY,
                         title TEXT NOT NULL
                     )
-                """))
+                """)
+                )
                 conn.commit()
 
             # Mock PostgreSQL
-            with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+            with patch(
+                "fastmcp.database_migrations.create_engine"
+            ) as mock_create_engine:
                 mock_engine = Mock()
                 mock_conn = Mock()
 
@@ -261,9 +283,13 @@ class TestRunMigrations:
                         result = Mock()
                         result.scalar.return_value = True
                         return result
-                    elif call_count[0] == 2:  # Column check - only progress_history exists
+                    elif (
+                        call_count[0] == 2
+                    ):  # Column check - only progress_history exists
                         result = Mock()
-                        result.__iter__ = Mock(return_value=iter([['progress_history']]))
+                        result.__iter__ = Mock(
+                            return_value=iter([["progress_history"]])
+                        )
                         return result
                     else:
                         return Mock()
@@ -279,7 +305,9 @@ class TestRunMigrations:
                 mock_engine.connect.return_value = mock_conn
                 mock_create_engine.return_value = mock_engine
 
-                migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+                migrator = DatabaseMigrator(
+                    database_url="postgresql://user:pass@localhost/db"
+                )
                 result = migrator.run_migrations()
 
                 assert result is True
@@ -293,10 +321,11 @@ class TestRunMigrations:
     def test_run_migrations_migrates_data_from_details(self, caplog):
         """Test migrating data from details column to progress_history"""
         import logging
+
         caplog.set_level(logging.INFO)
 
         # Mock PostgreSQL migration
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -312,7 +341,7 @@ class TestRunMigrations:
                 if call_count[0] == 1:  # Table exists check
                     result.scalar.return_value = True
                 elif call_count[0] == 2:  # Column check - has details
-                    result.__iter__ = Mock(return_value=iter([['details']]))
+                    result.__iter__ = Mock(return_value=iter([["details"]]))
                 elif call_count[0] == 3:  # Count check for migration
                     result.scalar.return_value = 5  # 5 rows to migrate
                 # For calls 4+ (UPDATE at call 4, DROP at call 5, CREATE INDEX at call 6), use defaults
@@ -329,19 +358,23 @@ class TestRunMigrations:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             assert result is True
             # Verify data migration was attempted (should have at least 6 calls)
             # 1: table check, 2: column check, 3: count, 4: UPDATE, 5: DROP, 6: CREATE INDEX
-            assert mock_conn.execute.call_count >= 6, f"Expected at least 6 calls, got {mock_conn.execute.call_count}"
+            assert mock_conn.execute.call_count >= 6, (
+                f"Expected at least 6 calls, got {mock_conn.execute.call_count}"
+            )
             # Verify migration logging
             assert "Migrating data from details to progress_history" in caplog.text
 
     def test_run_migrations_skips_if_columns_already_exist(self):
         """Test that migration is skipped if columns already exist"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -354,11 +387,11 @@ class TestRunMigrations:
                     result.scalar.return_value = True
                     return result
                 elif call_count[0] == 2:  # All columns exist
-                    result.__iter__ = Mock(return_value=iter([
-                        ['progress_history'],
-                        ['progress_count'],
-                        ['details']
-                    ]))
+                    result.__iter__ = Mock(
+                        return_value=iter(
+                            [["progress_history"], ["progress_count"], ["details"]]
+                        )
+                    )
                     return result
                 elif call_count[0] == 3:  # Count check
                     result.scalar.return_value = 0  # No rows to migrate
@@ -381,7 +414,9 @@ class TestRunMigrations:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             assert result is True
@@ -392,7 +427,7 @@ class TestRollbackScenarios:
 
     def test_run_migrations_rolls_back_on_error(self):
         """Test that transaction is rolled back on migration error"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -415,7 +450,9 @@ class TestRollbackScenarios:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             # Should fail and rollback
@@ -423,10 +460,12 @@ class TestRollbackScenarios:
 
     def test_run_migrations_handles_connection_errors(self):
         """Test handling of connection errors during migration"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_create_engine.side_effect = SQLAlchemyError("Connection failed")
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             assert result is False
@@ -434,12 +473,15 @@ class TestRollbackScenarios:
     def test_run_migrations_logs_error_on_failure(self, caplog):
         """Test that migration errors are properly logged"""
         import logging
+
         caplog.set_level(logging.ERROR)
 
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_create_engine.side_effect = Exception("Test migration error")
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             assert result is False
@@ -459,7 +501,7 @@ class TestInitializeDatabase:
 
     def test_initialize_database_creates_uuid_extension(self):
         """Test creating UUID extension in PostgreSQL"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
             mock_conn.execute = Mock()
@@ -469,7 +511,9 @@ class TestInitializeDatabase:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.initialize_database()
 
             assert result is True
@@ -478,10 +522,12 @@ class TestInitializeDatabase:
 
     def test_initialize_database_handles_errors(self):
         """Test error handling during database initialization"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_create_engine.side_effect = Exception("Initialization failed")
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.initialize_database()
 
             assert result is False
@@ -489,12 +535,15 @@ class TestInitializeDatabase:
     def test_initialize_database_logs_error(self, caplog):
         """Test that initialization errors are logged"""
         import logging
+
         caplog.set_level(logging.ERROR)
 
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_create_engine.side_effect = Exception("Init error")
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.initialize_database()
 
             assert result is False
@@ -508,8 +557,8 @@ class TestEnsureDatabaseReady:
         """Test successful database readiness check"""
         migrator = DatabaseMigrator(database_url="sqlite:///test.db")
 
-        with patch.object(migrator, 'initialize_database', return_value=True):
-            with patch.object(migrator, 'run_migrations', return_value=True):
+        with patch.object(migrator, "initialize_database", return_value=True):
+            with patch.object(migrator, "run_migrations", return_value=True):
                 result = migrator.ensure_database_ready()
 
                 assert result is True
@@ -518,8 +567,8 @@ class TestEnsureDatabaseReady:
         """Test that process continues even if initialization fails"""
         migrator = DatabaseMigrator(database_url="sqlite:///test.db")
 
-        with patch.object(migrator, 'initialize_database', return_value=False):
-            with patch.object(migrator, 'run_migrations', return_value=True):
+        with patch.object(migrator, "initialize_database", return_value=False):
+            with patch.object(migrator, "run_migrations", return_value=True):
                 result = migrator.ensure_database_ready()
 
                 # Still returns True because migrations succeeded
@@ -529,8 +578,8 @@ class TestEnsureDatabaseReady:
         """Test that process continues even if migrations fail"""
         migrator = DatabaseMigrator(database_url="sqlite:///test.db")
 
-        with patch.object(migrator, 'initialize_database', return_value=True):
-            with patch.object(migrator, 'run_migrations', return_value=False):
+        with patch.object(migrator, "initialize_database", return_value=True):
+            with patch.object(migrator, "run_migrations", return_value=False):
                 result = migrator.ensure_database_ready()
 
                 # Still returns True (graceful degradation)
@@ -540,7 +589,9 @@ class TestEnsureDatabaseReady:
         """Test error handling in ensure_database_ready"""
         migrator = DatabaseMigrator(database_url="sqlite:///test.db")
 
-        with patch.object(migrator, 'initialize_database', side_effect=Exception("Test error")):
+        with patch.object(
+            migrator, "initialize_database", side_effect=Exception("Test error")
+        ):
             result = migrator.ensure_database_ready()
 
             assert result is False
@@ -553,6 +604,7 @@ class TestGetMigrator:
         """Test that get_migrator creates a singleton instance"""
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
         migrator1 = get_migrator()
@@ -564,6 +616,7 @@ class TestGetMigrator:
         """Test get_migrator with custom database URL"""
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
         test_url = "postgresql://test:test@localhost/testdb"
@@ -574,6 +627,7 @@ class TestGetMigrator:
     def test_get_migrator_reuses_existing_instance(self):
         """Test that get_migrator reuses existing instance"""
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
         migrator1 = get_migrator()
@@ -591,16 +645,23 @@ class TestRunStartupMigrations:
         """Test successful startup migrations"""
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = True
             mock_get_migrator.return_value = mock_migrator
 
             # Patch the imports that happen inside run_startup_migrations
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations', return_value=True) as mock_auto:
-                with patch('fastmcp.database_init.initialize_database_for_current_user', return_value=True) as mock_init:
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations",
+                return_value=True,
+            ) as mock_auto:
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user",
+                    return_value=True,
+                ) as mock_init:
                     result = run_startup_migrations()
 
                     assert result is True
@@ -610,19 +671,27 @@ class TestRunStartupMigrations:
     def test_run_startup_migrations_continues_on_auto_migration_failure(self, caplog):
         """Test that startup continues even if auto migrations fail"""
         import logging
+
         caplog.set_level(logging.WARNING)
 
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = True
             mock_get_migrator.return_value = mock_migrator
 
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations', return_value=False):
-                with patch('fastmcp.database_init.initialize_database_for_current_user', return_value=True):
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations",
+                return_value=False,
+            ):
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user",
+                    return_value=True,
+                ):
                     result = run_startup_migrations()
 
                     # Should still succeed
@@ -632,20 +701,28 @@ class TestRunStartupMigrations:
     def test_run_startup_migrations_handles_missing_auto_migration(self, caplog):
         """Test handling when auto_migration module is not available"""
         import logging
+
         caplog.set_level(logging.WARNING)
 
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = True
             mock_get_migrator.return_value = mock_migrator
 
             # Simulate ImportError when trying to import run_auto_migrations
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations', side_effect=ImportError("Module not found")):
-                with patch('fastmcp.database_init.initialize_database_for_current_user', return_value=True):
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations",
+                side_effect=ImportError("Module not found"),
+            ):
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user",
+                    return_value=True,
+                ):
                     result = run_startup_migrations()
 
                     assert result is True
@@ -654,20 +731,27 @@ class TestRunStartupMigrations:
     def test_run_startup_migrations_handles_db_init_failure(self, caplog):
         """Test handling when database initialization fails"""
         import logging
+
         caplog.set_level(logging.WARNING)
 
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = True
             mock_get_migrator.return_value = mock_migrator
 
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations', return_value=True):
-                with patch('fastmcp.database_init.initialize_database_for_current_user',
-                          side_effect=Exception("Init failed")):
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations",
+                return_value=True,
+            ):
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user",
+                    side_effect=Exception("Init failed"),
+                ):
                     result = run_startup_migrations()
 
                     assert result is True
@@ -677,15 +761,20 @@ class TestRunStartupMigrations:
         """Test that initialization is skipped if migrations fail"""
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = False
             mock_get_migrator.return_value = mock_migrator
 
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations') as mock_auto_migrations:
-                with patch('fastmcp.database_init.initialize_database_for_current_user') as mock_init:
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations"
+            ) as mock_auto_migrations:
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user"
+                ) as mock_init:
                     result = run_startup_migrations()
 
                     assert result is False
@@ -696,24 +785,34 @@ class TestRunStartupMigrations:
     def test_run_startup_migrations_logs_init_skipped(self, caplog):
         """Test that startup migrations logs when initialization is skipped"""
         import logging
+
         caplog.set_level(logging.INFO)
 
         # Reset singleton
         import fastmcp.database_migrations
+
         fastmcp.database_migrations._migrator = None
 
-        with patch('fastmcp.database_migrations.get_migrator') as mock_get_migrator:
+        with patch("fastmcp.database_migrations.get_migrator") as mock_get_migrator:
             mock_migrator = Mock()
             mock_migrator.ensure_database_ready.return_value = True
             mock_get_migrator.return_value = mock_migrator
 
-            with patch('fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations', return_value=True):
-                with patch('fastmcp.database_init.initialize_database_for_current_user', return_value=False):
+            with patch(
+                "fastmcp.task_management.infrastructure.database.auto_migration.run_auto_migrations",
+                return_value=True,
+            ):
+                with patch(
+                    "fastmcp.database_init.initialize_database_for_current_user",
+                    return_value=False,
+                ):
                     result = run_startup_migrations()
 
                     assert result is True
                     # Verify line 226 is executed - logs "skipped or already done"
-                    assert "Database initialization skipped or already done" in caplog.text
+                    assert (
+                        "Database initialization skipped or already done" in caplog.text
+                    )
 
 
 class TestSecurityScenarios:
@@ -722,7 +821,7 @@ class TestSecurityScenarios:
     def test_sql_injection_prevention_in_migration(self):
         """Test that SQL injection attempts are prevented in migrations"""
         # This tests that parameterized queries are used
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -747,7 +846,9 @@ class TestSecurityScenarios:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             migrator.run_migrations()
 
             # Verify no string interpolation was used (all queries should use text())
@@ -757,14 +858,17 @@ class TestSecurityScenarios:
 
     def test_password_special_characters_in_url(self):
         """Test that passwords with special characters are handled correctly"""
-        with patch.dict(os.environ, {
-            "DATABASE_TYPE": "postgresql",
-            "DATABASE_HOST": "localhost",
-            "DATABASE_PORT": "5432",
-            "DATABASE_NAME": "testdb",
-            "DATABASE_USER": "user",
-            "DATABASE_PASSWORD": "p@ss!w0rd#$%"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "DATABASE_TYPE": "postgresql",
+                "DATABASE_HOST": "localhost",
+                "DATABASE_PORT": "5432",
+                "DATABASE_NAME": "testdb",
+                "DATABASE_USER": "user",
+                "DATABASE_PASSWORD": "p@ss!w0rd#$%",
+            },
+        ):
             migrator = DatabaseMigrator()
 
             # Password should be included in URL
@@ -777,7 +881,7 @@ class TestDataIntegrity:
 
     def test_migration_preserves_existing_data(self):
         """Test that migrations preserve existing task data"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -794,7 +898,7 @@ class TestDataIntegrity:
                 if call_count[0] == 1:  # Table exists check
                     result.scalar.return_value = True
                 elif call_count[0] == 2:  # Has details column
-                    result.__iter__ = Mock(return_value=iter([['details']]))
+                    result.__iter__ = Mock(return_value=iter([["details"]]))
                 elif call_count[0] == 3:  # Count of rows to migrate
                     result.scalar.return_value = 10  # 10 existing rows
                 # For calls 4+ (UPDATE, DROP, CREATE INDEX), use defaults
@@ -811,7 +915,9 @@ class TestDataIntegrity:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             result = migrator.run_migrations()
 
             assert result is True
@@ -820,7 +926,7 @@ class TestDataIntegrity:
 
     def test_migration_creates_indexes(self):
         """Test that migrations create necessary indexes"""
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
@@ -831,7 +937,9 @@ class TestDataIntegrity:
                 executed_queries.append(query_str)
                 result = Mock()
                 result.scalar.return_value = True if "EXISTS" in query_str else None
-                result.__iter__ = Mock(return_value=iter([['progress_history', 'progress_count']]))
+                result.__iter__ = Mock(
+                    return_value=iter([["progress_history", "progress_count"]])
+                )
                 return result
 
             mock_conn.execute = Mock(side_effect=track_execute)
@@ -845,7 +953,9 @@ class TestDataIntegrity:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             migrator.run_migrations()
 
             # Check if index creation was attempted
@@ -859,6 +969,7 @@ class TestLogging:
     def test_migration_logs_start(self, caplog):
         """Test that migration start is logged"""
         import logging
+
         caplog.set_level(logging.INFO)
 
         migrator = DatabaseMigrator(database_url="sqlite:///test.db")
@@ -869,16 +980,19 @@ class TestLogging:
     def test_migration_logs_success(self, caplog):
         """Test that successful migration is logged"""
         import logging
+
         caplog.set_level(logging.INFO)
 
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
 
             def execute_side_effect(query):
                 result = Mock()
                 result.scalar.return_value = True
-                result.__iter__ = Mock(return_value=iter([['progress_history', 'progress_count']]))
+                result.__iter__ = Mock(
+                    return_value=iter([["progress_history", "progress_count"]])
+                )
                 return result
 
             mock_conn.execute = Mock(side_effect=execute_side_effect)
@@ -892,7 +1006,9 @@ class TestLogging:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             migrator.run_migrations()
 
             assert "Database migrations completed successfully" in caplog.text
@@ -900,9 +1016,10 @@ class TestLogging:
     def test_initialization_logs_success(self, caplog):
         """Test that successful initialization is logged"""
         import logging
+
         caplog.set_level(logging.INFO)
 
-        with patch('fastmcp.database_migrations.create_engine') as mock_create_engine:
+        with patch("fastmcp.database_migrations.create_engine") as mock_create_engine:
             mock_engine = Mock()
             mock_conn = Mock()
             mock_conn.execute = Mock()
@@ -912,7 +1029,9 @@ class TestLogging:
             mock_engine.connect.return_value = mock_conn
             mock_create_engine.return_value = mock_engine
 
-            migrator = DatabaseMigrator(database_url="postgresql://user:pass@localhost/db")
+            migrator = DatabaseMigrator(
+                database_url="postgresql://user:pass@localhost/db"
+            )
             migrator.initialize_database()
 
             assert "Database initialization completed" in caplog.text

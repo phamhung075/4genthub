@@ -754,7 +754,9 @@ class SubtaskApplicationFacade:
                 parent_task = None
                 user_id = "system"
                 try:
-                    parent_task = task_repository.find_by_id(TaskId.from_string(task_id))
+                    parent_task = task_repository.find_by_id(
+                        TaskId.from_string(task_id)
+                    )
                     if parent_task and parent_task.user_id:
                         user_id = str(parent_task.user_id)
                 except Exception as e:

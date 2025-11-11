@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../"))
 
 from fastmcp.task_management.application.facades.task_application_facade import (
     TaskApplicationFacade,
@@ -30,16 +30,16 @@ def create_mock_facade():
     def create_task_side_effect(request):
         # Capture the dependencies from the request to verify they were processed correctly
         # The request is a CreateTaskRequest object which has dependencies as an attribute
-        dependencies = getattr(request, 'dependencies', [])
-        assignees = getattr(request, 'assignees', [])
-        
+        dependencies = getattr(request, "dependencies", [])
+        assignees = getattr(request, "assignees", [])
+
         # The mock needs to properly handle the fact that the controller might convert
         # single strings to lists, so we need to ensure dependencies is always a list
         if isinstance(dependencies, str):
             dependencies = [dependencies] if dependencies else []
         elif not isinstance(dependencies, list):
             dependencies = list(dependencies) if dependencies else []
-        
+
         # The facade.create_task should return a dictionary response
         # This should match what the actual TaskApplicationFacade returns
         return {
@@ -50,13 +50,18 @@ def create_mock_facade():
                     "title": request.title,
                     "git_branch_id": request.git_branch_id,
                     "dependencies": dependencies,  # Return the actual dependencies from the request
-                    "assignees": assignees if isinstance(assignees, list) else [assignees] if assignees else []  # Ensure assignees is always a list
+                    "assignees": assignees
+                    if isinstance(assignees, list)
+                    else [assignees]
+                    if assignees
+                    else [],  # Ensure assignees is always a list
                 }
-            }
+            },
         }
 
     mock_facade.create_task = MagicMock(side_effect=create_task_side_effect)
     return mock_facade
+
 
 @pytest.mark.asyncio
 async def test_all_dependency_formats():
@@ -71,58 +76,50 @@ async def test_all_dependency_formats():
     controller = TaskMCPController(facade_service_or_factory=mock_facade_service)
 
     # Mock authentication
-    with patch('fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id',
-               return_value="test-user-123"):
-
+    with patch(
+        "fastmcp.task_management.interface.mcp_controllers.task_mcp_controller.task_mcp_controller.get_authenticated_user_id",
+        return_value="test-user-123",
+    ):
         print("Testing all dependency parameter formats...")
         print("=" * 60)
 
         test_cases = [
             {
                 "name": "Python list format",
-                "dependencies": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"],
-                "expected_count": 2
+                "dependencies": [
+                    "550e8400-e29b-41d4-a716-446655440001",
+                    "550e8400-e29b-41d4-a716-446655440002",
+                ],
+                "expected_count": 2,
             },
             {
                 "name": "Single string UUID",
                 "dependencies": "550e8400-e29b-41d4-a716-446655440001",
-                "expected_count": 1
+                "expected_count": 1,
             },
             {
                 "name": "Comma-separated string",
                 "dependencies": "550e8400-e29b-41d4-a716-446655440001,550e8400-e29b-41d4-a716-446655440002",
-                "expected_count": 2
+                "expected_count": 2,
             },
             {
                 "name": "Comma-separated with spaces",
                 "dependencies": "550e8400-e29b-41d4-a716-446655440001, 550e8400-e29b-41d4-a716-446655440002",
-                "expected_count": 2
+                "expected_count": 2,
             },
-            {
-                "name": "Empty list",
-                "dependencies": [],
-                "expected_count": 0
-            },
-            {
-                "name": "Empty string",
-                "dependencies": "",
-                "expected_count": 0
-            },
-            {
-                "name": "None (not provided)",
-                "dependencies": None,
-                "expected_count": 0
-            },
+            {"name": "Empty list", "dependencies": [], "expected_count": 0},
+            {"name": "Empty string", "dependencies": "", "expected_count": 0},
+            {"name": "None (not provided)", "dependencies": None, "expected_count": 0},
             {
                 "name": "Single item list",
                 "dependencies": ["550e8400-e29b-41d4-a716-446655440001"],
-                "expected_count": 1
+                "expected_count": 1,
             },
             {
                 "name": "Three items comma-separated",
                 "dependencies": "550e8400-e29b-41d4-a716-446655440001,550e8400-e29b-41d4-a716-446655440002,550e8400-e29b-41d4-a716-446655440003",
-                "expected_count": 3
-            }
+                "expected_count": 3,
+            },
         ]
 
         success_count = 0
@@ -137,12 +134,12 @@ async def test_all_dependency_formats():
                     "action": "create",
                     "git_branch_id": "550e8400-e29b-41d4-a716-446655440000",
                     "title": f"Test with {test_case['name']}",
-                    "assignees": ["coding-agent"]
+                    "assignees": ["coding-agent"],
                 }
 
                 # Only add dependencies if not None
-                if test_case['dependencies'] is not None:
-                    kwargs['dependencies'] = test_case['dependencies']
+                if test_case["dependencies"] is not None:
+                    kwargs["dependencies"] = test_case["dependencies"]
 
                 result = await controller.manage_task(**kwargs)
 
@@ -152,7 +149,9 @@ async def test_all_dependency_formats():
                     # result.data.data.task due to double wrapping
                     data_wrapper = result.get("data", {})
                     # Check for double nesting
-                    if "data" in data_wrapper and "task" in data_wrapper.get("data", {}):
+                    if "data" in data_wrapper and "task" in data_wrapper.get(
+                        "data", {}
+                    ):
                         task = data_wrapper.get("data", {}).get("task", {})
                     else:
                         task = data_wrapper.get("task", {}) or result.get("task", {})
@@ -160,19 +159,29 @@ async def test_all_dependency_formats():
                     # Handle cases where dependencies might be returned as a string
                     if isinstance(actual_deps, str):
                         actual_deps = [actual_deps] if actual_deps else []
-                    actual_count = len(actual_deps) if isinstance(actual_deps, list) else 0
+                    actual_count = (
+                        len(actual_deps) if isinstance(actual_deps, list) else 0
+                    )
 
-                    if actual_count == test_case['expected_count']:
+                    if actual_count == test_case["expected_count"]:
                         print(f"   ✅ PASS - {test_case['name']} works correctly!")
-                        print(f"      Expected {test_case['expected_count']} dependencies, got {actual_count}")
+                        print(
+                            f"      Expected {test_case['expected_count']} dependencies, got {actual_count}"
+                        )
                         success_count += 1
                     else:
-                        print("   ⚠️  PARTIAL - Task created but dependency count mismatch")
-                        print(f"      Expected {test_case['expected_count']} dependencies, got {actual_count}")
+                        print(
+                            "   ⚠️  PARTIAL - Task created but dependency count mismatch"
+                        )
+                        print(
+                            f"      Expected {test_case['expected_count']} dependencies, got {actual_count}"
+                        )
                         print(f"      Actual dependencies: {actual_deps}")
                         failure_count += 1
                 else:
-                    print(f"   ❌ FAIL - {test_case['name']}: {result.get('error', result)}")
+                    print(
+                        f"   ❌ FAIL - {test_case['name']}: {result.get('error', result)}"
+                    )
                     failure_count += 1
 
             except Exception as e:
@@ -188,12 +197,18 @@ async def test_all_dependency_formats():
             {
                 "name": "Both as lists",
                 "assignees": ["coding-agent", "test-orchestrator-agent"],
-                "dependencies": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"],
+                "dependencies": [
+                    "550e8400-e29b-41d4-a716-446655440001",
+                    "550e8400-e29b-41d4-a716-446655440002",
+                ],
             },
             {
                 "name": "Assignees as string, dependencies as list",
                 "assignees": "coding-agent,test-orchestrator-agent",
-                "dependencies": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440002"],
+                "dependencies": [
+                    "550e8400-e29b-41d4-a716-446655440001",
+                    "550e8400-e29b-41d4-a716-446655440002",
+                ],
             },
             {
                 "name": "Assignees as list, dependencies as string",
@@ -204,7 +219,7 @@ async def test_all_dependency_formats():
                 "name": "Both as comma-separated strings",
                 "assignees": "coding-agent, test-orchestrator-agent",
                 "dependencies": "550e8400-e29b-41d4-a716-446655440001, 550e8400-e29b-41d4-a716-446655440002",
-            }
+            },
         ]
 
         for test_case in edge_cases:
@@ -214,8 +229,8 @@ async def test_all_dependency_formats():
                     action="create",
                     git_branch_id="550e8400-e29b-41d4-a716-446655440000",
                     title=f"Edge case: {test_case['name']}",
-                    assignees=test_case['assignees'],
-                    dependencies=test_case['dependencies']
+                    assignees=test_case["assignees"],
+                    dependencies=test_case["dependencies"],
                 )
 
                 if result.get("success"):
@@ -223,7 +238,9 @@ async def test_all_dependency_formats():
                     # result.data.data.task due to double wrapping
                     data_wrapper = result.get("data", {})
                     # Check for double nesting
-                    if "data" in data_wrapper and "task" in data_wrapper.get("data", {}):
+                    if "data" in data_wrapper and "task" in data_wrapper.get(
+                        "data", {}
+                    ):
                         task = data_wrapper.get("data", {}).get("task", {})
                     else:
                         task = data_wrapper.get("task", {}) or result.get("task", {})
@@ -248,9 +265,12 @@ async def test_all_dependency_formats():
         print(f"Total tests: {success_count + failure_count}")
 
         if failure_count == 0:
-            print("\n🎉 All tests passed! The dependencies parameter handling is working correctly.")
+            print(
+                "\n🎉 All tests passed! The dependencies parameter handling is working correctly."
+            )
         else:
             print(f"\n⚠️  {failure_count} test(s) failed. Review the implementation.")
+
 
 if __name__ == "__main__":
     asyncio.run(test_all_dependency_formats())

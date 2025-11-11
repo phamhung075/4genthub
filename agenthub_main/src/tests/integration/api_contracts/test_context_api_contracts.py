@@ -37,11 +37,8 @@ def sample_context(user_id: str, project_id: str):
             "title": "Test Context",
             "description": "Sample context for API contract testing",
             "requirements": ["Requirement 1", "Requirement 2"],
-            "technical_specs": {
-                "language": "Python",
-                "framework": "FastAPI"
-            }
-        }
+            "technical_specs": {"language": "Python", "framework": "FastAPI"},
+        },
     )
     return context
 
@@ -77,8 +74,7 @@ class TestContextResponseAPIContractBasicFields:
         Status: ✅ SHOULD PASS - Optional field in ContextResponse.
         """
         response = ContextResponse.success_response(
-            data={"key": "value"},
-            message="Test"
+            data={"key": "value"}, message="Test"
         )
 
         assert hasattr(response, "data"), "ContextResponse must have 'data' field"
@@ -92,8 +88,7 @@ class TestContextResponseAPIContractBasicFields:
         Status: ✅ SHOULD PASS - Error field in ContextResponse.
         """
         response = ContextResponse.error_response(
-            error="Test error",
-            message="Operation failed"
+            error="Test error", message="Operation failed"
         )
 
         assert hasattr(response, "error"), "ContextResponse must have 'error' field"
@@ -111,8 +106,7 @@ class TestContextResponseAPIContractContextField:
         Status: ✅ SHOULD PASS - Optional field for context data.
         """
         response = ContextResponse.success_response(
-            context=sample_context,
-            message="Context retrieved"
+            context=sample_context, message="Context retrieved"
         )
 
         assert hasattr(response, "context"), "ContextResponse must have 'context' field"
@@ -147,7 +141,9 @@ class TestTaskContextAPIContractBasicFields:
         Verify TaskContext includes user_id field.
         Status: ✅ SHOULD PASS - Required for multi-tenant isolation.
         """
-        assert hasattr(sample_context, "user_id"), "TaskContext must have 'user_id' field"
+        assert hasattr(sample_context, "user_id"), (
+            "TaskContext must have 'user_id' field"
+        )
         assert isinstance(sample_context.user_id, str), "user_id must be string"
 
     def test_task_context_has_data_field(self, sample_context: TaskContext):
@@ -162,7 +158,9 @@ class TestTaskContextAPIContractBasicFields:
 class TestTaskContextAPIContractTimestamps:
     """Test timestamp fields in TaskContext."""
 
-    def test_task_context_created_at_is_iso8601_compatible(self, sample_context: TaskContext):
+    def test_task_context_created_at_is_iso8601_compatible(
+        self, sample_context: TaskContext
+    ):
         """
         Verify created_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
@@ -174,7 +172,9 @@ class TestTaskContextAPIContractTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(sample_context.created_at, datetime):
             iso_string = sample_context.created_at.isoformat()
-            assert "T" in iso_string, "created_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "created_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_context.created_at, str):
             assert "T" in sample_context.created_at, (
                 "created_at must be ISO 8601 format (contains 'T')"
@@ -190,7 +190,9 @@ class TestTaskContextAPIContractTimestamps:
                 f"created_at must be datetime or string, got {type(sample_context.created_at)}"
             )
 
-    def test_task_context_updated_at_is_iso8601_compatible(self, sample_context: TaskContext):
+    def test_task_context_updated_at_is_iso8601_compatible(
+        self, sample_context: TaskContext
+    ):
         """
         Verify updated_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
@@ -202,7 +204,9 @@ class TestTaskContextAPIContractTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(sample_context.updated_at, datetime):
             iso_string = sample_context.updated_at.isoformat()
-            assert "T" in iso_string, "updated_at datetime must serialize to ISO 8601 format"
+            assert "T" in iso_string, (
+                "updated_at datetime must serialize to ISO 8601 format"
+            )
         elif isinstance(sample_context.updated_at, str):
             assert "T" in sample_context.updated_at, (
                 "updated_at must be ISO 8601 format (contains 'T')"
@@ -222,7 +226,9 @@ class TestTaskContextAPIContractTimestamps:
 class TestTaskContextAPIContractDataStructure:
     """Test data structure flexibility in TaskContext."""
 
-    def test_task_context_data_supports_nested_structures(self, sample_context: TaskContext):
+    def test_task_context_data_supports_nested_structures(
+        self, sample_context: TaskContext
+    ):
         """
         Verify context data supports nested dictionaries.
         Status: ✅ SHOULD PASS - Flexible data structure.
@@ -248,7 +254,9 @@ class TestTaskContextAPIContractDataStructure:
                 "Arrays should be supported in context data"
             )
 
-    def test_task_context_data_supports_various_types(self, sample_context: TaskContext):
+    def test_task_context_data_supports_various_types(
+        self, sample_context: TaskContext
+    ):
         """
         Verify context data supports various Python types.
         Status: ✅ SHOULD PASS - Type flexibility.
@@ -261,13 +269,11 @@ class TestTaskContextAPIContractDataStructure:
             "bool_field": True,
             "dict_field": {"nested": "value"},
             "list_field": [1, 2, 3],
-            "null_field": None
+            "null_field": None,
         }
 
         context = TaskContext.create(
-            context_id=str(uuid4()),
-            user_id="test_user",
-            data=test_data
+            context_id=str(uuid4()), user_id="test_user", data=test_data
         )
 
         assert isinstance(context.data, dict), "data must be dictionary"
@@ -314,8 +320,7 @@ class TestContextResponseAPIContractSerialization:
         Status: ✅ SHOULD PASS - Required for JSON serialization.
         """
         response = ContextResponse.success_response(
-            context=sample_context,
-            message="Context retrieved successfully"
+            context=sample_context, message="Context retrieved successfully"
         )
 
         response_dict = response.to_dict()
@@ -336,14 +341,15 @@ class TestContextResponseAPIContractSerialization:
 class TestListContextsResponseAPIContract:
     """Test ListContextsResponse specific fields."""
 
-    def test_list_contexts_response_has_contexts_array(self, sample_context: TaskContext):
+    def test_list_contexts_response_has_contexts_array(
+        self, sample_context: TaskContext
+    ):
         """
         Verify ListContextsResponse includes contexts array.
         Status: ✅ SHOULD PASS - Required for list operations.
         """
         response = ListContextsResponse.success_response(
-            contexts=[sample_context],
-            message="Contexts retrieved"
+            contexts=[sample_context], message="Contexts retrieved"
         )
 
         assert hasattr(response, "contexts"), (
@@ -356,14 +362,15 @@ class TestListContextsResponseAPIContract:
                 "contexts must contain TaskContext objects"
             )
 
-    def test_list_contexts_response_to_dict_serializes_array(self, sample_context: TaskContext):
+    def test_list_contexts_response_to_dict_serializes_array(
+        self, sample_context: TaskContext
+    ):
         """
         Verify ListContextsResponse serializes contexts array properly.
         Status: ✅ SHOULD PASS - Required for JSON serialization.
         """
         response = ListContextsResponse.success_response(
-            contexts=[sample_context],
-            message="Contexts retrieved"
+            contexts=[sample_context], message="Contexts retrieved"
         )
 
         response_dict = response.to_dict()
@@ -382,7 +389,9 @@ class TestListContextsResponseAPIContract:
 class TestContextAPIContractCompleteStructure:
     """Test that Context types match complete frontend expectations."""
 
-    def test_context_response_matches_frontend_interface(self, sample_context: TaskContext):
+    def test_context_response_matches_frontend_interface(
+        self, sample_context: TaskContext
+    ):
         """
         Verify ContextResponse matches frontend ContextResponse interface.
 
@@ -396,9 +405,7 @@ class TestContextAPIContractCompleteStructure:
         - inherited?: any
         """
         response = ContextResponse.success_response(
-            context=sample_context,
-            data={"key": "value"},
-            message="Test message"
+            context=sample_context, data={"key": "value"}, message="Test message"
         )
 
         # Required fields
@@ -432,8 +439,8 @@ class TestContextAPIContractHierarchy:
             data={
                 "organization_standards": {"coding_style": "PEP 8"},
                 "compliance_requirements": {"GDPR": True},
-                "shared_resources": ["lib1", "lib2"]
-            }
+                "shared_resources": ["lib1", "lib2"],
+            },
         )
 
         assert isinstance(global_context.data, dict), "Global context data must be dict"
@@ -455,8 +462,8 @@ class TestContextAPIContractHierarchy:
             data={
                 "project_name": "Test Project",
                 "technology_stack": ["Python", "React"],
-                "shared_config": {"timeout": 30}
-            }
+                "shared_config": {"timeout": 30},
+            },
         )
 
         # Child (task) context - inherits and extends
@@ -467,8 +474,8 @@ class TestContextAPIContractHierarchy:
                 "task_name": "Implement feature",
                 "task_specific_data": {"complexity": "high"},
                 # Can reference parent context_id for inheritance
-                "parent_context_id": parent_context.context_id
-            }
+                "parent_context_id": parent_context.context_id,
+            },
         )
 
         assert isinstance(parent_context.data, dict), "Parent context must have data"

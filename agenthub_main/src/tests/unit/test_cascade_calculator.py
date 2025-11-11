@@ -87,7 +87,12 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_task_cascade_calculation(
-        self, cascade_calculator, mock_data_provider, sample_task_id, sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test task cascade returns correct affected entities"""
 
@@ -96,7 +101,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -118,8 +123,13 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_subtask_cascade_propagation(
-        self, cascade_calculator, mock_data_provider, sample_subtask_id,
-        sample_task_id, sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_subtask_id,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test subtask cascade propagates to parent task"""
 
@@ -129,7 +139,7 @@ class TestCascadeCalculator:
             task_id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_subtask_cascade_data.return_value = subtask_data
 
@@ -149,8 +159,13 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_branch_cascade_affects_project(
-        self, cascade_calculator, mock_data_provider, sample_branch_id,
-        sample_project_id, sample_task_id, sample_subtask_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_branch_id,
+        sample_project_id,
+        sample_task_id,
+        sample_subtask_id,
     ):
         """Test branch cascade affects project and all related entities"""
 
@@ -159,7 +174,7 @@ class TestCascadeCalculator:
             id=sample_branch_id,
             project_id=sample_project_id,
             task_ids={sample_task_id},
-            subtask_ids={sample_subtask_id}
+            subtask_ids={sample_subtask_id},
         )
         mock_data_provider.get_branch_cascade_data.return_value = branch_data
 
@@ -179,8 +194,13 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_project_cascade_all_branches(
-        self, cascade_calculator, mock_data_provider, sample_project_id,
-        sample_branch_id, sample_task_id, sample_subtask_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_project_id,
+        sample_branch_id,
+        sample_task_id,
+        sample_subtask_id,
     ):
         """Test project cascade affects all branches and tasks"""
 
@@ -194,7 +214,7 @@ class TestCascadeCalculator:
             id=sample_project_id,
             branch_ids={sample_branch_id, branch_id_2},
             task_ids={sample_task_id, task_id_2},
-            subtask_ids={sample_subtask_id, subtask_id_2}
+            subtask_ids={sample_subtask_id, subtask_id_2},
         )
         mock_data_provider.get_project_cascade_data.return_value = project_data
 
@@ -235,7 +255,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=str(uuid.uuid4()),
             project_id=str(uuid.uuid4()),
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -249,8 +269,13 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_deduplication_works_correctly(
-        self, cascade_calculator, mock_data_provider, sample_task_id,
-        sample_subtask_id, sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_task_id,
+        sample_subtask_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test that duplicate IDs are properly deduplicated"""
 
@@ -259,7 +284,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -277,8 +302,12 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_cache_functionality(
-        self, cascade_calculator, mock_data_provider, sample_task_id,
-        sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test cascade calculation caching works correctly"""
 
@@ -287,24 +316,20 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
         # First call - should miss cache
         result1 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result1.cache_hit is False
         assert result1.entity_id == sample_task_id
 
         # Second call - should hit cache
         result2 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result2.cache_hit is True
         assert result2.entity_id == sample_task_id
@@ -326,7 +351,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -335,17 +360,13 @@ class TestCascadeCalculator:
 
         # First call - cache miss
         result1 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result1.cache_hit is False
 
         # Immediate second call - cache hit
         result2 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result2.cache_hit is True
 
@@ -354,9 +375,7 @@ class TestCascadeCalculator:
 
         # Third call after expiration - cache miss
         result3 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result3.cache_hit is False
 
@@ -372,23 +391,19 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
         # First call - cache miss
         result1 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result1.cache_hit is False
 
         # Second call - cache hit
         result2 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result2.cache_hit is True
 
@@ -397,16 +412,18 @@ class TestCascadeCalculator:
 
         # Third call after clear - cache miss
         result3 = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=True
+            sample_task_id, entity_type=EntityType.TASK, use_cache=True
         )
         assert result3.cache_hit is False
 
     @pytest.mark.asyncio
     async def test_performance_under_50ms(
-        self, cascade_calculator, mock_data_provider, sample_task_id,
-        sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test cascade calculation completes in under 50ms"""
 
@@ -415,7 +432,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=None
+            context_id=None,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -428,14 +445,14 @@ class TestCascadeCalculator:
         # Execute cascade calculation with timing
         start_time = time.time()
         result = await cascade_calculator.calculate_cascade(
-            sample_task_id,
-            entity_type=EntityType.TASK,
-            use_cache=False
+            sample_task_id, entity_type=EntityType.TASK, use_cache=False
         )
         elapsed_ms = (time.time() - start_time) * 1000
 
         # Verify performance requirement
-        assert elapsed_ms < 50, f"Cascade calculation took {elapsed_ms:.2f}ms (should be < 50ms)"
+        assert elapsed_ms < 50, (
+            f"Cascade calculation took {elapsed_ms:.2f}ms (should be < 50ms)"
+        )
         assert result.calculation_time_ms < 50
 
     @pytest.mark.asyncio
@@ -460,8 +477,12 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_get_all_affected_ids(
-        self, cascade_calculator, mock_data_provider, sample_task_id,
-        sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test get_all_affected_ids returns union of all entity IDs"""
 
@@ -471,7 +492,7 @@ class TestCascadeCalculator:
             id=sample_task_id,
             git_branch_id=sample_branch_id,
             project_id=sample_project_id,
-            context_id=context_id
+            context_id=context_id,
         )
         mock_data_provider.get_task_cascade_data.return_value = task_data
 
@@ -494,8 +515,13 @@ class TestCascadeCalculator:
 
     @pytest.mark.asyncio
     async def test_context_cascade_calculation(
-        self, cascade_calculator, mock_data_provider, sample_context_id,
-        sample_task_id, sample_branch_id, sample_project_id
+        self,
+        cascade_calculator,
+        mock_data_provider,
+        sample_context_id,
+        sample_task_id,
+        sample_branch_id,
+        sample_project_id,
     ):
         """Test context cascade calculation"""
 
@@ -505,7 +531,7 @@ class TestCascadeCalculator:
             task_ids={sample_task_id},
             branch_ids={sample_branch_id},
             project_ids={sample_project_id},
-            subtask_ids=set()
+            subtask_ids=set(),
         )
         mock_data_provider.get_context_cascade_data.return_value = context_data
 
@@ -541,7 +567,7 @@ class TestCascadeResultDataClass:
             affected_projects=set(),
             affected_contexts=set(),
             calculation_time_ms=10.5,
-            cache_hit=False
+            cache_hit=False,
         )
 
         assert result.entity_id == task_id
@@ -565,7 +591,7 @@ class TestCascadeResultDataClass:
             affected_branches={branch_id},
             affected_projects={project_id},
             affected_contexts={context_id},
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
         all_ids = result.get_all_affected_ids()
@@ -587,7 +613,9 @@ class TestCascadeResultDataClass:
             affected_branches={str(uuid.uuid4())},
             affected_projects={str(uuid.uuid4())},
             affected_contexts=set(),
-            calculation_time_ms=0.0
+            calculation_time_ms=0.0,
         )
 
-        assert result.get_affected_count() == 5  # 2 tasks + 1 subtask + 1 branch + 1 project
+        assert (
+            result.get_affected_count() == 5
+        )  # 2 tasks + 1 subtask + 1 branch + 1 project

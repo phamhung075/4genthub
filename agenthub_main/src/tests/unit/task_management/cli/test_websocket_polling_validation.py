@@ -23,7 +23,7 @@ class TestSubtaskCompletePayloadValidation:
             task_id="task-uuid-456",
             completion_summary="Successfully completed the feature",
             progress_percentage=100,
-            completed_at="2025-11-06T22:00:00Z"
+            completed_at="2025-11-06T22:00:00Z",
         )
 
         assert valid_payload.id == "subtask-uuid-123"
@@ -35,9 +35,7 @@ class TestSubtaskCompletePayloadValidation:
     def test_minimal_subtask_complete_payload(self):
         """Should validate minimal required fields (id, title, task_id)"""
         minimal_payload = SubtaskCompletePayload(
-            id="subtask-uuid-123",
-            title="Test Subtask",
-            task_id="task-uuid-456"
+            id="subtask-uuid-123", title="Test Subtask", task_id="task-uuid-456"
         )
 
         # Optional fields should use defaults
@@ -53,7 +51,7 @@ class TestSubtaskCompletePayloadValidation:
                 id="subtask-uuid-123",
                 title="Test Subtask",
                 status="in_progress",  # Invalid - must be 'done'
-                task_id="task-uuid-456"
+                task_id="task-uuid-456",
             )
 
         error = exc_info.value
@@ -66,7 +64,7 @@ class TestSubtaskCompletePayloadValidation:
                 id="subtask-uuid-123",
                 title="Test Subtask",
                 task_id="task-uuid-456",
-                progress_percentage=50  # Invalid - must be 100
+                progress_percentage=50,  # Invalid - must be 100
             )
 
         error = exc_info.value
@@ -78,7 +76,7 @@ class TestSubtaskCompletePayloadValidation:
             SubtaskCompletePayload(
                 # Missing id
                 title="Test Subtask",
-                task_id="task-uuid-456"
+                task_id="task-uuid-456",
             )
 
         error = exc_info.value
@@ -90,7 +88,7 @@ class TestSubtaskCompletePayloadValidation:
             SubtaskCompletePayload(
                 id="subtask-uuid-123",
                 # Missing title
-                task_id="task-uuid-456"
+                task_id="task-uuid-456",
             )
 
         error = exc_info.value
@@ -101,7 +99,7 @@ class TestSubtaskCompletePayloadValidation:
         with pytest.raises(ValidationError) as exc_info:
             SubtaskCompletePayload(
                 id="subtask-uuid-123",
-                title="Test Subtask"
+                title="Test Subtask",
                 # Missing task_id
             )
 
@@ -118,7 +116,7 @@ class TestSubtaskCompletePayloadValidation:
             "task_id": "task-def-456",
             "completion_summary": "Feature X implemented with tests",
             "progress_percentage": 100,
-            "completed_at": "2025-11-06T22:10:00Z"
+            "completed_at": "2025-11-06T22:10:00Z",
         }
 
         # CLI would extract and validate like this
@@ -130,12 +128,15 @@ class TestSubtaskCompletePayloadValidation:
                 task_id=websocket_data.get("task_id"),
                 completion_summary=websocket_data.get("completion_summary"),
                 progress_percentage=websocket_data.get("progress_percentage", 100),
-                completed_at=websocket_data.get("completed_at")
+                completed_at=websocket_data.get("completed_at"),
             )
 
             # Should succeed
             assert validated_payload.id == "subtask-abc-123"
-            assert validated_payload.completion_summary == "Feature X implemented with tests"
+            assert (
+                validated_payload.completion_summary
+                == "Feature X implemented with tests"
+            )
         except ValidationError:
             pytest.fail("Valid payload should not raise ValidationError")
 
@@ -147,7 +148,7 @@ class TestSubtaskCompletePayloadValidation:
             "title": "Implement feature X",
             "status": "done",
             # Missing task_id - should fail validation
-            "completion_summary": "Feature X implemented"
+            "completion_summary": "Feature X implemented",
         }
 
         # CLI should catch ValidationError and fallback to legacy extraction
@@ -156,8 +157,10 @@ class TestSubtaskCompletePayloadValidation:
                 id=websocket_data.get("id"),
                 title=websocket_data.get("title"),
                 status=websocket_data.get("status", "done"),
-                task_id=websocket_data.get("task_id"),  # Will be None - validation fails
-                completion_summary=websocket_data.get("completion_summary")
+                task_id=websocket_data.get(
+                    "task_id"
+                ),  # Will be None - validation fails
+                completion_summary=websocket_data.get("completion_summary"),
             )
 
     def test_optional_fields_can_be_none(self):
@@ -167,7 +170,7 @@ class TestSubtaskCompletePayloadValidation:
             title="Test Subtask",
             task_id="task-uuid-456",
             completion_summary=None,  # Explicitly None
-            completed_at=None  # Explicitly None
+            completed_at=None,  # Explicitly None
         )
 
         assert payload.completion_summary is None

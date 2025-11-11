@@ -66,17 +66,27 @@ class MockWebSocketConnection:
         """Mock sending JSON message - just store it"""
         if self.connected:
             self.received_messages.append(message)
-            logger.info(f"✅ Mock WebSocket received message: {message['type']} - {message['payload']['action']}")
+            logger.info(
+                f"✅ Mock WebSocket received message: {message['type']} - {message['payload']['action']}"
+            )
         else:
             raise Exception("WebSocket not connected")
 
     def get_messages_by_type(self, event_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by event type"""
-        return [msg for msg in self.received_messages if msg['payload']['action'] == event_type]
+        return [
+            msg
+            for msg in self.received_messages
+            if msg["payload"]["action"] == event_type
+        ]
 
     def get_messages_by_entity(self, entity_type: str) -> list[dict[str, Any]]:
         """Get messages filtered by entity type"""
-        return [msg for msg in self.received_messages if msg['payload']['entity'] == entity_type]
+        return [
+            msg
+            for msg in self.received_messages
+            if msg["payload"]["entity"] == entity_type
+        ]
 
     def clear_messages(self):
         """Clear received messages"""
@@ -86,6 +96,7 @@ class MockWebSocketConnection:
 # ============================================================================
 # Pytest Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def user_id():
@@ -97,15 +108,23 @@ def user_id():
 def mock_auth(user_id):
     """Mock authentication context"""
     mock_auth_info = {
-        'user_id': user_id,
-        'email': 'test@example.com',
-        'sub': user_id,
-        'realm_roles': ['admin', 'user'],
-        'resource_access': {}
+        "user_id": user_id,
+        "email": "test@example.com",
+        "sub": user_id,
+        "realm_roles": ["admin", "user"],
+        "resource_access": {},
     }
 
-    with patch('fastmcp.auth.middleware.request_context_middleware.get_current_auth_info', return_value=mock_auth_info), \
-         patch('fastmcp.auth.middleware.request_context_middleware.is_authenticated', return_value=True):
+    with (
+        patch(
+            "fastmcp.auth.middleware.request_context_middleware.get_current_auth_info",
+            return_value=mock_auth_info,
+        ),
+        patch(
+            "fastmcp.auth.middleware.request_context_middleware.is_authenticated",
+            return_value=True,
+        ),
+    ):
         yield mock_auth_info
 
 
@@ -116,7 +135,7 @@ def user(user_id):
         id=user_id,
         email="test@example.com",
         username="testuser",
-        password_hash="test_hash"
+        password_hash="test_hash",
     )
 
 
@@ -151,9 +170,11 @@ def mock_websocket(user_id, user):
 
     logger.info("🧹 E2E Test Teardown: Cleaned up mock WebSocket")
 
+
 # ============================================================================
 # TEST 1: Task Create Triggers WebSocket Notification to Frontend
 # ============================================================================
+
 
 @pytest.mark.asyncio
 async def test_task_create_triggers_websocket_notification_to_frontend(
@@ -183,7 +204,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assignees=["agent-1"],
         status="todo",
         priority="high",
-        user_id=user_id
+        user_id=user_id,
     )
 
     # Clear any existing messages
@@ -202,9 +223,10 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
     # Get "created" notifications
     create_notifications = mock_websocket.get_messages_by_type("created")
 
-    assert len(create_notifications) > 0, \
-        f"❌ NO NOTIFICATION RECEIVED! Expected 'created' notification but got {len(create_notifications)} messages. " \
+    assert len(create_notifications) > 0, (
+        f"❌ NO NOTIFICATION RECEIVED! Expected 'created' notification but got {len(create_notifications)} messages. "
         f"All messages: {[msg['payload']['action'] for msg in mock_websocket.received_messages]}"
+    )
 
     notification = create_notifications[0]
 
@@ -230,12 +252,15 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
     task_data = payload["data"]["primary"]
     assert "id" in task_data, "Missing 'id' in task data"
     assert "title" in task_data, "Missing 'title' in task data"
-    assert task_data["title"] == request.title, \
+    assert task_data["title"] == request.title, (
         f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
+    )
     assert "status" in task_data, "Missing 'status' in task data"
     assert "priority" in task_data, "Missing 'priority' in task data"
 
-    logger.info("✅ E2E TEST PASSED: Task create notification received with correct data structure")
+    logger.info(
+        "✅ E2E TEST PASSED: Task create notification received with correct data structure"
+    )
 
     # ============================================================================
     # TEST 2: Task Update Triggers WebSocket Notification to Frontend
@@ -258,7 +283,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             description="Testing WebSocket notification for task update",
             git_branch_id="branch-123",
             assignees=["agent-1"],
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         create_response = self.create_task_use_case.execute(create_request)
@@ -273,11 +298,12 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Act: Update task (this should trigger WebSocket notification)
         logger.info("🎬 E2E TEST: Updating task to trigger notification...")
         update_request = UpdateTaskRequest(
-            title="UPDATED E2E Test Task",
-            status="in_progress"
+            title="UPDATED E2E Test Task", status="in_progress"
         )
 
-        update_response = self.update_task_use_case.execute(task_id, update_request, self.user_id)
+        update_response = self.update_task_use_case.execute(
+            task_id, update_request, self.user_id
+        )
 
         await asyncio.sleep(0.1)
 
@@ -287,8 +313,9 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Get "updated" notifications
         update_notifications = self.mock_websocket.get_messages_by_type("updated")
 
-        assert len(update_notifications) > 0, \
+        assert len(update_notifications) > 0, (
             f"❌ NO UPDATE NOTIFICATION RECEIVED! Expected 'updated' notification but got {len(update_notifications)} messages."
+        )
 
         notification = update_notifications[0]
 
@@ -299,12 +326,16 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
 
         # Verify updated data
         task_data = payload["data"]["primary"]
-        assert task_data["title"] == "UPDATED E2E Test Task", \
+        assert task_data["title"] == "UPDATED E2E Test Task", (
             f"Title not updated in notification: {task_data['title']}"
-        assert task_data["status"] == "in_progress" or "in_progress" in str(task_data["status"]), \
-            f"Status not updated in notification: {task_data['status']}"
+        )
+        assert task_data["status"] == "in_progress" or "in_progress" in str(
+            task_data["status"]
+        ), f"Status not updated in notification: {task_data['status']}"
 
-        logger.info("✅ E2E TEST PASSED: Task update notification received with updated data")
+        logger.info(
+            "✅ E2E TEST PASSED: Task update notification received with updated data"
+        )
 
     # ============================================================================
     # TEST 3: Task Delete Triggers WebSocket Notification to Frontend
@@ -327,7 +358,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             description="Testing WebSocket notification for task deletion",
             git_branch_id="branch-123",
             assignees=["agent-1"],
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         create_response = self.create_task_use_case.execute(create_request)
@@ -351,9 +382,10 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Get "deleted" notifications
         delete_notifications = self.mock_websocket.get_messages_by_type("deleted")
 
-        assert len(delete_notifications) > 0, \
-            f"❌ NO DELETE NOTIFICATION RECEIVED! Expected 'deleted' notification but got {len(delete_notifications)} messages. " \
+        assert len(delete_notifications) > 0, (
+            f"❌ NO DELETE NOTIFICATION RECEIVED! Expected 'deleted' notification but got {len(delete_notifications)} messages. "
             f"All messages: {[msg['payload']['action'] for msg in self.mock_websocket.received_messages]}"
+        )
 
         notification = delete_notifications[0]
 
@@ -365,10 +397,13 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Verify deleted task data included (for frontend to remove from UI)
         task_data = payload["data"]["primary"]
         assert "id" in task_data, "Missing task ID in delete notification"
-        assert task_data["id"] == task_id, \
+        assert task_data["id"] == task_id, (
             f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
+        )
 
-        logger.info("✅ E2E TEST PASSED: Task delete notification received with task ID")
+        logger.info(
+            "✅ E2E TEST PASSED: Task delete notification received with task ID"
+        )
 
     # ============================================================================
     # TEST 4: Verify Data Model Matches TypeScript Interface Exactly
@@ -416,7 +451,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             description="Testing data model matches TypeScript interface",
             git_branch_id="branch-123",
             assignees=["agent-1"],
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         self.mock_websocket.clear_messages()
@@ -434,14 +469,17 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         # Verify root level fields (TypeScript interface)
         assert isinstance(notification["id"], str), "id must be string"
         assert isinstance(notification["version"], str), "version must be string"
-        assert notification["type"] in ["update", "sync", "error", "heartbeat"], \
+        assert notification["type"] in ["update", "sync", "error", "heartbeat"], (
             f"type must be one of allowed values, got: {notification['type']}"
+        )
         assert isinstance(notification["timestamp"], str), "timestamp must be string"
         # Verify timestamp is ISO 8601 format
         try:
             datetime.fromisoformat(notification["timestamp"].replace("Z", "+00:00"))
         except ValueError:
-            pytest.fail(f"timestamp not in ISO 8601 format: {notification['timestamp']}")
+            pytest.fail(
+                f"timestamp not in ISO 8601 format: {notification['timestamp']}"
+            )
 
         assert isinstance(notification["sequence"], int), "sequence must be number"
 
@@ -456,11 +494,19 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         metadata = notification["metadata"]
         assert isinstance(metadata["source"], str), "metadata.source must be string"
         assert isinstance(metadata["userId"], str), "metadata.userId must be string"
-        assert isinstance(metadata["entity_type"], str), "metadata.entity_type must be string"
-        assert isinstance(metadata["entity_id"], str), "metadata.entity_id must be string"
-        assert isinstance(metadata["event_type"], str), "metadata.event_type must be string"
+        assert isinstance(metadata["entity_type"], str), (
+            "metadata.entity_type must be string"
+        )
+        assert isinstance(metadata["entity_id"], str), (
+            "metadata.entity_id must be string"
+        )
+        assert isinstance(metadata["event_type"], str), (
+            "metadata.event_type must be string"
+        )
 
-        logger.info("✅ E2E TEST PASSED: Data model matches TypeScript interface exactly")
+        logger.info(
+            "✅ E2E TEST PASSED: Data model matches TypeScript interface exactly"
+        )
 
     # ============================================================================
     # TEST 5: Verify Cascade Data Included for Frontend Animations
@@ -491,7 +537,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             description="Testing cascade data for animations",
             git_branch_id="branch-123",
             assignees=["agent-1"],
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         self.mock_websocket.clear_messages()
@@ -508,35 +554,45 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         payload = notification["payload"]
 
         # Verify cascade data in payload.data (for frontend consumption)
-        assert "cascade" in payload["data"], \
-            "❌ CASCADE DATA MISSING! Frontend needs this for animations. " \
+        assert "cascade" in payload["data"], (
+            "❌ CASCADE DATA MISSING! Frontend needs this for animations. "
             f"payload.data keys: {list(payload['data'].keys())}"
+        )
 
         cascade = payload["data"]["cascade"]
 
         # Verify cascade data structure (if present)
         if cascade:  # Cascade might be None for some entity types
             # Cascade should be a dictionary or list
-            assert isinstance(cascade, (dict, list)), \
+            assert isinstance(cascade, (dict, list)), (
                 f"Cascade data must be dict or list, got: {type(cascade)}"
+            )
 
             # If it's a list (branches), verify structure
             if isinstance(cascade, list) and len(cascade) > 0:
                 branch = cascade[0]
                 # Branch statistics for animations
                 if "task_count" in branch:
-                    assert isinstance(branch["task_count"], int), "task_count must be integer"
+                    assert isinstance(branch["task_count"], int), (
+                        "task_count must be integer"
+                    )
                 if "completed_tasks" in branch:
-                    assert isinstance(branch["completed_tasks"], int), "completed_tasks must be integer"
+                    assert isinstance(branch["completed_tasks"], int), (
+                        "completed_tasks must be integer"
+                    )
                 if "progress_percentage" in branch:
-                    assert isinstance(branch["progress_percentage"], (int, float)), \
+                    assert isinstance(branch["progress_percentage"], (int, float)), (
                         "progress_percentage must be number"
+                    )
 
         # Verify cascade data NOT in metadata (avoid duplication)
-        assert "cascade" not in notification["metadata"], \
+        assert "cascade" not in notification["metadata"], (
             "❌ CASCADE DATA IN METADATA! Should only be in payload.data (bug fix verification)"
+        )
 
-        logger.info("✅ E2E TEST PASSED: Cascade data included in payload.data for frontend animations")
+        logger.info(
+            "✅ E2E TEST PASSED: Cascade data included in payload.data for frontend animations"
+        )
 
     # ============================================================================
     # TEST 6: Verify Notifications Triggered ONLY by WebSocket, Not API Response
@@ -561,7 +617,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             description="Testing notification via WebSocket only",
             git_branch_id="branch-123",
             assignees=["agent-1"],
-            user_id=self.user_id
+            user_id=self.user_id,
         )
 
         self.mock_websocket.clear_messages()
@@ -575,21 +631,29 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
         assert hasattr(api_response, "task"), "API response must have 'task' field"
 
         # Verify API response does NOT contain notification metadata
-        task_dict = api_response.task.__dict__ if hasattr(api_response.task, "__dict__") else {}
+        task_dict = (
+            api_response.task.__dict__ if hasattr(api_response.task, "__dict__") else {}
+        )
 
-        assert "notification_sent" not in task_dict, \
+        assert "notification_sent" not in task_dict, (
             "❌ API response contains 'notification_sent' field! Should be WebSocket only"
-        assert "websocket_triggered" not in task_dict, \
+        )
+        assert "websocket_triggered" not in task_dict, (
             "❌ API response contains 'websocket_triggered' field! Should be WebSocket only"
-        assert "websocket_message" not in task_dict, \
+        )
+        assert "websocket_message" not in task_dict, (
             "❌ API response contains 'websocket_message' field! Should be WebSocket only"
+        )
 
         # Verify WebSocket notification arrived separately
         notifications = self.mock_websocket.get_messages_by_type("created")
-        assert len(notifications) > 0, \
+        assert len(notifications) > 0, (
             "❌ NO WEBSOCKET NOTIFICATION! Notification should arrive via WebSocket, not API"
+        )
 
-        logger.info("✅ E2E TEST PASSED: API response clean, notification via WebSocket only")
+        logger.info(
+            "✅ E2E TEST PASSED: API response clean, notification via WebSocket only"
+        )
 
     # ============================================================================
     # TEST 7: Multiple Connections for Same User All Receive Notification
@@ -628,7 +692,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
                 description="Testing multiple tabs receive notification",
                 git_branch_id="branch-123",
                 assignees=["agent-1"],
-                user_id=self.user_id
+                user_id=self.user_id,
             )
 
             response = self.create_task_use_case.execute(request)
@@ -647,9 +711,13 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             tab1_data = tab1_notifications[0]["payload"]["data"]["primary"]
             tab2_data = tab2_notifications[0]["payload"]["data"]["primary"]
 
-            assert tab1_data["title"] == tab2_data["title"], "Notification data differs between tabs"
+            assert tab1_data["title"] == tab2_data["title"], (
+                "Notification data differs between tabs"
+            )
 
-            logger.info("✅ E2E TEST PASSED: Multiple tabs received identical notification")
+            logger.info(
+                "✅ E2E TEST PASSED: Multiple tabs received identical notification"
+            )
 
         finally:
             # Cleanup second connection
@@ -685,7 +753,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             id=user_b_id,
             email=user_b_email,
             username="userb",
-            password_hash="test_hash"
+            password_hash="test_hash",
         )
 
         mock_websocket_user_b = MockWebSocketConnection(user_b_id, user_b_email)
@@ -706,7 +774,7 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
                 description="Testing multi-tenant isolation",
                 git_branch_id="branch-123",
                 assignees=["agent-1"],
-                user_id=self.user_id  # User A
+                user_id=self.user_id,  # User A
             )
 
             response = self.create_task_use_case.execute(request)
@@ -718,12 +786,17 @@ async def test_task_create_triggers_websocket_notification_to_frontend(
             user_a_notifications = self.mock_websocket.get_messages_by_type("created")
             user_b_notifications = mock_websocket_user_b.get_messages_by_type("created")
 
-            assert len(user_a_notifications) > 0, "❌ User A did not receive notification for their own task"
-            assert len(user_b_notifications) == 0, \
-                f"❌ SECURITY ISSUE: User B received notification for User A's task! " \
+            assert len(user_a_notifications) > 0, (
+                "❌ User A did not receive notification for their own task"
+            )
+            assert len(user_b_notifications) == 0, (
+                f"❌ SECURITY ISSUE: User B received notification for User A's task! "
                 f"Received: {user_b_notifications}"
+            )
 
-            logger.info("✅ E2E TEST PASSED: Multi-tenant isolation enforced, no cross-user leaks")
+            logger.info(
+                "✅ E2E TEST PASSED: Multi-tenant isolation enforced, no cross-user leaks"
+            )
 
         finally:
             # Cleanup User B connection

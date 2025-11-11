@@ -28,9 +28,7 @@ class TestSubtaskDeletePayloadCreation:
     def test_subtask_delete_payload_with_all_fields(self):
         """Test creating SubtaskDeletePayload with all required and optional fields"""
         payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title="Test Subtask"
+            id="subtask-123", task_id="task-456", title="Test Subtask"
         )
 
         assert payload.id == "subtask-123"
@@ -39,11 +37,7 @@ class TestSubtaskDeletePayloadCreation:
 
     def test_subtask_delete_payload_without_title(self):
         """Test creating SubtaskDeletePayload without optional title field"""
-        payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title=None
-        )
+        payload = SubtaskDeletePayload(id="subtask-123", task_id="task-456", title=None)
 
         assert payload.id == "subtask-123"
         assert payload.task_id == "task-456"
@@ -53,35 +47,21 @@ class TestSubtaskDeletePayloadCreation:
         """Test that SubtaskDeletePayload validates required fields"""
         # Missing id should raise validation error
         with pytest.raises(Exception):
-            SubtaskDeletePayload(
-                task_id="task-456",
-                title="Test"
-            )
+            SubtaskDeletePayload(task_id="task-456", title="Test")
 
         # Missing task_id should raise validation error
         with pytest.raises(Exception):
-            SubtaskDeletePayload(
-                id="subtask-123",
-                title="Test"
-            )
+            SubtaskDeletePayload(id="subtask-123", title="Test")
 
     def test_subtask_delete_payload_rejects_empty_ids(self):
         """Test that SubtaskDeletePayload rejects empty string IDs"""
         # Empty id should raise validation error
         with pytest.raises(ValueError, match="ID cannot be empty"):
-            SubtaskDeletePayload(
-                id="",
-                task_id="task-456",
-                title="Test"
-            )
+            SubtaskDeletePayload(id="", task_id="task-456", title="Test")
 
         # Empty task_id should raise validation error
         with pytest.raises(ValueError, match="ID cannot be empty"):
-            SubtaskDeletePayload(
-                id="subtask-123",
-                task_id="",
-                title="Test"
-            )
+            SubtaskDeletePayload(id="subtask-123", task_id="", title="Test")
 
 
 class TestSubtaskDeleteMessageCreation:
@@ -90,57 +70,49 @@ class TestSubtaskDeleteMessageCreation:
     def test_create_delete_message_with_subtask_payload(self):
         """Test creating WebSocket delete message with SubtaskDeletePayload"""
         payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title="Test Subtask"
+            id="subtask-123", task_id="task-456", title="Test Subtask"
         )
 
         message = create_delete_message(
-            entity='subtask',
-            payload=payload,
-            user_id='user-789'
+            entity="subtask", payload=payload, user_id="user-789"
         )
 
         assert isinstance(message, WSMessage)
-        assert message.version == '2.0'
-        assert message.type == 'update'
-        assert message.payload.entity == 'subtask'
-        assert message.payload.action == 'deleted'
-        assert message.payload.data.primary['id'] == 'subtask-123'
-        assert message.payload.data.primary['task_id'] == 'task-456'
-        assert message.payload.data.primary['title'] == 'Test Subtask'
-        assert message.metadata.userId == 'user-789'
-        assert message.metadata.entity_type == 'subtask'
-        assert message.metadata.entity_id == 'subtask-123'
+        assert message.version == "2.0"
+        assert message.type == "update"
+        assert message.payload.entity == "subtask"
+        assert message.payload.action == "deleted"
+        assert message.payload.data.primary["id"] == "subtask-123"
+        assert message.payload.data.primary["task_id"] == "task-456"
+        assert message.payload.data.primary["title"] == "Test Subtask"
+        assert message.metadata.userId == "user-789"
+        assert message.metadata.entity_type == "subtask"
+        assert message.metadata.entity_id == "subtask-123"
 
     def test_create_delete_message_without_title(self):
         """Test creating WebSocket delete message when title is None"""
-        payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title=None
-        )
+        payload = SubtaskDeletePayload(id="subtask-123", task_id="task-456", title=None)
 
         message = create_delete_message(
-            entity='subtask',
-            payload=payload,
-            user_id='user-789'
+            entity="subtask", payload=payload, user_id="user-789"
         )
 
-        assert message.payload.data.primary['id'] == 'subtask-123'
-        assert message.payload.data.primary['task_id'] == 'task-456'
-        assert message.payload.data.primary['title'] is None
+        assert message.payload.data.primary["id"] == "subtask-123"
+        assert message.payload.data.primary["task_id"] == "task-456"
+        assert message.payload.data.primary["title"] is None
 
 
 class TestSubtaskFacadeDeleteIntegration:
     """Test integration of SubtaskDeletePayload in subtask_application_facade"""
 
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService')
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase')
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService"
+    )
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase"
+    )
     def test_handle_delete_uses_subtask_delete_payload_with_title(
-        self,
-        mock_use_case_class,
-        mock_ws_service
+        self, mock_use_case_class, mock_ws_service
     ):
         """Test that _handle_delete_subtask uses SubtaskDeletePayload with title field"""
         from fastmcp.task_management.application.facades.subtask_application_facade import (
@@ -173,7 +145,7 @@ class TestSubtaskFacadeDeleteIntegration:
             task_id="task-456",
             subtask_data={"subtask_id": "subtask-123"},
             task_repository=mock_task_repo,
-            subtask_repository=mock_subtask_repo
+            subtask_repository=mock_subtask_repo,
         )
 
         # Verify success
@@ -183,14 +155,17 @@ class TestSubtaskFacadeDeleteIntegration:
         # Verify WebSocket notification was called
         assert mock_ws_service.sync_broadcast_subtask_event.called
 
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService')
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase')
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.logger')
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService"
+    )
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase"
+    )
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.logger"
+    )
     def test_handle_delete_logs_warning_when_title_missing(
-        self,
-        mock_logger,
-        mock_use_case_class,
-        mock_ws_service
+        self, mock_logger, mock_use_case_class, mock_ws_service
     ):
         """Test that warning is logged when subtask title cannot be retrieved"""
         from fastmcp.task_management.application.facades.subtask_application_facade import (
@@ -219,7 +194,7 @@ class TestSubtaskFacadeDeleteIntegration:
             task_id="task-456",
             subtask_data={"subtask_id": "subtask-123"},
             task_repository=mock_task_repo,
-            subtask_repository=mock_subtask_repo
+            subtask_repository=mock_subtask_repo,
         )
 
         # Verify success
@@ -227,16 +202,21 @@ class TestSubtaskFacadeDeleteIntegration:
 
         # Verify warning was logged about missing title
         # (This will be implemented in the code)
-        [call for call in mock_logger.warning.call_args_list
-                        if 'title' in str(call).lower() or 'fallback' in str(call).lower()]
+        [
+            call
+            for call in mock_logger.warning.call_args_list
+            if "title" in str(call).lower() or "fallback" in str(call).lower()
+        ]
         # Note: Assertion will pass after implementation adds logging
 
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService')
-    @patch('fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase')
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.WebSocketNotificationService"
+    )
+    @patch(
+        "fastmcp.task_management.application.facades.subtask_application_facade.RemoveSubtaskUseCase"
+    )
     def test_handle_delete_uses_fallback_title(
-        self,
-        mock_use_case_class,
-        mock_ws_service
+        self, mock_use_case_class, mock_ws_service
     ):
         """Test that fallback title is used when subtask title is unavailable"""
         from fastmcp.task_management.application.facades.subtask_application_facade import (
@@ -269,7 +249,7 @@ class TestSubtaskFacadeDeleteIntegration:
             task_id="task-456",
             subtask_data={"subtask_id": "subtask-123"},
             task_repository=mock_task_repo,
-            subtask_repository=mock_subtask_repo
+            subtask_repository=mock_subtask_repo,
         )
 
         # Verify success
@@ -286,52 +266,42 @@ class TestSubtaskDeletePayloadSerialization:
     def test_payload_serializes_to_dict(self):
         """Test that SubtaskDeletePayload can be serialized to dict"""
         payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title="Test Subtask"
+            id="subtask-123", task_id="task-456", title="Test Subtask"
         )
 
         payload_dict = payload.model_dump()
 
         assert payload_dict == {
-            'id': 'subtask-123',
-            'task_id': 'task-456',
-            'title': 'Test Subtask'
+            "id": "subtask-123",
+            "task_id": "task-456",
+            "title": "Test Subtask",
         }
 
     def test_payload_with_none_title_serializes(self):
         """Test that SubtaskDeletePayload with None title serializes correctly"""
-        payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title=None
-        )
+        payload = SubtaskDeletePayload(id="subtask-123", task_id="task-456", title=None)
 
         payload_dict = payload.model_dump()
 
         assert payload_dict == {
-            'id': 'subtask-123',
-            'task_id': 'task-456',
-            'title': None
+            "id": "subtask-123",
+            "task_id": "task-456",
+            "title": None,
         }
 
     def test_websocket_message_json_serialization(self):
         """Test that WebSocket message with SubtaskDeletePayload can be JSON serialized"""
         payload = SubtaskDeletePayload(
-            id="subtask-123",
-            task_id="task-456",
-            title="Test Subtask"
+            id="subtask-123", task_id="task-456", title="Test Subtask"
         )
 
         message = create_delete_message(
-            entity='subtask',
-            payload=payload,
-            user_id='user-789'
+            entity="subtask", payload=payload, user_id="user-789"
         )
 
         # Should be able to serialize to JSON
         json_str = message.model_dump_json()
         assert isinstance(json_str, str)
-        assert 'subtask-123' in json_str
-        assert 'task-456' in json_str
-        assert 'Test Subtask' in json_str
+        assert "subtask-123" in json_str
+        assert "task-456" in json_str
+        assert "Test Subtask" in json_str

@@ -64,7 +64,7 @@ class TestGetUserScopedRepository:
 
     def test_user_id_attribute_same_user(self):
         """Test repository with user_id attribute but same user"""
-        mock_repo = Mock(spec=['user_id'])  # Only has user_id, not with_user
+        mock_repo = Mock(spec=["user_id"])  # Only has user_id, not with_user
         mock_repo.user_id = "user123"
 
         service = ContextInheritanceService(user_id="user123")
@@ -83,12 +83,12 @@ class TestProjectInheritance:
 
         global_context = {
             "security_policies": {"mfa_required": False},
-            "coding_standards": {"style": "PEP8"}
+            "coding_standards": {"style": "PEP8"},
         }
 
         project_context = {
             "team_preferences": {"timezone": "UTC"},
-            "technology_stack": {"backend": "Python"}
+            "technology_stack": {"backend": "Python"},
         }
 
         result = service.inherit_project_from_global(global_context, project_context)
@@ -111,14 +111,12 @@ class TestProjectInheritance:
 
         global_context = {
             "security_policies": {"mfa_required": False},
-            "code_review": {"required": True}
+            "code_review": {"required": True},
         }
 
         project_context = {
             "team_preferences": {"timezone": "EST"},
-            "global_overrides": {
-                "security_policies.mfa_required": True
-            }
+            "global_overrides": {"security_policies.mfa_required": True},
         }
 
         result = service.inherit_project_from_global(global_context, project_context)
@@ -131,17 +129,9 @@ class TestProjectInheritance:
         """Test project context with delegation rules"""
         service = ContextInheritanceService()
 
-        global_context = {
-            "delegation_rules": {
-                "auto_delegate": {"enabled": True}
-            }
-        }
+        global_context = {"delegation_rules": {"auto_delegate": {"enabled": True}}}
 
-        project_context = {
-            "delegation_rules": {
-                "auto_delegate": {"max_depth": 3}
-            }
-        }
+        project_context = {"delegation_rules": {"auto_delegate": {"max_depth": 3}}}
 
         result = service.inherit_project_from_global(global_context, project_context)
 
@@ -156,7 +146,7 @@ class TestProjectInheritance:
         global_context = {"base_field": "value"}
         project_context = {
             "custom_field": "custom_value",
-            "another_field": {"nested": "data"}
+            "another_field": {"nested": "data"},
         }
 
         result = service.inherit_project_from_global(global_context, project_context)
@@ -175,12 +165,12 @@ class TestBranchInheritance:
 
         project_context = {
             "security_policies": {"mfa_required": True},
-            "team_preferences": {"timezone": "UTC"}
+            "team_preferences": {"timezone": "UTC"},
         }
 
         branch_context = {
             "branch_workflow": {"ci_cd": "enabled"},
-            "branch_standards": {"commit_format": "conventional"}
+            "branch_standards": {"commit_format": "conventional"},
         }
 
         result = service.inherit_branch_from_project(project_context, branch_context)
@@ -195,21 +185,21 @@ class TestBranchInheritance:
         # Should have inheritance metadata
         assert "inheritance_metadata" in result
         assert result["inheritance_metadata"]["inherited_from"] == "project"
-        assert result["inheritance_metadata"]["inheritance_chain"] == ["global", "project", "branch"]
+        assert result["inheritance_metadata"]["inheritance_chain"] == [
+            "global",
+            "project",
+            "branch",
+        ]
 
     def test_branch_local_overrides(self):
         """Test branch context with local overrides"""
         service = ContextInheritanceService()
 
-        project_context = {
-            "code_review": {"required": True, "min_approvals": 2}
-        }
+        project_context = {"code_review": {"required": True, "min_approvals": 2}}
 
         branch_context = {
             "branch_workflow": {"feature_flags": True},
-            "local_overrides": {
-                "code_review.min_approvals": 1
-            }
+            "local_overrides": {"code_review.min_approvals": 1},
         }
 
         result = service.inherit_branch_from_project(project_context, branch_context)
@@ -226,7 +216,7 @@ class TestBranchInheritance:
         branch_context = {
             "agent_assignments": {
                 "coding-agent": ["task1", "task2"],
-                "test-agent": ["task3"]
+                "test-agent": ["task3"],
             }
         }
 
@@ -246,15 +236,10 @@ class TestTaskInheritance:
 
         branch_context = {
             "security_policies": {"mfa_required": True},
-            "branch_workflow": {"ci_cd": "enabled"}
+            "branch_workflow": {"ci_cd": "enabled"},
         }
 
-        task_context = {
-            "task_data": {
-                "priority": "high",
-                "deadline": "2025-12-31"
-            }
-        }
+        task_context = {"task_data": {"priority": "high", "deadline": "2025-12-31"}}
 
         result = service.inherit_task_from_branch(branch_context, task_context)
 
@@ -268,21 +253,22 @@ class TestTaskInheritance:
         # Should have inheritance metadata
         assert "inheritance_metadata" in result
         assert result["inheritance_metadata"]["inherited_from"] == "branch"
-        assert result["inheritance_metadata"]["inheritance_chain"] == ["global", "project", "branch", "task"]
+        assert result["inheritance_metadata"]["inheritance_chain"] == [
+            "global",
+            "project",
+            "branch",
+            "task",
+        ]
 
     def test_task_local_overrides(self):
         """Test task context with local overrides"""
         service = ContextInheritanceService()
 
-        branch_context = {
-            "testing": {"coverage_threshold": 80}
-        }
+        branch_context = {"testing": {"coverage_threshold": 80}}
 
         task_context = {
             "task_data": {"type": "bug_fix"},
-            "local_overrides": {
-                "testing.coverage_threshold": 70
-            }
+            "local_overrides": {"testing.coverage_threshold": 70},
         }
 
         result = service.inherit_task_from_branch(branch_context, task_context)
@@ -299,7 +285,7 @@ class TestTaskInheritance:
         task_context = {
             "implementation_notes": {
                 "approach": "TDD",
-                "considerations": ["performance", "security"]
+                "considerations": ["performance", "security"],
             }
         }
 
@@ -313,15 +299,12 @@ class TestTaskInheritance:
         """Test task context with custom inheritance rules"""
         service = ContextInheritanceService()
 
-        branch_context = {
-            "field1": "value1",
-            "field2": "value2"
-        }
+        branch_context = {"field1": "value1", "field2": "value2"}
 
         task_context = {
             "custom_inheritance_rules": {
                 "exclude_keys": ["field1"],
-                "force_values": {"field3": "forced"}
+                "force_values": {"field3": "forced"},
             }
         }
 
@@ -340,7 +323,7 @@ class TestTaskInheritance:
         task_context = {
             "delegation_triggers": {
                 "on_completion": ["notify_team"],
-                "on_error": ["escalate"]
+                "on_error": ["escalate"],
             }
         }
 
@@ -369,12 +352,8 @@ class TestDeepMerge:
         """Test merging nested dictionaries"""
         service = ContextInheritanceService()
 
-        base = {
-            "config": {"setting1": "value1", "setting2": "value2"}
-        }
-        override = {
-            "config": {"setting2": "new_value", "setting3": "value3"}
-        }
+        base = {"config": {"setting1": "value1", "setting2": "value2"}}
+        override = {"config": {"setting2": "new_value", "setting3": "value3"}}
 
         result = service._deep_merge(base, override)
 
@@ -426,14 +405,8 @@ class TestApplyOverrides:
         """Test nested key override with dot notation"""
         service = ContextInheritanceService()
 
-        context = {
-            "config": {
-                "database": {"host": "localhost"}
-            }
-        }
-        overrides = {
-            "config.database.host": "prod-server"
-        }
+        context = {"config": {"database": {"host": "localhost"}}}
+        overrides = {"config.database.host": "prod-server"}
 
         result = service._apply_overrides(context, overrides)
 
@@ -444,9 +417,7 @@ class TestApplyOverrides:
         service = ContextInheritanceService()
 
         context = {"existing": "data"}
-        overrides = {
-            "new.nested.field": "value"
-        }
+        overrides = {"new.nested.field": "value"}
 
         result = service._apply_overrides(context, overrides)
 
@@ -460,12 +431,8 @@ class TestMergeDelegationRules:
         """Test merging auto_delegate settings"""
         service = ContextInheritanceService()
 
-        base_rules = {
-            "auto_delegate": {"enabled": True, "max_depth": 3}
-        }
-        project_rules = {
-            "auto_delegate": {"max_depth": 5, "timeout": 60}
-        }
+        base_rules = {"auto_delegate": {"enabled": True, "max_depth": 3}}
+        project_rules = {"auto_delegate": {"max_depth": 5, "timeout": 60}}
 
         result = service._merge_delegation_rules(base_rules, project_rules)
 
@@ -477,12 +444,8 @@ class TestMergeDelegationRules:
         """Test merging threshold settings"""
         service = ContextInheritanceService()
 
-        base_rules = {
-            "thresholds": {"complexity": 10}
-        }
-        project_rules = {
-            "thresholds": {"complexity": 15, "priority": "high"}
-        }
+        base_rules = {"thresholds": {"complexity": 10}}
+        project_rules = {"thresholds": {"complexity": 15, "priority": "high"}}
 
         result = service._merge_delegation_rules(base_rules, project_rules)
 
@@ -500,10 +463,12 @@ class TestCustomInheritanceRules:
         context = {
             "keep_this": "value1",
             "remove_this": "value2",
-            "nested": {"keep": "yes", "remove": "no"}
+            "nested": {"keep": "yes", "remove": "no"},
         }
 
-        result = service._process_exclude_keys(context, ["remove_this", "nested.remove"])
+        result = service._process_exclude_keys(
+            context, ["remove_this", "nested.remove"]
+        )
 
         assert "keep_this" in result
         assert "remove_this" not in result
@@ -529,8 +494,12 @@ class TestCustomInheritanceRules:
         conditional_config = [
             {
                 "name": "prod_settings",
-                "condition": {"type": "key_equals", "key": "environment", "value": "production"},
-                "overrides": {"debug": False}
+                "condition": {
+                    "type": "key_equals",
+                    "key": "environment",
+                    "value": "production",
+                },
+                "overrides": {"debug": False},
             }
         ]
 
@@ -548,9 +517,24 @@ class TestConditionEvaluation:
 
         context = {"field1": "value", "nested": {"field2": "value"}}
 
-        assert service._evaluate_condition(context, {"type": "key_exists", "key": "field1"}) is True
-        assert service._evaluate_condition(context, {"type": "key_exists", "key": "nested.field2"}) is True
-        assert service._evaluate_condition(context, {"type": "key_exists", "key": "nonexistent"}) is False
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_exists", "key": "field1"}
+            )
+            is True
+        )
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_exists", "key": "nested.field2"}
+            )
+            is True
+        )
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_exists", "key": "nonexistent"}
+            )
+            is False
+        )
 
     def test_key_equals_condition(self):
         """Test key_equals condition"""
@@ -558,18 +542,24 @@ class TestConditionEvaluation:
 
         context = {"status": "active", "nested": {"value": 42}}
 
-        assert service._evaluate_condition(
-            context,
-            {"type": "key_equals", "key": "status", "value": "active"}
-        ) is True
-        assert service._evaluate_condition(
-            context,
-            {"type": "key_equals", "key": "nested.value", "value": 42}
-        ) is True
-        assert service._evaluate_condition(
-            context,
-            {"type": "key_equals", "key": "status", "value": "inactive"}
-        ) is False
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_equals", "key": "status", "value": "active"}
+            )
+            is True
+        )
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_equals", "key": "nested.value", "value": 42}
+            )
+            is True
+        )
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_equals", "key": "status", "value": "inactive"}
+            )
+            is False
+        )
 
     def test_key_contains_condition(self):
         """Test key_contains condition"""
@@ -577,14 +567,18 @@ class TestConditionEvaluation:
 
         context = {"message": "Hello World"}
 
-        assert service._evaluate_condition(
-            context,
-            {"type": "key_contains", "key": "message", "value": "Hello"}
-        ) is True
-        assert service._evaluate_condition(
-            context,
-            {"type": "key_contains", "key": "message", "value": "Goodbye"}
-        ) is False
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_contains", "key": "message", "value": "Hello"}
+            )
+            is True
+        )
+        assert (
+            service._evaluate_condition(
+                context, {"type": "key_contains", "key": "message", "value": "Goodbye"}
+            )
+            is False
+        )
 
 
 class TestInheritanceValidation:
@@ -597,7 +591,7 @@ class TestInheritanceValidation:
         resolved_context = {
             "inheritance_metadata": {
                 "inherited_from": "branch",
-                "inheritance_chain": ["global", "project", "branch", "task"]
+                "inheritance_chain": ["global", "project", "branch", "task"],
             }
         }
 
@@ -613,11 +607,13 @@ class TestInheritanceValidation:
         resolved_context = {
             "inheritance_metadata": {
                 "inherited_from": "project",
-                "inheritance_chain": ["global", "project", "branch"]
+                "inheritance_chain": ["global", "project", "branch"],
             }
         }
 
-        result = service.validate_inheritance_chain("branch", "branch123", resolved_context)
+        result = service.validate_inheritance_chain(
+            "branch", "branch123", resolved_context
+        )
 
         assert result["valid"] is True
         assert len(result["issues"]) == 0
@@ -640,7 +636,7 @@ class TestInheritanceValidation:
         resolved_context = {
             "inheritance_metadata": {
                 "inherited_from": "branch",
-                "inheritance_chain": ["global", "task"]  # Missing project and branch
+                "inheritance_chain": ["global", "task"],  # Missing project and branch
             }
         }
 
@@ -656,14 +652,14 @@ class TestInheritanceValidation:
         resolved_context = {
             "inheritance_metadata": {
                 "inherited_from": "branch",
-                "inheritance_chain": ["global", "project", "branch"]
+                "inheritance_chain": ["global", "project", "branch"],
             },
-            "local_overrides": {
-                "nonexistent.field": "value"
-            }
+            "local_overrides": {"nonexistent.field": "value"},
         }
 
-        result = service.validate_inheritance_chain("branch", "branch123", resolved_context)
+        result = service.validate_inheritance_chain(
+            "branch", "branch123", resolved_context
+        )
 
         assert result["valid"] is False
         assert any("Override path not found" in issue for issue in result["issues"])
@@ -676,13 +672,7 @@ class TestUtilityMethods:
         """Test getting nested value from context"""
         service = ContextInheritanceService()
 
-        context = {
-            "level1": {
-                "level2": {
-                    "level3": "target_value"
-                }
-            }
-        }
+        context = {"level1": {"level2": {"level3": "target_value"}}}
 
         result = service._get_nested_value(context, "level1.level2.level3")
         assert result == "target_value"
@@ -691,11 +681,7 @@ class TestUtilityMethods:
         """Test checking if nested key exists"""
         service = ContextInheritanceService()
 
-        context = {
-            "config": {
-                "database": {"host": "localhost"}
-            }
-        }
+        context = {"config": {"database": {"host": "localhost"}}}
 
         assert service._key_exists(context, "config.database.host") is True
         assert service._key_exists(context, "config.nonexistent") is False
@@ -708,8 +694,8 @@ class TestUtilityMethods:
 
         # Should be ISO format with Z suffix
         assert isinstance(timestamp, str)
-        assert timestamp.endswith('Z')
-        assert 'T' in timestamp
+        assert timestamp.endswith("Z")
+        assert "T" in timestamp
 
 
 class TestGetInheritedContext:

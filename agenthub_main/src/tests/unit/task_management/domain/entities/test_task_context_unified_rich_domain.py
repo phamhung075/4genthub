@@ -21,10 +21,7 @@ class TestTaskContextUnifiedFeatureFlag:
 
     def test_rich_domain_model_is_active(self):
         """Test that rich domain model is always active (feature flag removed)."""
-        context = TaskContextUnified(
-            id="test-ctx-1",
-            branch_id="branch-1"
-        )
+        context = TaskContextUnified(id="test-ctx-1", branch_id="branch-1")
 
         # Rich domain model is now the default and only behavior
         # Feature flag has been removed - this test verifies the context can be created
@@ -41,7 +38,7 @@ class TestValidateContextData:
             id="ctx-1",
             branch_id="br-1",
             progress=150,  # Invalid progress
-            task_data={}  # Missing title
+            task_data={},  # Missing title
         )
 
         is_valid, errors = context.validate_context_data()
@@ -61,12 +58,10 @@ class TestValidateContextData:
                 {
                     "timestamp": "2024-01-01T10:00:00Z",
                     "category": "insight",
-                    "content": "Found optimization"
+                    "content": "Found optimization",
                 }
             ],
-            blockers={
-                "blocker1": {"description": "Waiting for API"}
-            }
+            blockers={"blocker1": {"description": "Waiting for API"}},
         )
 
         is_valid, errors = context.validate_context_data()
@@ -77,10 +72,7 @@ class TestValidateContextData:
     def test_validate_invalid_progress_out_of_range(self):
         """Progress must be 0-100."""
         context = TaskContextUnified(
-            id="ctx-3",
-            branch_id="br-3",
-            progress=150,
-            task_data={"title": "Test"}
+            id="ctx-3", branch_id="br-3", progress=150, task_data={"title": "Test"}
         )
 
         is_valid, errors = context.validate_context_data()
@@ -91,10 +83,7 @@ class TestValidateContextData:
     def test_validate_negative_progress(self):
         """Negative progress is invalid."""
         context = TaskContextUnified(
-            id="ctx-4",
-            branch_id="br-4",
-            progress=-10,
-            task_data={"title": "Test"}
+            id="ctx-4", branch_id="br-4", progress=-10, task_data={"title": "Test"}
         )
 
         is_valid, errors = context.validate_context_data()
@@ -108,7 +97,7 @@ class TestValidateContextData:
             id="ctx-5",
             branch_id="br-5",
             progress=50,
-            task_data={}  # Missing title
+            task_data={},  # Missing title
         )
 
         is_valid, errors = context.validate_context_data()
@@ -123,7 +112,7 @@ class TestValidateContextData:
             branch_id="br-6",
             progress=50,
             task_data={"title": "Test"},
-            insights=["not a dict"]
+            insights=["not a dict"],
         )
 
         is_valid, errors = context.validate_context_data()
@@ -140,7 +129,7 @@ class TestValidateContextData:
             task_data={"title": "Test"},
             insights=[
                 {"timestamp": "2024-01-01T10:00:00Z"}  # Missing category, content
-            ]
+            ],
         )
 
         is_valid, errors = context.validate_context_data()
@@ -160,9 +149,9 @@ class TestValidateContextData:
                 {
                     "timestamp": "2024-01-01T10:00:00Z",
                     "category": "invalid_category",
-                    "content": "Test"
+                    "content": "Test",
                 }
-            ]
+            ],
         )
 
         is_valid, errors = context.validate_context_data()
@@ -179,7 +168,7 @@ class TestValidateContextData:
             task_data={"title": "Test"},
             blockers={
                 "blocker1": {}  # Missing description
-            }
+            },
         )
 
         is_valid, errors = context.validate_context_data()
@@ -196,7 +185,7 @@ class TestValidateContextData:
             task_data={},  # Missing title
             insights=[
                 {"timestamp": "2024-01-01T10:00:00Z"}  # Missing fields
-            ]
+            ],
         )
 
         is_valid, errors = context.validate_context_data()
@@ -211,27 +200,19 @@ class TestMergeContextUpdates:
     def test_merge_with_flag_disabled_direct_update(self):
         """When flag is disabled, updates are applied directly (legacy)."""
         context = TaskContextUnified(
-            id="ctx-1",
-            branch_id="br-1",
-            progress=50,
-            task_data={"title": "Original"}
+            id="ctx-1", branch_id="br-1", progress=50, task_data={"title": "Original"}
         )
 
-        context.merge_context_updates({
-            "progress": 75,
-            "task_data": {"title": "Updated"}
-        })
+        context.merge_context_updates(
+            {"progress": 75, "task_data": {"title": "Updated"}}
+        )
 
         assert context.progress == 75
         assert context.task_data["title"] == "Updated"
 
     def test_merge_progress_increase_allowed(self):
         """Progress can increase without restriction."""
-        context = TaskContextUnified(
-            id="ctx-2",
-            branch_id="br-2",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-2", branch_id="br-2", progress=50)
 
         context.merge_context_updates({"progress": 75})
 
@@ -239,11 +220,7 @@ class TestMergeContextUpdates:
 
     def test_merge_progress_decrease_ignored_by_default(self):
         """Progress decrease is ignored unless explicitly allowed."""
-        context = TaskContextUnified(
-            id="ctx-3",
-            branch_id="br-3",
-            progress=75
-        )
+        context = TaskContextUnified(id="ctx-3", branch_id="br-3", progress=75)
 
         context.merge_context_updates({"progress": 50})
 
@@ -251,49 +228,37 @@ class TestMergeContextUpdates:
 
     def test_merge_progress_decrease_with_flag(self):
         """Progress decrease allowed with _allow_progress_decrease flag."""
-        context = TaskContextUnified(
-            id="ctx-4",
-            branch_id="br-4",
-            progress=75
-        )
+        context = TaskContextUnified(id="ctx-4", branch_id="br-4", progress=75)
 
-        context.merge_context_updates({
-            "progress": 50,
-            "_allow_progress_decrease": True
-        })
+        context.merge_context_updates(
+            {"progress": 50, "_allow_progress_decrease": True}
+        )
 
         assert context.progress == 50
 
     def test_merge_progress_clamped_to_range(self):
         """Progress is clamped to 0-100 range."""
-        context = TaskContextUnified(
-            id="ctx-5",
-            branch_id="br-5",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-5", branch_id="br-5", progress=50)
 
         # Test upper bound
         context.merge_context_updates({"progress": 150})
         assert context.progress == 100
 
         # Test lower bound with explicit allow
-        context.merge_context_updates({
-            "progress": -10,
-            "_allow_progress_decrease": True
-        })
+        context.merge_context_updates(
+            {"progress": -10, "_allow_progress_decrease": True}
+        )
         assert context.progress == 0
 
     def test_merge_insights_append_only_list(self):
         """Insights are append-only when list provided."""
         context = TaskContextUnified(
-            id="ctx-6",
-            branch_id="br-6",
-            insights=[{"content": "Original"}]
+            id="ctx-6", branch_id="br-6", insights=[{"content": "Original"}]
         )
 
-        context.merge_context_updates({
-            "insights": [{"content": "New 1"}, {"content": "New 2"}]
-        })
+        context.merge_context_updates(
+            {"insights": [{"content": "New 1"}, {"content": "New 2"}]}
+        )
 
         assert len(context.insights) == 3
         assert context.insights[0]["content"] == "Original"
@@ -303,14 +268,10 @@ class TestMergeContextUpdates:
     def test_merge_insights_append_only_dict(self):
         """Single insight dict is appended to list."""
         context = TaskContextUnified(
-            id="ctx-7",
-            branch_id="br-7",
-            insights=[{"content": "Original"}]
+            id="ctx-7", branch_id="br-7", insights=[{"content": "Original"}]
         )
 
-        context.merge_context_updates({
-            "insights": {"content": "New"}
-        })
+        context.merge_context_updates({"insights": {"content": "New"}})
 
         assert len(context.insights) == 2
         assert context.insights[1]["content"] == "New"
@@ -320,15 +281,17 @@ class TestMergeContextUpdates:
         context = TaskContextUnified(
             id="ctx-8",
             branch_id="br-8",
-            blockers={"blocker1": {"description": "Original"}}
+            blockers={"blocker1": {"description": "Original"}},
         )
 
-        context.merge_context_updates({
-            "blockers": {
-                "blocker1": {"description": "Updated"},
-                "blocker2": {"description": "New"}
+        context.merge_context_updates(
+            {
+                "blockers": {
+                    "blocker1": {"description": "Updated"},
+                    "blocker2": {"description": "New"},
+                }
             }
-        })
+        )
 
         assert context.blockers["blocker1"]["description"] == "Updated"
         assert context.blockers["blocker2"]["description"] == "New"
@@ -336,14 +299,10 @@ class TestMergeContextUpdates:
     def test_merge_metadata_deep_merge(self):
         """Metadata is deep merged, not replaced."""
         context = TaskContextUnified(
-            id="ctx-9",
-            branch_id="br-9",
-            metadata={"key1": "value1", "key2": "value2"}
+            id="ctx-9", branch_id="br-9", metadata={"key1": "value1", "key2": "value2"}
         )
 
-        context.merge_context_updates({
-            "metadata": {"key2": "updated", "key3": "new"}
-        })
+        context.merge_context_updates({"metadata": {"key2": "updated", "key3": "new"}})
 
         assert context.metadata["key1"] == "value1"  # Preserved
         assert context.metadata["key2"] == "updated"  # Updated
@@ -355,13 +314,15 @@ class TestMergeContextUpdates:
             id="ctx-10",
             branch_id="br-10",
             task_data={"title": "Test", "status": "todo"},
-            execution_context={"files": ["file1.py"]}
+            execution_context={"files": ["file1.py"]},
         )
 
-        context.merge_context_updates({
-            "task_data": {"status": "in_progress", "progress": 50},
-            "execution_context": {"tests": ["test1.py"]}
-        })
+        context.merge_context_updates(
+            {
+                "task_data": {"status": "in_progress", "progress": 50},
+                "execution_context": {"tests": ["test1.py"]},
+            }
+        )
 
         # task_data merged
         assert context.task_data["title"] == "Test"
@@ -375,29 +336,20 @@ class TestMergeContextUpdates:
     def test_merge_next_steps_replaced(self):
         """Next steps are replaced, not appended."""
         context = TaskContextUnified(
-            id="ctx-11",
-            branch_id="br-11",
-            next_steps=["Old step 1", "Old step 2"]
+            id="ctx-11", branch_id="br-11", next_steps=["Old step 1", "Old step 2"]
         )
 
-        context.merge_context_updates({
-            "next_steps": ["New step 1", "New step 2"]
-        })
+        context.merge_context_updates({"next_steps": ["New step 1", "New step 2"]})
 
         assert context.next_steps == ["New step 1", "New step 2"]
 
     def test_merge_internal_flags_ignored(self):
         """Internal flags (starting with _) are ignored."""
-        context = TaskContextUnified(
-            id="ctx-12",
-            branch_id="br-12",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-12", branch_id="br-12", progress=50)
 
-        context.merge_context_updates({
-            "_internal_flag": "should be ignored",
-            "progress": 75
-        })
+        context.merge_context_updates(
+            {"_internal_flag": "should be ignored", "progress": 75}
+        )
 
         assert not hasattr(context, "_internal_flag")
         assert context.progress == 75
@@ -408,15 +360,10 @@ class TestAddInsight:
 
     def test_add_insight_includes_all_fields(self):
         """Rich domain model always adds complete insight with timestamp."""
-        context = TaskContextUnified(
-            id="ctx-1",
-            branch_id="br-1"
-        )
+        context = TaskContextUnified(id="ctx-1", branch_id="br-1")
 
         context.add_insight(
-            category="insight",
-            content="Test insight",
-            agent="test-agent"
+            category="insight", content="Test insight", agent="test-agent"
         )
 
         assert len(context.insights) == 1
@@ -427,18 +374,20 @@ class TestAddInsight:
 
     def test_add_insight_valid_categories(self):
         """Test adding insights with all valid categories."""
-        context = TaskContextUnified(
-            id="ctx-2",
-            branch_id="br-2"
-        )
+        context = TaskContextUnified(id="ctx-2", branch_id="br-2")
 
-        valid_categories = ['insight', 'challenge', 'solution', 'decision', 'technical', 'business']
+        valid_categories = [
+            "insight",
+            "challenge",
+            "solution",
+            "decision",
+            "technical",
+            "business",
+        ]
 
         for category in valid_categories:
             context.add_insight(
-                category=category,
-                content=f"Test {category}",
-                agent="test-agent"
+                category=category, content=f"Test {category}", agent="test-agent"
             )
 
         assert len(context.insights) == 6
@@ -447,61 +396,39 @@ class TestAddInsight:
 
     def test_add_insight_invalid_category(self):
         """Invalid category raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-3",
-            branch_id="br-3"
-        )
+        context = TaskContextUnified(id="ctx-3", branch_id="br-3")
 
         with pytest.raises(ValueError, match="Invalid category"):
             context.add_insight(
-                category="invalid_category",
-                content="Test",
-                agent="test-agent"
+                category="invalid_category", content="Test", agent="test-agent"
             )
 
     def test_add_insight_empty_content(self):
         """Empty content raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-4",
-            branch_id="br-4"
-        )
+        context = TaskContextUnified(id="ctx-4", branch_id="br-4")
 
         with pytest.raises(ValueError, match="content cannot be empty"):
-            context.add_insight(
-                category="insight",
-                content="",
-                agent="test-agent"
-            )
+            context.add_insight(category="insight", content="", agent="test-agent")
 
     def test_add_insight_whitespace_content(self):
         """Whitespace-only content raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-5",
-            branch_id="br-5"
-        )
+        context = TaskContextUnified(id="ctx-5", branch_id="br-5")
 
         with pytest.raises(ValueError, match="content cannot be empty"):
-            context.add_insight(
-                category="insight",
-                content="   ",
-                agent="test-agent"
-            )
+            context.add_insight(category="insight", content="   ", agent="test-agent")
 
     def test_add_insight_valid_importance_levels(self):
         """Test all valid importance levels."""
-        context = TaskContextUnified(
-            id="ctx-6",
-            branch_id="br-6"
-        )
+        context = TaskContextUnified(id="ctx-6", branch_id="br-6")
 
-        valid_importance = ['low', 'medium', 'high', 'critical']
+        valid_importance = ["low", "medium", "high", "critical"]
 
         for importance in valid_importance:
             context.add_insight(
                 category="insight",
                 content=f"Test {importance}",
                 agent="test-agent",
-                importance=importance
+                importance=importance,
             )
 
         assert len(context.insights) == 4
@@ -510,46 +437,32 @@ class TestAddInsight:
 
     def test_add_insight_invalid_importance(self):
         """Invalid importance raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-7",
-            branch_id="br-7"
-        )
+        context = TaskContextUnified(id="ctx-7", branch_id="br-7")
 
         with pytest.raises(ValueError, match="Invalid importance"):
             context.add_insight(
                 category="insight",
                 content="Test",
                 agent="test-agent",
-                importance="invalid"
+                importance="invalid",
             )
 
     def test_add_insight_default_values(self):
         """Test default values for agent and importance."""
-        context = TaskContextUnified(
-            id="ctx-8",
-            branch_id="br-8"
-        )
+        context = TaskContextUnified(id="ctx-8", branch_id="br-8")
 
-        context.add_insight(
-            category="insight",
-            content="Test insight"
-        )
+        context.add_insight(category="insight", content="Test insight")
 
         assert context.insights[0]["agent"] == "system"
         assert context.insights[0]["importance"] == "medium"
 
     def test_add_insight_timestamp_added(self):
         """Timestamp is automatically added."""
-        context = TaskContextUnified(
-            id="ctx-9",
-            branch_id="br-9"
-        )
+        context = TaskContextUnified(id="ctx-9", branch_id="br-9")
 
         before = datetime.now(UTC)
         context.add_insight(
-            category="insight",
-            content="Test insight",
-            agent="test-agent"
+            category="insight", content="Test insight", agent="test-agent"
         )
         after = datetime.now(UTC)
 
@@ -559,15 +472,10 @@ class TestAddInsight:
 
     def test_add_insight_content_stripped(self):
         """Content is stripped of whitespace."""
-        context = TaskContextUnified(
-            id="ctx-10",
-            branch_id="br-10"
-        )
+        context = TaskContextUnified(id="ctx-10", branch_id="br-10")
 
         context.add_insight(
-            category="insight",
-            content="  Test with spaces  ",
-            agent="test-agent"
+            category="insight", content="  Test with spaces  ", agent="test-agent"
         )
 
         assert context.insights[0]["content"] == "Test with spaces"
@@ -578,11 +486,7 @@ class TestUpdateProgress:
 
     def test_update_progress_stores_notes_properly(self):
         """Rich domain model updates progress and stores notes correctly."""
-        context = TaskContextUnified(
-            id="ctx-1",
-            branch_id="br-1",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-1", branch_id="br-1", progress=50)
 
         context.update_progress(75, notes="Progress update")
 
@@ -593,11 +497,7 @@ class TestUpdateProgress:
 
     def test_update_progress_valid_increase(self):
         """Valid progress increase is applied."""
-        context = TaskContextUnified(
-            id="ctx-2",
-            branch_id="br-2",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-2", branch_id="br-2", progress=50)
 
         context.update_progress(75)
 
@@ -605,44 +505,28 @@ class TestUpdateProgress:
 
     def test_update_progress_invalid_too_high(self):
         """Progress > 100 raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-3",
-            branch_id="br-3",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-3", branch_id="br-3", progress=50)
 
         with pytest.raises(ValueError, match="Progress must be between 0-100"):
             context.update_progress(150)
 
     def test_update_progress_invalid_negative(self):
         """Negative progress raises ValueError."""
-        context = TaskContextUnified(
-            id="ctx-4",
-            branch_id="br-4",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-4", branch_id="br-4", progress=50)
 
         with pytest.raises(ValueError, match="Progress must be between 0-100"):
             context.update_progress(-10)
 
     def test_update_progress_decrease_not_allowed_by_default(self):
         """Progress decrease raises ValueError by default."""
-        context = TaskContextUnified(
-            id="ctx-5",
-            branch_id="br-5",
-            progress=75
-        )
+        context = TaskContextUnified(id="ctx-5", branch_id="br-5", progress=75)
 
         with pytest.raises(ValueError, match="Progress cannot decrease"):
             context.update_progress(50)
 
     def test_update_progress_decrease_with_flag(self):
         """Progress decrease allowed with allow_decrease=True."""
-        context = TaskContextUnified(
-            id="ctx-6",
-            branch_id="br-6",
-            progress=75
-        )
+        context = TaskContextUnified(id="ctx-6", branch_id="br-6", progress=75)
 
         context.update_progress(50, allow_decrease=True)
 
@@ -650,11 +534,7 @@ class TestUpdateProgress:
 
     def test_update_progress_history_tracked(self):
         """Progress changes are tracked in metadata history."""
-        context = TaskContextUnified(
-            id="ctx-7",
-            branch_id="br-7",
-            progress=25
-        )
+        context = TaskContextUnified(id="ctx-7", branch_id="br-7", progress=25)
 
         context.update_progress(50)
         context.update_progress(75)
@@ -668,41 +548,38 @@ class TestUpdateProgress:
 
     def test_update_progress_with_notes(self):
         """Notes are added to implementation_notes."""
-        context = TaskContextUnified(
-            id="ctx-8",
-            branch_id="br-8",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-8", branch_id="br-8", progress=50)
 
         context.update_progress(75, notes="Completed authentication module")
 
         assert "progress_updates" in context.implementation_notes
         assert len(context.implementation_notes["progress_updates"]) == 1
         assert context.implementation_notes["progress_updates"][0]["progress"] == 75
-        assert context.implementation_notes["progress_updates"][0]["notes"] == "Completed authentication module"
+        assert (
+            context.implementation_notes["progress_updates"][0]["notes"]
+            == "Completed authentication module"
+        )
 
     def test_update_progress_multiple_notes(self):
         """Multiple progress updates accumulate notes."""
-        context = TaskContextUnified(
-            id="ctx-9",
-            branch_id="br-9",
-            progress=25
-        )
+        context = TaskContextUnified(id="ctx-9", branch_id="br-9", progress=25)
 
         context.update_progress(50, notes="First update")
         context.update_progress(75, notes="Second update")
 
         assert len(context.implementation_notes["progress_updates"]) == 2
-        assert context.implementation_notes["progress_updates"][0]["notes"] == "First update"
-        assert context.implementation_notes["progress_updates"][1]["notes"] == "Second update"
+        assert (
+            context.implementation_notes["progress_updates"][0]["notes"]
+            == "First update"
+        )
+        assert (
+            context.implementation_notes["progress_updates"][1]["notes"]
+            == "Second update"
+        )
 
     def test_update_progress_notes_in_history(self):
         """Notes are included in progress history."""
-        context = TaskContextUnified(
-            id="ctx-10",
-            branch_id="br-10",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-10", branch_id="br-10", progress=50)
 
         context.update_progress(75, notes="Test notes")
 
@@ -710,11 +587,7 @@ class TestUpdateProgress:
 
     def test_update_progress_timestamps(self):
         """Progress updates include timestamps."""
-        context = TaskContextUnified(
-            id="ctx-11",
-            branch_id="br-11",
-            progress=50
-        )
+        context = TaskContextUnified(id="ctx-11", branch_id="br-11", progress=50)
 
         before = datetime.now(UTC)
         context.update_progress(75, notes="Test")
@@ -741,7 +614,7 @@ class TestTaskContextUnifiedIntegration:
             id="workflow-ctx",
             branch_id="workflow-branch",
             progress=0,
-            task_data={"title": "Implement authentication"}
+            task_data={"title": "Implement authentication"},
         )
 
         # Validate initial state
@@ -753,7 +626,7 @@ class TestTaskContextUnifiedIntegration:
             category="technical",
             content="Using JWT for authentication",
             agent="architect-agent",
-            importance="high"
+            importance="high",
         )
 
         # Update progress with notes
@@ -764,7 +637,7 @@ class TestTaskContextUnifiedIntegration:
             category="challenge",
             content="Database connection timeout issues",
             agent="dev-agent",
-            importance="high"
+            importance="high",
         )
 
         # Update progress
@@ -775,21 +648,19 @@ class TestTaskContextUnifiedIntegration:
             category="solution",
             content="Implemented connection pooling with retry logic",
             agent="dev-agent",
-            importance="medium"
+            importance="medium",
         )
 
         # Merge additional context
-        context.merge_context_updates({
-            "execution_context": {
-                "files_modified": ["auth.py", "database.py"],
-                "tests_added": ["test_auth.py"]
-            },
-            "test_results": {
-                "passed": 15,
-                "failed": 0,
-                "coverage": 95.5
+        context.merge_context_updates(
+            {
+                "execution_context": {
+                    "files_modified": ["auth.py", "database.py"],
+                    "tests_added": ["test_auth.py"],
+                },
+                "test_results": {"passed": 15, "failed": 0, "coverage": 95.5},
             }
-        })
+        )
 
         # Final progress update
         context.update_progress(100, notes="All tests passing, ready for review")
@@ -812,7 +683,7 @@ class TestTaskContextUnifiedIntegration:
             id="active-ctx",
             branch_id="active-branch",
             progress=50,
-            task_data={"title": "Test Task"}
+            task_data={"title": "Test Task"},
         )
 
         # Validation enforces rules
@@ -825,17 +696,12 @@ class TestTaskContextUnifiedIntegration:
 
         # Insights require valid categories
         context.add_insight(
-            category="insight",
-            content="Valid insight content",
-            agent="test"
+            category="insight", content="Valid insight content", agent="test"
         )
         assert len(context.insights) == 1
 
         # Merge validates and applies updates
-        context.merge_context_updates({
-            "progress": 90,
-            "custom_field": "custom_value"
-        })
+        context.merge_context_updates({"progress": 90, "custom_field": "custom_value"})
         assert context.progress == 90
 
     def test_validation_enforced_consistently(self):
@@ -844,7 +710,7 @@ class TestTaskContextUnifiedIntegration:
             id="validation-ctx",
             branch_id="validation-branch",
             progress=50,
-            task_data={"title": "Test"}
+            task_data={"title": "Test"},
         )
 
         # Valid data passes

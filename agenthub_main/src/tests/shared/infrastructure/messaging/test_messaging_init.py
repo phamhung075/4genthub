@@ -8,7 +8,7 @@ class TestMessagingInit:
 
     def test_module_imports(self):
         """Test that messaging module can be imported"""
-        module = import_module('fastmcp.shared.infrastructure.messaging')
+        module = import_module("fastmcp.shared.infrastructure.messaging")
         assert module is not None
 
     def test_exported_items(self):
@@ -22,7 +22,7 @@ class TestMessagingInit:
             get_event_bus,
             set_event_bus,
         )
-        
+
         # Verify imports exist
         assert EventBus is not None
         assert DomainEvent is not None
@@ -34,8 +34,8 @@ class TestMessagingInit:
 
     def test_all_exports(self):
         """Test __all__ exports match actual exports"""
-        module = import_module('fastmcp.shared.infrastructure.messaging')
-        
+        module = import_module("fastmcp.shared.infrastructure.messaging")
+
         expected_exports = [
             "EventBus",
             "DomainEvent",
@@ -43,12 +43,12 @@ class TestMessagingInit:
             "EventPriority",
             "EventHandler",
             "get_event_bus",
-            "set_event_bus"
+            "set_event_bus",
         ]
-        
-        assert hasattr(module, '__all__')
+
+        assert hasattr(module, "__all__")
         assert set(module.__all__) == set(expected_exports)
-        
+
         # Verify each export is available
         for export in expected_exports:
             assert hasattr(module, export), f"Missing export: {export}"
@@ -62,7 +62,7 @@ class TestMessagingInit:
         from fastmcp.shared.infrastructure.messaging.event_bus import (
             EventHandler as DirectEventHandler,
         )
-        
+
         # Verify same class references
         assert EventBus is DirectEventBus
         assert EventHandler is DirectEventHandler
@@ -70,12 +70,12 @@ class TestMessagingInit:
     def test_enums_and_types(self):
         """Test that enums and type definitions are properly imported"""
         from fastmcp.shared.infrastructure.messaging import DomainEvent, EventPriority
-        
+
         # Test EventPriority is an enum
-        assert hasattr(EventPriority, 'LOW')
-        assert hasattr(EventPriority, 'NORMAL')
-        assert hasattr(EventPriority, 'HIGH')
-        assert hasattr(EventPriority, 'CRITICAL')
-        
+        assert hasattr(EventPriority, "LOW")
+        assert hasattr(EventPriority, "NORMAL")
+        assert hasattr(EventPriority, "HIGH")
+        assert hasattr(EventPriority, "CRITICAL")
+
         # Test DomainEvent is a class
-        assert hasattr(DomainEvent, '__init__')
+        assert hasattr(DomainEvent, "__init__")

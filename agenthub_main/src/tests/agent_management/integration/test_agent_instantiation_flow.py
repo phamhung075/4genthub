@@ -35,11 +35,7 @@ class TestAgentInstantiationFlow:
     """Integration tests for complete agent instantiation flow"""
 
     def test_get_or_create_returns_existing_instance_with_database_persistence(
-        self,
-        db_session,
-        sample_agent_template,
-        sample_user_instance,
-        sample_user_id
+        self, db_session, sample_agent_template, sample_user_instance, sample_user_id
     ):
         """
         Test that get_or_create_instance returns existing instance from database.
@@ -58,13 +54,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Record initial count
@@ -72,8 +67,7 @@ class TestAgentInstantiationFlow:
 
         # Act
         result = facade.get_or_create_instance(
-            user_id=sample_user_id,
-            agent_slug="coding-agent"
+            user_id=sample_user_id, agent_slug="coding-agent"
         )
 
         # Assert
@@ -81,16 +75,16 @@ class TestAgentInstantiationFlow:
         assert result.agent_name == "My Custom Coding Agent"
         assert result.is_customized is True
         assert "Glob" in result.configuration.tools  # Verify custom tool persisted
-        assert "Go" in result.configuration.capabilities["languages"]  # Verify custom capability persisted
+        assert (
+            "Go" in result.configuration.capabilities["languages"]
+        )  # Verify custom capability persisted
 
         # Verify no new instance was created
         final_count = db_session.query(UserAgentInstanceORM).count()
         assert final_count == initial_count
 
     def test_auto_creates_instance_when_not_found_with_database_persistence(
-        self,
-        db_session,
-        sample_agent_template
+        self, db_session, sample_agent_template
     ):
         """
         Test that get_or_create_instance auto-creates from template when instance doesn't exist.
@@ -110,13 +104,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Record initial count
@@ -124,8 +117,7 @@ class TestAgentInstantiationFlow:
 
         # Act
         result = facade.get_or_create_instance(
-            user_id=new_user_id,
-            agent_slug="coding-agent"
+            user_id=new_user_id, agent_slug="coding-agent"
         )
 
         # Assert - Instance created
@@ -136,28 +128,31 @@ class TestAgentInstantiationFlow:
         assert result.agent_name == sample_agent_template.name  # Uses template name
 
         # Verify configuration matches template default
-        assert result.configuration.system_prompt == sample_agent_template.default_configuration.system_prompt
-        assert set(result.configuration.tools) == set(sample_agent_template.default_configuration.tools)
+        assert (
+            result.configuration.system_prompt
+            == sample_agent_template.default_configuration.system_prompt
+        )
+        assert set(result.configuration.tools) == set(
+            sample_agent_template.default_configuration.tools
+        )
 
         # Verify instance was saved to database
         final_count = db_session.query(UserAgentInstanceORM).count()
         assert final_count == initial_count + 1
 
         # Verify database record
-        db_instance = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.id == str(result.id.value)
-        ).first()
+        db_instance = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.id == str(result.id.value))
+            .first()
+        )
         assert db_instance is not None
         assert db_instance.user_id == str(new_user_id.value)
         assert db_instance.template_id == str(sample_agent_template.id.value)
         assert db_instance.is_customized is False
 
     def test_usage_tracking_persists_to_database(
-        self,
-        db_session,
-        sample_agent_template,
-        sample_user_instance,
-        sample_user_id
+        self, db_session, sample_agent_template, sample_user_instance, sample_user_id
     ):
         """
         Test that usage tracking (last_used_at) is correctly persisted to database.
@@ -175,13 +170,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Record initial last_used_at (should be None)
@@ -190,8 +184,7 @@ class TestAgentInstantiationFlow:
 
         # Act - Call get_agent_for_call which tracks usage
         result = facade.get_agent_for_call(
-            user_id=sample_user_id,
-            agent_slug="coding-agent"
+            user_id=sample_user_id, agent_slug="coding-agent"
         )
 
         # Assert - Usage was tracked
@@ -199,9 +192,11 @@ class TestAgentInstantiationFlow:
         assert result["metadata"]["last_used"] is not None
 
         # Verify database was updated
-        db_instance = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.id == str(sample_user_instance.id.value)
-        ).first()
+        db_instance = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.id == str(sample_user_instance.id.value))
+            .first()
+        )
         assert db_instance is not None
         assert db_instance.last_used_at is not None
         assert isinstance(db_instance.last_used_at, datetime)
@@ -217,11 +212,7 @@ class TestAgentInstantiationFlow:
         assert time_diff < timedelta(seconds=5)
 
     def test_get_agent_for_call_returns_correct_format_from_database(
-        self,
-        db_session,
-        sample_agent_template,
-        sample_user_instance,
-        sample_user_id
+        self, db_session, sample_agent_template, sample_user_instance, sample_user_id
     ):
         """
         Test that get_agent_for_call returns correctly formatted data from database.
@@ -239,19 +230,17 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Act
         result = facade.get_agent_for_call(
-            user_id=sample_user_id,
-            agent_slug="coding-agent"
+            user_id=sample_user_id, agent_slug="coding-agent"
         )
 
         # Assert - Response structure
@@ -277,9 +266,7 @@ class TestAgentInstantiationFlow:
         assert "Go" in result["capabilities"]["languages"]  # Custom capability
 
     def test_multiple_users_can_have_different_instances_of_same_template(
-        self,
-        db_session,
-        sample_agent_template
+        self, db_session, sample_agent_template
     ):
         """
         Test that multiple users can each have their own instance of the same template.
@@ -300,13 +287,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Act - Create instances for both users
@@ -321,21 +307,22 @@ class TestAgentInstantiationFlow:
         assert instance2.template_id == sample_agent_template.id
 
         # Verify in database
-        user1_instances = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.user_id == str(user1_id.value)
-        ).all()
-        user2_instances = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.user_id == str(user2_id.value)
-        ).all()
+        user1_instances = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.user_id == str(user1_id.value))
+            .all()
+        )
+        user2_instances = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.user_id == str(user2_id.value))
+            .all()
+        )
 
         assert len(user1_instances) == 1
         assert len(user2_instances) == 1
         assert user1_instances[0].id != user2_instances[0].id
 
-    def test_template_not_found_raises_error(
-        self,
-        db_session
-    ):
+    def test_template_not_found_raises_error(self, db_session):
         """
         Test that requesting non-existent template raises appropriate error.
 
@@ -353,13 +340,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Act & Assert
@@ -367,15 +353,15 @@ class TestAgentInstantiationFlow:
             facade.get_or_create_instance(user_id, "nonexistent-agent")
 
         # Verify no instance was created
-        instances = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.user_id == str(user_id.value)
-        ).all()
+        instances = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.user_id == str(user_id.value))
+            .all()
+        )
         assert len(instances) == 0
 
     def test_concurrent_get_or_create_for_same_user_and_template(
-        self,
-        db_session,
-        sample_agent_template
+        self, db_session, sample_agent_template
     ):
         """
         Test that concurrent get_or_create calls for same user+template don't create duplicates.
@@ -394,13 +380,12 @@ class TestAgentInstantiationFlow:
         instance_repo._session = db_session
 
         instantiation_service = AgentInstantiationService(
-            template_repository=template_repo,
-            instance_repository=instance_repo
+            template_repository=template_repo, instance_repository=instance_repo
         )
         facade = AgentManagementFacade(
             template_repository=template_repo,
             instance_repository=instance_repo,
-            instantiation_service=instantiation_service
+            instantiation_service=instantiation_service,
         )
 
         # Act - Simulate concurrent calls (sequential in test, but tests the logic)
@@ -413,21 +398,21 @@ class TestAgentInstantiationFlow:
         assert instance2.user_id == user_id
 
         # Verify only one instance in database
-        instances = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.user_id == str(user_id.value),
-            UserAgentInstanceORM.template_id == str(sample_agent_template.id.value)
-        ).all()
+        instances = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(
+                UserAgentInstanceORM.user_id == str(user_id.value),
+                UserAgentInstanceORM.template_id == str(sample_agent_template.id.value),
+            )
+            .all()
+        )
         assert len(instances) == 1
 
 
 class TestRepositoryIntegration:
     """Integration tests for repository layer with database"""
 
-    def test_template_repository_find_by_slug(
-        self,
-        db_session,
-        sample_agent_template
-    ):
+    def test_template_repository_find_by_slug(self, db_session, sample_agent_template):
         """Test that template repository correctly retrieves template by slug"""
         # Arrange
         repo = ORMAgentTemplateRepository()
@@ -443,10 +428,7 @@ class TestRepositoryIntegration:
         assert result.id == sample_agent_template.id
 
     def test_instance_repository_find_by_user_and_template_slug(
-        self,
-        db_session,
-        sample_user_instance,
-        sample_user_id
+        self, db_session, sample_user_instance, sample_user_id
     ):
         """Test that instance repository correctly retrieves instance by user and template"""
         # Arrange
@@ -455,8 +437,7 @@ class TestRepositoryIntegration:
 
         # Act
         result = repo.find_by_user_and_template_slug(
-            user_id=sample_user_id,
-            template_slug="coding-agent"
+            user_id=sample_user_id, template_slug="coding-agent"
         )
 
         # Assert
@@ -466,9 +447,7 @@ class TestRepositoryIntegration:
         assert result.is_customized is True
 
     def test_instance_repository_save_creates_new_record(
-        self,
-        db_session,
-        sample_agent_template
+        self, db_session, sample_agent_template
     ):
         """Test that instance repository correctly saves new instance to database"""
         # Arrange
@@ -485,7 +464,7 @@ class TestRepositoryIntegration:
         configuration = AgentConfiguration(
             system_prompt="Test instance prompt",
             tools=["Read", "Write"],
-            capabilities={"test": True}
+            capabilities={"test": True},
         )
 
         instance = UserAgentInstance(
@@ -499,7 +478,7 @@ class TestRepositoryIntegration:
             last_used_at=None,
             metadata={},
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
 
         repo = ORMUserAgentInstanceRepository()
@@ -518,9 +497,11 @@ class TestRepositoryIntegration:
         final_count = db_session.query(UserAgentInstanceORM).count()
         assert final_count == initial_count + 1
 
-        db_record = db_session.query(UserAgentInstanceORM).filter(
-            UserAgentInstanceORM.id == str(instance_id.value)
-        ).first()
+        db_record = (
+            db_session.query(UserAgentInstanceORM)
+            .filter(UserAgentInstanceORM.id == str(instance_id.value))
+            .first()
+        )
         assert db_record is not None
         assert db_record.agent_name == "Test Agent"
         assert db_record.is_customized is False

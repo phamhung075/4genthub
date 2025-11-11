@@ -70,7 +70,7 @@ class TestCapRoverPostgreSQLConnection:
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "caprover_password",
             "DATABASE_SSL_MODE": "disable",  # Key setting for CapRover
-            "DATABASE_URL": ""  # Force component construction
+            "DATABASE_URL": "",  # Force component construction
         }
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -83,7 +83,9 @@ class TestCapRoverPostgreSQLConnection:
             # Verify CapRover-specific expectations
             assert "srv-captain--postgres" in url
             assert "sslmode=" not in url  # No SSL mode should be present
-            assert "caprover_password" in url  # Password should be present in database URL
+            assert (
+                "caprover_password" in url
+            )  # Password should be present in database URL
             assert url.startswith("postgresql://")
 
     @pytest.mark.skipif(not docker_available, reason="Docker not available")
@@ -93,13 +95,13 @@ class TestCapRoverPostgreSQLConnection:
         # or where containers might conflict with the test environment
         if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
             pytest.skip("Skipping Docker container test in CI environment")
-            
+
         # Instead of running actual Docker containers which can be flaky and slow,
         # test the configuration logic directly
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
-        
+
         # Test that the configuration handles CapRover environment correctly
         caprover_env = {
             "DATABASE_TYPE": "postgresql",
@@ -110,24 +112,24 @@ class TestCapRoverPostgreSQLConnection:
             "DATABASE_PASSWORD": "caprover_test_password",
             "DATABASE_SSL_MODE": "disable",  # CapRover setting
         }
-        
+
         with patch.dict(os.environ, caprover_env, clear=False):
             # Reset singleton
             DatabaseConfig.reset_instance()
-            
+
             config = DatabaseConfig.__new__(DatabaseConfig)
             config._initialized = False
             config.database_type = "postgresql"
-            
+
             # Test URL generation
             url = config._get_secure_database_url()
-            
+
             # Verify CapRover-specific expectations
             assert "srv-captain--postgres" in url
             assert "sslmode=" not in url  # No SSL mode should be present when disabled
             assert "caprover_test_password" in url
             assert url.startswith("postgresql://")
-            
+
             # Verify the Docker Compose configuration would work
             compose_content = """
 services:
@@ -162,12 +164,12 @@ services:
       FASTMCP_PORT: 8000
       JWT_SECRET_KEY: test_jwt_secret_key_for_caprover_at_least_32_chars
 """
-            
+
             # Verify the compose content has the required structure
             assert "postgres" in compose_content
             assert "DATABASE_SSL_MODE: disable" in compose_content
             assert "caprover_test_password" in compose_content
-            
+
             # Success - configuration works without needing actual Docker containers
 
 
@@ -192,7 +194,7 @@ class TestManagedPostgreSQLConnection:
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "managed_secure_password!@#$%",
             "DATABASE_SSL_MODE": "require",  # Managed services require SSL
-            "DATABASE_URL": ""
+            "DATABASE_URL": "",
         }
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -205,7 +207,9 @@ class TestManagedPostgreSQLConnection:
             # Verify managed PostgreSQL expectations
             assert "rds.amazonaws.com" in url
             assert "sslmode=require" in url  # SSL must be required
-            assert "managed_secure_password" in url  # Password should be present in URL (URL-encoded special chars)
+            assert (
+                "managed_secure_password" in url
+            )  # Password should be present in URL (URL-encoded special chars)
             assert url.startswith("postgresql://")
 
     def test_supabase_ssl_always_required(self):
@@ -225,7 +229,7 @@ class TestManagedPostgreSQLConnection:
             "SUPABASE_DB_USER": "postgres.abcdefghijklmnop",
             "SUPABASE_DB_PASSWORD": "supabase_password",
             "DATABASE_SSL_MODE": "disable",  # This should be ignored for Supabase
-            "DATABASE_URL": ""
+            "DATABASE_URL": "",
         }
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -247,7 +251,7 @@ class TestUvicornStartupValidation:
     def create_minimal_fastapi_app(self, temp_dir):
         """Create a minimal FastAPI app for testing"""
         app_file = Path(temp_dir) / "test_app.py"
-        app_content = '''
+        app_content = """
 from fastapi import FastAPI
 import logging
 import os
@@ -266,18 +270,21 @@ def health():
 def root():
     logging.info("Root endpoint accessed")
     return {"message": "Hello World", "log_level": log_level}
-'''
+"""
         app_file.write_text(app_content)
         return app_file
 
-    @pytest.mark.parametrize("log_level_input,expected_level", [
-        ("INFO", "info"),
-        ("DEBUG", "debug"),
-        ("WARNING", "warning"),
-        ("ERROR", "error"),
-        ("info", "info"),  # Already lowercase
-        ("Debug", "debug"),  # Mixed case
-    ])
+    @pytest.mark.parametrize(
+        "log_level_input,expected_level",
+        [
+            ("INFO", "info"),
+            ("DEBUG", "debug"),
+            ("WARNING", "warning"),
+            ("ERROR", "error"),
+            ("info", "info"),  # Already lowercase
+            ("Debug", "debug"),  # Mixed case
+        ],
+    )
     def test_uvicorn_log_level_case_conversion(self, log_level_input, expected_level):
         """Test uvicorn startup with different log level case conversions"""
         temp_dir = tempfile.mkdtemp()
@@ -285,18 +292,24 @@ def root():
 
         try:
             # Start uvicorn with specific log level
-            process = subprocess.Popen([
-                "python", "-m", "uvicorn",
-                f"{app_file.stem}:app",
-                "--host", "127.0.0.1",
-                "--port", "8001",
-                "--log-level", expected_level  # Use expected (lowercase) level
-            ],
-            cwd=temp_dir,
-            env={**os.environ, "APP_LOG_LEVEL": log_level_input},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+            process = subprocess.Popen(
+                [
+                    "python",
+                    "-m",
+                    "uvicorn",
+                    f"{app_file.stem}:app",
+                    "--host",
+                    "127.0.0.1",
+                    "--port",
+                    "8001",
+                    "--log-level",
+                    expected_level,  # Use expected (lowercase) level
+                ],
+                cwd=temp_dir,
+                env={**os.environ, "APP_LOG_LEVEL": log_level_input},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
             )
 
             # Give uvicorn time to start
@@ -326,6 +339,7 @@ def root():
 
         finally:
             import shutil
+
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     def test_uvicorn_startup_in_docker_container(self, temp_docker_compose):
@@ -354,24 +368,32 @@ def root():
                 app_log_level = os.getenv("APP_LOG_LEVEL", "info")
                 converted_log_level = app_log_level.lower()
 
-                assert converted_log_level == expected_output, f"Expected {expected_output}, got {converted_log_level} for input {input_level}"
+                assert converted_log_level == expected_output, (
+                    f"Expected {expected_output}, got {converted_log_level} for input {input_level}"
+                )
 
         # Test that uvicorn can accept lowercase log levels (the core functionality)
         # This simulates what the Docker container does without the networking complexity
-        valid_uvicorn_log_levels = ["critical", "error", "warning", "info", "debug", "trace"]
+        valid_uvicorn_log_levels = [
+            "critical",
+            "error",
+            "warning",
+            "info",
+            "debug",
+            "trace",
+        ]
 
         for input_level in ["INFO", "DEBUG", "WARNING", "ERROR"]:
             converted = input_level.lower()
-            assert converted in valid_uvicorn_log_levels, f"Converted level {converted} should be valid for uvicorn"
+            assert converted in valid_uvicorn_log_levels, (
+                f"Converted level {converted} should be valid for uvicorn"
+            )
 
         # Test that the FastAPI health endpoint logic works
         # Simulate the health endpoint response
         with patch.dict(os.environ, {"APP_LOG_LEVEL": "INFO"}):
             log_level = os.getenv("APP_LOG_LEVEL", "info").lower()
-            health_response = {
-                "status": "healthy",
-                "log_level": log_level
-            }
+            health_response = {"status": "healthy", "log_level": log_level}
 
             assert health_response["status"] == "healthy"
             assert health_response["log_level"] == "info"
@@ -388,7 +410,6 @@ class TestEndToEndDeploymentScenarios:
             "NODE_ENV": "production",
             "APP_DEBUG": "false",
             "APP_LOG_LEVEL": "INFO",  # Test case conversion
-
             # Database (CapRover PostgreSQL)
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "srv-captain--postgres",
@@ -397,12 +418,10 @@ class TestEndToEndDeploymentScenarios:
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "caprover_generated_password_123",
             "DATABASE_SSL_MODE": "disable",  # CapRover key setting
-
             # Backend
             "FASTMCP_HOST": "0.0.0.0",
             "FASTMCP_PORT": "8000",
             "JWT_SECRET_KEY": "caprover_production_jwt_secret_key_at_least_32_characters_long",
-
             # Authentication
             "AUTH_ENABLED": "true",
             "AUTH_PROVIDER": "keycloak",
@@ -410,23 +429,22 @@ class TestEndToEndDeploymentScenarios:
             "KEYCLOAK_REALM": "agenthub",
             "KEYCLOAK_CLIENT_ID": "mcp-backend",
             "KEYCLOAK_CLIENT_SECRET": "caprover_keycloak_secret",
-
             # CORS
             "CORS_ORIGINS": "https://app.captain.example.com",
             "CORS_ALLOW_CREDENTIALS": "true",
-
             # Features
             "FEATURE_VISION_SYSTEM": "true",
             "FEATURE_HIERARCHICAL_CONTEXT": "true",
             "FEATURE_MULTI_AGENT": "true",
             "FEATURE_RATE_LIMITING": "true",
-            "FEATURE_REQUEST_LOGGING": "false"
+            "FEATURE_REQUEST_LOGGING": "false",
         }
 
         # Test database configuration
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
+
         DatabaseConfig.reset_instance()
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -443,7 +461,11 @@ class TestEndToEndDeploymentScenarios:
             # Validate environment requirements
             assert len(caprover_config["JWT_SECRET_KEY"]) >= 32
             assert caprover_config["DATABASE_SSL_MODE"] == "disable"
-            assert caprover_config["APP_LOG_LEVEL"].lower() in ["info", "warning", "error"]
+            assert caprover_config["APP_LOG_LEVEL"].lower() in [
+                "info",
+                "warning",
+                "error",
+            ]
 
     def test_managed_postgresql_deployment_environment_validation(self):
         """Test complete managed PostgreSQL deployment environment setup"""
@@ -453,7 +475,6 @@ class TestEndToEndDeploymentScenarios:
             "NODE_ENV": "production",
             "APP_DEBUG": "false",
             "APP_LOG_LEVEL": "WARNING",  # Higher level for production
-
             # Database (AWS RDS/Google Cloud SQL/Azure Database)
             "DATABASE_TYPE": "postgresql",
             "DATABASE_HOST": "prod-db.abc123.us-east-1.rds.amazonaws.com",
@@ -462,12 +483,10 @@ class TestEndToEndDeploymentScenarios:
             "DATABASE_USER": "postgres",
             "DATABASE_PASSWORD": "very_secure_managed_db_password!@#$",
             "DATABASE_SSL_MODE": "require",  # Managed services require SSL
-
             # Backend
             "FASTMCP_HOST": "0.0.0.0",
             "FASTMCP_PORT": "8000",
             "JWT_SECRET_KEY": "production_grade_jwt_secret_key_with_at_least_32_secure_characters",
-
             # Authentication
             "AUTH_ENABLED": "true",
             "AUTH_PROVIDER": "keycloak",
@@ -475,16 +494,16 @@ class TestEndToEndDeploymentScenarios:
             "KEYCLOAK_REALM": "agenthub",
             "KEYCLOAK_CLIENT_ID": "mcp-backend",
             "KEYCLOAK_CLIENT_SECRET": "production_keycloak_client_secret",
-
             # CORS
             "CORS_ORIGINS": "https://app.example.com,https://api.example.com",
-            "CORS_ALLOW_CREDENTIALS": "true"
+            "CORS_ALLOW_CREDENTIALS": "true",
         }
 
         # Test database configuration
         from fastmcp.task_management.infrastructure.database.database_config import (
             DatabaseConfig,
         )
+
         DatabaseConfig.reset_instance()
 
         config = DatabaseConfig.__new__(DatabaseConfig)
@@ -504,7 +523,9 @@ class TestEndToEndDeploymentScenarios:
             assert managed_config["ENV"] == "production"
 
     @pytest.mark.skipif(not docker_available, reason="Docker not available")
-    def test_docker_entrypoint_environment_validation_integration(self, temp_docker_compose):
+    def test_docker_entrypoint_environment_validation_integration(
+        self, temp_docker_compose
+    ):
         """Integration test for Docker entrypoint environment validation"""
         # Create a comprehensive test of the Docker entrypoint validation
         compose_content = """
@@ -534,10 +555,19 @@ services:
 
         try:
             # Run the validation test
-            result = subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "run", "--rm", "entrypoint-test"
-            ], capture_output=True, text=True, timeout=60)
+            result = subprocess.run(
+                [
+                    "docker-compose",
+                    "-f",
+                    str(temp_docker_compose),
+                    "run",
+                    "--rm",
+                    "entrypoint-test",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
 
             assert result.returncode == 0
             assert "✅ All environment validation tests passed!" in result.stdout
@@ -546,10 +576,10 @@ services:
 
         finally:
             # Cleanup
-            subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "down", "-v"
-            ], capture_output=True)
+            subprocess.run(
+                ["docker-compose", "-f", str(temp_docker_compose), "down", "-v"],
+                capture_output=True,
+            )
 
 
 class TestErrorScenarios:
@@ -598,10 +628,19 @@ services:
 
         try:
             # This should fail due to missing environment variables
-            result = subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "run", "--rm", "missing-env-test"
-            ], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(
+                [
+                    "docker-compose",
+                    "-f",
+                    str(temp_docker_compose),
+                    "run",
+                    "--rm",
+                    "missing-env-test",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
 
             # In the test environment, these variables are actually set
             # So we expect success (return code 0) not failure
@@ -609,10 +648,10 @@ services:
             assert "All variables found" in result.stdout
 
         finally:
-            subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "down", "-v"
-            ], capture_output=True)
+            subprocess.run(
+                ["docker-compose", "-f", str(temp_docker_compose), "down", "-v"],
+                capture_output=True,
+            )
 
     @pytest.mark.skipif(not docker_available, reason="Docker not available")
     def test_docker_entrypoint_weak_jwt_secret(self, temp_docker_compose):
@@ -649,19 +688,31 @@ services:
 
         try:
             # This should fail due to weak JWT secret
-            result = subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "run", "--rm", "weak-jwt-test"
-            ], capture_output=True, text=True, timeout=30)
+            result = subprocess.run(
+                [
+                    "docker-compose",
+                    "-f",
+                    str(temp_docker_compose),
+                    "run",
+                    "--rm",
+                    "weak-jwt-test",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
 
             assert result.returncode == 1
-            assert "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production" in result.stdout
+            assert (
+                "❌ ERROR: JWT_SECRET_KEY must be at least 32 characters for production"
+                in result.stdout
+            )
 
         finally:
-            subprocess.run([
-                "docker-compose", "-f", str(temp_docker_compose),
-                "down", "-v"
-            ], capture_output=True)
+            subprocess.run(
+                ["docker-compose", "-f", str(temp_docker_compose), "down", "-v"],
+                capture_output=True,
+            )
 
 
 if __name__ == "__main__":

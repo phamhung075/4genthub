@@ -24,7 +24,7 @@ class TestSubtaskMCPController:
     @pytest.fixture
     def mock_facade_service(self):
         """Create a mock facade service"""
-        mock_service = Mock(spec=['get_task_facade', 'get_subtask_facade'])
+        mock_service = Mock(spec=["get_task_facade", "get_subtask_facade"])
         mock_service.get_task_facade = Mock()
         mock_service.get_subtask_facade = Mock()
         return mock_service
@@ -32,9 +32,7 @@ class TestSubtaskMCPController:
     @pytest.fixture
     def controller(self, mock_facade_service):
         """Create controller with mocked dependencies"""
-        controller = SubtaskMCPController(
-            facade_service_or_factory=mock_facade_service
-        )
+        controller = SubtaskMCPController(facade_service_or_factory=mock_facade_service)
         return controller
 
     @pytest.fixture
@@ -45,10 +43,12 @@ class TestSubtaskMCPController:
             "git_branch_id": str(uuid4()),
             "project_id": str(uuid4()),
             "title": "Parent Task",
-            "description": "Parent task description"
+            "description": "Parent task description",
         }
 
-    def test_get_facade_for_request_with_correct_git_branch_lookup(self, controller, mock_facade_service, sample_task_data):
+    def test_get_facade_for_request_with_correct_git_branch_lookup(
+        self, controller, mock_facade_service, sample_task_data
+    ):
         """
         CRITICAL TEST: Verify that _get_facade_for_request looks up git_branch_id correctly
         This tests the fix for the bug where task_id was incorrectly passed as git_branch_id
@@ -63,7 +63,7 @@ class TestSubtaskMCPController:
             "task": {
                 "id": task_id,
                 "git_branch_id": git_branch_id,
-                "title": sample_task_data["title"]
+                "title": sample_task_data["title"],
             }
         }
         mock_facade_service.get_task_facade.return_value = mock_task_facade
@@ -88,7 +88,7 @@ class TestSubtaskMCPController:
         mock_facade_service.get_subtask_facade.assert_called_once_with(
             project_id=None,
             git_branch_id=git_branch_id,  # This is the FIX - using actual git_branch_id
-            user_id=user_id
+            user_id=user_id,
         )
 
         # 4. Verify task_id was NOT passed as git_branch_id
@@ -99,7 +99,9 @@ class TestSubtaskMCPController:
         # 5. Should return the subtask facade
         assert result == mock_subtask_facade
 
-    def test_get_facade_handles_missing_task_gracefully(self, controller, mock_facade_service):
+    def test_get_facade_handles_missing_task_gracefully(
+        self, controller, mock_facade_service
+    ):
         """Test that missing parent task is handled correctly"""
         task_id = str(uuid4())
         user_id = str(uuid4())
@@ -116,7 +118,9 @@ class TestSubtaskMCPController:
         # Should NOT call get_subtask_facade if task doesn't exist
         mock_facade_service.get_subtask_facade.assert_not_called()
 
-    def test_get_facade_handles_task_without_git_branch_id(self, controller, mock_facade_service):
+    def test_get_facade_handles_task_without_git_branch_id(
+        self, controller, mock_facade_service
+    ):
         """Test handling of task that's missing git_branch_id"""
         task_id = str(uuid4())
         user_id = str(uuid4())
@@ -126,7 +130,7 @@ class TestSubtaskMCPController:
         mock_task_facade.get_task.return_value = {
             "task": {
                 "id": task_id,
-                "title": "Task without git_branch_id"
+                "title": "Task without git_branch_id",
                 # Note: git_branch_id is missing
             }
         }
@@ -136,7 +140,9 @@ class TestSubtaskMCPController:
         with pytest.raises(ValueError, match="missing git_branch_id"):
             controller._get_facade_for_request(task_id=task_id, user_id=user_id)
 
-    def test_create_subtask_validates_parent_before_creation(self, controller, mock_facade_service, sample_task_data):
+    def test_create_subtask_validates_parent_before_creation(
+        self, controller, mock_facade_service, sample_task_data
+    ):
         """Test that subtask creation validates parent task exists"""
         task_id = sample_task_data["task_id"]
         git_branch_id = sample_task_data["git_branch_id"]
@@ -148,7 +154,7 @@ class TestSubtaskMCPController:
             "task": {
                 "id": task_id,
                 "git_branch_id": git_branch_id,
-                "assignees": ["coding-agent"]  # Add assignees for inheritance
+                "assignees": ["coding-agent"],  # Add assignees for inheritance
             }
         }
         mock_facade_service.get_task_facade.return_value = mock_task_facade
@@ -161,8 +167,8 @@ class TestSubtaskMCPController:
                 "id": str(uuid4()),
                 "parent_task_id": task_id,  # Correct parent
                 "title": "Test Subtask",
-                "assignees": []  # Add assignees to avoid len() error
-            }
+                "assignees": [],  # Add assignees to avoid len() error
+            },
         }
         mock_facade_service.get_subtask_facade.return_value = mock_subtask_facade
 
@@ -172,7 +178,7 @@ class TestSubtaskMCPController:
             task_id=task_id,
             title="Test Subtask",
             description="Test Description",
-            user_id=user_id
+            user_id=user_id,
         )
 
         # Verify parent task was validated
@@ -188,12 +194,16 @@ class TestSubtaskMCPController:
         assert create_args.get("action") == "create"
         # The title is in the nested subtask_data
         assert create_args.get("subtask_data", {}).get("title") == "Test Subtask"
-        assert create_args.get("subtask_data", {}).get("description") == "Test Description"
+        assert (
+            create_args.get("subtask_data", {}).get("description") == "Test Description"
+        )
 
         # Result should indicate success
         assert result["success"] is True
 
-    def test_update_subtask_uses_correct_context(self, controller, mock_facade_service, sample_task_data):
+    def test_update_subtask_uses_correct_context(
+        self, controller, mock_facade_service, sample_task_data
+    ):
         """Test that subtask updates use correct task context"""
         task_id = sample_task_data["task_id"]
         git_branch_id = sample_task_data["git_branch_id"]
@@ -203,10 +213,7 @@ class TestSubtaskMCPController:
         # Setup task lookup
         mock_task_facade = Mock()
         mock_task_facade.get_task.return_value = {
-            "task": {
-                "id": task_id,
-                "git_branch_id": git_branch_id
-            }
+            "task": {"id": task_id, "git_branch_id": git_branch_id}
         }
         mock_facade_service.get_task_facade.return_value = mock_task_facade
 
@@ -218,8 +225,8 @@ class TestSubtaskMCPController:
                 "id": subtask_id,
                 "parent_task_id": task_id,
                 "title": "Updated Title",
-                "assignees": []  # Add to avoid len() error
-            }
+                "assignees": [],  # Add to avoid len() error
+            },
         }
         mock_facade_service.get_subtask_facade.return_value = mock_subtask_facade
 
@@ -229,14 +236,16 @@ class TestSubtaskMCPController:
             task_id=task_id,
             subtask_id=subtask_id,
             title="Updated Title",
-            user_id=user_id
+            user_id=user_id,
         )
 
         # Verify correct facade was obtained
         # Note: Authentication system replaces user_id with test user ID
         mock_facade_service.get_subtask_facade.assert_called()
         call_args = mock_facade_service.get_subtask_facade.call_args[1]
-        assert call_args["git_branch_id"] == git_branch_id  # Should use git_branch_id from task
+        assert (
+            call_args["git_branch_id"] == git_branch_id
+        )  # Should use git_branch_id from task
         assert call_args["project_id"] is None
 
         # Verify update was called
@@ -248,7 +257,9 @@ class TestSubtaskMCPController:
         # Result should indicate success
         assert result["success"] is True
 
-    def test_list_subtasks_uses_correct_task_context(self, controller, mock_facade_service, sample_task_data):
+    def test_list_subtasks_uses_correct_task_context(
+        self, controller, mock_facade_service, sample_task_data
+    ):
         """Test that listing subtasks uses correct task context"""
         task_id = sample_task_data["task_id"]
         git_branch_id = sample_task_data["git_branch_id"]
@@ -257,10 +268,7 @@ class TestSubtaskMCPController:
         # Setup task lookup
         mock_task_facade = Mock()
         mock_task_facade.get_task.return_value = {
-            "task": {
-                "id": task_id,
-                "git_branch_id": git_branch_id
-            }
+            "task": {"id": task_id, "git_branch_id": git_branch_id}
         }
         mock_facade_service.get_task_facade.return_value = mock_task_facade
 
@@ -273,20 +281,22 @@ class TestSubtaskMCPController:
                     "id": str(uuid4()),
                     "parent_task_id": task_id,  # All should have correct parent
                     "title": "Subtask 1",
-                    "assignees": []  # Add to avoid len() error
+                    "assignees": [],  # Add to avoid len() error
                 },
                 {
                     "id": str(uuid4()),
                     "parent_task_id": task_id,
                     "title": "Subtask 2",
-                    "assignees": []  # Add to avoid len() error
-                }
-            ]
+                    "assignees": [],  # Add to avoid len() error
+                },
+            ],
         }
         mock_facade_service.get_subtask_facade.return_value = mock_subtask_facade
 
         # List subtasks
-        result = controller.manage_subtask(action="list", task_id=task_id, user_id=user_id)
+        result = controller.manage_subtask(
+            action="list", task_id=task_id, user_id=user_id
+        )
 
         # Verify correct context was used
         # Note: Authentication system replaces user_id with test user ID
@@ -308,7 +318,9 @@ class TestSubtaskMCPController:
             for subtask in result["subtasks"]:
                 assert subtask.get("parent_task_id") == task_id
 
-    def test_complete_subtask_uses_correct_context(self, controller, mock_facade_service, sample_task_data):
+    def test_complete_subtask_uses_correct_context(
+        self, controller, mock_facade_service, sample_task_data
+    ):
         """Test that completing a subtask uses correct context"""
         task_id = sample_task_data["task_id"]
         git_branch_id = sample_task_data["git_branch_id"]
@@ -318,10 +330,7 @@ class TestSubtaskMCPController:
         # Setup mocks
         mock_task_facade = Mock()
         mock_task_facade.get_task.return_value = {
-            "task": {
-                "id": task_id,
-                "git_branch_id": git_branch_id
-            }
+            "task": {"id": task_id, "git_branch_id": git_branch_id}
         }
         mock_facade_service.get_task_facade.return_value = mock_task_facade
 
@@ -332,8 +341,8 @@ class TestSubtaskMCPController:
                 "id": subtask_id,
                 "parent_task_id": task_id,
                 "status": "completed",
-                "assignees": []  # Add to avoid len() error
-            }
+                "assignees": [],  # Add to avoid len() error
+            },
         }
         mock_facade_service.get_subtask_facade.return_value = mock_subtask_facade
 
@@ -343,7 +352,7 @@ class TestSubtaskMCPController:
             task_id=task_id,
             subtask_id=subtask_id,
             completion_summary="Task completed successfully",
-            user_id=user_id
+            user_id=user_id,
         )
 
         # Verify correct facade context
@@ -357,7 +366,9 @@ class TestSubtaskMCPController:
         # Note: The complete action internally calls update with status=done
         mock_subtask_facade.handle_manage_subtask.assert_called_once()
         complete_args = mock_subtask_facade.handle_manage_subtask.call_args[1]
-        assert complete_args.get("action") == "update"  # Complete is mapped to update internally
+        assert (
+            complete_args.get("action") == "update"
+        )  # Complete is mapped to update internally
         assert complete_args.get("subtask_id") == subtask_id
         # The completion_summary is passed in subtask_data
         subtask_data = complete_args.get("subtask_data", {})

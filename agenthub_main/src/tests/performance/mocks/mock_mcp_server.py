@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class MockTask:
     """Mock task data structure matching MCP server format."""
+
     id: str
     title: str
     description: str
@@ -33,7 +34,7 @@ class MockTask:
     updated_at: str = None
     estimated_effort: str = "1 hour"
     git_branch_id: str = None
-    
+
     def __post_init__(self):
         if not self.assignees:
             self.assignees = ["coding-agent"]
@@ -43,15 +44,16 @@ class MockTask:
             self.updated_at = self.created_at
 
 
-@dataclass 
+@dataclass
 class MockGitBranch:
     """Mock git branch data structure."""
+
     id: str
     name: str
     description: str
     project_id: str
     created_at: str = None
-    
+
     def __post_init__(self):
         if not self.created_at:
             self.created_at = datetime.now(UTC).isoformat()
@@ -59,13 +61,11 @@ class MockGitBranch:
 
 class MockKeycloakServer:
     """Mock Keycloak server for authentication testing."""
-    
+
     def __init__(self):
         self.tokens: dict[str, dict] = {}
-        self.client_credentials = {
-            "claude-hooks": "test-secret"
-        }
-        
+        self.client_credentials = {"claude-hooks": "test-secret"}
+
     def authenticate_client(self, client_id: str, client_secret: str) -> dict | None:
         """Simulate client credentials authentication."""
         if self.client_credentials.get(client_id) == client_secret:
@@ -74,11 +74,11 @@ class MockKeycloakServer:
                 "access_token": self._generate_mock_jwt(),
                 "token_type": "Bearer",
                 "expires_in": 3600,
-                "scope": "openid profile email mcp:read mcp:write"
+                "scope": "openid profile email mcp:read mcp:write",
             }
             return token_data
         return None
-    
+
     def _generate_mock_jwt(self) -> str:
         """Generate a mock JWT token for testing."""
         header = {"alg": "HS256", "typ": "JWT"}
@@ -87,21 +87,25 @@ class MockKeycloakServer:
             "iat": int(time.time()),
             "exp": int(time.time()) + 3600,
             "aud": "agenthub",
-            "iss": "http://localhost:8080/realms/agenthub"
+            "iss": "http://localhost:8080/realms/agenthub",
         }
-        
+
         # Simple base64 encoding for mock token (not cryptographically secure)
-        header_b64 = base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip('=')
-        payload_b64 = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip('=')
+        header_b64 = (
+            base64.urlsafe_b64encode(json.dumps(header).encode()).decode().rstrip("=")
+        )
+        payload_b64 = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        )
         signature = secrets.token_urlsafe(32)
-        
+
         return f"{header_b64}.{payload_b64}.{signature}"
-    
+
     def validate_token(self, token: str) -> bool:
         """Validate mock JWT token."""
         try:
             # Simple validation for testing
-            parts = token.split('.')
+            parts = token.split(".")
             return len(parts) == 3
         except Exception:
             return False
@@ -109,16 +113,18 @@ class MockKeycloakServer:
 
 class MockMCPServer:
     """Mock MCP server for controlled performance testing."""
-    
-    def __init__(self, 
-                 response_delay: float = 0.1,
-                 error_rate: float = 0.0,
-                 token_failure_rate: float = 0.0):
+
+    def __init__(
+        self,
+        response_delay: float = 0.1,
+        error_rate: float = 0.0,
+        token_failure_rate: float = 0.0,
+    ):
         """Initialize mock server with configurable behavior."""
         self.response_delay = response_delay
-        self.error_rate = error_rate  
+        self.error_rate = error_rate
         self.token_failure_rate = token_failure_rate
-        
+
         self.keycloak = MockKeycloakServer()
         self.request_count = 0
         self.request_history: list[dict] = []
@@ -126,28 +132,26 @@ class MockMCPServer:
             "total_requests": 0,
             "avg_response_time": 0.0,
             "error_count": 0,
-            "token_failures": 0
+            "token_failures": 0,
         }
-        
+
         # Mock data
         self._init_mock_data()
         self.lock = threading.RLock()
-    
+
     def _init_mock_data(self):
         """Initialize mock tasks and branches."""
-        self.projects = {
-            "proj-123": {"id": "proj-123", "name": "Test Project"}
-        }
-        
+        self.projects = {"proj-123": {"id": "proj-123", "name": "Test Project"}}
+
         self.git_branches = {
             "branch-456": MockGitBranch(
                 id="branch-456",
-                name="feature/performance-testing", 
+                name="feature/performance-testing",
                 description="Performance testing branch",
-                project_id="proj-123"
+                project_id="proj-123",
             )
         }
-        
+
         self.tasks = {
             f"task-{i:03d}": MockTask(
                 id=f"task-{i:03d}",
@@ -155,59 +159,62 @@ class MockMCPServer:
                 description=f"Description for test task {i}",
                 status="todo" if i % 3 == 0 else "in_progress",
                 priority=["low", "medium", "high"][i % 3],
-                git_branch_id="branch-456"
-            ) for i in range(1, 21)  # 20 mock tasks
+                git_branch_id="branch-456",
+            )
+            for i in range(1, 21)  # 20 mock tasks
         }
-    
+
     async def simulate_request_delay(self):
         """Simulate network and processing delay."""
         if self.response_delay > 0:
             await asyncio.sleep(self.response_delay)
-    
+
     def should_simulate_error(self) -> bool:
         """Determine if we should simulate an error."""
         return self.error_rate > 0 and time.time() % 1.0 < self.error_rate
-    
+
     def should_simulate_token_failure(self) -> bool:
-        """Determine if we should simulate token failure.""" 
-        return self.token_failure_rate > 0 and time.time() % 1.0 < self.token_failure_rate
-    
+        """Determine if we should simulate token failure."""
+        return (
+            self.token_failure_rate > 0 and time.time() % 1.0 < self.token_failure_rate
+        )
+
     async def handle_manage_task(self, payload: dict) -> dict:
         """Handle manage_task requests."""
         start_time = time.time()
-        
+
         with self.lock:
             self.request_count += 1
             self.performance_metrics["total_requests"] += 1
-        
+
         await self.simulate_request_delay()
-        
+
         if self.should_simulate_error():
             self.performance_metrics["error_count"] += 1
             return {"success": False, "error": "Simulated server error"}
-        
+
         action = payload.get("action", "list")
-        
+
         if action == "list":
             status_filter = payload.get("status")
             limit = payload.get("limit", 10)
-            
+
             filtered_tasks = []
             for task in self.tasks.values():
                 if not status_filter or task.status == status_filter:
                     filtered_tasks.append(asdict(task))
                 if len(filtered_tasks) >= limit:
                     break
-            
+
             response = {
                 "success": True,
                 "data": {
                     "tasks": filtered_tasks,
                     "total": len(filtered_tasks),
-                    "page": 1
-                }
+                    "page": 1,
+                },
             }
-            
+
         elif action == "next":
             git_branch_id = payload.get("git_branch_id")
             if git_branch_id and git_branch_id in self.git_branches:
@@ -217,67 +224,69 @@ class MockMCPServer:
                     if task.status == "todo" and task.git_branch_id == git_branch_id:
                         next_task = asdict(task)
                         break
-                
+
                 response = {
                     "success": True,
                     "data": {
                         "task": next_task,
-                        "workflow_hints": ["Start with unit tests", "Review requirements"],
-                        "estimated_duration": "2 hours"
-                    }
+                        "workflow_hints": [
+                            "Start with unit tests",
+                            "Review requirements",
+                        ],
+                        "estimated_duration": "2 hours",
+                    },
                 }
             else:
-                response = {
-                    "success": False,
-                    "error": "Invalid git_branch_id"
-                }
-        
+                response = {"success": False, "error": "Invalid git_branch_id"}
+
         else:
             response = {"success": False, "error": f"Unknown action: {action}"}
-        
+
         # Update metrics
         response_time = time.time() - start_time
         with self.lock:
             current_avg = self.performance_metrics["avg_response_time"]
             count = self.performance_metrics["total_requests"]
             self.performance_metrics["avg_response_time"] = (
-                (current_avg * (count - 1) + response_time) / count
+                current_avg * (count - 1) + response_time
+            ) / count
+
+            self.request_history.append(
+                {
+                    "timestamp": time.time(),
+                    "action": action,
+                    "response_time": response_time,
+                    "success": response.get("success", False),
+                }
             )
-            
-            self.request_history.append({
-                "timestamp": time.time(),
-                "action": action,
-                "response_time": response_time,
-                "success": response.get("success", False)
-            })
-        
+
         return response
-    
+
     async def handle_token_request(self, payload: dict) -> dict:
         """Handle Keycloak token requests."""
         if self.should_simulate_token_failure():
             self.performance_metrics["token_failures"] += 1
             return {"error": "invalid_client"}
-        
+
         client_id = payload.get("client_id")
         client_secret = payload.get("client_secret")
-        
+
         token_data = self.keycloak.authenticate_client(client_id, client_secret)
         if token_data:
             return token_data
         else:
             return {"error": "unauthorized"}
-    
+
     def get_performance_metrics(self) -> dict:
         """Get accumulated performance metrics."""
         with self.lock:
             return self.performance_metrics.copy()
-    
+
     def get_request_history(self) -> list[dict]:
         """Get request history for analysis."""
         with self.lock:
             return self.request_history.copy()
-    
+
     def reset_metrics(self):
         """Reset performance metrics."""
         with self.lock:
@@ -285,15 +294,17 @@ class MockMCPServer:
                 "total_requests": 0,
                 "avg_response_time": 0.0,
                 "error_count": 0,
-                "token_failures": 0
+                "token_failures": 0,
             }
             self.request_history = []
             self.request_count = 0
-    
-    def configure_behavior(self, 
-                          response_delay: float | None = None,
-                          error_rate: float | None = None,
-                          token_failure_rate: float | None = None):
+
+    def configure_behavior(
+        self,
+        response_delay: float | None = None,
+        error_rate: float | None = None,
+        token_failure_rate: float | None = None,
+    ):
         """Dynamically configure mock server behavior."""
         if response_delay is not None:
             self.response_delay = response_delay
@@ -305,24 +316,24 @@ class MockMCPServer:
 
 class MockMCPServerManager:
     """Manager for mock MCP server instances."""
-    
+
     def __init__(self):
         self.servers: dict[str, MockMCPServer] = {}
-    
+
     def create_server(self, name: str, **config) -> MockMCPServer:
         """Create a named mock server instance."""
         server = MockMCPServer(**config)
         self.servers[name] = server
         return server
-    
+
     def get_server(self, name: str) -> MockMCPServer | None:
         """Get existing server by name."""
         return self.servers.get(name)
-    
+
     def cleanup_server(self, name: str):
         """Remove server instance."""
         self.servers.pop(name, None)
-    
+
     def cleanup_all(self):
         """Remove all server instances."""
         self.servers.clear()
@@ -340,17 +351,12 @@ def create_performance_test_server(**config) -> MockMCPServer:
 def create_high_latency_server() -> MockMCPServer:
     """Create server with high latency for stress testing."""
     return mock_server_manager.create_server(
-        "high_latency",
-        response_delay=2.0,
-        error_rate=0.1
+        "high_latency", response_delay=2.0, error_rate=0.1
     )
 
 
 def create_unreliable_server() -> MockMCPServer:
-    """Create unreliable server for fallback testing.""" 
+    """Create unreliable server for fallback testing."""
     return mock_server_manager.create_server(
-        "unreliable",
-        response_delay=0.5,
-        error_rate=0.3,
-        token_failure_rate=0.2
+        "unreliable", response_delay=0.5, error_rate=0.3, token_failure_rate=0.2
     )

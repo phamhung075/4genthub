@@ -58,7 +58,9 @@ class MockWebSocketBroadcaster:
         """Get all messages of specific type."""
         return [msg for msg in self.messages if msg.get("type") == message_type]
 
-    def get_latest_message(self, message_type: str | None = None) -> dict[str, Any | None]:
+    def get_latest_message(
+        self, message_type: str | None = None
+    ) -> dict[str, Any | None]:
         """Get the most recent message, optionally filtered by type."""
         if message_type:
             filtered = self.get_messages_by_type(message_type)
@@ -98,7 +100,9 @@ class TestWebSocketMessageStructure:
     """Test basic WebSocket message structure that SHOULD PASS."""
 
     @pytest.mark.asyncio
-    async def test_websocket_message_has_required_fields(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_websocket_message_has_required_fields(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify all WebSocket messages have required structure fields.
         Status: ✅ SHOULD PASS - Basic message structure.
@@ -137,23 +141,29 @@ class TestTaskCreatedMessage:
     """Test task.created WebSocket message format."""
 
     @pytest.mark.asyncio
-    async def test_task_created_message_type(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_task_created_message_type(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify task.created message has correct type field.
         Status: ✅ SHOULD PASS - Message type verification.
         """
-        await ws_broadcaster.broadcast({
-            "type": "task.created",
-            "payload": {"id": str(uuid4())},
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.created",
+                "payload": {"id": str(uuid4())},
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.created")
         assert message is not None, "task.created message should be broadcast"
         assert message["type"] == "task.created", "Message type must be 'task.created'"
 
     @pytest.mark.asyncio
-    async def test_task_created_payload_has_all_task_fields(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_task_created_payload_has_all_task_fields(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify task.created payload includes all Task interface fields.
         Status: ⚠️ MAY FAIL - Depends on backend implementing all fields.
@@ -179,11 +189,13 @@ class TestTaskCreatedMessage:
             "progress_percentage": 0,
         }
 
-        await ws_broadcaster.broadcast({
-            "type": "task.created",
-            "payload": task_payload,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.created",
+                "payload": task_payload,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.created")
         payload = message["payload"]
@@ -197,11 +209,17 @@ class TestTaskCreatedMessage:
         if "assignees" in payload:
             assert isinstance(payload["assignees"], list), "assignees must be array"
             for assignee in payload["assignees"]:
-                assert assignee.startswith("@"), f"Assignee '{assignee}' must have @ prefix"
+                assert assignee.startswith("@"), (
+                    f"Assignee '{assignee}' must have @ prefix"
+                )
 
-    @pytest.mark.xfail(reason="MISMATCH #1: project_id not included in WebSocket messages")
+    @pytest.mark.xfail(
+        reason="MISMATCH #1: project_id not included in WebSocket messages"
+    )
     @pytest.mark.asyncio
-    async def test_task_created_payload_includes_project_id(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_task_created_payload_includes_project_id(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify task.created payload includes project_id field.
         Status: ❌ WILL FAIL - Backend doesn't include project_id in messages.
@@ -214,16 +232,18 @@ class TestTaskCreatedMessage:
         Fix required: Include project_id in all task-related WebSocket messages.
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-1
         """
-        await ws_broadcaster.broadcast({
-            "type": "task.created",
-            "payload": {
-                "id": str(uuid4()),
-                "title": "New Task",
-                "git_branch_id": str(uuid4()),
-                # project_id is missing!
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.created",
+                "payload": {
+                    "id": str(uuid4()),
+                    "title": "New Task",
+                    "git_branch_id": str(uuid4()),
+                    # project_id is missing!
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.created")
         payload = message["payload"]
@@ -238,7 +258,9 @@ class TestTaskUpdatedMessage:
     """Test task.updated WebSocket message format."""
 
     @pytest.mark.asyncio
-    async def test_task_updated_message_includes_changed_fields(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_task_updated_message_includes_changed_fields(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify task.updated message includes all changed fields.
         Status: ✅ SHOULD PASS - Message should contain updated task state.
@@ -256,11 +278,13 @@ class TestTaskUpdatedMessage:
             "updated_at": datetime.utcnow().isoformat() + "Z",
         }
 
-        await ws_broadcaster.broadcast({
-            "type": "task.updated",
-            "payload": updated_task,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.updated",
+                "payload": updated_task,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.updated")
         payload = message["payload"]
@@ -271,7 +295,9 @@ class TestTaskUpdatedMessage:
 
     @pytest.mark.xfail(reason="MISMATCH #2/#3: Subtask counts not included in messages")
     @pytest.mark.asyncio
-    async def test_task_updated_includes_subtask_counts(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_task_updated_includes_subtask_counts(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify task.updated includes computed subtask count fields.
         Status: ❌ WILL FAIL - Backend doesn't compute subtask counts.
@@ -288,18 +314,20 @@ class TestTaskUpdatedMessage:
         Fix required: Compute and include subtask counts in WebSocket messages.
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-2-3
         """
-        await ws_broadcaster.broadcast({
-            "type": "task.updated",
-            "payload": {
-                "id": str(uuid4()),
-                "title": "Task with Subtasks",
-                "status": "in_progress",
-                "progress_percentage": 33,
-                # subtask_count is missing!
-                # completed_subtasks is missing!
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.updated",
+                "payload": {
+                    "id": str(uuid4()),
+                    "title": "Task with Subtasks",
+                    "status": "in_progress",
+                    "progress_percentage": 33,
+                    # subtask_count is missing!
+                    # completed_subtasks is missing!
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.updated")
         payload = message["payload"]
@@ -310,15 +338,21 @@ class TestTaskUpdatedMessage:
         assert "completed_subtasks" in payload, (
             "task.updated MUST include 'completed_subtasks' for progress visualization"
         )
-        assert isinstance(payload["subtask_count"], int), "subtask_count must be integer"
-        assert isinstance(payload["completed_subtasks"], int), "completed_subtasks must be integer"
+        assert isinstance(payload["subtask_count"], int), (
+            "subtask_count must be integer"
+        )
+        assert isinstance(payload["completed_subtasks"], int), (
+            "completed_subtasks must be integer"
+        )
 
 
 class TestSubtaskMessages:
     """Test subtask-related WebSocket message formats."""
 
     @pytest.mark.asyncio
-    async def test_subtask_created_message_structure(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_subtask_created_message_structure(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify subtask.created message has correct structure.
         Status: ✅ SHOULD PASS - Basic subtask message structure.
@@ -332,11 +366,13 @@ class TestSubtaskMessages:
             "created_at": datetime.utcnow().isoformat() + "Z",
         }
 
-        await ws_broadcaster.broadcast({
-            "type": "subtask.created",
-            "payload": subtask_payload,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "subtask.created",
+                "payload": subtask_payload,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("subtask.created")
         assert message is not None, "subtask.created message should be broadcast"
@@ -348,7 +384,9 @@ class TestSubtaskMessages:
         assert "title" in payload, "subtask must have title"
 
     @pytest.mark.asyncio
-    async def test_subtask_created_triggers_parent_update(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_subtask_created_triggers_parent_update(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify creating subtask triggers parent task update message.
         Status: ⚠️ MAY FAIL - Depends on backend implementing cascade updates.
@@ -362,27 +400,31 @@ class TestSubtaskMessages:
         task_id = str(uuid4())
 
         # Subtask created
-        await ws_broadcaster.broadcast({
-            "type": "subtask.created",
-            "payload": {
-                "id": str(uuid4()),
-                "task_id": task_id,
-                "title": "New Subtask",
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "subtask.created",
+                "payload": {
+                    "id": str(uuid4()),
+                    "task_id": task_id,
+                    "title": "New Subtask",
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         # Parent task should be updated
-        await ws_broadcaster.broadcast({
-            "type": "task.updated",
-            "payload": {
-                "id": task_id,
-                "subtask_count": 1,  # Updated count
-                "completed_subtasks": 0,  # Updated count
-                "updated_at": datetime.utcnow().isoformat() + "Z",
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.updated",
+                "payload": {
+                    "id": task_id,
+                    "subtask_count": 1,  # Updated count
+                    "completed_subtasks": 0,  # Updated count
+                    "updated_at": datetime.utcnow().isoformat() + "Z",
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         # Verify both messages were sent
         subtask_messages = ws_broadcaster.get_messages_by_type("subtask.created")
@@ -398,7 +440,9 @@ class TestContextSyncedMessage:
     """Test context.synced WebSocket message format."""
 
     @pytest.mark.asyncio
-    async def test_context_synced_message_after_subtask_changes(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_context_synced_message_after_subtask_changes(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify context.synced message is sent after subtask changes.
         Status: ⚠️ MAY FAIL - Depends on context sync implementation.
@@ -413,19 +457,21 @@ class TestContextSyncedMessage:
         task_id = str(uuid4())
 
         # Simulate context sync after subtask change
-        await ws_broadcaster.broadcast({
-            "type": "context.synced",
-            "payload": {
-                "task_id": task_id,
-                "context_data": {
-                    "subtask_count": 3,
-                    "completed_subtasks": 1,
-                    "progress_percentage": 33,
+        await ws_broadcaster.broadcast(
+            {
+                "type": "context.synced",
+                "payload": {
+                    "task_id": task_id,
+                    "context_data": {
+                        "subtask_count": 3,
+                        "completed_subtasks": 1,
+                        "progress_percentage": 33,
+                    },
+                    "synced_at": datetime.utcnow().isoformat() + "Z",
                 },
-                "synced_at": datetime.utcnow().isoformat() + "Z",
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("context.synced")
         assert message is not None, "context.synced message should be broadcast"
@@ -437,7 +483,9 @@ class TestContextSyncedMessage:
 
     @pytest.mark.xfail(reason="Context sync implementation may not include all fields")
     @pytest.mark.asyncio
-    async def test_context_synced_includes_critical_counts(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_context_synced_includes_critical_counts(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify context.synced includes critical count fields.
         Status: ❌ MAY FAIL - Context sync may not include computed counts.
@@ -450,19 +498,21 @@ class TestContextSyncedMessage:
         This ensures frontend has accurate data after any context changes.
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-2-3
         """
-        await ws_broadcaster.broadcast({
-            "type": "context.synced",
-            "payload": {
-                "task_id": str(uuid4()),
-                "context_data": {
-                    # These fields might be missing!
-                    "subtask_count": 5,
-                    "completed_subtasks": 3,
-                    "progress_percentage": 60,
+        await ws_broadcaster.broadcast(
+            {
+                "type": "context.synced",
+                "payload": {
+                    "task_id": str(uuid4()),
+                    "context_data": {
+                        # These fields might be missing!
+                        "subtask_count": 5,
+                        "completed_subtasks": 3,
+                        "progress_percentage": 60,
+                    },
                 },
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("context.synced")
         context_data = message["payload"]["context_data"]
@@ -481,9 +531,13 @@ class TestContextSyncedMessage:
 class TestWebSocketFieldNaming:
     """Test WebSocket message field naming conventions."""
 
-    @pytest.mark.xfail(reason="MISMATCH #4/#5: Field naming inconsistency (camelCase vs snake_case)")
+    @pytest.mark.xfail(
+        reason="MISMATCH #4/#5: Field naming inconsistency (camelCase vs snake_case)"
+    )
     @pytest.mark.asyncio
-    async def test_websocket_uses_snake_case_consistently(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_websocket_uses_snake_case_consistently(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify WebSocket messages use snake_case for all fields consistently.
         Status: ❌ WILL FAIL - Backend may use camelCase in some fields.
@@ -501,16 +555,18 @@ class TestWebSocketFieldNaming:
 
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-4-5
         """
-        await ws_broadcaster.broadcast({
-            "type": "task.created",
-            "payload": {
-                "id": str(uuid4()),
-                "title": "Task",
-                "estimated_effort": "2 hours",  # Should be snake_case
-                "due_date": "2025-12-31",  # Should be snake_case
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.created",
+                "payload": {
+                    "id": str(uuid4()),
+                    "title": "Task",
+                    "estimated_effort": "2 hours",  # Should be snake_case
+                    "due_date": "2025-12-31",  # Should be snake_case
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.created")
         payload = message["payload"]
@@ -537,7 +593,9 @@ class TestWebSocketAssigneeFormat:
     """Test assignee format in WebSocket messages."""
 
     @pytest.mark.asyncio
-    async def test_websocket_assignees_have_at_prefix(self, ws_broadcaster: MockWebSocketBroadcaster):
+    async def test_websocket_assignees_have_at_prefix(
+        self, ws_broadcaster: MockWebSocketBroadcaster
+    ):
         """
         Verify assignees in WebSocket messages have @ prefix.
         Status: ✅ SHOULD PASS - Confirmed requirement.
@@ -547,15 +605,17 @@ class TestWebSocketAssigneeFormat:
         - "@test-orchestrator-agent"
         - etc.
         """
-        await ws_broadcaster.broadcast({
-            "type": "task.created",
-            "payload": {
-                "id": str(uuid4()),
-                "title": "Task",
-                "assignees": ["@coding-agent", "@debugger-agent"],
-            },
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        })
+        await ws_broadcaster.broadcast(
+            {
+                "type": "task.created",
+                "payload": {
+                    "id": str(uuid4()),
+                    "title": "Task",
+                    "assignees": ["@coding-agent", "@debugger-agent"],
+                },
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            }
+        )
 
         message = ws_broadcaster.get_latest_message("task.created")
         payload = message["payload"]
