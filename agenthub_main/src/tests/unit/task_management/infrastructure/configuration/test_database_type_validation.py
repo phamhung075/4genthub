@@ -19,7 +19,7 @@ from fastmcp.task_management.infrastructure.database.database_config import (
 )
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_db_connection():
     """Mock database connection to prevent actual database authentication."""
     with patch(
