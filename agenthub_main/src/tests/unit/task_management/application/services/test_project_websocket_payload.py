@@ -113,11 +113,13 @@ class TestProjectManagementServiceWebSocketIntegration:
         # Setup mock repository with async methods
         mock_repo = MagicMock(spec=ORMProjectRepository)
         mock_project = Project(name="Test Project", description="Test Description")
-        mock_repo.find_by_id = AsyncMock(return_value=mock_project)
+        # First call returns project (pre-deletion check), second call returns None (verification)
+        mock_repo.find_by_id = AsyncMock(side_effect=[mock_project, None])
         mock_repo.delete = AsyncMock(return_value=True)
         mock_repo.user_id = (
             "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
         )
+        mock_repo.with_user = MagicMock(return_value=mock_repo)  # Return self for user scoping
 
         # Mock RepositoryFactory for git_branch_repo
         with patch(
@@ -197,9 +199,11 @@ class TestProjectManagementServiceWebSocketIntegration:
             # Setup mock repository with async methods
             mock_repo = MagicMock(spec=ORMProjectRepository)
             mock_project = Project(name="Test Project", description="Test Description")
-            mock_repo.find_by_id = AsyncMock(return_value=mock_project)
+            # First call returns project (pre-deletion check), second call returns None (verification)
+            mock_repo.find_by_id = AsyncMock(side_effect=[mock_project, None])
             mock_repo.delete = AsyncMock(return_value=True)
             mock_repo.user_id = "test-user-123"  # Set user_id attribute for _get_user_scoped_repository()
+            mock_repo.with_user = MagicMock(return_value=mock_repo)  # Return self for user scoping
 
             # Mock RepositoryFactory for git_branch_repo
             with patch(
