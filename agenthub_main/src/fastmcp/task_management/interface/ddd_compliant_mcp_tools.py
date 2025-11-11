@@ -25,7 +25,6 @@ from ..application.services.facade_service import FacadeService
 if TYPE_CHECKING:
     pass
 
-
 # Agent management imports (new implementation)
 from fastmcp.agent_management.interface.mcp_controllers import CallAgentMCPController
 
@@ -63,10 +62,6 @@ from .mcp_controllers.unified_context_controller.unified_context_controller impo
 from .mcp_controllers.workflow_hint_enhancer.workflow_hint_enhancer import (
     WorkflowHintEnhancer,
 )
-
-# Application layer imports (proper DDD dependency direction)
-# Use case imports for tool registration (call_agent)
-from ..application.use_cases import CallAgentUseCase
 
 logger = logging.getLogger(__name__)
 

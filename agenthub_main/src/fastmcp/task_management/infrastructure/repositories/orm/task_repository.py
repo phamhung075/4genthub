@@ -42,7 +42,6 @@ from ...database.models import (
     TaskLabel,
 )
 from ...performance.task_performance_optimizer import get_performance_optimizer
-from ..base_orm_repository import BaseORMRepository
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..clean_timestamp_repository_mixin import CleanTimestampRepository

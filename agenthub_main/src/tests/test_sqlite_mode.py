@@ -11,6 +11,7 @@ For database tests, use PostgreSQL-based tests instead.
 
 import os
 import sys
+
 import pytest
 
 # Add src to path
