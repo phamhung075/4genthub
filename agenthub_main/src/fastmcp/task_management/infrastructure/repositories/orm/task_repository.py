@@ -42,13 +42,15 @@ from ...database.models import (
     TaskLabel,
 )
 from ...performance.task_performance_optimizer import get_performance_optimizer
-from ..base_orm_repository import BaseORMRepository  # Re-export for backward compatibility
 from ..base_timestamp_repository import BaseTimestampRepository
 from ..base_user_scoped_repository import BaseUserScopedRepository
 from ..clean_timestamp_repository_mixin import CleanTimestampRepository
 from ..event_publishing_mixin import EventPublishingMixin
 
 logger = logging.getLogger(__name__)
+
+# Explicitly export BaseORMRepository for backward compatibility
+__all__ = ["ORMTaskRepository", "BaseORMRepository"]
 
 
 def _ensure_estimated_effort_default(value: any) -> str:
