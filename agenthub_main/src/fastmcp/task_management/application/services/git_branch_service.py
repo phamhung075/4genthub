@@ -217,7 +217,7 @@ class GitBranchService:
             if not success:
                 return {
                     "success": False,
-                    "error": f"Git branch with ID {git_branch_id} not found or you don't have permission",
+                    "error": f"Failed to delete git branch {git_branch_id}",
                     "error_code": "DELETE_FAILED",
                 }
 
