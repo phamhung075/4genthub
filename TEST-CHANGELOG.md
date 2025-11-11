@@ -16,6 +16,39 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## [2025-11-11]
 
+### Fixed
+
+**Unit Test Database Mock Configuration** (2025-11-11)
+- Fixed ~40 unit tests failing with `SystemExit: 1` database initialization errors
+- Problem: Unit tests attempting to connect to actual PostgreSQL database instead of using mocks
+- Root cause: Missing mock fixtures for `DatabaseConfig`, `get_db_config()`, and related database components
+- Solution: Created comprehensive `conftest.py` in `src/tests/unit/task_management/` with 4 autouse fixtures:
+  - `mock_database_config()` - Mocks DatabaseConfig class to prevent real connections
+  - `mock_get_db_config()` - Mocks get_db_config() function used by tests
+  - `mock_database_source_manager()` - Prevents database mode detection
+  - `mock_database_initializer()` - Prevents schema creation attempts
+- Mock features:
+  - Context manager support for `get_session()`
+  - Mock SQL execution with `execute()`, `commit()`, `rollback()`
+  - Mock result sets with `fetchone()`, `fetchall()`, iteration support
+  - Returns appropriate mock data for database info queries
+- Files affected (13 test files with ~40 tests):
+  - `test_agent_application_facade_comprehensive.py`
+  - `test_task_facade_validation.py`
+  - `test_project_application_service.py` (all tests)
+  - `test_project_application_service_patterns.py` (all tests)
+  - `test_project.py` (all tests)
+  - `test_project_repository.py` (all tests)
+  - `supabase_optimized_repository_test.py`
+  - `unit_project_repository_test.py`
+  - `task_repository_factory_test.py`
+  - `test_websocket_routes.py`
+  - `git_branch_zero_tasks_deletion_test.py`
+  - `test_completion_summary_manual.py`
+  - `test_sqlite_version_fix.py`
+- Impact: Prevents unit tests from requiring real database connections, improving test isolation and speed
+- Related: Complements existing autouse fixture `set_mcp_db_path_for_tests` in main conftest.py
+
 ### Added
 
 **Phase 6: DATABASE_TYPE Validation Tests** (2025-11-11)
