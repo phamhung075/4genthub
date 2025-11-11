@@ -51,18 +51,18 @@ def mock_project_root_with_env(tmp_path, monkeypatch):
     )
 
     # Patch the Settings class to use this temp directory
-    from fastmcp import settings as settings_module
+    from fastmcp.settings import Settings
 
-    original_project_root = settings_module.Settings._project_root
-    settings_module.Settings._project_root = tmp_path
-    settings_module.Settings._env_path = tmp_path / ".env"
-    settings_module.Settings._env_dev_path = tmp_path / ".env.dev"
-    settings_module.Settings._env_file = str(env_file)
+    original_project_root = Settings._project_root
+    Settings._project_root = tmp_path
+    Settings._env_path = tmp_path / ".env"
+    Settings._env_dev_path = tmp_path / ".env.dev"
+    Settings._env_file = str(env_file)
 
     yield tmp_path
 
     # Restore original values
-    settings_module.Settings._project_root = original_project_root
+    Settings._project_root = original_project_root
 
 
 @pytest.mark.unit

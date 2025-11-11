@@ -49,6 +49,38 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Settings Import AttributeError in Unit Tests** (2025-11-11)
+
+Fixed incorrect Settings import pattern in environment loading test fixtures that caused AttributeError: 'Settings' object has no attribute 'Settings'.
+
+**Problem**:
+- Test fixtures used `from fastmcp import settings as settings_module`
+- This imported the `settings` instance (not the module or class)
+- Accessing `settings_module.Settings._project_root` tried to access `.Settings` attribute on instance
+- Caused AttributeError when fixtures attempted to patch Settings class attributes
+
+**Root Cause**:
+- `fastmcp/__init__.py` exports `settings` as an instance: `settings = Settings()`
+- Tests incorrectly assumed `settings` was the module or had a `.Settings` attribute
+
+**Solution**:
+- Changed import from `from fastmcp import settings as settings_module`
+- To correct import: `from fastmcp.settings import Settings`
+- Updated all references from `settings_module.Settings` to `Settings`
+
+**Files Modified**:
+- `agenthub_main/src/tests/unit/test_env_loading_tdd.py:54-65` - Fixed fixture `mock_project_root_with_env`
+- `agenthub_main/src/tests/unit/test_env_priority_tdd.py:35-53,82-101` - Fixed fixtures `mock_project_root_with_env` and `mock_project_root_with_both_env`
+
+**Tests Fixed** (6 tests):
+- 4 tests in `test_env_loading_tdd.py` that use `mock_project_root_with_env` fixture
+- 2 tests in `test_env_priority_tdd.py` that use fixtures
+
+**Impact**:
+- ✅ Fixtures now correctly access Settings class for patching
+- ✅ Tests can run without AttributeError
+- ✅ Proper distinction between instance (`settings`) and class (`Settings`)
+
 **Environment Loading Tests Fixed for CI/CD** (2025-11-11)
 
 Fixed 7 failing unit tests in environment loading test suite that were expecting .env files to exist in CI environment.

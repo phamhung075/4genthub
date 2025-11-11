@@ -32,25 +32,25 @@ def mock_project_root_with_env(tmp_path):
     )
 
     # Patch the Settings class to use this temp directory
-    from fastmcp import settings as settings_module
+    from fastmcp.settings import Settings
 
-    original_project_root = settings_module.Settings._project_root
-    original_env_path = settings_module.Settings._env_path
-    original_env_dev_path = settings_module.Settings._env_dev_path
-    original_env_file = settings_module.Settings._env_file
+    original_project_root = Settings._project_root
+    original_env_path = Settings._env_path
+    original_env_dev_path = Settings._env_dev_path
+    original_env_file = Settings._env_file
 
-    settings_module.Settings._project_root = tmp_path
-    settings_module.Settings._env_path = tmp_path / ".env"
-    settings_module.Settings._env_dev_path = tmp_path / ".env.dev"
-    settings_module.Settings._env_file = str(env_file)
+    Settings._project_root = tmp_path
+    Settings._env_path = tmp_path / ".env"
+    Settings._env_dev_path = tmp_path / ".env.dev"
+    Settings._env_file = str(env_file)
 
     yield tmp_path
 
     # Restore original values
-    settings_module.Settings._project_root = original_project_root
-    settings_module.Settings._env_path = original_env_path
-    settings_module.Settings._env_dev_path = original_env_dev_path
-    settings_module.Settings._env_file = original_env_file
+    Settings._project_root = original_project_root
+    Settings._env_path = original_env_path
+    Settings._env_dev_path = original_env_dev_path
+    Settings._env_file = original_env_file
 
 
 @pytest.fixture
@@ -79,26 +79,26 @@ def mock_project_root_with_both_env(tmp_path):
     )
 
     # Patch the Settings class to use this temp directory
-    from fastmcp import settings as settings_module
+    from fastmcp.settings import Settings
 
-    original_project_root = settings_module.Settings._project_root
-    original_env_path = settings_module.Settings._env_path
-    original_env_dev_path = settings_module.Settings._env_dev_path
-    original_env_file = settings_module.Settings._env_file
+    original_project_root = Settings._project_root
+    original_env_path = Settings._env_path
+    original_env_dev_path = Settings._env_dev_path
+    original_env_file = Settings._env_file
 
-    settings_module.Settings._project_root = tmp_path
-    settings_module.Settings._env_path = tmp_path / ".env"
-    settings_module.Settings._env_dev_path = tmp_path / ".env.dev"
+    Settings._project_root = tmp_path
+    Settings._env_path = tmp_path / ".env"
+    Settings._env_dev_path = tmp_path / ".env.dev"
     # .env.dev takes priority when it exists
-    settings_module.Settings._env_file = str(env_dev_file)
+    Settings._env_file = str(env_dev_file)
 
     yield tmp_path
 
     # Restore original values
-    settings_module.Settings._project_root = original_project_root
-    settings_module.Settings._env_path = original_env_path
-    settings_module.Settings._env_dev_path = original_env_dev_path
-    settings_module.Settings._env_file = original_env_file
+    Settings._project_root = original_project_root
+    Settings._env_path = original_env_path
+    Settings._env_dev_path = original_env_dev_path
+    Settings._env_file = original_env_file
 
 
 @pytest.mark.unit
