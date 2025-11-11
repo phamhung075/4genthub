@@ -49,36 +49,38 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
-**Subtask MCP Controller - Route All Actions Through handle_manage_subtask** (2025-11-11)
+**Environment Loading Tests Fixed for CI/CD** (2025-11-11)
 
-Fixed SubtaskMCPController to properly route all subtask operations through the facade's `handle_manage_subtask` method, addressing 4 test failures in unit tests.
+Fixed 7 failing unit tests in environment loading test suite that were expecting .env files to exist in CI environment.
 
-**Issues Fixed**:
-1. Parent task validation now happens before subtask creation via `_get_facade_for_request()`
-2. All actions (create, update, delete, list, get, complete) now route through `facade.handle_manage_subtask()`
-3. List responses preserve `parent_task_id` field from facade (no controller modification needed)
-4. Complete action correctly uses action='complete' instead of action='update'
+**Problem**:
+- Tests expected `.env` or `.env.dev` files at project root
+- CI environment doesn't have these files (not checked into git)
+- Tests failed with file not found errors
 
-**Root Cause**: Controller was routing through operation factory and handlers instead of calling `handle_manage_subtask` directly, causing test mock expectations to fail.
+**Solution**:
+- Created pytest fixtures (`mock_project_root_with_env`, `mock_project_root_with_both_env`)
+- Fixtures provide temporary .env files with proper test data
+- Patched Settings class to use temp directories during tests
+- Tests now work in any environment (local dev, CI, production)
 
-**Changes**:
-- `agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.py:288-435`
-  - Refactored `manage_subtask()` method to call `facade.handle_manage_subtask()` directly in new path
-  - Build `subtask_data` dict from kwargs for all actions
-  - For complete action: set status='done', progress_percentage=100, and completed_at timestamp
-  - Parent task validation via `_get_facade_for_request()` which calls `temp_facade.get_task(task_id)`
+**Tests Fixed**:
+1. `test_settings_should_load_env_from_root` - Now uses temp .env fixture
+2. `test_env_dev_should_not_interfere` - Uses temp .env fixture
+3. `test_missing_required_database_vars` - Properly clears environment before test
+4. `test_env_fallback_when_env_dev_missing` - Uses temp directory without .env.dev
+5. `test_env_file_priority_with_dotenv_load` - Uses temp directory with both files
+6. `test_settings_implementation_correct` - Tests with both .env and .env.dev
+7. `test_database_config_with_env_priority` - Uses temp files and resets singleton
 
-**Tests Fixed**: All 4 subtask controller unit tests now pass
-- `test_create_subtask_validates_parent_before_creation`
-- `test_update_subtask_uses_correct_context`
-- `test_list_subtasks_uses_correct_task_context`
-- `test_complete_subtask_uses_correct_context`
+**Files Modified**:
+- `agenthub_main/src/tests/unit/test_env_loading_tdd.py` - Added 2 fixtures, updated 3 tests
+- `agenthub_main/src/tests/unit/test_env_priority_tdd.py` - Added 2 fixtures, updated 4 tests
 
 **Impact**:
-- ✅ Proper parent task validation before subtask operations
-- ✅ Consistent routing architecture aligned with TaskMCPController pattern
-- ✅ Complete action properly distinguished from update action
-- ✅ All subtask operations use correct context (git_branch_id from parent task)
+- ✅ Tests pass in CI without requiring .env files
+- ✅ Tests are isolated and don't depend on project environment
+- ✅ Proper cleanup via pytest fixtures ensures no test pollution
 
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
