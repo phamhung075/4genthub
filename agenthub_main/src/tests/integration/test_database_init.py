@@ -71,15 +71,10 @@ class TestDatabaseInitializerInit:
         assert "agenthub_user" in initializer.database_url
         assert "agenthub_password" in initializer.database_url
 
-    @patch.dict(os.environ, {
-        "DATABASE_TYPE": "sqlite",
-        "DATABASE_URL": "sqlite:///custom_test.db"
-    })
-    def test_init_sqlite_from_environment(self):
-        """Test SQLite initialization from DATABASE_URL"""
-        initializer = DatabaseInitializer()
-
-        assert initializer.database_url == "sqlite:///custom_test.db"
+    @pytest.mark.skip(reason="SQLite is no longer supported - only postgresql/supabase are valid")
+    def test_init_sqlite_from_environment_deprecated(self):
+        """DEPRECATED: SQLite is no longer a supported DATABASE_TYPE"""
+        pytest.skip("SQLite support removed - DATABASE_TYPE must be 'postgresql' or 'supabase'")
 
     @patch.dict(os.environ, {"DATABASE_TYPE": "other"}, clear=True)
     def test_init_other_database_type_uses_default(self):
