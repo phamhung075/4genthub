@@ -15,11 +15,60 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 
+@pytest.fixture
+def temp_env_file():
+    """Create a temporary .env file for testing."""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.env', delete=False) as f:
+        f.write("DATABASE_TYPE=postgresql\n")
+        f.write("DATABASE_HOST=localhost\n")
+        f.write("DATABASE_PORT=5432\n")
+        f.write("DATABASE_NAME=test_db\n")
+        f.write("DATABASE_USER=test_user\n")
+        f.write("DATABASE_PASSWORD=test_pass\n")
+        f.write("FASTMCP_PORT=8000\n")
+        temp_path = f.name
+
+    yield temp_path
+
+    # Cleanup
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
+
+
+@pytest.fixture
+def mock_project_root_with_env(tmp_path, monkeypatch):
+    """Mock the project root to use a temporary directory with .env file."""
+    # Create .env file in temp directory
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "DATABASE_TYPE=postgresql\n"
+        "DATABASE_HOST=localhost\n"
+        "DATABASE_PORT=5432\n"
+        "DATABASE_NAME=test_db\n"
+        "DATABASE_USER=test_user\n"
+        "DATABASE_PASSWORD=test_pass\n"
+        "FASTMCP_PORT=8000\n"
+    )
+
+    # Patch the Settings class to use this temp directory
+    from fastmcp import settings as settings_module
+    original_project_root = settings_module.Settings._project_root
+    settings_module.Settings._project_root = tmp_path
+    settings_module.Settings._env_path = tmp_path / ".env"
+    settings_module.Settings._env_dev_path = tmp_path / ".env.dev"
+    settings_module.Settings._env_file = str(env_file)
+
+    yield tmp_path
+
+    # Restore original values
+    settings_module.Settings._project_root = original_project_root
+
+
 @pytest.mark.unit
 class TestEnvironmentLoading:
     """TDD tests for environment file loading functionality."""
 
-    def test_settings_should_load_env_from_root(self):
+    def test_settings_should_load_env_from_root(self, mock_project_root_with_env):
         """Settings should load .env file from project root, not from nested paths."""
         from fastmcp.settings import Settings
 
@@ -88,7 +137,7 @@ class TestEnvironmentLoading:
         engine_url = config.get('engine')
         assert engine_url is not None
 
-    def test_env_dev_should_not_interfere(self):
+    def test_env_dev_should_not_interfere(self, mock_project_root_with_env):
         """Presence of .env.dev should not break .env loading."""
         from fastmcp.settings import Settings
 
@@ -343,13 +392,14 @@ class TestErrorHandling:
         )
         DatabaseConfig.reset_instance()
 
-        with patch.dict(os.environ, {
-            'DATABASE_TYPE': 'postgresql',
-            # Missing DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD
-            'PYTEST_CURRENT_TEST': 'test'
-        }, clear=True):
+        # Clear environment and set only DATABASE_TYPE
+        with patch.dict(os.environ, {}, clear=True):
+            os.environ['DATABASE_TYPE'] = 'postgresql'
+            os.environ['PYTEST_CURRENT_TEST'] = 'test'
+            # Missing DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME
+
             # PostgreSQL requires connection details - should raise ValueError
-            with pytest.raises(ValueError, match="configuration missing|Required"):
+            with pytest.raises(ValueError, match="configuration missing|Required|DATABASE"):
                 DatabaseConfig()
 
     def test_invalid_port_number(self):

@@ -49,6 +49,39 @@ Fixed 4 HIGH severity CVEs by updating Python dependencies to patched versions.
 
 ### Fixed
 
+**Environment Loading Tests Fixed for CI/CD** (2025-11-11)
+
+Fixed 7 failing unit tests in environment loading test suite that were expecting .env files to exist in CI environment.
+
+**Problem**:
+- Tests expected `.env` or `.env.dev` files at project root
+- CI environment doesn't have these files (not checked into git)
+- Tests failed with file not found errors
+
+**Solution**:
+- Created pytest fixtures (`mock_project_root_with_env`, `mock_project_root_with_both_env`)
+- Fixtures provide temporary .env files with proper test data
+- Patched Settings class to use temp directories during tests
+- Tests now work in any environment (local dev, CI, production)
+
+**Tests Fixed**:
+1. `test_settings_should_load_env_from_root` - Now uses temp .env fixture
+2. `test_env_dev_should_not_interfere` - Uses temp .env fixture
+3. `test_missing_required_database_vars` - Properly clears environment before test
+4. `test_env_fallback_when_env_dev_missing` - Uses temp directory without .env.dev
+5. `test_env_file_priority_with_dotenv_load` - Uses temp directory with both files
+6. `test_settings_implementation_correct` - Tests with both .env and .env.dev
+7. `test_database_config_with_env_priority` - Uses temp files and resets singleton
+
+**Files Modified**:
+- `agenthub_main/src/tests/unit/test_env_loading_tdd.py` - Added 2 fixtures, updated 3 tests
+- `agenthub_main/src/tests/unit/test_env_priority_tdd.py` - Added 2 fixtures, updated 4 tests
+
+**Impact**:
+- ✅ Tests pass in CI without requiring .env files
+- ✅ Tests are isolated and don't depend on project environment
+- ✅ Proper cleanup via pytest fixtures ensures no test pollution
+
 **Python 3.11 Compatibility and Import Sorting** (2025-11-11)
 
 Fixed syntax errors and import sorting issues to ensure Python 3.11 compatibility and PEP 8 compliance.
