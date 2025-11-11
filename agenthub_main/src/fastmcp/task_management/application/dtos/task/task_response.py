@@ -179,10 +179,15 @@ class TaskResponse:
             else ""
         )
 
-        # Fix 3: Add @ prefix to assignees if not present
-        assignees_with_prefix = [
-            f"@{a}" if not a.startswith("@") else a for a in task_dict["assignees"]
-        ]
+        # Normalize agent names: remove @ prefix and add -agent suffix
+        assignees_normalized = []
+        for a in task_dict["assignees"]:
+            # Remove @ prefix if present
+            name = a.lstrip("@")
+            # Add -agent suffix if not present
+            if not name.endswith("-agent"):
+                name = f"{name}-agent"
+            assignees_normalized.append(name)
 
         # Fix 2: Get completed_subtasks count
         # Note: subtask_count is now a derived @property, not computed here
@@ -203,7 +208,7 @@ class TaskResponse:
             priority=task_dict["priority"],
             details=details,  # Formatted progress history text for backward compatibility
             estimated_effort=task_dict["estimatedEffort"],
-            assignees=assignees_with_prefix,  # Fix 3: Use assignees with @ prefix
+            assignees=assignees_normalized,  # Use normalized agent names
             labels=task_dict["labels"],
             dependencies=task_dict["dependencies"],
             subtasks=task_dict["subtasks"],
