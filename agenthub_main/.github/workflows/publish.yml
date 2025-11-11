@@ -3,11 +3,11 @@ name: Publish FastMCP to PyPI
 env:
   # Database configuration (required even for build due to import-time initialization)
   DATABASE_TYPE: postgresql
-  POSTGRES_HOST: localhost
-  POSTGRES_PORT: 5432
-  POSTGRES_DB: agenthub_test
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
+  DATABASE_HOST: localhost
+  DATABASE_PORT: 5432
+  DATABASE_NAME: agenthub_test
+  DATABASE_USER: postgres
+  DATABASE_PASSWORD: postgres
 
 on:
   release:

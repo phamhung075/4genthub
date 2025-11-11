@@ -6,11 +6,11 @@ env:
   MAX_PERFORMANCE_REGRESSION: 5
   # Database configuration for tests
   DATABASE_TYPE: postgresql
-  POSTGRES_HOST: localhost
-  POSTGRES_PORT: 5432
-  POSTGRES_DB: agenthub_test
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
+  DATABASE_HOST: localhost
+  DATABASE_PORT: 5432
+  DATABASE_NAME: agenthub_test
+  DATABASE_USER: postgres
+  DATABASE_PASSWORD: postgres
 
 on:
   push:
@@ -52,6 +52,9 @@ jobs:
           POSTGRES_DB: agenthub_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          DATABASE_NAME: agenthub_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -76,11 +79,11 @@ jobs:
       - name: Run tests with coverage
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           uv run pytest \
             --cov=src/fastmcp/agenthub \
             --cov-report=term-missing \
@@ -135,22 +138,22 @@ jobs:
       - name: Run safety check for known vulnerabilities
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           uv add --dev safety
           uv run safety check --json --output safety-report.json || true
 
       - name: Run bandit security linter
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           uv add --dev bandit
           uv run bandit -r src/ -f json -o bandit-report.json || true
 
@@ -260,6 +263,9 @@ jobs:
           POSTGRES_DB: agenthub_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          DATABASE_NAME: agenthub_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -284,21 +290,21 @@ jobs:
       - name: Run integration tests
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           uv run pytest tests/ -v --tb=short
 
       - name: Test task management MCP server
         run: |
           export DATABASE_TYPE=postgresql
-          export POSTGRES_HOST=localhost
-          export POSTGRES_PORT=5432
-          export POSTGRES_DB=agenthub_test
-          export POSTGRES_USER=postgres
-          export POSTGRES_PASSWORD=postgres
+          export DATABASE_HOST=localhost
+          export DATABASE_PORT=5432
+          export DATABASE_NAME=agenthub_test
+          export DATABASE_USER=postgres
+          export DATABASE_PASSWORD=postgres
           # Test that the MCP server can start and respond
           timeout 10s uv run python -c "
           from src.fastmcp.server.main_server import create_main_server
