@@ -165,6 +165,12 @@ jobs:
 
       - name: Set up test environment
         env:
+          DATABASE_TYPE: postgresql
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: agenthub_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agenthub_test
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci
@@ -183,6 +189,12 @@ jobs:
 
       - name: Run integration tests
         env:
+          DATABASE_TYPE: postgresql
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: agenthub_test
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/agenthub_test
           REDIS_URL: redis://localhost:6379/0
           JWT_SECRET_KEY: test-secret-key-for-ci
