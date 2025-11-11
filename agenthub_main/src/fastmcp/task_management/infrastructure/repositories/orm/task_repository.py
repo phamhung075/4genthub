@@ -49,6 +49,9 @@ from ..event_publishing_mixin import EventPublishingMixin
 
 logger = logging.getLogger(__name__)
 
+# Explicitly export BaseORMRepository for backward compatibility
+__all__ = ["ORMTaskRepository", "BaseORMRepository"]
+
 
 def _ensure_estimated_effort_default(value: any) -> str:
     """
