@@ -2,27 +2,22 @@
 # This runs automatically in GitHub Actions (see .github/workflows/run-static.yml)
 # To use locally: pip install pre-commit && pre-commit install
 #
-# NOTE: This configuration runs formatters on ALL Python files in the project
-# before each commit, ensuring project-wide code consistency.
+# NOTE: Hooks run on STAGED files only and automatically re-stage formatted files
 
 repos:
   # Ruff - Fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4  # Use latest stable version
     hooks:
-      # Run the linter on all files
+      # Run the linter - auto-fixes issues and re-stages files
       - id: ruff
         args: [--fix]
-        pass_filenames: false
-        always_run: true
         stages: [pre-commit]
-      # Run the formatter on all files
+      # Run the formatter - formats code and re-stages files
       - id: ruff-format
-        pass_filenames: false
-        always_run: true
         stages: [pre-commit]
 
-  # Additional checks (run on staged files only for performance)
+  # Additional checks - run on staged files
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
