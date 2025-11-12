@@ -29,77 +29,68 @@ def mock_database_connections():
         "DATABASE_PASSWORD": "test_pass",
     }
 
-    # Build list of patches conditionally based on what's available
-    patches = []
+    # Create mock modules if they don't exist
+    # This prevents ModuleNotFoundError when patching
+    import sys
 
-    # Try to patch psycopg2 only if it's available
+    # Track which modules we need to mock
+    modules_to_cleanup = []
+
+    # Mock psycopg2 if not available
+    if "psycopg2" not in sys.modules:
+        sys.modules["psycopg2"] = MagicMock()
+        sys.modules["psycopg2.extras"] = MagicMock()
+        modules_to_cleanup.extend(["psycopg2", "psycopg2.extras"])
+
+    # Mock sqlalchemy if not available
+    if "sqlalchemy" not in sys.modules:
+        sys.modules["sqlalchemy"] = MagicMock()
+        sys.modules["sqlalchemy.event"] = MagicMock()
+        modules_to_cleanup.extend(["sqlalchemy", "sqlalchemy.event"])
+
     try:
-        import psycopg2
-        patches.append(patch("psycopg2.connect"))
-        patches.append(patch("psycopg2.extras.register_uuid"))
-    except ImportError:
-        pass
-
-    # Try to patch sqlalchemy only if it's available
-    try:
-        import sqlalchemy
-        patches.append(patch("sqlalchemy.create_engine"))
-        patches.append(patch("sqlalchemy.event.listens_for"))
-    except ImportError:
-        pass
-
-    # Always patch environment variables
-    patches.append(patch.dict(os.environ, env_vars))
-
-    # Apply all patches using contextlib.ExitStack
-    from contextlib import ExitStack
-
-    with ExitStack() as stack:
-        mocks = [stack.enter_context(p) for p in patches]
-
-        # Configure mocks based on what was patched
-        # Count how many patches we have (excluding env_vars patch which is always last)
-        num_patches = len(mocks) - 1
-
-        if num_patches == 4:  # Has both psycopg2 and sqlalchemy mocks
-            mock_pg = mocks[0]
-            mock_uuid = mocks[1]
-            mock_engine = mocks[2]
-            mock_event = mocks[3]
-
+        with (
+            patch("psycopg2.connect") as mock_pg,
+            patch("psycopg2.extras.register_uuid") as mock_uuid,
+            patch("sqlalchemy.create_engine") as mock_engine,
+            patch("sqlalchemy.event.listens_for") as mock_event,
+            patch.dict(os.environ, env_vars),
+        ):
             # Create a proper mock connection with server_version attribute
             mock_conn = MagicMock()
             mock_conn.server_version = 140000  # PostgreSQL 14.0
             mock_pg.return_value = mock_conn
             mock_uuid.return_value = None  # register_uuid returns None
             mock_engine.return_value = MagicMock()
-            mock_event.return_value = lambda func: func
-        elif num_patches == 2:  # Only sqlalchemy or psycopg2 mocks
-            # Could be either psycopg2 or sqlalchemy, configure generically
-            if len(mocks) >= 2:
-                for mock_obj in mocks[:-1]:  # Skip env_vars patch
-                    if isinstance(mock_obj, MagicMock):
-                        mock_obj.return_value = MagicMock()
+            mock_event.return_value = (
+                lambda func: func
+            )  # Return decorator that does nothing
 
-        # Reset DatabaseConfig singleton AFTER mocks are set up
-        try:
-            from fastmcp.task_management.infrastructure.database.database_config import (
-                DatabaseConfig,
-            )
-            DatabaseConfig.reset_instance()
-        except ImportError:
-            pass
+            # Reset DatabaseConfig singleton AFTER mocks are set up
+            try:
+                from fastmcp.task_management.infrastructure.database.database_config import (
+                    DatabaseConfig,
+                )
 
-        yield
+                DatabaseConfig.reset_instance()
+            except ImportError:
+                pass
 
-        # Reset again after test
-        try:
-            from fastmcp.task_management.infrastructure.database.database_config import (
-                DatabaseConfig,
-            )
-            DatabaseConfig.reset_instance()
-        except ImportError:
-            pass
+            yield
+
+            # Reset again after test
+            try:
+                from fastmcp.task_management.infrastructure.database.database_config import (
+                    DatabaseConfig,
+                )
+
+                DatabaseConfig.reset_instance()
+            except ImportError:
+                pass
+    finally:
+        # Clean up mock modules if we created them
+        for module_name in modules_to_cleanup:
+            sys.modules.pop(module_name, None)
 
 
 @pytest.fixture
@@ -429,7 +420,11 @@ class TestEnvPriorityImplementation:
         """All modules should load the same prioritized env file"""
         import os
 
-        from dotenv import dotenv_values, load_dotenv
+        # Skip test if dotenv module is not available
+        try:
+            from dotenv import load_dotenv
+        except ModuleNotFoundError:
+            pytest.skip("python-dotenv not installed in test environment")
 
         project_root = Path(__file__).parent.parent.parent.parent.parent
         env_dev_file = project_root / ".env.dev"
@@ -438,7 +433,13 @@ class TestEnvPriorityImplementation:
         # Determine which file to use
         env_to_load = env_dev_file if env_dev_file.exists() else env_file
 
-        # Load it
+        # Skip test if no env file exists
+        if not env_to_load.exists():
+            pytest.skip(
+                f"No .env file found. Tested paths: {env_dev_file}, {env_file}"
+            )
+
+        # Load it with load_dotenv (first time)
         load_dotenv(env_to_load, override=True)
 
         # Get a value
@@ -446,9 +447,10 @@ class TestEnvPriorityImplementation:
 
         # Clear and reload to test consistency
         os.environ.pop("DATABASE_HOST", None)
-        # Use dotenv_values() to force a fresh file read (bypasses dotenv's internal cache)
-        env_vars = dotenv_values(env_to_load)
-        os.environ.update(env_vars)
+
+        # Use load_dotenv() consistently instead of mixing with dotenv_values()
+        # This is more reliable and doesn't have the empty dict issue
+        load_dotenv(env_to_load, override=True)
         db_host_2 = os.getenv("DATABASE_HOST")
 
         # Should be consistent
