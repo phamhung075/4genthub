@@ -171,6 +171,8 @@ class Settings(BaseSettings):
         cls._env_file = (
             str(cls._env_dev_path) if cls._env_dev_path.exists() else str(cls._env_path)
         )
+        # Update model_config dict to reflect the new env_file path
+        cls.model_config["env_file"] = cls._env_file
 
     @classmethod
     def settings_customise_sources(
