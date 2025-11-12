@@ -348,7 +348,9 @@ class TestEnvPriorityImplementation:
         settings = Settings()
 
         # Get the env file being used (check both model_config and effective_env_file property)
-        env_file = getattr(settings, "effective_env_file", None) or settings.model_config.get("env_file")
+        env_file = getattr(
+            settings, "effective_env_file", None
+        ) or settings.model_config.get("env_file")
 
         # With both files present, should use .env.dev
         env_dev_file = mock_project_root_with_both_env / ".env.dev"
@@ -409,9 +411,7 @@ class TestEnvPriorityImplementation:
 
         # Skip test if no env file exists
         if not env_to_load.exists():
-            pytest.skip(
-                f"No .env file found. Tested paths: {env_dev_file}, {env_file}"
-            )
+            pytest.skip(f"No .env file found. Tested paths: {env_dev_file}, {env_file}")
 
         # Load it with load_dotenv (first time)
         load_dotenv(env_to_load, override=True)
