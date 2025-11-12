@@ -12,7 +12,6 @@ Handles:
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
 def fix_bare_except(content: str) -> str:

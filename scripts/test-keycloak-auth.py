@@ -5,7 +5,7 @@ Tests both password grant and client credentials grant flows
 """
 
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import requests
 from dotenv import load_dotenv

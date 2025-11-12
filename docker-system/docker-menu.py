@@ -7,7 +7,6 @@ Interactive menu system for Docker CLI operations
 import os
 import subprocess
 import sys
-from typing import Tuple
 
 try:
     import questionary

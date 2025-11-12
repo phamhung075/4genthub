@@ -23,8 +23,8 @@ sys.path.insert(0, str(project_root / "agenthub_main" / "src"))
 # Import Keycloak services
 # Load environment variables
 from dotenv import load_dotenv
-from fastmcp.auth.keycloak_service import KeycloakAuthService
 
+from fastmcp.auth.keycloak_service import KeycloakAuthService
 from fastmcp.auth.mcp_keycloak_validator import MCPKeycloakValidator
 
 load_dotenv()
