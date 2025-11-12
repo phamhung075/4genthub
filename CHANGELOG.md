@@ -8,6 +8,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**datetime.UTC Compatibility Issue** (2025-11-12)
+
+Fixed AttributeError with datetime.UTC for Python 3.9+ compatibility. datetime.UTC was introduced in Python 3.11, causing failures on earlier Python versions.
+
+**Changes Made**:
+- Replaced `datetime.UTC` with `timezone.utc` in `agenthub_main/src/fastmcp/task_management/domain/websocket_protocol.py:35,378`
+- Replaced `datetime.UTC` with `datetime.timezone.utc` in `agenthub_main/src/fastmcp/utilities/cache.py:4`
+- Fixed test mocks in `test_subtask_websocket_payload.py` to include subtask data in use case responses
+
+**Tests Fixed**:
+- TestSubtaskDeleteMessageCreation::test_create_delete_message_with_subtask_payload
+- TestSubtaskDeleteMessageCreation::test_create_delete_message_without_title
+- TestSubtaskFacadeDeleteIntegration::test_handle_delete_uses_subtask_delete_payload_with_title
+- TestSubtaskFacadeDeleteIntegration::test_handle_delete_uses_fallback_title
+- TestSubtaskDeletePayloadSerialization::test_websocket_message_json_serialization
+
+**Impact**:
+- ✅ Ensures compatibility with Python 3.9, 3.10, 3.11+
+- ✅ WebSocket notification system now works correctly across all Python versions
+- ✅ All subtask deletion tests pass
+
 **Import Sorting Errors in Test Files** (2025-11-12)
 
 Fixed I001 ruff import sorting errors in test configuration and security test files.
