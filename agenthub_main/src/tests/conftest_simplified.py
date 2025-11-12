@@ -86,16 +86,19 @@ def test_database(request):
         yield
         return
 
-    from fastmcp.task_management.infrastructure.database.database_config import close_db
+    from fastmcp.task_management.infrastructure.database.test_database_config import (
+        DatabaseTestConfig,
+        install_missing_dependencies,
+    )
+
+    from fastmcp.task_management.infrastructure.database.database_config import (
+        close_db,
+    )
     from fastmcp.task_management.infrastructure.database.database_initializer import (
         reset_initialization_cache,
     )
     from fastmcp.task_management.infrastructure.database.database_source_manager import (
         DatabaseSourceManager,
-    )
-    from fastmcp.task_management.infrastructure.database.test_database_config import (
-        DatabaseTestConfig,
-        install_missing_dependencies,
     )
 
     # Install missing dependencies if needed

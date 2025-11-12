@@ -8,6 +8,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Import Sorting Errors in Test Files** (2025-11-12)
+
+Fixed I001 ruff import sorting errors in test configuration and security test files.
+
+**Changes Made**:
+- Fixed import formatting in `agenthub_main/src/tests/conftest_simplified.py:89`
+- Fixed import formatting in `agenthub_main/src/tests/security/agent_management/test_agent_security.py:30`
+- Reorganized imports to follow ruff/isort standards with proper grouping and alphabetical sorting
+- Ensured consistent formatting with parentheses for multi-line imports
+
+**Impact**:
+- ✅ All import blocks now properly sorted and pass ruff I001 checks
+- ✅ Improved code consistency and maintainability
+- ✅ Prevents future import-related linting errors
+
 **dotenv_values() Empty Dict Bug** (2025-11-11)
 
 Fixed issue where `dotenv_values()` returns empty dict on second load, causing environment variable loading inconsistencies.

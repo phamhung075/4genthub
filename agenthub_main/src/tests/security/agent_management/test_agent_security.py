@@ -29,9 +29,6 @@ pytestmark = pytest.mark.skip(
 try:
     from uuid import uuid4
 
-    from sqlalchemy.orm import Session
-
-    from fastmcp.auth.domain.value_objects.user_id import UserId
     from fastmcp.task_management.application.use_cases.agent_management import (
         CreateUserAgentInstanceUseCase,
         ImportSharedAgentUseCase,
@@ -39,7 +36,9 @@ try:
         ShareUserAgentUseCase,
         UpdateUserAgentConfigurationUseCase,
     )
-    from fastmcp.task_management.domain.entities.agent_template import AgentTemplate
+    from fastmcp.task_management.domain.entities.agent_template import (
+        AgentTemplate,
+    )
     from fastmcp.task_management.domain.entities.user_agent_instance import (
         UserAgentInstance,
     )
@@ -49,6 +48,9 @@ try:
     from fastmcp.task_management.infrastructure.repositories.orm_user_agent_instance_repository import (
         ORMUserAgentInstanceRepository,
     )
+    from sqlalchemy.orm import Session
+
+    from fastmcp.auth.domain.value_objects.user_id import UserId
 
     IMPORTS_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
