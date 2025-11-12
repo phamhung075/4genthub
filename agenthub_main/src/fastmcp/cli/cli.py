@@ -411,6 +411,11 @@ def install(
         env_dict = {}
         # Load from .env file if specified
         if env_file:
+            # Check file existence before calling dotenv_values()
+            if not env_file.exists():
+                logger.error(f"Environment file not found: {env_file}")
+                sys.exit(1)
+
             try:
                 env_dict |= {
                     k: v
