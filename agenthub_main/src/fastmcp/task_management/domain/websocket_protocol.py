@@ -32,7 +32,7 @@ USAGE:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -375,7 +375,7 @@ class WSMessage(BaseModel):
     version: Literal["2.0"] = "2.0"
     type: Literal["update", "bulk", "sync", "heartbeat", "error"]
     timestamp: str = Field(
-        default_factory=lambda: datetime.now(datetime.UTC).isoformat()
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     sequence: int = Field(default_factory=lambda: 0)
     payload: WSPayload

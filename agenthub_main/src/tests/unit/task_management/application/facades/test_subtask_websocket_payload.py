@@ -121,7 +121,11 @@ class TestSubtaskFacadeDeleteIntegration:
 
         # Setup mocks
         mock_use_case = Mock()
-        mock_use_case.execute.return_value = {"success": True, "progress": {}}
+        mock_use_case.execute.return_value = {
+            "success": True,
+            "subtask": {"id": "subtask-123", "title": "Test Subtask Title"},
+            "progress": {},
+        }
         mock_use_case_class.return_value = mock_use_case
 
         # Mock repository to return subtask with title
@@ -174,7 +178,11 @@ class TestSubtaskFacadeDeleteIntegration:
 
         # Setup mocks
         mock_use_case = Mock()
-        mock_use_case.execute.return_value = {"success": True, "progress": {}}
+        mock_use_case.execute.return_value = {
+            "success": True,
+            "subtask": {"id": "subtask-123"},  # Missing title
+            "progress": {},
+        }
         mock_use_case_class.return_value = mock_use_case
 
         # Mock repository to return None (subtask not found after deletion)
@@ -225,7 +233,11 @@ class TestSubtaskFacadeDeleteIntegration:
 
         # Setup mocks
         mock_use_case = Mock()
-        mock_use_case.execute.return_value = {"success": True, "progress": {}}
+        mock_use_case.execute.return_value = {
+            "success": True,
+            "subtask": {"id": "subtask-123", "title": None},  # Null title
+            "progress": {},
+        }
         mock_use_case_class.return_value = mock_use_case
 
         # Mock repository to return subtask without title (edge case)

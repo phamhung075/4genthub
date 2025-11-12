@@ -1,7 +1,7 @@
 import datetime
 from typing import Any
 
-UTC = datetime.UTC
+UTC = datetime.timezone.utc
 
 
 class TimedCache:
