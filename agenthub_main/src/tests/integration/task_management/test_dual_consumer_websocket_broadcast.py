@@ -190,9 +190,9 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Assert: broadcast_data_change was called
-        assert mock_broadcast_function.called, (
-            "broadcast_data_change should be called for task creation"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "broadcast_data_change should be called for task creation"
 
         # Extract broadcast call arguments
         call_args = mock_broadcast_function.call_args
@@ -208,32 +208,32 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Validate Frontend Consumer Contract: Cascade data in metadata (will be moved to payload.data by websocket_routes)
-        assert "cascade" in metadata, (
-            "Metadata should contain cascade data for frontend"
-        )
+        assert (
+            "cascade" in metadata
+        ), "Metadata should contain cascade data for frontend"
         assert "branches" in metadata["cascade"], "Cascade should have branches array"
-        assert len(metadata["cascade"]["branches"]) > 0, (
-            "Branches array should not be empty"
-        )
+        assert (
+            len(metadata["cascade"]["branches"]) > 0
+        ), "Branches array should not be empty"
 
         # Validate cascade data structure for frontend
         branch_data = metadata["cascade"]["branches"][0]
-        assert branch_data["id"] == test_branch_id, (
-            f"Branch ID should match: expected {test_branch_id}, got {branch_data['id']}"
-        )
+        assert (
+            branch_data["id"] == test_branch_id
+        ), f"Branch ID should match: expected {test_branch_id}, got {branch_data['id']}"
         assert "task_count" in branch_data, "Branch data should include task_count"
-        assert "completed_count" in branch_data, (
-            "Branch data should include completed_count"
-        )
-        assert "in_progress_count" in branch_data, (
-            "Branch data should include in_progress_count"
-        )
+        assert (
+            "completed_count" in branch_data
+        ), "Branch data should include completed_count"
+        assert (
+            "in_progress_count" in branch_data
+        ), "Branch data should include in_progress_count"
         assert "todo_count" in branch_data, "Branch data should include todo_count"
 
         # Validate cclaude-wait Consumer Contract: Metadata has task context
-        assert "task_title" in metadata or "title" in metadata, (
-            "Metadata should have task title"
-        )
+        assert (
+            "task_title" in metadata or "title" in metadata
+        ), "Metadata should have task title"
         assert "timestamp" in metadata, "Metadata should have timestamp"
 
     def test_task_updated_broadcast_with_cascade(
@@ -261,9 +261,9 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Assert: broadcast was called
-        assert mock_broadcast_function.called, (
-            "Broadcast should be called for task update"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "Broadcast should be called for task update"
 
         # Extract metadata
         call_args = mock_broadcast_function.call_args
@@ -276,18 +276,18 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # CRITICAL VALIDATION: Cascade data MUST be present for "updated" events
-        assert "cascade" in metadata, (
-            "CRITICAL: Task update must include cascade data for frontend animations (line 703 fix)"
-        )
-        assert "branches" in metadata["cascade"], (
-            "Cascade must have branches array for Redux update"
-        )
+        assert (
+            "cascade" in metadata
+        ), "CRITICAL: Task update must include cascade data for frontend animations (line 703 fix)"
+        assert (
+            "branches" in metadata["cascade"]
+        ), "Cascade must have branches array for Redux update"
 
         # Validate branch statistics are current
         branch_data = metadata["cascade"]["branches"][0]
-        assert branch_data["task_count"] == mock_branch_cascade_data["task_count"], (
-            "Branch task count should match current statistics"
-        )
+        assert (
+            branch_data["task_count"] == mock_branch_cascade_data["task_count"]
+        ), "Branch task count should match current statistics"
 
     def test_task_completed_broadcast_dual_consumer_data(
         self,
@@ -326,9 +326,9 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Assert: broadcast was called
-        assert mock_broadcast_function.called, (
-            "Broadcast should be called for task completion"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "Broadcast should be called for task completion"
 
         # Extract metadata
         call_args = mock_broadcast_function.call_args
@@ -341,33 +341,33 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Validate Frontend Consumer: Cascade data present
-        assert "cascade" in metadata, (
-            "Task completion must include cascade for frontend (line 703 fix)"
-        )
+        assert (
+            "cascade" in metadata
+        ), "Task completion must include cascade for frontend (line 703 fix)"
 
         # Validate cclaude-wait Consumer: Completion data in metadata
-        assert "completion_summary" in metadata, (
-            "Metadata must have completion_summary for cclaude-wait"
-        )
+        assert (
+            "completion_summary" in metadata
+        ), "Metadata must have completion_summary for cclaude-wait"
         assert (
             metadata["completion_summary"] == mock_completion_data["completion_summary"]
         ), "Completion summary should match provided data"
 
-        assert "testing_notes" in metadata, (
-            "Metadata must have testing_notes for cclaude-wait"
-        )
-        assert "progress_history" in metadata, (
-            "Metadata must have progress_history for workflow tracking"
-        )
+        assert (
+            "testing_notes" in metadata
+        ), "Metadata must have testing_notes for cclaude-wait"
+        assert (
+            "progress_history" in metadata
+        ), "Metadata must have progress_history for workflow tracking"
         assert "progress_count" in metadata, "Metadata must have progress_count"
 
         # Validate NO HTTP FETCH NEEDED: All completion data in single broadcast
-        assert metadata["completion_summary"] != "", (
-            "Completion summary should not be empty"
-        )
-        assert len(metadata["progress_history"]) > 0, (
-            "Progress history should have entries"
-        )
+        assert (
+            metadata["completion_summary"] != ""
+        ), "Completion summary should not be empty"
+        assert (
+            len(metadata["progress_history"]) > 0
+        ), "Progress history should have entries"
 
     def test_task_deleted_broadcast_with_cascade(
         self,
@@ -390,9 +390,9 @@ class TestDualConsumerTaskBroadcasts:
         )
 
         # Assert: broadcast was called
-        assert mock_broadcast_function.called, (
-            "Broadcast should be called for task deletion"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "Broadcast should be called for task deletion"
 
         # Extract metadata
         call_args = mock_broadcast_function.call_args
@@ -406,9 +406,9 @@ class TestDualConsumerTaskBroadcasts:
 
         # Validate cascade data present (was already working before fix)
         assert "cascade" in metadata, "Task deletion must include cascade data"
-        assert "branches" in metadata["cascade"], (
-            "Cascade must have branches for count decrement"
-        )
+        assert (
+            "branches" in metadata["cascade"]
+        ), "Cascade must have branches for count decrement"
 
 
 class TestDualConsumerSubtaskBroadcasts:
@@ -523,9 +523,9 @@ class TestDualConsumerSubtaskBroadcasts:
         )
 
         # Assert: broadcast was called
-        assert mock_broadcast_function.called, (
-            "Broadcast should be called for subtask creation"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "Broadcast should be called for subtask creation"
 
         # Extract metadata
         call_args = mock_broadcast_function.call_args
@@ -538,16 +538,16 @@ class TestDualConsumerSubtaskBroadcasts:
         )
 
         # Validate parent branch cascade data present
-        assert "cascade" in metadata, (
-            "Subtask creation must include parent branch cascade (line 987 fix)"
-        )
+        assert (
+            "cascade" in metadata
+        ), "Subtask creation must include parent branch cascade (line 987 fix)"
         assert "branches" in metadata["cascade"], "Cascade must have branches array"
 
         # Validate branch ID matches parent branch
         branch_data = metadata["cascade"]["branches"][0]
-        assert branch_data["id"] == test_branch_id, (
-            "Cascade should reference parent branch"
-        )
+        assert (
+            branch_data["id"] == test_branch_id
+        ), "Cascade should reference parent branch"
 
     def test_subtask_updated_broadcast_with_cascade(
         self,
@@ -573,9 +573,9 @@ class TestDualConsumerSubtaskBroadcasts:
         )
 
         # Assert: broadcast was called
-        assert mock_broadcast_function.called, (
-            "Broadcast should be called for subtask update"
-        )
+        assert (
+            mock_broadcast_function.called
+        ), "Broadcast should be called for subtask update"
 
         # Extract metadata
         call_args = mock_broadcast_function.call_args
@@ -588,9 +588,9 @@ class TestDualConsumerSubtaskBroadcasts:
         )
 
         # CRITICAL VALIDATION: Cascade MUST be present for subtask updates (line 987 fix)
-        assert "cascade" in metadata, (
-            "CRITICAL: Subtask update must include cascade data for frontend animations (line 987 fix)"
-        )
+        assert (
+            "cascade" in metadata
+        ), "CRITICAL: Subtask update must include cascade data for frontend animations (line 987 fix)"
 
     def test_subtask_completed_broadcast_dual_consumer(
         self,
@@ -639,15 +639,15 @@ class TestDualConsumerSubtaskBroadcasts:
         )
 
         # Validate Frontend: Cascade present
-        assert "cascade" in metadata, (
-            "Subtask completion must include cascade (line 987)"
-        )
+        assert (
+            "cascade" in metadata
+        ), "Subtask completion must include cascade (line 987)"
 
         # Validate cclaude-wait: Completion data in metadata
         assert "completion_summary" in metadata, "Metadata must have completion_summary"
-        assert metadata["completion_summary"] == "Subtask completed", (
-            "Completion data should match"
-        )
+        assert (
+            metadata["completion_summary"] == "Subtask completed"
+        ), "Completion data should match"
         assert "impact_on_parent" in metadata, "Metadata should have impact_on_parent"
 
     def test_subtask_deleted_broadcast_with_cascade(
@@ -825,16 +825,16 @@ class TestCascadeDataConsistencyAcrossOperations:
                 cascade_structures.append(metadata["cascade"])
 
         # Validate all cascade structures are identical
-        assert len(cascade_structures) == 4, (
-            "All 4 task operations should include cascade"
-        )
+        assert (
+            len(cascade_structures) == 4
+        ), "All 4 task operations should include cascade"
 
         # Check structure consistency
         first_structure = cascade_structures[0]
         for cascade in cascade_structures[1:]:
-            assert cascade.keys() == first_structure.keys(), (
-                "All operations must have identical cascade structure"
-            )
-            assert len(cascade["branches"]) == len(first_structure["branches"]), (
-                "Branch array length should be consistent"
-            )
+            assert (
+                cascade.keys() == first_structure.keys()
+            ), "All operations must have identical cascade structure"
+            assert len(cascade["branches"]) == len(
+                first_structure["branches"]
+            ), "Branch array length should be consistent"

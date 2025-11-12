@@ -146,9 +146,9 @@ class TestGetAgentForCallOrphanedFlag:
 
         # Assert - Orphaned flag and warning present
         assert response["is_orphaned"] is True, "Response should flag orphaned import"
-        assert response["metadata"]["orphaned_warning"] is not None, (
-            "Response should include orphaned warning message"
-        )
+        assert (
+            response["metadata"]["orphaned_warning"] is not None
+        ), "Response should include orphaned warning message"
         assert (
             "not supported by owner anymore" in response["metadata"]["orphaned_warning"]
         ), "Warning should mention owner no longer supports"
@@ -181,12 +181,12 @@ class TestGetAgentForCallOrphanedFlag:
         response = facade.get_agent_for_call(user_a, template.slug)
 
         # Assert - No orphaned flag
-        assert response["is_orphaned"] is False, (
-            "Original agent should not be flagged as orphaned"
-        )
-        assert response["metadata"]["orphaned_warning"] is None, (
-            "Original agent should not have warning"
-        )
+        assert (
+            response["is_orphaned"] is False
+        ), "Original agent should not be flagged as orphaned"
+        assert (
+            response["metadata"]["orphaned_warning"] is None
+        ), "Original agent should not have warning"
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -226,12 +226,12 @@ class TestGetAgentForCallOrphanedFlag:
         response = facade.get_agent_for_call(user_b, template.slug)
 
         # Assert - No orphaned flag (original still exists)
-        assert response["is_orphaned"] is False, (
-            "Active import should not be flagged as orphaned"
-        )
-        assert response["metadata"]["orphaned_warning"] is None, (
-            "Active import should not have warning"
-        )
+        assert (
+            response["is_orphaned"] is False
+        ), "Active import should not be flagged as orphaned"
+        assert (
+            response["metadata"]["orphaned_warning"] is None
+        ), "Active import should not have warning"
 
         # Cleanup
         instance_repo.delete(imported_instance.id)

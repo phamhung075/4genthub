@@ -68,9 +68,9 @@ def test_basic_functionality():
     # Test domain events
     events = entity.get_domain_events()
     assert len(events) == 1, "Should have one creation event"
-    assert isinstance(events[0], TimestampCreatedEvent), (
-        "Should be TimestampCreatedEvent"
-    )
+    assert isinstance(
+        events[0], TimestampCreatedEvent
+    ), "Should be TimestampCreatedEvent"
 
     print("✅ Domain events working correctly")
 
@@ -95,9 +95,9 @@ def test_touch_functionality():
     entity.touch("test_touch")
 
     # Check that updated_at changed but created_at didn't
-    assert entity.created_at == original_created_at, (
-        "created_at should remain unchanged"
-    )
+    assert (
+        entity.created_at == original_created_at
+    ), "created_at should remain unchanged"
     assert entity.updated_at > original_updated_at, "updated_at should be newer"
 
     print("✅ Touch updates timestamps correctly")
@@ -105,9 +105,9 @@ def test_touch_functionality():
     # Check domain event
     events = entity.get_domain_events()
     assert len(events) == 1, "Should have one update event"
-    assert isinstance(events[0], TimestampUpdatedEvent), (
-        "Should be TimestampUpdatedEvent"
-    )
+    assert isinstance(
+        events[0], TimestampUpdatedEvent
+    ), "Should be TimestampUpdatedEvent"
 
     print("✅ Touch generates correct domain events")
 
@@ -127,9 +127,9 @@ def test_comparison_methods():
 
     # Test is_newer_than
     assert entity2.is_newer_than(entity1), "entity2 should be newer than entity1"
-    assert not entity1.is_newer_than(entity2), (
-        "entity1 should not be newer than entity2"
-    )
+    assert not entity1.is_newer_than(
+        entity2
+    ), "entity1 should not be newer than entity2"
 
     print("✅ Comparison methods working correctly")
 

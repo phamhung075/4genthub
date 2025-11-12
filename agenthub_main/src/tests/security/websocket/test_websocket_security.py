@@ -286,9 +286,9 @@ class TestWebSocketAuthorization:
         assert mock_ws1.send_json.called, "user_1 should receive their own message"
 
         # user_2 should NOT receive the message (security filtering working)
-        assert not mock_ws2.send_json.called, (
-            "user_2 should NOT receive user_1's message"
-        )
+        assert (
+            not mock_ws2.send_json.called
+        ), "user_2 should NOT receive user_1's message"
 
         # Verify the message content for user_1 (v2.0 format)
         mock_ws1.send_json.assert_called_once()

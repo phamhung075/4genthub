@@ -213,15 +213,15 @@ class TestBroadcastDataChange:
         sent_message = mock_websocket.send_json.call_args[0][0]
 
         # Cascade data should be in payload.data (for frontend consumption)
-        assert "cascade" in sent_message["payload"]["data"], (
-            "Cascade data should be in payload.data for frontend"
-        )
+        assert (
+            "cascade" in sent_message["payload"]["data"]
+        ), "Cascade data should be in payload.data for frontend"
         assert sent_message["payload"]["data"]["cascade"] == cascade_data
 
         # Cascade data should NOT be in metadata (to avoid duplication)
-        assert "cascade" not in sent_message["metadata"], (
-            "Cascade data should be removed from metadata to avoid duplication"
-        )
+        assert (
+            "cascade" not in sent_message["metadata"]
+        ), "Cascade data should be removed from metadata to avoid duplication"
 
     @pytest.mark.asyncio
     async def test_broadcast_respects_authorization(self):
@@ -280,20 +280,20 @@ class TestBroadcastDataChange:
             )
 
         # Assert: Only authorized user received the data message
-        assert mock_websocket_authorized.send_json.called, (
-            "Authorized user should receive message"
-        )
+        assert (
+            mock_websocket_authorized.send_json.called
+        ), "Authorized user should receive message"
 
         # Unauthorized user receives error message, not data message (updated expectation)
-        assert mock_websocket_unauthorized.send_json.called, (
-            "Unauthorized user should receive error notification"
-        )
+        assert (
+            mock_websocket_unauthorized.send_json.called
+        ), "Unauthorized user should receive error notification"
 
         # Verify unauthorized user got error message, not data
         unauthorized_message = mock_websocket_unauthorized.send_json.call_args[0][0]
-        assert unauthorized_message["type"] == "error", (
-            "Unauthorized user should receive error type message"
-        )
+        assert (
+            unauthorized_message["type"] == "error"
+        ), "Unauthorized user should receive error type message"
         assert (
             "authorization" in unauthorized_message["payload"]["entity"]
             or unauthorized_message["payload"]["entity"] == "system"
@@ -343,14 +343,14 @@ class TestBroadcastDataChange:
             )
 
         # Assert: Disconnected client removed from tracking (updated architecture)
-        assert mock_websocket_disconnected not in connections, (
-            "Disconnected client should be removed from connections dictionary"
-        )
+        assert (
+            mock_websocket_disconnected not in connections
+        ), "Disconnected client should be removed from connections dictionary"
 
         # Active client should still be tracked (updated architecture)
-        assert mock_websocket_active in connections, (
-            "Active client should still be in connections dictionary"
-        )
+        assert (
+            mock_websocket_active in connections
+        ), "Active client should still be in connections dictionary"
 
     @pytest.mark.asyncio
     async def test_broadcast_handles_empty_connections(self):
@@ -438,9 +438,9 @@ class TestMessageFormatting:
 
         required_payload_fields = ["entity", "action", "data"]
         for field in required_payload_fields:
-            assert field in sent_message["payload"], (
-                f"Payload must include '{field}' field"
-            )
+            assert (
+                field in sent_message["payload"]
+            ), f"Payload must include '{field}' field"
 
         required_metadata_fields = [
             "source",
@@ -450,9 +450,9 @@ class TestMessageFormatting:
             "event_type",
         ]
         for field in required_metadata_fields:
-            assert field in sent_message["metadata"], (
-                f"Metadata must include '{field}' field"
-            )
+            assert (
+                field in sent_message["metadata"]
+            ), f"Metadata must include '{field}' field"
 
     @pytest.mark.asyncio
     async def test_message_timestamp_is_iso_8601_format(self):
@@ -606,18 +606,18 @@ class TestMultiTenantIsolation:
             )
 
         # Assert: User A received data, User B received error (updated expectation)
-        assert websocket_user_a.send_json.called, (
-            "User A should receive their own notification"
-        )
-        assert websocket_user_b.send_json.called, (
-            "User B should receive error notification"
-        )
+        assert (
+            websocket_user_a.send_json.called
+        ), "User A should receive their own notification"
+        assert (
+            websocket_user_b.send_json.called
+        ), "User B should receive error notification"
 
         # Verify User B got error message, not data
         user_b_message = websocket_user_b.send_json.call_args[0][0]
-        assert user_b_message["type"] == "error", (
-            "User B should receive error type message"
-        )
+        assert (
+            user_b_message["type"] == "error"
+        ), "User B should receive error type message"
 
         # Reset mocks for next test
         websocket_user_a.send_json.reset_mock()
@@ -637,18 +637,18 @@ class TestMultiTenantIsolation:
             )
 
         # Assert: User B received data, User A received error (updated expectation)
-        assert websocket_user_a.send_json.called, (
-            "User A should receive error notification"
-        )
-        assert websocket_user_b.send_json.called, (
-            "User B should receive their own notification"
-        )
+        assert (
+            websocket_user_a.send_json.called
+        ), "User A should receive error notification"
+        assert (
+            websocket_user_b.send_json.called
+        ), "User B should receive their own notification"
 
         # Verify User A got error message, not data
         user_a_message = websocket_user_a.send_json.call_args[0][0]
-        assert user_a_message["type"] == "error", (
-            "User A should receive error type message"
-        )
+        assert (
+            user_a_message["type"] == "error"
+        ), "User A should receive error type message"
 
     @pytest.mark.asyncio
     async def test_same_user_multiple_connections_all_receive_notification(self):

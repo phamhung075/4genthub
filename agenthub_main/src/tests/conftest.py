@@ -126,7 +126,7 @@ if importlib.util.find_spec("numpy") is None:
                             divisor = (
                                 other[i]
                                 if hasattr(other[i], "__float__")
-                                or isinstance(other[i], (int, float))
+                                or isinstance(other[i], int | float)
                                 else other[i][0]
                             )
                             result.append(
@@ -1262,9 +1262,9 @@ def test_data_validator():
         @staticmethod
         def assert_using_test_files(file_path: Path):
             """Assert that a file path is a test file, not production"""
-            assert is_test_data_file(file_path), (
-                f"File {file_path} is not a test file! Tests must use .test.json files"
-            )
+            assert is_test_data_file(
+                file_path
+            ), f"File {file_path} is not a test file! Tests must use .test.json files"
 
         @staticmethod
         def assert_no_production_data_modified():

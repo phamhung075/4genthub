@@ -573,9 +573,9 @@ class TestContextDerivationServiceIntegration:
             )
 
             # Assert
-            assert level == expected_level, (
-                f"Failed for task:{task_id}, branch:{branch_id}, project:{project_id}"
-            )
+            assert (
+                level == expected_level
+            ), f"Failed for task:{task_id}, branch:{branch_id}, project:{project_id}"
 
     @pytest.mark.asyncio
     async def test_business_rules_enforcement(self):

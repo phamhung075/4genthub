@@ -196,12 +196,12 @@ class TestPhase1TokenSavings:
 
         # Verify removed fields are NOT present
         task_data = response_without_context["data"]["task"]
-        assert "priority_emoji" not in task_data, (
-            "priority_emoji should be removed in Phase 1"
-        )
-        assert "status_emoji" not in task_data, (
-            "status_emoji should be removed in Phase 1"
-        )
+        assert (
+            "priority_emoji" not in task_data
+        ), "priority_emoji should be removed in Phase 1"
+        assert (
+            "status_emoji" not in task_data
+        ), "status_emoji should be removed in Phase 1"
 
         # Verify counts can be derived from arrays
         assert "assignees" in task_data
@@ -286,12 +286,12 @@ class TestPhase1TokenSavings:
         # Verify removed fields in all tasks
         tasks = list_response["data"]["tasks"]
         for task in tasks:
-            assert "priority_emoji" not in task, (
-                f"priority_emoji found in task {task['id']}"
-            )
-            assert "status_emoji" not in task, (
-                f"status_emoji found in task {task['id']}"
-            )
+            assert (
+                "priority_emoji" not in task
+            ), f"priority_emoji found in task {task['id']}"
+            assert (
+                "status_emoji" not in task
+            ), f"status_emoji found in task {task['id']}"
 
         # Calculate per-task average
         per_task_chars = list_size // len(tasks)
@@ -358,12 +358,12 @@ class TestPhase1TokenSavings:
         # Verify removed fields
         subtasks = subtask_list_response.get("subtasks", [])
         for subtask in subtasks:
-            assert "priority_emoji" not in subtask, (
-                f"priority_emoji found in subtask {subtask['id']}"
-            )
-            assert "status_emoji" not in subtask, (
-                f"status_emoji found in subtask {subtask['id']}"
-            )
+            assert (
+                "priority_emoji" not in subtask
+            ), f"priority_emoji found in subtask {subtask['id']}"
+            assert (
+                "status_emoji" not in subtask
+            ), f"status_emoji found in subtask {subtask['id']}"
 
         # Calculate per-subtask average
         per_subtask_chars = subtask_list_size // len(subtasks) if subtasks else 0
@@ -612,9 +612,9 @@ class TestPhase1TokenSavings:
         print(f"Prediction accuracy: {100 - accuracy:.1f}%")
         print(f"Within ±5% tolerance: {within_tolerance}")
 
-        assert within_tolerance, (
-            f"Predictions not accurate (off by {accuracy:.1f}%, expected ±5%)"
-        )
+        assert (
+            within_tolerance
+        ), f"Predictions not accurate (off by {accuracy:.1f}%, expected ±5%)"
 
         return {
             "operation": "aggregate_savings",

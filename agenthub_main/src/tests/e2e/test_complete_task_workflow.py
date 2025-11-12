@@ -146,15 +146,15 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         task_after_subtasks = get_result["task"]
 
         # CRITICAL: These counts must match reality
-        assert task_after_subtasks["subtask_count"] == 5, (
-            f"Expected 5 subtasks, got {task_after_subtasks['subtask_count']}"
-        )
-        assert task_after_subtasks["completed_subtasks"] == 0, (
-            f"Expected 0 completed, got {task_after_subtasks['completed_subtasks']}"
-        )
-        assert len(task_after_subtasks["subtasks"]) == 5, (
-            f"Expected 5 subtasks in array, got {len(task_after_subtasks['subtasks'])}"
-        )
+        assert (
+            task_after_subtasks["subtask_count"] == 5
+        ), f"Expected 5 subtasks, got {task_after_subtasks['subtask_count']}"
+        assert (
+            task_after_subtasks["completed_subtasks"] == 0
+        ), f"Expected 0 completed, got {task_after_subtasks['completed_subtasks']}"
+        assert (
+            len(task_after_subtasks["subtasks"]) == 5
+        ), f"Expected 5 subtasks in array, got {len(task_after_subtasks['subtasks'])}"
 
         # === STEP 4: COMPLETE 3 SUBTASKS ===
         for i in range(3):
@@ -171,20 +171,20 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         task_after_completion = get_result_after_completion["task"]
 
         # CRITICAL: Completed count must reflect actual completions
-        assert task_after_completion["subtask_count"] == 5, (
-            "Total subtask count should remain 5"
-        )
-        assert task_after_completion["completed_subtasks"] == 3, (
-            f"Expected 3 completed subtasks, got {task_after_completion['completed_subtasks']}"
-        )
+        assert (
+            task_after_completion["subtask_count"] == 5
+        ), "Total subtask count should remain 5"
+        assert (
+            task_after_completion["completed_subtasks"] == 3
+        ), f"Expected 3 completed subtasks, got {task_after_completion['completed_subtasks']}"
 
         # Verify actual subtask statuses from database
         completed_count = sum(
             1 for st in task_after_completion["subtasks"] if st["status"] == "done"
         )
-        assert completed_count == 3, (
-            f"Expected 3 subtasks with status 'done', found {completed_count}"
-        )
+        assert (
+            completed_count == 3
+        ), f"Expected 3 subtasks with status 'done', found {completed_count}"
 
         # === STEP 6: DELETE 2 SUBTASKS ===
         for i in range(2):
@@ -201,12 +201,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         task_after_deletion = get_result_after_deletion["task"]
 
         # CRITICAL: Counts must adjust after deletion
-        assert task_after_deletion["subtask_count"] == 3, (
-            f"Expected 3 subtasks after deletion, got {task_after_deletion['subtask_count']}"
-        )
-        assert task_after_deletion["completed_subtasks"] == 3, (
-            f"Expected 3 completed (none deleted were completed), got {task_after_deletion['completed_subtasks']}"
-        )
+        assert (
+            task_after_deletion["subtask_count"] == 3
+        ), f"Expected 3 subtasks after deletion, got {task_after_deletion['subtask_count']}"
+        assert (
+            task_after_deletion["completed_subtasks"] == 3
+        ), f"Expected 3 completed (none deleted were completed), got {task_after_deletion['completed_subtasks']}"
 
         # === STEP 8: VERIFY DATABASE CONSISTENCY ===
         # Directly query database to ensure counts match
@@ -226,12 +226,12 @@ class TestCompleteTaskLifecycleWithRealDatabase:
             db_total_count = row[0]
             db_completed_count = row[1] if row[1] is not None else 0
 
-            assert db_total_count == 3, (
-                f"Database shows {db_total_count} subtasks, expected 3"
-            )
-            assert db_completed_count == 3, (
-                f"Database shows {db_completed_count} completed, expected 3"
-            )
+            assert (
+                db_total_count == 3
+            ), f"Database shows {db_total_count} subtasks, expected 3"
+            assert (
+                db_completed_count == 3
+            ), f"Database shows {db_completed_count} completed, expected 3"
 
     def test_progress_percentage_updates_with_subtask_completion(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -313,9 +313,9 @@ class TestCompleteTaskLifecycleWithRealDatabase:
         get_result_100 = task_facade.get_task(task_id)
         final_progress = get_result_100["task"]["progress_percentage"]
 
-        assert final_progress == 100, (
-            f"Expected 100% progress when all done, got {final_progress}%"
-        )
+        assert (
+            final_progress == 100
+        ), f"Expected 100% progress when all done, got {final_progress}%"
 
     def test_task_update_preserves_subtask_data_integrity(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -375,23 +375,23 @@ class TestCompleteTaskLifecycleWithRealDatabase:
 
         # Verify subtasks preserved after all updates
         final_state = task_facade.get_task(task_id)["task"]
-        assert final_state["subtask_count"] == 3, (
-            "Subtask count changed after parent updates"
-        )
+        assert (
+            final_state["subtask_count"] == 3
+        ), "Subtask count changed after parent updates"
 
         final_subtask_ids = {st["id"] for st in final_state["subtasks"]}
-        assert final_subtask_ids == initial_subtask_ids, (
-            "Subtask IDs changed after parent updates"
-        )
+        assert (
+            final_subtask_ids == initial_subtask_ids
+        ), "Subtask IDs changed after parent updates"
 
         # Verify all subtasks still accessible
         for subtask_id in initial_subtask_ids:
             get_subtask_result = subtask_facade.handle_manage_subtask(
                 action="get", task_id=task_id, subtask_id=subtask_id, user_id=user_id
             )
-            assert get_subtask_result["success"] is True, (
-                f"Subtask {subtask_id} not accessible after parent updates"
-            )
+            assert (
+                get_subtask_result["success"] is True
+            ), f"Subtask {subtask_id} not accessible after parent updates"
 
 
 @pytest.mark.e2e
@@ -419,9 +419,9 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         result1 = task_facade.create_task(single_assignee)
         task1 = result1["task"]
 
-        assert isinstance(task1["assignees"], list), (
-            f"Single assignee should return array, got {type(task1['assignees'])}"
-        )
+        assert isinstance(
+            task1["assignees"], list
+        ), f"Single assignee should return array, got {type(task1['assignees'])}"
         assert len(task1["assignees"]) == 1
         assert task1["assignees"][0] == "@coding-agent"
 
@@ -450,9 +450,9 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         result3 = task_facade.create_task(no_assignees)
         task3 = result3["task"]
 
-        assert isinstance(task3["assignees"], list), (
-            "Empty assignees should be [], not null"
-        )
+        assert isinstance(
+            task3["assignees"], list
+        ), "Empty assignees should be [], not null"
         assert len(task3["assignees"]) == 0
 
     def test_timestamps_always_present_and_valid_iso8601(
@@ -510,12 +510,12 @@ class TestTaskFieldConsistencyAcrossLifecycle:
         task = result["task"]
 
         # Verify subtasks is array (empty, but not null)
-        assert isinstance(task["subtasks"], list), (
-            f"subtasks should be array, got {type(task.get('subtasks'))}"
-        )
+        assert isinstance(
+            task["subtasks"], list
+        ), f"subtasks should be array, got {type(task.get('subtasks'))}"
         assert task["subtasks"] == [], "Empty subtasks should be [], not null"
 
         # Verify context_data is object (not null)
-        assert isinstance(task.get("context_data"), dict), (
-            f"context_data should be object, got {type(task.get('context_data'))}"
-        )
+        assert isinstance(
+            task.get("context_data"), dict
+        ), f"context_data should be object, got {type(task.get('context_data'))}"

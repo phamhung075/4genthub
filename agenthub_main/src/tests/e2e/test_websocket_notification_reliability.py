@@ -231,9 +231,9 @@ async def test_task_create_notification_reaches_frontend(
     task_data = payload["data"]["primary"]
     assert "id" in task_data, "Missing task ID"
     assert "title" in task_data, "Missing title"
-    assert task_data["title"] == request.title, (
-        f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
-    )
+    assert (
+        task_data["title"] == request.title
+    ), f"Title mismatch: expected '{request.title}', got '{task_data['title']}'"
     assert "status" in task_data, "Missing status"
     assert "priority" in task_data, "Missing priority"
 
@@ -300,15 +300,15 @@ async def test_task_update_notification_reaches_frontend(
 
     # Assert 3: Updated data correct (no stale data)
     task_data = notification["payload"]["data"]["primary"]
-    assert task_data["title"] == "UPDATED - E2E Test Task", (
-        f"❌ STALE DATA: Title not updated! Expected 'UPDATED - E2E Test Task', got '{task_data['title']}'"
-    )
+    assert (
+        task_data["title"] == "UPDATED - E2E Test Task"
+    ), f"❌ STALE DATA: Title not updated! Expected 'UPDATED - E2E Test Task', got '{task_data['title']}'"
 
     # Status can be in different formats depending on serialization
     status_str = str(task_data.get("status", ""))
-    assert "in_progress" in status_str.lower() or "in progress" in status_str.lower(), (
-        f"❌ STALE DATA: Status not updated! Got: {task_data.get('status')}"
-    )
+    assert (
+        "in_progress" in status_str.lower() or "in progress" in status_str.lower()
+    ), f"❌ STALE DATA: Status not updated! Got: {task_data.get('status')}"
 
     logger.info(
         "✅ E2E TEST 2 PASSED: Task update notification with correct data reached frontend"
@@ -359,12 +359,12 @@ async def test_task_delete_notification_reaches_frontend(
     response_dict = (
         delete_response.__dict__ if hasattr(delete_response, "__dict__") else {}
     )
-    assert "notification_sent" not in response_dict, (
-        "❌ VIOLATION: API response contains notification metadata! Should be WebSocket only"
-    )
-    assert "websocket_message" not in response_dict, (
-        "❌ VIOLATION: API response contains WebSocket data! Should be separate"
-    )
+    assert (
+        "notification_sent" not in response_dict
+    ), "❌ VIOLATION: API response contains notification metadata! Should be WebSocket only"
+    assert (
+        "websocket_message" not in response_dict
+    ), "❌ VIOLATION: API response contains WebSocket data! Should be separate"
 
     # Assert 3: Delete notification received via WebSocket (separate from API)
     delete_notifications = mock_websocket.get_messages_by_type("deleted")
@@ -379,9 +379,9 @@ async def test_task_delete_notification_reaches_frontend(
     # Assert 4: Deleted task ID included (for frontend to remove from UI)
     task_data = notification["payload"]["data"]["primary"]
     assert "id" in task_data, "Missing task ID in delete notification"
-    assert task_data["id"] == task_id, (
-        f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
-    )
+    assert (
+        task_data["id"] == task_id
+    ), f"Task ID mismatch: expected '{task_id}', got '{task_data['id']}'"
 
     logger.info(
         "✅ E2E TEST 3 PASSED: Task delete notification via WebSocket only, API response clean"

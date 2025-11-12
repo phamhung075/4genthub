@@ -204,9 +204,9 @@ class TestUnifiedContextFacadeFactory:
             assert call_args[1]["level"] == "global"
             # The context_id will be a generated UUID, not 'global_singleton'
             context_id = call_args[1]["context_id"]
-            assert self._validate_uuid(context_id), (
-                f"Expected valid UUID, got: {context_id}"
-            )
+            assert self._validate_uuid(
+                context_id
+            ), f"Expected valid UUID, got: {context_id}"
             assert call_args[1]["data"] == EXPECTED_GLOBAL_DATA
 
     def test_auto_create_global_context_already_exists(self):
@@ -233,9 +233,9 @@ class TestUnifiedContextFacadeFactory:
             assert call_args[1]["level"] == "global"
             # The context_id will be a generated UUID, not 'global_singleton'
             context_id = call_args[1]["context_id"]
-            assert self._validate_uuid(context_id), (
-                f"Expected valid UUID, got: {context_id}"
-            )
+            assert self._validate_uuid(
+                context_id
+            ), f"Expected valid UUID, got: {context_id}"
 
     def test_auto_create_global_context_failure(self):
         """Test auto-creation failure handling"""

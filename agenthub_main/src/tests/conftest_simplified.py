@@ -86,17 +86,16 @@ def test_database(request):
         yield
         return
 
-    from fastmcp.task_management.infrastructure.database.test_database_config import (
-        DatabaseTestConfig,
-        install_missing_dependencies,
-    )
-
     from fastmcp.task_management.infrastructure.database.database_config import close_db
     from fastmcp.task_management.infrastructure.database.database_initializer import (
         reset_initialization_cache,
     )
     from fastmcp.task_management.infrastructure.database.database_source_manager import (
         DatabaseSourceManager,
+    )
+    from fastmcp.task_management.infrastructure.database.test_database_config import (
+        DatabaseTestConfig,
+        install_missing_dependencies,
     )
 
     # Install missing dependencies if needed
@@ -198,7 +197,7 @@ def _initialize_basic_test_data():
                 if not existing:
                     session.execute(
                         text("""
-                        INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata) 
+                        INSERT INTO projects (id, name, description, user_id, status, created_at, updated_at, metadata)
                         VALUES (:id, :name, :description, :user_id, :status, :created_at, :updated_at, :metadata)
                     """),
                         {
@@ -218,11 +217,11 @@ def _initialize_basic_test_data():
                 session.execute(
                     text("""
                     INSERT INTO project_git_branchs (
-                        id, project_id, name, description, created_at, updated_at, 
+                        id, project_id, name, description, created_at, updated_at,
                         priority, status, metadata, task_count, completed_task_count
-                    ) 
+                    )
                     VALUES (
-                        :id, :project_id, :name, :description, :created_at, :updated_at, 
+                        :id, :project_id, :name, :description, :created_at, :updated_at,
                         :priority, :status, :metadata, :task_count, :completed_task_count
                     )
                 """),
@@ -325,9 +324,9 @@ def test_data_validator():
         @staticmethod
         def assert_using_test_files(file_path: Path):
             """Assert that a file path is a test file, not production"""
-            assert is_test_data_file(file_path), (
-                f"File {file_path} is not a test file! Tests must use .test.json files"
-            )
+            assert is_test_data_file(
+                file_path
+            ), f"File {file_path} is not a test file! Tests must use .test.json files"
 
         @staticmethod
         def assert_no_production_data_modified():

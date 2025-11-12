@@ -84,9 +84,9 @@ def test_type_checking_imports_structure():
     ]
 
     for expected_import in expected_in_type_checking:
-        assert expected_import in source, (
-            f"Expected import not found: {expected_import}"
-        )
+        assert (
+            expected_import in source
+        ), f"Expected import not found: {expected_import}"
 
 
 # ============================================================================

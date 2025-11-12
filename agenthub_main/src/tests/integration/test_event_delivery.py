@@ -89,9 +89,9 @@ class TestEventDeliveryIntegration:
 
         # Verify event was processed
         with call_lock:
-            assert len(handler_calls) == 1, (
-                f"Expected 1 handler call, got {len(handler_calls)}"
-            )
+            assert (
+                len(handler_calls) == 1
+            ), f"Expected 1 handler call, got {len(handler_calls)}"
             assert handler_calls[0].task_id == "test-123"
             assert handler_calls[0].title == "Test Task"
 
@@ -264,18 +264,18 @@ class TestEventDeliveryIntegration:
             )
 
             # Verify no duplicates
-            assert len(set(processed_events)) == processed_count, (
-                "Duplicate events detected in processing"
-            )
+            assert (
+                len(set(processed_events)) == processed_count
+            ), "Duplicate events detected in processing"
 
         # Check worker stats
         stats = worker.get_stats()
-        assert stats["events_processed"] >= num_events, (
-            f"Expected at least {num_events} processed, got {stats['events_processed']}"
-        )
-        assert stats["queue_overflow_count"] == 0, (
-            f"Queue overflow occurred {stats['queue_overflow_count']} times"
-        )
+        assert (
+            stats["events_processed"] >= num_events
+        ), f"Expected at least {num_events} processed, got {stats['events_processed']}"
+        assert (
+            stats["queue_overflow_count"] == 0
+        ), f"Queue overflow occurred {stats['queue_overflow_count']} times"
         assert worker.is_healthy(), "Worker should be healthy after processing"
 
         # Cleanup

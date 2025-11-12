@@ -194,9 +194,9 @@ class TestORMGitBranchRepository:
 
         # Verify query was called
         calls = mock_session.query.call_args_list
-        assert any(call[0][0] == ProjectGitBranch for call in calls), (
-            "ProjectGitBranch query not found"
-        )
+        assert any(
+            call[0][0] == ProjectGitBranch for call in calls
+        ), "ProjectGitBranch query not found"
 
         # Verify new branch was added
         mock_session.add.assert_called_once()
@@ -276,9 +276,9 @@ class TestORMGitBranchRepository:
 
         # Verify query - should be called with ProjectGitBranch (and also Task internally)
         calls = mock_session.query.call_args_list
-        assert any(call[0][0] == ProjectGitBranch for call in calls), (
-            "ProjectGitBranch query not found"
-        )
+        assert any(
+            call[0][0] == ProjectGitBranch for call in calls
+        ), "ProjectGitBranch query not found"
 
         # Verify result
         assert isinstance(result, GitBranch)

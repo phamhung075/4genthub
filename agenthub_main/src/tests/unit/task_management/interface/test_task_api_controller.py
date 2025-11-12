@@ -162,12 +162,12 @@ class TestTaskAPIControllerArchitectureBoundaries:
         source = inspect.getsource(TaskAPIController)
 
         # Controller should NOT import or use WebSocketNotificationService
-        assert "WebSocketNotificationService" not in source, (
-            "Controller should not directly import WebSocketNotificationService - violates DDD architecture"
-        )
-        assert "broadcast_task_event" not in source, (
-            "Controller should not call broadcast_task_event - violates DDD architecture"
-        )
+        assert (
+            "WebSocketNotificationService" not in source
+        ), "Controller should not directly import WebSocketNotificationService - violates DDD architecture"
+        assert (
+            "broadcast_task_event" not in source
+        ), "Controller should not call broadcast_task_event - violates DDD architecture"
 
     def test_controller_does_not_have_notification_methods(self, controller):
         """Test that controller doesn't have notification-related methods"""
@@ -178,9 +178,9 @@ class TestTaskAPIControllerArchitectureBoundaries:
         notification_keywords = ["notify", "broadcast", "websocket", "notification"]
         for method in methods:
             for keyword in notification_keywords:
-                assert keyword not in method.lower(), (
-                    f"Controller has notification-related method '{method}' - violates DDD architecture"
-                )
+                assert (
+                    keyword not in method.lower()
+                ), f"Controller has notification-related method '{method}' - violates DDD architecture"
 
     def test_controller_only_delegates_to_handlers(self, controller):
         """Test that all public methods only delegate to handlers"""
@@ -198,7 +198,7 @@ class TestTaskAPIControllerArchitectureBoundaries:
             method = getattr(controller, method_name)
 
             # Skip mock objects (from fixtures)
-            if isinstance(method, (Mock, MagicMock)):
+            if isinstance(method, Mock | MagicMock):
                 continue
 
             try:
@@ -263,9 +263,9 @@ class TestTaskAPIControllerResponseIntegrity:
 
             # Verify WebSocketNotificationService was NOT called from controller level
             # (It should only be called from use case/application layer)
-            assert not mock_ws_service.called, (
-                "WebSocketNotificationService should NOT be called from controller level"
-            )
+            assert (
+                not mock_ws_service.called
+            ), "WebSocketNotificationService should NOT be called from controller level"
 
     def test_update_task_response_is_clean(self, controller):
         """Test that update response doesn't contain notification metadata"""
@@ -280,13 +280,13 @@ class TestTaskAPIControllerResponseIntegrity:
         )
 
         # Response should be clean TaskResponse, not modified with notification data
-        assert isinstance(result, (Mock, TaskResponse))
-        assert not hasattr(result, "notification_sent"), (
-            "Response should not contain notification metadata"
-        )
-        assert not hasattr(result, "websocket_triggered"), (
-            "Response should not contain WebSocket metadata"
-        )
+        assert isinstance(result, Mock | TaskResponse)
+        assert not hasattr(
+            result, "notification_sent"
+        ), "Response should not contain notification metadata"
+        assert not hasattr(
+            result, "websocket_triggered"
+        ), "Response should not contain WebSocket metadata"
 
     def test_delete_task_response_is_clean(self, controller):
         """Test that delete response doesn't contain notification metadata"""
@@ -299,10 +299,10 @@ class TestTaskAPIControllerResponseIntegrity:
         result = controller.delete_task("task-123", "user-123", Mock())
 
         # Response should be clean DeleteResponse
-        assert isinstance(result, (Mock, DeleteResponse))
-        assert not hasattr(result, "notification_sent"), (
-            "Delete response should not contain notification metadata"
-        )
+        assert isinstance(result, Mock | DeleteResponse)
+        assert not hasattr(
+            result, "notification_sent"
+        ), "Delete response should not contain notification metadata"
 
 
 class TestTaskAPIControllerParameterPassing:
@@ -409,9 +409,9 @@ class TestTaskAPIControllerErrorHandling:
                 controller.create_task(request, "user-123", Mock())
 
             # Verify no notification attempt from controller level
-            assert not mock_ws.called, (
-                "Controller should not attempt notification on error"
-            )
+            assert (
+                not mock_ws.called
+            ), "Controller should not attempt notification on error"
 
     def test_update_task_error_propagates_cleanly(self, controller):
         """Test that update errors propagate without notification side effects"""
@@ -477,6 +477,6 @@ class TestTaskAPIControllerCompleteTaskWorkflow:
             controller.complete_task("task-123", "Done", None, "user-123", Mock())
 
             # WebSocket service should NOT be called from controller
-            assert not mock_ws.called, (
-                "Completion notification should be in application layer, not controller"
-            )
+            assert (
+                not mock_ws.called
+            ), "Completion notification should be in application layer, not controller"

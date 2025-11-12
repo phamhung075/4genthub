@@ -743,9 +743,9 @@ class TestTaskCompletionSerialization:
         task_dict = task.to_dict()
 
         # Verify completion_summary is present
-        assert "completion_summary" in task_dict, (
-            "to_dict() must include completion_summary"
-        )
+        assert (
+            "completion_summary" in task_dict
+        ), "to_dict() must include completion_summary"
         assert task_dict["completion_summary"] == completion_text
         assert task_dict["status"] == "done"
 
@@ -757,9 +757,9 @@ class TestTaskCompletionSerialization:
         task_dict = task.to_dict()
 
         # Verify completion_summary is present but empty
-        assert "completion_summary" in task_dict, (
-            "to_dict() must include completion_summary field"
-        )
+        assert (
+            "completion_summary" in task_dict
+        ), "to_dict() must include completion_summary field"
         assert task_dict["completion_summary"] == ""
 
     def test_to_dict_includes_testing_notes_field(self):
@@ -769,8 +769,8 @@ class TestTaskCompletionSerialization:
         task_dict = task.to_dict()
 
         # Verify testing_notes field is present (testing_notes are stored in context, not entity)
-        assert "testing_notes" in task_dict, (
-            "to_dict() must include testing_notes field"
-        )
+        assert (
+            "testing_notes" in task_dict
+        ), "to_dict() must include testing_notes field"
         # For Task entity, testing_notes should be empty (stored in context layer)
         assert task_dict["testing_notes"] == ""

@@ -46,9 +46,9 @@ class TestSecurityVulnerabilities:
 
         for payload in sql_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"SQL injection payload should be rejected: {payload}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"SQL injection payload should be rejected: {payload}"
             assert "Invalid UUID format" in result.error_message
 
     def test_nosql_injection_prevention(self):
@@ -68,9 +68,9 @@ class TestSecurityVulnerabilities:
 
         for payload in nosql_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"NoSQL injection payload should be rejected: {payload}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"NoSQL injection payload should be rejected: {payload}"
 
     def test_xss_prevention_in_error_messages(self):
         """Test that error messages don't enable XSS attacks."""
@@ -110,9 +110,9 @@ class TestSecurityVulnerabilities:
 
         for payload in path_traversal_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Path traversal payload should be rejected: {payload}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Path traversal payload should be rejected: {payload}"
 
     def test_command_injection_prevention(self):
         """Test prevention of command injection attacks."""
@@ -129,9 +129,9 @@ class TestSecurityVulnerabilities:
 
         for payload in command_injection_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Command injection payload should be rejected: {payload}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Command injection payload should be rejected: {payload}"
 
     def test_buffer_overflow_attempts(self):
         """Test handling of extremely long inputs that might cause buffer overflows."""
@@ -146,9 +146,9 @@ class TestSecurityVulnerabilities:
 
         for payload in long_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Long payload should be rejected safely: len={len(payload)}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Long payload should be rejected safely: len={len(payload)}"
             # Validator should handle gracefully without crashing
 
     def test_unicode_exploitation_attempts(self):
@@ -169,9 +169,9 @@ class TestSecurityVulnerabilities:
 
         for payload in unicode_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Unicode payload should be rejected: {repr(payload)}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Unicode payload should be rejected: {repr(payload)}"
 
     def test_format_string_attacks(self):
         """Test prevention of format string attacks."""
@@ -186,9 +186,9 @@ class TestSecurityVulnerabilities:
 
         for payload in format_string_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Format string payload should be rejected: {payload}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Format string payload should be rejected: {payload}"
 
     def test_regex_dos_prevention(self):
         """Test prevention of ReDoS (Regular Expression Denial of Service) attacks."""
@@ -213,9 +213,9 @@ class TestSecurityVulnerabilities:
             elapsed_time = time.time() - start_time
 
             # Validation should complete quickly (< 100ms) to prevent DoS
-            assert elapsed_time < 0.1, (
-                f"Validation took too long: {elapsed_time:.3f}s for payload length {len(payload)}"
-            )
+            assert (
+                elapsed_time < 0.1
+            ), f"Validation took too long: {elapsed_time:.3f}s for payload length {len(payload)}"
             assert result.is_valid is False
 
     def test_null_byte_injection(self):
@@ -230,9 +230,9 @@ class TestSecurityVulnerabilities:
 
         for payload in null_byte_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Null byte payload should be rejected: {repr(payload)}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Null byte payload should be rejected: {repr(payload)}"
 
     def test_malformed_encoding_attacks(self):
         """Test handling of malformed encoding attacks."""
@@ -251,9 +251,9 @@ class TestSecurityVulnerabilities:
 
         for payload in malformed_encoding_payloads:
             result = self.validator.validate_uuid_format(payload)
-            assert result.is_valid is False, (
-                f"Malformed encoding should be rejected: {repr(payload)}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Malformed encoding should be rejected: {repr(payload)}"
 
 
 class TestSecurityBoundaries:
@@ -286,9 +286,9 @@ class TestSecurityBoundaries:
 
         for combo in malicious_combinations:
             result = self.validator.validate_parameter_mapping(**combo)
-            assert result.is_valid is False, (
-                f"Malicious combination should be rejected: {combo}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Malicious combination should be rejected: {combo}"
 
     def test_context_validation_security(self):
         """Test security aspects of context validation."""
@@ -376,9 +376,9 @@ class TestSecurityBoundaries:
         # Timing difference should not be significant (< 10x difference)
         # This prevents attackers from determining validity through timing
         timing_ratio = max(avg_valid, avg_invalid) / min(avg_valid, avg_invalid)
-        assert timing_ratio < 10, (
-            f"Timing difference too large: {timing_ratio:.2f}x (valid: {avg_valid:.6f}s, invalid: {avg_invalid:.6f}s)"
-        )
+        assert (
+            timing_ratio < 10
+        ), f"Timing difference too large: {timing_ratio:.2f}x (valid: {avg_valid:.6f}s, invalid: {avg_invalid:.6f}s)"
 
     def test_memory_exhaustion_protection(self):
         """Test protection against memory exhaustion attacks."""

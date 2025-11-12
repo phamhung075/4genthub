@@ -241,9 +241,9 @@ def test_500_tasks_load_performance(query_counter):
             f"Queries: {query_count}, Breakdown: {query_breakdown}"
         )
 
-        assert len(response.tasks) == 500, (
-            f"Expected 500 tasks, got {len(response.tasks)}"
-        )
+        assert (
+            len(response.tasks) == 500
+        ), f"Expected 500 tasks, got {len(response.tasks)}"
 
         # Verify query efficiency (should be constant ~3 queries, not 501)
         assert query_count <= 10, (
@@ -306,13 +306,13 @@ def test_1000_tasks_load_performance(query_counter):
         query_count = qc.count
 
         # Assert
-        assert duration < 5.0, (
-            f"UNACCEPTABLE RESPONSE TIME: 1000 tasks took {duration:.2f}s (target: <5s)"
-        )
+        assert (
+            duration < 5.0
+        ), f"UNACCEPTABLE RESPONSE TIME: 1000 tasks took {duration:.2f}s (target: <5s)"
 
-        assert len(response.tasks) == 1000, (
-            f"Expected 1000 tasks, got {len(response.tasks)}"
-        )
+        assert (
+            len(response.tasks) == 1000
+        ), f"Expected 1000 tasks, got {len(response.tasks)}"
 
         assert query_count <= 10, (
             f"QUERY EFFICIENCY ISSUE: {query_count} queries for 1000 tasks. "
@@ -374,13 +374,13 @@ def test_2000_tasks_future_proofing(query_counter):
         query_count = qc.count
 
         # Assert
-        assert duration < 10.0, (
-            f"FUTURE-PROOFING CONCERN: 2000 tasks took {duration:.2f}s (target: <10s)"
-        )
+        assert (
+            duration < 10.0
+        ), f"FUTURE-PROOFING CONCERN: 2000 tasks took {duration:.2f}s (target: <10s)"
 
-        assert len(response.tasks) == 2000, (
-            f"Expected 2000 tasks, got {len(response.tasks)}"
-        )
+        assert (
+            len(response.tasks) == 2000
+        ), f"Expected 2000 tasks, got {len(response.tasks)}"
 
         assert query_count <= 10, (
             f"SCALABILITY ISSUE: {query_count} queries for 2000 tasks. "
@@ -450,9 +450,9 @@ def test_5000_tasks_scalability_ceiling(query_counter):
             f"Consider implementing pagination for datasets this large."
         )
 
-        assert len(response.tasks) == 5000, (
-            f"Expected 5000 tasks, got {len(response.tasks)}"
-        )
+        assert (
+            len(response.tasks) == 5000
+        ), f"Expected 5000 tasks, got {len(response.tasks)}"
 
         assert query_count <= 10, (
             f"BATCH LOADING FAILURE: {query_count} queries for 5000 tasks. "
@@ -545,14 +545,14 @@ def test_connection_pool_stability_concurrent_load():
         f"Errors: {errors}"
     )
 
-    assert len(results) == 5, (
-        f"Expected 5 successful concurrent requests, got {len(results)}"
-    )
+    assert (
+        len(results) == 5
+    ), f"Expected 5 successful concurrent requests, got {len(results)}"
 
     for branch_id, duration, task_count in results:
-        assert task_count == 200, (
-            f"Branch {branch_id} returned {task_count} tasks, expected 200"
-        )
+        assert (
+            task_count == 200
+        ), f"Branch {branch_id} returned {task_count} tasks, expected 200"
         assert duration < 10.0, f"Branch {branch_id} took {duration:.2f}s (max: 10s)"
 
     print("\n✅ Test 5 PASSED: Connection pool stable under 5 concurrent requests")
@@ -707,7 +707,7 @@ def test_generate_performance_summary(query_counter):
     print("=" * 70 + "\n")
 
     # Assert summary metrics
-    assert metrics[1000]["queries"] <= 10, (
-        "Query count should be constant with batch loading"
-    )
+    assert (
+        metrics[1000]["queries"] <= 10
+    ), "Query count should be constant with batch loading"
     assert metrics[1000]["duration"] < 5.0, "1000 tasks should complete in <5s"

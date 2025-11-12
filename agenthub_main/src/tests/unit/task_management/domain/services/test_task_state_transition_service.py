@@ -77,9 +77,9 @@ class TestTaskStateTransitionService:
             can_transition, reason = self.service.can_transition_to(task, target_status)
 
             # Assert
-            assert can_transition is True, (
-                f"Should allow transition from {from_status} to {to_status}"
-            )
+            assert (
+                can_transition is True
+            ), f"Should allow transition from {from_status} to {to_status}"
             assert reason is None
 
     def test_can_transition_to_invalid_transition(self):
@@ -101,9 +101,9 @@ class TestTaskStateTransitionService:
             can_transition, reason = self.service.can_transition_to(task, target_status)
 
             # Assert
-            assert can_transition is False, (
-                f"Should block transition from {from_status} to {to_status}"
-            )
+            assert (
+                can_transition is False
+            ), f"Should block transition from {from_status} to {to_status}"
             assert reason is not None
             assert f"Cannot transition from '{from_status}' to '{to_status}'" in reason
 
@@ -640,9 +640,9 @@ class TestTaskStateTransitionServiceIntegration:
             )
 
             # Assert
-            assert success is True, (
-                f"Failed transition from {current_status} to {next_status}: {message}"
-            )
+            assert (
+                success is True
+            ), f"Failed transition from {current_status} to {next_status}: {message}"
             task.update_status.assert_called_with(TaskStatus.from_string(next_status))
 
     def test_dependency_chain_resolution(self):
@@ -751,9 +751,9 @@ class TestTaskStateTransitionServiceIntegration:
                 )
 
                 # Assert
-                assert can_transition is False, (
-                    f"Should block {from_status} -> {to_status}"
-                )
+                assert (
+                    can_transition is False
+                ), f"Should block {from_status} -> {to_status}"
                 assert reason is not None
 
     def test_transition_context_handling(self):

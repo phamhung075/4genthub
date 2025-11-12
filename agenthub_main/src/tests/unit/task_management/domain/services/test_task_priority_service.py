@@ -420,9 +420,9 @@ class TestTaskPriorityService:
             score = self.service._calculate_base_priority_score(task)
 
             # Assert
-            assert score == expected_score, (
-                f"Priority {priority_str} should yield score {expected_score}"
-            )
+            assert (
+                score == expected_score
+            ), f"Priority {priority_str} should yield score {expected_score}"
 
     def test_calculate_urgency_score_various_due_dates(self):
         """Test urgency score calculation for various due date scenarios"""
@@ -454,9 +454,9 @@ class TestTaskPriorityService:
         assert future_score <= 50.0, "Future tasks should have lower urgency"
 
         # Test ordering: overdue >= today > future
-        assert overdue_score >= today_score > future_score, (
-            "Urgency should decrease with time to due date"
-        )
+        assert (
+            overdue_score >= today_score > future_score
+        ), "Urgency should decrease with time to due date"
 
     def test_calculate_urgency_score_no_due_date(self):
         """Test urgency score for task without due date"""
@@ -494,9 +494,9 @@ class TestTaskPriorityService:
             )
 
             # Assert
-            assert score == expected_score, (
-                f"Dependent count {dependent_count} should yield blocking score {expected_score}"
-            )
+            assert (
+                score == expected_score
+            ), f"Dependent count {dependent_count} should yield blocking score {expected_score}"
 
     def test_calculate_age_score_various_ages(self):
         """Test age score calculation for tasks of different ages"""
@@ -523,9 +523,9 @@ class TestTaskPriorityService:
             score = self.service._calculate_age_score(task)
 
             # Assert
-            assert score == expected_score, (
-                f"Age {(now - created_at).days} days should yield age score {expected_score}"
-            )
+            assert (
+                score == expected_score
+            ), f"Age {(now - created_at).days} days should yield age score {expected_score}"
 
     def test_calculate_progress_score_various_statuses(self):
         """Test progress score calculation for different task statuses"""
@@ -552,9 +552,9 @@ class TestTaskPriorityService:
             score = self.service._calculate_progress_score(task)
 
             # Assert
-            assert score == expected_score, (
-                f"Status {status_str} should yield progress score {expected_score}"
-            )
+            assert (
+                score == expected_score
+            ), f"Status {status_str} should yield progress score {expected_score}"
 
     def test_get_priority_factors_complete_breakdown(self):
         """Test detailed priority factors breakdown"""

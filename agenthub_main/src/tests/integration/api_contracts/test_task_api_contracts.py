@@ -175,9 +175,9 @@ class TestTaskAPIContractBasicFields:
         assert hasattr(sample_task, "status"), "Task must have 'status' field"
         assert isinstance(sample_task.status, str), "Task status must be string"
         valid_statuses = ["todo", "in_progress", "done", "blocked", "cancelled"]
-        assert sample_task.status in valid_statuses, (
-            f"Task status '{sample_task.status}' must be one of {valid_statuses}"
-        )
+        assert (
+            sample_task.status in valid_statuses
+        ), f"Task status '{sample_task.status}' must be one of {valid_statuses}"
 
     def test_task_has_priority_field(self, sample_task: TaskResponse):
         """
@@ -187,9 +187,9 @@ class TestTaskAPIContractBasicFields:
         assert hasattr(sample_task, "priority"), "Task must have 'priority' field"
         assert isinstance(sample_task.priority, str), "Task priority must be string"
         valid_priorities = ["low", "medium", "high", "urgent", "critical"]
-        assert sample_task.priority in valid_priorities, (
-            f"Task priority '{sample_task.priority}' must be one of {valid_priorities}"
-        )
+        assert (
+            sample_task.priority in valid_priorities
+        ), f"Task priority '{sample_task.priority}' must be one of {valid_priorities}"
 
     def test_task_has_assignees_array(self, sample_task: TaskResponse):
         """
@@ -216,15 +216,15 @@ class TestTaskAPIContractBasicFields:
         Verify task response includes progress_percentage as integer.
         Status: ✅ SHOULD PASS - Confirmed match in comparison matrix.
         """
-        assert hasattr(sample_task, "progress_percentage"), (
-            "Task must have 'progress_percentage' field"
-        )
-        assert isinstance(sample_task.progress_percentage, int), (
-            "Task progress_percentage must be integer"
-        )
-        assert 0 <= sample_task.progress_percentage <= 100, (
-            f"Task progress_percentage must be 0-100, got {sample_task.progress_percentage}"
-        )
+        assert hasattr(
+            sample_task, "progress_percentage"
+        ), "Task must have 'progress_percentage' field"
+        assert isinstance(
+            sample_task.progress_percentage, int
+        ), "Task progress_percentage must be integer"
+        assert (
+            0 <= sample_task.progress_percentage <= 100
+        ), f"Task progress_percentage must be 0-100, got {sample_task.progress_percentage}"
 
 
 class TestTaskAPIContractTimestamps:
@@ -244,14 +244,14 @@ class TestTaskAPIContractTimestamps:
         if isinstance(sample_task.created_at, datetime):
             # If it's a datetime object, verify it can be serialized to ISO format
             iso_string = sample_task.created_at.isoformat()
-            assert "T" in iso_string, (
-                "created_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "created_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_task.created_at, str):
             # If it's already a string, verify ISO 8601 format
-            assert "T" in sample_task.created_at, (
-                "created_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_task.created_at
+            ), "created_at must be ISO 8601 format (contains 'T')"
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(sample_task.created_at.replace("Z", "+00:00"))
@@ -278,14 +278,14 @@ class TestTaskAPIContractTimestamps:
         if isinstance(sample_task.updated_at, datetime):
             # If it's a datetime object, verify it can be serialized to ISO format
             iso_string = sample_task.updated_at.isoformat()
-            assert "T" in iso_string, (
-                "updated_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "updated_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_task.updated_at, str):
             # If it's already a string, verify ISO 8601 format
-            assert "T" in sample_task.updated_at, (
-                "updated_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_task.updated_at
+            ), "updated_at must be ISO 8601 format (contains 'T')"
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(sample_task.updated_at.replace("Z", "+00:00"))
@@ -314,9 +314,9 @@ class TestTaskAPIContractAssigneeFormat:
         assert len(sample_task.assignees) > 0, "Sample task should have assignees"
 
         for assignee in sample_task.assignees:
-            assert assignee.startswith("@"), (
-                f"Assignee '{assignee}' must start with @ prefix"
-            )
+            assert assignee.startswith(
+                "@"
+            ), f"Assignee '{assignee}' must start with @ prefix"
 
 
 class TestTaskAPIContractMissingFields:
@@ -341,9 +341,9 @@ class TestTaskAPIContractMissingFields:
 
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-1
         """
-        assert hasattr(sample_task, "project_id"), (
-            "Task MUST have 'project_id' field for frontend to filter by project"
-        )
+        assert hasattr(
+            sample_task, "project_id"
+        ), "Task MUST have 'project_id' field for frontend to filter by project"
         assert isinstance(sample_task.project_id, str), "Task project_id must be string"
         # Verify it's a valid UUID format
         try:
@@ -370,12 +370,12 @@ class TestTaskAPIContractMissingFields:
 
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-2
         """
-        assert hasattr(task_with_subtasks, "subtask_count"), (
-            "Task MUST have 'subtask_count' field for efficient frontend display"
-        )
-        assert isinstance(task_with_subtasks.subtask_count, int), (
-            "Task subtask_count must be integer"
-        )
+        assert hasattr(
+            task_with_subtasks, "subtask_count"
+        ), "Task MUST have 'subtask_count' field for efficient frontend display"
+        assert isinstance(
+            task_with_subtasks.subtask_count, int
+        ), "Task subtask_count must be integer"
         # Verify count matches actual subtasks
         if hasattr(task_with_subtasks, "subtasks") and task_with_subtasks.subtasks:
             assert task_with_subtasks.subtask_count == len(
@@ -401,12 +401,12 @@ class TestTaskAPIContractMissingFields:
 
         Reference: ai_docs/testing-qa/backend-frontend-type-comparison-matrix.md#mismatch-3
         """
-        assert hasattr(task_with_subtasks, "completed_subtasks"), (
-            "Task MUST have 'completed_subtasks' field for progress tracking"
-        )
-        assert isinstance(task_with_subtasks.completed_subtasks, int), (
-            "Task completed_subtasks must be integer"
-        )
+        assert hasattr(
+            task_with_subtasks, "completed_subtasks"
+        ), "Task MUST have 'completed_subtasks' field for progress tracking"
+        assert isinstance(
+            task_with_subtasks.completed_subtasks, int
+        ), "Task completed_subtasks must be integer"
         assert (
             0
             <= task_with_subtasks.completed_subtasks
@@ -450,12 +450,12 @@ class TestTaskAPIContractFieldNaming:
         )
 
         # Should use snake_case for Python/TypeScript consistency
-        assert "estimated_effort" in task_dict, (
-            "Task JSON should use 'estimated_effort' (snake_case), not 'estimatedEffort'"
-        )
-        assert "estimatedEffort" not in task_dict, (
-            "Task JSON should NOT use 'estimatedEffort' (camelCase)"
-        )
+        assert (
+            "estimated_effort" in task_dict
+        ), "Task JSON should use 'estimated_effort' (snake_case), not 'estimatedEffort'"
+        assert (
+            "estimatedEffort" not in task_dict
+        ), "Task JSON should NOT use 'estimatedEffort' (camelCase)"
 
     @pytest.mark.xfail(
         reason="MISMATCH #5: Field naming inconsistency (see comparison matrix)"
@@ -484,12 +484,12 @@ class TestTaskAPIContractFieldNaming:
         )
 
         # Should use snake_case for Python/TypeScript consistency
-        assert "due_date" in task_dict, (
-            "Task JSON should use 'due_date' (snake_case), not 'dueDate'"
-        )
-        assert "dueDate" not in task_dict, (
-            "Task JSON should NOT use 'dueDate' (camelCase)"
-        )
+        assert (
+            "due_date" in task_dict
+        ), "Task JSON should use 'due_date' (snake_case), not 'dueDate'"
+        assert (
+            "dueDate" not in task_dict
+        ), "Task JSON should NOT use 'dueDate' (camelCase)"
 
 
 class TestTaskAPIContractOptionalFields:
@@ -500,27 +500,27 @@ class TestTaskAPIContractOptionalFields:
         assert hasattr(sample_task, "description"), "Task must have 'description' field"
         # Description is optional but should be string when present
         if sample_task.description is not None:
-            assert isinstance(sample_task.description, str), (
-                "Task description must be string"
-            )
+            assert isinstance(
+                sample_task.description, str
+            ), "Task description must be string"
 
     def test_task_has_git_branch_id(self, sample_task: TaskResponse):
         """Verify git_branch_id is included (required for task creation)."""
-        assert hasattr(sample_task, "git_branch_id"), (
-            "Task must have 'git_branch_id' field"
-        )
-        assert isinstance(sample_task.git_branch_id, str), (
-            "Task git_branch_id must be string"
-        )
+        assert hasattr(
+            sample_task, "git_branch_id"
+        ), "Task must have 'git_branch_id' field"
+        assert isinstance(
+            sample_task.git_branch_id, str
+        ), "Task git_branch_id must be string"
 
     def test_task_has_context_id_when_context_exists(self, sample_task: TaskResponse):
         """Verify context_id is included when task has context."""
         assert hasattr(sample_task, "context_id"), "Task must have 'context_id' field"
         # context_id is optional but should be string when present
         if sample_task.context_id is not None:
-            assert isinstance(sample_task.context_id, str), (
-                "Task context_id must be string"
-            )
+            assert isinstance(
+                sample_task.context_id, str
+            ), "Task context_id must be string"
 
 
 class TestTaskAPIContractCompleteResponse:
@@ -566,15 +566,15 @@ class TestTaskAPIContractCompleteResponse:
 
         # Verify required fields
         for field in required_fields:
-            assert hasattr(sample_task, field), (
-                f"Task MUST have required field '{field}'"
-            )
+            assert hasattr(
+                sample_task, field
+            ), f"Task MUST have required field '{field}'"
 
         # Verify optional fields exist (even if None)
         for field in optional_fields:
-            assert hasattr(sample_task, field), (
-                f"Task should have optional field '{field}'"
-            )
+            assert hasattr(
+                sample_task, field
+            ), f"Task should have optional field '{field}'"
 
         # Document missing fields (these will cause test to fail until implemented)
         missing_fields = [

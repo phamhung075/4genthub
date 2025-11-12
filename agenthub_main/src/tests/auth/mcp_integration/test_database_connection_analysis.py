@@ -461,9 +461,9 @@ class TestDatabaseConnectionAnalysis:
             print(f"   {i}. [{rec['priority']}] {rec['action']}")
 
         # Assert that we have meaningful analysis
-        assert len(analysis["repositories"]) > 0, (
-            "Should analyze at least one repository"
-        )
+        assert (
+            len(analysis["repositories"]) > 0
+        ), "Should analyze at least one repository"
         assert "database_config" in analysis, "Should include database config analysis"
 
 

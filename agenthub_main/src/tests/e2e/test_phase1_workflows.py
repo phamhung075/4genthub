@@ -107,9 +107,9 @@ def project_with_branch(mcp_tools, mock_auth, test_user_id):
         user_id=test_user_id,
     )
 
-    assert branch_result.get("success") is True, (
-        f"Branch creation failed: {branch_result}"
-    )
+    assert (
+        branch_result.get("success") is True
+    ), f"Branch creation failed: {branch_result}"
     git_branch_id = branch_result["data"]["git_branch"]["id"]
 
     yield project_id, git_branch_id
@@ -152,17 +152,17 @@ class TestPhase1TaskCRUDOperations:
         # PHASE 2 VERIFICATION: Count fields present
         assert "subtask_count" in task, "subtask_count field must exist (Phase 2)"
         assert task["subtask_count"] == 0, "New task should have 0 subtasks"
-        assert "completed_subtasks" in task, (
-            "completed_subtasks field must exist (Phase 2)"
-        )
-        assert task["completed_subtasks"] == 0, (
-            "New task should have 0 completed subtasks"
-        )
+        assert (
+            "completed_subtasks" in task
+        ), "completed_subtasks field must exist (Phase 2)"
+        assert (
+            task["completed_subtasks"] == 0
+        ), "New task should have 0 completed subtasks"
 
         # PHASE 1 VERIFICATION: NO emoji fields
-        assert "priority_emoji" not in task, (
-            "priority_emoji field must NOT exist (Phase 1)"
-        )
+        assert (
+            "priority_emoji" not in task
+        ), "priority_emoji field must NOT exist (Phase 1)"
         assert "status_emoji" not in task, "status_emoji field must NOT exist (Phase 1)"
 
     def test_get_task_default_no_context(
@@ -512,13 +512,13 @@ class TestPhase1ArrayBasedCountLogic:
         assert "subtasks" in task
         assert "subtask_count" in task
         assert task["subtask_count"] == 3, "Should have 3 subtasks"
-        assert task["subtask_count"] == len(task["subtasks"]), (
-            "Count should match array length"
-        )
+        assert task["subtask_count"] == len(
+            task["subtasks"]
+        ), "Count should match array length"
         assert "completed_subtasks" in task
-        assert task["completed_subtasks"] <= task["subtask_count"], (
-            "Completed should not exceed total"
-        )
+        assert (
+            task["completed_subtasks"] <= task["subtask_count"]
+        ), "Completed should not exceed total"
 
     def test_task_with_zero_subtasks(self, mcp_tools, project_with_branch, mock_auth):
         """Verify empty subtasks array (not null)"""
@@ -539,9 +539,9 @@ class TestPhase1ArrayBasedCountLogic:
         assert "subtasks" in task
         assert "subtask_count" in task
         assert task["subtask_count"] == 0, "Should have 0 subtasks"
-        assert task["subtask_count"] == len(task["subtasks"]), (
-            "Count should match array length"
-        )
+        assert task["subtask_count"] == len(
+            task["subtasks"]
+        ), "Count should match array length"
         assert "completed_subtasks" in task
         assert task["completed_subtasks"] == 0, "Should have 0 completed"
 

@@ -110,9 +110,9 @@ class TestSubtaskAPIContractBasicFields:
         Verify subtask response includes parent task_id field.
         Status: ✅ SHOULD PASS - Required field in SubtaskResponse.
         """
-        assert hasattr(sample_subtask, "task_id"), (
-            "SubtaskResponse must have 'task_id' field"
-        )
+        assert hasattr(
+            sample_subtask, "task_id"
+        ), "SubtaskResponse must have 'task_id' field"
         assert isinstance(sample_subtask.task_id, str), "task_id must be string"
         # Verify it's a valid UUID format
         try:
@@ -126,9 +126,9 @@ class TestSubtaskAPIContractBasicFields:
         Verify subtask response includes subtask as dictionary.
         Status: ✅ SHOULD PASS - Required field in SubtaskResponse.
         """
-        assert hasattr(sample_subtask, "subtask"), (
-            "SubtaskResponse must have 'subtask' field"
-        )
+        assert hasattr(
+            sample_subtask, "subtask"
+        ), "SubtaskResponse must have 'subtask' field"
         assert isinstance(sample_subtask.subtask, dict), "subtask must be dictionary"
         assert len(sample_subtask.subtask) > 0, "subtask dictionary must not be empty"
 
@@ -137,9 +137,9 @@ class TestSubtaskAPIContractBasicFields:
         Verify subtask response includes progress as dictionary.
         Status: ✅ SHOULD PASS - Required field in SubtaskResponse.
         """
-        assert hasattr(sample_subtask, "progress"), (
-            "SubtaskResponse must have 'progress' field"
-        )
+        assert hasattr(
+            sample_subtask, "progress"
+        ), "SubtaskResponse must have 'progress' field"
         assert isinstance(sample_subtask.progress, dict), "progress must be dictionary"
 
 
@@ -180,9 +180,9 @@ class TestSubtaskDictStructure:
         assert "status" in subtask_dict, "subtask dict must have 'status' field"
         assert isinstance(subtask_dict["status"], str), "subtask status must be string"
         valid_statuses = ["todo", "in_progress", "done", "blocked", "cancelled"]
-        assert subtask_dict["status"] in valid_statuses, (
-            f"subtask status '{subtask_dict['status']}' must be one of {valid_statuses}"
-        )
+        assert (
+            subtask_dict["status"] in valid_statuses
+        ), f"subtask status '{subtask_dict['status']}' must be one of {valid_statuses}"
 
     def test_subtask_dict_has_priority_field(self, sample_subtask):
         """
@@ -191,13 +191,13 @@ class TestSubtaskDictStructure:
         """
         subtask_dict = sample_subtask.subtask
         assert "priority" in subtask_dict, "subtask dict must have 'priority' field"
-        assert isinstance(subtask_dict["priority"], str), (
-            "subtask priority must be string"
-        )
+        assert isinstance(
+            subtask_dict["priority"], str
+        ), "subtask priority must be string"
         valid_priorities = ["low", "medium", "high", "urgent", "critical"]
-        assert subtask_dict["priority"] in valid_priorities, (
-            f"subtask priority '{subtask_dict['priority']}' must be one of {valid_priorities}"
-        )
+        assert (
+            subtask_dict["priority"] in valid_priorities
+        ), f"subtask priority '{subtask_dict['priority']}' must be one of {valid_priorities}"
 
     def test_subtask_dict_has_progress_percentage(self, sample_subtask):
         """
@@ -205,15 +205,15 @@ class TestSubtaskDictStructure:
         Status: ✅ SHOULD PASS - Progress tracking field.
         """
         subtask_dict = sample_subtask.subtask
-        assert "progress_percentage" in subtask_dict, (
-            "subtask dict must have 'progress_percentage' field"
-        )
-        assert isinstance(subtask_dict["progress_percentage"], int), (
-            "subtask progress_percentage must be integer"
-        )
-        assert 0 <= subtask_dict["progress_percentage"] <= 100, (
-            f"subtask progress_percentage must be 0-100, got {subtask_dict['progress_percentage']}"
-        )
+        assert (
+            "progress_percentage" in subtask_dict
+        ), "subtask dict must have 'progress_percentage' field"
+        assert isinstance(
+            subtask_dict["progress_percentage"], int
+        ), "subtask progress_percentage must be integer"
+        assert (
+            0 <= subtask_dict["progress_percentage"] <= 100
+        ), f"subtask progress_percentage must be 0-100, got {subtask_dict['progress_percentage']}"
 
 
 class TestSubtaskDictTimestamps:
@@ -230,13 +230,13 @@ class TestSubtaskDictTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(subtask_dict["created_at"], datetime):
             iso_string = subtask_dict["created_at"].isoformat()
-            assert "T" in iso_string, (
-                "created_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "created_at datetime must serialize to ISO 8601 format"
         elif isinstance(subtask_dict["created_at"], str):
-            assert "T" in subtask_dict["created_at"], (
-                "created_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in subtask_dict["created_at"]
+            ), "created_at must be ISO 8601 format (contains 'T')"
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(
@@ -262,13 +262,13 @@ class TestSubtaskDictTimestamps:
         # Handle both datetime objects and string representations
         if isinstance(subtask_dict["updated_at"], datetime):
             iso_string = subtask_dict["updated_at"].isoformat()
-            assert "T" in iso_string, (
-                "updated_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "updated_at datetime must serialize to ISO 8601 format"
         elif isinstance(subtask_dict["updated_at"], str):
-            assert "T" in subtask_dict["updated_at"], (
-                "updated_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in subtask_dict["updated_at"]
+            ), "updated_at must be ISO 8601 format (contains 'T')"
             # Try to parse it to verify it's valid
             try:
                 datetime.fromisoformat(
@@ -294,9 +294,9 @@ class TestSubtaskDictAssignees:
         """
         subtask_dict = sample_subtask.subtask
         assert "assignees" in subtask_dict, "subtask dict must have 'assignees' field"
-        assert isinstance(subtask_dict["assignees"], list), (
-            "subtask assignees must be array"
-        )
+        assert isinstance(
+            subtask_dict["assignees"], list
+        ), "subtask assignees must be array"
         for assignee in subtask_dict["assignees"]:
             assert isinstance(assignee, str), "Each assignee must be string"
 
@@ -309,9 +309,9 @@ class TestSubtaskDictAssignees:
         assert "assignees" in subtask_dict, "subtask dict must have 'assignees' field"
         if len(subtask_dict["assignees"]) > 0:
             for assignee in subtask_dict["assignees"]:
-                assert assignee.startswith("@"), (
-                    f"Assignee '{assignee}' must start with @ prefix"
-                )
+                assert assignee.startswith(
+                    "@"
+                ), f"Assignee '{assignee}' must start with @ prefix"
 
 
 class TestSubtaskProgressDict:
@@ -345,12 +345,12 @@ class TestSubtaskAgentInheritance:
         # Check if inheritance was applied
         if hasattr(sample_subtask, "agent_inheritance_applied"):
             if sample_subtask.agent_inheritance_applied:
-                assert hasattr(sample_subtask, "inherited_assignees"), (
-                    "When agent_inheritance_applied=True, must have 'inherited_assignees' field"
-                )
-                assert isinstance(sample_subtask.inherited_assignees, list), (
-                    "inherited_assignees must be list"
-                )
+                assert hasattr(
+                    sample_subtask, "inherited_assignees"
+                ), "When agent_inheritance_applied=True, must have 'inherited_assignees' field"
+                assert isinstance(
+                    sample_subtask.inherited_assignees, list
+                ), "inherited_assignees must be list"
 
 
 class TestSubtaskDictOptionalFields:
@@ -362,9 +362,9 @@ class TestSubtaskDictOptionalFields:
         # Description should exist in dict (even if empty)
         if "description" in subtask_dict:
             if subtask_dict["description"] is not None:
-                assert isinstance(subtask_dict["description"], str), (
-                    "subtask description must be string"
-                )
+                assert isinstance(
+                    subtask_dict["description"], str
+                ), "subtask description must be string"
 
     def test_subtask_dict_has_parent_task_id(self, sample_subtask):
         """
@@ -377,9 +377,9 @@ class TestSubtaskDictOptionalFields:
         has_task_reference = (
             "task_id" in subtask_dict or "parent_task_id" in subtask_dict
         )
-        assert has_task_reference, (
-            "subtask dict must have 'task_id' or 'parent_task_id' field"
-        )
+        assert (
+            has_task_reference
+        ), "subtask dict must have 'task_id' or 'parent_task_id' field"
 
 
 class TestSubtaskResponseCompleteContract:
@@ -400,9 +400,9 @@ class TestSubtaskResponseCompleteContract:
         ]
 
         for field in required_response_fields:
-            assert hasattr(sample_subtask, field), (
-                f"SubtaskResponse MUST have required field '{field}'"
-            )
+            assert hasattr(
+                sample_subtask, field
+            ), f"SubtaskResponse MUST have required field '{field}'"
 
         # Required fields in subtask dict
         subtask_dict = sample_subtask.subtask
@@ -414,9 +414,9 @@ class TestSubtaskResponseCompleteContract:
         ]
 
         for field in required_subtask_fields:
-            assert field in subtask_dict, (
-                f"subtask dict MUST have required field '{field}'"
-            )
+            assert (
+                field in subtask_dict
+            ), f"subtask dict MUST have required field '{field}'"
 
         # Optional but commonly used fields
         common_optional_fields = [
@@ -429,9 +429,9 @@ class TestSubtaskResponseCompleteContract:
 
         # Verify these fields exist (they may be None or empty)
         for field in common_optional_fields:
-            assert field in subtask_dict, (
-                f"subtask dict should have common field '{field}'"
-            )
+            assert (
+                field in subtask_dict
+            ), f"subtask dict should have common field '{field}'"
 
 
 class TestSubtaskResponseSerialization:
@@ -447,17 +447,17 @@ class TestSubtaskResponseSerialization:
             assert isinstance(response_dict, dict), "to_dict() must return dictionary"
 
             # Verify required keys in serialized response
-            assert "task_id" in response_dict, (
-                "Serialized response must include task_id"
-            )
-            assert "subtask" in response_dict, (
-                "Serialized response must include subtask"
-            )
-            assert "progress" in response_dict, (
-                "Serialized response must include progress"
-            )
+            assert (
+                "task_id" in response_dict
+            ), "Serialized response must include task_id"
+            assert (
+                "subtask" in response_dict
+            ), "Serialized response must include subtask"
+            assert (
+                "progress" in response_dict
+            ), "Serialized response must include progress"
 
             # Verify serialized subtask is dict
-            assert isinstance(response_dict["subtask"], dict), (
-                "Serialized subtask must be dictionary"
-            )
+            assert isinstance(
+                response_dict["subtask"], dict
+            ), "Serialized subtask must be dictionary"

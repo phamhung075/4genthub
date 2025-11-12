@@ -54,18 +54,18 @@ class TestSupabaseConnectionFix:
         # Assert that the configuration check behaves as expected
         if database_type == "supabase":
             # When DATABASE_TYPE is supabase, we should be able to check configuration
-            assert isinstance(supabase_configured, bool), (
-                "is_supabase_configured should return boolean"
-            )
+            assert isinstance(
+                supabase_configured, bool
+            ), "is_supabase_configured should return boolean"
 
         # Test SupabaseConfig creation - this may succeed or fail depending on environment
         # We'll test this without requiring a specific outcome since environment varies
         try:
             supabase_config = SupabaseConfig()
             logger.info("SupabaseConfig created successfully")
-            assert hasattr(supabase_config, "database_url"), (
-                "SupabaseConfig should have database_url attribute"
-            )
+            assert hasattr(
+                supabase_config, "database_url"
+            ), "SupabaseConfig should have database_url attribute"
             if supabase_config.database_url:
                 logger.info(f"Database URL: {supabase_config.database_url[:50]}...")
         except Exception as e:
@@ -99,12 +99,12 @@ class TestSupabaseConnectionFix:
         logger.info(f"Database URL: {supabase_config.database_url[:50]}...")
 
         # Test that it's actually a PostgreSQL URL
-        assert "postgresql://" in supabase_config.database_url, (
-            "Database URL should be PostgreSQL format"
-        )
-        assert "supabase.com" in supabase_config.database_url, (
-            "Database URL should contain supabase.com"
-        )
+        assert (
+            "postgresql://" in supabase_config.database_url
+        ), "Database URL should be PostgreSQL format"
+        assert (
+            "supabase.com" in supabase_config.database_url
+        ), "Database URL should contain supabase.com"
         logger.info("Database URL is correctly formatted PostgreSQL connection")
 
     @patch.dict(os.environ)
@@ -134,12 +134,12 @@ class TestSupabaseConnectionFix:
         logger.info(f"Database URL: {supabase_config.database_url[:50]}...")
 
         # Test that it's actually a PostgreSQL URL
-        assert "postgresql://" in supabase_config.database_url, (
-            "Database URL should be PostgreSQL format"
-        )
-        assert "supabase.com" in supabase_config.database_url, (
-            "Database URL should contain supabase.com"
-        )
+        assert (
+            "postgresql://" in supabase_config.database_url
+        ), "Database URL should be PostgreSQL format"
+        assert (
+            "supabase.com" in supabase_config.database_url
+        ), "Database URL should contain supabase.com"
         logger.info("Database URL is correctly formatted PostgreSQL connection")
 
     @patch.dict(os.environ)
@@ -180,12 +180,12 @@ class TestSupabaseConnectionFix:
         logger.info(f"Database URL: {supabase_config.database_url[:50]}...")
 
         # Test that it's actually a PostgreSQL URL
-        assert "postgresql://" in supabase_config.database_url, (
-            "Database URL should be PostgreSQL format"
-        )
-        assert "PLACEHOLDER_SUPABASE_REF" in supabase_config.database_url, (
-            "Database URL should contain project reference"
-        )
+        assert (
+            "postgresql://" in supabase_config.database_url
+        ), "Database URL should be PostgreSQL format"
+        assert (
+            "PLACEHOLDER_SUPABASE_REF" in supabase_config.database_url
+        ), "Database URL should contain project reference"
         logger.info("Database URL constructed correctly from components")
 
     def test_database_config_with_fix(self):
@@ -268,15 +268,15 @@ class TestSupabaseConnectionFix:
                                     )
 
                                     # Verify it's configured for PostgreSQL, not SQLite
-                                    assert db_config.database_type == "supabase", (
-                                        "Database type should be supabase"
-                                    )
-                                    assert db_config.database_url is not None, (
-                                        "Database URL should be set"
-                                    )
-                                    assert "postgresql://" in db_config.database_url, (
-                                        "Database URL should be PostgreSQL format"
-                                    )
+                                    assert (
+                                        db_config.database_type == "supabase"
+                                    ), "Database type should be supabase"
+                                    assert (
+                                        db_config.database_url is not None
+                                    ), "Database URL should be set"
+                                    assert (
+                                        "postgresql://" in db_config.database_url
+                                    ), "Database URL should be PostgreSQL format"
                                     assert (
                                         "sqlite" not in db_config.database_url.lower()
                                     ), "Database URL should not contain sqlite"
@@ -291,9 +291,9 @@ class TestSupabaseConnectionFix:
 
         # Test that is_supabase_configured returns a boolean
         supabase_configured = is_supabase_configured()
-        assert isinstance(supabase_configured, bool), (
-            "is_supabase_configured should return boolean"
-        )
+        assert isinstance(
+            supabase_configured, bool
+        ), "is_supabase_configured should return boolean"
 
         # Test DATABASE_URL configuration works
         with patch.dict(
@@ -309,12 +309,12 @@ class TestSupabaseConnectionFix:
 
             try:
                 supabase_config = SupabaseConfig()
-                assert hasattr(supabase_config, "database_url"), (
-                    "SupabaseConfig should have database_url"
-                )
-                assert "postgresql://" in supabase_config.database_url, (
-                    "Should use PostgreSQL URL"
-                )
+                assert hasattr(
+                    supabase_config, "database_url"
+                ), "SupabaseConfig should have database_url"
+                assert (
+                    "postgresql://" in supabase_config.database_url
+                ), "Should use PostgreSQL URL"
                 logger.info("DATABASE_URL configuration test passed")
             except Exception as e:
                 logger.warning(f"DATABASE_URL configuration failed: {e}")
@@ -333,12 +333,12 @@ class TestSupabaseConnectionFix:
 
             try:
                 supabase_config = SupabaseConfig()
-                assert hasattr(supabase_config, "database_url"), (
-                    "SupabaseConfig should have database_url"
-                )
-                assert "postgresql://" in supabase_config.database_url, (
-                    "Should use PostgreSQL URL"
-                )
+                assert hasattr(
+                    supabase_config, "database_url"
+                ), "SupabaseConfig should have database_url"
+                assert (
+                    "postgresql://" in supabase_config.database_url
+                ), "Should use PostgreSQL URL"
                 logger.info("SUPABASE_DATABASE_URL configuration test passed")
             except Exception as e:
                 logger.warning(f"SUPABASE_DATABASE_URL configuration failed: {e}")

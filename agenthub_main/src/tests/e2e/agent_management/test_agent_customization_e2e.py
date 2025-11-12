@@ -155,9 +155,9 @@ class TestAgentCustomizationE2EWorkflow:
         await browser.store_auth_token(mock_auth_token)
 
         await browser.wait_for_selector("#dashboard")
-        assert await browser.get_auth_token() != "", (
-            "Authentication failed - no token stored"
-        )
+        assert (
+            await browser.get_auth_token() != ""
+        ), "Authentication failed - no token stored"
         logger.info("✅ User authenticated successfully")
 
         # ========================================================================
@@ -321,9 +321,9 @@ class TestAgentCustomizationE2EWorkflow:
 
         # Verify configuration was saved
         assert persisted_instance is not None, "Failed to reload instance"
-        assert persisted_instance.is_customized is True, (
-            "Instance not marked as customized"
-        )
+        assert (
+            persisted_instance.is_customized is True
+        ), "Instance not marked as customized"
 
         # Verify instructions were saved
         assert (
@@ -332,9 +332,9 @@ class TestAgentCustomizationE2EWorkflow:
         ), "Instructions not persisted correctly"
 
         # Verify rules were saved
-        assert "CUSTOM RULES" in persisted_instance.configuration.get("rules", ""), (
-            "Rules not persisted correctly"
-        )
+        assert "CUSTOM RULES" in persisted_instance.configuration.get(
+            "rules", ""
+        ), "Rules not persisted correctly"
 
         # Verify capabilities were saved
         assert "E2E Testing" in persisted_instance.configuration.get(
@@ -383,9 +383,9 @@ class TestAgentCustomizationE2EWorkflow:
         # Verify tab switch preserves previous content
         await browser.click_button("#tab-instructions")
         preserved_instructions = await browser.get_text("#markdown-editor")
-        assert preserved_instructions == "Instructions content", (
-            "Instructions lost after tab switch"
-        )
+        assert (
+            preserved_instructions == "Instructions content"
+        ), "Instructions lost after tab switch"
 
         logger.info("✅ Tab switching preserves content correctly")
 
@@ -469,9 +469,9 @@ class TestAgentCustomizationE2EWorkflow:
         )
 
         reloaded_instructions = reloaded_instance.configuration.get("instructions", "")
-        assert reloaded_instructions == original_instructions, (
-            "Changes persisted without save"
-        )
+        assert (
+            reloaded_instructions == original_instructions
+        ), "Changes persisted without save"
 
         logger.info("✅ Canceled changes not persisted")
 

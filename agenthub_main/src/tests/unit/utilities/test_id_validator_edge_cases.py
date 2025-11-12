@@ -63,9 +63,9 @@ class TestIDValidatorEdgeCases:
 
         for malformed_uuid in malformed_uuids:
             result = self.validator.validate_uuid_format(malformed_uuid)
-            assert result.is_valid is False, (
-                f"Should reject malformed UUID: {malformed_uuid}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Should reject malformed UUID: {malformed_uuid}"
             assert "Invalid UUID format" in result.error_message
 
     def test_uuid_version_validation_strict_mode(self):
@@ -97,9 +97,9 @@ class TestIDValidatorEdgeCases:
 
         for uuid_str in valid_uuids:
             result = self.relaxed_validator.validate_uuid_format(uuid_str)
-            assert result.is_valid is True, (
-                f"Should accept UUID in relaxed mode: {uuid_str}"
-            )
+            assert (
+                result.is_valid is True
+            ), f"Should accept UUID in relaxed mode: {uuid_str}"
 
     def test_context_hint_edge_cases(self):
         """Test context hint detection with edge cases."""
@@ -118,9 +118,9 @@ class TestIDValidatorEdgeCases:
         for hint in context_hints:
             result = self.validator.detect_id_type(valid_uuid, hint)
             assert result.is_valid is True
-            assert result.id_type != IDType.UNKNOWN, (
-                f"Should detect type for hint: {hint}"
-            )
+            assert (
+                result.id_type != IDType.UNKNOWN
+            ), f"Should detect type for hint: {hint}"
 
     def test_parameter_mapping_complex_scenarios(self):
         """Test parameter mapping with complex real-world scenarios."""
@@ -270,9 +270,9 @@ class TestIDValidatorEdgeCases:
 
         for pattern in sql_injection_patterns:
             result = self.validator.validate_uuid_format(pattern)
-            assert result.is_valid is False, (
-                f"Should reject SQL injection pattern: {pattern}"
-            )
+            assert (
+                result.is_valid is False
+            ), f"Should reject SQL injection pattern: {pattern}"
 
     def test_fix_suggestions_comprehensive(self):
         """Test comprehensive fix suggestions for different contexts."""
@@ -299,9 +299,9 @@ class TestIDValidatorEdgeCases:
                 "prevention",
             ]
             for key in expected_keys:
-                assert key in suggestions, (
-                    f"Missing key '{key}' in suggestions for {context}"
-                )
+                assert (
+                    key in suggestions
+                ), f"Missing key '{key}' in suggestions for {context}"
 
             # Verify content quality
             assert context in suggestions["issue"]
@@ -362,9 +362,9 @@ class TestIDValidatorEdgeCases:
                 gc.collect()
                 current_objects = len(gc.get_objects())
                 # Allow some growth but not excessive
-                assert current_objects < initial_objects * 2, (
-                    f"Memory usage grew too much: {current_objects} vs {initial_objects}"
-                )
+                assert (
+                    current_objects < initial_objects * 2
+                ), f"Memory usage grew too much: {current_objects} vs {initial_objects}"
 
     def test_validator_state_isolation(self):
         """Test that different validator instances don't share state."""

@@ -114,9 +114,9 @@ def assert_field_type(obj: Any, field: str, expected_type: type) -> None:
     if value is None:
         return
 
-    assert isinstance(value, expected_type), (
-        f"Field '{field}' must be {expected_type.__name__}, got {type(value).__name__}"
-    )
+    assert isinstance(
+        value, expected_type
+    ), f"Field '{field}' must be {expected_type.__name__}, got {type(value).__name__}"
 
 
 def assert_field_types(obj: Any, field_type_map: dict[str, type]) -> None:
@@ -160,9 +160,9 @@ def assert_list_item_type(obj: Any, field: str, item_type: type) -> None:
     assert isinstance(value, list), f"Field '{field}' must be a list"
 
     for i, item in enumerate(value):
-        assert isinstance(item, item_type), (
-            f"Item {i} in '{field}' must be {item_type.__name__}, got {type(item).__name__}"
-        )
+        assert isinstance(
+            item, item_type
+        ), f"Item {i} in '{field}' must be {item_type.__name__}, got {type(item).__name__}"
 
 
 # ============================================================================
@@ -225,14 +225,14 @@ def validate_iso8601_timestamp(obj: Any, field: str) -> None:
     if isinstance(value, datetime):
         # Verify datetime can be serialized to ISO format
         iso_string = value.isoformat()
-        assert "T" in iso_string, (
-            f"Field '{field}' datetime must serialize to ISO 8601 format"
-        )
+        assert (
+            "T" in iso_string
+        ), f"Field '{field}' datetime must serialize to ISO 8601 format"
     elif isinstance(value, str):
         # Verify string is valid ISO 8601 format
-        assert "T" in value, (
-            f"Field '{field}' must be ISO 8601 format (contains 'T' separator)"
-        )
+        assert (
+            "T" in value
+        ), f"Field '{field}' must be ISO 8601 format (contains 'T' separator)"
         try:
             # Try parsing to verify validity
             datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -316,9 +316,9 @@ def assert_valid_enum_value(
     assert isinstance(value, str), f"Field '{field}' must be string"
 
     enum_label = enum_name or field
-    assert value in valid_values, (
-        f"{enum_label} '{value}' must be one of {valid_values}"
-    )
+    assert (
+        value in valid_values
+    ), f"{enum_label} '{value}' must be one of {valid_values}"
 
 
 def validate_task_status(obj: Any, field: str = "status") -> None:
@@ -380,9 +380,9 @@ def assert_value_in_range(
     if value is None:
         return  # Allow None for optional fields
 
-    assert min_value <= value <= max_value, (
-        f"Field '{field}' value {value} must be between {min_value} and {max_value}"
-    )
+    assert (
+        min_value <= value <= max_value
+    ), f"Field '{field}' value {value} must be between {min_value} and {max_value}"
 
 
 def validate_progress_percentage(obj: Any, field: str = "progress_percentage") -> None:
@@ -486,20 +486,20 @@ def validate_complete_task_contract(
 
     # Validate fields that are known mismatches (optional based on flags)
     if expect_project_id:
-        assert hasattr(task, "project_id"), (
-            "Task MUST have 'project_id' field for frontend to filter by project"
-        )
+        assert hasattr(
+            task, "project_id"
+        ), "Task MUST have 'project_id' field for frontend to filter by project"
         validate_uuid_field(task, "project_id")
 
     if expect_subtask_counts:
-        assert hasattr(task, "subtask_count"), (
-            "Task MUST have 'subtask_count' field for efficient frontend display"
-        )
+        assert hasattr(
+            task, "subtask_count"
+        ), "Task MUST have 'subtask_count' field for efficient frontend display"
         assert_field_type(task, "subtask_count", int)
 
-        assert hasattr(task, "completed_subtasks"), (
-            "Task MUST have 'completed_subtasks' field for progress tracking"
-        )
+        assert hasattr(
+            task, "completed_subtasks"
+        ), "Task MUST have 'completed_subtasks' field for progress tracking"
         assert_field_type(task, "completed_subtasks", int)
 
         # Validate count relationships
@@ -598,9 +598,9 @@ def validate_snake_case_fields(
         # Convert to camelCase for comparison
         camel_case = snake_to_camel(field)
 
-        assert field in obj_dict or field not in obj_dict, (
-            f"If field exists, it should use snake_case '{field}', not camelCase '{camel_case}'"
-        )
+        assert (
+            field in obj_dict or field not in obj_dict
+        ), f"If field exists, it should use snake_case '{field}', not camelCase '{camel_case}'"
 
         if camel_case in obj_dict and field not in obj_dict:
             pytest.fail(
@@ -658,9 +658,9 @@ def validate_websocket_task_message(
     """
     validate_websocket_message_structure(message)
 
-    assert "task" in message["data"] or "id" in message["data"], (
-        "WebSocket message data must contain task information"
-    )
+    assert (
+        "task" in message["data"] or "id" in message["data"]
+    ), "WebSocket message data must contain task information"
 
     # If complete task is expected, validate it
     if expect_complete_task:

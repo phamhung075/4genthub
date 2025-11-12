@@ -107,9 +107,9 @@ class TestIssue1SubtaskCountMatchesActualSubtasks:
         parent = task_repository.find_by_id(TaskId(parent_id))
         subtasks_data = parent.context_data.get("subtasks", {})
 
-        assert subtasks_data["total_count"] == 3, (
-            "REGRESSION: Subtask count not synced to context_data (Issue #1)"
-        )
+        assert (
+            subtasks_data["total_count"] == 3
+        ), "REGRESSION: Subtask count not synced to context_data (Issue #1)"
 
     async def test_deleting_subtasks_updates_count_in_context(
         self, task_facade, subtask_facade, task_repository
@@ -137,9 +137,9 @@ class TestIssue1SubtaskCountMatchesActualSubtasks:
 
         # REGRESSION TEST: count should be 1, not 2 or 0
         parent = task_repository.find_by_id(TaskId(parent_id))
-        assert parent.context_data["subtasks"]["total_count"] == 1, (
-            "REGRESSION: Subtask deletion not reflected in context_data (Issue #1)"
-        )
+        assert (
+            parent.context_data["subtasks"]["total_count"] == 1
+        ), "REGRESSION: Subtask deletion not reflected in context_data (Issue #1)"
 
 
 @pytest.mark.asyncio
@@ -173,9 +173,9 @@ class TestIssue2StatusStaysSynced:
         task = task_repository.find_by_id(TaskId(task_id))
 
         assert task.status.value == "in_progress", "Task.status not updated"
-        assert task.context_data["metadata"]["status"] == "in_progress", (
-            "REGRESSION: Status not synced to context_data (Issue #2)"
-        )
+        assert (
+            task.context_data["metadata"]["status"] == "in_progress"
+        ), "REGRESSION: Status not synced to context_data (Issue #2)"
 
     async def test_completing_task_syncs_done_status(
         self, task_facade, task_repository
@@ -198,9 +198,9 @@ class TestIssue2StatusStaysSynced:
         task = task_repository.find_by_id(TaskId(task_id))
 
         assert task.status.value == "done"
-        assert task.context_data["metadata"]["status"] == "done", (
-            "REGRESSION: Completion status not synced to context_data (Issue #2)"
-        )
+        assert (
+            task.context_data["metadata"]["status"] == "done"
+        ), "REGRESSION: Completion status not synced to context_data (Issue #2)"
 
 
 @pytest.mark.asyncio
@@ -232,9 +232,9 @@ class TestIssue3ProjectIdPopulated:
 
         # Note: In this test environment, project_id might not be derivable
         # The important part is the sync mechanism exists, not the actual value
-        assert "project_id" in metadata or task.project_id is not None, (
-            "REGRESSION: project_id not included in sync mechanism (Issue #3)"
-        )
+        assert (
+            "project_id" in metadata or task.project_id is not None
+        ), "REGRESSION: project_id not included in sync mechanism (Issue #3)"
 
 
 @pytest.mark.asyncio
@@ -291,9 +291,9 @@ class TestIssue4TimestampsSyncedToContext:
         task_after = await task_repository.find_by_id(TaskId(task_id))
 
         assert task_after.updated_at is not None
-        assert task_after.updated_at >= created_at_before, (
-            "REGRESSION: updated_at timestamp not synced (Issue #4)"
-        )
+        assert (
+            task_after.updated_at >= created_at_before
+        ), "REGRESSION: updated_at timestamp not synced (Issue #4)"
 
 
 @pytest.mark.asyncio
@@ -324,9 +324,9 @@ class TestIssue5EstimatedEffortBidirectionalSync:
         task = task_repository.find_by_id(TaskId(task_id))
         objective = task.context_data.get("objective", {})
 
-        assert objective.get("estimated_effort") == "3 hours", (
-            "REGRESSION: estimated_effort not synced to context (Issue #5)"
-        )
+        assert (
+            objective.get("estimated_effort") == "3 hours"
+        ), "REGRESSION: estimated_effort not synced to context (Issue #5)"
 
     async def test_estimated_effort_synced_on_update(
         self, task_facade, task_repository
@@ -352,9 +352,9 @@ class TestIssue5EstimatedEffortBidirectionalSync:
         task = task_repository.find_by_id(TaskId(task_id))
         objective = task.context_data.get("objective", {})
 
-        assert objective.get("estimated_effort") == "4 hours", (
-            "REGRESSION: estimated_effort update not synced to context (Issue #5)"
-        )
+        assert (
+            objective.get("estimated_effort") == "4 hours"
+        ), "REGRESSION: estimated_effort update not synced to context (Issue #5)"
 
 
 @pytest.mark.asyncio
@@ -387,9 +387,9 @@ class TestIssue6AssigneesFormatConsistent:
         assignees = metadata.get("assignees", [])
 
         for assignee in assignees:
-            assert assignee.startswith("@"), (
-                f"REGRESSION: Assignee '{assignee}' missing @ prefix (Issue #6)"
-            )
+            assert assignee.startswith(
+                "@"
+            ), f"REGRESSION: Assignee '{assignee}' missing @ prefix (Issue #6)"
 
     async def test_assignees_no_double_prefix(self, task_facade, task_repository):
         """Verify @ prefix not duplicated if already present."""
@@ -410,12 +410,12 @@ class TestIssue6AssigneesFormatConsistent:
         assignees = metadata.get("assignees", [])
 
         for assignee in assignees:
-            assert not assignee.startswith("@@"), (
-                f"REGRESSION: Assignee '{assignee}' has double @ prefix (Issue #6)"
-            )
-            assert assignee.startswith("@"), (
-                f"Assignee '{assignee}' should have single @ prefix"
-            )
+            assert not assignee.startswith(
+                "@@"
+            ), f"REGRESSION: Assignee '{assignee}' has double @ prefix (Issue #6)"
+            assert assignee.startswith(
+                "@"
+            ), f"Assignee '{assignee}' should have single @ prefix"
 
     async def test_updating_assignees_maintains_format(
         self, task_facade, task_repository
@@ -447,9 +447,9 @@ class TestIssue6AssigneesFormatConsistent:
 
         assert len(assignees) > 0, "Assignees should be present"
         for assignee in assignees:
-            assert assignee.startswith("@"), (
-                f"REGRESSION: Updated assignee '{assignee}' missing @ prefix (Issue #6)"
-            )
+            assert assignee.startswith(
+                "@"
+            ), f"REGRESSION: Updated assignee '{assignee}' missing @ prefix (Issue #6)"
 
 
 @pytest.mark.asyncio
@@ -497,36 +497,36 @@ class TestAllIssuesRemainsFixed:
         context_data = task.context_data
 
         # Issue #1: Subtask count synced
-        assert context_data["subtasks"]["total_count"] == 3, (
-            "Issue #1 REGRESSED: Subtask count not synced"
-        )
+        assert (
+            context_data["subtasks"]["total_count"] == 3
+        ), "Issue #1 REGRESSED: Subtask count not synced"
 
         # Issue #2: Status synced
-        assert context_data["metadata"]["status"] == "in_progress", (
-            "Issue #2 REGRESSED: Status not synced"
-        )
+        assert (
+            context_data["metadata"]["status"] == "in_progress"
+        ), "Issue #2 REGRESSED: Status not synced"
 
         # Issue #3: project_id present (mechanism exists)
-        assert "project_id" in context_data.get("metadata", {}), (
-            "Issue #3 REGRESSED: project_id sync mechanism broken"
-        )
+        assert "project_id" in context_data.get(
+            "metadata", {}
+        ), "Issue #3 REGRESSED: project_id sync mechanism broken"
 
         # Issue #4: Timestamps present
-        assert task.created_at is not None, (
-            "Issue #4 REGRESSED: Timestamps not maintained"
-        )
-        assert task.updated_at is not None, (
-            "Issue #4 REGRESSED: updated_at not maintained"
-        )
+        assert (
+            task.created_at is not None
+        ), "Issue #4 REGRESSED: Timestamps not maintained"
+        assert (
+            task.updated_at is not None
+        ), "Issue #4 REGRESSED: updated_at not maintained"
 
         # Issue #5: Estimated effort synced
-        assert context_data["objective"]["estimated_effort"] == "6 hours", (
-            "Issue #5 REGRESSED: estimated_effort not synced"
-        )
+        assert (
+            context_data["objective"]["estimated_effort"] == "6 hours"
+        ), "Issue #5 REGRESSED: estimated_effort not synced"
 
         # Issue #6: Assignees have @ prefix
         assignees = context_data["metadata"]["assignees"]
         for assignee in assignees:
-            assert assignee.startswith("@"), (
-                f"Issue #6 REGRESSED: Assignee '{assignee}' missing @ prefix"
-            )
+            assert assignee.startswith(
+                "@"
+            ), f"Issue #6 REGRESSED: Assignee '{assignee}' missing @ prefix"

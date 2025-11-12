@@ -121,9 +121,9 @@ class TestOrphanedAgentE2EWorkflow:
         # Verify in marketplace
         marketplace_before = instance_repo.find_public_instances(limit=100, offset=0)
         marketplace_ids_before = [inst.id.value for inst in marketplace_before]
-        assert instance_a.id.value in marketplace_ids_before, (
-            "Original agent should be in marketplace"
-        )
+        assert (
+            instance_a.id.value in marketplace_ids_before
+        ), "Original agent should be in marketplace"
         print("  ✓ Agent visible in marketplace")
 
         # STEP 2: User B imports agent
@@ -140,9 +140,9 @@ class TestOrphanedAgentE2EWorkflow:
             share_token, user_b, creator_email="user_a@test.com"
         )
         assert imported_instance is not None, "Import should succeed"
-        assert imported_instance.original_creator_id == user_a, (
-            "Import should reference original creator's user ID"
-        )
+        assert (
+            imported_instance.original_creator_id == user_a
+        ), "Import should reference original creator's user ID"
         print(f"  ✓ User B imported agent: {imported_instance.id.value[:8]}")
 
         # Verify both in marketplace
@@ -152,12 +152,12 @@ class TestOrphanedAgentE2EWorkflow:
         marketplace_ids_after_import = [
             inst.id.value for inst in marketplace_after_import
         ]
-        assert instance_a.id.value in marketplace_ids_after_import, (
-            "Original should still be in marketplace"
-        )
-        assert imported_instance.id.value in marketplace_ids_after_import, (
-            "Active import should be in marketplace"
-        )
+        assert (
+            instance_a.id.value in marketplace_ids_after_import
+        ), "Original should still be in marketplace"
+        assert (
+            imported_instance.id.value in marketplace_ids_after_import
+        ), "Active import should be in marketplace"
         print(
             f"  ✓ Both agents visible in marketplace (count: {len(marketplace_ids_after_import)})"
         )
@@ -176,12 +176,12 @@ class TestOrphanedAgentE2EWorkflow:
             inst.id.value for inst in marketplace_after_delete
         ]
 
-        assert instance_a.id.value not in marketplace_ids_after_delete, (
-            "Deleted original should not be in marketplace"
-        )
-        assert imported_instance.id.value not in marketplace_ids_after_delete, (
-            "Orphaned import should NOT be in marketplace"
-        )
+        assert (
+            instance_a.id.value not in marketplace_ids_after_delete
+        ), "Deleted original should not be in marketplace"
+        assert (
+            imported_instance.id.value not in marketplace_ids_after_delete
+        ), "Orphaned import should NOT be in marketplace"
         print("  ✓ Orphaned import hidden from marketplace")
 
         # STEP 5: User B can still use imported agent
@@ -197,9 +197,9 @@ class TestOrphanedAgentE2EWorkflow:
 
         agent_response = facade.get_agent_for_call(user_b, template.slug)
         assert agent_response["is_orphaned"] is True, "Should flag as orphaned"
-        assert agent_response["metadata"]["orphaned_warning"] is not None, (
-            "Should include warning message"
-        )
+        assert (
+            agent_response["metadata"]["orphaned_warning"] is not None
+        ), "Should include warning message"
         assert (
             "not supported by owner anymore"
             in agent_response["metadata"]["orphaned_warning"]
@@ -271,27 +271,27 @@ class TestOrphanedAgentE2EWorkflow:
         print("\n🔹 Verifying marketplace contents")
 
         # Original public agent should be present
-        assert instance_1.id.value in marketplace_ids, (
-            "Original public agent should be in marketplace"
-        )
+        assert (
+            instance_1.id.value in marketplace_ids
+        ), "Original public agent should be in marketplace"
         print("  ✓ Original agent visible")
 
         # Active import's original should be present
-        assert instance_2.id.value in marketplace_ids, (
-            "Original of active import should be in marketplace"
-        )
+        assert (
+            instance_2.id.value in marketplace_ids
+        ), "Original of active import should be in marketplace"
         print("  ✓ Active import's original visible")
 
         # Active import should be present
-        assert imported_active.id.value in marketplace_ids, (
-            "Active import should be in marketplace"
-        )
+        assert (
+            imported_active.id.value in marketplace_ids
+        ), "Active import should be in marketplace"
         print("  ✓ Active import visible")
 
         # Orphaned import should NOT be present
-        assert imported_orphan.id.value not in marketplace_ids, (
-            "Orphaned import should NOT be in marketplace"
-        )
+        assert (
+            imported_orphan.id.value not in marketplace_ids
+        ), "Orphaned import should NOT be in marketplace"
         print("  ✓ Orphaned import hidden")
 
         # Cleanup

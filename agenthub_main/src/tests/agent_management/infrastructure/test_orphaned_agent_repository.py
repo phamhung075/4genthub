@@ -147,9 +147,9 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Orphaned import NOT in marketplace
-        assert imported_instance.id.value not in public_ids, (
-            "Orphaned import should be excluded from marketplace"
-        )
+        assert (
+            imported_instance.id.value not in public_ids
+        ), "Orphaned import should be excluded from marketplace"
 
         # Cleanup
         if imported_instance.id.value not in public_ids:
@@ -193,12 +193,12 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Both original and import in marketplace
-        assert original_instance.id.value in public_ids, (
-            "Original agent should be in marketplace"
-        )
-        assert imported_instance.id.value in public_ids, (
-            "Active import should be in marketplace"
-        )
+        assert (
+            original_instance.id.value in public_ids
+        ), "Original agent should be in marketplace"
+        assert (
+            imported_instance.id.value in public_ids
+        ), "Active import should be in marketplace"
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -232,9 +232,9 @@ class TestFindPublicInstances:
         public_ids = [inst.id.value for inst in public_instances]
 
         # Assert - Original agent in marketplace
-        assert original_instance.id.value in public_ids, (
-            "Original public agent should be in marketplace"
-        )
+        assert (
+            original_instance.id.value in public_ids
+        ), "Original public agent should be in marketplace"
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -284,9 +284,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(imported_instance.id)
 
         # Assert
-        assert is_orphaned is True, (
-            "Instance with deleted original_creator_id should be orphaned"
-        )
+        assert (
+            is_orphaned is True
+        ), "Instance with deleted original_creator_id should be orphaned"
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -315,9 +315,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(original_instance.id)
 
         # Assert
-        assert is_orphaned is False, (
-            "Original agent (no original_creator_id) should not be orphaned"
-        )
+        assert (
+            is_orphaned is False
+        ), "Original agent (no original_creator_id) should not be orphaned"
 
         # Cleanup
         instance_repo.delete(original_instance.id)
@@ -355,9 +355,9 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(imported_instance.id)
 
         # Assert
-        assert is_orphaned is False, (
-            "Import with existing original should not be orphaned"
-        )
+        assert (
+            is_orphaned is False
+        ), "Import with existing original should not be orphaned"
 
         # Cleanup
         instance_repo.delete(imported_instance.id)
@@ -380,8 +380,8 @@ class TestIsOrphaned:
         is_orphaned = instance_repo.is_orphaned(fake_id)
 
         # Assert
-        assert is_orphaned is False, (
-            "Non-existent instance should return False (defensive)"
-        )
+        assert (
+            is_orphaned is False
+        ), "Non-existent instance should return False (defensive)"
 
         print("✅ test_is_orphaned_returns_false_for_nonexistent_instance passed")

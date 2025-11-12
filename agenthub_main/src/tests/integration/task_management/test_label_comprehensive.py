@@ -155,9 +155,9 @@ class LabelIntegrationTestSuite:
 
         assert len(created_labels) == 3, "Should create 3 labels"
         for label in created_labels:
-            assert label.created_at.tzinfo == UTC, (
-                f"{label.name} must have UTC timestamp"
-            )
+            assert (
+                label.created_at.tzinfo == UTC
+            ), f"{label.name} must have UTC timestamp"
         print(f"  ✓ Created {len(created_labels)} labels with UTC timestamps")
 
     def test_create_label_with_complex_name(self):
@@ -183,9 +183,9 @@ class LabelIntegrationTestSuite:
 
         assert label.created_at >= before_create, "Timestamp should be after test start"
         assert label.created_at <= after_create, "Timestamp should be before test end"
-        assert (after_create - label.created_at).total_seconds() < 5, (
-            "Timestamp should be very recent"
-        )
+        assert (
+            after_create - label.created_at
+        ).total_seconds() < 5, "Timestamp should be very recent"
         print("  ✓ Timestamp precision verified")
 
     # ========================================================================
@@ -359,9 +359,9 @@ class LabelIntegrationTestSuite:
             )
             assert False, "Should have raised NotFoundError"
         except Exception as e:
-            assert "not found" in str(e).lower() or "Task" in str(e), (
-                "Error should mention task not found"
-            )
+            assert "not found" in str(e).lower() or "Task" in str(
+                e
+            ), "Error should mention task not found"
             print("  ✓ Assignment to nonexistent task correctly rejected")
 
     def test_get_nonexistent_label(self):

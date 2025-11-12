@@ -28,9 +28,9 @@ def assert_task_structure(
     fields_to_check = required_fields or default_required
 
     # Check that it's a dictionary
-    assert isinstance(task_data, dict), (
-        f"Task data must be a dictionary, got {type(task_data)}"
-    )
+    assert isinstance(
+        task_data, dict
+    ), f"Task data must be a dictionary, got {type(task_data)}"
 
     # Check required fields are present
     for field in fields_to_check:
@@ -55,15 +55,15 @@ def assert_task_structure(
             "done",
             "cancelled",
         ]
-        assert task_data["status"] in valid_statuses, (
-            f"Invalid task status: {task_data['status']}"
-        )
+        assert (
+            task_data["status"] in valid_statuses
+        ), f"Invalid task status: {task_data['status']}"
 
     if "priority" in task_data:
         valid_priorities = ["low", "medium", "high", "urgent", "critical"]
-        assert task_data["priority"] in valid_priorities, (
-            f"Invalid task priority: {task_data['priority']}"
-        )
+        assert (
+            task_data["priority"] in valid_priorities
+        ), f"Invalid task priority: {task_data['priority']}"
 
 
 def assert_context_inheritance(
@@ -79,9 +79,9 @@ def assert_context_inheritance(
     Raises:
         AssertionError: If inheritance is incorrect
     """
-    assert isinstance(context_data, dict), (
-        f"Context data must be a dictionary, got {type(context_data)}"
-    )
+    assert isinstance(
+        context_data, dict
+    ), f"Context data must be a dictionary, got {type(context_data)}"
 
     # Check that inheritance information is present
     assert "inheritance_chain" in context_data, "Context data missing inheritance_chain"
@@ -90,16 +90,16 @@ def assert_context_inheritance(
     assert isinstance(actual_chain, list), "Inheritance chain must be a list"
 
     # Validate inheritance chain matches expected
-    assert len(actual_chain) == len(expected_inheritance_chain), (
-        f"Inheritance chain length mismatch. Expected {len(expected_inheritance_chain)}, got {len(actual_chain)}"
-    )
+    assert (
+        len(actual_chain) == len(expected_inheritance_chain)
+    ), f"Inheritance chain length mismatch. Expected {len(expected_inheritance_chain)}, got {len(actual_chain)}"
 
     for i, (expected, actual) in enumerate(
         zip(expected_inheritance_chain, actual_chain)
     ):
-        assert expected == actual, (
-            f"Inheritance chain mismatch at position {i}: expected {expected}, got {actual}"
-        )
+        assert (
+            expected == actual
+        ), f"Inheritance chain mismatch at position {i}: expected {expected}, got {actual}"
 
     # Check that inherited data is properly merged
     if "inherited_data" in context_data:
@@ -118,9 +118,9 @@ def assert_domain_event_structure(event_data: dict[str, Any], event_type: str) -
     Raises:
         AssertionError: If event structure is invalid
     """
-    assert isinstance(event_data, dict), (
-        f"Event data must be a dictionary, got {type(event_data)}"
-    )
+    assert isinstance(
+        event_data, dict
+    ), f"Event data must be a dictionary, got {type(event_data)}"
 
     # Check required event fields
     required_fields = ["event_type", "event_id", "occurred_at"]
@@ -128,9 +128,9 @@ def assert_domain_event_structure(event_data: dict[str, Any], event_type: str) -
         assert field in event_data, f"Event missing required field: {field}"
 
     # Validate event type
-    assert event_data["event_type"] == event_type, (
-        f"Event type mismatch: expected {event_type}, got {event_data['event_type']}"
-    )
+    assert (
+        event_data["event_type"] == event_type
+    ), f"Event type mismatch: expected {event_type}, got {event_data['event_type']}"
 
     # Validate event ID format (should be UUID)
     event_id = event_data["event_id"]
@@ -159,9 +159,9 @@ def assert_mcp_tool_response(
     Raises:
         AssertionError: If response structure is invalid
     """
-    assert isinstance(response, dict), (
-        f"MCP response must be a dictionary, got {type(response)}"
-    )
+    assert isinstance(
+        response, dict
+    ), f"MCP response must be a dictionary, got {type(response)}"
 
     # Check for success field
     assert "success" in response, "MCP response missing 'success' field"
@@ -169,19 +169,19 @@ def assert_mcp_tool_response(
 
     # Validate success/failure structure
     if expected_success:
-        assert response["success"] is True, (
-            f"Expected successful response, got: {response}"
-        )
+        assert (
+            response["success"] is True
+        ), f"Expected successful response, got: {response}"
 
         # Successful responses should have result data
         if "error" in response:
-            assert False, (
-                f"Successful response should not contain error: {response['error']}"
-            )
+            assert (
+                False
+            ), f"Successful response should not contain error: {response['error']}"
     else:
-        assert response["success"] is False, (
-            f"Expected failed response, got: {response}"
-        )
+        assert (
+            response["success"] is False
+        ), f"Expected failed response, got: {response}"
 
         # Failed responses should have error information
         assert "error" in response, "Failed response missing 'error' field"
@@ -204,9 +204,9 @@ def assert_database_foreign_key_constraint(
         AssertionError: If foreign key constraint is not enforced
     """
     assert isinstance(test_data, dict), "Test data must be a dictionary"
-    assert foreign_key_field in test_data, (
-        f"Test data missing foreign key field: {foreign_key_field}"
-    )
+    assert (
+        foreign_key_field in test_data
+    ), f"Test data missing foreign key field: {foreign_key_field}"
 
     # This helper documents the expectation that foreign key constraints should be enforced
     # The actual constraint testing should be done in the calling test
@@ -247,38 +247,38 @@ def assert_pagination_structure(
 
     # Validate field types and values
     assert isinstance(pagination_result["items"], list), "'items' must be a list"
-    assert isinstance(pagination_result["total_count"], int), (
-        "'total_count' must be an integer"
-    )
+    assert isinstance(
+        pagination_result["total_count"], int
+    ), "'total_count' must be an integer"
     assert isinstance(pagination_result["page"], int), "'page' must be an integer"
-    assert isinstance(pagination_result["page_size"], int), (
-        "'page_size' must be an integer"
-    )
-    assert isinstance(pagination_result["total_pages"], int), (
-        "'total_pages' must be an integer"
-    )
-    assert isinstance(pagination_result["has_next"], bool), (
-        "'has_next' must be a boolean"
-    )
-    assert isinstance(pagination_result["has_previous"], bool), (
-        "'has_previous' must be a boolean"
-    )
+    assert isinstance(
+        pagination_result["page_size"], int
+    ), "'page_size' must be an integer"
+    assert isinstance(
+        pagination_result["total_pages"], int
+    ), "'total_pages' must be an integer"
+    assert isinstance(
+        pagination_result["has_next"], bool
+    ), "'has_next' must be a boolean"
+    assert isinstance(
+        pagination_result["has_previous"], bool
+    ), "'has_previous' must be a boolean"
 
     # Validate pagination logic
-    assert pagination_result["page"] == expected_page, (
-        f"Page mismatch: expected {expected_page}, got {pagination_result['page']}"
-    )
-    assert pagination_result["page_size"] == expected_page_size, (
-        f"Page size mismatch: expected {expected_page_size}, got {pagination_result['page_size']}"
-    )
-    assert pagination_result["total_count"] >= min_total_count, (
-        f"Total count too low: expected >= {min_total_count}, got {pagination_result['total_count']}"
-    )
+    assert (
+        pagination_result["page"] == expected_page
+    ), f"Page mismatch: expected {expected_page}, got {pagination_result['page']}"
+    assert (
+        pagination_result["page_size"] == expected_page_size
+    ), f"Page size mismatch: expected {expected_page_size}, got {pagination_result['page_size']}"
+    assert (
+        pagination_result["total_count"] >= min_total_count
+    ), f"Total count too low: expected >= {min_total_count}, got {pagination_result['total_count']}"
 
     # Validate items count doesn't exceed page size
-    assert len(pagination_result["items"]) <= expected_page_size, (
-        f"Items count exceeds page size: {len(pagination_result['items'])} > {expected_page_size}"
-    )
+    assert (
+        len(pagination_result["items"]) <= expected_page_size
+    ), f"Items count exceeds page size: {len(pagination_result['items'])} > {expected_page_size}"
 
 
 def assert_test_isolation(test_id: str, file_paths: list[str]) -> None:
@@ -308,6 +308,6 @@ def assert_test_isolation(test_id: str, file_paths: list[str]) -> None:
             or file_path.endswith(".test.db")
         )
 
-        assert is_test_file, (
-            f"File path does not appear to be test-isolated: {file_path}"
-        )
+        assert (
+            is_test_file
+        ), f"File path does not appear to be test-isolated: {file_path}"

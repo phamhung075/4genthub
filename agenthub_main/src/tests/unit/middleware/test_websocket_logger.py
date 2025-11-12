@@ -109,9 +109,9 @@ class TestWebSocketMessageValidator:
 
         errors = WebSocketMessageValidator.validate_message(message)
 
-        assert len(errors) >= 4, (
-            f"Should detect at least 4 type errors, got {len(errors)}: {errors}"
-        )
+        assert (
+            len(errors) >= 4
+        ), f"Should detect at least 4 type errors, got {len(errors)}: {errors}"
 
     def test_validate_subtask_event_complete(self):
         """Test validation of complete subtask event"""
@@ -132,9 +132,9 @@ class TestWebSocketMessageValidator:
 
         errors = WebSocketMessageValidator.validate_message(message)
 
-        assert len(errors) == 0, (
-            f"Valid subtask message should have no errors: {errors}"
-        )
+        assert (
+            len(errors) == 0
+        ), f"Valid subtask message should have no errors: {errors}"
 
     def test_validate_subtask_event_missing_parent(self):
         """Test validation detects missing parent_task_id in subtask events"""

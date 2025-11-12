@@ -44,9 +44,9 @@ class TestPytestSessionfinishCleanup:
                 pytest_sessionfinish(mock_session, exitstatus=0)
 
                 # Verify cleanup was called
-                assert mock_cleanup.called, (
-                    "cleanup_test_data_files_only should be called"
-                )
+                assert (
+                    mock_cleanup.called
+                ), "cleanup_test_data_files_only should be called"
 
     def test_sessionfinish_temp_directory_cleanup_success(self):
         """Test successful temporary directory cleanup during session finish."""
@@ -86,9 +86,9 @@ class TestPytestSessionfinishCleanup:
                     pytest_sessionfinish(mock_session, exitstatus=0)
 
                     # Verify rmtree called for both directories
-                    assert mock_rmtree.call_count == 2, (
-                        "Should cleanup 2 temp directories"
-                    )
+                    assert (
+                        mock_rmtree.call_count == 2
+                    ), "Should cleanup 2 temp directories"
 
     def test_sessionfinish_temp_directory_cleanup_error_handling(self):
         """Test error handling when temp directory cleanup fails (line 1038)."""
@@ -133,9 +133,9 @@ class TestPytestSessionfinishCleanup:
                             "Could not remove temp dir" in str(call)
                             for call in print_calls
                         )
-                        assert error_printed, (
-                            "Should print error message for cleanup failure"
-                        )
+                        assert (
+                            error_printed
+                        ), "Should print error message for cleanup failure"
 
 
 class TestPytestConfigureMarkers:
@@ -265,9 +265,7 @@ class TestPytestConfigureMarkers:
                 marker_name in str(call) and marker_desc_fragment in str(call)
                 for call in all_calls
             )
-            assert marker_found, (
-                f"Marker '{marker_name}' with description fragment '{marker_desc_fragment}' should be registered"
-            )
+            assert marker_found, f"Marker '{marker_name}' with description fragment '{marker_desc_fragment}' should be registered"
 
 
 class TestDatabaseInitializationEdgeCases:
@@ -295,18 +293,18 @@ class TestDatabaseInitializationEdgeCases:
                     _initialize_test_database_with_basic_data()
 
                     # Verify text() was called (SQL statements were created)
-                    assert mock_text.called, (
-                        "SQL text() should be called for INSERT statements"
-                    )
+                    assert (
+                        mock_text.called
+                    ), "SQL text() should be called for INSERT statements"
 
                     # Check that git branch INSERT was attempted
                     sql_calls = [str(call) for call in mock_text.call_args_list]
                     git_branch_insert = any(
                         "project_git_branchs" in str(call) for call in sql_calls
                     )
-                    assert git_branch_insert, (
-                        "Git branch INSERT statement should be executed"
-                    )
+                    assert (
+                        git_branch_insert
+                    ), "Git branch INSERT statement should be executed"
 
     def test_initialize_database_git_branch_description_field(self):
         """Test git branch description field is included (line 1178)."""
@@ -341,15 +339,15 @@ class TestDatabaseInitializationEdgeCases:
                 git_branch_params = [
                     p for p in execute_params if "name" in p and p.get("name") == "main"
                 ]
-                assert len(git_branch_params) > 0, (
-                    "Git branch parameters should include description field"
-                )
+                assert (
+                    len(git_branch_params) > 0
+                ), "Git branch parameters should include description field"
 
                 # Verify description value for git branch (not project)
                 branch_param = git_branch_params[0]
-                assert branch_param["description"] == "Main branch for testing", (
-                    "Git branch description should be 'Main branch for testing'"
-                )
+                assert (
+                    branch_param["description"] == "Main branch for testing"
+                ), "Git branch description should be 'Main branch for testing'"
 
     def test_initialize_database_error_handling_rollback(self):
         """Test database initialization error handling with rollback."""
@@ -375,9 +373,9 @@ class TestDatabaseInitializationEdgeCases:
                 _initialize_test_database_with_basic_data()
 
                 # Verify rollback was called
-                assert mock_session.rollback.called, (
-                    "Session rollback should be called on error"
-                )
+                assert (
+                    mock_session.rollback.called
+                ), "Session rollback should be called on error"
 
                 # Verify error was printed
                 print_calls = [str(call) for call in mock_print.call_args_list]
@@ -408,12 +406,12 @@ class TestPostgreSQLSessionFixture:
         # Verify fixture has proper error handling
         assert "ImportError" in source, "Fixture should handle ImportError"
         assert "pytest.skip" in source, "Fixture should skip test on import error"
-        assert "get_test_database_config" in source, (
-            "Fixture should try to get test config"
-        )
-        assert "install_missing_dependencies" in source, (
-            "Fixture should try to install dependencies"
-        )
+        assert (
+            "get_test_database_config" in source
+        ), "Fixture should try to get test config"
+        assert (
+            "install_missing_dependencies" in source
+        ), "Fixture should try to install dependencies"
 
     def test_postgresql_session_fixture_general_error_handling(self):
         """Test PostgreSQL session fixture handles general errors with pytest.fail."""
@@ -426,9 +424,9 @@ class TestPostgreSQLSessionFixture:
         # Verify fixture has general exception handling
         assert "except Exception" in source, "Fixture should handle general exceptions"
         assert "pytest.fail" in source, "Fixture should fail test on general error"
-        assert "failed" in source.lower(), (
-            "Fixture should include 'failed' in error message"
-        )
+        assert (
+            "failed" in source.lower()
+        ), "Fixture should include 'failed' in error message"
 
     def test_postgresql_session_fixture_cleanup_flow(self):
         """Test PostgreSQL session fixture has proper cleanup in finally/teardown."""
@@ -439,16 +437,16 @@ class TestPostgreSQLSessionFixture:
         source = inspect.getsource(shared_test_db)
 
         # Verify fixture has proper cleanup
-        assert "restore_environment" in source, (
-            "Fixture should call restore_environment for cleanup"
-        )
+        assert (
+            "restore_environment" in source
+        ), "Fixture should call restore_environment for cleanup"
         assert "yield" in source, "Fixture should yield config to test"
-        assert "print" in source and "Creating PostgreSQL" in source, (
-            "Fixture should print setup message"
-        )
-        assert "print" in source and "Cleaning up PostgreSQL" in source, (
-            "Fixture should print cleanup message"
-        )
+        assert (
+            "print" in source and "Creating PostgreSQL" in source
+        ), "Fixture should print setup message"
+        assert (
+            "print" in source and "Cleaning up PostgreSQL" in source
+        ), "Fixture should print cleanup message"
 
     def test_postgresql_session_fixture_lines_1526_to_1532_structure(self):
         """Test specific lines 1526-1532 structure matches requirements."""
@@ -464,18 +462,18 @@ class TestPostgreSQLSessionFixture:
         relevant_section = "\n".join(lines)
 
         # Verify key components are present (lines 1526-1532 area)
-        assert "test_config = get_test_database_config()" in relevant_section, (
-            "Line 1527 should get test database config"
-        )
-        assert "install_missing_dependencies()" in relevant_section, (
-            "Line 1524 should call install_missing_dependencies"
-        )
-        assert "yield test_config" in relevant_section, (
-            "Line 1531 should yield test config"
-        )
-        assert "test_config.restore_environment()" in relevant_section, (
-            "Line 1534 should restore environment"
-        )
+        assert (
+            "test_config = get_test_database_config()" in relevant_section
+        ), "Line 1527 should get test database config"
+        assert (
+            "install_missing_dependencies()" in relevant_section
+        ), "Line 1524 should call install_missing_dependencies"
+        assert (
+            "yield test_config" in relevant_section
+        ), "Line 1531 should yield test config"
+        assert (
+            "test_config.restore_environment()" in relevant_section
+        ), "Line 1534 should restore environment"
 
 
 class TestHelperMethodComprehensiveCoverage:
@@ -499,9 +497,9 @@ class TestHelperMethodComprehensiveCoverage:
 
             # Verify only matching directories found
             assert len(matches) == 2, "Should find exactly 2 matching directories"
-            assert all("agenthub_test_" in str(m) for m in matches), (
-                "All matches should contain 'agenthub_test_' prefix"
-            )
+            assert all(
+                "agenthub_test_" in str(m) for m in matches
+            ), "All matches should contain 'agenthub_test_' prefix"
 
     def test_shutil_rmtree_directory_removal(self):
         """Test shutil.rmtree successfully removes directories."""
@@ -542,6 +540,6 @@ class TestHelperMethodComprehensiveCoverage:
         assert len(call_sequence) >= 13, "Should register at least 13 markers"
 
         # Verify all calls use "markers" as first argument
-        assert all(call[0] == "markers" for call in call_sequence), (
-            "All marker registrations should use 'markers' as first argument"
-        )
+        assert all(
+            call[0] == "markers" for call in call_sequence
+        ), "All marker registrations should use 'markers' as first argument"

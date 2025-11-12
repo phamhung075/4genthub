@@ -490,9 +490,9 @@ class TestRealKeycloakIntegration:
         """Test authentication against real Keycloak instance"""
         token = await self.auth.authenticate()
 
-        assert token is not None, (
-            "Authentication should succeed with proper configuration"
-        )
+        assert (
+            token is not None
+        ), "Authentication should succeed with proper configuration"
         assert token.access_token, "Should receive access token"
         assert not token.is_expired, "Token should not be expired"
 
