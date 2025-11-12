@@ -181,7 +181,7 @@ addopts = [
 # Parallel execution settings (uncomment to enable by default)
 # addopts = [
 #     "--tb=short",
-#     "--strict-markers", 
+#     "--strict-markers",
 #     "--strict-config",
 #     "-ra",
 #     "--durations=10",
@@ -256,10 +256,17 @@ output = "coverage.xml"
 # allow imports not at the top of the file
 "src/fastmcp/__init__.py" = ["E402"]
 
-# Scripts: Allow sys.path manipulation before imports
-"scripts/**/*.py" = ["E402"]
+# Scripts: Allow sys.path manipulation before imports and bare except for error handling
+"scripts/**/*.py" = ["E402", "E722"]
 "init_database.py" = ["E402"]
 "utils/**/*.py" = ["E402"]
+
+# Claude Code hooks: Allow bare except for error handling and unused imports (anywhere in tree)
+"**/.claude/hooks/**/*.py" = ["E722", "F401", "E402"]
+# Docker menu: Allow unused imports (anywhere in tree)
+"**/docker-system/**/*.py" = ["F401"]
+# Root-level scripts: E402 already allowed above
+"**/scripts/*.py" = ["E402"]
 
 # Templates: Allow undefined placeholders
 "scripts/test_templates/*.py" = ["F821"]
@@ -272,4 +279,3 @@ output = "coverage.xml"
 
 # Database scripts: Allow star imports
 "scripts/database/create_missing_tables.py" = ["F403"]
-
