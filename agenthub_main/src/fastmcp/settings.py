@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field, model_validator
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo, ModelPrivateAttr
 from pydantic_settings import (
     BaseSettings,
+    DotEnvSettingsSource,
     EnvSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
@@ -53,71 +54,73 @@ class ExtendedSettingsConfigDict(SettingsConfigDict, total=False):
     env_prefixes: list[str] | None
 
 
+class DynamicDotEnvSettingsSource(DotEnvSettingsSource):
+    """
+    A DotEnvSettingsSource that respects the instance-level _env_file attribute.
+    This allows tests to modify Settings._env_file and have it take effect.
+    """
+
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        env_file: str | Path | None = None,
+        env_file_encoding: str | None = None,
+        case_sensitive: bool | None = None,
+        env_prefix: str | None = None,
+        env_nested_delimiter: str | None = None,
+    ):
+        # Use the current value of _env_file from the class
+        # Access via __dict__ to get the raw value
+        if "_env_file" in settings_cls.__dict__:
+            env_file_raw = settings_cls.__dict__["_env_file"]
+            # Unwrap ModelPrivateAttr if needed
+            if isinstance(env_file_raw, ModelPrivateAttr):
+                env_file = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+            else:
+                env_file = env_file_raw
+
+        super().__init__(
+            settings_cls,
+            env_file=env_file,
+            env_file_encoding=env_file_encoding,
+            case_sensitive=case_sensitive,
+            env_prefix=env_prefix,
+            env_nested_delimiter=env_nested_delimiter,
+        )
+
+
 class Settings(BaseSettings):
     """FastMCP settings."""
 
-    # Default model_config (env_file will be updated in __init__)
+    # Find project root and determine which env file to use
+    _project_root = Path(__file__).parent.parent.parent.parent
+    _env_dev_path = _project_root / ".env.dev"
+    _env_path = _project_root / ".env"
+
+    # Use .env.dev if it exists, otherwise .env
+    _env_file = str(_env_dev_path) if _env_dev_path.exists() else str(_env_path)
+
+    # Log which file is being used (only if .env.dev exists)
+    if _env_dev_path.exists():
+        logger.info("Loading configuration from .env.dev (development mode)")
+
+    # Class-level model_config for Pydantic's internal use
+    # Note: env_file is determined dynamically by DynamicDotEnvSettingsSource
     model_config = ExtendedSettingsConfigDict(
         env_prefixes=["FASTMCP_", "FASTMCP_SERVER_"],
-        env_file=".env",  # Will be updated in __init__
+        env_file=_env_file,  # Default, overridden by DynamicDotEnvSettingsSource
         extra="ignore",
         env_nested_delimiter="__",
         nested_model_default_partial_update=True,
     )
 
-    def __init__(self, **data):
+    @property
+    def effective_env_file(self) -> str:
         """
-        Initialize Settings with dynamic env file path calculation.
-
-        This allows the env file paths to be recalculated based on current
-        class attributes, enabling testability with mocked project roots.
+        Return the actual env_file being used.
+        This respects dynamic changes to _env_file for testing.
         """
-        # Check if env_file was explicitly set (for testing)
-        explicit_env_file = self.__class__.model_config.get("env_file")
-        skip_auto_detect = explicit_env_file and explicit_env_file not in [".env", ""]
-
-        if not skip_auto_detect:
-            # Get class-level project root (defaults to actual project root)
-            project_root = getattr(type(self), "_project_root_value", None)
-            if project_root is None:
-                # Calculate default project root on first access
-                project_root = Path(__file__).parent.parent.parent.parent
-                setattr(type(self), "_project_root_value", project_root)
-
-            # Calculate env file paths
-            env_dev_path = project_root / ".env.dev"
-            env_path = project_root / ".env"
-
-            # Determine which env file to use
-            env_file = str(env_dev_path) if env_dev_path.exists() else str(env_path)
-
-            # Store calculated paths as class attributes
-            setattr(type(self), "_env_dev_path_value", env_dev_path)
-            setattr(type(self), "_env_path_value", env_path)
-            setattr(type(self), "_env_file_value", env_file)
-
-            # Update model_config with the determined env file
-            self.__class__.model_config["env_file"] = env_file
-
-            # Log which file is being used (only if .env.dev exists)
-            if env_dev_path.exists():
-                logger.info("Loading configuration from .env.dev (development mode)")
-
-        # Call parent __init__
-        super().__init__(**data)
-
-    # Class-level defaults (for backward compatibility and testing)
-    @classmethod
-    def _get_project_root(cls) -> Path:
-        """Get the project root, allowing override for testing."""
-        return getattr(cls, "_project_root_value", Path(__file__).parent.parent.parent.parent)
-
-    @classmethod
-    def _set_project_root(cls, path: Path) -> None:
-        """Set the project root for testing."""
-        setattr(cls, "_project_root_value", path)
-        # Reset model_config env_file to trigger recalculation
-        cls.model_config["env_file"] = ".env"
+        return self.__class__._env_file
 
     @classmethod
     def settings_customise_sources(
@@ -128,12 +131,26 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        # can remove this classmethod after deprecated FASTMCP_SERVER_ prefix is
-        # removed
+        # Use custom sources that respect dynamic env_file and env_prefixes
+        # Access _env_file from __dict__ and unwrap if needed
+        env_file_raw = settings_cls.__dict__.get("_env_file", None)
+        if isinstance(env_file_raw, ModelPrivateAttr):
+            env_file_value = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+        else:
+            env_file_value = env_file_raw
+
         return (
             init_settings,
             ExtendedEnvSettingsSource(settings_cls),
-            dotenv_settings,
+            DynamicDotEnvSettingsSource(
+                settings_cls,
+                env_file=env_file_value,
+                env_file_encoding=settings_cls.model_config.get("env_file_encoding"),
+                case_sensitive=settings_cls.model_config.get("case_sensitive"),
+                env_nested_delimiter=settings_cls.model_config.get(
+                    "env_nested_delimiter"
+                ),
+            ),
             file_secret_settings,
         )
 
