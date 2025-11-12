@@ -479,8 +479,9 @@ sys.modules["fastapi.security"] = mock_fastapi_security
 
 
 # Mock FastAPI TestClient for testing
-class _MockFastAPIClient:
-    """Mock FastAPI TestClient for testing (underscore prefix prevents pytest collection)."""
+# Note: Using double underscore prefix to prevent pytest from attempting to collect as test
+class __MockFastAPIClient:
+    """Mock FastAPI TestClient for testing (double underscore prefix prevents pytest collection)."""
 
     def __init__(self, app):
         self.app = app
@@ -1012,7 +1013,7 @@ mock_fastapi.security = mock_fastapi_security
 
 # Add testclient module
 mock_fastapi.testclient = type(sys)("fastapi.testclient")
-mock_fastapi.testclient.TestClient = _MockFastAPIClient
+mock_fastapi.testclient.TestClient = __MockFastAPIClient
 
 
 # Add middleware module for CORS support
