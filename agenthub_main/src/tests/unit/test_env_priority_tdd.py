@@ -347,8 +347,8 @@ class TestEnvPriorityImplementation:
         # Create settings instance
         settings = Settings()
 
-        # Get the env file being used
-        env_file = settings.model_config.get("env_file")
+        # Get the env file being used (check both model_config and effective_env_file property)
+        env_file = getattr(settings, "effective_env_file", None) or settings.model_config.get("env_file")
 
         # With both files present, should use .env.dev
         env_dev_file = mock_project_root_with_both_env / ".env.dev"
