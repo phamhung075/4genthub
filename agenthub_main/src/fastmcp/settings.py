@@ -75,7 +75,9 @@ class DynamicDotEnvSettingsSource(DotEnvSettingsSource):
             env_file_raw = settings_cls.__dict__["_env_file"]
             # Unwrap ModelPrivateAttr if needed
             if isinstance(env_file_raw, ModelPrivateAttr):
-                env_file = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+                env_file = (
+                    env_file_raw.default if hasattr(env_file_raw, "default") else None
+                )
             else:
                 env_file = env_file_raw
 
@@ -123,6 +125,54 @@ class Settings(BaseSettings):
         return self.__class__._env_file
 
     @classmethod
+    def _get_project_root(cls) -> Path:
+        """
+        Get current project root for testing purposes.
+
+        Returns:
+            Path: The current project root directory
+        """
+        # Access via __dict__ to get the raw value, then unwrap if needed
+        project_root_raw = cls.__dict__.get("_project_root")
+        if isinstance(project_root_raw, ModelPrivateAttr):
+            return (
+                project_root_raw.default
+                if hasattr(project_root_raw, "default")
+                else Path(__file__).parent.parent.parent.parent
+            )
+        return (
+            project_root_raw
+            if project_root_raw is not None
+            else Path(__file__).parent.parent.parent.parent
+        )
+
+    @classmethod
+    def _set_project_root(cls, new_root: Path) -> None:
+        """
+        Set project root and recalculate env file paths.
+
+        This method is primarily for testing purposes, allowing tests to mock
+        the project root and have all path-dependent attributes recalculated.
+
+        Args:
+            new_root: The new project root directory path
+        """
+        # Unwrap if ModelPrivateAttr was passed in
+        if isinstance(new_root, ModelPrivateAttr):
+            new_root = (
+                new_root.default
+                if hasattr(new_root, "default")
+                else Path(__file__).parent.parent.parent.parent
+            )
+
+        cls._project_root = new_root
+        cls._env_dev_path = new_root / ".env.dev"
+        cls._env_path = new_root / ".env"
+        cls._env_file = (
+            str(cls._env_dev_path) if cls._env_dev_path.exists() else str(cls._env_path)
+        )
+
+    @classmethod
     def settings_customise_sources(
         cls,
         settings_cls: type[BaseSettings],
@@ -135,7 +185,9 @@ class Settings(BaseSettings):
         # Access _env_file from __dict__ and unwrap if needed
         env_file_raw = settings_cls.__dict__.get("_env_file", None)
         if isinstance(env_file_raw, ModelPrivateAttr):
-            env_file_value = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+            env_file_value = (
+                env_file_raw.default if hasattr(env_file_raw, "default") else None
+            )
         else:
             env_file_value = env_file_raw
 
