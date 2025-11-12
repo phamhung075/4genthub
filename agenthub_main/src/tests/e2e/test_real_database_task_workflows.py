@@ -87,9 +87,9 @@ def project_with_branch(shared_test_db, user_id, mock_auth):
         user_id=user_id,
     )
 
-    assert project_result.get("success") is True, (
-        f"Project creation failed: {project_result}"
-    )
+    assert (
+        project_result.get("success") is True
+    ), f"Project creation failed: {project_result}"
     project_id = project_result["data"]["project"]["id"]
 
     # Create git branch
@@ -102,9 +102,9 @@ def project_with_branch(shared_test_db, user_id, mock_auth):
         user_id=user_id,
     )
 
-    assert branch_result.get("success") is True, (
-        f"Branch creation failed: {branch_result}"
-    )
+    assert (
+        branch_result.get("success") is True
+    ), f"Branch creation failed: {branch_result}"
     git_branch_id = branch_result["data"]["git_branch"]["id"]
 
     yield project_id, git_branch_id
@@ -204,9 +204,9 @@ class TestCompleteTaskWorkflowsRealDB:
 
         # Verify count after creation
         after_create = task_facade.get_task(task_id)["task"]
-        assert after_create["subtask_count"] == 5, (
-            f"Expected 5 subtasks, got {after_create['subtask_count']}"
-        )
+        assert (
+            after_create["subtask_count"] == 5
+        ), f"Expected 5 subtasks, got {after_create['subtask_count']}"
         assert len(after_create["subtasks"]) == 5
 
         # Complete 3 subtasks
@@ -224,9 +224,9 @@ class TestCompleteTaskWorkflowsRealDB:
         # Verify completed count
         after_complete = task_facade.get_task(task_id)["task"]
         assert after_complete["subtask_count"] == 5
-        assert after_complete["completed_subtasks"] == 3, (
-            f"Expected 3 completed, got {after_complete['completed_subtasks']}"
-        )
+        assert (
+            after_complete["completed_subtasks"] == 3
+        ), f"Expected 3 completed, got {after_complete['completed_subtasks']}"
 
         # Delete 2 subtasks (not the completed ones)
         for i in range(3, 5):
@@ -237,12 +237,12 @@ class TestCompleteTaskWorkflowsRealDB:
 
         # Verify counts after deletion
         final = task_facade.get_task(task_id)["task"]
-        assert final["subtask_count"] == 3, (
-            f"Expected 3 remaining subtasks, got {final['subtask_count']}"
-        )
-        assert final["completed_subtasks"] == 3, (
-            "Completed count should still be 3 (we didn't delete completed ones)"
-        )
+        assert (
+            final["subtask_count"] == 3
+        ), f"Expected 3 remaining subtasks, got {final['subtask_count']}"
+        assert (
+            final["completed_subtasks"] == 3
+        ), "Completed count should still be 3 (we didn't delete completed ones)"
 
     def test_assignees_field_always_returns_array_never_string(
         self, task_facade, git_branch_id
@@ -260,9 +260,9 @@ class TestCompleteTaskWorkflowsRealDB:
                 assignees="@coding-agent",
             )
         )
-        assert isinstance(task1["task"]["assignees"], list), (
-            "Single assignee should return as array"
-        )
+        assert isinstance(
+            task1["task"]["assignees"], list
+        ), "Single assignee should return as array"
         assert (
             len(task1["task"]["assignees"]) >= 0
         )  # Could be 0 or 1 depending on parsing
@@ -288,9 +288,9 @@ class TestCompleteTaskWorkflowsRealDB:
                 assignees=[],
             )
         )
-        assert isinstance(task3["task"]["assignees"], list), (
-            "Empty assignees should be array, not null"
-        )
+        assert isinstance(
+            task3["task"]["assignees"], list
+        ), "Empty assignees should be array, not null"
         assert task3["task"]["assignees"] == [] or len(task3["task"]["assignees"]) == 0
 
     def test_subtasks_array_never_null_even_with_no_subtasks(
@@ -310,9 +310,9 @@ class TestCompleteTaskWorkflowsRealDB:
 
         # Verify subtasks is array (empty, but not null)
         assert "subtasks" in task["task"], "subtasks field missing"
-        assert isinstance(task["task"]["subtasks"], list), (
-            f"subtasks should be array, got {type(task['task'].get('subtasks'))}"
-        )
+        assert isinstance(
+            task["task"]["subtasks"], list
+        ), f"subtasks should be array, got {type(task['task'].get('subtasks'))}"
         assert task["task"]["subtasks"] == []
 
     def test_progress_percentage_updates_when_subtasks_complete(
@@ -357,9 +357,9 @@ class TestCompleteTaskWorkflowsRealDB:
         progress = task_50.get("progress_percentage", 0)
 
         # Should be around 50% (allow some tolerance)
-        assert 40 <= progress <= 60, (
-            f"Expected ~50% progress (2/4 subtasks), got {progress}%"
-        )
+        assert (
+            40 <= progress <= 60
+        ), f"Expected ~50% progress (2/4 subtasks), got {progress}%"
 
     def test_timestamps_always_present_and_valid(self, task_facade, git_branch_id):
         """
@@ -414,9 +414,9 @@ class TestCompleteTaskWorkflowsRealDB:
 
         # Should be dict, not None
         assert context is not None, "context_data should not be null"
-        assert isinstance(context, dict), (
-            f"context_data should be object/dict, got {type(context)}"
-        )
+        assert isinstance(
+            context, dict
+        ), f"context_data should be object/dict, got {type(context)}"
 
 
 @pytest.mark.e2e
@@ -456,9 +456,9 @@ class TestConcurrentOperations:
         final = task_facade.get_task(task_id)["task"]
 
         # Count should match number successfully created
-        assert final["subtask_count"] == created_count, (
-            f"Expected {created_count} subtasks, got {final['subtask_count']}"
-        )
+        assert (
+            final["subtask_count"] == created_count
+        ), f"Expected {created_count} subtasks, got {final['subtask_count']}"
         assert len(final["subtasks"]) == created_count
 
     def test_rapid_add_and_delete_maintains_consistency(
@@ -499,6 +499,6 @@ class TestConcurrentOperations:
 
             # Verify count is back to 0
             check2 = task_facade.get_task(task_id)["task"]
-            assert check2["subtask_count"] == 0, (
-                f"Cycle {cycle}: Expected 0 after deletion, got {check2['subtask_count']}"
-            )
+            assert (
+                check2["subtask_count"] == 0
+            ), f"Cycle {cycle}: Expected 0 after deletion, got {check2['subtask_count']}"

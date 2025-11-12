@@ -263,33 +263,33 @@ class TestGitBranchFilteringIntegration:
             )
 
         # Should return exactly 2 tasks for branch A
-        assert len(returned_tasks) == 2, (
-            f"Expected 2 tasks for branch A, got {len(returned_tasks)}"
-        )
+        assert (
+            len(returned_tasks) == 2
+        ), f"Expected 2 tasks for branch A, got {len(returned_tasks)}"
 
         # All returned tasks should belong to branch A
         for task in returned_tasks:
             task_git_branch_id = task.get("git_branch_id")
-            assert task_git_branch_id == self.branch_a_id, (
-                f"Task {task.get('id')} has wrong branch_id: {task_git_branch_id} (expected {self.branch_a_id})"
-            )
+            assert (
+                task_git_branch_id == self.branch_a_id
+            ), f"Task {task.get('id')} has wrong branch_id: {task_git_branch_id} (expected {self.branch_a_id})"
 
         # Verify specific task titles are present
         task_titles = [task.get("title", "") for task in returned_tasks]
-        assert "Task A1 - Integration Test" in task_titles, (
-            "Task A1 should be in results"
-        )
-        assert "Task A2 - Integration Test" in task_titles, (
-            "Task A2 should be in results"
-        )
+        assert (
+            "Task A1 - Integration Test" in task_titles
+        ), "Task A1 should be in results"
+        assert (
+            "Task A2 - Integration Test" in task_titles
+        ), "Task A2 should be in results"
 
         # Verify no branch B tasks are present
-        assert "Task B1 - Integration Test" not in task_titles, (
-            "Task B1 should NOT be in branch A results"
-        )
-        assert "Task B2 - Integration Test" not in task_titles, (
-            "Task B2 should NOT be in branch A results"
-        )
+        assert (
+            "Task B1 - Integration Test" not in task_titles
+        ), "Task B1 should NOT be in branch A results"
+        assert (
+            "Task B2 - Integration Test" not in task_titles
+        ), "Task B2 should NOT be in branch A results"
 
         logger.info("✅ Branch A filtering test passed")
 
@@ -309,33 +309,33 @@ class TestGitBranchFilteringIntegration:
         logger.info(f"Branch B returned {len(returned_tasks)} tasks")
 
         # Should return exactly 2 tasks for branch B
-        assert len(returned_tasks) == 2, (
-            f"Expected 2 tasks for branch B, got {len(returned_tasks)}"
-        )
+        assert (
+            len(returned_tasks) == 2
+        ), f"Expected 2 tasks for branch B, got {len(returned_tasks)}"
 
         # All returned tasks should belong to branch B
         for task in returned_tasks:
             task_git_branch_id = task.get("git_branch_id")
-            assert task_git_branch_id == self.branch_b_id, (
-                f"Task {task.get('id')} has wrong branch_id: {task_git_branch_id} (expected {self.branch_b_id})"
-            )
+            assert (
+                task_git_branch_id == self.branch_b_id
+            ), f"Task {task.get('id')} has wrong branch_id: {task_git_branch_id} (expected {self.branch_b_id})"
 
         # Verify specific task titles are present
         task_titles = [task.get("title", "") for task in returned_tasks]
-        assert "Task B1 - Integration Test" in task_titles, (
-            "Task B1 should be in results"
-        )
-        assert "Task B2 - Integration Test" in task_titles, (
-            "Task B2 should be in results"
-        )
+        assert (
+            "Task B1 - Integration Test" in task_titles
+        ), "Task B1 should be in results"
+        assert (
+            "Task B2 - Integration Test" in task_titles
+        ), "Task B2 should be in results"
 
         # Verify no branch A tasks are present
-        assert "Task A1 - Integration Test" not in task_titles, (
-            "Task A1 should NOT be in branch B results"
-        )
-        assert "Task A2 - Integration Test" not in task_titles, (
-            "Task A2 should NOT be in branch B results"
-        )
+        assert (
+            "Task A1 - Integration Test" not in task_titles
+        ), "Task A1 should NOT be in branch B results"
+        assert (
+            "Task A2 - Integration Test" not in task_titles
+        ), "Task A2 should NOT be in branch B results"
 
         logger.info("✅ Branch B filtering test passed")
 
@@ -355,24 +355,24 @@ class TestGitBranchFilteringIntegration:
         logger.info(f"No filter returned {len(returned_tasks)} tasks")
 
         # Should return at least our 4 test tasks (there might be more from other tests)
-        assert len(returned_tasks) >= 4, (
-            f"Expected at least 4 tasks (our test data), got {len(returned_tasks)}"
-        )
+        assert (
+            len(returned_tasks) >= 4
+        ), f"Expected at least 4 tasks (our test data), got {len(returned_tasks)}"
 
         # Verify our test tasks are present
         task_titles = [task.get("title", "") for task in returned_tasks]
-        assert "Task A1 - Integration Test" in task_titles, (
-            "Task A1 should be in unfiltered results"
-        )
-        assert "Task A2 - Integration Test" in task_titles, (
-            "Task A2 should be in unfiltered results"
-        )
-        assert "Task B1 - Integration Test" in task_titles, (
-            "Task B1 should be in unfiltered results"
-        )
-        assert "Task B2 - Integration Test" in task_titles, (
-            "Task B2 should be in unfiltered results"
-        )
+        assert (
+            "Task A1 - Integration Test" in task_titles
+        ), "Task A1 should be in unfiltered results"
+        assert (
+            "Task A2 - Integration Test" in task_titles
+        ), "Task A2 should be in unfiltered results"
+        assert (
+            "Task B1 - Integration Test" in task_titles
+        ), "Task B1 should be in unfiltered results"
+        assert (
+            "Task B2 - Integration Test" in task_titles
+        ), "Task B2 should be in unfiltered results"
 
         logger.info("✅ Unfiltered listing test passed")
 
@@ -391,32 +391,28 @@ class TestGitBranchFilteringIntegration:
         logger.info(f"Optimized repo A returned {len(tasks_a)} tasks")
 
         # Verify branch A results
-        assert len(tasks_a) >= 2, (
-            f"Branch A repo should return at least 2 tasks, got {len(tasks_a)}"
-        )
+        assert (
+            len(tasks_a) >= 2
+        ), f"Branch A repo should return at least 2 tasks, got {len(tasks_a)}"
         for task in tasks_a:
             assert (
                 task.get("git_branch_id") == self.branch_a_id
                 or task.get("git_branch_id") is None
-            ), (
-                f"Optimized repo A returned task with wrong branch_id: {task.get('git_branch_id')}"
-            )
+            ), f"Optimized repo A returned task with wrong branch_id: {task.get('git_branch_id')}"
 
         # Test branch B repository
         tasks_b = repo_b.list_tasks_minimal(limit=50)
         logger.info(f"Optimized repo B returned {len(tasks_b)} tasks")
 
         # Verify branch B results
-        assert len(tasks_b) >= 2, (
-            f"Branch B repo should return at least 2 tasks, got {len(tasks_b)}"
-        )
+        assert (
+            len(tasks_b) >= 2
+        ), f"Branch B repo should return at least 2 tasks, got {len(tasks_b)}"
         for task in tasks_b:
             assert (
                 task.get("git_branch_id") == self.branch_b_id
                 or task.get("git_branch_id") is None
-            ), (
-                f"Optimized repo B returned task with wrong branch_id: {task.get('git_branch_id')}"
-            )
+            ), f"Optimized repo B returned task with wrong branch_id: {task.get('git_branch_id')}"
 
         logger.info("✅ Optimized repository direct test passed")
 
@@ -436,9 +432,9 @@ class TestGitBranchFilteringIntegration:
             if task.get("git_branch_id") is not None
         ]
         for branch_id in task_branch_ids:
-            assert branch_id == self.branch_b_id, (
-                f"Expected branch B tasks, got task with branch_id: {branch_id}"
-            )
+            assert (
+                branch_id == self.branch_b_id
+            ), f"Expected branch B tasks, got task with branch_id: {branch_id}"
 
         logger.info("✅ Repository parameter override test passed")
 

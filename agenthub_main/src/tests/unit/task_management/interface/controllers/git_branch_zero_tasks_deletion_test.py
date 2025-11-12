@@ -256,9 +256,9 @@ class TestGitBranchZeroTasksDeletion:
         )
 
         # Assert
-        assert result["success"] is True, (
-            f"Service layer failed to delete empty branch: {result.get('error')}"
-        )
+        assert (
+            result["success"] is True
+        ), f"Service layer failed to delete empty branch: {result.get('error')}"
 
     def test_orm_repository_delete_empty_branch_unit(self):
         """UNIT TEST: Test the ORM repository delete method for empty branches
@@ -356,9 +356,9 @@ class TestGitBranchZeroTasksDeletion:
 
         # Each branch should be deletable
         for branch in empty_branches:
-            assert branch.get_task_count() == 0, (
-                f"Branch {branch.name} should have 0 tasks"
-            )
+            assert (
+                branch.get_task_count() == 0
+            ), f"Branch {branch.name} should have 0 tasks"
 
     def test_branch_task_count_accuracy(self):
         """HELPER TEST: Ensure our task counting logic is accurate

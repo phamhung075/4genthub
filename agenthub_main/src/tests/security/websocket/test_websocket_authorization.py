@@ -111,9 +111,9 @@ class TestWebSocketAuthorizationAllEntities:
             )
 
             # Assert non-owner did NOT receive the message
-            assert not mock_other_ws.send_json.called, (
-                "Non-owner should not receive task events"
-            )
+            assert (
+                not mock_other_ws.send_json.called
+            ), "Non-owner should not receive task events"
 
         finally:
             # Cleanup
@@ -303,14 +303,14 @@ class TestWebSocketAuthorizationAllEntities:
                 )
 
                 # Assert owner received event
-                assert mock_owner_ws.send_json.called, (
-                    f"Owner should receive {entity_type} event"
-                )
+                assert (
+                    mock_owner_ws.send_json.called
+                ), f"Owner should receive {entity_type} event"
 
                 # Assert non-owner did NOT receive event
-                assert not mock_other_ws.send_json.called, (
-                    f"Non-owner should NOT receive {entity_type} event"
-                )
+                assert (
+                    not mock_other_ws.send_json.called
+                ), f"Non-owner should NOT receive {entity_type} event"
 
                 # Verify event content
                 sent_message = mock_owner_ws.send_json.call_args[0][0]
@@ -361,9 +361,9 @@ class TestWebSocketAuthorizationAllEntities:
                 )
 
                 # Assert owner received event
-                assert mock_owner_ws.send_json.called, (
-                    f"Owner should receive {action} event"
-                )
+                assert (
+                    mock_owner_ws.send_json.called
+                ), f"Owner should receive {action} event"
 
                 # Verify action in message
                 sent_message = mock_owner_ws.send_json.call_args[0][0]

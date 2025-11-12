@@ -177,9 +177,9 @@ class TestRepositoryProviderFailFast:
                 # Assert: exc_info=True was passed
                 error_call = mock_logger.error.call_args
                 assert error_call is not None, "logger.error should have been called"
-                assert error_call[1].get("exc_info") is True, (
-                    "exc_info should be True for stack traces"
-                )
+                assert (
+                    error_call[1].get("exc_info") is True
+                ), "exc_info should be True for stack traces"
 
     def test_error_should_preserve_original_exception_chain(self):
         """Verify 'raise ... from e' preserves exception chain for debugging.

@@ -142,9 +142,9 @@ class TestProjectManagementServiceWebSocketIntegration:
             result = await service.delete_project(project_id=project_id, force=True)
 
             # Verify result
-            assert result["success"] is True, (
-                f"Deletion failed: {result.get('error', 'Unknown error')}"
-            )
+            assert (
+                result["success"] is True
+            ), f"Deletion failed: {result.get('error', 'Unknown error')}"
 
             # Verify WebSocket service was called with validated payload
             mock_ws_service.sync_broadcast_project_event.assert_called_once()
@@ -230,15 +230,15 @@ class TestProjectManagementServiceWebSocketIntegration:
                 result = await service.delete_project(project_id=project_id, force=True)
 
                 # Verify result is still successful (fallback worked)
-                assert result["success"] is True, (
-                    f"Deletion failed: {result.get('error', 'Unknown error')}"
-                )
+                assert (
+                    result["success"] is True
+                ), f"Deletion failed: {result.get('error', 'Unknown error')}"
 
                 # Verify error logging for validation failure
                 # Note: The exact logging format may vary, so we just check that an error was logged
-                assert mock_logger.error.call_count > 0, (
-                    "Expected error logging for validation failure"
-                )
+                assert (
+                    mock_logger.error.call_count > 0
+                ), "Expected error logging for validation failure"
 
                 # Verify WebSocket service was still called with fallback dict
                 mock_ws_service.sync_broadcast_project_event.assert_called_once()

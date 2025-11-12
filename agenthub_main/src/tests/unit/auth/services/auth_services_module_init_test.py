@@ -62,9 +62,9 @@ def test_services_module_structure():
     actual_files = os.listdir(module_dir)
 
     for expected_file in expected_files:
-        assert expected_file in actual_files, (
-            f"Expected file {expected_file} not found in services module"
-        )
+        assert (
+            expected_file in actual_files
+        ), f"Expected file {expected_file} not found in services module"
 
 
 def test_services_module_no_syntax_errors():

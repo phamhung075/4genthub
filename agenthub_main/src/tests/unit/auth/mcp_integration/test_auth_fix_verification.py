@@ -170,9 +170,7 @@ class TestAuthenticationFixVerification:
         await require_auth(scope, AsyncMock(), AsyncMock())
 
         # Verify the middleware passed the request through (authentication succeeded)
-        assert next_app_was_called, (
-            "RequireAuthMiddleware should have called the next app - authentication should have passed!"
-        )
+        assert next_app_was_called, "RequireAuthMiddleware should have called the next app - authentication should have passed!"
 
     @pytest.mark.asyncio
     async def test_require_auth_middleware_rejects_missing_authenticated_user(self):
@@ -191,9 +189,9 @@ class TestAuthenticationFixVerification:
         await require_auth(scope, AsyncMock(), send_mock)
 
         # Verify error response was sent
-        assert send_mock.called, (
-            "RequireAuthMiddleware should have sent an error response"
-        )
+        assert (
+            send_mock.called
+        ), "RequireAuthMiddleware should have sent an error response"
 
         # Check that it's a 401 response
         calls = send_mock.call_args_list
@@ -265,9 +263,7 @@ class TestAuthenticationFixVerification:
         await require_auth(scope, AsyncMock(), AsyncMock())
 
         # VERIFICATION: Authentication should have passed completely
-        assert authentication_passed, (
-            "🚨 AUTHENTICATION FAILED - RequireAuthMiddleware should have passed the request!"
-        )
+        assert authentication_passed, "🚨 AUTHENTICATION FAILED - RequireAuthMiddleware should have passed the request!"
 
         print("✅ COMPLETE AUTHENTICATION FLOW SUCCESSFUL!")
         print("🎯 The JWT authentication state propagation issue is RESOLVED!")

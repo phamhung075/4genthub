@@ -209,9 +209,9 @@ class TestTaskCreatedMessage:
         if "assignees" in payload:
             assert isinstance(payload["assignees"], list), "assignees must be array"
             for assignee in payload["assignees"]:
-                assert assignee.startswith("@"), (
-                    f"Assignee '{assignee}' must have @ prefix"
-                )
+                assert assignee.startswith(
+                    "@"
+                ), f"Assignee '{assignee}' must have @ prefix"
 
     @pytest.mark.xfail(
         reason="MISMATCH #1: project_id not included in WebSocket messages"
@@ -248,9 +248,9 @@ class TestTaskCreatedMessage:
         message = ws_broadcaster.get_latest_message("task.created")
         payload = message["payload"]
 
-        assert "project_id" in payload, (
-            "task.created payload MUST include 'project_id' for frontend filtering"
-        )
+        assert (
+            "project_id" in payload
+        ), "task.created payload MUST include 'project_id' for frontend filtering"
         assert isinstance(payload["project_id"], str), "project_id must be string"
 
 
@@ -332,18 +332,18 @@ class TestTaskUpdatedMessage:
         message = ws_broadcaster.get_latest_message("task.updated")
         payload = message["payload"]
 
-        assert "subtask_count" in payload, (
-            "task.updated MUST include 'subtask_count' for progress tracking"
-        )
-        assert "completed_subtasks" in payload, (
-            "task.updated MUST include 'completed_subtasks' for progress visualization"
-        )
-        assert isinstance(payload["subtask_count"], int), (
-            "subtask_count must be integer"
-        )
-        assert isinstance(payload["completed_subtasks"], int), (
-            "completed_subtasks must be integer"
-        )
+        assert (
+            "subtask_count" in payload
+        ), "task.updated MUST include 'subtask_count' for progress tracking"
+        assert (
+            "completed_subtasks" in payload
+        ), "task.updated MUST include 'completed_subtasks' for progress visualization"
+        assert isinstance(
+            payload["subtask_count"], int
+        ), "subtask_count must be integer"
+        assert isinstance(
+            payload["completed_subtasks"], int
+        ), "completed_subtasks must be integer"
 
 
 class TestSubtaskMessages:
@@ -431,9 +431,9 @@ class TestSubtaskMessages:
         task_messages = ws_broadcaster.get_messages_by_type("task.updated")
 
         assert len(subtask_messages) > 0, "subtask.created message should be sent"
-        assert len(task_messages) > 0, (
-            "task.updated message should be sent when subtask is created (cascade update)"
-        )
+        assert (
+            len(task_messages) > 0
+        ), "task.updated message should be sent when subtask is created (cascade update)"
 
 
 class TestContextSyncedMessage:
@@ -517,15 +517,15 @@ class TestContextSyncedMessage:
         message = ws_broadcaster.get_latest_message("context.synced")
         context_data = message["payload"]["context_data"]
 
-        assert "subtask_count" in context_data, (
-            "context.synced MUST include subtask_count"
-        )
-        assert "completed_subtasks" in context_data, (
-            "context.synced MUST include completed_subtasks"
-        )
-        assert "progress_percentage" in context_data, (
-            "context.synced MUST include progress_percentage"
-        )
+        assert (
+            "subtask_count" in context_data
+        ), "context.synced MUST include subtask_count"
+        assert (
+            "completed_subtasks" in context_data
+        ), "context.synced MUST include completed_subtasks"
+        assert (
+            "progress_percentage" in context_data
+        ), "context.synced MUST include progress_percentage"
 
 
 class TestWebSocketFieldNaming:
@@ -573,20 +573,20 @@ class TestWebSocketFieldNaming:
 
         # Verify snake_case is used
         if "estimated_effort" in payload or "estimatedEffort" in payload:
-            assert "estimated_effort" in payload, (
-                "WebSocket messages should use 'estimated_effort' (snake_case)"
-            )
-            assert "estimatedEffort" not in payload, (
-                "WebSocket messages should NOT use 'estimatedEffort' (camelCase)"
-            )
+            assert (
+                "estimated_effort" in payload
+            ), "WebSocket messages should use 'estimated_effort' (snake_case)"
+            assert (
+                "estimatedEffort" not in payload
+            ), "WebSocket messages should NOT use 'estimatedEffort' (camelCase)"
 
         if "due_date" in payload or "dueDate" in payload:
-            assert "due_date" in payload, (
-                "WebSocket messages should use 'due_date' (snake_case)"
-            )
-            assert "dueDate" not in payload, (
-                "WebSocket messages should NOT use 'dueDate' (camelCase)"
-            )
+            assert (
+                "due_date" in payload
+            ), "WebSocket messages should use 'due_date' (snake_case)"
+            assert (
+                "dueDate" not in payload
+            ), "WebSocket messages should NOT use 'dueDate' (camelCase)"
 
 
 class TestWebSocketAssigneeFormat:
@@ -622,6 +622,6 @@ class TestWebSocketAssigneeFormat:
 
         if "assignees" in payload:
             for assignee in payload["assignees"]:
-                assert assignee.startswith("@"), (
-                    f"Assignee '{assignee}' in WebSocket message must have @ prefix"
-                )
+                assert assignee.startswith(
+                    "@"
+                ), f"Assignee '{assignee}' in WebSocket message must have @ prefix"

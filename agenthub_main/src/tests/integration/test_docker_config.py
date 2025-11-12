@@ -368,9 +368,9 @@ def root():
                 app_log_level = os.getenv("APP_LOG_LEVEL", "info")
                 converted_log_level = app_log_level.lower()
 
-                assert converted_log_level == expected_output, (
-                    f"Expected {expected_output}, got {converted_log_level} for input {input_level}"
-                )
+                assert (
+                    converted_log_level == expected_output
+                ), f"Expected {expected_output}, got {converted_log_level} for input {input_level}"
 
         # Test that uvicorn can accept lowercase log levels (the core functionality)
         # This simulates what the Docker container does without the networking complexity
@@ -385,9 +385,9 @@ def root():
 
         for input_level in ["INFO", "DEBUG", "WARNING", "ERROR"]:
             converted = input_level.lower()
-            assert converted in valid_uvicorn_log_levels, (
-                f"Converted level {converted} should be valid for uvicorn"
-            )
+            assert (
+                converted in valid_uvicorn_log_levels
+            ), f"Converted level {converted} should be valid for uvicorn"
 
         # Test that the FastAPI health endpoint logic works
         # Simulate the health endpoint response

@@ -352,9 +352,9 @@ class TestWeek1BaselinePerformance:
             user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), (
-            f"Failed to create test task: {create_result.get('error')}"
-        )
+        assert create_result.get(
+            "success"
+        ), f"Failed to create test task: {create_result.get('error')}"
         task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(task_id)
 
@@ -428,9 +428,9 @@ class TestWeek1BaselinePerformance:
                 execution_time_ms
             )
             assert result.get("success"), "Task listing failed"
-            assert len(result.get("tasks", [])) >= 10, (
-                f"Expected at least 10 tasks, got {len(result.get('tasks', []))}"
-            )
+            assert (
+                len(result.get("tasks", [])) >= 10
+            ), f"Expected at least 10 tasks, got {len(result.get('tasks', []))}"
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)
@@ -462,9 +462,9 @@ class TestWeek1BaselinePerformance:
             user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), (
-            f"Failed to create test task: {create_result.get('error')}"
-        )
+        assert create_result.get(
+            "success"
+        ), f"Failed to create test task: {create_result.get('error')}"
         task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(task_id)
 
@@ -518,9 +518,9 @@ class TestWeek1BaselinePerformance:
             user_id="test-user-perf",
         )
         create_result = task_facade.create_task(request)
-        assert create_result.get("success"), (
-            f"Failed to create parent task: {create_result.get('error')}"
-        )
+        assert create_result.get(
+            "success"
+        ), f"Failed to create parent task: {create_result.get('error')}"
         parent_task_id = create_result["task"]["id"]
         baseline_tester.test_data.append(parent_task_id)
 
@@ -565,9 +565,9 @@ class TestWeek1BaselinePerformance:
             baseline_tester.metrics["subtask_operations"].measurements.append(
                 execution_time_ms
             )
-            assert result.get("success"), (
-                f"Failed to create subtask: {result.get('error')}"
-            )
+            assert result.get(
+                "success"
+            ), f"Failed to create subtask: {result.get('error')}"
 
         # Cleanup
         baseline_tester.cleanup_test_data(db_session)

@@ -46,13 +46,13 @@ class TestTaskDTOSerializationNoEmojiFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert "priority_emoji" not in task_dict, (
-            "priority_emoji field should NOT exist in serialized task"
-        )
+        assert (
+            "priority_emoji" not in task_dict
+        ), "priority_emoji field should NOT exist in serialized task"
         assert "priority" in task_dict, "priority field should exist (without emoji)"
-        assert task_dict["priority"] == "high", (
-            "priority value should be the string value, not emoji"
-        )
+        assert (
+            task_dict["priority"] == "high"
+        ), "priority value should be the string value, not emoji"
 
     def test_task_to_dict_excludes_status_emoji(self):
         """Verify task.to_dict() doesn't include status_emoji field"""
@@ -77,13 +77,13 @@ class TestTaskDTOSerializationNoEmojiFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert "status_emoji" not in task_dict, (
-            "status_emoji field should NOT exist in serialized task"
-        )
+        assert (
+            "status_emoji" not in task_dict
+        ), "status_emoji field should NOT exist in serialized task"
         assert "status" in task_dict, "status field should exist (without emoji)"
-        assert task_dict["status"] == "in_progress", (
-            "status value should be the string value, not emoji"
-        )
+        assert (
+            task_dict["status"] == "in_progress"
+        ), "status value should be the string value, not emoji"
 
     def test_task_to_dict_excludes_all_emoji_fields(self):
         """Verify task.to_dict() excludes ALL emoji fields"""
@@ -110,9 +110,9 @@ class TestTaskDTOSerializationNoEmojiFields:
         # Assert - None of the emoji fields should exist
         emoji_fields = ["priority_emoji", "status_emoji"]
         for field in emoji_fields:
-            assert field not in task_dict, (
-                f"{field} should NOT exist in serialized task"
-            )
+            assert (
+                field not in task_dict
+            ), f"{field} should NOT exist in serialized task"
 
 
 class TestTaskDTOSerializationNoCountFields:
@@ -142,19 +142,19 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert "subtask_count" in task_dict, (
-            "subtask_count field SHOULD exist as computed property in serialized task"
-        )
-        assert task_dict["subtask_count"] == 3, (
-            "subtask_count should match length of subtasks array"
-        )
+        assert (
+            "subtask_count" in task_dict
+        ), "subtask_count field SHOULD exist as computed property in serialized task"
+        assert (
+            task_dict["subtask_count"] == 3
+        ), "subtask_count should match length of subtasks array"
         assert "subtasks" in task_dict, "subtasks array should exist"
-        assert len(task_dict["subtasks"]) == 3, (
-            "subtasks array is source of truth for count"
-        )
-        assert task_dict["subtasks"] == subtask_ids, (
-            "subtasks array should contain actual subtask IDs"
-        )
+        assert (
+            len(task_dict["subtasks"]) == 3
+        ), "subtasks array is source of truth for count"
+        assert (
+            task_dict["subtasks"] == subtask_ids
+        ), "subtasks array should contain actual subtask IDs"
 
     def test_task_to_dict_excludes_assignees_count(self):
         """Verify task.to_dict() doesn't include assignees_count field"""
@@ -180,13 +180,13 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert "assignees_count" not in task_dict, (
-            "assignees_count field should NOT exist in serialized task"
-        )
+        assert (
+            "assignees_count" not in task_dict
+        ), "assignees_count field should NOT exist in serialized task"
         assert "assignees" in task_dict, "assignees array should exist"
-        assert len(task_dict["assignees"]) == 3, (
-            "assignees array is source of truth for count"
-        )
+        assert (
+            len(task_dict["assignees"]) == 3
+        ), "assignees array is source of truth for count"
 
     def test_task_to_dict_excludes_dependency_count(self):
         """Verify task.to_dict() doesn't include dependency_count field"""
@@ -212,16 +212,16 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert
-        assert "dependency_count" in task_dict, (
-            "dependency_count field SHOULD exist as computed property in serialized task"
-        )
-        assert task_dict["dependency_count"] == 2, (
-            "dependency_count should match length of dependencies array"
-        )
+        assert (
+            "dependency_count" in task_dict
+        ), "dependency_count field SHOULD exist as computed property in serialized task"
+        assert (
+            task_dict["dependency_count"] == 2
+        ), "dependency_count should match length of dependencies array"
         assert "dependencies" in task_dict, "dependencies array should exist"
-        assert len(task_dict["dependencies"]) == 2, (
-            "dependencies array is source of truth for count"
-        )
+        assert (
+            len(task_dict["dependencies"]) == 2
+        ), "dependencies array is source of truth for count"
 
     def test_task_to_dict_includes_computed_count_fields(self):
         """Verify task.to_dict() includes computed count fields (subtask_count, dependency_count)"""
@@ -246,18 +246,18 @@ class TestTaskDTOSerializationNoCountFields:
         task_dict = task.to_dict()
 
         # Assert - Computed count fields SHOULD exist with correct values
-        assert "subtask_count" in task_dict, (
-            "subtask_count should exist as computed property"
-        )
-        assert task_dict["subtask_count"] == 2, (
-            "subtask_count should match subtasks array length"
-        )
-        assert "dependency_count" in task_dict, (
-            "dependency_count should exist as computed property"
-        )
-        assert task_dict["dependency_count"] == 1, (
-            "dependency_count should match dependencies array length"
-        )
+        assert (
+            "subtask_count" in task_dict
+        ), "subtask_count should exist as computed property"
+        assert (
+            task_dict["subtask_count"] == 2
+        ), "subtask_count should match subtasks array length"
+        assert (
+            "dependency_count" in task_dict
+        ), "dependency_count should exist as computed property"
+        assert (
+            task_dict["dependency_count"] == 1
+        ), "dependency_count should match dependencies array length"
 
         # Fields that should NOT exist
         assert "assignees_count" not in task_dict, "assignees_count should NOT exist"
@@ -291,12 +291,12 @@ class TestTaskDTOSerializationArraysAreSourceOfTruth:
         task_dict = task.to_dict()
 
         # Assert
-        assert task_dict["subtasks"] == subtask_ids, (
-            "subtasks array should contain exact subtask IDs"
-        )
-        assert len(task_dict["subtasks"]) == 5, (
-            "Count should be derived from array length, not stored separately"
-        )
+        assert (
+            task_dict["subtasks"] == subtask_ids
+        ), "subtasks array should contain exact subtask IDs"
+        assert (
+            len(task_dict["subtasks"]) == 5
+        ), "Count should be derived from array length, not stored separately"
 
     def test_assignees_array_is_authoritative(self):
         """Verify assignees array contains actual data, not derived count"""
@@ -327,12 +327,12 @@ class TestTaskDTOSerializationArraysAreSourceOfTruth:
         task_dict = task.to_dict()
 
         # Assert
-        assert set(task_dict["assignees"]) == set(assignees), (
-            "assignees array should contain exact agent names"
-        )
-        assert len(task_dict["assignees"]) == 4, (
-            "Count should be derived from array length, not stored separately"
-        )
+        assert set(task_dict["assignees"]) == set(
+            assignees
+        ), "assignees array should contain exact agent names"
+        assert (
+            len(task_dict["assignees"]) == 4
+        ), "Count should be derived from array length, not stored separately"
 
     def test_dependencies_array_is_authoritative(self):
         """Verify dependencies array contains actual data, not derived count"""
@@ -358,12 +358,12 @@ class TestTaskDTOSerializationArraysAreSourceOfTruth:
         task_dict = task.to_dict()
 
         # Assert
-        assert task_dict["dependencies"] == dependency_ids, (
-            "dependencies array should contain exact dependency IDs"
-        )
-        assert len(task_dict["dependencies"]) == 3, (
-            "Count should be derived from array length, not stored separately"
-        )
+        assert (
+            task_dict["dependencies"] == dependency_ids
+        ), "dependencies array should contain exact dependency IDs"
+        assert (
+            len(task_dict["dependencies"]) == 3
+        ), "Count should be derived from array length, not stored separately"
 
 
 class TestTaskDTOSerializationBaseFields:
@@ -411,9 +411,9 @@ class TestTaskDTOSerializationBaseFields:
         ]
 
         for field in required_fields:
-            assert field in task_dict, (
-                f"Required field '{field}' missing from serialization"
-            )
+            assert (
+                field in task_dict
+            ), f"Required field '{field}' missing from serialization"
 
     def test_task_to_dict_includes_context_id(self):
         """Verify context_id is included in serialization"""
@@ -472,12 +472,12 @@ class TestTaskDTOSerializationEmptyArrays:
         # Assert
         assert "subtasks" in task_dict, "subtasks field should exist"
         assert task_dict["subtasks"] == [], "Empty subtasks should be []"
-        assert "subtask_count" in task_dict, (
-            "subtask_count field should exist as computed property"
-        )
-        assert task_dict["subtask_count"] == 0, (
-            "subtask_count should be 0 for empty array"
-        )
+        assert (
+            "subtask_count" in task_dict
+        ), "subtask_count field should exist as computed property"
+        assert (
+            task_dict["subtask_count"] == 0
+        ), "subtask_count should be 0 for empty array"
 
     def test_task_with_no_dependencies_serializes_empty_array(self):
         """Verify empty dependencies array, not count field"""
@@ -504,12 +504,12 @@ class TestTaskDTOSerializationEmptyArrays:
         # Assert
         assert "dependencies" in task_dict, "dependencies field should exist"
         assert task_dict["dependencies"] == [], "Empty dependencies should be []"
-        assert "dependency_count" in task_dict, (
-            "dependency_count field should exist as computed property"
-        )
-        assert task_dict["dependency_count"] == 0, (
-            "dependency_count should be 0 for empty array"
-        )
+        assert (
+            "dependency_count" in task_dict
+        ), "dependency_count field should exist as computed property"
+        assert (
+            task_dict["dependency_count"] == 0
+        ), "dependency_count should be 0 for empty array"
 
 
 if __name__ == "__main__":

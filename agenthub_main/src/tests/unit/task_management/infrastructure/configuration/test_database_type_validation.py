@@ -166,9 +166,9 @@ class TestDatabaseTypeValidation:
                 DatabaseConfig()
 
             # Verify error message contains expected substring
-            assert error_substring in str(exc_info.value), (
-                f"Expected error message to contain '{error_substring}', got: {exc_info.value}"
-            )
+            assert (
+                error_substring in str(exc_info.value)
+            ), f"Expected error message to contain '{error_substring}', got: {exc_info.value}"
 
     def test_missing_database_type_raises_error(self):
         """Test that missing DATABASE_TYPE raises clear error message."""

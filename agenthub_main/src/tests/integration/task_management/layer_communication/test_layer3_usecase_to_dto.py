@@ -116,23 +116,23 @@ def test_dto_includes_basic_entity_fields(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: Basic fields are present and correct
-    assert dto.id == str(sample_task_entity.id), (
-        "ID should match (DTO converts TaskId to string)"
-    )
+    assert dto.id == str(
+        sample_task_entity.id
+    ), "ID should match (DTO converts TaskId to string)"
     assert dto.title == sample_task_entity.title, "Title should match"
     assert dto.description == sample_task_entity.description, "Description should match"
-    assert dto.status == sample_task_entity.status.value, (
-        "Status should match (DTO converts TaskStatus to string)"
-    )
-    assert dto.priority == sample_task_entity.priority.value, (
-        "Priority should match (DTO converts Priority to string)"
-    )
-    assert dto.git_branch_id == sample_task_entity.git_branch_id, (
-        "git_branch_id should match"
-    )
-    assert dto.estimated_effort == sample_task_entity.estimated_effort, (
-        "estimated_effort should match"
-    )
+    assert (
+        dto.status == sample_task_entity.status.value
+    ), "Status should match (DTO converts TaskStatus to string)"
+    assert (
+        dto.priority == sample_task_entity.priority.value
+    ), "Priority should match (DTO converts Priority to string)"
+    assert (
+        dto.git_branch_id == sample_task_entity.git_branch_id
+    ), "git_branch_id should match"
+    assert (
+        dto.estimated_effort == sample_task_entity.estimated_effort
+    ), "estimated_effort should match"
     # Note: details field is on DTO but not on Task entity - it's populated from context_data
 
 
@@ -155,18 +155,18 @@ def test_dto_serializes_nested_objects_correctly(sample_task_entity):
 
     # Assert: Labels are serialized
     assert len(dto.labels) == 2, "Should have 2 labels"
-    assert all(isinstance(label, Label) for label in dto.labels), (
-        "Labels should be Label objects"
-    )
-    assert all(hasattr(label, "name") and label.name for label in dto.labels), (
-        "All labels should have name"
-    )
+    assert all(
+        isinstance(label, Label) for label in dto.labels
+    ), "Labels should be Label objects"
+    assert all(
+        hasattr(label, "name") and label.name for label in dto.labels
+    ), "All labels should have name"
 
     # Assert: Subtasks are serialized
     assert len(dto.subtasks) == 3, "Should have 3 subtasks"
-    assert all(isinstance(subtask, Subtask) for subtask in dto.subtasks), (
-        "Subtasks should be Subtask objects"
-    )
+    assert all(
+        isinstance(subtask, Subtask) for subtask in dto.subtasks
+    ), "Subtasks should be Subtask objects"
 
 
 # ============================================================================
@@ -235,9 +235,9 @@ def test_dto_includes_project_id_from_git_branch_relationship(sample_task_entity
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: project_id should be present (WILL FAIL)
-    assert dto.project_id is not None, (
-        "project_id should be computed from git_branch_id relationship"
-    )
+    assert (
+        dto.project_id is not None
+    ), "project_id should be computed from git_branch_id relationship"
 
     # This assertion would pass after fix:
     # assert dto.project_id == expected_project_id
@@ -263,9 +263,9 @@ def test_dto_computes_subtask_count_from_subtasks_array(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: subtask_count should equal length of subtasks array
-    assert dto.subtask_count is not None, (
-        "subtask_count should be computed from subtasks array"
-    )
+    assert (
+        dto.subtask_count is not None
+    ), "subtask_count should be computed from subtasks array"
     assert dto.subtask_count == 3, f"Expected subtask_count=3, got {dto.subtask_count}"
 
 
@@ -300,12 +300,12 @@ def test_dto_computes_completed_subtasks_from_subtask_statuses(sample_task_entit
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: completed_subtasks should be computed (WILL FAIL)
-    assert dto.completed_subtasks is not None, (
-        "completed_subtasks should be computed from subtask statuses"
-    )
-    assert dto.completed_subtasks == expected_completed, (
-        f"Expected completed_subtasks={expected_completed}, got {dto.completed_subtasks}"
-    )
+    assert (
+        dto.completed_subtasks is not None
+    ), "completed_subtasks should be computed from subtask statuses"
+    assert (
+        dto.completed_subtasks == expected_completed
+    ), f"Expected completed_subtasks={expected_completed}, got {dto.completed_subtasks}"
 
 
 # ============================================================================
@@ -328,15 +328,15 @@ def test_dto_adds_prefix_to_assignees(sample_task_entity):
     dto = TaskResponse.from_domain(sample_task_entity)
 
     # Assert: All assignees should have @ prefix
-    assert all(assignee.startswith("@") for assignee in dto.assignees), (
-        f"All assignees should have @ prefix. Got: {dto.assignees}"
-    )
+    assert all(
+        assignee.startswith("@") for assignee in dto.assignees
+    ), f"All assignees should have @ prefix. Got: {dto.assignees}"
 
     # Verify expected values after fix:
     expected_assignees = ["@coding-agent", "@test-orchestrator-agent"]
-    assert dto.assignees == expected_assignees, (
-        f"Expected {expected_assignees}, got {dto.assignees}"
-    )
+    assert (
+        dto.assignees == expected_assignees
+    ), f"Expected {expected_assignees}, got {dto.assignees}"
 
 
 # ============================================================================

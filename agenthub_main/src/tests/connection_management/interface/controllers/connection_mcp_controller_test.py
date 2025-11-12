@@ -195,9 +195,9 @@ class TestConnectionMCPController:
         ]
 
         for method_name in deprecated_methods:
-            assert not hasattr(controller, method_name), (
-                f"Method {method_name} should have been removed"
-            )
+            assert not hasattr(
+                controller, method_name
+            ), f"Method {method_name} should have been removed"
 
     def test_only_health_check_functionality(self, controller):
         """Test that controller only provides health check functionality"""

@@ -59,12 +59,12 @@ class TestAgentRepositoryTimestampRegression:
             description="Test agent for timestamp regression",
         )
         # Timestamps should be automatically initialized by BaseTimestampEntity
-        assert agent.created_at is not None, (
-            "Agent entity should have created_at initialized"
-        )
-        assert agent.updated_at is not None, (
-            "Agent entity should have updated_at initialized"
-        )
+        assert (
+            agent.created_at is not None
+        ), "Agent entity should have created_at initialized"
+        assert (
+            agent.updated_at is not None
+        ), "Agent entity should have updated_at initialized"
         return agent
 
     def test_entity_to_model_dict_includes_timestamps(
@@ -91,12 +91,12 @@ class TestAgentRepositoryTimestampRegression:
         )
 
         # Verify timestamp values are datetime objects
-        assert isinstance(model_dict["created_at"], datetime), (
-            "created_at should be a datetime object"
-        )
-        assert isinstance(model_dict["updated_at"], datetime), (
-            "updated_at should be a datetime object"
-        )
+        assert isinstance(
+            model_dict["created_at"], datetime
+        ), "created_at should be a datetime object"
+        assert isinstance(
+            model_dict["updated_at"], datetime
+        ), "updated_at should be a datetime object"
 
         # Verify timestamps match entity timestamps
         assert model_dict["created_at"] == sample_agent_entity.created_at
@@ -145,12 +145,12 @@ class TestAgentRepositoryTimestampRegression:
         )
 
         # Verify BaseTimestampEntity.__post_init__() set timestamps
-        assert agent.created_at is not None, (
-            "BaseTimestampEntity should initialize created_at"
-        )
-        assert agent.updated_at is not None, (
-            "BaseTimestampEntity should initialize updated_at"
-        )
+        assert (
+            agent.created_at is not None
+        ), "BaseTimestampEntity should initialize created_at"
+        assert (
+            agent.updated_at is not None
+        ), "BaseTimestampEntity should initialize updated_at"
 
         # Verify timestamps are recent (within last second)
         now = datetime.now(UTC)
@@ -263,12 +263,12 @@ class TestAgentRepositoryTimestampRegression:
                     call_kwargs = mock_create.call_args[1]
 
                     # CRITICAL: Verify timestamps were passed to database
-                    assert "created_at" in call_kwargs, (
-                        "REGRESSION: created_at not passed to database during agent registration!"
-                    )
-                    assert "updated_at" in call_kwargs, (
-                        "REGRESSION: updated_at not passed to database during agent registration!"
-                    )
+                    assert (
+                        "created_at" in call_kwargs
+                    ), "REGRESSION: created_at not passed to database during agent registration!"
+                    assert (
+                        "updated_at" in call_kwargs
+                    ), "REGRESSION: updated_at not passed to database during agent registration!"
 
                     # Verify timestamps are datetime objects
                     assert isinstance(call_kwargs["created_at"], datetime)
@@ -302,14 +302,14 @@ class TestAgentRepositoryTimestampRegression:
         updated_updated_at = updated_dict["updated_at"]
 
         # Verify created_at remains unchanged
-        assert updated_created_at == initial_created_at, (
-            "created_at should never change after initial creation"
-        )
+        assert (
+            updated_created_at == initial_created_at
+        ), "created_at should never change after initial creation"
 
         # Verify updated_at changed after touch
-        assert updated_updated_at > initial_updated_at, (
-            "updated_at should increase after entity modification"
-        )
+        assert (
+            updated_updated_at > initial_updated_at
+        ), "updated_at should increase after entity modification"
 
 
 class TestTimestampBugPreventionGuidelines:

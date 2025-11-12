@@ -147,13 +147,13 @@ class TestSubtaskUserIdFix:
         )
 
         assert db_subtask is not None, "Subtask should exist in database"
-        assert db_subtask.user_id == self.user_id, (
-            f"Subtask user_id should be {self.user_id}"
-        )
+        assert (
+            db_subtask.user_id == self.user_id
+        ), f"Subtask user_id should be {self.user_id}"
         assert db_subtask.title == "Test Subtask", "Subtask title should match"
-        assert db_subtask.task_id == self.task_id, (
-            "Subtask should be linked to parent task"
-        )
+        assert (
+            db_subtask.task_id == self.task_id
+        ), "Subtask should be linked to parent task"
 
     def test_create_subtask_without_user_id_uses_mvp_fallback(self):
         """Test that creating subtask without user_id requires authentication"""
@@ -215,12 +215,12 @@ class TestSubtaskUserIdFix:
 
         # Instead of testing through factory (which uses different DB connection),
         # just verify the factory passes user_id correctly
-        assert hasattr(subtask_repo, "user_id"), (
-            "Repository should have user_id attribute"
-        )
-        assert subtask_repo.user_id == self.user_id, (
-            f"Repository user_id should be {self.user_id}"
-        )
+        assert hasattr(
+            subtask_repo, "user_id"
+        ), "Repository should have user_id attribute"
+        assert (
+            subtask_repo.user_id == self.user_id
+        ), f"Repository user_id should be {self.user_id}"
 
         # Test basic functionality by creating a new repository with our session
         from fastmcp.task_management.infrastructure.repositories.orm.subtask_repository import (
@@ -264,12 +264,12 @@ class TestSubtaskUserIdFix:
             )
 
             assert db_subtask is not None, "Subtask should exist in database"
-            assert db_subtask.user_id == self.user_id, (
-                f"Subtask user_id should be {self.user_id}"
-            )
-            assert db_subtask.title == "Test Subtask from Factory", (
-                "Subtask title should match"
-            )
+            assert (
+                db_subtask.user_id == self.user_id
+            ), f"Subtask user_id should be {self.user_id}"
+            assert (
+                db_subtask.title == "Test Subtask from Factory"
+            ), "Subtask title should match"
             assert db_subtask.priority == "high", "Subtask priority should be high"
 
         except Exception as e:

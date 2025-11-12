@@ -112,9 +112,9 @@ class TestContextResponseAPIContractContextField:
         assert hasattr(response, "context"), "ContextResponse must have 'context' field"
         # context is optional, can be None or TaskContext
         if response.context is not None:
-            assert isinstance(response.context, TaskContext), (
-                "context must be TaskContext when provided"
-            )
+            assert isinstance(
+                response.context, TaskContext
+            ), "context must be TaskContext when provided"
 
 
 class TestTaskContextAPIContractBasicFields:
@@ -125,9 +125,9 @@ class TestTaskContextAPIContractBasicFields:
         Verify TaskContext includes context_id field.
         Status: ✅ SHOULD PASS - Required field.
         """
-        assert hasattr(sample_context, "context_id"), (
-            "TaskContext must have 'context_id' field"
-        )
+        assert hasattr(
+            sample_context, "context_id"
+        ), "TaskContext must have 'context_id' field"
         assert isinstance(sample_context.context_id, str), "context_id must be string"
         # Verify it's a valid UUID format
         try:
@@ -141,9 +141,9 @@ class TestTaskContextAPIContractBasicFields:
         Verify TaskContext includes user_id field.
         Status: ✅ SHOULD PASS - Required for multi-tenant isolation.
         """
-        assert hasattr(sample_context, "user_id"), (
-            "TaskContext must have 'user_id' field"
-        )
+        assert hasattr(
+            sample_context, "user_id"
+        ), "TaskContext must have 'user_id' field"
         assert isinstance(sample_context.user_id, str), "user_id must be string"
 
     def test_task_context_has_data_field(self, sample_context: TaskContext):
@@ -165,20 +165,20 @@ class TestTaskContextAPIContractTimestamps:
         Verify created_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
         """
-        assert hasattr(sample_context, "created_at"), (
-            "TaskContext must have 'created_at' field"
-        )
+        assert hasattr(
+            sample_context, "created_at"
+        ), "TaskContext must have 'created_at' field"
 
         # Handle both datetime objects and string representations
         if isinstance(sample_context.created_at, datetime):
             iso_string = sample_context.created_at.isoformat()
-            assert "T" in iso_string, (
-                "created_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "created_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_context.created_at, str):
-            assert "T" in sample_context.created_at, (
-                "created_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_context.created_at
+            ), "created_at must be ISO 8601 format (contains 'T')"
             try:
                 datetime.fromisoformat(sample_context.created_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
@@ -197,20 +197,20 @@ class TestTaskContextAPIContractTimestamps:
         Verify updated_at can be serialized to ISO 8601 format.
         Status: ✅ SHOULD PASS - Standard timestamp field.
         """
-        assert hasattr(sample_context, "updated_at"), (
-            "TaskContext must have 'updated_at' field"
-        )
+        assert hasattr(
+            sample_context, "updated_at"
+        ), "TaskContext must have 'updated_at' field"
 
         # Handle both datetime objects and string representations
         if isinstance(sample_context.updated_at, datetime):
             iso_string = sample_context.updated_at.isoformat()
-            assert "T" in iso_string, (
-                "updated_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "updated_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_context.updated_at, str):
-            assert "T" in sample_context.updated_at, (
-                "updated_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_context.updated_at
+            ), "updated_at must be ISO 8601 format (contains 'T')"
             try:
                 datetime.fromisoformat(sample_context.updated_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
@@ -237,9 +237,9 @@ class TestTaskContextAPIContractDataStructure:
 
         # Verify nested structure support
         if "technical_specs" in sample_context.data:
-            assert isinstance(sample_context.data["technical_specs"], dict), (
-                "Nested structures should be supported"
-            )
+            assert isinstance(
+                sample_context.data["technical_specs"], dict
+            ), "Nested structures should be supported"
 
     def test_task_context_data_supports_arrays(self, sample_context: TaskContext):
         """
@@ -250,9 +250,9 @@ class TestTaskContextAPIContractDataStructure:
 
         # Verify array support
         if "requirements" in sample_context.data:
-            assert isinstance(sample_context.data["requirements"], list), (
-                "Arrays should be supported in context data"
-            )
+            assert isinstance(
+                sample_context.data["requirements"], list
+            ), "Arrays should be supported in context data"
 
     def test_task_context_data_supports_various_types(
         self, sample_context: TaskContext
@@ -301,12 +301,12 @@ class TestTaskContextAPIContractSerialization:
             assert key in context_dict, f"Serialized context must include {key}"
 
         # Verify timestamps are ISO 8601 strings in serialized form
-        assert isinstance(context_dict["created_at"], str), (
-            "Serialized created_at must be string"
-        )
-        assert isinstance(context_dict["updated_at"], str), (
-            "Serialized updated_at must be string"
-        )
+        assert isinstance(
+            context_dict["created_at"], str
+        ), "Serialized created_at must be string"
+        assert isinstance(
+            context_dict["updated_at"], str
+        ), "Serialized updated_at must be string"
         assert "T" in context_dict["created_at"], "created_at must be ISO 8601 format"
         assert "T" in context_dict["updated_at"], "updated_at must be ISO 8601 format"
 
@@ -333,9 +333,9 @@ class TestContextResponseAPIContractSerialization:
 
         # Verify context is serialized
         if "context" in response_dict:
-            assert isinstance(response_dict["context"], dict), (
-                "Serialized context must be dictionary"
-            )
+            assert isinstance(
+                response_dict["context"], dict
+            ), "Serialized context must be dictionary"
 
 
 class TestListContextsResponseAPIContract:
@@ -352,15 +352,15 @@ class TestListContextsResponseAPIContract:
             contexts=[sample_context], message="Contexts retrieved"
         )
 
-        assert hasattr(response, "contexts"), (
-            "ListContextsResponse must have 'contexts' field"
-        )
+        assert hasattr(
+            response, "contexts"
+        ), "ListContextsResponse must have 'contexts' field"
         assert isinstance(response.contexts, list), "contexts must be list"
 
         if len(response.contexts) > 0:
-            assert isinstance(response.contexts[0], TaskContext), (
-                "contexts must contain TaskContext objects"
-            )
+            assert isinstance(
+                response.contexts[0], TaskContext
+            ), "contexts must contain TaskContext objects"
 
     def test_list_contexts_response_to_dict_serializes_array(
         self, sample_context: TaskContext
@@ -376,14 +376,14 @@ class TestListContextsResponseAPIContract:
         response_dict = response.to_dict()
 
         assert "contexts" in response_dict, "Serialized response must include contexts"
-        assert isinstance(response_dict["contexts"], list), (
-            "Serialized contexts must be list"
-        )
+        assert isinstance(
+            response_dict["contexts"], list
+        ), "Serialized contexts must be list"
 
         if len(response_dict["contexts"]) > 0:
-            assert isinstance(response_dict["contexts"][0], dict), (
-                "Each serialized context must be dictionary"
-            )
+            assert isinstance(
+                response_dict["contexts"][0], dict
+            ), "Each serialized context must be dictionary"
 
 
 class TestContextAPIContractCompleteStructure:
@@ -444,9 +444,9 @@ class TestContextAPIContractHierarchy:
         )
 
         assert isinstance(global_context.data, dict), "Global context data must be dict"
-        assert "organization_standards" in global_context.data, (
-            "Should support organization standards"
-        )
+        assert (
+            "organization_standards" in global_context.data
+        ), "Should support organization standards"
 
     def test_context_inheritance_pattern(self):
         """

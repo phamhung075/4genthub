@@ -178,9 +178,9 @@ class TestWebSocketPayloadStructure:
                     )
 
                     # Verify cascade data was fetched
-                    assert mock_cascade.called, (
-                        "Cascade data should be fetched for create/delete events"
-                    )
+                    assert (
+                        mock_cascade.called
+                    ), "Cascade data should be fetched for create/delete events"
 
     @pytest.mark.asyncio
     async def test_payload_data_types_match_typescript_interface(self):

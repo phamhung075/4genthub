@@ -51,12 +51,12 @@ class TestPhase1TaskDTOSerialization:
         task_dict = task.to_dict()
 
         # Should NOT have emoji fields
-        assert "priority_emoji" not in task_dict, (
-            "priority_emoji should be removed in Phase 1"
-        )
-        assert "status_emoji" not in task_dict, (
-            "status_emoji should be removed in Phase 1"
-        )
+        assert (
+            "priority_emoji" not in task_dict
+        ), "priority_emoji should be removed in Phase 1"
+        assert (
+            "status_emoji" not in task_dict
+        ), "status_emoji should be removed in Phase 1"
 
         # Should have base string fields
         assert "priority" in task_dict
@@ -91,15 +91,15 @@ class TestPhase1TaskDTOSerialization:
         task_dict = task.to_dict()
 
         # Should NOT have count fields
-        assert "subtask_count" not in task_dict, (
-            "subtask_count should be removed in Phase 1"
-        )
-        assert "assignees_count" not in task_dict, (
-            "assignees_count should be removed in Phase 1"
-        )
-        assert "dependency_count" not in task_dict, (
-            "dependency_count should be removed in Phase 1"
-        )
+        assert (
+            "subtask_count" not in task_dict
+        ), "subtask_count should be removed in Phase 1"
+        assert (
+            "assignees_count" not in task_dict
+        ), "assignees_count should be removed in Phase 1"
+        assert (
+            "dependency_count" not in task_dict
+        ), "dependency_count should be removed in Phase 1"
 
         # Should have actual arrays
         assert "subtasks" in task_dict
@@ -192,12 +192,12 @@ class TestPhase1SubtaskDTOSerialization:
         subtask_dict = subtask.to_dict()
 
         # Should NOT have emoji fields
-        assert "priority_emoji" not in subtask_dict, (
-            "priority_emoji should be removed in Phase 1"
-        )
-        assert "status_emoji" not in subtask_dict, (
-            "status_emoji should be removed in Phase 1"
-        )
+        assert (
+            "priority_emoji" not in subtask_dict
+        ), "priority_emoji should be removed in Phase 1"
+        assert (
+            "status_emoji" not in subtask_dict
+        ), "status_emoji should be removed in Phase 1"
 
         # Should have base string fields
         assert "priority" in subtask_dict

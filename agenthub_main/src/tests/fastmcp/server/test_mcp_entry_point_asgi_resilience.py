@@ -83,9 +83,9 @@ class TestASGIResponseDuplicateHandling:
         response_starts = [
             m for m in sent_messages if m["type"] == "http.response.start"
         ]
-        assert len(response_starts) == 2, (
-            "Both duplicate messages should be sent through"
-        )
+        assert (
+            len(response_starts) == 2
+        ), "Both duplicate messages should be sent through"
 
         # Verify response completed successfully
         response_bodies = [

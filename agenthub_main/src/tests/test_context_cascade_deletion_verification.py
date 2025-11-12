@@ -94,9 +94,9 @@ def test_task_context_cascade_deletion():
             session.query(TaskContext).filter_by(task_id=task_id).count()
         )
         print(f"📊 Task contexts before deletion: {context_count_before}")
-        assert context_count_before == 1, (
-            f"Expected 1 task context, found {context_count_before}"
-        )
+        assert (
+            context_count_before == 1
+        ), f"Expected 1 task context, found {context_count_before}"
 
         # 6. Delete the parent task (check if this cascades to delete context)
         print("🗑️ Deleting parent task...")

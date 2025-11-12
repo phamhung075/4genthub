@@ -125,9 +125,9 @@ class TestTaskGitBranchFiltering:
             0
         ]  # Get the ListTasksRequest object
         assert isinstance(call_args, ListTasksRequest)
-        assert call_args.git_branch_id == self.branch_a_id, (
-            "The git_branch_id filter was not applied correctly"
-        )
+        assert (
+            call_args.git_branch_id == self.branch_a_id
+        ), "The git_branch_id filter was not applied correctly"
 
         # Assert: Result should contain only branch A tasks
         assert result["success"] is True
@@ -135,26 +135,26 @@ class TestTaskGitBranchFiltering:
         returned_tasks = result["tasks"]
 
         # Critical assertion: Should only contain tasks from branch A
-        assert len(returned_tasks) == 2, (
-            f"Expected 2 tasks for branch A, got {len(returned_tasks)}"
-        )
+        assert (
+            len(returned_tasks) == 2
+        ), f"Expected 2 tasks for branch A, got {len(returned_tasks)}"
 
         # Verify all returned tasks belong to branch A
         for task in returned_tasks:
-            assert task["git_branch_id"] == self.branch_a_id, (
-                f"Task {task['id']} has wrong branch_id: {task.get('git_branch_id')} (expected {self.branch_a_id})"
-            )
+            assert (
+                task["git_branch_id"] == self.branch_a_id
+            ), f"Task {task['id']} has wrong branch_id: {task.get('git_branch_id')} (expected {self.branch_a_id})"
 
         # Verify no tasks from other branches are included
         task_ids = [task["id"] for task in returned_tasks]
         assert "task-a1" in task_ids
         assert "task-a2" in task_ids
-        assert "task-b1" not in task_ids, (
-            "Task from branch B should not be in branch A results"
-        )
-        assert "task-b2" not in task_ids, (
-            "Task from branch B should not be in branch A results"
-        )
+        assert (
+            "task-b1" not in task_ids
+        ), "Task from branch B should not be in branch A results"
+        assert (
+            "task-b2" not in task_ids
+        ), "Task from branch B should not be in branch A results"
 
     @patch(
         "fastmcp.task_management.interface.mcp_controllers.auth_helper.get_authenticated_user_id"
@@ -215,9 +215,9 @@ class TestTaskGitBranchFiltering:
         task_ids_a = {task["id"] for task in tasks_a}
         task_ids_b = {task["id"] for task in tasks_b}
 
-        assert task_ids_a.isdisjoint(task_ids_b), (
-            "Branch A and B should have completely different tasks"
-        )
+        assert task_ids_a.isdisjoint(
+            task_ids_b
+        ), "Branch A and B should have completely different tasks"
         assert task_ids_a == {"task-a1", "task-a2"}
         assert task_ids_b == {"task-b1", "task-b2"}
 
@@ -398,9 +398,9 @@ class TestTaskGitBranchFilteringIntegration:
         # Verify the ListTasksRequest was created with correct git_branch_id
         call_args = self.mock_facade.list_tasks.call_args[0][0]
         assert isinstance(call_args, ListTasksRequest)
-        assert call_args.git_branch_id == self.test_branch_id, (
-            f"Expected git_branch_id {self.test_branch_id}, got {call_args.git_branch_id}"
-        )
+        assert (
+            call_args.git_branch_id == self.test_branch_id
+        ), f"Expected git_branch_id {self.test_branch_id}, got {call_args.git_branch_id}"
 
         # Assert: Result should be successful and contain the filtered tasks
         assert result["success"] is True

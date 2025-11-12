@@ -96,9 +96,9 @@ def verify_timestamp_system():
         print("🧪 Testing touch functionality...")
         original_updated = test_entity.updated_at
         test_entity.touch("verification_touch")
-        assert test_entity.updated_at > original_updated, (
-            "Touch should update timestamp"
-        )
+        assert (
+            test_entity.updated_at > original_updated
+        ), "Touch should update timestamp"
         print("✅ Touch functionality working")
 
         # Test domain events

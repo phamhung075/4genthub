@@ -119,12 +119,12 @@ class TestProgressCalculationWithoutSubtasks:
         result = create_task_use_case.execute(request)
         task = result.task if hasattr(result, "task") else result
 
-        assert task.progress_percentage == 0, (
-            f"New task without subtasks should have 0% progress, got {task.progress_percentage}"
-        )
-        assert isinstance(task.progress_percentage, int), (
-            "progress_percentage must be integer"
-        )
+        assert (
+            task.progress_percentage == 0
+        ), f"New task without subtasks should have 0% progress, got {task.progress_percentage}"
+        assert isinstance(
+            task.progress_percentage, int
+        ), "progress_percentage must be integer"
         assert 0 <= task.progress_percentage <= 100, "progress_percentage must be 0-100"
 
     def test_task_without_subtasks_progress_updates_with_status(
@@ -366,9 +366,9 @@ class TestProgressCalculationWithSubtasks:
         assert fresh_task.completed_subtasks == 3
 
         # Progress should be at or near 100%
-        assert fresh_task.progress_percentage >= 90, (
-            f"Expected progress near 100% when all subtasks done, got {fresh_task.progress_percentage}"
-        )
+        assert (
+            fresh_task.progress_percentage >= 90
+        ), f"Expected progress near 100% when all subtasks done, got {fresh_task.progress_percentage}"
         assert fresh_task.progress_percentage <= 100
 
 
@@ -510,9 +510,9 @@ class TestProgressCalculationEdgeCases:
         task = result.task if hasattr(result, "task") else result
 
         # CRITICAL: Must be integer
-        assert isinstance(task.progress_percentage, int), (
-            f"progress_percentage must be integer, got {type(task.progress_percentage)}"
-        )
+        assert isinstance(
+            task.progress_percentage, int
+        ), f"progress_percentage must be integer, got {type(task.progress_percentage)}"
         assert 0 <= task.progress_percentage <= 100
 
     def test_progress_never_exceeds_100_percent(
@@ -573,6 +573,6 @@ class TestProgressCalculationEdgeCases:
         task = result.task if hasattr(result, "task") else result
 
         # Progress must not exceed 100
-        assert task.progress_percentage <= 100, (
-            f"progress_percentage exceeded 100: {task.progress_percentage}"
-        )
+        assert (
+            task.progress_percentage <= 100
+        ), f"progress_percentage exceeded 100: {task.progress_percentage}"

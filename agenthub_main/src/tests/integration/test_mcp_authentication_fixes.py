@@ -119,9 +119,9 @@ class TestMCPAuthenticationFixes:
                 description="Project for authentication testing",
                 user_id=self.test_user_uuid,
             )
-            assert project_result.get("success") is True, (
-                f"Project creation failed: {project_result.get('error')}"
-            )
+            assert (
+                project_result.get("success") is True
+            ), f"Project creation failed: {project_result.get('error')}"
             self.created_project_id = project_result["data"]["project"]["id"]
 
             # Create branch
@@ -143,9 +143,9 @@ class TestMCPAuthenticationFixes:
                     f"Git branch creation failed due to database schema issue: {actual_error}"
                 )
 
-            assert branch_result.get("success") is True, (
-                f"Branch creation failed: {branch_result.get('error')}"
-            )
+            assert (
+                branch_result.get("success") is True
+            ), f"Branch creation failed: {branch_result.get('error')}"
 
             # Skip test if we can't create branch due to infrastructure issues
             if "data" not in branch_result or not isinstance(
@@ -183,9 +183,9 @@ class TestMCPAuthenticationFixes:
             result = task_controller.manage_task_sync(**test_params)
 
             # Should succeed now (was failing before)
-            assert result.get("success") is True, (
-                f"Task creation failed: {result.get('error', 'Unknown error')}"
-            )
+            assert (
+                result.get("success") is True
+            ), f"Task creation failed: {result.get('error', 'Unknown error')}"
             assert (
                 result.get("data", {}).get("task", {}).get("title")
                 == "Authentication Test Task"
@@ -226,9 +226,9 @@ class TestMCPAuthenticationFixes:
                 description="Project for branch operations testing",
                 user_id=self.test_user_uuid,
             )
-            assert project_result.get("success") is True, (
-                f"Project creation failed: {project_result.get('error')}"
-            )
+            assert (
+                project_result.get("success") is True
+            ), f"Project creation failed: {project_result.get('error')}"
             project_id = project_result["data"]["project"]["id"]
 
             # Create a branch
@@ -249,9 +249,9 @@ class TestMCPAuthenticationFixes:
                     f"Git branch creation failed due to database schema issue: {actual_error}"
                 )
 
-            assert branch_result.get("success") is True, (
-                f"Branch creation failed: {branch_result.get('error')}"
-            )
+            assert (
+                branch_result.get("success") is True
+            ), f"Branch creation failed: {branch_result.get('error')}"
 
             # Skip test if we can't create branch due to infrastructure issues
             if "data" not in branch_result or not isinstance(
@@ -283,9 +283,9 @@ class TestMCPAuthenticationFixes:
             result = git_branch_controller.manage_git_branch(**list_params)
 
             # Should succeed and contain the created branch
-            assert result.get("success") is True, (
-                f"Git branch list failed: {result.get('error', 'Unknown error')}"
-            )
+            assert (
+                result.get("success") is True
+            ), f"Git branch list failed: {result.get('error', 'Unknown error')}"
 
             branches = result.get("data", {}).get("git_branchs", [])
             assert len(branches) > 0, "No branches returned"
@@ -354,9 +354,9 @@ class TestMCPAuthenticationFixes:
                 user_id=self.test_user_uuid,
             )
 
-            assert project_result.get("success") is True, (
-                f"Project creation failed: {project_result.get('error')}"
-            )
+            assert (
+                project_result.get("success") is True
+            ), f"Project creation failed: {project_result.get('error')}"
             project_id = project_result["data"]["project"]["id"]
 
             # 2. Create branch
@@ -379,9 +379,9 @@ class TestMCPAuthenticationFixes:
                     f"Git branch creation failed due to database schema issue: {actual_error}"
                 )
 
-            assert branch_result.get("success") is True, (
-                f"Branch creation failed: {branch_result.get('error')}"
-            )
+            assert (
+                branch_result.get("success") is True
+            ), f"Branch creation failed: {branch_result.get('error')}"
 
             # Skip test if we can't create branch due to infrastructure issues
             if "data" not in branch_result or not isinstance(
@@ -416,9 +416,9 @@ class TestMCPAuthenticationFixes:
                 user_id=self.test_user_uuid,
             )
 
-            assert task_result.get("success") is True, (
-                f"Task creation failed: {task_result.get('error')}"
-            )
+            assert (
+                task_result.get("success") is True
+            ), f"Task creation failed: {task_result.get('error')}"
 
             created_task_id = task_result["data"]["task"]["id"]
 
@@ -479,9 +479,9 @@ class TestMCPAuthenticationFixes:
                 user_id=self.test_user_uuid,
             )
 
-            assert project_result.get("success") is True, (
-                f"Project creation failed: {project_result.get('error')}"
-            )
+            assert (
+                project_result.get("success") is True
+            ), f"Project creation failed: {project_result.get('error')}"
             project_id = project_result["data"]["project"]["id"]
 
             # Create branch
@@ -502,9 +502,9 @@ class TestMCPAuthenticationFixes:
                     f"Git branch creation failed due to database schema issue: {actual_error}"
                 )
 
-            assert branch_result.get("success") is True, (
-                f"Branch creation failed: {branch_result.get('error')}"
-            )
+            assert (
+                branch_result.get("success") is True
+            ), f"Branch creation failed: {branch_result.get('error')}"
 
             # Skip test if we can't create branch due to infrastructure issues
             if "data" not in branch_result or not isinstance(
@@ -565,9 +565,7 @@ class TestMCPAuthenticationFixes:
                     keyword in error_str for keyword in validation_keywords
                 )
 
-                assert has_validation_error, (
-                    f"Expected validation error for missing assignees, got: {error_message}"
-                )
+                assert has_validation_error, f"Expected validation error for missing assignees, got: {error_message}"
 
             except Exception as e:
                 # Exception is also acceptable for validation failure

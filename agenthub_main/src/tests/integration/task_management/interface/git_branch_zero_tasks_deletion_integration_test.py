@@ -241,9 +241,9 @@ class TestGitBranchZeroTasksDeletionIntegration:
         logger.info(f"🔍 Deletion result: {result}")
 
         # Verify deletion succeeded
-        assert result["success"] is True, (
-            f"Empty branch deletion failed: {result.get('error')}"
-        )
+        assert (
+            result["success"] is True
+        ), f"Empty branch deletion failed: {result.get('error')}"
 
         # Verify branch no longer exists in database
         branch_still_exists = self._verify_branch_exists_in_database(
@@ -280,9 +280,9 @@ class TestGitBranchZeroTasksDeletionIntegration:
             branch_still_exists = self._verify_branch_exists_in_database(
                 self.branch_with_tasks_id
             )
-            assert not branch_still_exists, (
-                "Branch still exists after successful deletion"
-            )
+            assert (
+                not branch_still_exists
+            ), "Branch still exists after successful deletion"
             logger.info("✅ Branch with tasks deletion succeeded")
         else:
             # If it fails, that might be the expected behavior (cascade delete not implemented)
@@ -298,9 +298,9 @@ class TestGitBranchZeroTasksDeletionIntegration:
             action="list", project_id=self.project_id, user_id=self.user_id
         )
 
-        assert result["success"] is True, (
-            f"Failed to list branches: {result.get('error')}"
-        )
+        assert (
+            result["success"] is True
+        ), f"Failed to list branches: {result.get('error')}"
 
         branches = result.get("data", {}).get("git_branchs", [])
         assert len(branches) == 2, f"Expected 2 branches, got {len(branches)}"
@@ -381,13 +381,13 @@ class TestGitBranchZeroTasksDeletionIntegration:
         # Should fail gracefully
         # Check various possible response formats
         if "success" in result:
-            assert result["success"] is False, (
-                f"Expected success=False but got {result}"
-            )
+            assert (
+                result["success"] is False
+            ), f"Expected success=False but got {result}"
         elif "status" in result:
-            assert result["status"] == "failure", (
-                f"Expected status=failure but got {result}"
-            )
+            assert (
+                result["status"] == "failure"
+            ), f"Expected status=failure but got {result}"
 
         # Check for error indication
         error_found = (
@@ -419,9 +419,9 @@ class TestGitBranchZeroTasksDeletionIntegration:
             user_id=self.user_id,
         )
 
-        assert create_result["success"] is True, (
-            f"Failed to create branch: {create_result.get('error')}"
-        )
+        assert (
+            create_result["success"] is True
+        ), f"Failed to create branch: {create_result.get('error')}"
 
         # Get the created branch ID
         created_branch_id = (
@@ -446,14 +446,14 @@ class TestGitBranchZeroTasksDeletionIntegration:
         logger.info(f"🔍 Lifecycle delete result: {delete_result}")
 
         # Verify deletion
-        assert delete_result["success"] is True, (
-            f"Failed to delete created empty branch: {delete_result.get('error')}"
-        )
+        assert (
+            delete_result["success"] is True
+        ), f"Failed to delete created empty branch: {delete_result.get('error')}"
 
         # Verify it's gone from database
-        assert not self._verify_branch_exists_in_database(created_branch_id), (
-            "Branch still exists after deletion"
-        )
+        assert not self._verify_branch_exists_in_database(
+            created_branch_id
+        ), "Branch still exists after deletion"
 
         logger.info("✅ Complete branch lifecycle test passed")
 

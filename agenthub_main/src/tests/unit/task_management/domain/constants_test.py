@@ -244,12 +244,12 @@ class TestDomainConstants:
         required_functions = ["validate_user_id", "require_authenticated_user"]
 
         for func_name in required_functions:
-            assert hasattr(constants, func_name), (
-                f"Required function {func_name} should exist"
-            )
-            assert callable(getattr(constants, func_name)), (
-                f"Function {func_name} should be callable"
-            )
+            assert hasattr(
+                constants, func_name
+            ), f"Required function {func_name} should exist"
+            assert callable(
+                getattr(constants, func_name)
+            ), f"Function {func_name} should be callable"
 
     def test_validate_user_id_maintains_case(self):
         """Test that validate_user_id normalizes case-sensitive IDs to UUIDs.

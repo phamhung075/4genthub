@@ -29,6 +29,9 @@ pytestmark = pytest.mark.skip(
 try:
     from uuid import uuid4
 
+    from sqlalchemy.orm import Session
+
+    from fastmcp.auth.domain.value_objects.user_id import UserId
     from fastmcp.task_management.application.use_cases.agent_management import (
         CreateUserAgentInstanceUseCase,
         ImportSharedAgentUseCase,
@@ -46,9 +49,6 @@ try:
     from fastmcp.task_management.infrastructure.repositories.orm_user_agent_instance_repository import (
         ORMUserAgentInstanceRepository,
     )
-    from sqlalchemy.orm import Session
-
-    from fastmcp.auth.domain.value_objects.user_id import UserId
 
     IMPORTS_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
@@ -625,9 +625,9 @@ class TestCryptographicSecurity:
             # Token should NOT contain instance ID fragments
             # Check first 8 chars of UUID
             uuid_fragment = instance_id.split("-")[0]
-            assert uuid_fragment.lower() not in token.lower(), (
-                "Share token should not contain instance ID fragments"
-            )
+            assert (
+                uuid_fragment.lower() not in token.lower()
+            ), "Share token should not contain instance ID fragments"
 
 
 # ============================================================================

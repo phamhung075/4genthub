@@ -256,9 +256,9 @@ class TestGetHttpHeaders:
         }
 
         # Verify all are lowercase (this is what the code checks)
-        assert all(h.lower() == h for h in excluded), (
-            "All excluded headers must be lowercase"
-        )
+        assert all(
+            h.lower() == h for h in excluded
+        ), "All excluded headers must be lowercase"
 
 
 class TestHeaderValueConversion:

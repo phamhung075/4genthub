@@ -115,9 +115,9 @@ class TestSubtaskCascadeCountUpdates:
             current = task_facade.get_task(task_id)["task"]
 
             # CRITICAL: Count should match number of subtasks created
-            assert current["subtask_count"] == i, (
-                f"After creating {i} subtasks, count is {current['subtask_count']}"
-            )
+            assert (
+                current["subtask_count"] == i
+            ), f"After creating {i} subtasks, count is {current['subtask_count']}"
 
             # Verify database consistency
             with db_config.get_session() as session:
@@ -126,9 +126,9 @@ class TestSubtaskCascadeCountUpdates:
                     {"task_id": task_id},
                 )
                 db_count = result.scalar()
-                assert db_count == i, (
-                    f"Database shows {db_count} subtasks, expected {i}"
-                )
+                assert (
+                    db_count == i
+                ), f"Database shows {db_count} subtasks, expected {i}"
 
     def test_parent_subtask_count_decrements_on_subtask_deletion(
         self, task_facade, subtask_facade, git_branch_id, db_config, user_id
@@ -171,9 +171,9 @@ class TestSubtaskCascadeCountUpdates:
             current = task_facade.get_task(task_id)["task"]
 
             # CRITICAL: Count must decrement correctly
-            assert current["subtask_count"] == remaining, (
-                f"After deleting {i + 1} subtasks, count is {current['subtask_count']}, expected {remaining}"
-            )
+            assert (
+                current["subtask_count"] == remaining
+            ), f"After deleting {i + 1} subtasks, count is {current['subtask_count']}, expected {remaining}"
 
     def test_completed_subtasks_count_updates_on_completion(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -219,9 +219,9 @@ class TestSubtaskCascadeCountUpdates:
             expected_completed = i + 1
 
             # CRITICAL: Completed count must increment
-            assert current["completed_subtasks"] == expected_completed, (
-                f"After completing {expected_completed} subtasks, count is {current['completed_subtasks']}"
-            )
+            assert (
+                current["completed_subtasks"] == expected_completed
+            ), f"After completing {expected_completed} subtasks, count is {current['completed_subtasks']}"
 
             # Total count should remain the same
             assert current["subtask_count"] == 4
@@ -279,9 +279,9 @@ class TestSubtaskCascadeCountUpdates:
 
         # Both counts should decrement
         assert after_delete["subtask_count"] == 2, "Total count should decrement"
-        assert after_delete["completed_subtasks"] == 2, (
-            "Completed count should also decrement when deleting completed subtask"
-        )
+        assert (
+            after_delete["completed_subtasks"] == 2
+        ), "Completed count should also decrement when deleting completed subtask"
 
 
 @pytest.mark.e2e
@@ -395,9 +395,9 @@ class TestSubtaskProgressCascade:
 
         # Parent should show ~25% (first subtask 50% + second subtask 0% = avg 25%)
         # Allow tolerance
-        assert 20 <= progress_after_first <= 30, (
-            f"Expected ~25% parent progress, got {progress_after_first}%"
-        )
+        assert (
+            20 <= progress_after_first <= 30
+        ), f"Expected ~25% parent progress, got {progress_after_first}%"
 
         # Update second subtask to 100%
         subtask_facade.handle_manage_subtask(
@@ -412,9 +412,9 @@ class TestSubtaskProgressCascade:
         progress_after_second = task_after_second["progress_percentage"]
 
         # Parent should show ~75% (50% + 100% = avg 75%)
-        assert 70 <= progress_after_second <= 80, (
-            f"Expected ~75% parent progress, got {progress_after_second}%"
-        )
+        assert (
+            70 <= progress_after_second <= 80
+        ), f"Expected ~75% parent progress, got {progress_after_second}%"
 
 
 @pytest.mark.e2e
@@ -504,9 +504,9 @@ class TestSubtaskContextCascade:
         updated_at_after_subtask = parent_after_subtask["updated_at"]
 
         # Parent's updated_at should have changed
-        assert updated_at_after_subtask != initial_updated_at, (
-            "Parent updated_at should change when subtask is created"
-        )
+        assert (
+            updated_at_after_subtask != initial_updated_at
+        ), "Parent updated_at should change when subtask is created"
 
         # Parse timestamps to ensure it's actually later
         from datetime import datetime
@@ -516,9 +516,9 @@ class TestSubtaskContextCascade:
             updated_at_after_subtask.replace("Z", "+00:00")
         )
 
-        assert after_dt > initial_dt, (
-            "Parent updated_at timestamp should be later after subtask creation"
-        )
+        assert (
+            after_dt > initial_dt
+        ), "Parent updated_at timestamp should be later after subtask creation"
 
 
 @pytest.mark.e2e
@@ -574,9 +574,9 @@ class TestCascadeDeletion:
                 {"task_id": task_id},
             )
             count_after = result.scalar()
-            assert count_after == 0, (
-                "Subtasks should be cascade deleted when parent is deleted"
-            )
+            assert (
+                count_after == 0
+            ), "Subtasks should be cascade deleted when parent is deleted"
 
     def test_cannot_access_subtasks_after_parent_deletion(
         self, task_facade, subtask_facade, git_branch_id, user_id
@@ -613,9 +613,9 @@ class TestCascadeDeletion:
                 action="get", task_id=task_id, subtask_id=subtask_id, user_id=user_id
             )
             # If it doesn't raise an error, it should at least return success=False
-            assert get_subtask_result["success"] is False, (
-                "Should not be able to access subtask after parent deletion"
-            )
+            assert (
+                get_subtask_result["success"] is False
+            ), "Should not be able to access subtask after parent deletion"
         except Exception:
             # Expected - subtask no longer exists
             pass

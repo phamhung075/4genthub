@@ -45,9 +45,9 @@ def test_assignees_string_conversion():
         print(f"First element: {repr(test_kwargs_single['assignees'][0])}")
 
         # Verify it's correct
-        assert test_kwargs_single["assignees"] == ["test-orchestrator-agent"], (
-            f"Expected ['test-orchestrator-agent'], got {test_kwargs_single['assignees']}"
-        )
+        assert (
+            test_kwargs_single["assignees"] == ["test-orchestrator-agent"]
+        ), f"Expected ['test-orchestrator-agent'], got {test_kwargs_single['assignees']}"
         print("✓ Test 1 PASSED")
 
     except Exception as e:
@@ -92,9 +92,9 @@ def test_assignees_string_conversion():
 
         # Verify it's correct
         expected = ["coding-agent", "test-orchestrator-agent", "@debugger-agent"]
-        assert test_kwargs_multi["assignees"] == expected, (
-            f"Expected {expected}, got {test_kwargs_multi['assignees']}"
-        )
+        assert (
+            test_kwargs_multi["assignees"] == expected
+        ), f"Expected {expected}, got {test_kwargs_multi['assignees']}"
         print("✓ Test 2 PASSED")
 
     except Exception as e:

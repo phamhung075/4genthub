@@ -111,9 +111,9 @@ def test_env_variables_accessible_in_app():
             if isinstance(expected, str):
                 assert value == expected, f"{var} expected '{expected}', got '{value}'"
             elif isinstance(expected, list):
-                assert value in expected, (
-                    f"{var} expected one of {expected}, got '{value}'"
-                )
+                assert (
+                    value in expected
+                ), f"{var} expected one of {expected}, got '{value}'"
             elif callable(expected):
                 assert expected(value), f"{var} validation failed for value '{value}'"
 

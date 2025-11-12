@@ -45,9 +45,9 @@ class TestProjectAPIContractBasicFields:
 
         # Convert to string for UUID validation
         id_str = str(sample_project.id)
-        assert isinstance(id_str, str), (
-            "Project id must be string or convertible to string"
-        )
+        assert isinstance(
+            id_str, str
+        ), "Project id must be string or convertible to string"
 
         # Verify it's a valid UUID format
         try:
@@ -70,14 +70,14 @@ class TestProjectAPIContractBasicFields:
         Verify project includes description field.
         Status: ✅ SHOULD PASS - Standard field.
         """
-        assert hasattr(sample_project, "description"), (
-            "Project must have 'description' field"
-        )
+        assert hasattr(
+            sample_project, "description"
+        ), "Project must have 'description' field"
         # Description can be string or None
         if sample_project.description is not None:
-            assert isinstance(sample_project.description, str), (
-                "Project description must be string when provided"
-            )
+            assert isinstance(
+                sample_project.description, str
+            ), "Project description must be string when provided"
 
 
 class TestProjectAPIContractTimestamps:
@@ -91,20 +91,20 @@ class TestProjectAPIContractTimestamps:
         Frontend expects: created_at?: string
         Backend returns: created_at: datetime → serialized as ISO string
         """
-        assert hasattr(sample_project, "created_at"), (
-            "Project must have 'created_at' field"
-        )
+        assert hasattr(
+            sample_project, "created_at"
+        ), "Project must have 'created_at' field"
 
         # Handle both datetime objects and string representations
         if isinstance(sample_project.created_at, datetime):
             iso_string = sample_project.created_at.isoformat()
-            assert "T" in iso_string, (
-                "created_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "created_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_project.created_at, str):
-            assert "T" in sample_project.created_at, (
-                "created_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_project.created_at
+            ), "created_at must be ISO 8601 format (contains 'T')"
             try:
                 datetime.fromisoformat(sample_project.created_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
@@ -124,20 +124,20 @@ class TestProjectAPIContractTimestamps:
         Frontend expects: updated_at?: string
         Backend returns: updated_at: datetime → serialized as ISO string
         """
-        assert hasattr(sample_project, "updated_at"), (
-            "Project must have 'updated_at' field"
-        )
+        assert hasattr(
+            sample_project, "updated_at"
+        ), "Project must have 'updated_at' field"
 
         # Handle both datetime objects and string representations
         if isinstance(sample_project.updated_at, datetime):
             iso_string = sample_project.updated_at.isoformat()
-            assert "T" in iso_string, (
-                "updated_at datetime must serialize to ISO 8601 format"
-            )
+            assert (
+                "T" in iso_string
+            ), "updated_at datetime must serialize to ISO 8601 format"
         elif isinstance(sample_project.updated_at, str):
-            assert "T" in sample_project.updated_at, (
-                "updated_at must be ISO 8601 format (contains 'T')"
-            )
+            assert (
+                "T" in sample_project.updated_at
+            ), "updated_at must be ISO 8601 format (contains 'T')"
             try:
                 datetime.fromisoformat(sample_project.updated_at.replace("Z", "+00:00"))
             except (ValueError, AttributeError):
@@ -161,12 +161,12 @@ class TestProjectAPIContractOptionalFields:
         Frontend expects: git_branchs?: Record<string, Branch>
         Backend has: git_branchs: dict[str, GitBranch]
         """
-        assert hasattr(sample_project, "git_branchs"), (
-            "Project must have 'git_branchs' field"
-        )
-        assert isinstance(sample_project.git_branchs, dict), (
-            "Project git_branchs must be dictionary"
-        )
+        assert hasattr(
+            sample_project, "git_branchs"
+        ), "Project must have 'git_branchs' field"
+        assert isinstance(
+            sample_project.git_branchs, dict
+        ), "Project git_branchs must be dictionary"
 
     def test_project_has_status_field(self, sample_project: Project):
         """
@@ -231,9 +231,9 @@ class TestProjectAPIContractCompleteStructure:
         ]
 
         for field in required_fields:
-            assert hasattr(sample_project, field), (
-                f"Project MUST have required field '{field}'"
-            )
+            assert hasattr(
+                sample_project, field
+            ), f"Project MUST have required field '{field}'"
 
         # Common optional fields
         common_fields = [
@@ -244,9 +244,9 @@ class TestProjectAPIContractCompleteStructure:
         ]
 
         for field in common_fields:
-            assert hasattr(sample_project, field), (
-                f"Project should have common field '{field}'"
-            )
+            assert hasattr(
+                sample_project, field
+            ), f"Project should have common field '{field}'"
 
 
 class TestProjectAPIContractBusinessLogic:
@@ -268,23 +268,23 @@ class TestProjectAPIContractBusinessLogic:
         health = sample_project.calculate_project_health()
 
         assert isinstance(health, dict), "Health calculation must return dict"
-        assert "overall_health_score" in health, (
-            "Health must include overall_health_score"
-        )
+        assert (
+            "overall_health_score" in health
+        ), "Health must include overall_health_score"
         assert "health_status" in health, "Health must include health_status"
         assert "metrics" in health, "Health must include metrics"
         assert "counts" in health, "Health must include counts"
 
         # Verify score range
-        assert 0 <= health["overall_health_score"] <= 100, (
-            f"Health score must be 0-100, got {health['overall_health_score']}"
-        )
+        assert (
+            0 <= health["overall_health_score"] <= 100
+        ), f"Health score must be 0-100, got {health['overall_health_score']}"
 
         # Verify status values
         valid_statuses = ["excellent", "good", "fair", "poor", "critical"]
-        assert health["health_status"] in valid_statuses, (
-            f"Health status must be one of {valid_statuses}, got {health['health_status']}"
-        )
+        assert (
+            health["health_status"] in valid_statuses
+        ), f"Health status must be one of {valid_statuses}, got {health['health_status']}"
 
     def test_project_get_orchestration_status_returns_valid_structure(
         self, sample_project: Project
@@ -313,9 +313,9 @@ class TestProjectAPIContractBusinessLogic:
 
         # Verify types
         assert isinstance(status["total_branches"], int), "total_branches must be int"
-        assert isinstance(status["registered_agents"], int), (
-            "registered_agents must be int"
-        )
+        assert isinstance(
+            status["registered_agents"], int
+        ), "registered_agents must be int"
         assert isinstance(status["branches"], dict), "branches must be dict"
         assert isinstance(status["agents"], dict), "agents must be dict"
 
@@ -347,9 +347,9 @@ class TestProjectAPIContractBusinessLogic:
             "high_risk",
             "critical_risk",
         ]
-        assert risk["risk_level"] in valid_risk_levels, (
-            f"Risk level must be one of {valid_risk_levels}, got {risk['risk_level']}"
-        )
+        assert (
+            risk["risk_level"] in valid_risk_levels
+        ), f"Risk level must be one of {valid_risk_levels}, got {risk['risk_level']}"
 
         # Verify string fields
         assert isinstance(risk["assessment"], str), "assessment must be string"
@@ -384,9 +384,9 @@ class TestProjectAPIContractGitBranchManagement:
         Frontend expects: git_branchs?: Record<string, Branch>
         Backend has: git_branchs: dict[str, GitBranch]
         """
-        assert isinstance(sample_project.git_branchs, dict), (
-            "git_branchs must be dictionary"
-        )
+        assert isinstance(
+            sample_project.git_branchs, dict
+        ), "git_branchs must be dictionary"
 
         # If there are any branches, verify key format
         for branch_id in sample_project.git_branchs.keys():
@@ -407,21 +407,21 @@ class TestProjectAPIContractAgentManagement:
         Verify project has registered_agents dictionary.
         Status: ✅ SHOULD PASS - Agent management field.
         """
-        assert hasattr(sample_project, "registered_agents"), (
-            "Project must have 'registered_agents' field"
-        )
-        assert isinstance(sample_project.registered_agents, dict), (
-            "registered_agents must be dictionary"
-        )
+        assert hasattr(
+            sample_project, "registered_agents"
+        ), "Project must have 'registered_agents' field"
+        assert isinstance(
+            sample_project.registered_agents, dict
+        ), "registered_agents must be dictionary"
 
     def test_project_has_agent_assignments_dict(self, sample_project: Project):
         """
         Verify project has agent_assignments dictionary.
         Status: ✅ SHOULD PASS - Agent assignment tracking.
         """
-        assert hasattr(sample_project, "agent_assignments"), (
-            "Project must have 'agent_assignments' field"
-        )
-        assert isinstance(sample_project.agent_assignments, dict), (
-            "agent_assignments must be dictionary"
-        )
+        assert hasattr(
+            sample_project, "agent_assignments"
+        ), "Project must have 'agent_assignments' field"
+        assert isinstance(
+            sample_project.agent_assignments, dict
+        ), "agent_assignments must be dictionary"

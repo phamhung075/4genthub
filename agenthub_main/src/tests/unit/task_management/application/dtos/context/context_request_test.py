@@ -340,9 +340,9 @@ class TestDTORelationships:
 
         for dto_class in dto_classes:
             field_names = {f.name for f in fields(dto_class)}
-            assert "task_id" in field_names, (
-                f"{dto_class.__name__} must have task_id field"
-            )
+            assert (
+                "task_id" in field_names
+            ), f"{dto_class.__name__} must have task_id field"
 
     def test_dto_documentation(self):
         """Test that all DTOs have proper documentation"""

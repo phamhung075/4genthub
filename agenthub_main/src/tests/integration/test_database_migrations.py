@@ -366,9 +366,9 @@ class TestRunMigrations:
             assert result is True
             # Verify data migration was attempted (should have at least 6 calls)
             # 1: table check, 2: column check, 3: count, 4: UPDATE, 5: DROP, 6: CREATE INDEX
-            assert mock_conn.execute.call_count >= 6, (
-                f"Expected at least 6 calls, got {mock_conn.execute.call_count}"
-            )
+            assert (
+                mock_conn.execute.call_count >= 6
+            ), f"Expected at least 6 calls, got {mock_conn.execute.call_count}"
             # Verify migration logging
             assert "Migrating data from details to progress_history" in caplog.text
 

@@ -219,9 +219,9 @@ class TestGlobalContextMigrator:
 
             # Verify data ended up in correct nested location
             migrated_value = nested_data.get_nested_value(new_path)
-            assert migrated_value == {"test": "value"}, (
-                f"Failed for {old_field} -> {new_path}"
-            )
+            assert migrated_value == {
+                "test": "value"
+            }, f"Failed for {old_field} -> {new_path}"
 
     def test_migration_with_unmapped_fields(self):
         """Test migration handles unmapped fields correctly."""

@@ -178,9 +178,9 @@ class TestAuthModuleStructure:
 
         # Check that common internal patterns aren't exported
         for item in fastmcp.auth.__all__:
-            assert not item.startswith("_"), (
-                f"Private item {item} should not be exported"
-            )
-            assert not item.endswith("_internal"), (
-                f"Internal item {item} should not be exported"
-            )
+            assert not item.startswith(
+                "_"
+            ), f"Private item {item} should not be exported"
+            assert not item.endswith(
+                "_internal"
+            ), f"Internal item {item} should not be exported"

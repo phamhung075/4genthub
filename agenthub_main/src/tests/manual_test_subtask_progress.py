@@ -45,9 +45,9 @@ def test_is_completed_property():
     )
     # Note: When progress_percentage is set to 100, the entity automatically updates status to 'done'
     # This is correct behavior as per the Subtask.update_progress_percentage method
-    assert subtask2.is_completed, (
-        "Subtask with progress_percentage=100 should be completed"
-    )
+    assert (
+        subtask2.is_completed
+    ), "Subtask with progress_percentage=100 should be completed"
 
     # Test 3: Subtask with status='todo' should not be completed
     subtask3 = Subtask(
@@ -61,9 +61,9 @@ def test_is_completed_property():
     print(
         f"Test 3 - Status='todo': is_completed = {subtask3.is_completed} (expected: False)"
     )
-    assert not subtask3.is_completed, (
-        "Subtask with status='todo' should not be completed"
-    )
+    assert (
+        not subtask3.is_completed
+    ), "Subtask with status='todo' should not be completed"
 
     # Test 4: Subtask with progress_percentage=50 should not be completed
     subtask4 = Subtask(
@@ -78,9 +78,9 @@ def test_is_completed_property():
     print(
         f"Test 4 - Progress=50%: is_completed = {subtask4.is_completed} (expected: False)"
     )
-    assert not subtask4.is_completed, (
-        "Subtask with progress_percentage=50 should not be completed"
-    )
+    assert (
+        not subtask4.is_completed
+    ), "Subtask with progress_percentage=50 should not be completed"
 
     print("\n✅ All Subtask.is_completed tests passed!")
 

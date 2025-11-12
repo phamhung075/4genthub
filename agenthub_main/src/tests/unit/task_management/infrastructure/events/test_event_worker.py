@@ -187,9 +187,9 @@ class TestEventWorker:
             successes.append(success)
 
         # At least one should fail due to queue full
-        assert False in successes, (
-            "Expected at least one enqueue to fail due to full queue"
-        )
+        assert (
+            False in successes
+        ), "Expected at least one enqueue to fail due to full queue"
 
         # Check stats
         stats = worker.get_stats()

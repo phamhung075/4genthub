@@ -238,9 +238,9 @@ class TestTaskListNPlusOneQuery:
             print(f"Actual queries: {counter.count}")
             print(f"N+1 problem detected: {counter.count > 3}")
 
-            assert len(response.tasks) == task_count, (
-                f"Should return all {task_count} tasks"
-            )
+            assert (
+                len(response.tasks) == task_count
+            ), f"Should return all {task_count} tasks"
 
             # CRITICAL ASSERTION - WILL FAIL INITIALLY
             assert counter.count <= 3, (
@@ -294,9 +294,9 @@ class TestTaskListNPlusOneQuery:
             print("Performance target: < 1.0 second")
             print(f"Performance issue: {duration > 1.0}")
 
-            assert len(response.tasks) == task_count, (
-                f"Should return all {task_count} tasks"
-            )
+            assert (
+                len(response.tasks) == task_count
+            ), f"Should return all {task_count} tasks"
 
             # CRITICAL ASSERTION - WILL FAIL INITIALLY
             assert duration < 1.0, (
@@ -357,9 +357,9 @@ class TestTaskListNPlusOneQuery:
                         f"Task {i + 1}: project_id mismatch - expected {project_id}, got {task.project_id}"
                     )
 
-            assert len(response.tasks) == task_count, (
-                f"Should return all {task_count} tasks"
-            )
+            assert (
+                len(response.tasks) == task_count
+            ), f"Should return all {task_count} tasks"
 
             # CRITICAL ASSERTIONS - Verify data integrity
             assert null_count == 0, (
@@ -587,9 +587,9 @@ class TestTaskListPerformanceRegression:
                 assert task.priority is not None, "Task missing priority"
                 assert task.git_branch_id is not None, "Task missing git_branch_id"
                 # project_id should be populated via batch loading
-                assert task.project_id is not None, (
-                    "Task missing project_id (batch loading failed)"
-                )
+                assert (
+                    task.project_id is not None
+                ), "Task missing project_id (batch loading failed)"
 
 
 if __name__ == "__main__":

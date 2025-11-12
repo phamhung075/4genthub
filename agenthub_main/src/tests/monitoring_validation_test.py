@@ -256,9 +256,9 @@ class MetricsValidationTest:
 
             # Verify metrics were recorded
             summary = collector.get_optimization_summary(1)
-            assert summary["performance_metrics"], (
-                "Performance metrics should be recorded"
-            )
+            assert summary[
+                "performance_metrics"
+            ], "Performance metrics should be recorded"
 
             self.test_results.append(
                 {
@@ -409,19 +409,19 @@ class MetricsValidationTest:
 
             # Generate test reports
             daily_report = await reporter.generate_daily_report()
-            assert daily_report["report_type"] == "daily", (
-                "Daily report should be generated"
-            )
+            assert (
+                daily_report["report_type"] == "daily"
+            ), "Daily report should be generated"
 
             weekly_report = await reporter.generate_weekly_report()
-            assert weekly_report["report_type"] == "weekly", (
-                "Weekly report should be generated"
-            )
+            assert (
+                weekly_report["report_type"] == "weekly"
+            ), "Weekly report should be generated"
 
             monthly_report = await reporter.generate_monthly_roi_report()
-            assert "roi_analysis" in monthly_report, (
-                "Monthly ROI report should contain ROI analysis"
-            )
+            assert (
+                "roi_analysis" in monthly_report
+            ), "Monthly ROI report should contain ROI analysis"
 
             # Verify files were created
             report_files = list(self.output_dir.glob("*_report_*.html")) + list(

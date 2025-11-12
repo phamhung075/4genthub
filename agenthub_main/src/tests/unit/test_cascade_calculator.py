@@ -450,9 +450,9 @@ class TestCascadeCalculator:
         elapsed_ms = (time.time() - start_time) * 1000
 
         # Verify performance requirement
-        assert elapsed_ms < 50, (
-            f"Cascade calculation took {elapsed_ms:.2f}ms (should be < 50ms)"
-        )
+        assert (
+            elapsed_ms < 50
+        ), f"Cascade calculation took {elapsed_ms:.2f}ms (should be < 50ms)"
         assert result.calculation_time_ms < 50
 
     @pytest.mark.asyncio

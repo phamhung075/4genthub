@@ -116,13 +116,13 @@ class TestSubtaskCountAccuracy:
 
         # CRITICAL: These fields must exist and be zero
         assert hasattr(task, "subtask_count"), "subtask_count field MUST exist"
-        assert hasattr(task, "completed_subtasks"), (
-            "completed_subtasks field MUST exist"
-        )
+        assert hasattr(
+            task, "completed_subtasks"
+        ), "completed_subtasks field MUST exist"
         assert task.subtask_count == 0, f"Expected 0 subtasks, got {task.subtask_count}"
-        assert task.completed_subtasks == 0, (
-            f"Expected 0 completed, got {task.completed_subtasks}"
-        )
+        assert (
+            task.completed_subtasks == 0
+        ), f"Expected 0 completed, got {task.completed_subtasks}"
         assert isinstance(task.subtasks, list), "subtasks must be list (not None)"
         assert len(task.subtasks) == 0, "subtasks array should be empty"
 
@@ -186,12 +186,12 @@ class TestSubtaskCountAccuracy:
             f"Expected subtask_count=5, got {fresh_task.subtask_count}. "
             f"User sees incorrect badge count!"
         )
-        assert fresh_task.completed_subtasks == 0, (
-            f"Expected completed_subtasks=0, got {fresh_task.completed_subtasks}"
-        )
-        assert len(fresh_task.subtasks) == 5, (
-            f"Expected 5 items in subtasks array, got {len(fresh_task.subtasks)}"
-        )
+        assert (
+            fresh_task.completed_subtasks == 0
+        ), f"Expected completed_subtasks=0, got {fresh_task.completed_subtasks}"
+        assert (
+            len(fresh_task.subtasks) == 5
+        ), f"Expected 5 items in subtasks array, got {len(fresh_task.subtasks)}"
         # Verify subtask_count matches array length
         assert fresh_task.subtask_count == len(fresh_task.subtasks), (
             f"subtask_count ({fresh_task.subtask_count}) MUST match "
@@ -253,12 +253,12 @@ class TestSubtaskCountAccuracy:
         )
 
         # CRITICAL: Count should be 3 (5 - 2 deleted)
-        assert fresh_task.subtask_count == 3, (
-            f"After deleting 2 subtasks, count should be 3, got {fresh_task.subtask_count}"
-        )
-        assert len(fresh_task.subtasks) == 3, (
-            f"Subtasks array should have 3 items, got {len(fresh_task.subtasks)}"
-        )
+        assert (
+            fresh_task.subtask_count == 3
+        ), f"After deleting 2 subtasks, count should be 3, got {fresh_task.subtask_count}"
+        assert (
+            len(fresh_task.subtasks) == 3
+        ), f"Subtasks array should have 3 items, got {len(fresh_task.subtasks)}"
 
     def test_completing_subtasks_updates_completed_count(
         self,
@@ -321,18 +321,18 @@ class TestSubtaskCountAccuracy:
         )
 
         # CRITICAL CHECKS
-        assert fresh_task.subtask_count == 5, (
-            f"Total subtasks should be 5, got {fresh_task.subtask_count}"
-        )
+        assert (
+            fresh_task.subtask_count == 5
+        ), f"Total subtasks should be 5, got {fresh_task.subtask_count}"
         assert fresh_task.completed_subtasks == 2, (
             f"Completed subtasks should be 2, got {fresh_task.completed_subtasks}. "
             f"Frontend progress bar will be incorrect!"
         )
         # Progress should reflect completion
         (2 / 5) * 100  # 40%
-        assert fresh_task.completed_subtasks <= fresh_task.subtask_count, (
-            "completed_subtasks cannot exceed subtask_count"
-        )
+        assert (
+            fresh_task.completed_subtasks <= fresh_task.subtask_count
+        ), "completed_subtasks cannot exceed subtask_count"
 
     def test_all_subtasks_completed_shows_full_count(
         self,
@@ -400,9 +400,9 @@ class TestSubtaskCountAccuracy:
             f"All 3 subtasks completed, should show completed_subtasks=3, "
             f"got {fresh_task.completed_subtasks}"
         )
-        assert fresh_task.completed_subtasks == fresh_task.subtask_count, (
-            "When all subtasks done, completed should equal total"
-        )
+        assert (
+            fresh_task.completed_subtasks == fresh_task.subtask_count
+        ), "When all subtasks done, completed should equal total"
 
     def test_mixed_subtask_states_counts_only_done(
         self,
@@ -522,9 +522,9 @@ class TestSubtaskCountEdgeCases:
         result = get_task_use_case.execute(get_request)
         task = result.task if hasattr(result, "task") else result
 
-        assert task.subtask_count == 10, (
-            f"After rapid addition of 10 subtasks, count should be 10, got {task.subtask_count}"
-        )
+        assert (
+            task.subtask_count == 10
+        ), f"After rapid addition of 10 subtasks, count should be 10, got {task.subtask_count}"
 
     def test_subtask_counts_persist_across_multiple_retrievals(
         self,
@@ -573,6 +573,6 @@ class TestSubtaskCountEdgeCases:
             counts.append((task.subtask_count, task.completed_subtasks))
 
         # All retrievals should return same counts
-        assert all(count == (3, 0) for count in counts), (
-            f"Counts should be consistent across retrievals: {counts}"
-        )
+        assert all(
+            count == (3, 0) for count in counts
+        ), f"Counts should be consistent across retrievals: {counts}"

@@ -37,9 +37,9 @@ class TestResponseValidator:
 
         # Should have no errors for complete, valid task
         errors = [i for i in issues if i.severity == "error"]
-        assert len(errors) == 0, (
-            f"Valid task should have no errors: {[e.message for e in errors]}"
-        )
+        assert (
+            len(errors) == 0
+        ), f"Valid task should have no errors: {[e.message for e in errors]}"
 
     def test_validate_task_missing_required_field(self):
         """Test validation detects missing required fields"""
@@ -138,9 +138,9 @@ class TestResponseValidator:
 
         # Should have no errors
         errors = [i for i in issues if i.severity == "error"]
-        assert len(errors) == 0, (
-            f"Valid subtask should have no errors: {[e.message for e in errors]}"
-        )
+        assert (
+            len(errors) == 0
+        ), f"Valid subtask should have no errors: {[e.message for e in errors]}"
 
     def test_validate_subtask_missing_parent_task_id(self):
         """Test validation detects missing parent_task_id in subtask"""

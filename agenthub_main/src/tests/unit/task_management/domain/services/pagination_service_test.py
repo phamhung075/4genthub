@@ -456,9 +456,9 @@ class TestPaginationServiceBusinessRules:
             )
 
             # Assert
-            assert result.total_pages == expected_pages, (
-                f"Failed for total_count={total_count}, page_size={page_size}"
-            )
+            assert (
+                result.total_pages == expected_pages
+            ), f"Failed for total_count={total_count}, page_size={page_size}"
 
     def test_has_next_logic(self):
         """Test has_next flag is set correctly."""
@@ -484,9 +484,9 @@ class TestPaginationServiceBusinessRules:
             )
 
             # Assert
-            assert result.has_next == expected_has_next, (
-                f"Failed for page={page}, total_pages={total_pages}"
-            )
+            assert (
+                result.has_next == expected_has_next
+            ), f"Failed for page={page}, total_pages={total_pages}"
 
     def test_has_previous_logic(self):
         """Test has_previous flag is set correctly."""
@@ -510,6 +510,6 @@ class TestPaginationServiceBusinessRules:
             )
 
             # Assert
-            assert result.has_previous == expected_has_previous, (
-                f"Failed for page={page}"
-            )
+            assert (
+                result.has_previous == expected_has_previous
+            ), f"Failed for page={page}"

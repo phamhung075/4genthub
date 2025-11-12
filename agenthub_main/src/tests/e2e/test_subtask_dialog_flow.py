@@ -114,9 +114,9 @@ class TestSubtaskDialogFlow:
 
         # Verify URL contains 'subtask' parameter or path
         current_url = page.url
-        assert "subtask" in current_url.lower(), (
-            f"URL should contain 'subtask' but got: {current_url}"
-        )
+        assert (
+            "subtask" in current_url.lower()
+        ), f"URL should contain 'subtask' but got: {current_url}"
 
     def test_subtask_url_remains_stable_after_dialog_open(
         self, page: Page, base_url: str, test_project_data: dict
@@ -149,24 +149,24 @@ class TestSubtaskDialogFlow:
         url_after_click = page.url
 
         # URL should have changed to include subtask
-        assert url_after_click != url_before_click, (
-            "URL should change when subtask dialog opens"
-        )
-        assert "subtask" in url_after_click.lower(), (
-            f"URL should contain 'subtask': {url_after_click}"
-        )
+        assert (
+            url_after_click != url_before_click
+        ), "URL should change when subtask dialog opens"
+        assert (
+            "subtask" in url_after_click.lower()
+        ), f"URL should contain 'subtask': {url_after_click}"
 
         # Wait 3 seconds to ensure URL doesn't revert
         page.wait_for_timeout(3000)
         url_after_wait = page.url
 
         # URL should remain stable (not revert)
-        assert url_after_wait == url_after_click, (
-            f"URL reverted from {url_after_click} to {url_after_wait}"
-        )
-        assert "subtask" in url_after_wait.lower(), (
-            "URL should still contain 'subtask' after waiting"
-        )
+        assert (
+            url_after_wait == url_after_click
+        ), f"URL reverted from {url_after_click} to {url_after_wait}"
+        assert (
+            "subtask" in url_after_wait.lower()
+        ), "URL should still contain 'subtask' after waiting"
 
     def test_subtask_api_calls_use_correct_task_id_format(
         self, page: Page, base_url: str, test_project_data: dict
@@ -223,9 +223,9 @@ class TestSubtaskDialogFlow:
 
                 # Verify it's not using git_branch_id pattern
                 # Git branch IDs typically have different patterns
-                assert len(task_id_in_url) == 36, (
-                    f"Task ID should be standard UUID length (36): {task_id_in_url}"
-                )
+                assert (
+                    len(task_id_in_url) == 36
+                ), f"Task ID should be standard UUID length (36): {task_id_in_url}"
 
     def test_subtask_dialog_displays_correct_content(
         self, page: Page, base_url: str, test_project_data: dict
@@ -271,9 +271,9 @@ class TestSubtaskDialogFlow:
             dialog_title = dialog.locator("h1, h2, h3, [class*='title']").first
             if dialog_title.is_visible():
                 dialog_title_text = dialog_title.inner_text()
-                assert subtask_title.lower() in dialog_title_text.lower(), (
-                    f"Dialog should show subtask title '{subtask_title}' but shows '{dialog_title_text}'"
-                )
+                assert (
+                    subtask_title.lower() in dialog_title_text.lower()
+                ), f"Dialog should show subtask title '{subtask_title}' but shows '{dialog_title_text}'"
 
         # Verify dialog has subtask-specific elements
         # Look for elements that would only appear in a subtask dialog
@@ -378,9 +378,9 @@ class TestSubtaskDialogFlow:
         assert "subtask" in second_subtask_url.lower()
 
         # URLs should be different (different subtask IDs)
-        assert first_subtask_url != second_subtask_url, (
-            "Different subtasks should have different URLs"
-        )
+        assert (
+            first_subtask_url != second_subtask_url
+        ), "Different subtasks should have different URLs"
 
 
 if __name__ == "__main__":
