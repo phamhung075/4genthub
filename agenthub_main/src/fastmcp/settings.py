@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field, model_validator
-from pydantic.fields import FieldInfo
+from pydantic.fields import FieldInfo, ModelPrivateAttr
 from pydantic_settings import (
     BaseSettings,
+    DotEnvSettingsSource,
     EnvSettingsSource,
     PydanticBaseSettingsSource,
     SettingsConfigDict,
@@ -53,6 +54,41 @@ class ExtendedSettingsConfigDict(SettingsConfigDict, total=False):
     env_prefixes: list[str] | None
 
 
+class DynamicDotEnvSettingsSource(DotEnvSettingsSource):
+    """
+    A DotEnvSettingsSource that respects the instance-level _env_file attribute.
+    This allows tests to modify Settings._env_file and have it take effect.
+    """
+
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        env_file: str | Path | None = None,
+        env_file_encoding: str | None = None,
+        case_sensitive: bool | None = None,
+        env_prefix: str | None = None,
+        env_nested_delimiter: str | None = None,
+    ):
+        # Use the current value of _env_file from the class
+        # Access via __dict__ to get the raw value
+        if "_env_file" in settings_cls.__dict__:
+            env_file_raw = settings_cls.__dict__["_env_file"]
+            # Unwrap ModelPrivateAttr if needed
+            if isinstance(env_file_raw, ModelPrivateAttr):
+                env_file = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+            else:
+                env_file = env_file_raw
+
+        super().__init__(
+            settings_cls,
+            env_file=env_file,
+            env_file_encoding=env_file_encoding,
+            case_sensitive=case_sensitive,
+            env_prefix=env_prefix,
+            env_nested_delimiter=env_nested_delimiter,
+        )
+
+
 class Settings(BaseSettings):
     """FastMCP settings."""
 
@@ -68,13 +104,23 @@ class Settings(BaseSettings):
     if _env_dev_path.exists():
         logger.info("Loading configuration from .env.dev (development mode)")
 
+    # Class-level model_config for Pydantic's internal use
+    # Note: env_file is determined dynamically by DynamicDotEnvSettingsSource
     model_config = ExtendedSettingsConfigDict(
         env_prefixes=["FASTMCP_", "FASTMCP_SERVER_"],
-        env_file=_env_file,
+        env_file=_env_file,  # Default, overridden by DynamicDotEnvSettingsSource
         extra="ignore",
         env_nested_delimiter="__",
         nested_model_default_partial_update=True,
     )
+
+    @property
+    def effective_env_file(self) -> str:
+        """
+        Return the actual env_file being used.
+        This respects dynamic changes to _env_file for testing.
+        """
+        return self.__class__._env_file
 
     @classmethod
     def settings_customise_sources(
@@ -85,12 +131,26 @@ class Settings(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        # can remove this classmethod after deprecated FASTMCP_SERVER_ prefix is
-        # removed
+        # Use custom sources that respect dynamic env_file and env_prefixes
+        # Access _env_file from __dict__ and unwrap if needed
+        env_file_raw = settings_cls.__dict__.get("_env_file", None)
+        if isinstance(env_file_raw, ModelPrivateAttr):
+            env_file_value = env_file_raw.default if hasattr(env_file_raw, 'default') else None
+        else:
+            env_file_value = env_file_raw
+
         return (
             init_settings,
             ExtendedEnvSettingsSource(settings_cls),
-            dotenv_settings,
+            DynamicDotEnvSettingsSource(
+                settings_cls,
+                env_file=env_file_value,
+                env_file_encoding=settings_cls.model_config.get("env_file_encoding"),
+                case_sensitive=settings_cls.model_config.get("case_sensitive"),
+                env_nested_delimiter=settings_cls.model_config.get(
+                    "env_nested_delimiter"
+                ),
+            ),
             file_secret_settings,
         )
 
