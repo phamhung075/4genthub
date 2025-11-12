@@ -150,6 +150,9 @@ markers = [
     "stress: Stress tests",
     "load: Load tests",
     "timeout: Tests with timeout restrictions",
+    "regression: Regression tests for bug fixes",
+    "agent_repository: Agent repository tests",
+    "timestamp_bug_fix: Tests for timestamp-related bug fixes",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

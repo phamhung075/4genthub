@@ -337,8 +337,7 @@ class WSMetadata(BaseModel):
 
     timestamp: str | None = None
 
-    class Config:
-        extra = "allow"  # Allow additional metadata fields
+    model_config = {"extra": "allow"}  # Allow additional metadata fields
 
 
 class WSPayloadData(BaseModel):
@@ -375,7 +374,9 @@ class WSMessage(BaseModel):
     id: str = Field(default_factory=lambda: f"ws-{uuid.uuid4().hex[:12]}")
     version: Literal["2.0"] = "2.0"
     type: Literal["update", "bulk", "sync", "heartbeat", "error"]
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(datetime.UTC).isoformat()
+    )
     sequence: int = Field(default_factory=lambda: 0)
     payload: WSPayload
     metadata: WSMetadata
