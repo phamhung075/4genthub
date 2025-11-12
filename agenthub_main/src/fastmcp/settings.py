@@ -56,25 +56,68 @@ class ExtendedSettingsConfigDict(SettingsConfigDict, total=False):
 class Settings(BaseSettings):
     """FastMCP settings."""
 
-    # Find project root and determine which env file to use
-    _project_root = Path(__file__).parent.parent.parent.parent
-    _env_dev_path = _project_root / ".env.dev"
-    _env_path = _project_root / ".env"
-
-    # Use .env.dev if it exists, otherwise .env
-    _env_file = str(_env_dev_path) if _env_dev_path.exists() else str(_env_path)
-
-    # Log which file is being used (only if .env.dev exists)
-    if _env_dev_path.exists():
-        logger.info("Loading configuration from .env.dev (development mode)")
-
+    # Default model_config (env_file will be updated in __init__)
     model_config = ExtendedSettingsConfigDict(
         env_prefixes=["FASTMCP_", "FASTMCP_SERVER_"],
-        env_file=_env_file,
+        env_file=".env",  # Will be updated in __init__
         extra="ignore",
         env_nested_delimiter="__",
         nested_model_default_partial_update=True,
     )
+
+    def __init__(self, **data):
+        """
+        Initialize Settings with dynamic env file path calculation.
+
+        This allows the env file paths to be recalculated based on current
+        class attributes, enabling testability with mocked project roots.
+        """
+        # Check if env_file was explicitly set (for testing)
+        explicit_env_file = self.__class__.model_config.get("env_file")
+        skip_auto_detect = explicit_env_file and explicit_env_file not in [".env", ""]
+
+        if not skip_auto_detect:
+            # Get class-level project root (defaults to actual project root)
+            project_root = getattr(type(self), "_project_root_value", None)
+            if project_root is None:
+                # Calculate default project root on first access
+                project_root = Path(__file__).parent.parent.parent.parent
+                setattr(type(self), "_project_root_value", project_root)
+
+            # Calculate env file paths
+            env_dev_path = project_root / ".env.dev"
+            env_path = project_root / ".env"
+
+            # Determine which env file to use
+            env_file = str(env_dev_path) if env_dev_path.exists() else str(env_path)
+
+            # Store calculated paths as class attributes
+            setattr(type(self), "_env_dev_path_value", env_dev_path)
+            setattr(type(self), "_env_path_value", env_path)
+            setattr(type(self), "_env_file_value", env_file)
+
+            # Update model_config with the determined env file
+            self.__class__.model_config["env_file"] = env_file
+
+            # Log which file is being used (only if .env.dev exists)
+            if env_dev_path.exists():
+                logger.info("Loading configuration from .env.dev (development mode)")
+
+        # Call parent __init__
+        super().__init__(**data)
+
+    # Class-level defaults (for backward compatibility and testing)
+    @classmethod
+    def _get_project_root(cls) -> Path:
+        """Get the project root, allowing override for testing."""
+        return getattr(cls, "_project_root_value", Path(__file__).parent.parent.parent.parent)
+
+    @classmethod
+    def _set_project_root(cls, path: Path) -> None:
+        """Set the project root for testing."""
+        setattr(cls, "_project_root_value", path)
+        # Reset model_config env_file to trigger recalculation
+        cls.model_config["env_file"] = ".env"
 
     @classmethod
     def settings_customise_sources(
