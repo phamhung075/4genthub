@@ -184,6 +184,26 @@
       ],
       "path": "claude-code"
     },
+    "core-architecture": {
+      "count": 2,
+      "files": [
+        {
+          "hash": "076f8352ded11869664ad8583d763bd0",
+          "modified": "2025-11-13T16:33:07.749305",
+          "name": "agent-knowledge-skill-system-summary.md",
+          "path": "core-architecture/agent-knowledge-skill-system-summary.md",
+          "size": 10384
+        },
+        {
+          "hash": "ac6e97a76c0673f53cba677a15aac132",
+          "modified": "2025-11-13T16:32:29.053312",
+          "name": "agent-knowledge-skill-system-specs.md",
+          "path": "core-architecture/agent-knowledge-skill-system-specs.md",
+          "size": 101059
+        }
+      ],
+      "path": "core-architecture"
+    },
     "development-guides": {
       "count": 3,
       "files": [
@@ -236,19 +256,6 @@
         }
       ],
       "path": "operations"
-    },
-    "reports-status": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "f12615c092db465fc146be6fce29ff14",
-          "modified": "2025-11-10T14:44:56.547313",
-          "name": "dead-code-cleanup-2025-11-10.md",
-          "path": "reports-status/dead-code-cleanup-2025-11-10.md",
-          "size": 11355
-        }
-      ],
-      "path": "reports-status"
     },
     "root": {
       "count": 12,
@@ -407,7 +414,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-10T14:44:56.646107",
+  "generated_at": "2025-11-13T16:33:07.828603",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -463,6 +470,12 @@
         "token-optimization-comparison.md"
       ]
     },
+    "core-architecture": {
+      "files": [
+        "agent-knowledge-skill-system-specs.md",
+        "agent-knowledge-skill-system-summary.md"
+      ]
+    },
     "development-guides": {
       "files": [
         "ddd-architecture-complete.md",
@@ -494,11 +507,7 @@
         "complete-operations-guide.md"
       ]
     },
-    "reports-status": {
-      "files": [
-        "dead-code-cleanup-2025-11-10.md"
-      ]
-    },
+    "reports-status": {},
     "setup-guides": {
       "files": [
         "complete-setup-guide.md"
@@ -522,6 +531,6 @@
       ]
     }
   },
-  "total_directories": 18,
-  "total_files": 42
+  "total_directories": 19,
+  "total_files": 43
 }
