@@ -90,14 +90,22 @@ export function useSubtaskAnimation({
         element: currentElement.tagName
       }, 'useSubtaskAnimation.ts');
 
-      animationFactory.registerElement(subtaskId, currentElement, {
-        onAnimationStart: (type: AnimationType) => {
-          logger.debug('🎬 Subtask animation started', { subtaskId, type }, 'useSubtaskAnimation.ts');
-        },
-        onAnimationEnd: (type: AnimationType) => {
-          logger.debug('🎬 Subtask animation completed', { subtaskId, type }, 'useSubtaskAnimation.ts');
+      // ✅ FIX 2025-11-22: Pass entityType 'subtask' for correct CSS class selection
+      // This fixes the bug where subtask delete animations weren't playing
+      // AnimationFactory now builds 'subtaskRowDeleteAnimation' instead of 'taskRowDeleteAnimation'
+      animationFactory.registerElement(
+        subtaskId,
+        currentElement,
+        'subtask', // Entity type for correct CSS classes (subtaskRowCreateAnimation, etc.)
+        {
+          onAnimationStart: (type: AnimationType) => {
+            logger.debug('🎬 Subtask animation started', { subtaskId, type }, 'useSubtaskAnimation.ts');
+          },
+          onAnimationEnd: (type: AnimationType) => {
+            logger.debug('🎬 Subtask animation completed', { subtaskId, type }, 'useSubtaskAnimation.ts');
+          }
         }
-      });
+      );
 
       logger.debug('Subtask element registered with AnimationFactory', {
         component: 'useSubtaskAnimation',

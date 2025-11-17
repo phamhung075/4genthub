@@ -10,33 +10,34 @@ import type {
   AnimationSource,
   AnimationState,
   AnimationType,
-  ElementRegistration
+  ElementRegistration,
+  EntityType
 } from '../types/animationTypes';
 import logger from '../utils/logger';
 
 class AnimationFactory {
   // Animation definitions with synchronized CSS durations
-  // CSS classes are defined in: src/styles/task-animations.css
-  private readonly animationRegistry: Record<AnimationType, AnimationDefinition> = {
+  // ✅ FIX 2025-11-22: Removed hardcoded task-specific CSS classes
+  // Now dynamically built based on entity type (task/subtask/branch/project)
+  // CSS classes are defined in:
+  //   - src/styles/task-animations.css (taskRow*Animation)
+  //   - src/styles/subtask-animations.css (subtaskRow*Animation)
+  private readonly animationRegistry: Record<AnimationType, Omit<AnimationDefinition, 'cssClass'>> = {
     create: {
-      cssClass: 'taskRowCreateAnimation',
-      duration: 800, // 0.8s - matches taskRowSlideIn animation
-      description: 'Slide in animation for newly created tasks'
+      duration: 800, // 0.8s - matches slideIn animation
+      description: 'Slide in animation for newly created entities'
     },
     delete: {
-      cssClass: 'taskRowDeleteAnimation',
-      duration: 800, // 0.8s - matches taskRowSlideOut animation
-      description: 'Slide out animation for deleted tasks'
+      duration: 800, // 0.8s - matches slideOut animation
+      description: 'Slide out animation for deleted entities'
     },
     update: {
-      cssClass: 'taskRowUpdateAnimation',
-      duration: 1700, // 1.7s - matches taskRowFlash animation (3 flashes)
-      description: 'Flash background animation for updated tasks'
+      duration: 1700, // 1.7s - matches flash animation (3 flashes)
+      description: 'Flash background animation for updated entities'
     },
     complete: {
-      cssClass: 'taskRowUpdateAnimation', // Complete uses same flash as update
-      duration: 1700, // 1.7s - matches taskRowFlash animation (3 flashes)
-      description: 'Flash background animation for completed tasks'
+      duration: 1700, // 1.7s - matches flash animation (3 flashes)
+      description: 'Flash background animation for completed entities'
     }
   };
 
@@ -51,16 +52,18 @@ class AnimationFactory {
 
   /**
    * Register an element for animations
+   * ✅ FIX 2025-11-22: Added entityType parameter to build correct CSS class names
    */
   registerElement(
     elementId: string,
     element: HTMLElement,
+    entityType: EntityType,
     callbacks?: {
       onAnimationStart?: (type: AnimationType) => void;
       onAnimationEnd?: (type: AnimationType) => void;
     }
   ): void {
-    this.elementRegistry.set(elementId, { element, callbacks });
+    this.elementRegistry.set(elementId, { element, entityType, callbacks });
   }
 
   /**
@@ -130,8 +133,27 @@ class AnimationFactory {
   /**
    * Get all available animation types and their definitions
    */
-  getAvailableAnimations(): Record<AnimationType, AnimationDefinition> {
+  getAvailableAnimations(): Record<AnimationType, Omit<AnimationDefinition, 'cssClass'>> {
     return { ...this.animationRegistry };
+  }
+
+  /**
+   * Build CSS class name based on entity type and animation type
+   * ✅ FIX 2025-11-22: Dynamically builds correct CSS class for each entity type
+   *
+   * Examples:
+   * - buildCssClass('task', 'delete') → 'taskRowDeleteAnimation'
+   * - buildCssClass('subtask', 'delete') → 'subtaskRowDeleteAnimation'
+   * - buildCssClass('branch', 'create') → 'branchRowCreateAnimation'
+   */
+  private buildCssClass(entityType: EntityType, animationType: AnimationType): string {
+    // Capitalize first letter of animation type (delete → Delete)
+    const capitalizedType = animationType.charAt(0).toUpperCase() + animationType.slice(1);
+
+    // Build class name: {entityType}Row{AnimationType}Animation
+    // task + Delete → taskRowDeleteAnimation
+    // subtask + Create → subtaskRowCreateAnimation
+    return `${entityType}Row${capitalizedType}Animation`;
   }
 
   /**
@@ -143,28 +165,41 @@ class AnimationFactory {
 
   /**
    * Apply animation to element with proper cleanup
+   * ✅ FIX 2025-11-22: Uses entity-specific CSS classes instead of hardcoded task classes
    */
   private applyAnimation(
     registration: ElementRegistration,
-    animationDef: AnimationDefinition,
+    animationDef: Omit<AnimationDefinition, 'cssClass'>,
     type: AnimationType
   ): void {
-    const { element, callbacks } = registration;
+    const { element, entityType, callbacks } = registration;
 
-    // Remove any existing animation classes
-    Object.values(this.animationRegistry).forEach(def => {
-      element.classList.remove(def.cssClass);
+    // Build entity-specific CSS class name
+    const cssClass = this.buildCssClass(entityType, type);
+
+    // Remove any existing animation classes for this entity type
+    const allAnimationTypes: AnimationType[] = ['create', 'delete', 'update', 'complete'];
+    allAnimationTypes.forEach(animType => {
+      const classToRemove = this.buildCssClass(entityType, animType);
+      element.classList.remove(classToRemove);
     });
 
     // Trigger start callback
     callbacks?.onAnimationStart?.(type);
 
-    // Add animation class
-    element.classList.add(animationDef.cssClass);
+    // Add entity-specific animation class
+    element.classList.add(cssClass);
+
+    logger.debug(`🎬 [AnimationFactory] Applied animation`, {
+      entityType,
+      animationType: type,
+      cssClass,
+      elementId: this.getElementId(element)
+    });
 
     // Schedule cleanup
     setTimeout(() => {
-      element.classList.remove(animationDef.cssClass);
+      element.classList.remove(cssClass);
 
       // Clear animation state
       this.animationStates.delete(this.getElementId(element));

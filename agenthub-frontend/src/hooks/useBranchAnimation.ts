@@ -95,14 +95,20 @@ export function useBranchAnimation(
         element: currentElement.tagName
       }, 'useBranchAnimation.ts');
 
-      animationFactory.registerElement(branch.id, currentElement, {
-        onAnimationStart: (type: AnimationType) => {
-          logger.debug('🎬 Animation started', { branchId: branch.id, type }, 'useBranchAnimation.ts');
-        },
-        onAnimationEnd: (type: AnimationType) => {
-          logger.debug('🎬 Animation completed', { branchId: branch.id, type }, 'useBranchAnimation.ts');
+      // ✅ FIX 2025-11-22: Pass entityType 'branch' for correct CSS class selection
+      animationFactory.registerElement(
+        branch.id,
+        currentElement,
+        'branch', // Entity type for correct CSS classes (branchRowCreateAnimation, etc.)
+        {
+          onAnimationStart: (type: AnimationType) => {
+            logger.debug('🎬 Animation started', { branchId: branch.id, type }, 'useBranchAnimation.ts');
+          },
+          onAnimationEnd: (type: AnimationType) => {
+            logger.debug('🎬 Animation completed', { branchId: branch.id, type }, 'useBranchAnimation.ts');
+          }
         }
-      });
+      );
 
       logger.debug('Element registered with AnimationFactory', {
         component: 'useBranchAnimation',
@@ -198,15 +204,15 @@ export function useBranchAnimation(
   }, [branch.id, playDeleteAnimation]);
 
   // Helper function to get fallback animation class - matches task/subtask/project implementation
-  // CSS classes are now global (defined in src/styles/task-animations.css)
+  // ✅ FIX 2025-11-22: Updated to use branch-specific CSS classes instead of task classes
   const getAnimationClass = (): string => {
     switch (animationState) {
       case 'creating':
-        return 'taskRowCreateAnimation';
+        return 'branchRowCreateAnimation';
       case 'deleting':
-        return 'taskRowDeleteAnimation';
+        return 'branchRowDeleteAnimation';
       case 'updating':
-        return 'taskRowUpdateAnimation';
+        return 'branchRowUpdateAnimation';
       default:
         return '';
     }

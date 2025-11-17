@@ -95,14 +95,20 @@ export function useProjectAnimation(
         element: currentElement.tagName
       }, 'useProjectAnimation.ts');
 
-      animationFactory.registerElement(project.id, currentElement, {
-        onAnimationStart: (type: AnimationType) => {
-          logger.debug('🎬 Animation started', { projectId: project.id, type }, 'useProjectAnimation.ts');
-        },
-        onAnimationEnd: (type: AnimationType) => {
-          logger.debug('🎬 Animation completed', { projectId: project.id, type }, 'useProjectAnimation.ts');
+      // ✅ FIX 2025-11-22: Pass entityType 'project' for correct CSS class selection
+      animationFactory.registerElement(
+        project.id,
+        currentElement,
+        'project', // Entity type for correct CSS classes (projectRowCreateAnimation, etc.)
+        {
+          onAnimationStart: (type: AnimationType) => {
+            logger.debug('🎬 Animation started', { projectId: project.id, type }, 'useProjectAnimation.ts');
+          },
+          onAnimationEnd: (type: AnimationType) => {
+            logger.debug('🎬 Animation completed', { projectId: project.id, type }, 'useProjectAnimation.ts');
+          }
         }
-      });
+      );
 
       logger.debug('Element registered with AnimationFactory', {
         component: 'useProjectAnimation',
@@ -194,15 +200,15 @@ export function useProjectAnimation(
   }, [project.id, playDeleteAnimation]);
 
   // Helper function to get fallback animation class - matches task/subtask implementation
-  // CSS classes are now global (defined in src/styles/task-animations.css)
+  // ✅ FIX 2025-11-22: Updated to use project-specific CSS classes instead of task classes
   const getAnimationClass = (): string => {
     switch (animationState) {
       case 'creating':
-        return 'taskRowCreateAnimation';
+        return 'projectRowCreateAnimation';
       case 'deleting':
-        return 'taskRowDeleteAnimation';
+        return 'projectRowDeleteAnimation';
       case 'updating':
-        return 'taskRowUpdateAnimation';
+        return 'projectRowUpdateAnimation';
       default:
         return '';
     }

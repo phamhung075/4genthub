@@ -189,7 +189,12 @@ export const useSubtaskMutations = () => {
       return subtaskId;
     },
     onMutate: async (subtaskId) => {
-      // Find the task_id from existing cache
+      // ✅ FIX 2025-11-22: REMOVED optimistic cache update to allow delete animation
+      // Optimistic update was removing subtask from cache immediately, causing component to unmount
+      // before animation could play. Now let WebSocket handler (useRealtimeSync.ts:430-448) handle
+      // cache update with proper 600ms delay for animation.
+
+      // Find the task_id from existing cache (for rollback on error)
       let taskId: string | undefined;
       const allSubtasksQueries = queryClient.getQueriesData<Subtask[]>({ queryKey: ['subtasks'] });
 
@@ -203,21 +208,12 @@ export const useSubtaskMutations = () => {
         }
       }
 
-      if (taskId) {
-        await queryClient.cancelQueries({ queryKey: ['subtasks', taskId] });
-      }
-
       const previousSubtasks = taskId
         ? queryClient.getQueryData<Subtask[]>(['subtasks', taskId])
         : undefined;
 
-      // Optimistically remove from cache
-      if (previousSubtasks && taskId) {
-        queryClient.setQueryData<Subtask[]>(
-          ['subtasks', taskId],
-          previousSubtasks.filter(s => s.id !== subtaskId)
-        );
-      }
+      // NO OPTIMISTIC UPDATE - keep subtask in list for animation
+      // WebSocket will remove it after animation plays
 
       return { previousSubtasks, taskId };
     },
@@ -229,12 +225,9 @@ export const useSubtaskMutations = () => {
     },
     onSuccess: (subtaskId, _, context: any) => {
       logger.debug('[useSubtaskMutations] Subtask deleted:', subtaskId);
-
-      if (context?.taskId) {
-        queryClient.invalidateQueries({ queryKey: ['subtasks', context.taskId] });
-        queryClient.invalidateQueries({ queryKey: ['task', context.taskId] });
-        queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      }
+      // 🔥 REMOVED invalidateQueries - WebSocket handler updates cache with 600ms delay
+      // This prevents cache refetch from removing subtask before delete animation completes
+      // WebSocket 'deleted' message (useRealtimeSync.ts:430-448) handles cache update after animation
     }
   });
 

@@ -54,12 +54,14 @@ class TaskApplicationFacade:
         subtask_repository: SubtaskRepository | None = None,
         context_service: Any | None = None,
         git_branch_repository: GitBranchRepository | None = None,
+        project_repository: Any | None = None,
     ):
         """Initialize facade with required dependencies"""
         self._task_repository = task_repository
         self._subtask_repository = subtask_repository
         self._context_service = context_service
         self._git_branch_repository = git_branch_repository
+        self._project_repository = project_repository
 
         # Initialize hierarchical context service with lazy import to avoid circular dependency
         from ...application.factories.unified_context_facade_factory import (
@@ -559,19 +561,11 @@ class TaskApplicationFacade:
 
                     if updated_task_response is not None:
                         # Context was successfully created and task response includes context data
-                        # Convert updated task response to dict with minimal serialization (token optimized)
+                        # Return FULL task dict for HTTP API (not minimal - needs all fields like title, description)
                         if hasattr(updated_task_response, "to_dict"):
-                            task_payload = (
-                                MinimalResponseSerializer.serialize_task_minimal(
-                                    updated_task_response, "create"
-                                )
-                            )
+                            task_payload = updated_task_response.to_dict()
                         else:
-                            task_payload = (
-                                MinimalResponseSerializer.serialize_task_minimal(
-                                    updated_task_response.task, "create"
-                                )
-                            )
+                            task_payload = updated_task_response.task.to_dict()
                         # Apply unified context format
                         task_payload = ContextResponseFactory.apply_to_task_response(
                             task_payload
@@ -582,10 +576,8 @@ class TaskApplicationFacade:
                             "Context creation failed for task %s, but task was created successfully",
                             task_response.task.id,
                         )
-                        # Return task without context data (minimal serialization)
-                        task_payload = MinimalResponseSerializer.serialize_task_minimal(
-                            task_response.task, "create"
-                        )
+                        # Return FULL task dict for HTTP API (not minimal - needs all fields)
+                        task_payload = task_response.task.to_dict()
                         warning_msg = "Task created without context synchronization"
 
                 except Exception as e:
@@ -599,10 +591,8 @@ class TaskApplicationFacade:
                         "Continuing with task creation despite context sync failure"
                     )
 
-                    # Return task without context data (minimal serialization)
-                    task_payload = MinimalResponseSerializer.serialize_task_minimal(
-                        task_response.task, "create"
-                    )
+                    # Return FULL task dict for HTTP API (not minimal - needs all fields)
+                    task_payload = task_response.task.to_dict()
                     warning_msg = f"Task created without context: {str(e)}"
 
                 # Broadcast task creation event ONLY if this was a new creation (not a duplicate)
@@ -622,6 +612,7 @@ class TaskApplicationFacade:
                                 priority=task_payload.get("priority")
                                 or task_response.task.priority,
                                 git_branch_id=request.git_branch_id,
+                                project_id=derived_project_id,  # 🔥 CRITICAL FIX: For project cache invalidation
                                 assignees=task_payload.get("assignees"),
                                 labels=task_payload.get("labels"),
                                 created_at=task_payload.get("created_at"),
@@ -720,21 +711,37 @@ class TaskApplicationFacade:
                         user_id = getattr(request, "user_id", None) or "system"
 
                         # ✅ TYPE-SAFE PAYLOAD: Using Pydantic model for runtime validation
+                        # ✅ ROOT CAUSE FIX: MinimalResponseSerializer excludes input fields for token optimization
+                        # So we use current_task (from DB) which has ALL fields
                         try:
+                            # Use current_task which has ALL fields from database
+                            # current_task was already fetched at line 687
+                            if current_task:
+                                # Convert to dict if it's an entity object
+                                full_task_data = (
+                                    current_task.to_dict()
+                                    if hasattr(current_task, "to_dict")
+                                    else current_task
+                                )
+                            else:
+                                # Fallback to task_response if current_task not available
+                                full_task_data = (
+                                    task_response.task.to_dict()
+                                    if hasattr(task_response.task, "to_dict")
+                                    else task_response.task
+                                )
+
                             payload = TaskUpdatePayload(
-                                id=task_dict.get("id") or task_id,
-                                title=task_dict.get("title")
-                                or task_response.task.title,
-                                description=task_dict.get("description"),
-                                status=task_dict.get("status")
-                                or task_response.task.status,
-                                priority=task_dict.get("priority")
-                                or task_response.task.priority,
-                                git_branch_id=task_dict.get("git_branch_id")
-                                or task_response.task.git_branch_id,
-                                assignees=task_dict.get("assignees"),
-                                labels=task_dict.get("labels"),
-                                updated_at=task_dict.get("updated_at"),
+                                id=full_task_data.get("id") or task_id,
+                                title=full_task_data.get("title"),
+                                description=full_task_data.get("description"),
+                                status=full_task_data.get("status"),
+                                priority=full_task_data.get("priority"),
+                                git_branch_id=full_task_data.get("git_branch_id"),
+                                assignees=full_task_data.get("assignees"),
+                                labels=full_task_data.get("labels"),
+                                updated_at=task_dict.get("updated_at")
+                                or full_task_data.get("updated_at"),
                             )
                             validated_task_data = payload.model_dump()
                             logger.info(
@@ -811,7 +818,15 @@ class TaskApplicationFacade:
                         f"Skipped duplicate notification for non-meaningful update of task {task_id}"
                     )
 
-                return {"success": True, "action": "update", "task": task_dict}
+                # ✅ FIX: Return complete task data (not minimal) for API response
+                # MinimalResponseSerializer is for internal use/token optimization only
+                # API responses need complete task for task_to_dto conversion
+                complete_task = (
+                    task_response.task.to_dict()
+                    if hasattr(task_response.task, "to_dict")
+                    else task_response.task
+                )
+                return {"success": True, "action": "update", "task": complete_task}
             else:
                 return {
                     "success": False,
@@ -1237,6 +1252,16 @@ class TaskApplicationFacade:
                 logger.info(
                     f"✅ Pre-fetched task context before deletion: {task_context}"
                 )
+
+                # 🔥 CRITICAL FIX: Add project_id to snapshot for frontend cache invalidation
+                # Task entity doesn't store project_id directly, so get it from context
+                if task_data_snapshot and task_context:
+                    task_data_snapshot["project_id"] = task_context.get(
+                        "parent_project_id"
+                    )
+                    logger.info(
+                        f"✅ Added project_id to task snapshot: {task_data_snapshot.get('project_id')}"
+                    )
             except Exception as e:
                 logger.warning(f"Failed to get task data/context before deletion: {e}")
                 # Use fallback context if pre-fetch fails
@@ -1261,6 +1286,9 @@ class TaskApplicationFacade:
                         "title"
                     ),  # From use case (fetched before deletion)
                     "git_branch_id": task_context.get("parent_branch_id")
+                    if task_context
+                    else None,
+                    "project_id": task_context.get("parent_project_id")
                     if task_context
                     else None,
                 }
@@ -1316,6 +1344,9 @@ class TaskApplicationFacade:
                             if task_context
                             else f"Task {task_id[:8]}",
                             git_branch_id=task_context.get("parent_branch_id")
+                            if task_context
+                            else None,
+                            project_id=task_context.get("parent_project_id")
                             if task_context
                             else None,
                         )

@@ -66,11 +66,19 @@ async def create_task(
                 detail=result.message or "Failed to create task",
             )
 
-        return {
-            "success": True,
-            "task": result.task,
-            "message": f"Task created successfully for user {current_user.email}",
-        }
+        # Debug logging before serialization
+        logger.debug(f"Task creation result type: {type(result)}")
+        logger.debug(f"Task creation result.task type: {type(result.task)}")
+        logger.debug(f"Task creation result.task value: {result.task}")
+
+        try:
+            serialized = result.model_dump(by_alias=True)
+            logger.debug("Successfully serialized task response")
+            return serialized
+        except Exception as e:
+            logger.error(f"Error serializing task response: {e}")
+            logger.error(f"Result object: {result}")
+            raise
 
     except HTTPException:
         raise

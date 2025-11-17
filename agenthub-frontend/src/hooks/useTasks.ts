@@ -109,11 +109,29 @@ export const useTaskMutations = () => {
         queryClient.setQueryData(['tasks', context.git_branch_id], context.previousTasks);
       }
     },
-    onSuccess: (data, newTask) => {
-      logger.debug('[useTaskMutations] Task created:', data);
-      // Invalidate and refetch
-      if (newTask.git_branch_id) {
-        queryClient.invalidateQueries({ queryKey: ['tasks', newTask.git_branch_id] });
+    onSuccess: (createdTask, newTask) => {
+      logger.debug('[useTaskMutations] Task created:', createdTask);
+      // Update cache directly instead of invalidating to prevent component remounts
+      const git_branch_id = newTask.git_branch_id;
+      if (git_branch_id) {
+        queryClient.setQueryData<Task[]>(
+          ['tasks', git_branch_id],
+          (oldTasks = []) => {
+            // Remove temp optimistic task
+            const withoutTemp = oldTasks.filter(t => !t.id.startsWith('temp-'));
+
+            // Check if real task already exists (from WebSocket race condition)
+            const realTaskExists = withoutTemp.some(t => t.id === createdTask.id);
+            if (realTaskExists) {
+              // Update existing task instead of adding duplicate
+              logger.debug('[useTaskMutations] Task already exists from WebSocket, updating instead of adding');
+              return withoutTemp.map(t => t.id === createdTask.id ? createdTask : t);
+            }
+
+            // Add new task (WebSocket hasn't arrived yet)
+            return [createdTask, ...withoutTemp];
+          }
+        );
       }
     }
   });

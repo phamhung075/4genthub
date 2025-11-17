@@ -96,6 +96,7 @@ class WebSocketNotificationService:
                         "task_title": task.title,
                         "parent_branch_id": branch.id,
                         "parent_branch_title": branch.name,
+                        "parent_project_id": branch.project_id,  # 🔥 CRITICAL FIX: Include for project cache invalidation
                         "task_user_id": task.user_id,  # Include task owner's user_id for proper authorization
                     }
                 else:
@@ -104,6 +105,7 @@ class WebSocketNotificationService:
                         "task_title": f"Task {task_id[:8]}",
                         "parent_branch_id": None,
                         "parent_branch_title": "Unknown Branch",
+                        "parent_project_id": None,  # 🔥 CRITICAL FIX: Include in fallback
                         "task_user_id": None,  # No user_id available if task not found
                     }
 
@@ -113,6 +115,7 @@ class WebSocketNotificationService:
                 "task_title": f"Task {task_id[:8]}",
                 "parent_branch_id": None,
                 "parent_branch_title": "Unknown Branch",
+                "parent_project_id": None,  # 🔥 CRITICAL FIX: Include in fallback
                 "task_user_id": None,  # No user_id available on error
             }
 

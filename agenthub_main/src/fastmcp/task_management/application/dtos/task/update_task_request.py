@@ -2,26 +2,30 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel, Field
 
-@dataclass
-class UpdateTaskRequest:
+
+class UpdateTaskRequest(BaseModel):
     """Request DTO for updating a task with hierarchical storage support"""
 
     task_id: Any
-    title: str | None = None
-    description: str | None = None
-    status: str | None = None
-    priority: str | None = None
-    details: str | None = None
-    estimated_effort: str | None = None
-    assignees: list[str] | None = None
-    labels: list[str] | None = None
-    due_date: str | None = None
-    context_id: str | None = None
-    completion_summary: str | None = None
-    testing_notes: str | None = None
-    completed_at: str | None = None
-    progress_percentage: int | None = None
+    title: str | None = Field(default=None)
+    description: str | None = Field(default=None)
+    status: str | None = Field(default=None)
+    priority: str | None = Field(default=None)
+    details: str | None = Field(default=None)
+    estimated_effort: str | None = Field(default=None)
+    assignees: list[str] | None = Field(default=None)
+    labels: list[str] | None = Field(default=None)
+    due_date: str | None = Field(default=None)
+    context_id: str | None = Field(default=None)
+    completion_summary: str | None = Field(default=None)
+    testing_notes: str | None = Field(default=None)
+    completed_at: str | None = Field(default=None)
+    progress_percentage: int | None = Field(default=None)
+
+    class Config:
+        # Allow extra fields in case frontend sends additional data
+        extra = "allow"

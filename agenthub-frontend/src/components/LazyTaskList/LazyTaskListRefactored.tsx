@@ -45,9 +45,9 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // Load full task on demand
   const loadFullTask = useCallback(async (taskId: string): Promise<any | null> => {
-    if (fullTasksMap.current.has(taskId)) {
-      return fullTasksMap.current.get(taskId);
-    }
+    // ✅ FIX 2025-11-22: Always fetch from React Query cache (might have fresh data from WebSocket)
+    // Don't return from fullTasksMap early - it can be stale after WebSocket updates
+    // React Query cache is updated by WebSocket (useRealtimeSync.ts:144-145)
 
     // Use queryClient.fetchQuery to load the full task
     try {
@@ -61,6 +61,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
       });
 
       if (fullTask) {
+        // Update fullTasksMap with fresh data from React Query
         fullTasksMap.current.set(taskId, fullTask);
         setLoadedTaskIds(prev => new Set([...prev, taskId]));
       }

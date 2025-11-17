@@ -9,6 +9,7 @@
 
 export type AnimationType = 'create' | 'delete' | 'update' | 'complete';
 export type AnimationSource = 'websocket' | 'callback' | 'mount';
+export type EntityType = 'task' | 'subtask' | 'branch' | 'project';
 
 export interface AnimationDefinition {
   cssClass: string;
@@ -24,6 +25,7 @@ export interface AnimationState {
 
 export interface ElementRegistration {
   element: HTMLElement;
+  entityType: EntityType; // ✅ FIX 2025-11-22: Added entity type for correct CSS class selection
   callbacks?: {
     onAnimationStart?: (type: AnimationType) => void;
     onAnimationEnd?: (type: AnimationType) => void;

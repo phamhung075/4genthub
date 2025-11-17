@@ -14,15 +14,30 @@ import logger from '../utils/logger';
 
 class WebSocketAnimationService {
   private animationListeners: Map<string, Set<Function>> = new Map();
+  private initialized: boolean = false;
+  private updateHandler: ((message: WSMessage) => void) | null = null;
 
   /**
    * Initialize the service by connecting to WebSocket message events
+   * Protected against multiple initialization to prevent duplicate animations
    */
   init(webSocketClient: any) {
-    // Listen for WebSocket update messages
-    webSocketClient.on('update', (message: WSMessage) => {
+    // Prevent duplicate initialization
+    if (this.initialized) {
+      logger.debug('[WebSocketAnimationService] Already initialized, skipping duplicate init');
+      return;
+    }
+
+    // Create handler function once and store reference
+    this.updateHandler = (message: WSMessage) => {
       this.handleWebSocketMessage(message);
-    });
+    };
+
+    // Listen for WebSocket update messages
+    webSocketClient.on('update', this.updateHandler);
+
+    this.initialized = true;
+    logger.debug('[WebSocketAnimationService] Initialized successfully');
   }
 
   /**
@@ -65,9 +80,14 @@ class WebSocketAnimationService {
     let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
+<<<<<<< HEAD
         // SKIP animation for created events - mount animation handles this
         // Prevents race condition where WebSocket animation fires before element registration
         return; // Exit early - no animation needed
+=======
+        animationType = 'create';
+        break;
+>>>>>>> 8daef02e (fix(project): resolve project creation validation errors and animation issues)
       case 'updated':
         animationType = 'update';
         break;

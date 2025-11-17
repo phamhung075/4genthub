@@ -124,19 +124,34 @@ export function useTaskAnimation(
 
   // Mount-time animation check for newly created tasks
   useEffect(() => {
-    // ALWAYS try to animate on first mount - the component only mounts when a task is added
-    logger.debug('🎬 [useTaskAnimation] Mount-time check', {
-      taskId: summary.id,
-      hasCreatedAt: !!summary.created_at,
-      createdAt: summary.created_at
-    }, 'useTaskAnimation.ts');
+    // Only animate if task was created recently (within last 2 seconds)
+    // This prevents ALL tasks from animating when the list re-renders
+    if (summary.created_at) {
+      const createdAt = new Date(summary.created_at);
+      const now = new Date();
+      const ageInMs = now.getTime() - createdAt.getTime();
+      const isNewTask = ageInMs < 2000; // Created within last 2 seconds
 
-    // Small delay to ensure DOM is ready, then trigger animation
-    setTimeout(() => {
-      logger.debug('🎬 Mount-time animation triggered', { taskId: summary.id }, 'useTaskAnimation.ts');
-      playCreateAnimation('mount');
+      logger.debug('🎬 [useTaskAnimation] Mount-time check', {
+        taskId: summary.id,
+        createdAt: summary.created_at,
+        ageInMs,
+        isNewTask
+      }, 'useTaskAnimation.ts');
+
+      if (isNewTask) {
+        // Small delay to ensure DOM is ready, then trigger animation
+        setTimeout(() => {
+          logger.debug('🎬 Mount-time animation triggered for NEW task', { taskId: summary.id }, 'useTaskAnimation.ts');
+          playCreateAnimation('mount');
+          hasMountedRef.current = true;
+        }, 50);
+      } else {
+        hasMountedRef.current = true;
+      }
+    } else {
       hasMountedRef.current = true;
-    }, 50);
+    }
   }, []); // Only run on mount
 
   // Detect ANY changes after mount and trigger update animation

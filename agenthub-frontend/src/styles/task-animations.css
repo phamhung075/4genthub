@@ -14,7 +14,7 @@
 }
 
 /* ========================================
-   CREATE ANIMATION (Slide In from Right)
+   CREATE ANIMATION (Slide In from RIGHT to LEFT)
    ======================================== */
 @keyframes taskRowSlideIn {
   0% {
@@ -44,7 +44,10 @@
 }
 
 .taskRowCreateAnimation {
-  animation: taskRowSlideIn 0.8s ease-out forwards;
+  animation: taskRowSlideIn 0.5s ease-out forwards;
+  /* Start hidden off-screen to the right */
+  transform: translateX(100%);
+  opacity: 0;
 }
 
 /* ========================================

@@ -97,7 +97,33 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
   const handleSave = () => {
     if (!editForm.title.trim()) return;
-    onSave(editForm);
+
+    // Clean form data: convert empty strings to undefined for optional fields
+    // Backend rejects empty strings for date fields (expects null or valid ISO 8601)
+    const cleanedData = {
+      ...editForm,
+      due_date: editForm.due_date?.trim() || undefined,
+      estimated_effort: editForm.estimated_effort?.trim() || undefined,
+      description: editForm.description?.trim() || undefined,
+      progress_notes: editForm.progress_notes?.trim() || undefined
+    };
+
+    onSave(cleanedData);
+  };
+
+  // Check if save should be disabled due to validation
+  const isSaveDisabled = () => {
+    if (saving || !editForm.title.trim()) return true;
+
+    // Backend validation: status updates require progress notes (10+ chars)
+    const statusChanged = task && editForm.status !== task.status;
+    const progressNotesProvided = editForm.progress_notes?.trim();
+
+    if (statusChanged && (!progressNotesProvided || progressNotesProvided.length < 10)) {
+      return true;
+    }
+
+    return false;
   };
 
   const handleCancel = () => {
@@ -260,9 +286,15 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Add Progress Update
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                  (Optional - add notes about work done)
-                </span>
+                {editForm.status !== task.status ? (
+                  <span className="text-xs text-red-600 dark:text-red-400 ml-2">
+                    (Required when changing status - minimum 10 characters)
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                    (Optional - add notes about work done)
+                  </span>
+                )}
               </label>
               <Textarea
                 placeholder="E.g., Completed authentication module, fixed login bug, added user validation..."
@@ -270,12 +302,24 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
                 onChange={(e) => setEditForm(prev => ({ ...prev, progress_notes: e.target.value }))}
                 disabled={saving}
                 rows={3}
+                className={editForm.status !== task.status && (!editForm.progress_notes || editForm.progress_notes.length < 10) ? 'border-red-500' : ''}
               />
-              {editForm.progress_notes && (
-                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {editForm.progress_notes.length} characters
-                </div>
-              )}
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {editForm.progress_notes ? (
+                  <>
+                    {editForm.progress_notes.length} characters
+                    {editForm.status !== task.status && editForm.progress_notes.length < 10 && (
+                      <span className="text-red-600 dark:text-red-400 ml-2">
+                        (Need {10 - editForm.progress_notes.length} more)
+                      </span>
+                    )}
+                  </>
+                ) : editForm.status !== task.status ? (
+                  <span className="text-red-600 dark:text-red-400">
+                    Progress notes required when changing status (minimum 10 characters)
+                  </span>
+                ) : null}
+              </div>
             </div>
           )}
 
@@ -351,7 +395,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
             </div>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel} disabled={saving}>
             Cancel
@@ -359,7 +403,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
           <Button
             variant="default"
             onClick={handleSave}
-            disabled={saving || !editForm.title.trim()}
+            disabled={isSaveDisabled()}
           >
             {saving ? "Saving..." : task ? "Save Changes" : "Create Task"}
           </Button>

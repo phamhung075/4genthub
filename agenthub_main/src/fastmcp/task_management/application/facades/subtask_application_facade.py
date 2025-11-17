@@ -619,13 +619,22 @@ class SubtaskApplicationFacade:
             progress_notes=subtask_data.get("progress_notes") if subtask_data else None,
         )
         response = update_subtask_use_case.execute(request)
+
+        # ✅ FIX 2025-11-22: Return complete subtask data (not minimal) for API response
+        # MinimalResponseSerializer excludes priority for update operations
+        # But subtask_to_dto requires priority (converters.py:136) - causes KeyError
+        # Same fix as task_application_facade.py:811-815
+        complete_subtask = (
+            response.subtask.to_dict()
+            if hasattr(response.subtask, "to_dict")
+            else response.subtask
+        )
+
         result = {
             "success": True,
             "action": "update",
             "message": f"Subtask {actual_subtask_id} updated",
-            "subtask": MinimalResponseSerializer.serialize_subtask_minimal(
-                response.subtask, "update"
-            ),
+            "subtask": complete_subtask,  # Complete data for subtask_to_dto
         }
 
         # Broadcast subtask update event via WebSocket (unless suppressed during completion)
