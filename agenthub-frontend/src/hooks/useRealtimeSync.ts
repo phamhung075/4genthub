@@ -13,6 +13,7 @@ import {
   getEntityId,
   getDisplayName
 } from '../types/websocket-protocol';
+import { animationFactory } from '../services/AnimationFactory';
 
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
 // This prevents duplicate toasts when multiple components use useRealtimeSync
@@ -84,6 +85,19 @@ export const useRealtimeSync = (
       }
 
       logger.debug('[useRealtimeSync] Task event:', action, taskId);
+
+      // 🔍 DEBUG: Log task payload to verify project_id presence
+      if (action === 'deleted') {
+        logger.debug('[useRealtimeSync] Task delete payload:', {
+          taskId,
+          hasProjectId: !!taskData.project_id,
+          projectId: taskData.project_id,
+          hasBranchId: !!taskData.git_branch_id,
+          branchId: taskData.git_branch_id,
+          fullPayload: taskData
+        });
+      }
+
       const taskTitle = getDisplayName(message);
 
       switch (action) {
@@ -101,7 +115,8 @@ export const useRealtimeSync = (
                   return old.map(t => t.id === taskId ? taskData : t);
                 }
 
-                return [...old, taskData];
+                // Add new task to BEGINNING (first row) for newest-first order
+                return [taskData, ...old];
               }
             );
           }
@@ -116,12 +131,21 @@ export const useRealtimeSync = (
               return old.map(t => t.id === taskId ? taskData : t);
             }
 
-            return [...old, taskData];
+            // Add new task to BEGINNING (first row) for newest-first order
+            return [taskData, ...old];
           });
 
           // 🔥 CRITICAL FIX: Invalidate branchSummaries to update parent branch's task_count in sidebar
           if (taskData.git_branch_id) {
             queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+            queryClient.invalidateQueries({ queryKey: ['branch', taskData.git_branch_id] });
+          }
+
+          // 🔥 CRITICAL FIX: Invalidate projects to update parent project's task_count badge
+          // Project badge calculates total by summing branch task counts from project.git_branchs
+          if (taskData.project_id) {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['project', taskData.project_id] });
           }
 
           // Show success toast (deduplicated)
@@ -131,23 +155,24 @@ export const useRealtimeSync = (
           break;
 
         case 'updated':
-          // 🔥 FIX: Backend sends incomplete data (MinimalResponseSerializer excludes dependencies/assignees)
-          // Instead of updating cache with incomplete data, INVALIDATE to trigger refetch
-          // This ensures UI always displays complete, fresh data including dependencies
+          // ✅ FIX 2025-11-22: Backend NOW sends complete data (fixed facade to return complete task)
+          // Directly update cache with WebSocket payload instead of invalidating
+          // This is faster and prevents stale data in fullTasksMap
 
           // CRITICAL: Delay to allow update animation to play (~150ms)
           setTimeout(() => {
-            // ✅ INVALIDATE queries to force refetch of complete data
-            // This ensures dependencies, assignees, labels are all fetched
-            queryClient.invalidateQueries({ queryKey: ['task', taskId, false] });
-            queryClient.invalidateQueries({ queryKey: ['task', taskId, true] });
+            // ✅ DIRECTLY UPDATE cache with complete WebSocket data
+            // Backend now sends ALL fields (title, description, status, priority, etc.)
+            queryClient.setQueryData(['task', taskId, false], taskData);
+            queryClient.setQueryData(['task', taskId, true], taskData);
 
+            // Also invalidate task list to update summaries
             if (taskData.git_branch_id) {
               queryClient.invalidateQueries({ queryKey: ['tasks', taskData.git_branch_id] });
             }
             queryClient.invalidateQueries({ queryKey: ['tasks'] });
 
-            logger.debug(`[useRealtimeSync] Invalidated task queries for ${taskId} (forces refetch of complete data)`);
+            logger.debug(`[useRealtimeSync] Updated task ${taskId} with complete data from WebSocket`);
           }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
 
           // 🔇 SUPPRESS toast for automatic task updates (subtask count changes)
@@ -173,13 +198,23 @@ export const useRealtimeSync = (
             return;
           }
 
+          // 🎬 CRITICAL: Trigger delete animation IMMEDIATELY (before cache update)
+          // Animation needs to play BEFORE component unmounts
+          logger.debug('🎬 [useRealtimeSync] Triggering task delete animation', { taskId });
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              animationFactory.animate(taskId, 'delete', 'websocket');
+            }, 150); // 150ms delay ensures DOM is ready
+          });
 
-          // Show warning toast FIRST (before cache update)
+          // Show warning toast (animation triggered above)
           showToastOnce(`task-deleted-${taskId}`, () => {
             showWarning(`Task "${taskTitle}" deleted`);
           });
 
-          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          // CRITICAL: Delay cache update to allow delete animation to play (~800ms total)
+          // 150ms (requestAnimationFrame) + 800ms (animation duration) = 950ms
+          // Using 600ms keeps it responsive while animation plays
           setTimeout(() => {
 
             // Remove from individual task cache
@@ -209,6 +244,14 @@ export const useRealtimeSync = (
             // 🔥 CRITICAL FIX: Invalidate branchSummaries to update parent branch's task_count in sidebar
             if (taskData.git_branch_id) {
               queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
+              queryClient.invalidateQueries({ queryKey: ['branch', taskData.git_branch_id] });
+            }
+
+            // 🔥 CRITICAL FIX: Invalidate projects to update parent project's task_count badge
+            // Project badge calculates total by summing branch task counts from project.git_branchs
+            if (taskData.project_id) {
+              queryClient.invalidateQueries({ queryKey: ['projects'] }); // ✅ FIXED: was 'projectSummaries'
+              queryClient.invalidateQueries({ queryKey: ['project', taskData.project_id] });
             }
 
           }, 600);
@@ -372,20 +415,26 @@ export const useRealtimeSync = (
           break;
 
         case 'updated':
-          // 🔥 FIX: Backend sends incomplete data (MinimalResponseSerializer excludes assignees)
-          // Instead of updating cache with incomplete data, INVALIDATE to trigger refetch
-          // This ensures assignees (inherited from parent) are always displayed correctly
+          // ✅ FIX 2025-11-22: Backend NOW sends complete data (fixed facade to return complete subtask)
+          // Directly update cache with WebSocket payload instead of invalidating
+          // Same fix as task update (useRealtimeSync.ts:135-154)
 
           // CRITICAL: Delay to allow update animation to play (~150ms)
           setTimeout(() => {
-            // ✅ INVALIDATE queries to force refetch of complete data
+            // ✅ DIRECTLY UPDATE cache with complete WebSocket data
             if (taskId) {
-              queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] });
+              queryClient.setQueryData<Subtask[]>(
+                ['subtasks', taskId],
+                (old) => {
+                  if (!old) return [subtaskData];
+                  return old.map(s => s.id === subtaskData.id ? subtaskData : s);
+                }
+              );
 
               // Also invalidate parent task to update counts
               queryClient.invalidateQueries({ queryKey: ['task', taskId] });
 
-              logger.debug(`[useRealtimeSync] Invalidated subtask queries for task ${taskId} (forces refetch with inherited assignees)`);
+              logger.debug(`[useRealtimeSync] Updated subtask ${subtaskData.id} with complete data from WebSocket`);
             }
           }, 150); // Match UPDATE animation duration from WebSocketAnimationService.ts
 
@@ -397,6 +446,12 @@ export const useRealtimeSync = (
 
         case 'deleted':
           // 🔍 DEBUG: Log payload structure for validation
+          logger.debug('[useRealtimeSync] Subtask delete - Received payload', {
+            subtaskData,
+            hasId: !!subtaskData?.id,
+            hasTaskId: !!subtaskData?.task_id,
+            keys: Object.keys(subtaskData || {})
+          });
 
           // Validate delete payload using type guard
           if (!isSubtaskDeletePayload(subtaskData)) {
@@ -412,13 +467,23 @@ export const useRealtimeSync = (
             return;
           }
 
+          // 🎬 CRITICAL: Trigger delete animation IMMEDIATELY (before cache update)
+          // Animation needs to play BEFORE component unmounts
+          logger.debug('🎬 [useRealtimeSync] Triggering subtask delete animation', { subtaskId: subtaskData.id });
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              animationFactory.animate(subtaskData.id, 'delete', 'websocket');
+            }, 150); // 150ms delay ensures DOM is ready
+          });
 
-          // Show warning toast FIRST (before cache update)
+          // Show warning toast (animation triggered above)
           showToastOnce(`subtask-deleted-${subtaskData.id}`, () => {
             showWarning(`Subtask "${subtaskTitle}" deleted`);
           });
 
-          // CRITICAL: Delay cache update to allow delete animation to play (~600ms)
+          // CRITICAL: Delay cache update to allow delete animation to play (~800ms total)
+          // 150ms (requestAnimationFrame) + 800ms (animation duration) = 950ms
+          // Using 600ms keeps it responsive while animation plays
           setTimeout(() => {
 
             // Remove from cache

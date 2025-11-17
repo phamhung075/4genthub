@@ -32,7 +32,7 @@ USAGE:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -166,6 +166,7 @@ class TaskCreatePayload(BaseModel):
     status: str
     priority: str
     git_branch_id: str
+    project_id: str | None = None  # 🔥 CRITICAL FIX: For project cache invalidation
     assignees: list[str] | None = None
     labels: list[str] | None = None
     created_at: str | None = None
@@ -193,12 +194,16 @@ class TaskDeletePayload(BaseModel):
     - id: For frontend cache operations
     - title: For toast notification display
     - git_branch_id: For cache invalidation of parent branch (optional but recommended)
+    - project_id: For cache invalidation of parent project (optional but recommended)
     """
 
     id: str = Field(..., description="Task UUID - REQUIRED for frontend handler")
     title: str = Field(..., description="Task title - REQUIRED for toast notification")
     git_branch_id: str | None = Field(
         None, description="Parent branch UUID - for cache invalidation"
+    )
+    project_id: str | None = Field(
+        None, description="Parent project UUID - for cache invalidation"
     )
 
     @field_validator("id")
@@ -374,9 +379,7 @@ class WSMessage(BaseModel):
     id: str = Field(default_factory=lambda: f"ws-{uuid.uuid4().hex[:12]}")
     version: Literal["2.0"] = "2.0"
     type: Literal["update", "bulk", "sync", "heartbeat", "error"]
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(datetime.UTC).isoformat()
-    )
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     sequence: int = Field(default_factory=lambda: 0)
     payload: WSPayload
     metadata: WSMetadata
@@ -569,7 +572,10 @@ def convert_task_delete_legacy(task_snapshot: dict[str, Any]) -> TaskDeletePaylo
         title = f"Task {task_id[:8]}"
 
     return TaskDeletePayload(
-        id=task_id, title=title, git_branch_id=task_snapshot.get("git_branch_id")
+        id=task_id,
+        title=title,
+        git_branch_id=task_snapshot.get("git_branch_id"),
+        project_id=task_snapshot.get("project_id"),
     )
 
 

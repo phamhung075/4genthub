@@ -84,11 +84,13 @@ class TaskCrudHandler:
 
         except Exception as e:
             logger.error(f"Error creating task for user {user_id}: {e}")
+            # Return specific error message instead of generic one for better debugging
+            error_message = str(e) if str(e) else "Failed to create task"
             return TaskResponse(
                 success=False,
                 task=None,
-                error=str(e),
-                message="Failed to create task",
+                error=error_message,
+                message=error_message,  # Use specific error for user-facing message
                 timestamp=datetime.now(UTC).isoformat(),
             )
 
@@ -148,11 +150,13 @@ class TaskCrudHandler:
 
         except Exception as e:
             logger.error(f"Error getting task {task_id} for user {user_id}: {e}")
+            # Return specific error message instead of generic one for better debugging
+            error_message = str(e) if str(e) else "Failed to get task"
             return TaskResponse(
                 success=False,
                 task=None,
-                error=str(e),
-                message="Failed to get task",
+                error=error_message,
+                message=error_message,  # Use specific error for user-facing message
                 timestamp=datetime.now(UTC).isoformat(),
             )
 
@@ -213,11 +217,13 @@ class TaskCrudHandler:
 
         except Exception as e:
             logger.error(f"Error updating task {task_id} for user {user_id}: {e}")
+            # Return specific error message instead of generic one for better debugging
+            error_message = str(e) if str(e) else "Failed to update task"
             return TaskResponse(
                 success=False,
                 task=None,
-                error=str(e),
-                message="Failed to update task",
+                error=error_message,
+                message=error_message,  # Use specific error for user-facing message
                 timestamp=datetime.now(UTC).isoformat(),
             )
 
@@ -271,11 +277,13 @@ class TaskCrudHandler:
 
         except Exception as e:
             logger.error(f"Error deleting task {task_id} for user {user_id}: {e}")
+            # Return specific error message instead of generic one for better debugging
+            error_message = str(e) if str(e) else "Failed to delete task"
             return DeleteResponse(
                 success=False,
                 deleted=False,
-                error=str(e),
-                message="Failed to delete task",
+                error=error_message,
+                message=error_message,  # Use specific error for user-facing message
                 timestamp=datetime.now(UTC).isoformat(),
             )
 
@@ -332,10 +340,12 @@ class TaskCrudHandler:
 
         except Exception as e:
             logger.error(f"Error listing tasks for user {user_id}: {e}", exc_info=True)
+            # Return specific error message instead of generic one for better debugging
+            error_message = str(e) if str(e) else "Failed to list tasks"
             return TasksResponse(
                 success=False,
                 tasks=[],
-                error=str(e),
-                message="Failed to list tasks",
+                error=error_message,
+                message=error_message,  # Use specific error for user-facing message
                 timestamp=datetime.now(UTC).isoformat(),
             )

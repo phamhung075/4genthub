@@ -147,12 +147,21 @@ class TaskFacadeFactory:
             user_id=user_id
         )
 
+        # Create project repository for the facade (needed for git_branch_id validation)
+        project_repository = self._repository_provider.get_project_repository(
+            user_id=user_id
+        )
+
         # Create and return facade with all repositories and services
         # The facade will create its own use cases internally
         from ...application.facades.task_application_facade import TaskApplicationFacade
 
         return TaskApplicationFacade(
-            task_repository, subtask_repository, context_service, git_branch_repository
+            task_repository,
+            subtask_repository,
+            context_service,
+            git_branch_repository,
+            project_repository,
         )
 
     def create_task_facade_with_git_branch_id(
@@ -204,9 +213,18 @@ class TaskFacadeFactory:
             user_id=user_id
         )
 
+        # Create project repository for the facade (needed for git_branch_id validation)
+        project_repository = self._repository_provider.get_project_repository(
+            user_id=user_id
+        )
+
         # Create and return facade with all repositories and services
         from ...application.facades.task_application_facade import TaskApplicationFacade
 
         return TaskApplicationFacade(
-            task_repository, subtask_repository, context_service, git_branch_repository
+            task_repository,
+            subtask_repository,
+            context_service,
+            git_branch_repository,
+            project_repository,
         )

@@ -95,14 +95,20 @@ export function useTaskAnimation(
         element: currentElement.tagName
       }, 'useTaskAnimation.ts');
 
-      animationFactory.registerElement(summary.id, currentElement, {
-        onAnimationStart: (type: AnimationType) => {
-          logger.debug('🎬 Animation started', { taskId: summary.id, type }, 'useTaskAnimation.ts');
-        },
-        onAnimationEnd: (type: AnimationType) => {
-          logger.debug('🎬 Animation completed', { taskId: summary.id, type }, 'useTaskAnimation.ts');
+      // ✅ FIX 2025-11-22: Pass entityType 'task' for correct CSS class selection
+      animationFactory.registerElement(
+        summary.id,
+        currentElement,
+        'task', // Entity type for correct CSS classes (taskRowCreateAnimation, etc.)
+        {
+          onAnimationStart: (type: AnimationType) => {
+            logger.debug('🎬 Animation started', { taskId: summary.id, type }, 'useTaskAnimation.ts');
+          },
+          onAnimationEnd: (type: AnimationType) => {
+            logger.debug('🎬 Animation completed', { taskId: summary.id, type }, 'useTaskAnimation.ts');
+          }
         }
-      });
+      );
 
       logger.debug('Element registered with AnimationFactory', {
         component: 'useTaskAnimation',
@@ -122,21 +128,12 @@ export function useTaskAnimation(
     };
   }, [summary.id, isMobile]);
 
-  // Mount-time animation check for newly created tasks
+  // Mount-time animation - DISABLED
+  // WebSocket notifications are the source of truth for animations (MCP trigger)
+  // Both API route and MCP route send WebSocket 'created' events
+  // WebSocketAnimationService handles all create animations
   useEffect(() => {
-    // ALWAYS try to animate on first mount - the component only mounts when a task is added
-    logger.debug('🎬 [useTaskAnimation] Mount-time check', {
-      taskId: summary.id,
-      hasCreatedAt: !!summary.created_at,
-      createdAt: summary.created_at
-    }, 'useTaskAnimation.ts');
-
-    // Small delay to ensure DOM is ready, then trigger animation
-    setTimeout(() => {
-      logger.debug('🎬 Mount-time animation triggered', { taskId: summary.id }, 'useTaskAnimation.ts');
-      playCreateAnimation('mount');
-      hasMountedRef.current = true;
-    }, 50);
+    hasMountedRef.current = true;
   }, []); // Only run on mount
 
   // Detect ANY changes after mount and trigger update animation
@@ -189,6 +186,19 @@ export function useTaskAnimation(
   // Helper function to get fallback animation class - matches subtask implementation
   // CSS classes are now global (defined in src/styles/task-animations.css)
   const getAnimationClass = (): string => {
+    // Check if this is a newly created task (< 2 seconds old)
+    // Apply 'taskRowNew' class to keep it hidden until WebSocket animation triggers
+    if (summary.created_at && !hasMountedRef.current) {
+      const createdAt = new Date(summary.created_at);
+      const now = new Date();
+      const ageInMs = now.getTime() - createdAt.getTime();
+      const isNewTask = ageInMs < 2000; // Created within last 2 seconds
+
+      if (isNewTask) {
+        return 'taskRowNew'; // Start hidden, WebSocket animation will replace this
+      }
+    }
+
     switch (animationState) {
       case 'creating':
         return 'taskRowCreateAnimation';

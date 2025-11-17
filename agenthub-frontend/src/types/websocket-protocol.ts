@@ -79,6 +79,7 @@ export interface TaskCreatePayload {
   status: string;
   priority: string;
   git_branch_id: string;
+  project_id?: string;  // 🔥 CRITICAL FIX: For project cache invalidation
   assignees?: string[];
   labels?: string[];
   created_at?: string;
@@ -100,6 +101,7 @@ export interface TaskDeletePayload {
   id: string;                   // REQUIRED for frontend handler
   title: string;                // For toast notification
   git_branch_id?: string;       // For cache invalidation
+  project_id?: string;          // For project cache invalidation
 }
 
 export interface TaskCompletePayload {
