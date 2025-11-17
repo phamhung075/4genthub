@@ -124,20 +124,28 @@ export function useBranchAnimation(
 
   // Mount-time animation check for newly created branches
   useEffect(() => {
-    // ALWAYS try to animate on first mount - the component only mounts when a branch is added
     const createdAt = 'created_at' in branch ? branch.created_at : undefined;
-    logger.debug('🎬 [useBranchAnimation] Mount-time check', {
-      branchId: branch.id,
-      hasCreatedAt: !!createdAt,
-      createdAt
-    }, 'useBranchAnimation.ts');
 
-    // Small delay to ensure DOM is ready, then trigger animation
-    setTimeout(() => {
-      logger.debug('🎬 Mount-time animation triggered', { branchId: branch.id }, 'useBranchAnimation.ts');
-      playCreateAnimation('mount');
+    // Only animate if branch was created recently (within last 2 seconds)
+    // This prevents ALL branches from animating when the list re-renders
+    if (createdAt) {
+      const createdAtDate = new Date(createdAt);
+      const now = new Date();
+      const ageInMs = now.getTime() - createdAtDate.getTime();
+      const isNewBranch = ageInMs < 2000; // Created within last 2 seconds
+
+      if (isNewBranch) {
+        // Small delay to ensure DOM is ready, then trigger animation
+        setTimeout(() => {
+          playCreateAnimation('mount');
+          hasMountedRef.current = true;
+        }, 50);
+      } else {
+        hasMountedRef.current = true;
+      }
+    } else {
       hasMountedRef.current = true;
-    }, 50);
+    }
   }, []); // Only run on mount
 
   // Detect ANY changes after mount and trigger update animation

@@ -58,6 +58,16 @@ class ProjectAPIController:
                 request.name, request.description or ""
             )
 
+            # Check if facade returned an error response
+            if not result.get("success", True):
+                return ProjectResponse(
+                    success=False,
+                    project=None,
+                    error=result.get("error", "Unknown error"),
+                    message=result.get("error", "Failed to create project"),
+                    timestamp=datetime.now(UTC).isoformat(),
+                )
+
             # Extract project data from result
             project_data = result.get("project", {})
 

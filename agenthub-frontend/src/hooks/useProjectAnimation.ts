@@ -124,19 +124,26 @@ export function useProjectAnimation(
 
   // Mount-time animation check for newly created projects
   useEffect(() => {
-    // ALWAYS try to animate on first mount - the component only mounts when a project is added
-    logger.debug('🎬 [useProjectAnimation] Mount-time check', {
-      projectId: project.id,
-      hasCreatedAt: !!project.created_at,
-      createdAt: project.created_at
-    }, 'useProjectAnimation.ts');
+    // Only animate if project was created recently (within last 2 seconds)
+    // This prevents ALL projects from animating when the list re-renders
+    if (project.created_at) {
+      const createdAt = new Date(project.created_at);
+      const now = new Date();
+      const ageInMs = now.getTime() - createdAt.getTime();
+      const isNewProject = ageInMs < 2000; // Created within last 2 seconds
 
-    // Small delay to ensure DOM is ready, then trigger animation
-    setTimeout(() => {
-      logger.debug('🎬 Mount-time animation triggered', { projectId: project.id }, 'useProjectAnimation.ts');
-      playCreateAnimation('mount');
+      if (isNewProject) {
+        // Small delay to ensure DOM is ready, then trigger animation
+        setTimeout(() => {
+          playCreateAnimation('mount');
+          hasMountedRef.current = true;
+        }, 50);
+      } else {
+        hasMountedRef.current = true;
+      }
+    } else {
       hasMountedRef.current = true;
-    }, 50);
+    }
   }, []); // Only run on mount
 
   // Detect ANY changes after mount and trigger update animation
