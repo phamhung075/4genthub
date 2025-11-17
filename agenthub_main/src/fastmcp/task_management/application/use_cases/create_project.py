@@ -232,6 +232,9 @@ class CreateProjectUseCase:
                 "description": project.description,
                 "created_at": project.created_at.isoformat(),
                 "updated_at": project.updated_at.isoformat(),
-                "git_branchs": list(project.git_branchs.keys()),
+                "git_branchs": {
+                    branch_id: branch.to_dict()
+                    for branch_id, branch in project.git_branchs.items()
+                },
             },
         }

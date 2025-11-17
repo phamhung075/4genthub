@@ -281,6 +281,7 @@ class GitBranch(BaseTimestampEntity):
             if self.id
             else "",
             "name": self.name,
+            "git_branch_name": self.git_branch_name,  # Required by BranchDTO
             "description": self.description,
             "project_id": self.project_id,
             "created_at": self.created_at.isoformat(),

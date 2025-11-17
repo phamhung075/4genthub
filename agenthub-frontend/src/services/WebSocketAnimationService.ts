@@ -19,68 +19,28 @@ class WebSocketAnimationService {
    * Initialize the service by connecting to WebSocket message events
    */
   init(webSocketClient: any) {
-    logger.debug('🎬 WebSocketAnimationService: Initializing...');
-    logger.debug('🎬 WebSocketAnimationService: Client type:', typeof webSocketClient);
-    logger.debug('🎬 WebSocketAnimationService: Client has "on" method:', typeof webSocketClient.on);
-
     // Listen for WebSocket update messages
     webSocketClient.on('update', (message: WSMessage) => {
-      logger.debug('🎬 WebSocketAnimationService: 📨 Received update message');
       this.handleWebSocketMessage(message);
     });
-
-    logger.debug('✅ WebSocketAnimationService: Connected to WebSocket events');
   }
 
   /**
    * Handle incoming WebSocket messages and trigger animations
-   * Made public for debugging purposes
    */
   handleWebSocketMessage(message: WSMessage) {
     const { payload } = message;
     const { entity, action } = payload;
 
-    logger.debug('🎬 🚨 DELETE DEBUG: WebSocketAnimationService: Processing message:', {
-      entity,
-      action,
-      messageId: message.id
-    });
-
-    // Special detailed logging for DELETE operations
-    if (action?.toLowerCase().includes('delete')) {
-      logger.warn('🗑️ DELETE MESSAGE RECEIVED in WebSocketAnimationService:');
-      logger.warn('  Entity:', entity);
-      logger.warn('  Action:', action);
-      logger.warn('  Message ID:', message.id);
-      logger.warn('  Full message:', message);
-      logger.warn('  Checking if entity matches supported types (task/subtask/branch)...');
-    }
-
-    // Only handle task-related operations that should trigger animations
+    // Route to appropriate entity animation handler
     if (entity === 'task') {
-      if (action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE: Triggering task animation');
-      }
       this.triggerTaskAnimation(action, message);
     } else if (entity === 'subtask') {
-      if (action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE: Triggering subtask animation');
-      }
       this.triggerSubtaskAnimation(action, message);
     } else if (entity === 'branch') {
-      if (action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE: Triggering branch animation');
-      }
       this.triggerBranchAnimation(action, message);
     } else if (entity === 'project') {
-      if (action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE: Triggering project animation');
-      }
       this.triggerProjectAnimation(action, message);
-    } else {
-      if (action?.toLowerCase().includes('delete')) {
-        logger.warn('🗑️ DELETE: Entity not supported for animations:', entity);
-      }
     }
   }
 
@@ -88,16 +48,6 @@ class WebSocketAnimationService {
    * Trigger animations for task operations using centralized AnimationFactory
    */
   private triggerTaskAnimation(action: string, message: WSMessage) {
-    const { metadata } = message;
-    const taskTitle = metadata?.task_title || 'Task';
-    const branchTitle = metadata?.parent_branch_title || 'Branch';
-
-    logger.debug('🎯 WebSocketAnimationService: Triggering task animation via AnimationFactory:', {
-      action,
-      taskTitle,
-      branchTitle
-    });
-
     // Extract task ID from message for targeted animations
     // Try multiple extraction paths to handle different backend message formats
     const primary = message.payload?.data?.primary;
@@ -106,16 +56,8 @@ class WebSocketAnimationService {
     const metadataId = message.metadata?.entity_id;
     const taskId = primaryId || directDataId || metadataId;
 
-    logger.debug('🔍 Task ID extraction debug:', {
-      primaryId,
-      directDataId,
-      metadataId,
-      finalTaskId: taskId,
-      action
-    });
-
     if (!taskId) {
-      logger.warn('❌ No task ID found - cannot trigger targeted animation');
+      logger.warn('No task ID found - cannot trigger animation');
       return;
     }
 
@@ -125,10 +67,6 @@ class WebSocketAnimationService {
       case 'created':
         // SKIP animation for created events - mount animation handles this
         // Prevents race condition where WebSocket animation fires before element registration
-        logger.debug('🎬 WebSocketAnimationService: Skipping WebSocket animation for created event (mount handles it)', {
-          taskId,
-          action
-        });
         return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
@@ -141,23 +79,15 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        logger.debug('🎬 WebSocketAnimationService: Unknown task action:', action);
         return;
     }
 
-    // FIX: Defer animation until after DOM element exists
+    // Defer animation until after DOM element exists
     // WebSocket event → React renders → DOM updated → Animate
     // Use requestAnimationFrame + setTimeout to ensure React has rendered
     requestAnimationFrame(() => {
       setTimeout(() => {
-        // Trigger animation via centralized factory
-        const success = animationFactory.animate(taskId, animationType!, 'websocket');
-
-        logger.debug('🎬 WebSocketAnimationService: Animation request result (deferred):', {
-          taskId,
-          animationType,
-          success
-        });
+        animationFactory.animate(taskId, animationType!, 'websocket');
       }, 150); // 150ms delay ensures DOM is ready (React render + paint)
     });
 
@@ -169,16 +99,6 @@ class WebSocketAnimationService {
    * Trigger animations for subtask operations using centralized AnimationFactory
    */
   private triggerSubtaskAnimation(action: string, message: WSMessage) {
-    const { metadata } = message;
-    const subtaskTitle = metadata?.subtask_title || 'Subtask';
-    const parentTaskTitle = metadata?.parent_task_title || 'Task';
-
-    logger.debug('🎯 WebSocketAnimationService: Triggering subtask animation via AnimationFactory:', {
-      action,
-      subtaskTitle,
-      parentTaskTitle
-    });
-
     // Extract subtask ID from message for targeted animations
     const primary = message.payload?.data?.primary;
     const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
@@ -187,7 +107,7 @@ class WebSocketAnimationService {
     const subtaskId = primaryId || directDataId || metadataId;
 
     if (!subtaskId) {
-      logger.warn('❌ No subtask ID found - cannot trigger targeted animation');
+      logger.warn('No subtask ID found - cannot trigger animation');
       return;
     }
 
@@ -196,11 +116,6 @@ class WebSocketAnimationService {
     switch (action) {
       case 'created':
         // SKIP animation for created events - mount animation handles this
-        // Prevents race condition where WebSocket animation fires before element registration
-        logger.debug('🎬 WebSocketAnimationService: Skipping WebSocket animation for created subtask (mount handles it)', {
-          subtaskId,
-          action
-        });
         return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
@@ -213,21 +128,13 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        logger.debug('🎬 WebSocketAnimationService: Unknown subtask action:', action);
         return;
     }
 
-    // FIX: Defer animation until after DOM element exists
+    // Defer animation until after DOM element exists
     requestAnimationFrame(() => {
       setTimeout(() => {
-        // Trigger animation via centralized factory
-        const success = animationFactory.animate(subtaskId, animationType!, 'websocket');
-
-        logger.debug('🎬 WebSocketAnimationService: Subtask animation request result (deferred):', {
-          subtaskId,
-          animationType,
-          success
-        });
+        animationFactory.animate(subtaskId, animationType!, 'websocket');
       }, 150); // 150ms delay ensures DOM is ready
     });
   }
@@ -236,14 +143,6 @@ class WebSocketAnimationService {
    * Trigger animations for branch operations using centralized AnimationFactory
    */
   private triggerBranchAnimation(action: string, message: WSMessage) {
-    const { metadata } = message;
-    const branchTitle = metadata?.branch_title || 'Branch';
-
-    logger.debug('🎯 WebSocketAnimationService: Triggering branch animation via AnimationFactory:', {
-      action,
-      branchTitle
-    });
-
     // Extract branch ID from message for targeted animations
     const primary = message.payload?.data?.primary;
     const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
@@ -252,19 +151,18 @@ class WebSocketAnimationService {
     const branchId = primaryId || directDataId || metadataId;
 
     if (!branchId) {
-      logger.warn('❌ No branch ID found - cannot trigger targeted animation');
+      logger.warn('No branch ID found - cannot trigger animation');
       return;
     }
 
     // Map WebSocket actions to animation types (same mapping as tasks)
     let animationType: AnimationType | null = null;
-    let delay = 150; // Default delay for UPDATE/DELETE
 
     switch (action) {
       case 'created':
-        animationType = 'create';
-        delay = 500; // Longer delay for CREATE - React needs time to render new element
-        break;
+        // SKIP animation for created events - mount animation handles this
+        // Prevents race condition and prevents all branches from animating when cache updates
+        return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
         break;
@@ -273,29 +171,14 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        logger.debug('🎬 WebSocketAnimationService: Unknown branch action:', action);
         return;
     }
 
-    // FIX: Defer animation until after DOM element exists
-    // CREATE events need longer delay (500ms) for React to render + register element
+    // Defer animation until after DOM element exists
     requestAnimationFrame(() => {
       setTimeout(() => {
-        logger.debug(`🎬 WebSocketAnimationService: Attempting branch animation after ${delay}ms delay:`, {
-          branchId,
-          animationType,
-          action
-        });
-
-        // Trigger animation via centralized factory
-        const success = animationFactory.animate(branchId, animationType!, 'websocket');
-
-        logger.debug('🎬 WebSocketAnimationService: Branch animation request result (deferred):', {
-          branchId,
-          animationType,
-          success
-        });
-      }, delay);
+        animationFactory.animate(branchId, animationType!, 'websocket');
+      }, 150);
     });
   }
 
@@ -303,14 +186,6 @@ class WebSocketAnimationService {
    * Trigger animations for project operations using centralized AnimationFactory
    */
   private triggerProjectAnimation(action: string, message: WSMessage) {
-    const { metadata } = message;
-    const projectTitle = metadata?.project_title || 'Project';
-
-    logger.debug('🎯 WebSocketAnimationService: Triggering project animation via AnimationFactory:', {
-      action,
-      projectTitle
-    });
-
     // Extract project ID from message for targeted animations
     const primary = message.payload?.data?.primary;
     const primaryId = primary && !Array.isArray(primary) ? primary.id : undefined;
@@ -319,19 +194,18 @@ class WebSocketAnimationService {
     const projectId = primaryId || directDataId || metadataId;
 
     if (!projectId) {
-      logger.warn('❌ No project ID found - cannot trigger targeted animation');
+      logger.warn('No project ID found - cannot trigger animation');
       return;
     }
 
     // Map WebSocket actions to animation types
     let animationType: AnimationType | null = null;
-    let delay = 150; // Default delay for UPDATE/DELETE
 
     switch (action) {
       case 'created':
-        animationType = 'create';
-        delay = 500; // Longer delay for CREATE - React needs time to render new element
-        break;
+        // SKIP animation for created events - mount animation handles this
+        // Prevents race condition and prevents all projects from animating when cache updates
+        return; // Exit early - no animation needed
       case 'updated':
         animationType = 'update';
         break;
@@ -340,29 +214,14 @@ class WebSocketAnimationService {
         animationType = 'delete';
         break;
       default:
-        logger.debug('🎬 WebSocketAnimationService: Unknown project action:', action);
         return;
     }
 
-    // FIX: Defer animation until after DOM element exists
-    // CREATE events need longer delay (500ms) for React to render + register element
+    // Defer animation until after DOM element exists
     requestAnimationFrame(() => {
       setTimeout(() => {
-        logger.debug(`🎬 WebSocketAnimationService: Attempting project animation after ${delay}ms delay:`, {
-          projectId,
-          animationType,
-          action
-        });
-
-        // Trigger animation via centralized factory
-        const success = animationFactory.animate(projectId, animationType!, 'websocket');
-
-        logger.debug('🎬 WebSocketAnimationService: Project animation request result (deferred):', {
-          projectId,
-          animationType,
-          success
-        });
-      }, delay);
+        animationFactory.animate(projectId, animationType!, 'websocket');
+      }, 150);
     });
   }
 
