@@ -37,7 +37,10 @@
 }
 
 .subtaskRowCreateAnimation {
-  animation: subtaskRowSlideIn 0.8s ease-out forwards;
+  animation: subtaskRowSlideIn 1.2s ease-out forwards;
+  /* Start hidden off-screen to the right - CRITICAL to prevent flash */
+  transform: translateX(100%);
+  opacity: 0;
 }
 
 /* ========================================
