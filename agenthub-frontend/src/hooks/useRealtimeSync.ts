@@ -108,7 +108,7 @@ export const useRealtimeSync = (
           requestAnimationFrame(() => {
             setTimeout(() => {
               animationFactory.animate(taskId, 'create', 'websocket');
-            }, 150); // 150ms delay ensures DOM is ready and painted
+            }, 50); // 50ms delay ensures DOM is ready
           });
 
           // Direct cache update - add new task to the lists (check for duplicates)
@@ -381,7 +381,7 @@ export const useRealtimeSync = (
           requestAnimationFrame(() => {
             setTimeout(() => {
               animationFactory.animate(subtaskData.id, 'create', 'websocket');
-            }, 500); // 500ms delay - longer for subtasks to ensure parent task row is fully rendered
+            }, 50); // 50ms delay ensures DOM is ready
           });
 
           // Direct cache update - add new subtask to the list (check for duplicates)
