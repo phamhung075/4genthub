@@ -84,26 +84,13 @@ export const useSubtaskMutations = () => {
       // Snapshot previous values
       const previousSubtasks = queryClient.getQueryData<Subtask[]>(['subtasks', taskId]);
 
-      // Optimistically update cache with temporary ID
-      if (previousSubtasks) {
-        const optimisticSubtask: Subtask = {
-          id: `temp-${Date.now()}`,
-          task_id: taskId,
-          title: subtask.title || '',
-          description: subtask.description,
-          status: subtask.status || 'todo',
-          priority: subtask.priority || 'medium',
-          assignees: subtask.assignees,
-          progress_percentage: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-
-        queryClient.setQueryData<Subtask[]>(
-          ['subtasks', taskId],
-          [optimisticSubtask, ...previousSubtasks]
-        );
-      }
+      // 🔥 FIX 2025-11-22: REMOVED optimistic update to allow create animation to play
+      // Optimistic updates show subtask instantly (no animation)
+      // By waiting for WebSocket, we get the beautiful slide-in animation (right to left)
+      // This matches task creation behavior (tasks don't have optimistic updates)
+      //
+      // Previously: Created temp subtask with id `temp-${Date.now()}`
+      // Now: Wait for real WebSocket message with slide-in animation
 
       return { previousSubtasks, taskId };
     },
