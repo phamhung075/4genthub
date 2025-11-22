@@ -102,6 +102,15 @@ export const useRealtimeSync = (
 
       switch (action) {
         case 'created':
+          // 🎬 CRITICAL: Trigger create animation IMMEDIATELY (before cache update)
+          // Animation needs to play as soon as task appears
+          logger.debug('🎬 [useRealtimeSync] Triggering task create animation', { taskId });
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              animationFactory.animate(taskId, 'create', 'websocket');
+            }, 50); // 50ms delay ensures DOM is ready
+          });
+
           // Direct cache update - add new task to the lists (check for duplicates)
           if (taskData.git_branch_id) {
             queryClient.setQueryData<Task[]>(
@@ -366,6 +375,15 @@ export const useRealtimeSync = (
 
       switch (action) {
         case 'created':
+          // 🎬 CRITICAL: Trigger create animation IMMEDIATELY (before cache update)
+          // Animation plays as soon as subtask appears (slide-in from right to left)
+          logger.debug('🎬 [useRealtimeSync] Triggering subtask create animation', { subtaskId: subtaskData.id });
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              animationFactory.animate(subtaskData.id, 'create', 'websocket');
+            }, 50); // 50ms delay ensures DOM is ready
+          });
+
           // Direct cache update - add new subtask to the list (check for duplicates)
           if (taskId) {
             queryClient.setQueryData<Subtask[]>(
@@ -373,29 +391,13 @@ export const useRealtimeSync = (
               (old) => {
                 if (!old) return [subtaskData];
 
-                // ✨ FIX: Check if subtask already exists (from optimistic update)
+                // ✨ FIX: Check if subtask already exists
                 const exists = old.some(s => s.id === subtaskData.id);
                 if (exists) {
                   return old.map(s => s.id === subtaskData.id ? subtaskData : s);
                 }
 
-                // 🎯 NEW: Replace temp optimistic subtask with real backend data
-                // Match by title and recent creation (within 10 seconds)
-                const now = new Date().getTime();
-                const tempSubtaskIndex = old.findIndex(s => {
-                  if (!s.id.startsWith('temp-')) return false;
-
-                  const titleMatches = s.title === subtaskData.title;
-                  const createdRecently = now - new Date(s.created_at).getTime() < 10000;
-
-                  return titleMatches && createdRecently;
-                });
-
-                if (tempSubtaskIndex !== -1) {
-                  // Replace temp subtask with real one (no animation)
-                  return old.map((s, idx) => idx === tempSubtaskIndex ? subtaskData : s);
-                }
-
+                // Add new subtask to END of list
                 return [...old, subtaskData];
               }
             );
