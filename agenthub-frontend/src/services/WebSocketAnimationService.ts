@@ -80,14 +80,8 @@ class WebSocketAnimationService {
     let animationType: AnimationType | null = null;
     switch (action) {
       case 'created':
-<<<<<<< HEAD
-        // SKIP animation for created events - mount animation handles this
-        // Prevents race condition where WebSocket animation fires before element registration
-        return; // Exit early - no animation needed
-=======
         animationType = 'create';
         break;
->>>>>>> 8daef02e (fix(project): resolve project creation validation errors and animation issues)
       case 'updated':
         animationType = 'update';
         break;
