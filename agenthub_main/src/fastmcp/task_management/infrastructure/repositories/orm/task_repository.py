@@ -34,6 +34,7 @@ from ....domain.value_objects.task_status import TaskStatus
 from ...cache.cache_invalidation_mixin import CacheInvalidationMixin, CacheOperation
 from ...database.models import (
     Label,
+    ProjectGitBranch,
     Subtask,
     Task,
     TaskAssignee,
@@ -822,12 +823,30 @@ class ORMTaskRepository(
                 )
                 logger.info(f"Deleted {deleted_labels} labels for task {task_id}")
 
-                # 6. Branch counters will be updated automatically by database triggers
-                # No manual counter manipulation needed - triggers handle this correctly
+                # 6. Manually decrement branch task counters (NO database triggers in DDD design)
                 if task.git_branch_id:
-                    logger.info(
-                        f"Database triggers will automatically update branch {task.git_branch_id} counters after task deletion"
+                    branch = (
+                        session.query(ProjectGitBranch)
+                        .filter(ProjectGitBranch.id == task.git_branch_id)
+                        .first()
                     )
+                    if branch:
+                        # Decrement total task count
+                        branch.task_count = max(0, (branch.task_count or 0) - 1)
+
+                        # Decrement completed count if task was completed
+                        if task.status == "done":
+                            branch.completed_task_count = max(
+                                0, (branch.completed_task_count or 0) - 1
+                            )
+
+                        # Update branch timestamp
+                        branch.touch("branch_task_count_decremented")
+                        # ✅ FIX: Don't commit here - commit once at end after task deletion succeeds
+                        logger.info(
+                            f"Will decrement branch {task.git_branch_id} counters: "
+                            f"task_count={branch.task_count}, completed_count={branch.completed_task_count}"
+                        )
 
                 # 7. Finally delete the task itself
                 session.delete(task)
@@ -980,7 +999,7 @@ class ORMTaskRepository(
         with self.get_db_session() as session:
             # Build the optimized query with subquery joins for counts
             base_query = """
-            SELECT 
+            SELECT
                 t.*,
                 COALESCE(subtask_counts.count, 0) as subtask_count,
                 COALESCE(assignee_counts.count, 0) as assignee_count,
@@ -994,13 +1013,13 @@ class ORMTaskRepository(
                 GROUP BY task_id
             ) subtask_counts ON t.id = subtask_counts.task_id
             LEFT JOIN (
-                SELECT task_id, COUNT(*) as count 
-                FROM task_assignees 
+                SELECT task_id, COUNT(*) as count
+                FROM task_assignees
                 GROUP BY task_id
             ) assignee_counts ON t.id = assignee_counts.task_id
             LEFT JOIN (
-                SELECT task_id, COUNT(*) as count 
-                FROM task_labels 
+                SELECT task_id, COUNT(*) as count
+                FROM task_labels
                 GROUP BY task_id
             ) label_counts ON t.id = label_counts.task_id
             WHERE 1=1

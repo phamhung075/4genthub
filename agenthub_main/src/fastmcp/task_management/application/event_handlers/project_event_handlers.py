@@ -219,6 +219,26 @@ class ProjectEventHandlers:
             }
         )
 
+        # Persist updated statistics to database (not just in-memory)
+        if self.project_repository:
+            try:
+                self.project_repository.update_statistics(
+                    project_id=str(event.project_id),
+                    branch_count=event.branch_count,
+                    task_count=event.total_tasks,
+                    completed_tasks=event.completed_tasks,
+                    in_progress_tasks=event.in_progress_tasks,
+                    todo_tasks=event.todo_tasks,
+                    progress_percentage=event.overall_progress_percentage,
+                )
+                logger.info(
+                    f"Persisted project {event.project_id} statistics to database"
+                )
+            except Exception as db_error:
+                logger.warning(
+                    f"Failed to persist project statistics to database: {db_error}"
+                )
+
         # Send WebSocket notification to update frontend cache
         try:
             from ...application.services.websocket_notification_service import (
