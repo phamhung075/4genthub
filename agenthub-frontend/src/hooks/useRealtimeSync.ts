@@ -841,6 +841,7 @@ export const useRealtimeSync = (
               // 4. Invalidate aggregate queries to update counts
               queryClient.invalidateQueries({ queryKey: ['branchSummaries'] });
               queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+              queryClient.invalidateQueries({ queryKey: ['projects'] }); // ✅ FIX: Invalidate projects list to update sidebar badge
 
             } else {
             }
