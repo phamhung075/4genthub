@@ -795,6 +795,71 @@ class ORMProjectRepository(
                 "updated_at": project.updated_at.isoformat(),
             }
 
+    def update_statistics(
+        self,
+        project_id: str,
+        branch_count: int = None,
+        task_count: int = None,
+        completed_tasks: int = None,
+        in_progress_tasks: int = None,
+        todo_tasks: int = None,
+        progress_percentage: float = None,
+    ) -> bool:
+        """
+        Update project statistics in database.
+
+        Args:
+            project_id: ID of the project
+            branch_count: Number of branches
+            task_count: Total number of tasks
+            completed_tasks: Number of completed tasks
+            in_progress_tasks: Number of in-progress tasks
+            todo_tasks: Number of todo tasks
+            progress_percentage: Overall progress percentage
+
+        Returns:
+            True if successful, False otherwise
+        """
+        with self.get_db_session() as session:
+            try:
+                project = (
+                    session.query(Project).filter(Project.id == project_id).first()
+                )
+                if not project:
+                    logger.warning(
+                        f"Project {project_id} not found for statistics update"
+                    )
+                    return False
+
+                # Update fields if provided
+                if branch_count is not None:
+                    project.branch_count = branch_count
+                if task_count is not None:
+                    project.task_count = task_count
+                if completed_tasks is not None:
+                    project.completed_tasks = completed_tasks
+                if in_progress_tasks is not None:
+                    project.in_progress_tasks = in_progress_tasks
+                if todo_tasks is not None:
+                    project.todo_tasks = todo_tasks
+                if progress_percentage is not None:
+                    project.progress_percentage = progress_percentage
+
+                # Update timestamp
+                project.touch("statistics_updated")
+                session.commit()
+
+                logger.info(
+                    f"Updated project {project_id} statistics: "
+                    f"branches={branch_count}, tasks={task_count}, completed={completed_tasks}"
+                )
+                return True
+
+            except Exception as e:
+                logger.error(f"Failed to update project statistics: {e}")
+                session.rollback()
+                return False
+
     def get_project_selective_fields(
         self, project_id: str, fields: list[str] | FieldSet | None = None
     ) -> dict[str, Any]:
