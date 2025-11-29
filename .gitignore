@@ -327,7 +327,7 @@ SECURITY_INCIDENT_RESPONSE.md
 .env.origin
 
 # =============================================================================
-# TEMPORARY AND CACHE FILES  
+# TEMPORARY AND CACHE FILES
 # =============================================================================
 # Temporary files
 *.tmp
@@ -517,7 +517,7 @@ marketing-solution/*
 # =============================================================================
 # 🚨 REMEMBER: NEVER commit files containing:
 # - Passwords, API keys, or secrets
-# - Database connection strings with credentials  
+# - Database connection strings with credentials
 # - Private keys or certificates
 # - Personal identifiable information (PII)
 # - Production configuration with sensitive data
@@ -544,3 +544,5 @@ scripts/analyze_*.js
 scripts/benchmark-*.ts
 scripts/diagnose_*.py
 scripts/find-*.sh
+
+.gemini/settings.json
