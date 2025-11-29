@@ -1,0 +1,16 @@
+description = "Create session summary and save to ai_docs/sessions/"
+prompt = """
+# Save Session
+
+**Purpose**: Comprehensive session summary for future reference
+
+## Include
+- Key decisions made
+- Code changes implemented
+- Next steps planned
+- Important context to remember
+
+**Save To**: `ai_docs/sessions/sessionYYMMDD-{{args}}.md`
+
+**Session ID/Name**: {{args}}
+"""

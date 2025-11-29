@@ -189,14 +189,14 @@
       "files": [
         {
           "hash": "076f8352ded11869664ad8583d763bd0",
-          "modified": "2025-11-15T16:13:47.712322",
+          "modified": "2025-11-22T19:47:58.681636",
           "name": "agent-knowledge-skill-system-summary.md",
           "path": "core-architecture/agent-knowledge-skill-system-summary.md",
           "size": 10384
         },
         {
           "hash": "ad3c537ae5303e770ee2898e2c981e5a",
-          "modified": "2025-11-15T16:13:47.712322",
+          "modified": "2025-11-22T19:47:58.681636",
           "name": "agent-knowledge-skill-system-specs.md",
           "path": "core-architecture/agent-knowledge-skill-system-specs.md",
           "size": 101060
@@ -257,21 +257,8 @@
       ],
       "path": "operations"
     },
-    "reports-status": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "ebfe928cc3456acbd3f00239c0870ce1",
-          "modified": "2025-11-15T16:30:13.360159",
-          "name": "mcp-tools-comprehensive-test-2025-11-15.md",
-          "path": "reports-status/mcp-tools-comprehensive-test-2025-11-15.md",
-          "size": 12356
-        }
-      ],
-      "path": "reports-status"
-    },
     "root": {
-      "count": 12,
+      "count": 13,
       "files": [
         {
           "hash": "42b2d04f206c4fa810f4410070d043d3",
@@ -351,6 +338,13 @@
           "size": 10561
         },
         {
+          "hash": "cb5cb8b628c6e65bc9add252db13b46f",
+          "modified": "2025-11-29T10:00:53.109375",
+          "name": "mcp_test_issues.md",
+          "path": "mcp_test_issues.md",
+          "size": 2242
+        },
+        {
           "hash": "a2ed3aa7230b94313cb0fe030caea786",
           "modified": "2025-11-15T16:13:47.712322",
           "name": "anthropic_output_styles.md",
@@ -374,7 +368,7 @@
       "path": "setup-guides"
     },
     "testing-qa": {
-      "count": 3,
+      "count": 4,
       "files": [
         {
           "hash": "2fe07f7c974ace497fe158d1a365a807",
@@ -396,6 +390,13 @@
           "name": "mcp-tools-validation-complete.md",
           "path": "testing-qa/mcp-tools-validation-complete.md",
           "size": 7898
+        },
+        {
+          "hash": "8d74bc13084fe12be88ce65b18d9688b",
+          "modified": "2025-11-29T10:08:55.475568",
+          "name": "mcp-comprehensive-test-report-2025-11-29.md",
+          "path": "testing-qa/mcp-comprehensive-test-report-2025-11-29.md",
+          "size": 19778
         }
       ],
       "path": "testing-qa"
@@ -427,7 +428,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2025-11-15T16:30:13.438645",
+  "generated_at": "2025-11-29T10:08:55.547343",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -510,6 +511,7 @@
       "cleanup-analysis-2025-11-03.md",
       "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
       "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
+      "mcp_test_issues.md",
       "openai_quick_start.md",
       "token-optimization-complete-summary-2025-11-03.md",
       "user_prompt_submit_hook.md",
@@ -520,11 +522,7 @@
         "complete-operations-guide.md"
       ]
     },
-    "reports-status": {
-      "files": [
-        "mcp-tools-comprehensive-test-2025-11-15.md"
-      ]
-    },
+    "reports-status": {},
     "setup-guides": {
       "files": [
         "complete-setup-guide.md"
@@ -538,6 +536,7 @@
       },
       "files": [
         "contract-integration-complete.md",
+        "mcp-comprehensive-test-report-2025-11-29.md",
         "mcp-tools-validation-complete.md",
         "qa-strategy-planning-complete.md"
       ]
@@ -549,5 +548,5 @@
     }
   },
   "total_directories": 19,
-  "total_files": 44
+  "total_files": 45
 }
