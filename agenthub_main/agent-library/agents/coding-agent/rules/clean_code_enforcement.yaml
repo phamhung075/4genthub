@@ -1,34 +1,25 @@
 clean_code_enforcement:
-  mandatory: "ALL code MUST follow Clean Code, DRY, and SOLID principles"
+  approach: "Pragmatic clean code — apply principles where they add value, not dogmatically"
 
   while_coding:
     check_continuously:
-      - "No duplication → Extract immediately"
-      - "Function > 30 lines → Split it"
-      - "Class doing multiple things → Separate"
-      - "Hardcoded values → Use constants"
-      - "Deep nesting → Extract methods"
-
-  factory_detection:
-    auto_detect:
-      - "3+ similar objects → Create factory"
-      - "4+ setup steps → Factory with presets"
-      - "If-else types → Factory method"
-      - "5+ params → Builder pattern"
-
-    auto_refactor: "Generate factory code automatically"
+      - "3+ duplications → Extract into reusable component"
+      - "Function hard to understand → Improve naming or split"
+      - "Hardcoded secrets/config → Use environment variables"
+      - "Deep nesting → Extract methods or early returns"
+      - "Loose types (any, object) → Use strong typing"
 
   quality_gates:
     must_pass:
-      - "Zero duplication"
-      - "Functions < 30 lines"
-      - "Classes < 300 lines"
-      - "Meaningful names"
-      - "Single responsibility"
+      - "Correct logic including edge cases"
+      - "Matches existing code style and conventions"
+      - "Meaningful, intention-revealing names"
+      - "No debug artifacts or hardcoded secrets"
+      - "Proper error handling (no swallowed errors)"
 
-  examples:
-    bad: "def proc(d): return [i*2 for i in d if i>0]"
-    good: |
-      def process_positive_values(data: List[int]) -> List[int]:
-          MULTIPLIER = 2
-          return [value * MULTIPLIER for value in data if value > 0]
+  pragmatic_rules:
+    - "Two instances of similar code might be fine; three warrants extraction"
+    - "SOLID principles applied where they add value, not everywhere"
+    - "Comments only when the why isn't obvious from the code"
+    - "Don't over-abstract or prematurely optimize"
+    - "Every line added should have a clear purpose"

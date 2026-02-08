@@ -22,9 +22,8 @@ file_operations:
 mcp_tools:
   enabled: true
   tools:
-  - mcp__agenthub_http__manage_task
   - mcp__agenthub_http__manage_subtask
-  - mcp--agenthub-http--manage-agent
+  - mcp__agenthub_http__call_agent
   - mcp__sequential-thinking__sequentialthinking
   - WebFetch
   - WebSearch

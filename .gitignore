@@ -546,3 +546,6 @@ scripts/diagnose_*.py
 scripts/find-*.sh
 
 .gemini/settings.json
+
+# Swarm runtime state
+.swarm/

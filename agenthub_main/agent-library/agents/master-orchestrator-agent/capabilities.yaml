@@ -10,6 +10,7 @@ command_execution:
   - docker
   - kubectl
   - terraform
+  - python
 file_operations:
   enabled: true
   permissions:
@@ -25,9 +26,7 @@ mcp_tools:
   - mcp__agenthub_http__manage_context
   - mcp__agenthub_http__manage_project
   - mcp__agenthub_http__manage_git_branch
-  - mcp--agenthub-http--manage-agent
-  - mcp--agenthub-http--call-agent
-  - mcp__agenthub_http__manage_rule
-  - mcp__agenthub_http__manage_compliance
+  - mcp__agenthub_http__manage_agent
+  - mcp__agenthub_http__call_agent
   - mcp__agenthub_http__manage_connection
   - mcp__sequential-thinking__sequentialthinking

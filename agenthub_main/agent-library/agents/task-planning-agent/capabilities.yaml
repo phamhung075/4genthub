@@ -22,11 +22,6 @@ file_operations:
 mcp_tools:
   enabled: true
   tools:
-  - mcp__agenthub_http__manage_task
   - mcp__agenthub_http__manage_subtask
-  - mcp__agenthub_http__manage_context
-  - mcp__agenthub_http__manage_project
-  - mcp__agenthub_http__manage_git_branch
-  - mcp--agenthub-http--manage-agent
-  - mcp--agenthub-http--call-agent
+  - mcp__agenthub_http__call_agent
   - mcp__sequential-thinking__sequentialthinking
