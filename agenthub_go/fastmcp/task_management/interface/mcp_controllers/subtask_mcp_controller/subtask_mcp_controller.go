@@ -257,29 +257,62 @@ func (c *SubtaskMCPController) getFacadeForRequest(ctx context.Context, taskID, 
 		return nil, &value_objects.ValueError{Msg: "FacadeService is required but not provided"}
 	}
 
-	taskFacadeRaw, err := c.facadeService.GetTaskFacade(nil, nil, &userID)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get subtask facade: %s", err.Error())
+	var (
+		parentTask *entities.OrderedMap[any]
+		err        error
+	)
+	if c.taskFacade != nil {
+		parentTask, err = c.taskFacade.GetTask(ctx, taskID)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get subtask facade: %s", err.Error())
+		}
+	} else {
+		taskFacadeRaw, err := c.facadeService.GetTaskFacade(nil, nil, &userID)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get subtask facade: %s", err.Error())
+		}
+		switch tf := taskFacadeRaw.(type) {
+		case *facades.TaskApplicationFacade:
+			parentTask = tf.GetTask(ctx, taskID, false, false)
+		case interface{ TaskApplicationFacade() *facades.TaskApplicationFacade }:
+			parentTask = tf.TaskApplicationFacade().GetTask(ctx, taskID, false, false)
+		case interface{ GetTask(context.Context, string) *entities.OrderedMap[any] }:
+			parentTask = tf.GetTask(ctx, taskID)
+		case ParentTaskFacade:
+			parentTask, err = tf.GetTask(ctx, taskID)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to get subtask facade: %s", err.Error())
+			}
+		default:
+			return nil, fmt.Errorf("Failed to get subtask facade: task facade does not implement GetTask")
+		}
 	}
-	taskFacade, ok := taskFacadeRaw.(ParentTaskFacade)
-	if !ok {
-		return nil, fmt.Errorf("Failed to get subtask facade: task facade does not implement GetTask")
+	if parentTask == nil {
+		return nil, fmt.Errorf("Failed to get subtask facade: Parent task %s not found", taskID)
 	}
-	parentTask, err := taskFacade.GetTask(ctx, taskID)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get subtask facade: %s", err.Error())
+	if s, ok := parentTask.Get("success"); ok && !value_objects.PyTruthy(s) {
+		msg := "Parent task " + taskID + " not found"
+		if m, ok := parentTask.Get("message"); ok {
+			if ms, ok := m.(string); ok && ms != "" {
+				msg = ms
+			}
+		}
+		return nil, fmt.Errorf("Failed to get subtask facade: %s", msg)
 	}
 	taskNodeAny, _ := parentTask.Get("task")
 	taskNode, ok := taskNodeAny.(*entities.OrderedMap[any])
 	if !ok {
 		return nil, fmt.Errorf("Failed to get subtask facade: Parent task %s not found", taskID)
 	}
-	gitBranchIDAny, ok := taskNode.Get("git_branch_id")
-	if !ok || gitBranchIDAny == nil {
-		return nil, fmt.Errorf("Failed to get subtask facade: Parent task %s missing git_branch_id required for context derivation", taskID)
+	gitBranchIDAny, _ := taskNode.Get("git_branch_id")
+	if gitBranchIDAny == nil {
+		gitBranchIDAny, _ = taskNode.Get("branch_id")
 	}
-	gitBranchID, _ := gitBranchIDAny.(string)
-	if gitBranchID == "" {
+	if gitBranchIDAny == nil {
+		gitBranchIDAny, _ = parentTask.Get("git_branch_id")
+	}
+	gitBranchID := value_objects.PyStr(gitBranchIDAny)
+	if gitBranchID == "" || gitBranchID == "None" {
 		return nil, fmt.Errorf("Failed to get subtask facade: Parent task %s missing git_branch_id required for context derivation", taskID)
 	}
 

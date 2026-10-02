@@ -162,11 +162,14 @@ func (c *SubtaskAPIController) CreateSubtask(ctx context.Context, taskID, title 
 	if err != nil {
 		return sacCreateFailure(err.Error())
 	}
-	tempFacade, ok := tempRaw.(TaskQueryFacade)
-	if !ok {
+	var parentTask *entities.OrderedMap[any]
+	if tf, ok := tempRaw.(TaskQueryWithFlagsFacade); ok {
+		parentTask = tf.GetTask(ctx, taskID, false, false)
+	} else if tempFacade, ok := tempRaw.(TaskQueryFacade); ok {
+		parentTask = tempFacade.GetTask(ctx, taskID)
+	} else {
 		return sacCreateFailure("Failed to create subtask")
 	}
-	parentTask := tempFacade.GetTask(ctx, taskID)
 	if parentTask == nil || sacGet(parentTask, "task") == nil {
 		return sacCreateFailure("Parent task " + taskID + " not found")
 	}
@@ -393,6 +396,11 @@ type TaskQueryFacade interface {
 	GetTask(ctx context.Context, taskID string) *entities.OrderedMap[any]
 }
 
+// TaskQueryWithFlagsFacade is the full get_task surface on TaskApplicationFacade.
+type TaskQueryWithFlagsFacade interface {
+	GetTask(ctx context.Context, taskID string, includeContext, includeDependencies bool) *entities.OrderedMap[any]
+}
+
 // resolveSubtaskContext mirrors the repeated parent-task lookup and derives the
 // git_branch_id, returning the subtask facade. failMsg is non-empty on the
 // Python exception path.
@@ -401,11 +409,14 @@ func (c *SubtaskAPIController) resolveSubtaskContext(ctx context.Context, taskID
 	if err != nil {
 		return "", nil, err.Error()
 	}
-	tempFacade, ok := tempRaw.(TaskQueryFacade)
-	if !ok {
+	var parentTask *entities.OrderedMap[any]
+	if tf, ok := tempRaw.(TaskQueryWithFlagsFacade); ok {
+		parentTask = tf.GetTask(ctx, taskID, false, false)
+	} else if tempFacade, ok := tempRaw.(TaskQueryFacade); ok {
+		parentTask = tempFacade.GetTask(ctx, taskID)
+	} else {
 		return "", nil, "Parent task " + taskID + " not found"
 	}
-	parentTask := tempFacade.GetTask(ctx, taskID)
 	if parentTask == nil || sacGet(parentTask, "task") == nil {
 		return "", nil, "Parent task " + taskID + " not found"
 	}
