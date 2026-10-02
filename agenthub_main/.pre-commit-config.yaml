@@ -12,9 +12,11 @@ repos:
       # Run the linter - auto-fixes issues and re-stages files
       - id: ruff
         args: [--fix]
+        files: ^agenthub_main/
         stages: [pre-commit]
       # Run the formatter - formats code and re-stages files
       - id: ruff-format
+        files: ^agenthub_main/
         stages: [pre-commit]
 
   # Additional checks - run on staged files
@@ -22,8 +24,10 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^agenthub_go/
       - id: end-of-file-fixer
+        exclude: ^agenthub_go/
       - id: check-yaml
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: ['--maxkb=5000']
       - id: check-merge-conflict

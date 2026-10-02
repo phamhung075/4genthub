@@ -1,0 +1,7471 @@
+{
+ "now": "2026-01-15T12:00:00+00:00",
+ "history": [
+  [
+   "c1",
+   "2026-01-15T10:00:00+00:00"
+  ],
+  [
+   "c1",
+   "2026-01-12T12:00:00+00:00"
+  ],
+  [
+   "c1",
+   "2025-12-06T12:00:00+00:00"
+  ],
+  [
+   "c2",
+   "2025-12-17T12:00:00+00:00"
+  ],
+  [
+   "c2",
+   "2025-12-17T11:00:00+00:00"
+  ],
+  [
+   "c2",
+   "2025-11-06T12:00:00+00:00"
+  ],
+  [
+   "c3",
+   "2025-11-15T12:00:00+00:00"
+  ],
+  [
+   "c4",
+   "2026-01-15T11:55:00+00:00"
+  ]
+ ],
+ "contexts": [
+  {
+   "id": "c1",
+   "context_type": "task",
+   "title": "Fix login bug",
+   "description": "The login page crashes on submit",
+   "status": "in_progress",
+   "assignees": [
+    "alice",
+    "bob"
+   ],
+   "details": "stack trace attached",
+   "git_branch_id": "b1",
+   "project_id": "p1"
+  },
+  {
+   "id": "c2",
+   "context_type": "branch",
+   "git_branch_name": "feature/login",
+   "branch_info": {
+    "x": 1
+   },
+   "git_branch_id": "b1"
+  },
+  {
+   "context_id": "c3",
+   "context_type": "project",
+   "name": "Auth",
+   "description": "",
+   "project_settings": {},
+   "project_id": "p1"
+  },
+  {
+   "id": "c4",
+   "context_type": "global",
+   "organization_name": "Acme",
+   "global_settings": {
+    "a": [
+     1,
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "c5",
+   "title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "status": "done"
+  },
+  {
+   "id": "c6",
+   "context_type": "weird",
+   "status": "review",
+   "title": "Login login LOGIN"
+  },
+  {
+   "id": 0,
+   "context_id": 9,
+   "context_type": "task",
+   "status": "blocked",
+   "assignees": [
+    "carol"
+   ]
+  },
+  {}
+ ],
+ "sims": {
+  "c1": 0.55,
+  "c2": 0.9,
+  "c3": 0.1,
+  "c4": 0.0,
+  "c5": 0.99,
+  "c6": 0.3,
+  "0": 0.2
+ },
+ "runs": {
+  "plain|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.6273633127894898,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5101633174971808,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.28947368421052627,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.18771929824561404,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "plain|": [
+   {
+    "id": "c1",
+    "total": 0.5799948917368583,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5101633174971808,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.27368421052631575,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.18771929824561404,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "plain|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.6431527864737003,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5101633174971808,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.28947368421052627,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.18771929824561404,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "prefs|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.6799948917368583,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5312159490761281,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.5039649122807017,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.4523762450872319,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.31052631578947365,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.21052631578947367,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.8
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.800",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.2087719298245614,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.15789473684210525,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "prefs|": [
+   {
+    "id": "c1",
+    "total": 0.6326264706842268,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5206896332866544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.4313236135082845,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.8
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.800",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.2842105263157894,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.18947368421052632,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6000000000000001
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.18771929824561404,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "prefs|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.6957843654210689,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5206896332866544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.49343859649122807,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.44184992929775824,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.9
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.900",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.29999999999999993,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.2,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.19824561403508772,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.14736842105263157,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "proj|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.6599948917368582,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.810"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.49963700170770714,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.400"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.24035087719298245,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 1.000"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.23684210526315785,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.19263157894736843,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "proj|": [
+   {
+    "id": "c1",
+    "total": 0.6126264706842267,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.810"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.49963700170770714,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.400"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.24035087719298245,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 1.000"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.22105263157894733,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.19263157894736843,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "proj|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.6757843654210688,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.810"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.49963700170770714,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.400"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.24035087719298245,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 1.000"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.23684210526315785,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.19263157894736843,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "cur|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.6431527864737003,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5259527911813914,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.28947368421052627,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.22982456140350876,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "cur|": [
+   {
+    "id": "c1",
+    "total": 0.5957843654210688,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5259527911813914,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.27368421052631575,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.22982456140350876,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "cur|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.6589422601579109,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5259527911813914,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.3997446661398635,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.28947368421052627,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.22982456140350876,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.17894736842105263,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "all|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.7284159443684373,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.810",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5364791069708651,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.700",
+     "Project priority: 0.400",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.5039649122807017,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.4523762450872319,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.30350877192982456,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.700",
+     "Project priority: 1.000",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.25789473684210523,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.700",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.22421052631578947,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.8
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.800",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.15789473684210525,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.700",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "all|": [
+   {
+    "id": "c1",
+    "total": 0.6810475233158058,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.810",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5259527911813914,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.600",
+     "Project priority: 0.400",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.4829122807017544,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.4313236135082845,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.8
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.800",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.2824561403508772,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 1.000",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.231578947368421,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.2031578947368421,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6000000000000001
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.13684210526315788,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "all|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.7442054180526478,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      1.0
+     ],
+     [
+      "project_priority",
+      0.81
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 1.000",
+     "Project priority: 0.810",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.5259527911813914,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.4
+     ],
+     [
+      "dependency_boost",
+      0.3
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.600",
+     "Project priority: 0.400",
+     "Dependency boost: 0.300"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.49343859649122807,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.44184992929775824,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.9
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.900",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.2929824561403509,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      1.0
+     ],
+     [
+      "dependency_boost",
+      0.8
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.600",
+     "Project priority: 1.000",
+     "Dependency boost: 0.800"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.24736842105263152,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.0
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.600",
+     "Project priority: 0.000"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.2136842105263158,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.7
+     ],
+     [
+      "project_priority",
+      0.63
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.700",
+     "Project priority: 0.630"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.14736842105263157,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.6
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.600",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "custom_w|login crash on submit": [
+   {
+    "id": "c1",
+    "total": 0.6489967647666771,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.7000000000000001
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.700",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.6236589899704368,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.5953333333333335,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.31000000000000005,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.2948382885552469,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.16833333333333333,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.135,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.095,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "custom_w|": [
+   {
+    "id": "c2",
+    "total": 0.6236589899704368,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.5953333333333335,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c1",
+    "total": 0.573996764766677,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.55
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.550",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c4",
+    "total": 0.2948382885552469,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c6",
+    "total": 0.28500000000000003,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.3
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.300",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c3",
+    "total": 0.16833333333333333,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.135,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.095,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ],
+  "custom_w|a long query with many many words about the login page crash and submit handler bug more": [
+   {
+    "id": "c1",
+    "total": 0.673996764766677,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.75
+     ],
+     [
+      "recency",
+      0.9200444146293233
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.750",
+     "Recency: 0.920",
+     "Frequency: 0.320",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 61,
+    "ctype": "task",
+    "last": "2026-01-15T10:00:00+00:00"
+   },
+   {
+    "id": "c2",
+    "total": 0.6236589899704368,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.9
+     ],
+     [
+      "recency",
+      2.543665647376923e-13
+     ],
+     [
+      "frequency",
+      0.3199232330374462
+     ],
+     [
+      "completeness",
+      0.6666666666666666
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.900",
+     "Recency: 0.000",
+     "Frequency: 0.320",
+     "Completeness: 0.667",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 30,
+    "ctype": "branch",
+    "last": "2025-12-17T12:00:00+00:00"
+   },
+   {
+    "id": "c5",
+    "total": 0.5953333333333335,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.99
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.17333333333333334
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.990",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "Size penalty: 0.173",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1760,
+    "ctype": "unknown",
+    "last": null
+   },
+   {
+    "id": "c6",
+    "total": 0.31000000000000005,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.35
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.350",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 21,
+    "ctype": "weird",
+    "last": null
+   },
+   {
+    "id": "c4",
+    "total": 0.2948382885552469,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.9965337989703691
+     ],
+     [
+      "frequency",
+      0.20184908658209985
+     ],
+     [
+      "completeness",
+      1.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.997",
+     "Frequency: 0.202",
+     "Completeness: 1.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 26,
+    "ctype": "global",
+    "last": "2026-01-15T11:55:00+00:00"
+   },
+   {
+    "id": "c3",
+    "total": 0.16833333333333333,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.1
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.0
+     ],
+     [
+      "completeness",
+      0.3333333333333333
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.100",
+     "Recency: 0.100",
+     "Frequency: 0.000",
+     "Completeness: 0.333",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 31,
+    "ctype": "project",
+    "last": null
+   },
+   {
+    "id": "9",
+    "total": 0.135,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.4
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.400",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 23,
+    "ctype": "task",
+    "last": null
+   },
+   {
+    "id": "",
+    "total": 0.095,
+    "factors": [
+     [
+      "semantic_relevance",
+      0.0
+     ],
+     [
+      "recency",
+      0.1
+     ],
+     [
+      "frequency",
+      0.1
+     ],
+     [
+      "completeness",
+      0.0
+     ],
+     [
+      "size_penalty",
+      0.0
+     ],
+     [
+      "user_preference",
+      0.5
+     ],
+     [
+      "project_priority",
+      0.5
+     ],
+     [
+      "dependency_boost",
+      0.0
+     ]
+    ],
+    "expl": [
+     "Semantic relevance: 0.000",
+     "Recency: 0.100",
+     "Frequency: 0.100",
+     "Completeness: 0.000",
+     "User preference: 0.500",
+     "Project priority: 0.500"
+    ],
+    "tokens": 1,
+    "ctype": "unknown",
+    "last": null
+   }
+  ]
+ },
+ "err": "TypeError",
+ "adjust": {
+  "a b|task|null": [
+   0.2608695652173913,
+   0.1739130434782609,
+   0.1739130434782609,
+   0.08695652173913045,
+   0.05,
+   0.08695652173913045,
+   0.13043478260869565,
+   0.08695652173913045
+  ],
+  "a b|task|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5128205128205128,
+   0.2564102564102564,
+   0.0,
+   0.05128205128205128,
+   0.05,
+   0.05128205128205128,
+   0.07692307692307691,
+   0.05128205128205128
+  ],
+  "a b|global|null": [
+   0.2857142857142857,
+   0.19047619047619047,
+   0.09523809523809523,
+   0.19047619047619047,
+   0.05,
+   0.09523809523809523,
+   0.09523809523809523,
+   0.047619047619047616
+  ],
+  "a b|global|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5128205128205128,
+   0.2564102564102564,
+   0.0,
+   0.10256410256410256,
+   0.05,
+   0.05128205128205128,
+   0.05128205128205128,
+   0.02564102564102564
+  ],
+  "a b|branch|null": [
+   0.28571428571428575,
+   0.19047619047619052,
+   0.19047619047619052,
+   0.09523809523809526,
+   0.05,
+   0.09523809523809526,
+   0.09523809523809526,
+   0.04761904761904763
+  ],
+  "a b|branch|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5405405405405405,
+   0.27027027027027023,
+   0.0,
+   0.05405405405405405,
+   0.05,
+   0.05405405405405405,
+   0.05405405405405405,
+   0.027027027027027025
+  ],
+  "a b c d e f g h i j k|task|null": [
+   0.3333333333333333,
+   0.12499999999999999,
+   0.12499999999999999,
+   0.12499999999999999,
+   0.05,
+   0.08333333333333333,
+   0.12499999999999999,
+   0.08333333333333333
+  ],
+  "a b c d e f g h i j k|task|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5128205128205129,
+   0.23076923076923078,
+   0.0,
+   0.07692307692307693,
+   0.05,
+   0.051282051282051294,
+   0.07692307692307693,
+   0.051282051282051294
+  ],
+  "a b c d e f g h i j k|global|null": [
+   0.36363636363636365,
+   0.13636363636363635,
+   0.09090909090909091,
+   0.18181818181818182,
+   0.05,
+   0.09090909090909091,
+   0.09090909090909091,
+   0.045454545454545456
+  ],
+  "a b c d e f g h i j k|global|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5263157894736842,
+   0.23684210526315785,
+   0.0,
+   0.10526315789473684,
+   0.05,
+   0.05263157894736842,
+   0.05263157894736842,
+   0.02631578947368421
+  ],
+  "a b c d e f g h i j k|branch|null": [
+   0.36363636363636365,
+   0.13636363636363635,
+   0.13636363636363635,
+   0.13636363636363635,
+   0.05,
+   0.09090909090909091,
+   0.09090909090909091,
+   0.045454545454545456
+  ],
+  "a b c d e f g h i j k|branch|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5405405405405405,
+   0.24324324324324317,
+   0.0,
+   0.08108108108108107,
+   0.05,
+   0.05405405405405405,
+   0.05405405405405405,
+   0.027027027027027025
+  ],
+  "one two three four|task|null": [
+   0.2857142857142857,
+   0.14285714285714285,
+   0.14285714285714285,
+   0.09523809523809523,
+   0.05,
+   0.09523809523809523,
+   0.14285714285714285,
+   0.09523809523809523
+  ],
+  "one two three four|task|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5263157894736842,
+   0.23684210526315785,
+   0.0,
+   0.05263157894736842,
+   0.05,
+   0.05263157894736842,
+   0.07894736842105263,
+   0.05263157894736842
+  ],
+  "one two three four|global|null": [
+   0.3,
+   0.15,
+   0.1,
+   0.2,
+   0.05,
+   0.1,
+   0.1,
+   0.05
+  ],
+  "one two three four|global|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5263157894736842,
+   0.23684210526315785,
+   0.0,
+   0.10526315789473684,
+   0.05,
+   0.05263157894736842,
+   0.05263157894736842,
+   0.02631578947368421
+  ],
+  "one two three four|branch|null": [
+   0.3157894736842105,
+   0.15789473684210525,
+   0.15789473684210525,
+   0.10526315789473684,
+   0.05,
+   0.10526315789473684,
+   0.10526315789473684,
+   0.05263157894736842
+  ],
+  "one two three four|branch|{\"recency\": 0.3, \"nope\": 1.0, \"frequency\": -0.9, \"semantic_relevance\": 2.0}": [
+   0.5555555555555555,
+   0.24999999999999994,
+   0.0,
+   0.05555555555555555,
+   0.05,
+   0.05555555555555555,
+   0.05555555555555555,
+   0.027777777777777776
+  ]
+ },
+ "stats": {
+  "total_contexts_tracked": 4,
+  "total_accesses_recorded": 6,
+  "avg_accesses_per_context": 1.5,
+  "recency_decay_hours": 24.0,
+  "frequency_window_days": 30,
+  "size_penalty_threshold": 1500,
+  "most_frequent_contexts": [
+   {
+    "context_id": "c1",
+    "access_count": 3
+   },
+   {
+    "context_id": "c2",
+    "access_count": 2
+   },
+   {
+    "context_id": "c4",
+    "access_count": 1
+   },
+   {
+    "context_id": "c3",
+    "access_count": 0
+   }
+  ]
+ },
+ "empty_stats": {},
+ "hist_after": {
+  "c1": [
+   "2026-01-15T10:00:00+00:00",
+   "2026-01-12T12:00:00+00:00",
+   "2025-12-06T12:00:00+00:00"
+  ],
+  "c2": [
+   "2025-12-17T12:00:00+00:00",
+   "2025-12-17T11:00:00+00:00"
+  ],
+  "c3": [],
+  "c4": [
+   "2026-01-15T11:55:00+00:00"
+  ]
+ },
+ "zero_norm": [
+  0,
+  0.05
+ ]
+}

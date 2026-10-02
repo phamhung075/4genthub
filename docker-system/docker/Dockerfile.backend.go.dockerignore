@@ -1,0 +1,8 @@
+# BuildKit per-Dockerfile ignore: the build context is the repo root, so keep only agenthub_go.
+*
+!agenthub_go
+agenthub_go/.gocache
+agenthub_go/.gomodcache
+agenthub_go/scratch
+agenthub_go/**/*.test
+agenthub_go/*.md

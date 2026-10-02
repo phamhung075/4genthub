@@ -383,6 +383,18 @@ def _register_websocket_lifecycle(v2_app) -> None:
         v2_app.include_router(websocket_router)
         logger.info("✅ WebSocket routes registered at /ws/realtime")
 
+        # Isolated: a failure here must not skip the retry-queue/cleanup
+        # startup hooks registered below for the existing /ws/realtime route.
+        try:
+            from .routes.session_stream_routes import router as session_stream_router
+
+            v2_app.include_router(session_stream_router)
+            logger.info(
+                "✅ Session stream routes registered (/ws/connector, /ws/sessions)"
+            )
+        except Exception as e:
+            logger.error(f"Session stream routes not registered: {e}")
+
         # Start the WebSocket message retry queue processor on startup
         @v2_app.on_event("startup")
         async def startup_websocket_retry_queue():

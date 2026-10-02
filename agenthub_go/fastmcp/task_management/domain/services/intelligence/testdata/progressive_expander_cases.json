@@ -1,0 +1,1702 @@
+{
+ "now": "2026-01-15T12:00:00+00:00",
+ "presets": {
+  "a": {
+   "access_count": 5,
+   "total_sessions": 10,
+   "last": "2026-01-15T06:00:00+00:00",
+   "kw": []
+  },
+  "b": {
+   "access_count": 1,
+   "total_sessions": 10,
+   "last": "2026-01-13T20:00:00+00:00",
+   "kw": [
+    "Login",
+    "oauth"
+   ]
+  },
+  "c": {
+   "access_count": 9,
+   "total_sessions": 0,
+   "last": "2026-01-15T12:00:00+00:00",
+   "kw": []
+  }
+ },
+ "contexts": [
+  {
+   "id": "a",
+   "context_type": "task",
+   "title": "alpha",
+   "git_branch_id": "b1"
+  },
+  {
+   "id": "b",
+   "context_type": "branch",
+   "git_branch_name": "feature/xfeature/xfeature/x"
+  },
+  {
+   "context_id": "c",
+   "context_type": "project",
+   "name": "gamma"
+  },
+  {
+   "id": "d",
+   "context_type": "global",
+   "settings": {
+    "k": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+   }
+  },
+  {
+   "id": "e",
+   "context_type": "task",
+   "title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "git_branch_id": "b2"
+  },
+  {
+   "id": "f",
+   "context_type": "task",
+   "title": "dep target"
+  },
+  {
+   "id": "g"
+  },
+  {
+   "id": "h",
+   "context_type": "weird",
+   "git_branch_id": "b1",
+   "body": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+   "id": "loaded",
+   "context_type": "task"
+  },
+  {
+   "id": 7,
+   "context_type": "task",
+   "title": "int id"
+  },
+  {}
+ ],
+ "current": {
+  "loaded_contexts": [
+   "loaded"
+  ],
+  "dependencies": [
+   "f"
+  ],
+  "git_branch_id": "b1"
+ },
+ "sims": {
+  "a": 0.9,
+  "b": 0.55,
+  "c": 0.2,
+  "d": 0.5,
+  "e": 0.75,
+  "g": 0.49
+ },
+ "ident": {
+  "login|sims": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "similarity_match",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.9
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.2
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.7200000000000001,
+    "tokens": 467,
+    "trigger": "similarity_match",
+    "sim": 0.75
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.2
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.52,
+    "tokens": 21,
+    "trigger": "pattern_based",
+    "sim": 0.55
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.55
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.31,
+    "tokens": 21,
+    "trigger": "prefetch",
+    "sim": 0.55
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.49
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.09,
+    "tokens": 90,
+    "trigger": "prefetch",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.09,
+    "tokens": 2,
+    "trigger": "prefetch",
+    "sim": 0.49
+   }
+  ],
+  "login|none": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.52,
+    "tokens": 21,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ],
+  "login|empty": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.52,
+    "tokens": 21,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ],
+  "empty|sims": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "similarity_match",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.9
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.2
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.7200000000000001,
+    "tokens": 467,
+    "trigger": "similarity_match",
+    "sim": 0.75
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.2
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.55
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.31,
+    "tokens": 21,
+    "trigger": "prefetch",
+    "sim": 0.55
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.49
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.09,
+    "tokens": 90,
+    "trigger": "prefetch",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.09,
+    "tokens": 2,
+    "trigger": "prefetch",
+    "sim": 0.49
+   }
+  ],
+  "empty|none": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ],
+  "empty|empty": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ],
+  "other|sims": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "similarity_match",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.9
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.9
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.2
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.7200000000000001,
+    "tokens": 467,
+    "trigger": "similarity_match",
+    "sim": 0.75
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.2
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.55
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.31,
+    "tokens": 21,
+    "trigger": "prefetch",
+    "sim": 0.55
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.49
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.09,
+    "tokens": 90,
+    "trigger": "prefetch",
+    "sim": 0.5
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.09,
+    "tokens": 2,
+    "trigger": "prefetch",
+    "sim": 0.49
+   }
+  ],
+  "other|none": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ],
+  "other|empty": [
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 1.0,
+    "tokens": 19,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.9900000000000001,
+    "tokens": 19,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "a",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 19,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.81,
+    "tokens": 14,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.8,
+    "tokens": 15,
+    "trigger": "pattern_based",
+    "sim": 0.0
+   },
+   {
+    "id": "c",
+    "level": "project",
+    "type": "project",
+    "prio": 0.7,
+    "tokens": 15,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "b",
+    "level": "branch",
+    "type": "branch",
+    "prio": 0.38,
+    "tokens": 21,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "e",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 467,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "f",
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 14,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": 7,
+    "level": "task",
+    "type": "task",
+    "prio": 0.36000000000000004,
+    "tokens": 13,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.27,
+    "tokens": 42,
+    "trigger": "dependency_chain",
+    "sim": 0.0
+   },
+   {
+    "id": "d",
+    "level": "global",
+    "type": "global",
+    "prio": 0.12,
+    "tokens": 90,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "g",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 2,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "h",
+    "level": "global",
+    "type": "weird",
+    "prio": 0.12,
+    "tokens": 42,
+    "trigger": "token_available",
+    "sim": 0.0
+   },
+   {
+    "id": "",
+    "level": "global",
+    "type": "unknown",
+    "prio": 0.12,
+    "tokens": 0,
+    "trigger": "token_available",
+    "sim": 0.0
+   }
+  ]
+ },
+ "expand": [
+  {
+   "budget": null,
+   "agg": false,
+   "tokens_used": 1472,
+   "remaining": 428,
+   "path": [
+    "user_request:task:a",
+    "similarity_match:task:a",
+    "dependency_chain:task:a",
+    "pattern_based:task:a",
+    "token_available:task:a",
+    "dependency_chain:task:f",
+    "pattern_based:project:c",
+    "similarity_match:task:e",
+    "token_available:project:c",
+    "pattern_based:branch:b",
+    "token_available:branch:b",
+    "token_available:task:f",
+    "token_available:task:7",
+    "prefetch:branch:b",
+    "dependency_chain:global:h",
+    "token_available:global:d",
+    "token_available:global:g",
+    "token_available:global:h",
+    "token_available:global:",
+    "prefetch:global:d",
+    "prefetch:global:g"
+   ],
+   "prefetched": [],
+   "n": 21
+  },
+  {
+   "budget": 50,
+   "agg": false,
+   "tokens_used": 0,
+   "remaining": 0,
+   "path": [
+    "token_available:global:"
+   ],
+   "prefetched": [],
+   "n": 1
+  },
+  {
+   "budget": 300,
+   "agg": false,
+   "tokens_used": 192,
+   "remaining": 8,
+   "path": [
+    "user_request:task:a",
+    "similarity_match:task:a",
+    "dependency_chain:task:a",
+    "pattern_based:task:a",
+    "token_available:task:a",
+    "dependency_chain:task:f",
+    "token_available:global:g",
+    "token_available:global:",
+    "prefetch:global:g"
+   ],
+   "prefetched": [],
+   "n": 9
+  },
+  {
+   "budget": 300,
+   "agg": true,
+   "tokens_used": 200,
+   "remaining": 0,
+   "path": [
+    "user_request:task:a",
+    "similarity_match:task:a",
+    "dependency_chain:task:a",
+    "pattern_based:task:a",
+    "token_available:task:a",
+    "prefetch:f",
+    "token_available:global:g",
+    "token_available:global:",
+    "prefetch:global:g"
+   ],
+   "prefetched": [
+    "f"
+   ],
+   "n": 8
+  },
+  {
+   "budget": 5000,
+   "agg": false,
+   "tokens_used": 1472,
+   "remaining": 3428,
+   "path": [
+    "user_request:task:a",
+    "similarity_match:task:a",
+    "dependency_chain:task:a",
+    "pattern_based:task:a",
+    "token_available:task:a",
+    "dependency_chain:task:f",
+    "pattern_based:project:c",
+    "similarity_match:task:e",
+    "token_available:project:c",
+    "pattern_based:branch:b",
+    "token_available:branch:b",
+    "token_available:task:f",
+    "token_available:task:7",
+    "prefetch:branch:b",
+    "dependency_chain:global:h",
+    "token_available:global:d",
+    "token_available:global:g",
+    "token_available:global:h",
+    "token_available:global:",
+    "prefetch:global:d",
+    "prefetch:global:g"
+   ],
+   "prefetched": [],
+   "n": 21
+  },
+  {
+   "budget": 5000,
+   "agg": true,
+   "tokens_used": 1762,
+   "remaining": 3138,
+   "path": [
+    "user_request:task:a",
+    "similarity_match:task:a",
+    "dependency_chain:task:a",
+    "pattern_based:task:a",
+    "token_available:task:a",
+    "dependency_chain:task:f",
+    "pattern_based:project:c",
+    "similarity_match:task:e",
+    "token_available:project:c",
+    "pattern_based:branch:b",
+    "token_available:branch:b",
+    "token_available:task:f",
+    "token_available:task:7",
+    "prefetch:branch:b",
+    "dependency_chain:global:h",
+    "token_available:global:d",
+    "token_available:global:g",
+    "token_available:global:h",
+    "token_available:global:",
+    "prefetch:global:d",
+    "prefetch:global:g"
+   ],
+   "prefetched": [],
+   "n": 21
+  },
+  {
+   "budget": 0,
+   "agg": false,
+   "tokens_used": 0,
+   "remaining": 0,
+   "path": [
+    "token_available:global:"
+   ],
+   "prefetched": [],
+   "n": 1
+  },
+  {
+   "budget": 120,
+   "agg": true,
+   "tokens_used": 6,
+   "remaining": 14,
+   "path": [
+    "token_available:global:g",
+    "token_available:global:",
+    "prefetch:global:g"
+   ],
+   "prefetched": [],
+   "n": 3
+  }
+ ],
+ "tokens": [
+  19,
+  21,
+  15,
+  90,
+  467,
+  14,
+  2,
+  42,
+  10,
+  13,
+  0
+ ],
+ "stats": {
+  "total_expansions": 8,
+  "avg_tokens_used": 638.0,
+  "avg_contexts_expanded": 10.625,
+  "tracked_context_patterns": 10,
+  "expansion_factor": 1.5,
+  "token_budget": 2000
+ },
+ "empty_stats": {},
+ "patterns": {
+  "a": {
+   "count": 30,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "b": {
+   "count": 10,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "c": {
+   "count": 15,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "f": {
+   "count": 7,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "e": {
+   "count": 3,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "7": {
+   "count": 3,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "h": {
+   "count": 6,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "d": {
+   "count": 6,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "g": {
+   "count": 12,
+   "last": "2026-01-15T12:00:00+00:00"
+  },
+  "": {
+   "count": 8,
+   "last": "2026-01-15T12:00:00+00:00"
+  }
+ }
+}
