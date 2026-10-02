@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"os"
@@ -413,7 +414,7 @@ var keycloakJWKSClientInstance *KeycloakJWKSClient
 // GetKeycloakJWKSClient returns the cached JWKS client (Python
 // get_keycloak_jwks_client). It returns nil when KEYCLOAK_URL is unset.
 func GetKeycloakJWKSClient() *KeycloakJWKSClient {
-	keycloakURL := os.Getenv("KEYCLOAK_URL")
+	keycloakURL := strings.TrimRight(os.Getenv("KEYCLOAK_URL"), "/")
 	keycloakRealm := envOr("KEYCLOAK_REALM", "mcp")
 
 	if keycloakURL == "" {
@@ -438,7 +439,7 @@ func ptrOrEmpty(s *string) string {
 // validate_keycloak_token).
 func ValidateKeycloakToken(ctx context.Context, token string) (*authentities.User, error) {
 	authProvider := envOr("AUTH_PROVIDER", "keycloak")
-	keycloakURL := os.Getenv("KEYCLOAK_URL")
+	keycloakURL := strings.TrimRight(os.Getenv("KEYCLOAK_URL"), "/")
 
 	if authProvider != "keycloak" || keycloakURL == "" {
 		return nil, &HTTPException{StatusCode: 500, Detail: "Keycloak not configured"}
@@ -453,6 +454,7 @@ func ValidateKeycloakToken(ctx context.Context, token string) (*authentities.Use
 	if err != nil {
 		// PyJWT's PyJWKClientError is not an InvalidTokenError, so the Python
 		// code falls through to the generic exception handler.
+		log.Printf("[auth] Keycloak GetSigningKeyFromJWT failed: %v", err)
 		return nil, &HTTPException{StatusCode: 401, Detail: "Token validation failed"}
 	}
 
@@ -465,8 +467,10 @@ func ValidateKeycloakToken(ctx context.Context, token string) (*authentities.Use
 	})
 	if err != nil {
 		if isJWTExpired(err) {
+			log.Printf("[auth] Keycloak token expired: %v", err)
 			return nil, &HTTPException{StatusCode: 401, Detail: "Token expired"}
 		}
+		log.Printf("[auth] Keycloak jwtDecodeRS256Claims failed: %v", err)
 		return nil, &HTTPException{StatusCode: 401, Detail: fmt.Sprintf("Invalid token: %s", err.Error())}
 	}
 
@@ -584,7 +588,8 @@ func GetCurrentUserUniversal(ctx context.Context, token string) (*authentities.U
 		return ValidateLocalToken(token)
 	}
 	issuer, _ := claims["iss"].(string)
-	if keycloakURL := os.Getenv("KEYCLOAK_URL"); keycloakURL != "" && strings.HasPrefix(issuer, keycloakURL) {
+	cleanKeycloakURL := strings.TrimRight(os.Getenv("KEYCLOAK_URL"), "/")
+	if (cleanKeycloakURL != "" && strings.HasPrefix(issuer, cleanKeycloakURL)) || strings.Contains(issuer, "/realms/") {
 		return ValidateKeycloakToken(ctx, token)
 	}
 	return ValidateLocalToken(token)

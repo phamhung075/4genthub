@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	authservices "agenthub/fastmcp/auth/domain/services"
@@ -397,6 +398,16 @@ func zpTokenHex(nBytes int) string {
 
 // zpTokenHasField reports whether the reflected object has the named field.
 func zpTokenHasField(obj any, name string) (any, bool) {
+	if obj == nil {
+		return nil, false
+	}
+	if om, ok := obj.(*entities.OrderedMap[any]); ok && om != nil {
+		return om.Get(name)
+	}
+	if m, ok := obj.(map[string]any); ok && m != nil {
+		v, found := m[name]
+		return v, found
+	}
 	value := reflect.ValueOf(obj)
 	for value.Kind() == reflect.Ptr || value.Kind() == reflect.Interface {
 		if value.IsNil() {
@@ -408,6 +419,18 @@ func zpTokenHasField(obj any, name string) (any, bool) {
 		return nil, false
 	}
 	field := value.FieldByName(name)
+	if !field.IsValid() {
+		typ := value.Type()
+		for i := 0; i < typ.NumField(); i++ {
+			f := typ.Field(i)
+			if strings.EqualFold(f.Name, name) ||
+				f.Tag.Get("db") == name ||
+				strings.Split(f.Tag.Get("json"), ",")[0] == name {
+				field = value.Field(i)
+				break
+			}
+		}
+	}
 	if !field.IsValid() {
 		return nil, false
 	}

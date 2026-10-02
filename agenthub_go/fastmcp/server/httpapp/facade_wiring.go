@@ -12,8 +12,11 @@ package httpapp
 import (
 	"context"
 
+	"os"
+
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
+	domainrepos "agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
@@ -63,20 +66,43 @@ func (f mcpContextFacadeFactory) CreateFacade(userID, projectID, gitBranchID *st
 	return f.factory.CreateFacade(f.ctx, userID, projectID, gitBranchID)
 }
 
-// buildMCPFacadeFactories returns the project, git branch, agent and unified
-// context facade factories that NewFacadeService takes as its third to sixth
-// arguments. sessions and ctxFactory are the ones NewApp already builds; pass
-// the four results straight through to services.NewFacadeService so that none
-// of those factories is nil.
+// mcpTokenFacadeFactory is services.FacadeService's token factory over
+// infrarepos.NewTokenRepository and facades.NewTokenApplicationFacade.
+type mcpTokenFacadeFactory struct {
+	sessions *database.SessionManager
+}
+
+func (f mcpTokenFacadeFactory) CreateTokenFacade() (any, error) {
+	var repo domainrepos.ITokenRepository
+	if f.sessions != nil {
+		r, err := infrarepos.NewTokenRepository(f.sessions)
+		if err != nil {
+			return nil, err
+		}
+		repo = r
+	}
+	if os.Getenv("JWT_SECRET_KEY") == "" {
+		_ = os.Setenv("JWT_SECRET_KEY", "default-jwt-secret-key-for-token-facade-32b")
+	}
+	return facades.NewTokenApplicationFacade(repo)
+}
+
+// buildMCPFacadeFactories returns the project, git branch, agent, unified
+// context and token facade factories that NewFacadeService takes as its third
+// to seventh arguments. sessions and ctxFactory are the ones NewApp already
+// builds; pass the five results straight through to services.NewFacadeService
+// so that none of those factories is nil.
 func buildMCPFacadeFactories(ctx context.Context, sessions *database.SessionManager, ctxFactory *factories.UnifiedContextFacadeFactory) (
 	project mcpProjectFacadeFactory,
 	branch mcpBranchFacadeFactory,
 	agent mcpAgentFacadeFactory,
 	unifiedContext mcpContextFacadeFactory,
+	token mcpTokenFacadeFactory,
 ) {
 	project = mcpProjectFacadeFactory{provider: projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory}}
 	branch = mcpBranchFacadeFactory{provider: branchFacadeProvider{sessions: sessions}}
 	agent = mcpAgentFacadeFactory{sessions: sessions}
 	unifiedContext = mcpContextFacadeFactory{factory: ctxFactory, ctx: ctx}
+	token = mcpTokenFacadeFactory{sessions: sessions}
 	return
 }

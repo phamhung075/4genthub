@@ -38,12 +38,15 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	factories.UnifiedContextRepositoryBuilder = unifiedContextRepositories
 	factories.UnifiedContextEntityLookup = contextEntityLookup{sessions}
 	services.SetRepositoryProviderBackend(func() services.RepositoryProviderBackend { return repoBackend{sessions} })
+	facades.TokenFacadeRepositoryBackend = func(any) (repositories.ITokenRepository, error) {
+		return infrarepos.NewTokenRepository(sessions)
+	}
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
 	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: &services.WebSocketNotificationService{}}
-	projectFactory, branchFactory, agentFactory, contextFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
-	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, agentFactory, contextFactory, nil)
+	projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
+	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory)
 	services.SetInstance(facadeService)
 	a.tasks = userTaskControllerAdapter{c: taskapicontroller.NewTaskAPIController(facadeService)}
 	a.subtasks = subtaskControllerAdapter{c: api_controllers.NewSubtaskAPIController(facadeService).WithSubtaskRepositories(func(userID *string) (repositories.SubtaskRepository, error) {

@@ -53,7 +53,7 @@ class TokenService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to generate token' }));
-      throw new Error(error.message || 'Failed to generate token');
+      throw new Error(error.detail || error.message || 'Failed to generate token');
     }
 
     const tokenResponse = await response.json();
@@ -72,7 +72,7 @@ class TokenService {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to fetch tokens' }));
       logger.error('Token fetch error:', error);
-      throw new Error(error.message || error.error || 'Failed to fetch tokens');
+      throw new Error(error.detail || error.message || error.error || 'Failed to fetch tokens');
     }
 
     const data = await response.json();
@@ -87,7 +87,7 @@ class TokenService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to revoke token' }));
-      throw new Error(error.message || 'Failed to revoke token');
+      throw new Error(error.detail || error.message || 'Failed to revoke token');
     }
   }
 
@@ -98,7 +98,7 @@ class TokenService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Failed to fetch token details' }));
-      throw new Error(error.message || 'Failed to fetch token details');
+      throw new Error(error.detail || error.message || 'Failed to fetch token details');
     }
 
     return response.json();

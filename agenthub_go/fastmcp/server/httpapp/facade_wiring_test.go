@@ -20,9 +20,9 @@ const facadeWiringUserID = "3f0d8f7a-1b2c-4d5e-8f90-1234567890ab"
 func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 	ctx := context.Background()
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, nil)
-	project, branch, agent, unifiedContext := buildMCPFacadeFactories(ctx, nil, ctxFactory)
+	project, branch, agent, unifiedContext, token := buildMCPFacadeFactories(ctx, nil, ctxFactory)
 
-	svc := services.NewFacadeService(nil, nil, project, branch, agent, unifiedContext, nil)
+	svc := services.NewFacadeService(nil, nil, project, branch, agent, unifiedContext, token)
 	userID := facadeWiringUserID
 	projectID := "11111111-1111-1111-1111-111111111111"
 
@@ -49,6 +49,12 @@ func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
 	if _, err := svc.GetContextFacade(&userID, &projectID, nil); err != nil && strings.Contains(err.Error(), "is not configured") {
 		t.Fatalf("GetContextFacade reported unconfigured factory: %v", err)
 	}
+
+	if got, err := svc.GetTokenFacade(); err != nil {
+		t.Fatalf("GetTokenFacade: %v", err)
+	} else if _, ok := got.(*facades.TokenApplicationFacade); !ok {
+		t.Fatalf("token facade has unexpected type %T", got)
+	}
 }
 
 // TestFacadeServiceNilFactoriesReportUnconfigured is the contrast: with nil
@@ -67,6 +73,7 @@ func TestFacadeServiceNilFactoriesReportUnconfigured(t *testing.T) {
 		{"branch", getBranchFacadeErr(svc, &projectID, &userID)},
 		{"agent", getAgentFacadeErr(svc, projectID, &userID)},
 		{"context", getContextFacadeErr(svc, &userID, &projectID)},
+		{"token", getTokenFacadeErr(svc)},
 	}
 	for _, c := range cases {
 		if c.err == nil || !strings.Contains(c.err.Error(), "is not configured") {
@@ -92,5 +99,10 @@ func getAgentFacadeErr(svc *services.FacadeService, projectID string, userID *st
 
 func getContextFacadeErr(svc *services.FacadeService, userID, projectID *string) error {
 	_, err := svc.GetContextFacade(userID, projectID, nil)
+	return err
+}
+
+func getTokenFacadeErr(svc *services.FacadeService) error {
+	_, err := svc.GetTokenFacade()
 	return err
 }
