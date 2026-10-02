@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -38,14 +39,18 @@ func ValidateTokenUniversal(ctx context.Context, token string, clientInfo *taske
 	if strings.HasPrefix(token, "eyJ") {
 		unverifiedPayload, err := jwtUnverifiedClaims(token)
 		if err == nil {
-			authProvider := value_objects.PyLower(envOr("AUTH_PROVIDER", "supabase"))
+			authProvider := value_objects.PyLower(envOr("AUTH_PROVIDER", "keycloak"))
 			issuer, _ := unverifiedPayload["iss"].(string)
 			keycloakURL := os.Getenv("KEYCLOAK_URL")
+			cleanKeycloakURL := strings.TrimRight(keycloakURL, "/")
 
-			if authProvider == "keycloak" && keycloakURL != "" && strings.HasPrefix(issuer, keycloakURL) {
+			if authProvider == "keycloak" && (keycloakURL != "" && strings.HasPrefix(issuer, cleanKeycloakURL) || strings.Contains(issuer, "/realms/")) {
 				result := validateUnifiedKeycloakToken(ctx, token)
 				if result.Valid {
 					return result
+				}
+				if result.Error != nil {
+					log.Printf("[auth] Keycloak validation failed: %s (iss=%s, keycloakURL=%s)", *result.Error, issuer, keycloakURL)
 				}
 			} else {
 				tokenID, _ := unverifiedPayload["token_id"]

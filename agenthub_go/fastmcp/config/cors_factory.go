@@ -1,6 +1,9 @@
 package config
 
 import (
+	"bufio"
+	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"sort"
@@ -211,6 +214,14 @@ func (c *corsWriter) Flush() {
 	if f, ok := c.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
+}
+
+func (c *corsWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	c.start()
+	if hj, ok := c.ResponseWriter.(http.Hijacker); ok {
+		return hj.Hijack()
+	}
+	return nil, nil, fmt.Errorf("underlying ResponseWriter does not support hijacking")
 }
 
 // ConfigureCORS wraps a handler with the CORS middleware. Custom origins (when non-empty)

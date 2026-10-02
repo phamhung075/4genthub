@@ -239,3 +239,36 @@ func TestMountWebSocketsRealtimeRejectsMissingToken(t *testing.T) {
 		t.Fatalf("status = %d, want 403", status)
 	}
 }
+
+func TestMountWebSocketsRealtimeWithCORSAndOrigin(t *testing.T) {
+	token := wsTestToken(t, nil)
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(withCORS(mux))
+	defer server.Close()
+
+	u, err := url.Parse(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	conn, err := net.Dial("tcp", u.Host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	key := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef"))
+	req := "GET /ws/realtime?token=" + url.QueryEscape(token) + " HTTP/1.1\r\nHost: " + u.Host +
+		"\r\nOrigin: https://4genthub.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: " + key +
+		"\r\nSec-WebSocket-Version: 13\r\n\r\n"
+	if _, err := conn.Write([]byte(req)); err != nil {
+		t.Fatal(err)
+	}
+	br := bufio.NewReader(conn)
+	resp, err := http.ReadResponse(br, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusSwitchingProtocols {
+		t.Fatalf("handshake status = %d, want 101", resp.StatusCode)
+	}
+}

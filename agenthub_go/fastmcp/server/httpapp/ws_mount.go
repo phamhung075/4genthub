@@ -61,7 +61,11 @@ func mountWebSockets(mux *http.ServeMux, sessions *database.SessionManager) {
 // handleRealtime ports realtime_updates: authenticate from ?token=, accept, send the
 // welcome frame, replay missed notifications, then answer ping/heartbeat/subscribe.
 func handleRealtime(w http.ResponseWriter, r *http.Request) {
-	result := auth.ValidateTokenUniversal(r.Context(), r.URL.Query().Get("token"), nil)
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		token = wsBearerToken(r)
+	}
+	result := auth.ValidateTokenUniversal(r.Context(), token, nil)
 	if !result.Valid || result.UserID == nil || *result.UserID == "" {
 		http.Error(w, "Authentication required", http.StatusForbidden)
 		return
@@ -618,9 +622,17 @@ func wsUpgrade(w http.ResponseWriter, r *http.Request) (*wsConn, error) {
 	if err != nil {
 		return nil, err
 	}
+	var extraHeaders strings.Builder
+	if origin := w.Header().Get("Access-Control-Allow-Origin"); origin != "" {
+		extraHeaders.WriteString("Access-Control-Allow-Origin: " + origin + "\r\n")
+	}
+	if creds := w.Header().Get("Access-Control-Allow-Credentials"); creds != "" {
+		extraHeaders.WriteString("Access-Control-Allow-Credentials: " + creds + "\r\n")
+	}
 	_, err = fmt.Fprintf(bufrw,
-		"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n\r\n",
-		wsAcceptKey(r.Header.Get("Sec-WebSocket-Key")))
+		"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n%s\r\n",
+		wsAcceptKey(r.Header.Get("Sec-WebSocket-Key")),
+		extraHeaders.String())
 	if err == nil {
 		err = bufrw.Flush()
 	}
