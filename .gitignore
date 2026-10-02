@@ -546,3 +546,24 @@ scripts/diagnose_*.py
 scripts/find-*.sh
 
 .gemini/settings.json
+
+# Swarm runtime state
+.swarm/
+
+# Go build caches, binaries, and local scratch
+.gocache/
+.gomodcache/
+.gotmp/
+agenthub_go/.gocache/
+agenthub_go/.gomodcache/
+agenthub_go/.gotmp/
+agenthub_go/agenthub
+agenthub_go/scratch/
+testground/
+
+# OpenRig runtime and orchestration files
+.openrig/
+.agents/
+AGENTS.md
+CULTURE.md
+rig.yaml

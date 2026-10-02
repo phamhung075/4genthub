@@ -1,0 +1,2864 @@
+{
+ "projects": [
+  {
+   "id": "P7",
+   "domain": "search",
+   "tasks": [
+    {
+     "id": "q1",
+     "title": "Implement search service",
+     "description": "Implement search service in src/search/service.py with table search_index",
+     "details": "",
+     "assignees": [],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-02-02",
+     "dependencies": [
+      "q2",
+      "q3"
+     ]
+    },
+    {
+     "id": "q2",
+     "title": "Create search index schema",
+     "description": "Create table search_index schema for search service in src/search/schema.sql",
+     "details": "",
+     "assignees": [],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-02-01",
+     "dependencies": []
+    },
+    {
+     "id": "q3",
+     "title": "Search service config",
+     "description": "Configure search service in config/search.yaml and src/search/service.py",
+     "details": "",
+     "assignees": [],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-02-01T05:00:00",
+     "dependencies": []
+    },
+    {
+     "id": "q4",
+     "title": "Search service tests",
+     "description": "search service tests src/search/service.py table search_index",
+     "details": "",
+     "assignees": [
+      "x",
+      "y"
+     ],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-02-03",
+     "dependencies": [
+      "q1"
+     ]
+    },
+    {
+     "id": "q5",
+     "title": "Search service docs",
+     "description": "search service docs src/search/service.py table search_index",
+     "details": "",
+     "assignees": [
+      "x",
+      "y"
+     ],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-02-04",
+     "dependencies": [
+      "q4"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P1",
+   "domain": "web",
+   "tasks": [
+    {
+     "id": "t1",
+     "title": "Design UserService schema",
+     "description": "Create table users_profile and class UserProfile in src/models/user.py",
+     "details": "See config/app.yaml and docs/design.md. Also POST /api/users endpoint",
+     "assignees": [
+      "coding-agent",
+      "system-architect-agent"
+     ],
+     "priority": "high",
+     "estimated_effort": "2h",
+     "created_at": "2026-01-01T10:00:00",
+     "dependencies": []
+    },
+    {
+     "id": "t2",
+     "title": "Implement UserService login",
+     "description": "Implement UserService login handler in src/services/user_service.py using GET /api/users and the AuthController",
+     "details": "tests in test/user_test.js",
+     "assignees": [
+      "coding-agent"
+     ],
+     "priority": "high",
+     "estimated_effort": "4h",
+     "created_at": "2026-01-02T10:00:00",
+     "dependencies": [
+      "t1"
+     ]
+    },
+    {
+     "id": "t3",
+     "title": "Write login tests for UserService",
+     "description": "Cover UserService login tests in test/user_test.py and src/services/user_service.py",
+     "details": "",
+     "assignees": [
+      "test-orchestrator-agent",
+      "coding-agent"
+     ],
+     "priority": "medium",
+     "estimated_effort": "2h",
+     "created_at": "2026-01-03T10:00:00",
+     "dependencies": [
+      "t2",
+      "t1",
+      "t4"
+     ]
+    },
+    {
+     "id": "t4",
+     "title": "Document the login API",
+     "description": "Document POST /api/login and GET /api/users in docs/api.md",
+     "details": "",
+     "assignees": [
+      "documentation-agent"
+     ],
+     "priority": "low",
+     "estimated_effort": "1h",
+     "created_at": "2026-01-01T09:00:00",
+     "dependencies": [
+      "t3"
+     ]
+    },
+    {
+     "id": "t5",
+     "title": "Refactor Component library",
+     "description": "Refactor LoginComponent and UserModel in src/ui/login.tsx",
+     "details": "",
+     "assignees": [
+      "coding-agent"
+     ],
+     "priority": "medium",
+     "estimated_effort": "",
+     "created_at": "2026-01-04T10:00:00",
+     "dependencies": [
+      "t2"
+     ]
+    },
+    {
+     "id": "t6",
+     "title": "Deploy",
+     "description": "ship",
+     "details": "",
+     "assignees": [
+      "coding-agent"
+     ],
+     "priority": "medium",
+     "estimated_effort": "",
+     "created_at": "2026-01-02T10:00:00",
+     "dependencies": [
+      "t5",
+      "t5"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P2",
+   "tasks": [
+    {
+     "id": "a1",
+     "title": "Caf\u00e9 d\u00e9j\u00e0 vu \u0130stanbul Stra\u00dfe",
+     "description": "na\u00efve r\u00e9sum\u00e9 fa\u00e7ade: configure ServiceManager in src/\u00dcn\u00efcode/ctrl.py",
+     "details": "\u0391\u0392\u0393 unicode test",
+     "assignees": [
+      "ops"
+     ],
+     "priority": "medium",
+     "estimated_effort": "1h",
+     "created_at": "2026-02-01T00:00:00",
+     "dependencies": [
+      "a2"
+     ]
+    },
+    {
+     "id": "a2",
+     "title": "\u00dcnicode tokens \u01c5",
+     "description": "Handler HandlerService class Foo_Bar table ORDER_items TABLE Users and DELETE /x/{id}",
+     "details": "",
+     "assignees": [
+      "ops",
+      "dev"
+     ],
+     "priority": "medium",
+     "estimated_effort": "1h",
+     "created_at": "2026-01-01T00:00:00",
+     "dependencies": [
+      "a1"
+     ]
+    },
+    {
+     "id": "a3",
+     "title": 123,
+     "description": "x",
+     "priority": "low",
+     "dependencies": [
+      "a1"
+     ],
+     "created_at": "2026-01-05"
+    },
+    {
+     "id": "a4",
+     "title": "No priority",
+     "description": "x",
+     "dependencies": [
+      "a1",
+      "a2"
+     ],
+     "created_at": "2026-01-06"
+    },
+    {
+     "id": "a5",
+     "title": "assignees str",
+     "description": "d",
+     "details": "d",
+     "assignees": "ops",
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-07",
+     "dependencies": [
+      "a1"
+     ]
+    },
+    {
+     "id": "a6",
+     "title": "None created",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "ops"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": null,
+     "dependencies": [
+      "a1"
+     ]
+    },
+    {
+     "title": "missing id",
+     "priority": "low",
+     "dependencies": [
+      "a1"
+     ]
+    },
+    {
+     "id": "a7",
+     "title": "long text word0 word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17 word18 word19 word20 word21 word22 word23 word24 word25 word26 word27 word28 word29 word30 word31 word32 word33 word34 word35 word36 word37 word38 word39 word40 word41 word42 word43 word44 word45 word46 word47 word48 word49 word50 word51 word52 word53 word54 word55 word56 word57 word58 word59 word60 word61 word62 word63 word64 word65 word66 word67 word68 word69 word70 word71 word72 word73 word74 word75 word76 word77 word78 word79",
+     "description": "alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma tok0 tok1 tok2 tok3 tok4 tok5 tok6 tok7 tok8 tok9 tok10 tok11 tok12 tok13 tok14 tok15 tok16 tok17 tok18 tok19 tok20 tok21 tok22 tok23 tok24 tok25 tok26 tok27 tok28 tok29 tok30 tok31 tok32 tok33 tok34 tok35 tok36 tok37 tok38 tok39 tok40 tok41 tok42 tok43 tok44 tok45 tok46 tok47 tok48 tok49 tok50 tok51 tok52 tok53 tok54 tok55 tok56 tok57 tok58 tok59",
+     "details": "",
+     "assignees": [
+      "ops"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-03-01",
+     "dependencies": [
+      "a1"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P3",
+   "tasks": [
+    {
+     "id": "s1",
+     "title": "only one",
+     "description": "",
+     "details": "",
+     "assignees": [],
+     "priority": "medium",
+     "estimated_effort": "",
+     "created_at": "2026-01-01T00:00:00",
+     "dependencies": []
+    }
+   ]
+  },
+  {
+   "id": "P4",
+   "domain": "mix",
+   "tasks": [
+    {
+     "id": "m1",
+     "title": "mix",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "x"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-01T00:00:00",
+     "dependencies": [
+      "m2"
+     ]
+    },
+    {
+     "id": "m2",
+     "title": "mix2",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "x"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": 5,
+     "dependencies": [
+      "m1"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "P5",
+   "tasks": [
+    {
+     "id": "b1",
+     "title": "bb string deps",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "x",
+      "y"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-02",
+     "dependencies": "bc"
+    },
+    {
+     "id": "b",
+     "title": "single",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "x"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-01",
+     "dependencies": []
+    },
+    {
+     "id": "c",
+     "title": "cc",
+     "description": "d",
+     "details": "d",
+     "assignees": [
+      "y"
+     ],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-01",
+     "dependencies": []
+    }
+   ]
+  },
+  {
+   "id": "P6",
+   "domain": "weak",
+   "tasks": [
+    {
+     "id": "w1",
+     "title": "weak",
+     "description": "",
+     "details": "",
+     "assignees": [],
+     "priority": "low",
+     "estimated_effort": "",
+     "created_at": "2026-01-02",
+     "dependencies": [
+      "w2"
+     ]
+    },
+    {
+     "id": "w2",
+     "title": "weak2",
+     "description": "",
+     "details": "",
+     "assignees": [],
+     "priority": "high",
+     "estimated_effort": "1h",
+     "created_at": "2026-01-01",
+     "dependencies": []
+    }
+   ]
+  }
+ ],
+ "vecs_input": [
+  {
+   "id": "q1",
+   "title": "Implement search service",
+   "description": "Implement search service in src/search/service.py with table search_index",
+   "details": "",
+   "assignees": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-02",
+   "dependencies": [
+    "q2",
+    "q3"
+   ]
+  },
+  {
+   "id": "q2",
+   "title": "Create search index schema",
+   "description": "Create table search_index schema for search service in src/search/schema.sql",
+   "details": "",
+   "assignees": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-01",
+   "dependencies": []
+  },
+  {
+   "id": "q3",
+   "title": "Search service config",
+   "description": "Configure search service in config/search.yaml and src/search/service.py",
+   "details": "",
+   "assignees": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-01T05:00:00",
+   "dependencies": []
+  },
+  {
+   "id": "q4",
+   "title": "Search service tests",
+   "description": "search service tests src/search/service.py table search_index",
+   "details": "",
+   "assignees": [
+    "x",
+    "y"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-03",
+   "dependencies": [
+    "q1"
+   ]
+  },
+  {
+   "id": "q5",
+   "title": "Search service docs",
+   "description": "search service docs src/search/service.py table search_index",
+   "details": "",
+   "assignees": [
+    "x",
+    "y"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-04",
+   "dependencies": [
+    "q4"
+   ]
+  },
+  {
+   "id": "t1",
+   "title": "Design UserService schema",
+   "description": "Create table users_profile and class UserProfile in src/models/user.py",
+   "details": "See config/app.yaml and docs/design.md. Also POST /api/users endpoint",
+   "assignees": [
+    "coding-agent",
+    "system-architect-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "2h",
+   "created_at": "2026-01-01T10:00:00",
+   "dependencies": []
+  },
+  {
+   "id": "t2",
+   "title": "Implement UserService login",
+   "description": "Implement UserService login handler in src/services/user_service.py using GET /api/users and the AuthController",
+   "details": "tests in test/user_test.js",
+   "assignees": [
+    "coding-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "4h",
+   "created_at": "2026-01-02T10:00:00",
+   "dependencies": [
+    "t1"
+   ]
+  },
+  {
+   "id": "t3",
+   "title": "Write login tests for UserService",
+   "description": "Cover UserService login tests in test/user_test.py and src/services/user_service.py",
+   "details": "",
+   "assignees": [
+    "test-orchestrator-agent",
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-01-03T10:00:00",
+   "dependencies": [
+    "t2",
+    "t1",
+    "t4"
+   ]
+  },
+  {
+   "id": "t4",
+   "title": "Document the login API",
+   "description": "Document POST /api/login and GET /api/users in docs/api.md",
+   "details": "",
+   "assignees": [
+    "documentation-agent"
+   ],
+   "priority": "low",
+   "estimated_effort": "1h",
+   "created_at": "2026-01-01T09:00:00",
+   "dependencies": [
+    "t3"
+   ]
+  },
+  {
+   "id": "t5",
+   "title": "Refactor Component library",
+   "description": "Refactor LoginComponent and UserModel in src/ui/login.tsx",
+   "details": "",
+   "assignees": [
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "",
+   "created_at": "2026-01-04T10:00:00",
+   "dependencies": [
+    "t2"
+   ]
+  },
+  {
+   "id": "t6",
+   "title": "Deploy",
+   "description": "ship",
+   "details": "",
+   "assignees": [
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "",
+   "created_at": "2026-01-02T10:00:00",
+   "dependencies": [
+    "t5",
+    "t5"
+   ]
+  },
+  {
+   "id": "a1",
+   "title": "Caf\u00e9 d\u00e9j\u00e0 vu \u0130stanbul Stra\u00dfe",
+   "description": "na\u00efve r\u00e9sum\u00e9 fa\u00e7ade: configure ServiceManager in src/\u00dcn\u00efcode/ctrl.py",
+   "details": "\u0391\u0392\u0393 unicode test",
+   "assignees": [
+    "ops"
+   ],
+   "priority": "medium",
+   "estimated_effort": "1h",
+   "created_at": "2026-02-01T00:00:00",
+   "dependencies": [
+    "a2"
+   ]
+  },
+  {
+   "id": "a2",
+   "title": "\u00dcnicode tokens \u01c5",
+   "description": "Handler HandlerService class Foo_Bar table ORDER_items TABLE Users and DELETE /x/{id}",
+   "details": "",
+   "assignees": [
+    "ops",
+    "dev"
+   ],
+   "priority": "medium",
+   "estimated_effort": "1h",
+   "created_at": "2026-01-01T00:00:00",
+   "dependencies": [
+    "a1"
+   ]
+  },
+  {
+   "id": "a3",
+   "title": 123,
+   "description": "x",
+   "priority": "low",
+   "dependencies": [
+    "a1"
+   ],
+   "created_at": "2026-01-05"
+  },
+  {
+   "id": "a4",
+   "title": "No priority",
+   "description": "x",
+   "dependencies": [
+    "a1",
+    "a2"
+   ],
+   "created_at": "2026-01-06"
+  },
+  {
+   "id": "a5",
+   "title": "assignees str",
+   "description": "d",
+   "details": "d",
+   "assignees": "ops",
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-07",
+   "dependencies": [
+    "a1"
+   ]
+  },
+  {
+   "id": "a6",
+   "title": "None created",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "ops"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": null,
+   "dependencies": [
+    "a1"
+   ]
+  },
+  {
+   "title": "missing id",
+   "priority": "low",
+   "dependencies": [
+    "a1"
+   ]
+  },
+  {
+   "id": "a7",
+   "title": "long text word0 word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12 word13 word14 word15 word16 word17 word18 word19 word20 word21 word22 word23 word24 word25 word26 word27 word28 word29 word30 word31 word32 word33 word34 word35 word36 word37 word38 word39 word40 word41 word42 word43 word44 word45 word46 word47 word48 word49 word50 word51 word52 word53 word54 word55 word56 word57 word58 word59 word60 word61 word62 word63 word64 word65 word66 word67 word68 word69 word70 word71 word72 word73 word74 word75 word76 word77 word78 word79",
+   "description": "alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma alpha beta gamma tok0 tok1 tok2 tok3 tok4 tok5 tok6 tok7 tok8 tok9 tok10 tok11 tok12 tok13 tok14 tok15 tok16 tok17 tok18 tok19 tok20 tok21 tok22 tok23 tok24 tok25 tok26 tok27 tok28 tok29 tok30 tok31 tok32 tok33 tok34 tok35 tok36 tok37 tok38 tok39 tok40 tok41 tok42 tok43 tok44 tok45 tok46 tok47 tok48 tok49 tok50 tok51 tok52 tok53 tok54 tok55 tok56 tok57 tok58 tok59",
+   "details": "",
+   "assignees": [
+    "ops"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-03-01",
+   "dependencies": [
+    "a1"
+   ]
+  },
+  {
+   "id": "s1",
+   "title": "only one",
+   "description": "",
+   "details": "",
+   "assignees": [],
+   "priority": "medium",
+   "estimated_effort": "",
+   "created_at": "2026-01-01T00:00:00",
+   "dependencies": []
+  },
+  {
+   "id": "m1",
+   "title": "mix",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-01T00:00:00",
+   "dependencies": [
+    "m2"
+   ]
+  },
+  {
+   "id": "m2",
+   "title": "mix2",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": 5,
+   "dependencies": [
+    "m1"
+   ]
+  },
+  {
+   "id": "b1",
+   "title": "bb string deps",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "x",
+    "y"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-02",
+   "dependencies": "bc"
+  },
+  {
+   "id": "b",
+   "title": "single",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-01",
+   "dependencies": []
+  },
+  {
+   "id": "c",
+   "title": "cc",
+   "description": "d",
+   "details": "d",
+   "assignees": [
+    "y"
+   ],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-01",
+   "dependencies": []
+  },
+  {
+   "id": "w1",
+   "title": "weak",
+   "description": "",
+   "details": "",
+   "assignees": [],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-01-02",
+   "dependencies": [
+    "w2"
+   ]
+  },
+  {
+   "id": "w2",
+   "title": "weak2",
+   "description": "",
+   "details": "",
+   "assignees": [],
+   "priority": "high",
+   "estimated_effort": "1h",
+   "created_at": "2026-01-01",
+   "dependencies": []
+  }
+ ],
+ "vecs": [
+  {
+   "task_id": "q1",
+   "title_tokens": [
+    "implement",
+    "search",
+    "service"
+   ],
+   "description_tokens": [
+    "implement",
+    "search",
+    "service",
+    "src",
+    "search",
+    "service",
+    "table",
+    "search_index"
+   ],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "src/search/service",
+    "src/search/service.py"
+   ],
+   "technical_entities": [
+    "search_index"
+   ],
+   "creation_time": "2026-02-02",
+   "completion_time": null
+  },
+  {
+   "task_id": "q2",
+   "title_tokens": [
+    "create",
+    "search",
+    "index",
+    "schema"
+   ],
+   "description_tokens": [
+    "create",
+    "table",
+    "search_index",
+    "schema",
+    "search",
+    "service",
+    "src",
+    "search",
+    "schema",
+    "sql"
+   ],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "src/search/schema.sql",
+    "src/search/schema"
+   ],
+   "technical_entities": [
+    "search_index"
+   ],
+   "creation_time": "2026-02-01",
+   "completion_time": null
+  },
+  {
+   "task_id": "q3",
+   "title_tokens": [
+    "search",
+    "service",
+    "config"
+   ],
+   "description_tokens": [
+    "configure",
+    "search",
+    "service",
+    "config",
+    "search",
+    "yaml",
+    "src",
+    "search",
+    "service"
+   ],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "src/search/service",
+    "config/search.yaml",
+    "src/search/service.py",
+    "config/search"
+   ],
+   "technical_entities": [],
+   "creation_time": "2026-02-01T05:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "q4",
+   "title_tokens": [
+    "search",
+    "service",
+    "tests"
+   ],
+   "description_tokens": [
+    "search",
+    "service",
+    "tests",
+    "src",
+    "search",
+    "service",
+    "table",
+    "search_index"
+   ],
+   "agents": [
+    "x",
+    "y"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "src/search/service",
+    "src/search/service.py"
+   ],
+   "technical_entities": [
+    "search_index"
+   ],
+   "creation_time": "2026-02-03",
+   "completion_time": null
+  },
+  {
+   "task_id": "q5",
+   "title_tokens": [
+    "search",
+    "service",
+    "docs"
+   ],
+   "description_tokens": [
+    "search",
+    "service",
+    "docs",
+    "src",
+    "search",
+    "service",
+    "table",
+    "search_index"
+   ],
+   "agents": [
+    "x",
+    "y"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "src/search/service",
+    "src/search/service.py"
+   ],
+   "technical_entities": [
+    "search_index"
+   ],
+   "creation_time": "2026-02-04",
+   "completion_time": null
+  },
+  {
+   "task_id": "t1",
+   "title_tokens": [
+    "design",
+    "userservice",
+    "schema"
+   ],
+   "description_tokens": [
+    "create",
+    "table",
+    "users_profile",
+    "class",
+    "userprofile",
+    "src",
+    "models",
+    "user",
+    "see",
+    "config",
+    "app",
+    "yaml",
+    "docs",
+    "design",
+    "also",
+    "post",
+    "api",
+    "users",
+    "endpoint"
+   ],
+   "agents": [
+    "coding-agent",
+    "system-architect-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "2h",
+   "file_references": [
+    "docs/design.md",
+    "docs/design",
+    "config/app.yaml",
+    "config/app",
+    "src/models/user.py",
+    "src/models/user"
+   ],
+   "technical_entities": [
+    "users_profile",
+    "UserProfile",
+    "POST /api/users"
+   ],
+   "creation_time": "2026-01-01T10:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "t2",
+   "title_tokens": [
+    "implement",
+    "userservice",
+    "login"
+   ],
+   "description_tokens": [
+    "implement",
+    "userservice",
+    "login",
+    "handler",
+    "src",
+    "services",
+    "user_service",
+    "using",
+    "get",
+    "api",
+    "users",
+    "authcontroller",
+    "tests",
+    "test",
+    "user_test"
+   ],
+   "agents": [
+    "coding-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "4h",
+   "file_references": [
+    "src/services/user_service",
+    "test/user_test.js",
+    "src/services/user_service.py",
+    "test/user_test"
+   ],
+   "technical_entities": [
+    "GET /api/users",
+    "AuthController",
+    "UserService"
+   ],
+   "creation_time": "2026-01-02T10:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "t3",
+   "title_tokens": [
+    "write",
+    "login",
+    "tests",
+    "userservice"
+   ],
+   "description_tokens": [
+    "cover",
+    "userservice",
+    "login",
+    "tests",
+    "test",
+    "user_test",
+    "src",
+    "services",
+    "user_service"
+   ],
+   "agents": [
+    "test-orchestrator-agent",
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "file_references": [
+    "test/user_test.py",
+    "test/user_test",
+    "src/services/user_service.py",
+    "src/services/user_service"
+   ],
+   "technical_entities": [
+    "UserService"
+   ],
+   "creation_time": "2026-01-03T10:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "t4",
+   "title_tokens": [
+    "document",
+    "login",
+    "api"
+   ],
+   "description_tokens": [
+    "document",
+    "post",
+    "api",
+    "login",
+    "get",
+    "api",
+    "users",
+    "docs",
+    "api"
+   ],
+   "agents": [
+    "documentation-agent"
+   ],
+   "priority": "low",
+   "estimated_effort": "1h",
+   "file_references": [
+    "docs/api.md",
+    "docs/api"
+   ],
+   "technical_entities": [
+    "GET /api/users",
+    "POST /api/login"
+   ],
+   "creation_time": "2026-01-01T09:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "t5",
+   "title_tokens": [
+    "refactor",
+    "component",
+    "library"
+   ],
+   "description_tokens": [
+    "refactor",
+    "logincomponent",
+    "usermodel",
+    "src",
+    "login",
+    "tsx"
+   ],
+   "agents": [
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [
+    "src/ui/login.ts",
+    "src/ui/login"
+   ],
+   "technical_entities": [
+    "UserModel",
+    "LoginComponent"
+   ],
+   "creation_time": "2026-01-04T10:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "t6",
+   "title_tokens": [
+    "deploy"
+   ],
+   "description_tokens": [
+    "ship"
+   ],
+   "agents": [
+    "coding-agent"
+   ],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-02T10:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a1",
+   "title_tokens": [
+    "stanbul"
+   ],
+   "description_tokens": [
+    "configure",
+    "servicemanager",
+    "src",
+    "ctrl",
+    "unicode",
+    "test"
+   ],
+   "agents": [
+    "ops"
+   ],
+   "priority": "medium",
+   "estimated_effort": "1h",
+   "file_references": [
+    "src/\u00dcn\u00efcode/ctrl.py",
+    "src/\u00dcn\u00efcode/ctrl"
+   ],
+   "technical_entities": [
+    "ServiceManager"
+   ],
+   "creation_time": "2026-02-01T00:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a2",
+   "title_tokens": [
+    "tokens"
+   ],
+   "description_tokens": [
+    "handler",
+    "handlerservice",
+    "class",
+    "foo_bar",
+    "table",
+    "order_items",
+    "table",
+    "users",
+    "delete"
+   ],
+   "agents": [
+    "ops",
+    "dev"
+   ],
+   "priority": "medium",
+   "estimated_effort": "1h",
+   "file_references": [],
+   "technical_entities": [
+    "DELETE /x/{id}",
+    "Users",
+    "HandlerService",
+    "Foo_Bar",
+    "ORDER_items"
+   ],
+   "creation_time": "2026-01-01T00:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a3",
+   "title_tokens": [],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-03-01T10:00:00.123456+00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a4",
+   "title_tokens": [],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-03-01T10:00:00.123456+00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a5",
+   "title_tokens": [],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-03-01T10:00:00.123456+00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a6",
+   "title_tokens": [
+    "none",
+    "created"
+   ],
+   "description_tokens": [],
+   "agents": [
+    "ops"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": null,
+   "completion_time": null
+  },
+  {
+   "task_id": "unknown",
+   "title_tokens": [],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-03-01T10:00:00.123456+00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "a7",
+   "title_tokens": [
+    "long",
+    "text",
+    "word0",
+    "word1",
+    "word2",
+    "word3",
+    "word4",
+    "word5",
+    "word6",
+    "word7",
+    "word8",
+    "word9",
+    "word10",
+    "word11",
+    "word12",
+    "word13",
+    "word14",
+    "word15",
+    "word16",
+    "word17",
+    "word18",
+    "word19",
+    "word20",
+    "word21",
+    "word22",
+    "word23",
+    "word24",
+    "word25",
+    "word26",
+    "word27",
+    "word28",
+    "word29",
+    "word30",
+    "word31",
+    "word32",
+    "word33",
+    "word34",
+    "word35",
+    "word36",
+    "word37",
+    "word38",
+    "word39",
+    "word40",
+    "word41",
+    "word42",
+    "word43",
+    "word44",
+    "word45",
+    "word46",
+    "word47"
+   ],
+   "description_tokens": [
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta",
+    "gamma",
+    "alpha",
+    "beta"
+   ],
+   "agents": [
+    "ops"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-03-01",
+   "completion_time": null
+  },
+  {
+   "task_id": "s1",
+   "title_tokens": [
+    "only",
+    "one"
+   ],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "medium",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-01T00:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "m1",
+   "title_tokens": [
+    "mix"
+   ],
+   "description_tokens": [],
+   "agents": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-01T00:00:00",
+   "completion_time": null
+  },
+  {
+   "task_id": "m2",
+   "title_tokens": [
+    "mix2"
+   ],
+   "description_tokens": [],
+   "agents": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": 5,
+   "completion_time": null
+  },
+  {
+   "task_id": "b1",
+   "title_tokens": [
+    "string",
+    "deps"
+   ],
+   "description_tokens": [],
+   "agents": [
+    "x",
+    "y"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-02",
+   "completion_time": null
+  },
+  {
+   "task_id": "b",
+   "title_tokens": [
+    "single"
+   ],
+   "description_tokens": [],
+   "agents": [
+    "x"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-01",
+   "completion_time": null
+  },
+  {
+   "task_id": "c",
+   "title_tokens": [],
+   "description_tokens": [],
+   "agents": [
+    "y"
+   ],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-01",
+   "completion_time": null
+  },
+  {
+   "task_id": "w1",
+   "title_tokens": [
+    "weak"
+   ],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "low",
+   "estimated_effort": "unknown",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-02",
+   "completion_time": null
+  },
+  {
+   "task_id": "w2",
+   "title_tokens": [
+    "weak2"
+   ],
+   "description_tokens": [],
+   "agents": [],
+   "priority": "high",
+   "estimated_effort": "1h",
+   "file_references": [],
+   "technical_entities": [],
+   "creation_time": "2026-01-01",
+   "completion_time": null
+  }
+ ],
+ "stats_untrained": {
+  "status": "not_trained",
+  "patterns": 0
+ },
+ "predict_untrained": [],
+ "summary": {
+  "total_projects": 7,
+  "patterns_learned": 8,
+  "pattern_types": {
+   "sequential": 4,
+   "branching": 1,
+   "agent_based": 3
+  },
+  "average_confidence": 0.4510416666666667,
+  "training_completed_at": "2026-03-01T10:00:00.123456+00:00"
+ },
+ "summary_types": [
+  [
+   "sequential",
+   4
+  ],
+  [
+   "branching",
+   1
+  ],
+  [
+   "agent_based",
+   3
+  ]
+ ],
+ "patterns": [
+  {
+   "id": "pattern_0",
+   "type": "sequential",
+   "src": {
+    "title_keywords": [
+     "implement",
+     "search",
+     "service"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "implement",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "tgt": {
+    "title_keywords": [
+     "create",
+     "search",
+     "index",
+     "schema"
+    ],
+    "description_keywords": [
+     "schema",
+     "search",
+     "create",
+     "table",
+     "search_index",
+     "service",
+     "src",
+     "sql"
+    ],
+    "agents": [],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "sql"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "conf": 0.39999999999999997,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P7"
+    ],
+    [
+     "project_domain",
+     "search"
+    ],
+    [
+     "source_task_id",
+     "q1"
+    ],
+    [
+     "target_task_id",
+     "q2"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_1",
+   "type": "sequential",
+   "src": {
+    "title_keywords": [
+     "implement",
+     "search",
+     "service"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "implement",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "tgt": {
+    "title_keywords": [
+     "search",
+     "service",
+     "config"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "configure",
+     "config",
+     "yaml",
+     "src"
+    ],
+    "agents": [],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py",
+     "yaml"
+    ],
+    "has_entities": false,
+    "entity_types": []
+   },
+   "conf": 0.31666666666666665,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P7"
+    ],
+    [
+     "project_domain",
+     "search"
+    ],
+    [
+     "source_task_id",
+     "q1"
+    ],
+    [
+     "target_task_id",
+     "q3"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_2",
+   "type": "sequential",
+   "src": {
+    "title_keywords": [
+     "search",
+     "service",
+     "tests"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "tests",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [
+     "x",
+     "y"
+    ],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "tgt": {
+    "title_keywords": [
+     "implement",
+     "search",
+     "service"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "implement",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "conf": 0.6714285714285714,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P7"
+    ],
+    [
+     "project_domain",
+     "search"
+    ],
+    [
+     "source_task_id",
+     "q4"
+    ],
+    [
+     "target_task_id",
+     "q1"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_3",
+   "type": "sequential",
+   "src": {
+    "title_keywords": [
+     "search",
+     "service",
+     "docs"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "docs",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [
+     "x",
+     "y"
+    ],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "tgt": {
+    "title_keywords": [
+     "search",
+     "service",
+     "tests"
+    ],
+    "description_keywords": [
+     "search",
+     "service",
+     "tests",
+     "src",
+     "table",
+     "search_index"
+    ],
+    "agents": [
+     "x",
+     "y"
+    ],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "other"
+    ]
+   },
+   "conf": 0.7035714285714285,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P7"
+    ],
+    [
+     "project_domain",
+     "search"
+    ],
+    [
+     "source_task_id",
+     "q5"
+    ],
+    [
+     "target_task_id",
+     "q4"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_5",
+   "type": "branching",
+   "src": {
+    "title_keywords": [
+     "write",
+     "login",
+     "tests",
+     "userservice"
+    ],
+    "description_keywords": [
+     "cover",
+     "userservice",
+     "login",
+     "tests",
+     "test",
+     "user_test",
+     "src",
+     "services",
+     "user_service"
+    ],
+    "agents": [
+     "test-orchestrator-agent",
+     "coding-agent"
+    ],
+    "priority": "medium",
+    "estimated_effort": "2h",
+    "has_files": true,
+    "file_types": [
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "service"
+    ]
+   },
+   "tgt": {
+    "title_keywords": [
+     "implement",
+     "userservice",
+     "login"
+    ],
+    "description_keywords": [
+     "implement",
+     "userservice",
+     "login",
+     "handler",
+     "src",
+     "services",
+     "user_service",
+     "using",
+     "get",
+     "api"
+    ],
+    "agents": [
+     "coding-agent"
+    ],
+    "priority": "high",
+    "estimated_effort": "4h",
+    "has_files": true,
+    "file_types": [
+     "js",
+     "py"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "api_endpoint",
+     "controller",
+     "service"
+    ]
+   },
+   "conf": 0.31666666666666665,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P1"
+    ],
+    [
+     "project_domain",
+     "web"
+    ],
+    [
+     "source_task_id",
+     "t3"
+    ],
+    [
+     "target_task_id",
+     "t2"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_10",
+   "type": "agent_based",
+   "src": {
+    "title_keywords": [
+     "deploy"
+    ],
+    "description_keywords": [
+     "ship"
+    ],
+    "agents": [
+     "coding-agent"
+    ],
+    "priority": "medium",
+    "estimated_effort": "unknown",
+    "has_files": false,
+    "file_types": [],
+    "has_entities": false,
+    "entity_types": []
+   },
+   "tgt": {
+    "title_keywords": [
+     "refactor",
+     "component",
+     "library"
+    ],
+    "description_keywords": [
+     "refactor",
+     "logincomponent",
+     "usermodel",
+     "src",
+     "login",
+     "tsx"
+    ],
+    "agents": [
+     "coding-agent"
+    ],
+    "priority": "medium",
+    "estimated_effort": "unknown",
+    "has_files": true,
+    "file_types": [
+     "ts"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "component",
+     "model"
+    ]
+   },
+   "conf": 0.4,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P1"
+    ],
+    [
+     "project_domain",
+     "web"
+    ],
+    [
+     "source_task_id",
+     "t6"
+    ],
+    [
+     "target_task_id",
+     "t5"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_11",
+   "type": "agent_based",
+   "src": {
+    "title_keywords": [
+     "deploy"
+    ],
+    "description_keywords": [
+     "ship"
+    ],
+    "agents": [
+     "coding-agent"
+    ],
+    "priority": "medium",
+    "estimated_effort": "unknown",
+    "has_files": false,
+    "file_types": [],
+    "has_entities": false,
+    "entity_types": []
+   },
+   "tgt": {
+    "title_keywords": [
+     "refactor",
+     "component",
+     "library"
+    ],
+    "description_keywords": [
+     "refactor",
+     "logincomponent",
+     "usermodel",
+     "src",
+     "login",
+     "tsx"
+    ],
+    "agents": [
+     "coding-agent"
+    ],
+    "priority": "medium",
+    "estimated_effort": "unknown",
+    "has_files": true,
+    "file_types": [
+     "ts"
+    ],
+    "has_entities": true,
+    "entity_types": [
+     "component",
+     "model"
+    ]
+   },
+   "conf": 0.4,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P1"
+    ],
+    [
+     "project_domain",
+     "web"
+    ],
+    [
+     "source_task_id",
+     "t6"
+    ],
+    [
+     "target_task_id",
+     "t5"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  },
+  {
+   "id": "pattern_15",
+   "type": "agent_based",
+   "src": {
+    "title_keywords": [
+     "string",
+     "deps"
+    ],
+    "description_keywords": [],
+    "agents": [
+     "x",
+     "y"
+    ],
+    "priority": "low",
+    "estimated_effort": "unknown",
+    "has_files": false,
+    "file_types": [],
+    "has_entities": false,
+    "entity_types": []
+   },
+   "tgt": {
+    "title_keywords": [],
+    "description_keywords": [],
+    "agents": [
+     "y"
+    ],
+    "priority": "low",
+    "estimated_effort": "unknown",
+    "has_files": false,
+    "file_types": [],
+    "has_entities": false,
+    "entity_types": []
+   },
+   "conf": 0.4,
+   "support": 1,
+   "succ": 1.0,
+   "meta": [
+    [
+     "project_id",
+     "P5"
+    ],
+    [
+     "project_domain",
+     "unknown"
+    ],
+    [
+     "source_task_id",
+     "b1"
+    ],
+    [
+     "target_task_id",
+     "c"
+    ]
+   ],
+   "created": "2026-03-01T10:00:00.123456+00:00"
+  }
+ ],
+ "counter": 17,
+ "stats": {
+  "status": "trained",
+  "total_patterns": 8,
+  "pattern_types": [
+   [
+    "sequential",
+    4
+   ],
+   [
+    "branching",
+    1
+   ],
+   [
+    "agent_based",
+    3
+   ]
+  ],
+  "average_confidence": 0.4510416666666667,
+  "average_support": 1.0,
+  "last_updated": "2026-03-01T10:00:00.123456+00:00"
+ },
+ "subject_tasks": [
+  {
+   "id": "n1",
+   "title": "Add login UserService tests",
+   "description": "tests in test/user_test.py for UserService login",
+   "details": "",
+   "assignees": [
+    "coding-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-01",
+   "dependencies": []
+  },
+  {
+   "id": "t2",
+   "title": "Implement UserService login",
+   "description": "Implement UserService login handler in src/services/user_service.py",
+   "details": "",
+   "assignees": [
+    "coding-agent"
+   ],
+   "priority": "high",
+   "estimated_effort": "4h",
+   "created_at": "2026-01-01T00:00:00",
+   "dependencies": []
+  },
+  {
+   "id": "n3",
+   "title": "Search service tests",
+   "description": "search service tests src/search/service.py table search_index",
+   "details": "",
+   "assignees": [
+    "x",
+    "y"
+   ],
+   "priority": "medium",
+   "estimated_effort": "2h",
+   "created_at": "2026-02-05",
+   "dependencies": []
+  },
+  {
+   "id": "n2",
+   "title": "Weather",
+   "description": "sunny",
+   "details": "",
+   "assignees": [],
+   "priority": "low",
+   "estimated_effort": "",
+   "created_at": "2026-02-01",
+   "dependencies": []
+  },
+  {
+   "title": "no id",
+   "priority": "low"
+  }
+ ],
+ "subjects": [
+  {
+   "id": "n1"
+  },
+  {
+   "id": "t2"
+  },
+  {
+   "id": "n3"
+  },
+  {
+   "id": "n2"
+  },
+  {}
+ ],
+ "preds": [
+  [
+   {
+    "s": "n1",
+    "t": "t1",
+    "ids": [
+     "pattern_5",
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "branching (score: 0.83)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "branching",
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n1",
+    "t": "q1",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.96)",
+     "sequential (score: 0.82)",
+     "sequential (score: 0.75)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "n1",
+    "t": "q2",
+    "ids": [
+     "pattern_0",
+     "pattern_2",
+     "pattern_3",
+     "pattern_5",
+     "pattern_1"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.94)",
+     "sequential (score: 0.77)",
+     "sequential (score: 0.71)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n1",
+    "t": "q3",
+    "ids": [
+     "pattern_1",
+     "pattern_2",
+     "pattern_3",
+     "pattern_5",
+     "pattern_0"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.94)",
+     "sequential (score: 0.74)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n1",
+    "t": "q4",
+    "ids": [
+     "pattern_3",
+     "pattern_2",
+     "pattern_0",
+     "pattern_5",
+     "pattern_1"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.98)",
+     "sequential (score: 0.83)",
+     "sequential (score: 0.71)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching",
+      "sequential"
+     ]
+    }
+   }
+  ],
+  [
+   {
+    "s": "t2",
+    "t": "t1",
+    "ids": [
+     "pattern_5",
+     "pattern_0",
+     "pattern_1",
+     "pattern_2",
+     "pattern_3"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "branching (score: 0.74)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "branching",
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "t2",
+    "t": "q1",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.88)",
+     "sequential (score: 0.75)",
+     "sequential (score: 0.71)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "t2",
+    "t": "q2",
+    "ids": [
+     "pattern_0",
+     "pattern_2",
+     "pattern_3",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.90)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "t2",
+    "t": "q3",
+    "ids": [
+     "pattern_1",
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.90)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "t2",
+    "t": "q4",
+    "ids": [
+     "pattern_3",
+     "pattern_2",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.91)",
+     "sequential (score: 0.75)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   }
+  ],
+  [
+   {
+    "s": "n3",
+    "t": "t1",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.98)",
+     "sequential (score: 0.92)",
+     "sequential (score: 0.81)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "n3",
+    "t": "t2",
+    "ids": [
+     "pattern_5",
+     "pattern_2",
+     "pattern_3",
+     "pattern_1",
+     "pattern_0"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "branching (score: 1.00)",
+     "sequential (score: 0.90)",
+     "sequential (score: 0.82)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "branching",
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n3",
+    "t": "t4",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.84)",
+     "sequential (score: 0.78)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "n3",
+    "t": "q1",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 1.00)",
+     "sequential (score: 1.00)",
+     "sequential (score: 0.98)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   },
+   {
+    "s": "n3",
+    "t": "q2",
+    "ids": [
+     "pattern_0",
+     "pattern_2",
+     "pattern_3",
+     "pattern_1",
+     "pattern_5"
+    ],
+    "conf": 0.48166666666666663,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 1.00)",
+     "sequential (score: 1.00)",
+     "sequential (score: 1.00)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential",
+      "branching"
+     ]
+    }
+   }
+  ],
+  [
+   {
+    "s": "n2",
+    "t": "t3",
+    "ids": [
+     "pattern_3",
+     "pattern_10",
+     "pattern_11",
+     "pattern_2"
+    ],
+    "conf": 0.54375,
+    "why": "Predicted based on 4 similar sequential pattern(s) with average support of 1.0",
+    "fm": [],
+    "ev": {
+     "matching_patterns": 4,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "agent_based",
+      "agent_based",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n2",
+    "t": "q1",
+    "ids": [
+     "pattern_2",
+     "pattern_3",
+     "pattern_0",
+     "pattern_1"
+    ],
+    "conf": 0.5229166666666666,
+    "why": "Predicted based on 4 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.80)"
+    ],
+    "ev": {
+     "matching_patterns": 4,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n2",
+    "t": "q2",
+    "ids": [
+     "pattern_0",
+     "pattern_2",
+     "pattern_3",
+     "pattern_1"
+    ],
+    "conf": 0.5229166666666666,
+    "why": "Predicted based on 4 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.80)"
+    ],
+    "ev": {
+     "matching_patterns": 4,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n2",
+    "t": "q3",
+    "ids": [
+     "pattern_1",
+     "pattern_2",
+     "pattern_3",
+     "pattern_0"
+    ],
+    "conf": 0.5229166666666666,
+    "why": "Predicted based on 4 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.80)"
+    ],
+    "ev": {
+     "matching_patterns": 4,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "sequential"
+     ]
+    }
+   },
+   {
+    "s": "n2",
+    "t": "q4",
+    "ids": [
+     "pattern_3",
+     "pattern_2",
+     "pattern_0",
+     "pattern_15",
+     "pattern_1"
+    ],
+    "conf": 0.49833333333333335,
+    "why": "Predicted based on 5 similar sequential pattern(s) with average support of 1.0",
+    "fm": [
+     "sequential (score: 0.84)"
+    ],
+    "ev": {
+     "matching_patterns": 5,
+     "avg_support": 1.0,
+     "pattern_types": [
+      "sequential",
+      "sequential",
+      "sequential",
+      "agent_based",
+      "sequential"
+     ]
+    }
+   }
+  ],
+  []
+ ],
+ "stats_after": {
+  "status": "trained",
+  "total_patterns": 8,
+  "pattern_types": [
+   [
+    "sequential",
+    4
+   ],
+   [
+    "branching",
+    1
+   ],
+   [
+    "agent_based",
+    3
+   ]
+  ],
+  "average_confidence": 0.4510416666666667,
+  "average_support": 1.0,
+  "last_updated": "2026-03-01T10:00:00.123456+00:00"
+ },
+ "pattern_scores": [
+  0.5658730158730159,
+  0.5380952380952381,
+  0.6724489795918368,
+  0.7795918367346939,
+  0.8357142857142857,
+  0.65,
+  0.65,
+  0.5535714285714286
+ ],
+ "empty_summary": {
+  "total_projects": 0,
+  "patterns_learned": 0,
+  "pattern_types": {},
+  "average_confidence": 0.0,
+  "training_completed_at": "2026-03-01T10:00:00.123456+00:00"
+ },
+ "empty_stats": {
+  "status": "not_trained",
+  "patterns": 0
+ }
+}

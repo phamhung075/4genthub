@@ -1,0 +1,512 @@
+{
+ "ok": {
+  "create": [],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "short_title": {
+  "create": [
+   "Task title must be at least 3 characters long"
+  ],
+  "constraints": [
+   "Task title must be at least 3 characters long"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title must be at least 3 characters long"
+  ]
+ },
+ "empty_title": {
+  "create": [
+   "Task title is required",
+   "Task title cannot be empty"
+  ],
+  "constraints": [
+   "Task title cannot be empty"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title is required",
+   "Task title cannot be empty"
+  ]
+ },
+ "ws_title": {
+  "create": [
+   "Task title cannot be empty"
+  ],
+  "constraints": [
+   "Task title cannot be empty"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title cannot be empty"
+  ]
+ },
+ "long_title": {
+  "create": [
+   "Task title cannot exceed 200 characters"
+  ],
+  "constraints": [
+   "Task title cannot exceed 200 characters"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title cannot exceed 200 characters"
+  ]
+ },
+ "placeholder": {
+  "create": [
+   "Task title appears to be placeholder text. Please provide a descriptive title."
+  ],
+  "constraints": [],
+  "content": [
+   "Task title appears to be placeholder text. Please provide a descriptive title."
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title appears to be placeholder text. Please provide a descriptive title."
+  ]
+ },
+ "repeat": {
+  "create": [
+   "Task title contains too much repetition"
+  ],
+  "constraints": [],
+  "content": [
+   "Task title contains too much repetition"
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title contains too much repetition"
+  ]
+ },
+ "repeat_half": {
+  "create": [],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "brief_desc": {
+  "create": [
+   "Task description is too brief to be meaningful"
+  ],
+  "constraints": [],
+  "content": [
+   "Task description is too brief to be meaningful"
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task description is too brief to be meaningful"
+  ]
+ },
+ "na_desc": {
+  "create": [
+   "Task description is too brief to be meaningful"
+  ],
+  "constraints": [],
+  "content": [
+   "Task description is too brief to be meaningful"
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task description is too brief to be meaningful"
+  ]
+ },
+ "long_desc": {
+  "create": [
+   "Task description cannot exceed 2000 characters"
+  ],
+  "constraints": [
+   "Task description cannot exceed 2000 characters"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task description cannot exceed 2000 characters"
+  ]
+ },
+ "effort_bad": {
+  "create": [
+   "Estimated effort should include time units (e.g., '2 hours', '1 day', '3 weeks')"
+  ],
+  "constraints": [],
+  "content": [
+   "Estimated effort should include time units (e.g., '2 hours', '1 day', '3 weeks')"
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Estimated effort should include time units (e.g., '2 hours', '1 day', '3 weeks')"
+  ]
+ },
+ "effort_ok": {
+  "create": [],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "assignees": {
+  "create": [
+   "Task cannot have more than 5 assignees",
+   "Assignee names cannot be empty",
+   "Assignee names cannot exceed 50 characters"
+  ],
+  "constraints": [
+   "Task cannot have more than 5 assignees",
+   "Assignee names cannot be empty",
+   "Assignee names cannot exceed 50 characters"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task cannot have more than 5 assignees",
+   "Assignee names cannot be empty",
+   "Assignee names cannot exceed 50 characters"
+  ]
+ },
+ "labels": {
+  "create": [
+   "Task cannot have more than 10 labels",
+   "Labels cannot exceed 30 characters",
+   "Labels cannot be empty"
+  ],
+  "constraints": [
+   "Task cannot have more than 10 labels",
+   "Labels cannot exceed 30 characters",
+   "Labels cannot be empty"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task cannot have more than 10 labels",
+   "Labels cannot exceed 30 characters",
+   "Labels cannot be empty"
+  ]
+ },
+ "due": {
+  "create": [
+   "Business constraint validation error: 'str' object has no attribute 'tzinfo'"
+  ],
+  "constraints": [
+   "Business constraint validation error: 'str' object has no attribute 'tzinfo'"
+  ],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Business constraint validation error: 'str' object has no attribute 'tzinfo'"
+  ]
+ },
+ "crit_todo": {
+  "create": [
+   "Critical priority tasks should be started immediately"
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Critical priority tasks should be started immediately"
+  ]
+ },
+ "done_urgent": {
+  "create": [
+   "High priority completed tasks must include completion summary"
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "High priority completed tasks must include completion summary"
+  ]
+ },
+ "done_urgent_cs": {
+  "create": [],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "bad_id": {
+  "create": [
+   "Invalid task ID format: Invalid UUID format: not-a-uuid. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Invalid task ID format: Invalid UUID format: not-a-uuid. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ]
+ },
+ "same_branch": {
+  "create": [
+   "CRITICAL: Task ID and Git Branch ID are identical. This indicates parameter confusion that leads to data integrity issues."
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "no_branch": {
+  "create": [
+   "Git branch ID is required"
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   false,
+   [
+    "Task must be associated with a valid git branch"
+   ]
+  ],
+  "update_self": []
+ },
+ "bad_branch": {
+  "create": [
+   "Invalid git branch ID format: Invalid UUID format: xyz. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": []
+ },
+ "deps": {
+  "create": [],
+  "constraints": [],
+  "content": [],
+  "rel": [
+   false,
+   [
+    "Task cannot have more than 10 dependencies",
+    "Task cannot depend on itself"
+   ]
+  ],
+  "update_self": []
+ },
+ "unicode": {
+  "create": [
+   "Task title contains too much repetition"
+  ],
+  "constraints": [],
+  "content": [
+   "Task title contains too much repetition"
+  ],
+  "rel": [
+   true,
+   []
+  ],
+  "update_self": [
+   "Task title contains too much repetition"
+  ]
+ },
+ "_trans": {
+  "todo": {
+   "todo": [],
+   "in_progress": [],
+   "review": [
+    "Invalid status transition from 'todo' to 'review'"
+   ],
+   "testing": [
+    "Invalid status transition from 'todo' to 'testing'"
+   ],
+   "done": [
+    "Invalid status transition from 'todo' to 'done'"
+   ],
+   "blocked": [],
+   "cancelled": []
+  },
+  "in_progress": {
+   "todo": [],
+   "in_progress": [],
+   "review": [],
+   "testing": [],
+   "done": [],
+   "blocked": [],
+   "cancelled": [
+    "Invalid status transition from 'in_progress' to 'cancelled'"
+   ]
+  },
+  "review": {
+   "todo": [
+    "Invalid status transition from 'review' to 'todo'"
+   ],
+   "in_progress": [],
+   "review": [],
+   "testing": [],
+   "done": [],
+   "blocked": [
+    "Invalid status transition from 'review' to 'blocked'"
+   ],
+   "cancelled": [
+    "Invalid status transition from 'review' to 'cancelled'"
+   ]
+  },
+  "testing": {
+   "todo": [
+    "Invalid status transition from 'testing' to 'todo'"
+   ],
+   "in_progress": [],
+   "review": [],
+   "testing": [],
+   "done": [],
+   "blocked": [
+    "Invalid status transition from 'testing' to 'blocked'"
+   ],
+   "cancelled": [
+    "Invalid status transition from 'testing' to 'cancelled'"
+   ]
+  },
+  "done": {
+   "todo": [
+    "Invalid status transition from 'done' to 'todo'"
+   ],
+   "in_progress": [
+    "Invalid status transition from 'done' to 'in_progress'"
+   ],
+   "review": [
+    "Invalid status transition from 'done' to 'review'"
+   ],
+   "testing": [
+    "Invalid status transition from 'done' to 'testing'"
+   ],
+   "done": [],
+   "blocked": [
+    "Invalid status transition from 'done' to 'blocked'"
+   ],
+   "cancelled": [
+    "Invalid status transition from 'done' to 'cancelled'"
+   ]
+  },
+  "blocked": {
+   "todo": [],
+   "in_progress": [],
+   "review": [
+    "Invalid status transition from 'blocked' to 'review'"
+   ],
+   "testing": [
+    "Invalid status transition from 'blocked' to 'testing'"
+   ],
+   "done": [
+    "Invalid status transition from 'blocked' to 'done'"
+   ],
+   "blocked": [],
+   "cancelled": [
+    "Invalid status transition from 'blocked' to 'cancelled'"
+   ]
+  },
+  "cancelled": {
+   "todo": [
+    "Invalid status transition from 'cancelled' to 'todo'"
+   ],
+   "in_progress": [
+    "Invalid status transition from 'cancelled' to 'in_progress'"
+   ],
+   "review": [
+    "Invalid status transition from 'cancelled' to 'review'"
+   ],
+   "testing": [
+    "Invalid status transition from 'cancelled' to 'testing'"
+   ],
+   "done": [
+    "Invalid status transition from 'cancelled' to 'done'"
+   ],
+   "blocked": [
+    "Invalid status transition from 'cancelled' to 'blocked'"
+   ],
+   "cancelled": []
+  }
+ },
+ "_update_id": [
+  "Field 'id' cannot be modified after creation"
+ ],
+ "_similar": [
+  "A task with similar title already exists: ' implement LOGIN flow '"
+ ],
+ "_similar_none": [],
+ "_ids": {
+  "map": [],
+  "ok": [],
+  "none": [
+   "At least one parameter must be provided"
+  ],
+  "ctx_same": [
+   "CRITICAL: task_id and git_branch_id are identical. This indicates parameter confusion that leads to data integrity issues."
+  ],
+  "ctx_ok": [],
+  "ctx_bad": [
+   "Invalid UUID format: zz. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  ],
+  "ctx_none": []
+ }
+}

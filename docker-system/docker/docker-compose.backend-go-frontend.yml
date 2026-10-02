@@ -1,0 +1,81 @@
+# Backend (Go) and Frontend Only Docker Compose Configuration
+# Same as docker-compose.backend-frontend.yml, but the backend is the Go server (agenthub_go)
+# built from Dockerfile.backend.go instead of the Python server. Menu option 1G.
+# Uses external PostgreSQL database (must be running separately)
+
+services:
+  # Backend API (Go)
+  backend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.backend.go
+    image: agenthub-backend-go:local
+    container_name: agenthub-backend
+    env_file:
+      - ../../.env.dev
+    environment:
+      # Authentication
+      AUTH_ENABLED: ${AUTH_ENABLED}
+      AUTH_PROVIDER: ${AUTH_PROVIDER}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # Connect to PostgreSQL container on the same network
+      DATABASE_HOST: agenthub-postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@agenthub-postgres:5432/${DATABASE_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ENV: ${ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      FASTMCP_HOST: 0.0.0.0
+      FASTMCP_PORT: ${FASTMCP_PORT}
+      # Mark as Docker environment for logging
+      CONTAINER_ENV: docker
+      # Local dev database only: the Go server runs DDL only when this is true (default off)
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+    ports:
+      - "${FASTMCP_PORT}:8000"
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+    external_links:
+      - agenthub-postgres:postgres
+    healthcheck:
+      # distroless image has no curl: the binary has its own -healthcheck mode
+      test: ["CMD", "/agenthub", "-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ../..
+      dockerfile: docker-system/docker/Dockerfile.frontend.dev
+    container_name: agenthub-frontend
+    env_file:
+      - ../../.env.dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL}
+      VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM}
+      VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID}
+      VITE_ENV: ${VITE_ENV}
+      NODE_ENV: ${NODE_ENV}
+      # Feature flags
+      VITE_DISABLE_AUTH: ${VITE_DISABLE_AUTH:-false}
+      VITE_ENABLE_MARKETPLACE: ${VITE_ENABLE_MARKETPLACE:-true}
+    ports:
+      - "${FRONTEND_PORT}:3800"
+    depends_on:
+      - backend
+    networks:
+      - agenthub-network
+    restart: unless-stopped
+
+networks:
+  agenthub-network:
+    external: true
+    name: agenthub-network

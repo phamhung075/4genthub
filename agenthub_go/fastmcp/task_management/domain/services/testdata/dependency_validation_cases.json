@@ -1,0 +1,165 @@
+{
+ "v1": {
+  "valid": true,
+  "task_id": "00000000-0000-4000-8000-000000000001",
+  "dependency_count": 2,
+  "issues": [
+   {
+    "type": "blocked_dependency",
+    "dependency_id": "00000000-0000-4000-8000-000000000003",
+    "dependency_title": "C",
+    "severity": "warning",
+    "message": "Dependency 'C' is currently blocked",
+    "suggestion": "Resolve blockers in the dependency task first"
+   }
+  ],
+  "errors": [],
+  "can_proceed": false
+ },
+ "v5": {
+  "valid": false,
+  "task_id": "00000000-0000-4000-8000-000000000005",
+  "dependency_count": 1,
+  "issues": [],
+  "errors": [
+   "Circular dependency detected: 00000000-0000-4000-8000-000000000005 -> 00000000-0000-4000-8000-000000000006 -> 00000000-0000-4000-8000-000000000005"
+  ],
+  "can_proceed": false
+ },
+ "v7": {
+  "valid": false,
+  "task_id": "00000000-0000-4000-8000-000000000007",
+  "dependency_count": 4,
+  "issues": [
+   {
+    "type": "missing_dependency",
+    "dependency_id": "00000000-0000-4000-8000-000000000099",
+    "severity": "error",
+    "message": "Dependency task 00000000-0000-4000-8000-000000000099 not found in any state",
+    "suggestion": "Remove this dependency or check if the task ID is correct"
+   }
+  ],
+  "errors": [
+   "Task cannot depend on itself (ID: 00000000-0000-4000-8000-000000000007)",
+   "Invalid dependency ID format 'bad': Invalid UUID format: bad. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "Dependency 00000000-0000-4000-8000-000000000099 no longer exists",
+   "Dependency bad no longer exists"
+  ],
+  "can_proceed": false
+ },
+ "v8": {
+  "valid": true,
+  "task_id": "00000000-0000-4000-8000-000000000008",
+  "dependency_count": 2,
+  "issues": [
+   {
+    "type": "cancelled_dependency",
+    "dependency_id": "00000000-0000-4000-8000-000000000009",
+    "dependency_title": "I",
+    "severity": "warning",
+    "message": "Dependency 'I' was cancelled",
+    "suggestion": "Consider removing this dependency or finding an alternative"
+   },
+   {
+    "type": "satisfied_dependency",
+    "dependency_id": "00000000-0000-4000-8000-000000000010",
+    "dependency_title": "J",
+    "severity": "info",
+    "message": "Dependency 'J' is completed",
+    "suggestion": "Task can proceed with this dependency satisfied"
+   }
+  ],
+  "errors": [],
+  "can_proceed": false
+ },
+ "v11": {
+  "valid": true,
+  "message": "Task has no dependencies",
+  "issues": [],
+  "errors": []
+ },
+ "v50": {
+  "valid": false,
+  "errors": [
+   "Task 00000000-0000-4000-8000-000000000050 not found"
+  ],
+  "issues": []
+ },
+ "s1": {
+  "task_id": "00000000-0000-4000-8000-000000000001",
+  "task_title": "A",
+  "task_status": "todo",
+  "dependency_chain": [
+   {
+    "dependency_id": "00000000-0000-4000-8000-000000000002",
+    "title": "B",
+    "status": "in_progress",
+    "found": true,
+    "is_completed": false,
+    "priority": "high"
+   },
+   {
+    "dependency_id": "00000000-0000-4000-8000-000000000003",
+    "title": "C",
+    "status": "blocked",
+    "found": true,
+    "is_completed": false,
+    "priority": "high"
+   }
+  ],
+  "chain_statistics": {
+   "total_dependencies": 2,
+   "completed_dependencies": 0,
+   "blocked_dependencies": 1,
+   "completion_percentage": 0.0
+  },
+  "can_proceed": false
+ },
+ "s7": {
+  "task_id": "00000000-0000-4000-8000-000000000007",
+  "task_title": "G",
+  "task_status": "todo",
+  "dependency_chain": [
+   {
+    "dependency_id": "00000000-0000-4000-8000-000000000001",
+    "title": "A",
+    "status": "todo",
+    "found": true,
+    "is_completed": false,
+    "priority": "high"
+   },
+   {
+    "dependency_id": "00000000-0000-4000-8000-000000000099",
+    "status": "missing",
+    "title": "Unknown",
+    "found": false,
+    "message": "Dependency task not found"
+   },
+   {
+    "dependency_id": "00000000-0000-4000-8000-000000000007",
+    "title": "G",
+    "status": "todo",
+    "found": true,
+    "is_completed": false,
+    "priority": "high"
+   },
+   {
+    "dependency_id": "bad",
+    "status": "missing",
+    "title": "Unknown",
+    "found": false,
+    "message": "Dependency task not found"
+   }
+  ],
+  "chain_statistics": {
+   "total_dependencies": 4,
+   "completed_dependencies": 0,
+   "blocked_dependencies": 0,
+   "completion_percentage": 0.0
+  },
+  "can_proceed": false
+ },
+ "s50": {
+  "error": "Task 00000000-0000-4000-8000-000000000050 not found"
+ }
+}

@@ -18,9 +18,10 @@ WORKDIR /build
 
 # Copy package files
 COPY agenthub-frontend/package.json ./
+COPY agenthub-frontend/pnpm-workspace.yaml ./
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install pnpm (version pinned to avoid build-tool drift between CI runs)
+RUN npm install -g pnpm@10.9.0
 
 # Copy pnpm-lock.yaml
 COPY agenthub-frontend/pnpm-lock.yaml ./

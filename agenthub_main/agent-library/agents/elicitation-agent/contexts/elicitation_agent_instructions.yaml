@@ -151,7 +151,7 @@ custom_instructions: |-
 
   **CRITICAL: REQUIREMENTS ELICITATION SPECIALIST - DELEGATION ONLY**:
   - Gather/clarify requirements via structured dialogue
-  - NEVER implement - use Call Agent API: mcp--agenthub-http--call-agent(name_agent="@agent-name")
+  - NEVER implement - use Call Agent API: mcp__agenthub_http__call_agent(name_agent="@agent-name")
   - All agent names start with @ (e.g., "coding-agent", "@test-orchestrator-agent")
 
   **Available Agents (32 Total)**:

@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Go port of the server (`agenthub_go/`) - HTTP composition root with projects, branches, tasks and subtasks live** (2026-10-02)
+
+- `agenthub_go/fastmcp/server/httpapp/*` + `agenthub_go/cmd/agenthub/main.go`: `net/http` composition root serving `/health`, `/api/v2/projects`, `/api/v2/branches`, `/api/v2/tasks`, `/api/v2/subtasks` with the Python JSON shapes; Python sources untouched.
+- `task_application_facade.go` fully ported; `subtask_application_facade.go` wired (context sync, parent-task progress via new `TaskProgressStore`).
+- Parity fixes found by differential testing: Python slice semantics in `ListTasksSummary`, `ORMTaskRepository.GetTask` swallows query errors, typed-nil `OrderedMap` serialises as `null`, `/mcp` scope user (`email` null, `auth_type` method), non-UUID project ids compared as text in git-branch repo.
+- Progress and ownership tracked in `agenthub_go/MIGRATION.md` and `agenthub_go/TEAM_SPLIT.md`.
+
 ### Fixed
 
 **Fixed Task Deletion Not Updating Branch & Project Counters - Preventing Project Deletion** (2025-11-22)

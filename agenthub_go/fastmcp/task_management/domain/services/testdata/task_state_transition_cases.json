@@ -1,0 +1,655 @@
+[
+ {
+  "from": "todo",
+  "can": {
+   "todo": [
+    false,
+    "Cannot transition from 'todo' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    null
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'todo' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'todo' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'todo' to 'done'"
+   ],
+   "blocked": [
+    true,
+    null
+   ],
+   "cancelled": [
+    true,
+    null
+   ]
+  },
+  "suggest": {
+   "suggested_status": "in_progress",
+   "current_status": "todo",
+   "reason": "Natural progression from 'todo' to 'in_progress'",
+   "description": "Start working on this task"
+  },
+  "allowed": {
+   "in_progress": {
+    "allowed": true,
+    "reason": null,
+    "description": "Start working on this task",
+    "prerequisites": [
+     "Task assignee available",
+     "Dependencies satisfied"
+    ]
+   },
+   "blocked": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from todo to blocked",
+    "prerequisites": []
+   },
+   "cancelled": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from todo to cancelled",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "in_progress",
+   "blocked",
+   "cancelled"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Cannot transition from 'todo' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    "Status changed from 'todo' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'todo' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'todo' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'todo' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Transition failed: Cannot transition from todo to blocked"
+   ],
+   "cancelled": [
+    true,
+    "Status changed from 'todo' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "in_progress",
+  "can": {
+   "todo": [
+    true,
+    null
+   ],
+   "in_progress": [
+    false,
+    "Cannot transition from 'in_progress' to 'in_progress'"
+   ],
+   "review": [
+    true,
+    null
+   ],
+   "testing": [
+    true,
+    null
+   ],
+   "done": [
+    true,
+    null
+   ],
+   "blocked": [
+    true,
+    null
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'in_progress' to 'cancelled'"
+   ]
+  },
+  "suggest": {
+   "suggested_status": "review",
+   "current_status": "in_progress",
+   "reason": "Natural progression from 'in_progress' to 'review'",
+   "description": "Submit work for review"
+  },
+  "allowed": {
+   "review": {
+    "allowed": true,
+    "reason": null,
+    "description": "Submit work for review",
+    "prerequisites": [
+     "Work completed",
+     "Ready for review"
+    ]
+   },
+   "testing": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from in_progress to testing",
+    "prerequisites": []
+   },
+   "done": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from in_progress to done",
+    "prerequisites": []
+   },
+   "blocked": {
+    "allowed": true,
+    "reason": null,
+    "description": "Block due to impediment",
+    "prerequisites": []
+   },
+   "todo": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from in_progress to todo",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "review",
+   "testing",
+   "done",
+   "blocked",
+   "todo"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Transition failed: Cannot transition from in_progress to todo"
+   ],
+   "in_progress": [
+    false,
+    "Cannot transition from 'in_progress' to 'in_progress'"
+   ],
+   "review": [
+    true,
+    "Status changed from 'in_progress' to 'review'"
+   ],
+   "testing": [
+    true,
+    "Status changed from 'in_progress' to 'testing'"
+   ],
+   "done": [
+    true,
+    "Status changed from 'in_progress' to 'done'"
+   ],
+   "blocked": [
+    true,
+    "Status changed from 'in_progress' to 'blocked'"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'in_progress' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "review",
+  "can": {
+   "todo": [
+    false,
+    "Cannot transition from 'review' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    null
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'review' to 'review'"
+   ],
+   "testing": [
+    true,
+    null
+   ],
+   "done": [
+    true,
+    null
+   ],
+   "blocked": [
+    true,
+    null
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'review' to 'cancelled'"
+   ]
+  },
+  "suggest": {
+   "suggested_status": "testing",
+   "current_status": "review",
+   "reason": "Natural progression from 'review' to 'testing'",
+   "description": "Move to testing phase"
+  },
+  "allowed": {
+   "in_progress": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from review to in_progress",
+    "prerequisites": []
+   },
+   "testing": {
+    "allowed": true,
+    "reason": null,
+    "description": "Move to testing phase",
+    "prerequisites": [
+     "Review passed",
+     "Code approved"
+    ]
+   },
+   "done": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from review to done",
+    "prerequisites": []
+   },
+   "blocked": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from review to blocked",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "in_progress",
+   "testing",
+   "done",
+   "blocked"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Cannot transition from 'review' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    "Status changed from 'review' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'review' to 'review'"
+   ],
+   "testing": [
+    true,
+    "Status changed from 'review' to 'testing'"
+   ],
+   "done": [
+    true,
+    "Status changed from 'review' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Transition failed: Cannot transition from review to blocked"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'review' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "testing",
+  "can": {
+   "todo": [
+    false,
+    "Cannot transition from 'testing' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    null
+   ],
+   "review": [
+    false,
+    "Task must be in progress before moving to review"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'testing' to 'testing'"
+   ],
+   "done": [
+    true,
+    null
+   ],
+   "blocked": [
+    true,
+    null
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'testing' to 'cancelled'"
+   ]
+  },
+  "suggest": {
+   "suggested_status": "done",
+   "current_status": "testing",
+   "reason": "Natural progression from 'testing' to 'done'",
+   "description": "Mark as completed"
+  },
+  "allowed": {
+   "review": {
+    "allowed": false,
+    "reason": "Task must be in progress before moving to review",
+    "description": "Change status from testing to review",
+    "prerequisites": []
+   },
+   "done": {
+    "allowed": true,
+    "reason": null,
+    "description": "Mark as completed",
+    "prerequisites": [
+     "Tests passed",
+     "All subtasks completed"
+    ]
+   },
+   "in_progress": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from testing to in_progress",
+    "prerequisites": []
+   },
+   "blocked": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from testing to blocked",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "review",
+   "done",
+   "in_progress",
+   "blocked"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Cannot transition from 'testing' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    "Status changed from 'testing' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Task must be in progress before moving to review"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'testing' to 'testing'"
+   ],
+   "done": [
+    true,
+    "Status changed from 'testing' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Transition failed: Cannot transition from testing to blocked"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'testing' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "done",
+  "can": {
+   "todo": [
+    false,
+    "Cannot transition from 'done' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    null
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'done' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'done' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'done' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'done' to 'blocked'"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'done' to 'cancelled'"
+   ]
+  },
+  "suggest": null,
+  "allowed": {
+   "in_progress": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from done to in_progress",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "in_progress"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Cannot transition from 'done' to 'todo'"
+   ],
+   "in_progress": [
+    true,
+    "Status changed from 'done' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'done' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'done' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'done' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'done' to 'blocked'"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'done' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "blocked",
+  "can": {
+   "todo": [
+    true,
+    null
+   ],
+   "in_progress": [
+    true,
+    null
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'blocked' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'blocked' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'blocked' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'blocked' to 'blocked'"
+   ],
+   "cancelled": [
+    true,
+    null
+   ]
+  },
+  "suggest": {
+   "suggested_status": "todo",
+   "current_status": "blocked",
+   "reason": "Natural progression from 'blocked' to 'todo'",
+   "description": "Unblock and return to todo"
+  },
+  "allowed": {
+   "todo": {
+    "allowed": true,
+    "reason": null,
+    "description": "Unblock and return to todo",
+    "prerequisites": [
+     "Blocking issues resolved"
+    ]
+   },
+   "in_progress": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from blocked to in_progress",
+    "prerequisites": []
+   },
+   "cancelled": {
+    "allowed": true,
+    "reason": null,
+    "description": "Change status from blocked to cancelled",
+    "prerequisites": []
+   }
+  },
+  "order": [
+   "todo",
+   "in_progress",
+   "cancelled"
+  ],
+  "transition": {
+   "todo": [
+    false,
+    "Transition failed: Cannot transition from blocked to todo"
+   ],
+   "in_progress": [
+    true,
+    "Status changed from 'blocked' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'blocked' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'blocked' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'blocked' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'blocked' to 'blocked'"
+   ],
+   "cancelled": [
+    true,
+    "Status changed from 'blocked' to 'cancelled'"
+   ]
+  }
+ },
+ {
+  "from": "cancelled",
+  "can": {
+   "todo": [
+    false,
+    "Cannot transition from 'cancelled' to 'todo'"
+   ],
+   "in_progress": [
+    false,
+    "Cannot transition from 'cancelled' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'cancelled' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'cancelled' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'cancelled' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'cancelled' to 'blocked'"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'cancelled' to 'cancelled'"
+   ]
+  },
+  "suggest": null,
+  "allowed": {},
+  "order": [],
+  "transition": {
+   "todo": [
+    false,
+    "Cannot transition from 'cancelled' to 'todo'"
+   ],
+   "in_progress": [
+    false,
+    "Cannot transition from 'cancelled' to 'in_progress'"
+   ],
+   "review": [
+    false,
+    "Cannot transition from 'cancelled' to 'review'"
+   ],
+   "testing": [
+    false,
+    "Cannot transition from 'cancelled' to 'testing'"
+   ],
+   "done": [
+    false,
+    "Cannot transition from 'cancelled' to 'done'"
+   ],
+   "blocked": [
+    false,
+    "Cannot transition from 'cancelled' to 'blocked'"
+   ],
+   "cancelled": [
+    false,
+    "Cannot transition from 'cancelled' to 'cancelled'"
+   ]
+  }
+ }
+]

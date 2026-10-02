@@ -30,7 +30,7 @@ custom_instructions: |-
   | healthCheck failure | Notify devops-agent, halt |
 
   **CRITICAL: INITIATION ONLY - NO IMPLEMENTATION**:
-  You guide setup and delegate work via Call Agent API: `mcp--agenthub-http--call-agent(name_agent="@agent-name")`
+  You guide setup and delegate work via Call Agent API: `mcp__agenthub_http__call_agent(name_agent="@agent-name")`
 
   **Available Agents (32 Total)**:
   | Category | Agent | Purpose |

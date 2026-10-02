@@ -1,0 +1,1533 @@
+{
+ "conn": [
+  {
+   "in": [
+    10,
+    5,
+    "active"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      5.0
+     ],
+     [
+      "duration_seconds",
+      10.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      []
+     ],
+     [
+      "recommendations",
+      []
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "idle_time_seconds",
+        5.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    true,
+    true,
+    false
+   ],
+   "idle": 5.0,
+   "dur": 10.0
+  },
+  {
+   "in": [
+    7200,
+    3601,
+    "active"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "unhealthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      3601.0
+     ],
+     [
+      "duration_seconds",
+      7200.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      [
+       "Connection has been idle for over 1 hour"
+      ]
+     ],
+     [
+      "recommendations",
+      [
+       "Consider reconnecting to refresh the session"
+      ]
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "unhealthy"
+       ],
+       [
+        "idle_time_seconds",
+        3601.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    false,
+    false,
+    false
+   ],
+   "idle": 3601.0,
+   "dur": 7200.0
+  },
+  {
+   "in": [
+    90000,
+    10,
+    "active"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      10.0
+     ],
+     [
+      "duration_seconds",
+      90000.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      [
+       "Connection has been active for over 24 hours"
+      ]
+     ],
+     [
+      "recommendations",
+      [
+       "Consider periodic reconnection for optimal performance"
+      ]
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "idle_time_seconds",
+        10.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    true,
+    true,
+    false
+   ],
+   "idle": 10.0,
+   "dur": 90000.0
+  },
+  {
+   "in": [
+    90000,
+    4000,
+    "disconnected"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "unhealthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      4000.0
+     ],
+     [
+      "duration_seconds",
+      90000.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      [
+       "Connection has been idle for over 1 hour",
+       "Connection has been active for over 24 hours",
+       "Connection status is 'disconnected' instead of 'active'"
+      ]
+     ],
+     [
+      "recommendations",
+      [
+       "Consider reconnecting to refresh the session",
+       "Consider periodic reconnection for optimal performance",
+       "Check client connection and network stability"
+      ]
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "unhealthy"
+       ],
+       [
+        "idle_time_seconds",
+        4000.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    false,
+    false,
+    false
+   ],
+   "idle": 4000.0,
+   "dur": 90000.0
+  },
+  {
+   "in": [
+    30,
+    1800,
+    "active"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      1800.0
+     ],
+     [
+      "duration_seconds",
+      30.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      []
+     ],
+     [
+      "recommendations",
+      []
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "idle_time_seconds",
+        1800.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    false,
+    false,
+    false
+   ],
+   "idle": 1800.0,
+   "dur": 30.0
+  },
+  {
+   "in": [
+    30,
+    1799,
+    "idle"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "unhealthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      1799.0
+     ],
+     [
+      "duration_seconds",
+      30.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      [
+       "Connection status is 'idle' instead of 'active'"
+      ]
+     ],
+     [
+      "recommendations",
+      [
+       "Check client connection and network stability"
+      ]
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "unhealthy"
+       ],
+       [
+        "idle_time_seconds",
+        1799.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    true,
+    false,
+    false
+   ],
+   "idle": 1799.0,
+   "dur": 30.0
+  },
+  {
+   "in": [
+    0,
+    0,
+    "active"
+   ],
+   "health": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "connection_id",
+      "c1"
+     ],
+     [
+      "idle_time_seconds",
+      0.0
+     ],
+     [
+      "duration_seconds",
+      0.0
+     ],
+     [
+      "client_info",
+      {
+       "__od__": [
+        [
+         "agent",
+         "x"
+        ]
+       ]
+      }
+     ],
+     [
+      "issues",
+      []
+     ],
+     [
+      "recommendations",
+      []
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ConnectionHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ConnectionHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "connection_id",
+        "c1"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "idle_time_seconds",
+        0.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "active": [
+    true,
+    true,
+    false
+   ],
+   "idle": 0.0,
+   "dur": 0.0
+  }
+ ],
+ "disc": [
+  "disconnected",
+  "2026-03-01T10:00:00.500000",
+  0
+ ],
+ "ev": [
+  2,
+  0
+ ],
+ "srv": [
+  {
+   "auth": {
+    "__od__": [
+     [
+      "enabled",
+      true
+     ],
+     [
+      "mvp_mode",
+      true
+     ]
+    ]
+   },
+   "off": 3600.25,
+   "status": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "server_name",
+      "srv"
+     ],
+     [
+      "version",
+      "1.2.3"
+     ],
+     [
+      "uptime_seconds",
+      3600.25
+     ],
+     [
+      "restart_count",
+      2
+     ],
+     [
+      "authentication",
+      {
+       "__od__": [
+        [
+         "enabled",
+         true
+        ],
+        [
+         "mvp_mode",
+         true
+        ]
+       ]
+      }
+     ],
+     [
+      "task_management",
+      {
+       "__od__": [
+        [
+         "tm",
+         true
+        ]
+       ]
+      }
+     ],
+     [
+      "environment",
+      {
+       "__od__": [
+        [
+         "env",
+         "dev"
+        ]
+       ]
+      }
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ServerHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ServerHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "server_name",
+        "srv"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "uptime_seconds",
+        3600.25
+       ]
+      ]
+     }
+    ]
+   ],
+   "caps": {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "Task Management",
+        "Project Management",
+        "Agent Orchestration",
+        "Cursor Rules Integration",
+        "Multi-Agent Coordination",
+        "Token-based Authentication",
+        "Rate Limiting",
+        "Security Logging",
+        "Connection Management",
+        "Real-time Status Updates"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "connection_management",
+          [
+           "health_check",
+           "server_capabilities",
+           "connection_health",
+           "status",
+           "register_updates"
+          ]
+         ],
+         [
+          "authentication",
+          [
+           "validate_token",
+           "get_rate_limit_status",
+           "revoke_token",
+           "get_auth_status",
+           "generate_token"
+          ]
+         ],
+         [
+          "project_management",
+          [
+           "create",
+           "get",
+           "list",
+           "create_tree",
+           "get_tree_status",
+           "orchestrate",
+           "get_dashboard"
+          ]
+         ],
+         [
+          "task_management",
+          [
+           "create",
+           "update",
+           "complete",
+           "list",
+           "search",
+           "get_next",
+           "add_dependency",
+           "remove_dependency",
+           "list_dependencies"
+          ]
+         ],
+         [
+          "subtask_management",
+          [
+           "add",
+           "update",
+           "remove",
+           "list"
+          ]
+         ],
+         [
+          "agent_management",
+          [
+           "register",
+           "assign",
+           "update",
+           "list",
+           "get",
+           "unassign",
+           "unregister"
+          ]
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       true
+      ],
+      [
+       "mvp_mode",
+       true
+      ],
+      [
+       "version",
+       "1.2.3"
+      ],
+      [
+       "total_actions",
+       37
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "auth": {
+    "__od__": []
+   },
+   "off": 0,
+   "status": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "unhealthy"
+     ],
+     [
+      "server_name",
+      "srv"
+     ],
+     [
+      "version",
+      "1.2.3"
+     ],
+     [
+      "uptime_seconds",
+      0.0
+     ],
+     [
+      "restart_count",
+      0
+     ],
+     [
+      "authentication",
+      {
+       "__od__": []
+      }
+     ],
+     [
+      "task_management",
+      {
+       "__od__": [
+        [
+         "tm",
+         true
+        ]
+       ]
+      }
+     ],
+     [
+      "environment",
+      {
+       "__od__": [
+        [
+         "env",
+         "dev"
+        ]
+       ]
+      }
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ServerHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ServerHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "server_name",
+        "srv"
+       ],
+       [
+        "status",
+        "unhealthy"
+       ],
+       [
+        "uptime_seconds",
+        0.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "caps": {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "Task Management",
+        "Project Management",
+        "Agent Orchestration",
+        "Cursor Rules Integration",
+        "Multi-Agent Coordination",
+        "Token-based Authentication",
+        "Rate Limiting",
+        "Security Logging",
+        "Connection Management",
+        "Real-time Status Updates"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "connection_management",
+          [
+           "health_check",
+           "server_capabilities",
+           "connection_health",
+           "status",
+           "register_updates"
+          ]
+         ],
+         [
+          "authentication",
+          [
+           "validate_token",
+           "get_rate_limit_status",
+           "revoke_token",
+           "get_auth_status",
+           "generate_token"
+          ]
+         ],
+         [
+          "project_management",
+          [
+           "create",
+           "get",
+           "list",
+           "create_tree",
+           "get_tree_status",
+           "orchestrate",
+           "get_dashboard"
+          ]
+         ],
+         [
+          "task_management",
+          [
+           "create",
+           "update",
+           "complete",
+           "list",
+           "search",
+           "get_next",
+           "add_dependency",
+           "remove_dependency",
+           "list_dependencies"
+          ]
+         ],
+         [
+          "subtask_management",
+          [
+           "add",
+           "update",
+           "remove",
+           "list"
+          ]
+         ],
+         [
+          "agent_management",
+          [
+           "register",
+           "assign",
+           "update",
+           "list",
+           "get",
+           "unassign",
+           "unregister"
+          ]
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       false
+      ],
+      [
+       "mvp_mode",
+       false
+      ],
+      [
+       "version",
+       "1.2.3"
+      ],
+      [
+       "total_actions",
+       37
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "auth": {
+    "__od__": [
+     [
+      "enabled",
+      "false"
+     ]
+    ]
+   },
+   "off": 5,
+   "status": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "server_name",
+      "srv"
+     ],
+     [
+      "version",
+      "1.2.3"
+     ],
+     [
+      "uptime_seconds",
+      5.0
+     ],
+     [
+      "restart_count",
+      0
+     ],
+     [
+      "authentication",
+      {
+       "__od__": [
+        [
+         "enabled",
+         "false"
+        ]
+       ]
+      }
+     ],
+     [
+      "task_management",
+      {
+       "__od__": [
+        [
+         "tm",
+         true
+        ]
+       ]
+      }
+     ],
+     [
+      "environment",
+      {
+       "__od__": [
+        [
+         "env",
+         "dev"
+        ]
+       ]
+      }
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ServerHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ServerHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "server_name",
+        "srv"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "uptime_seconds",
+        5.0
+       ]
+      ]
+     }
+    ]
+   ],
+   "caps": {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "Task Management",
+        "Project Management",
+        "Agent Orchestration",
+        "Cursor Rules Integration",
+        "Multi-Agent Coordination",
+        "Token-based Authentication",
+        "Rate Limiting",
+        "Security Logging",
+        "Connection Management",
+        "Real-time Status Updates"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "connection_management",
+          [
+           "health_check",
+           "server_capabilities",
+           "connection_health",
+           "status",
+           "register_updates"
+          ]
+         ],
+         [
+          "authentication",
+          [
+           "validate_token",
+           "get_rate_limit_status",
+           "revoke_token",
+           "get_auth_status",
+           "generate_token"
+          ]
+         ],
+         [
+          "project_management",
+          [
+           "create",
+           "get",
+           "list",
+           "create_tree",
+           "get_tree_status",
+           "orchestrate",
+           "get_dashboard"
+          ]
+         ],
+         [
+          "task_management",
+          [
+           "create",
+           "update",
+           "complete",
+           "list",
+           "search",
+           "get_next",
+           "add_dependency",
+           "remove_dependency",
+           "list_dependencies"
+          ]
+         ],
+         [
+          "subtask_management",
+          [
+           "add",
+           "update",
+           "remove",
+           "list"
+          ]
+         ],
+         [
+          "agent_management",
+          [
+           "register",
+           "assign",
+           "update",
+           "list",
+           "get",
+           "unassign",
+           "unregister"
+          ]
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       "false"
+      ],
+      [
+       "mvp_mode",
+       false
+      ],
+      [
+       "version",
+       "1.2.3"
+      ],
+      [
+       "total_actions",
+       37
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "auth": {
+    "__od__": [
+     [
+      "enabled",
+      null
+     ],
+     [
+      "mvp_mode",
+      0
+     ]
+    ]
+   },
+   "off": 1.5,
+   "status": {
+    "__od__": [
+     [
+      "success",
+      true
+     ],
+     [
+      "status",
+      "healthy"
+     ],
+     [
+      "server_name",
+      "srv"
+     ],
+     [
+      "version",
+      "1.2.3"
+     ],
+     [
+      "uptime_seconds",
+      1.5
+     ],
+     [
+      "restart_count",
+      0
+     ],
+     [
+      "authentication",
+      {
+       "__od__": [
+        [
+         "enabled",
+         null
+        ],
+        [
+         "mvp_mode",
+         0
+        ]
+       ]
+      }
+     ],
+     [
+      "task_management",
+      {
+       "__od__": [
+        [
+         "tm",
+         true
+        ]
+       ]
+      }
+     ],
+     [
+      "environment",
+      {
+       "__od__": [
+        [
+         "env",
+         "dev"
+        ]
+       ]
+      }
+     ]
+    ]
+   },
+   "events": [
+    [
+     "ServerHealthChecked",
+     {
+      "__od__": [
+       [
+        "event_type",
+        "ServerHealthChecked"
+       ],
+       [
+        "timestamp",
+        {
+         "__dt__": "2026-03-01T10:00:00.500000"
+        }
+       ],
+       [
+        "server_name",
+        "srv"
+       ],
+       [
+        "status",
+        "healthy"
+       ],
+       [
+        "uptime_seconds",
+        1.5
+       ]
+      ]
+     }
+    ]
+   ],
+   "caps": {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "Task Management",
+        "Project Management",
+        "Agent Orchestration",
+        "Cursor Rules Integration",
+        "Multi-Agent Coordination",
+        "Token-based Authentication",
+        "Rate Limiting",
+        "Security Logging",
+        "Connection Management",
+        "Real-time Status Updates"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "connection_management",
+          [
+           "health_check",
+           "server_capabilities",
+           "connection_health",
+           "status",
+           "register_updates"
+          ]
+         ],
+         [
+          "authentication",
+          [
+           "validate_token",
+           "get_rate_limit_status",
+           "revoke_token",
+           "get_auth_status",
+           "generate_token"
+          ]
+         ],
+         [
+          "project_management",
+          [
+           "create",
+           "get",
+           "list",
+           "create_tree",
+           "get_tree_status",
+           "orchestrate",
+           "get_dashboard"
+          ]
+         ],
+         [
+          "task_management",
+          [
+           "create",
+           "update",
+           "complete",
+           "list",
+           "search",
+           "get_next",
+           "add_dependency",
+           "remove_dependency",
+           "list_dependencies"
+          ]
+         ],
+         [
+          "subtask_management",
+          [
+           "add",
+           "update",
+           "remove",
+           "list"
+          ]
+         ],
+         [
+          "agent_management",
+          [
+           "register",
+           "assign",
+           "update",
+           "list",
+           "get",
+           "unassign",
+           "unregister"
+          ]
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       null
+      ],
+      [
+       "mvp_mode",
+       0
+      ],
+      [
+       "version",
+       "1.2.3"
+      ],
+      [
+       "total_actions",
+       37
+      ]
+     ]
+    }
+   }
+  }
+ ],
+ "restart": [
+  1,
+  "2026-03-01T10:00:00.500000"
+ ]
+}

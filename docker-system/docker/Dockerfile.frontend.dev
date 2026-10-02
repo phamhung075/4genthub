@@ -56,10 +56,11 @@ ENV VITE_DISABLE_AUTH=${VITE_DISABLE_AUTH} \
 
 # Copy package files from frontend directory (project uses pnpm)
 COPY agenthub-frontend/package.json ./
+COPY agenthub-frontend/pnpm-workspace.yaml ./
 
 # Install dependencies including dev dependencies for development
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install pnpm globally (version pinned to avoid build-tool drift between CI runs)
+RUN npm install -g pnpm@10.9.0
 
 # Copy pnpm-lock.yaml
 COPY agenthub-frontend/pnpm-lock.yaml ./

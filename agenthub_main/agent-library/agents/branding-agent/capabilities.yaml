@@ -18,6 +18,6 @@ mcp_tools:
   - mcp__browsermcp__browser_navigate
   - mcp__browsermcp__browser_snapshot
   - mcp__browsermcp__browser_screenshot
-  - mcp__agenthub_http__manage_task
-  - mcp__agenthub_http__manage_context
+  - mcp__agenthub_http__manage_subtask
+  - mcp__agenthub_http__call_agent
   - mcp__sequential-thinking__sequentialthinking

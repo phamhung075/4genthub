@@ -38,7 +38,6 @@ mcp_tools:
   - mcp__browsermcp__browser_wait
   - mcp__browsermcp__browser_hover
   - mcp__browsermcp__browser_press_key
-  - mcp__agenthub_http__manage_task
   - mcp__agenthub_http__manage_subtask
-  - mcp--agenthub-http--manage-agent
+  - mcp__agenthub_http__call_agent
   - mcp__sequential-thinking__sequentialthinking

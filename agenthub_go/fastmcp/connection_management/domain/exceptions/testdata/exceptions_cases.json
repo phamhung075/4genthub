@@ -1,0 +1,52 @@
+[
+ [
+  "ServerNotFoundError",
+  [
+   "srv"
+  ],
+  "Server not found: srv"
+ ],
+ [
+  "ConnectionNotFoundError",
+  [
+   "c1"
+  ],
+  "Connection not found: c1"
+ ],
+ [
+  "InvalidServerStatusError",
+  [
+   "bad"
+  ],
+  "Invalid server status: bad"
+ ],
+ [
+  "InvalidConnectionStatusError",
+  [
+   "bad"
+  ],
+  "Invalid connection status: bad"
+ ],
+ [
+  "ServerHealthCheckFailedError",
+  [
+   "boom"
+  ],
+  "Server health check failed: boom"
+ ],
+ [
+  "ConnectionHealthCheckFailedError",
+  [
+   "c1",
+   "boom"
+  ],
+  "Connection health check failed for c1: boom"
+ ],
+ [
+  "StatusBroadcastError",
+  [
+   "why"
+  ],
+  "Status broadcast failed: why"
+ ]
+]

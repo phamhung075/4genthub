@@ -1,0 +1,378 @@
+{
+ "retry": [
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: Connection refused]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: read TIMEOUT]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: boom]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": false
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: server closed the connection unexpectedly]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: Network is unreachable]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": false
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: no route to host]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: CONNECTION DROPPED]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": true
+  },
+  {
+   "kind": "op",
+   "msg": "(builtins.NoneType) None\n[SQL: x]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+   "want": false
+  },
+  {
+   "kind": "pool",
+   "msg": "Connection refused",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "read TIMEOUT",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "boom",
+   "want": false
+  },
+  {
+   "kind": "pool",
+   "msg": "server closed the connection unexpectedly",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "Network is unreachable",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "",
+   "want": false
+  },
+  {
+   "kind": "pool",
+   "msg": "no route to host",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "CONNECTION DROPPED",
+   "want": true
+  },
+  {
+   "kind": "pool",
+   "msg": "x",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "Connection refused",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "read TIMEOUT",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "boom",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "server closed the connection unexpectedly",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "Network is unreachable",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "no route to host",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "CONNECTION DROPPED",
+   "want": false
+  },
+  {
+   "kind": "val",
+   "msg": "x",
+   "want": false
+  },
+  {
+   "kind": "psy",
+   "msg": "Connection refused",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "read TIMEOUT",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "boom",
+   "want": false
+  },
+  {
+   "kind": "psy",
+   "msg": "server closed the connection unexpectedly",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "Network is unreachable",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "",
+   "want": false
+  },
+  {
+   "kind": "psy",
+   "msg": "no route to host",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "CONNECTION DROPPED",
+   "want": true
+  },
+  {
+   "kind": "psy",
+   "msg": "x",
+   "want": false
+  }
+ ],
+ "delay": [
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 0,
+   "want": 1.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 1,
+   "want": 2.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 2,
+   "want": 4.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 3,
+   "want": 8.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 4,
+   "want": 16.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 5,
+   "want": 30.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 6,
+   "want": 30.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 30.0,
+   "base": 2.0,
+   "attempt": 7,
+   "want": 30.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 0,
+   "want": 2.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 1,
+   "want": 4.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 2,
+   "want": 8.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 3,
+   "want": 16.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 4,
+   "want": 32.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 5,
+   "want": 60.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 6,
+   "want": 60.0
+  },
+  {
+   "max": 5,
+   "init": 2.0,
+   "maxd": 60.0,
+   "base": 2.0,
+   "attempt": 7,
+   "want": 60.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 0,
+   "want": 1.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 1,
+   "want": 2.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 2,
+   "want": 4.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 3,
+   "want": 5.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 4,
+   "want": 5.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 5,
+   "want": 5.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 6,
+   "want": 5.0
+  },
+  {
+   "max": 3,
+   "init": 1.0,
+   "maxd": 5.0,
+   "base": 2.0,
+   "attempt": 7,
+   "want": 5.0
+  }
+ ]
+}

@@ -1,0 +1,289 @@
+package session_stream
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"net/url"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"agenthub/fastmcp/task_management/domain/entities"
+	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
+	"agenthub/fastmcp/task_management/infrastructure/database"
+)
+
+func TestSessionIDFor(t *testing.T) {
+	cases := []struct {
+		user, connector, key, want string
+	}{
+		{"user1", "conn1", "key1", "4cafc727-23b6-5e7f-b06b-7728464564bc"},
+		{"user-550e8400-e29b-41d4-a716-446655440002", "connector-1", "tmux-0", "22c53896-1078-56c0-a150-14a919520e5c"},
+		{"u", "c", "k", "d803d566-e889-5b89-ad33-080508302436"},
+		{"alice", "machineA", "%0", "4163ba3f-5bc0-54d4-9aa3-8d909b8ee7d2"},
+		{"", "", "", "14f7afad-71de-5e96-81a7-e42b52ef5a74"},
+	}
+	for _, c := range cases {
+		if got := SessionIDFor(c.user, c.connector, c.key); got != c.want {
+			t.Errorf("SessionIDFor(%q,%q,%q) = %s, want %s", c.user, c.connector, c.key, got, c.want)
+		}
+	}
+}
+
+func TestClip(t *testing.T) {
+	if got := clip(nil); got != nil {
+		t.Errorf("clip(nil) = %v, want nil", *got)
+	}
+	empty := ""
+	if got := clip(&empty); got != nil {
+		t.Errorf("clip(\"\") = %v, want nil", *got)
+	}
+	short := "hello"
+	if got := clip(&short); got == nil || *got != "hello" {
+		t.Errorf("clip(short) = %v", got)
+	}
+	long := strings.Repeat("é", 300)
+	got := clip(&long)
+	if got == nil || len([]rune(*got)) != 255 {
+		t.Errorf("clip(long) rune length = %d, want 255", len([]rune(*got)))
+	}
+}
+
+func TestAppendEventsBatchLimit(t *testing.T) {
+	_, err := AppendEvents(context.Background(), nil, "u", "s", make([]any, MaxEventsPerBatch+1))
+	var ve *tmvo.ValueError
+	if !errors.As(err, &ve) || ve.Msg != "at most 200 events per batch" {
+		t.Fatalf("err = %v, want ValueError 'at most 200 events per batch'", err)
+	}
+}
+
+func TestMarkOfflineWithoutSessions(t *testing.T) {
+	DefaultSessions = nil
+	err := MarkOffline(context.Background(), nil, "u", "c")
+	if err == nil || err.Error() != "database configuration not available" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func newTestSessions(t *testing.T) *database.SessionManager {
+	t.Helper()
+	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
+	if admin == "" {
+		t.Skip("AGENTHUB_TEST_PG_URL not set")
+	}
+	adm, err := sql.Open("pgx", admin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := fmt.Sprintf("agenthub_stream_%d", time.Now().UnixNano())
+	if _, err := adm.Exec("CREATE DATABASE " + name); err != nil {
+		t.Fatal(err)
+	}
+	adm.Close()
+	u, _ := url.Parse(admin)
+	u.Path = "/" + name
+	env := map[string]string{"DATABASE_TYPE": "postgresql", "DATABASE_HOST": "x", "DATABASE_PASSWORD": "x"}
+	database.ResetInstance()
+	deps := database.Deps{
+		Getenv: func(k string) (string, bool) { v, ok := env[k]; return v, ok },
+		Sleep:  func(time.Duration) {},
+		Open: func(string, database.EngineOptions) (*sql.DB, error) {
+			return database.PgxOpener(u.String(), database.EngineOptions{PoolSize: 4, MaxOverflow: 4, PoolRecycle: 60})
+		},
+	}
+	cfg, err := database.GetInstance(context.Background(), deps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cfg.CreateTables(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	database.SetupTimestampEvents()
+	t.Cleanup(func() {
+		database.ResetInstance()
+		adm, err := sql.Open("pgx", admin)
+		if err == nil {
+			_, _ = adm.Exec("DROP DATABASE IF EXISTS " + name + " WITH (FORCE)")
+			adm.Close()
+		}
+	})
+	return database.NewSessionManager(cfg)
+}
+
+func event(typ string, payload any) *entities.OrderedMap[any] {
+	m := entities.NewOrderedMap[any]()
+	m.Set("type", typ)
+	m.Set("payload", payload)
+	return m
+}
+
+func TestRepositoryPostgres(t *testing.T) {
+	sessions := newTestSessions(t)
+	ctx := context.Background()
+	user := "user1"
+	connector := "conn1"
+	key := "key1"
+	sid := SessionIDFor(user, connector, key)
+
+	project := "proj"
+	row, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen"}
+	if got := row.Keys(); strings.Join(got, ",") != strings.Join(wantKeys, ",") {
+		t.Fatalf("row keys = %v, want %v", got, wantKeys)
+	}
+	if v, _ := row.Get("id"); v != sid {
+		t.Errorf("id = %v, want %s", v, sid)
+	}
+	if v, _ := row.Get("status"); v != "active" {
+		t.Errorf("status = %v", v)
+	}
+	if v, _ := row.Get("last_seq"); v != int64(0) {
+		t.Errorf("last_seq = %v", v)
+	}
+	if v, _ := row.Get("created_at"); v == nil {
+		t.Errorf("created_at is nil")
+	}
+
+	// A different user has a different deterministic id and cannot see user1's row.
+	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if otherID, _ := rowOther.Get("id"); otherID == sid {
+		t.Fatalf("user2 got user1's id")
+	}
+	if g, _ := GetSessionForUser(ctx, sessions, "user2", sid); g != nil {
+		t.Fatalf("user2 must not see user1 session: %v", g)
+	}
+
+	// Update keeps project when the new one is empty, updates name.
+	empty := ""
+	row2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v, _ := row2.Get("name"); v != "renamed" {
+		t.Errorf("name = %v", v)
+	}
+	if v, _ := row2.Get("project"); v != "proj" {
+		t.Errorf("project = %v, want proj (kept)", v)
+	}
+
+	// Append assigns seq server-side.
+	p1 := entities.NewOrderedMap[any]()
+	p1.Set("text", "one")
+	p2 := entities.NewOrderedMap[any]()
+	p2.Set("text", "two")
+	stored, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", p1), event("output", p2)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stored) != 2 {
+		t.Fatalf("stored = %d", len(stored))
+	}
+	if v, _ := stored[0].Get("seq"); v != int64(1) {
+		t.Errorf("seq[0] = %v", v)
+	}
+	if v, _ := stored[1].Get("seq"); v != int64(2) {
+		t.Errorf("seq[1] = %v", v)
+	}
+	if v, _ := stored[1].Get("type"); v != "output" {
+		t.Errorf("type[1] = %v", v)
+	}
+	if got := stored[0].Keys(); strings.Join(got, ",") != "seq,type,payload" {
+		t.Errorf("stored keys = %v", got)
+	}
+
+	// Non-object events are rejected.
+	_, err = AppendEvents(ctx, sessions, user, sid, []any{"nope"})
+	var ve *tmvo.ValueError
+	if !errors.As(err, &ve) || ve.Msg != "each event must be an object" {
+		t.Fatalf("non-object event err = %v", err)
+	}
+
+	// Unknown session is a PermissionError.
+	var pe *PermissionError
+	_, err = AppendEvents(ctx, sessions, user, "00000000-0000-0000-0000-000000000000", []any{event("message", p1)})
+	if !errors.As(err, &pe) || pe.Msg != "unknown session" {
+		t.Fatalf("unknown session err = %v", err)
+	}
+
+	// Oversized payload becomes {"truncated": true}.
+	big := entities.NewOrderedMap[any]()
+	big.Set("x", strings.Repeat("a", MaxPayloadChars))
+	storedBig, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", big)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	payloadVal, _ := storedBig[0].Get("payload")
+	payload := payloadVal.(*entities.OrderedMap[any])
+	if pv, ok := payload.Get("truncated"); !ok || pv != true {
+		t.Fatalf("oversized payload = %v, want truncated marker", payloadVal)
+	}
+
+	// Listing returns the events in seq order with keys seq,type,payload,ts.
+	events, err := ListEvents(ctx, sessions, user, sid, 0, 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 3 {
+		t.Fatalf("events = %d, want 3", len(events))
+	}
+	if got := events[0].Keys(); strings.Join(got, ",") != "seq,type,payload,ts" {
+		t.Errorf("event keys = %v", got)
+	}
+	if v, _ := events[2].Get("seq"); v != int64(3) {
+		t.Errorf("last seq = %v", v)
+	}
+	// after_seq filters.
+	after, err := ListEvents(ctx, sessions, user, sid, 1, 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != 2 {
+		t.Fatalf("after_seq events = %d, want 2", len(after))
+	}
+
+	got, err := GetSessionForUser(ctx, sessions, user, sid)
+	if err != nil || got == nil {
+		t.Fatalf("get session = %v, %v", got, err)
+	}
+	if _, err := GetSessionForUser(ctx, sessions, "user2", sid); err != nil {
+		t.Fatalf("other user get err = %v", err)
+	}
+	if g, _ := GetSessionForUser(ctx, sessions, "user2", sid); g != nil {
+		t.Fatalf("user2 must not see user1 session: %v", g)
+	}
+
+	if err := MarkOffline(ctx, sessions, user, connector); err != nil {
+		t.Fatal(err)
+	}
+	off, _ := GetSessionForUser(ctx, sessions, user, sid)
+	if v, _ := off.Get("status"); v != "offline" {
+		t.Errorf("status = %v, want offline", v)
+	}
+
+	list, err := ListSessions(ctx, sessions, user)
+	if err != nil || len(list) != 1 {
+		t.Fatalf("list sessions = %v, %v", list, err)
+	}
+
+	// Defensive branch: a stored row with the same determinant id but another user_id
+	// (only reachable with corrupted/foreign rows).
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, "UPDATE agent_sessions SET user_id = $1 WHERE id = $2", "intruder", sid)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil)
+	if !errors.As(err, &pe) || pe.Msg != "session belongs to another user" {
+		t.Fatalf("foreign row upsert err = %v", err)
+	}
+}
