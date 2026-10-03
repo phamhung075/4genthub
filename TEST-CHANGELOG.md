@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck roster in multi-pod rigs
+
+- Added: `TestParseWhoamiMultiPodRig` (pods `dev`/`agy` in rig `4genthub-go` resolve), `TestParseWhoamiDuplicateMemberIsAnError`. `TestParseWhoamiRoster` no longer carries a peer of another rig (a roster is the rig's own). cmd/seatcheck ok.
+
 ## 2026-10-03 — machine token review follow-ups
 
 - Added: `TestMachineTokenCreateOtherIntegrityErrorsAreNotConflicts` (23503, other 23505, 23502), `TestMachineTokenRejectionsHaveIdenticalBodies` (revoked, unknown and malformed tokens get the same 401 body); the scope test now also sends a machine token to the rooms and seat-types routes (401/403). The conflict test's fake error names `uq_machine_tokens_active`. seat_management and server packages ok.

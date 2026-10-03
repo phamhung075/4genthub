@@ -124,6 +124,8 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
 		return 3
 	}
+	// The audit line above records the policy decision only; a recipient the roster does not
+	// list fails here, after an allowed decision.
 	// rig send resolves only full session names (<pod>-<member>@<rig>), which the roster of
 	// rig whoami carries.
 	session, ok := who.Peers[*to]
@@ -168,11 +170,19 @@ func parseWhoami(data []byte) (identity, error) {
 	if rig == "" || member == "" {
 		return identity{}, errors.New("rig whoami returned no rig or member")
 	}
+	// A logical id is <pod>.<member>; the member is the part after the first dot (the pod is not
+	// always the rig name). A member name is unique in a rig, so a repeat is an error, not a
+	// silent last-one-wins.
 	peers := make(map[string]string, len(who.Peers))
 	for _, p := range who.Peers {
-		if name, ok := strings.CutPrefix(p.LogicalID, rig+"."); ok && p.SessionName != "" {
-			peers[name] = p.SessionName
+		_, name, ok := strings.Cut(p.LogicalID, ".")
+		if !ok || name == "" || p.SessionName == "" {
+			continue
 		}
+		if previous, dup := peers[name]; dup {
+			return identity{}, fmt.Errorf("member %q is in two pods of rig %q: %s and %s", name, rig, previous, p.SessionName)
+		}
+		peers[name] = p.SessionName
 	}
 	return identity{Rig: rig, Member: member, Peers: peers}, nil
 }

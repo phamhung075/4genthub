@@ -205,7 +205,7 @@ func TestSendAllowedRecipientOutsideRosterFails(t *testing.T) {
 // and carry the full session name rig send needs.
 func TestParseWhoamiRoster(t *testing.T) {
 	who, err := parseWhoami([]byte(`{"identity":{"rigName":"scratchcomm","memberId":"alpha","sessionName":"scratchcomm-alpha@scratchcomm"},` +
-		`"peers":[{"logicalId":"scratchcomm.beta","sessionName":"scratchcomm-beta@scratchcomm"},{"logicalId":"other.x","sessionName":"o-x@o"}]}`))
+		`"peers":[{"logicalId":"scratchcomm.beta","sessionName":"scratchcomm-beta@scratchcomm"}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,6 +214,27 @@ func TestParseWhoamiRoster(t *testing.T) {
 	}
 	if _, err := parseWhoami([]byte(`{"identity":{}}`)); err == nil {
 		t.Fatal("an identity without rig or member must fail")
+	}
+}
+
+// In a multi-pod rig the pod is not the rig name: the member is what follows the first dot.
+func TestParseWhoamiMultiPodRig(t *testing.T) {
+	who, err := parseWhoami([]byte(`{"identity":{"rigName":"4genthub-go","memberId":"coder"},"peers":[` +
+		`{"logicalId":"dev.reviewer","sessionName":"dev-reviewer@4genthub-go"},` +
+		`{"logicalId":"agy.check","sessionName":"agy-check@4genthub-go"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if who.Peers["reviewer"] != "dev-reviewer@4genthub-go" || who.Peers["check"] != "agy-check@4genthub-go" || len(who.Peers) != 2 {
+		t.Fatalf("peers = %v", who.Peers)
+	}
+}
+
+func TestParseWhoamiDuplicateMemberIsAnError(t *testing.T) {
+	_, err := parseWhoami([]byte(`{"identity":{"rigName":"r","memberId":"a"},"peers":[` +
+		`{"logicalId":"agy.check","sessionName":"agy-check@r"},{"logicalId":"dev.check","sessionName":"dev-check@r"}]}`))
+	if err == nil || !strings.Contains(err.Error(), "check") || !strings.Contains(err.Error(), "agy-check@r") || !strings.Contains(err.Error(), "dev-check@r") {
+		t.Fatalf("err = %v, want the member and both sessions named", err)
 	}
 }
 
