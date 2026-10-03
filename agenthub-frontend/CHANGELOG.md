@@ -14,6 +14,12 @@
     `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`, `src/tests/utils/machineSeats.test.ts` (new)
 
 ### Removed
+- **Seat `status` field and badge** - 2026-10-03
+  - The API no longer sends `status` for a seat (seats are hard-deleted, `945648f5`); removed
+    `Seat.status`, the unused `SeatStatus` type, the empty status badge on `/seats` seat cards and the
+    fixture values (commit `5afd1432`).
+  - Files: `src/types/seatTypes.ts`, `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`,
+    `src/tests/pages/SeatDetailPage.test.tsx`
 - **Legacy `TaskRow` and `useTaskAnimation` hook** - 2026-10-03
   - `src/components/TaskRow.tsx` was imported only by its own test (the app uses
     `src/components/TaskRow/TaskRowRefactored.tsx`), and was the only user of `src/hooks/useTaskAnimation.ts`;
