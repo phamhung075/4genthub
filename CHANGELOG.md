@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Parser tests failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `parsers/rule_content_parser_test.go`: `TestParseMarkdownSections` and `TestParseJSON` expected `general` but got `agent`. `classifyRuleType` (a port of Python `_classify_rule_type`, unchanged) classifies on the lowercase absolute path, and the temp file lived under `agenthub_go/.gotmp`, whose name contains "agent". The two tests now use a relative file name (`writeRelTemp`, working directory = temp dir). No production code changed.
+
 **Secret scanners miss URL credentials** (2026-10-03)
 
 - `agenthub_go/fastmcp/seat_management/domain/secretscan/secretscan.go`, `scripts/openrig_scrub.py`: new pattern `://user:password@` (greedy to the last `@`, so a password containing `@` is covered). Before, `postgres://agent:pass@db/app` in a seat `detail` passed the server scan (200) and the bridge scrubber left it unredacted.
@@ -38,6 +42,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Production note: tables created by the earlier DDL still have `seat_types.default_runtime` and no `seat_type_versions.default_runtime`; the new schema is not applied over them by `CREATE TABLE IF NOT EXISTS`.
 
 ### Added
+
+**Per-machine tokens for the bridge** (2026-10-03)
+
+- `POST /api/v2/openrig/machines` `{machine_id}` (user token) registers a machine and returns its token once (`mt_` plus 256 random bits, `Cache-Control: no-store`); 409 while the machine has an active token, 400 for an invalid id. `DELETE /api/v2/openrig/machines/{machine}/token` revokes it (404 when this user has no active token for that machine, so another user's machine looks absent).
+- `POST /api/v2/openrig/seat-status` now takes only a machine token, no longer a user token: 403 without a header, 401 for an unknown, revoked or malformed token, 403 when the report's `machine_id` is not the token's machine. The report is stored under the token's user and machine. A machine token is rejected everywhere else. `GET /api/v2/openrig/machines` still takes the user token. Breaking for existing bridges: register the machine and set `AGENTHUB_TOKEN` to the new token.
+- `agenthub_go/fastmcp/server/httpapp/machine_token_mount.go`, `seat_management/application/services/machine_token_service.go`, `infrastructure/repositories/orm/machine_token_repository.go`; table `machine_tokens` (`token_hash` SHA-256 hex only, `revoked_at`, partial unique index on `(user_id, machine_id) WHERE revoked_at IS NULL`) in the ORM structs, `seat_tables.go` and `seat_management_postgresql.sql`. The token is never stored, logged or returned again.
+- Production note: `machine_tokens` is a new table; apply the DDL there before deploying, or the bridge cannot authenticate.
+- `scripts/openrig_bridge.py`: docstring describes the machine token.
 
 **Delete a seat link and delete a room** (2026-10-03)
 

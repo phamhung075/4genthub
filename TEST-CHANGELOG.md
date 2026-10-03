@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Parser tests failed under a TMPDIR inside the repository
+
+- Fixed: `TestParseMarkdownSections`, `TestParseJSON` depended on the absolute temp path; they now use `writeRelTemp`. Red before (TMPDIR inside `agenthub_go`), green after with TMPDIR inside and outside the repo.
+
 ## 2026-10-03 — URL credentials in secret scanners
 
 - Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
@@ -9,6 +13,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-03 — Frontend seat authoring
 
 - Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
+
+## 2026-10-03 — Per-machine tokens
+
+- Added `server/httpapp/machine_token_mount_test.go` (acceptance: valid token accepted, revoked 401, token of machine A cannot report for B (403), other user's revoke 404, token shown once and only its hash stored, scope limited to seat-status, bad credentials, repository failure is 500), `application/services/machine_token_service_test.go`, `orm/machine_token_repository_test.go` (fake driver; written by a DeepSeek worker, reviewed), `TestMachineTokensIntegration` (Postgres; skipped without `SEAT_TEST_DATABASE_URL`).
+- Changed: `seat_status_mount_test.go` posts with a machine token; the DDL-vs-struct test registers `machine_tokens`.
 
 ## 2026-10-03 — Parallel schema apply
 

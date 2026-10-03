@@ -18,6 +18,30 @@ func writeTemp(t *testing.T, name, content string) string {
 	return path
 }
 
+// writeRelTemp writes the file into a fresh directory, makes it the working directory and returns
+// the bare file name. Rule types are classified from the path, so a test that expects the general
+// type must not see the absolute temp location (TMPDIR may sit under a path containing "agent").
+func writeRelTemp(t *testing.T, name, content string) string {
+	t.Helper()
+	dir := t.TempDir()
+	prev, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(prev); err != nil {
+			t.Fatal(err)
+		}
+	})
+	if err := os.WriteFile(name, []byte(content), 0o666); err != nil {
+		t.Fatal(err)
+	}
+	return name
+}
+
 func TestDetectFormat(t *testing.T) {
 	p := NewRuleContentParser()
 	cases := map[string]entities.RuleFormat{
@@ -35,7 +59,7 @@ func TestDetectFormat(t *testing.T) {
 
 func TestParseMarkdownSections(t *testing.T) {
 	content := "# Intro\n\nSee [docs](https://example.com).\nHello {{name}} and {{name}}.\n\n## Details\nMore {{other}}\n"
-	path := writeTemp(t, "rule.md", content)
+	path := writeRelTemp(t, "rule.md", content)
 	got, err := NewRuleContentParser().ParseRuleFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +124,7 @@ func TestParseTypeClassification(t *testing.T) {
 
 func TestParseJSON(t *testing.T) {
 	content := `{"reference": "top.md", "variables": {"a": 1}, "sections": {"s1": "x"}, "nested": {"reference": "deep.md"}}`
-	path := writeTemp(t, "rule.json", content)
+	path := writeRelTemp(t, "rule.json", content)
 	got, err := NewRuleContentParser().ParseRuleFile(path)
 	if err != nil {
 		t.Fatal(err)
