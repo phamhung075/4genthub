@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat checker PATH limit
+
+- Changed (`test_openrig_seat_sync.py`): the pull-without-checker and install-checker-not-on-PATH tests also assert the daemon-PATH note (`rig daemon stop`, "inherit", "does not expose"). file: 66 passed.
+
 ## 2026-10-03 — per-seat permission policy
 
 - Added: `TestRenderRoomPermissionPolicyPerSeat` (all five policies render exactly once, on the member), `TestRoomRigSpecRendersPermissionPolicyPerSeat` (three seats, three policies, none on the rig, a `?permission_policy=` query changes nothing), `TestSeatAdminServiceSetPermissionPolicy`, `TestSeatAdminSetPermissionPolicy` (200, 400 for invalid/empty/unknown field, 404 for unknown room/seat, rejected call leaves the seat unchanged), `TestSeatAdminCreateSeatPermissionPolicy` (default `standard`, explicit, invalid is 400 and stores nothing), `TestSeatUpdatePermissionPolicyIsUserScoped`, tenant and update checks in the Postgres integration test, and a probe for the new route in the auth table.

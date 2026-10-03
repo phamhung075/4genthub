@@ -1000,6 +1000,7 @@ def test_pull_and_rig_fail_loudly_without_the_link(
     assert code == 2
     assert str(pins / "bin" / "seatcheck") in err
     assert "install-checker" in err and str(checker_home) in err
+    assert "rig daemon stop" in err and "inherit" in err
     assert env.gets == []
     assert not (pins / "room1").exists()
 
@@ -1072,6 +1073,7 @@ def test_install_checker_fails_loudly_when_the_link_dir_is_not_on_path(
     assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
     err = capsys.readouterr().err
     assert f"add {checker_home} to PATH" in err
+    assert "rig daemon stop" in err and "does not expose" in err
     assert (checker_home / "seatcheck").is_symlink()
 
 

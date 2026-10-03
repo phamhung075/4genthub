@@ -50,7 +50,10 @@ Usage:
 ``install-checker`` builds ``agenthub_go/cmd/seatcheck`` to ``<DIR>/bin/seatcheck`` (DIR is the
 seat store) and links ``~/.local/bin/seatcheck`` to it. Seats run the bare name
 ``seatcheck send ...``, so it must resolve on the PATH the seats inherit; ``pull`` and ``rig``
-fail until it resolves to the store's binary.
+fail until it resolves to the store's binary. The check reads the PATH of the shell that runs
+this script. Seats inherit the PATH the OpenRig daemon had when it started, and ``rig`` does not
+expose that PATH, so the check cannot see it: after changing PATH, restart the daemon from a
+shell where ``seatcheck`` resolves (``rig daemon stop``, ``rig daemon start``).
 
 ``switch`` changes the LLM of one seat: 4genthub records the occupant, then
 OpenRig applies it. Fields not given keep their current cloud value. A model
@@ -325,6 +328,13 @@ def resolve_checker(out: Path) -> bool:
     )
 
 
+PATH_LIMIT = (
+    "this checks the PATH of this shell; seats inherit the PATH the OpenRig daemon "
+    "started with, which `rig` does not expose: restart it from a shell where "
+    f"{CHECKER_NAME} resolves (`rig daemon stop`, `rig daemon start`)"
+)
+
+
 def describe_found() -> str:
     found = shutil.which(CHECKER_NAME)
     return f"{found} -> {os.path.realpath(found)}" if found else "not on PATH"
@@ -336,7 +346,7 @@ def require_checker(out: Path) -> None:
             f"{CHECKER_NAME} does not resolve to {checker_binary(out)} on PATH "
             f"(found: {describe_found()}); "
             "run `openrig_seat_sync.py install-checker` and put "
-            f"{checker_link().parent} on PATH",
+            f"{checker_link().parent} on PATH ({PATH_LIMIT})",
             EXIT_USAGE,
         )
 
@@ -366,7 +376,7 @@ def cmd_install_checker(args: argparse.Namespace) -> None:
         raise SyncError(
             f"installed {binary} and linked {checker_link()}, but {CHECKER_NAME} does not "
             f"resolve to it on PATH (found: {describe_found()}); "
-            f"add {checker_link().parent} to PATH",
+            f"add {checker_link().parent} to PATH ({PATH_LIMIT})",
             EXIT_USAGE,
         )
     print(f"checker:{binary}")
