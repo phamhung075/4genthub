@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -132,11 +133,17 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	decision := commpolicy.Decide(policy, *to, intent)
+	// The policy and the roster speak in seat keys; a reply to a message header carries a full
+	// session name (<pod>-<member>@<rig>). Map it to its member before the policy check.
+	recipient, session, known := resolveRecipient(who, policy, *to)
+	if !known {
+		recipient = *to
+	}
+	decision := commpolicy.Decide(policy, recipient, intent)
 	record := commpolicy.AuditRecord{
 		At:         time.Now().UTC(),
 		From:       policy.Seat,
-		To:         *to,
+		To:         recipient,
 		Intent:     intent,
 		Allowed:    decision.Allowed,
 		Reason:     decision.Reason,
@@ -149,13 +156,16 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 	}
 	if !decision.Allowed {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
+		if !known {
+			fmt.Fprintf(stderr, "unknown recipient %q; use a seat key: %s\n", *to, strings.Join(seatKeys(who, policy), ", "))
+		}
 		return exitDenied
 	}
 
 	// rig send resolves only full session names (<pod>-<member>@<rig>), which the roster of
 	// rig whoami carries. The decision line above is on disk; a delivery that cannot start or
 	// fails is recorded after it.
-	code := deliverTo(who, *to, strings.Join(words, " "), stdout, stderr)
+	code := deliverTo(who, recipient, session, strings.Join(words, " "), stdout, stderr)
 	record.Outcome = commpolicy.OutcomeDelivered
 	if code != 0 {
 		record.Outcome = commpolicy.OutcomeDeliveryFailed
@@ -171,20 +181,63 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// deliverTo resolves the recipient in the roster and delivers; any failure is a non-zero code
-// that runSend maps to exitDeliveryFailed, so it never reads as a policy result (2, 3, 4).
-func deliverTo(who identity, to, text string, stdout, stderr io.Writer) int {
-	sessions := who.Peers[to]
-	switch len(sessions) {
-	case 0:
-		fmt.Fprintf(stderr, "seatcheck send: %q is not a seat of rig %q\n", to, who.Rig)
-		return 1
-	case 1:
-	default:
-		fmt.Fprintf(stderr, "seatcheck send: %q is ambiguous in rig %q: %s\n", to, who.Rig, strings.Join(sessions, " and "))
-		return 1
+// resolveRecipient maps --to to a seat key. A name that is a seat key (the calling seat, a
+// roster member or a seat the policy links) is used as is; otherwise a full roster session name
+// maps to its member and is also returned as the session to deliver to. known is false when
+// the name is neither; the send is then denied by the policy (no link) and audited, and the
+// caller is told which seat keys exist.
+func resolveRecipient(who identity, policy commpolicy.Policy, to string) (recipient, session string, known bool) {
+	for _, key := range seatKeys(who, policy) {
+		if key == to {
+			return to, "", true
+		}
 	}
-	if code := deliver(sessions[0], text, stdout, stderr); code != 0 {
+	for member, sessions := range who.Peers {
+		for _, s := range sessions {
+			if s == to {
+				return member, s, true
+			}
+		}
+	}
+	return "", "", false
+}
+
+// seatKeys lists the seat keys a message can be addressed to, sorted: the calling seat, the
+// roster members and the seats the policy links.
+func seatKeys(who identity, policy commpolicy.Policy) []string {
+	set := map[string]bool{policy.Seat: true}
+	for member := range who.Peers {
+		set[member] = true
+	}
+	for _, link := range policy.Links {
+		set[link.From], set[link.To] = true, true
+	}
+	keys := make([]string, 0, len(set))
+	for key := range set {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// deliverTo delivers to session when it is known, otherwise to the roster session of the seat
+// key to; any failure is a non-zero code that runSend maps to exitDeliveryFailed, so it never
+// reads as a policy result (2, 3, 4).
+func deliverTo(who identity, to, session, text string, stdout, stderr io.Writer) int {
+	if session == "" {
+		sessions := who.Peers[to]
+		switch len(sessions) {
+		case 0:
+			fmt.Fprintf(stderr, "seatcheck send: %q is not a seat of rig %q\n", to, who.Rig)
+			return 1
+		case 1:
+			session = sessions[0]
+		default:
+			fmt.Fprintf(stderr, "seatcheck send: %q is ambiguous in rig %q: %s\n", to, who.Rig, strings.Join(sessions, " and "))
+			return 1
+		}
+	}
+	if code := deliver(session, text, stdout, stderr); code != 0 {
 		fmt.Fprintf(stderr, "seatcheck send: delivery failed (rig send exit %d)\n", code)
 		return code
 	}

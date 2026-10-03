@@ -143,7 +143,7 @@ func TestSendDeniedWritesAuditAndSkipsDelivery(t *testing.T) {
 			if len(records) != 1 || records[0].Allowed || records[0].Reason == "" {
 				t.Fatalf("audit = %+v, want one denied record with a reason", records)
 			}
-			if stderr != "denied: "+records[0].Reason+"\n" {
+			if !strings.HasPrefix(stderr, "denied: "+records[0].Reason+"\n") {
 				t.Fatalf("stderr = %q, want denied: %s", stderr, records[0].Reason)
 			}
 			if tc.reason != "" && records[0].Reason != tc.reason {
@@ -458,6 +458,138 @@ func TestSendOutcomeAuditFailureAfterDeliveryKeepsExitZero(t *testing.T) {
 			records := auditRecords(t, seatDir)
 			if len(records) != 1 || records[0].Outcome != "" {
 				t.Fatalf("audit = %+v, want exactly the decision line", records)
+			}
+		})
+	}
+}
+
+// A --to that is a full roster session name (<pod>-<member>@<rig>) is mapped to its member
+// before the policy check: the audit carries the member key and delivery goes to exactly the
+// session named.
+func TestSendAcceptsAFullSessionName(t *testing.T) {
+	seatDir, got := seatEnv(t, allowPolicy)
+	code, _, stderr := send("--to", "pod-b@r", "--intent", "task", "--", "hi")
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr %q, want 0", code, stderr)
+	}
+	if got.calls != 1 || got.target != "pod-b@r" {
+		t.Fatalf("delivery = %+v, want one call to pod-b@r", got)
+	}
+	records := auditRecords(t, seatDir)
+	if len(records) != 2 {
+		t.Fatalf("audit lines = %d, want 2 (decision then outcome)", len(records))
+	}
+	for i, r := range records {
+		if r.To != "b" {
+			t.Fatalf("record %d To = %q, want b", i, r.To)
+		}
+	}
+	if records[0].Outcome != "" || records[1].Outcome != commpolicy.OutcomeDelivered {
+		t.Fatalf("outcomes = %q then %q, want none then delivered", records[0].Outcome, records[1].Outcome)
+	}
+}
+
+// A full session name of a real roster member the policy does not link is still a known
+// recipient: the send is denied for lack of a link, not for being unknown.
+func TestSendFullSessionNameOfAnUnlinkedSeatIsDenied(t *testing.T) {
+	seatDir, got := seatEnv(t, allowPolicy)
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{
+			"b": {"pod-b@r"}, "c": {"pod-c@r"},
+		}}, nil
+	}
+	code, stdout, stderr := send("--to", "pod-c@r", "--intent", "task", "--", "hi")
+	if code != exitDenied {
+		t.Fatalf("exit = %d, stderr %q, want %d (denied)", code, stderr, exitDenied)
+	}
+	if got.calls != 0 || stdout != "" {
+		t.Fatalf("delivery ran on a denied send: %+v, stdout %q", got, stdout)
+	}
+	records := auditRecords(t, seatDir)
+	if len(records) != 1 || records[0].Allowed || records[0].To != "c" {
+		t.Fatalf("audit = %+v, want one denied record with To == c", records)
+	}
+	if !strings.Contains(stderr, "denied: no link") {
+		t.Fatalf("stderr = %q, want it to say denied: no link", stderr)
+	}
+	if strings.Contains(stderr, "unknown recipient") {
+		t.Fatalf("stderr = %q, must not call a real roster member unknown", stderr)
+	}
+}
+
+// A recipient that is neither a seat key nor a roster session is unknown: denied by policy and
+// told which seat keys could be used.
+func TestSendUnknownRecipientListsSeatKeys(t *testing.T) {
+	seatDir, got := seatEnv(t, allowPolicy)
+	code, stdout, stderr := send("--to", "ghost@nowhere", "--intent", "task", "--", "hi")
+	if code != exitDenied {
+		t.Fatalf("exit = %d, stderr %q, want %d (denied)", code, stderr, exitDenied)
+	}
+	if got.calls != 0 || stdout != "" {
+		t.Fatalf("delivery ran on an unknown recipient: %+v, stdout %q", got, stdout)
+	}
+	records := auditRecords(t, seatDir)
+	if len(records) != 1 || records[0].Allowed {
+		t.Fatalf("audit = %+v, want one denied record", records)
+	}
+	if !strings.HasPrefix(stderr, "denied: no link\n") {
+		t.Fatalf("stderr = %q, want it to start with denied: no link", stderr)
+	}
+	want := `unknown recipient "ghost@nowhere"; use a seat key: a, b`
+	if !strings.Contains(stderr, want) {
+		t.Fatalf("stderr = %q, want it to contain %q", stderr, want)
+	}
+}
+
+// Naming one session of a member whose name is repeated across pods delivers to exactly that
+// session, while sending to the bare member name stays ambiguous.
+func TestSendFullSessionNameWithRepeatedMemberDeliversToThatSession(t *testing.T) {
+	_, got := seatEnv(t, allowPolicy)
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{
+			"b": {"pod-b@r", "other-b@r"},
+		}}, nil
+	}
+	code, _, stderr := send("--to", "other-b@r", "--intent", "task", "--", "hi")
+	if code != 0 || got.calls != 1 || got.target != "other-b@r" {
+		t.Fatalf("send to other-b@r: exit %d, delivery %+v, stderr %q, want 0 and target other-b@r", code, got, stderr)
+	}
+	got.calls = 0
+	code, _, stderr = send("--to", "b", "--intent", "task", "--", "hi")
+	if code != exitDeliveryFailed || got.calls != 0 {
+		t.Fatalf("send to b: exit %d, calls %d, stderr %q, want %d and no delivery", code, got.calls, stderr, exitDeliveryFailed)
+	}
+	if !strings.Contains(stderr, "pod-b@r") || !strings.Contains(stderr, "other-b@r") {
+		t.Fatalf("stderr = %q, want both sessions named", stderr)
+	}
+}
+
+// resolveRecipient is the seam that maps --to to a seat key and, when the name was a session,
+// to the session to deliver to.
+func TestResolveRecipient(t *testing.T) {
+	who := identity{Rig: testRig, Member: testMember, Peers: map[string][]string{"b": {"pod-b@r"}}}
+	policy := commpolicy.Policy{Seat: "a", Links: []commpolicy.Link{
+		{From: "a", To: "c", Kind: commpolicy.KindDelegatesTo, Allow: true},
+	}}
+	cases := []struct {
+		name          string
+		to            string
+		wantRecipient string
+		wantSession   string
+		wantKnown     bool
+	}{
+		{"seat key as is", "b", "b", "", true},
+		{"calling seat", "a", "a", "", true},
+		{"policy link seat not in roster", "c", "c", "", true},
+		{"roster session maps to member", "pod-b@r", "b", "pod-b@r", true},
+		{"unknown", "ghost@nowhere", "", "", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			recipient, session, known := resolveRecipient(who, policy, tc.to)
+			if recipient != tc.wantRecipient || session != tc.wantSession || known != tc.wantKnown {
+				t.Fatalf("resolveRecipient(%q) = (%q, %q, %v), want (%q, %q, %v)",
+					tc.to, recipient, session, known, tc.wantRecipient, tc.wantSession, tc.wantKnown)
 			}
 		})
 	}

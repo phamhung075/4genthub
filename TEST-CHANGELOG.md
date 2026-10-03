@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck full session names
+
+- Added: `TestSendAcceptsAFullSessionName`, `TestSendFullSessionNameOfAnUnlinkedSeatIsDenied`, `TestSendUnknownRecipientListsSeatKeys`, `TestSendFullSessionNameWithRepeatedMemberDeliversToThatSession`, `TestResolveRecipient`. Drafted by deepseek (session e8b7d68e-3d05-40e4-8805-d01ff0968026), verified by me with a mutation check.
+- Changed: `TestSendDeniedWritesAuditAndSkipsDelivery` checks the `denied:` line as a prefix (the unknown-recipient hint follows it).
+
 ## 2026-10-03 — column drift notice
 
 - Added: `TestMissingTablesNilEngine`, `TestLogMissingTablesReportsACheckFailure` (nil engine and a failing query are logged, never fatal), `TestColumnDriftFindsMissingAndBlockingColumns` (a missing column and an unknown NOT NULL column without default are reported, an unknown nullable one is not, complete tables and absent tables are not), `TestInitDatabaseLogsColumnDriftWithoutAutoMigrate` (startup succeeds, no DDL runs), `TestColumnDriftNoticeNamesBothKinds`; `fakedriver_test.go` answers the drift query (`schema`, `failQuery`). Drafted by deepseek (session c23cf86b-f5cc-49e0-87e0-35388f9222f1), verified with two mutations.
