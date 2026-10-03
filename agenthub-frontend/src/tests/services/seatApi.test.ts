@@ -31,4 +31,12 @@ describe('seatApi', () => {
     expect(url).toContain('/api/v2/openrig/rooms/dev%20room/seats/alice/links/bob/delegates_to');
     expect(init.method).toBe('DELETE');
   });
+
+  it('deletes a room with DELETE /rooms/{room}', async () => {
+    await seatApi.deleteRoom('dev room');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toMatch(/\/api\/v2\/openrig\/rooms\/dev%20room$/);
+    expect(init.method).toBe('DELETE');
+  });
 });
