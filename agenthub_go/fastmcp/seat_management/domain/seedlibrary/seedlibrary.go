@@ -12,15 +12,31 @@ import (
 	"sort"
 	"strings"
 
+	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
 
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed seat-types/*.yaml
+//go:embed seat-types/*.yaml shared-modules/*
 var embedded embed.FS
 
-const seatTypesDir = "seat-types"
+const (
+	seatTypesDir     = "seat-types"
+	sharedModulesDir = "shared-modules"
+)
+
+// sharedModuleFiles lists the modules every seat type carries: slug, kind and the file in
+// shared-modules/ that holds the content. comm-guard is the Claude settings fragment that
+// denies direct messaging commands; comm-guard-skill tells the seat what to use instead.
+var sharedModuleFiles = []struct {
+	slug string
+	kind resolver.ModuleKind
+	file string
+}{
+	{"comm-guard", resolver.KindTool, "comm-guard.json"},
+	{"comm-guard-skill", resolver.KindSkill, "comm-guard-skill.md"},
+}
 
 var (
 	slugPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
@@ -53,6 +69,10 @@ func LoadFS(fsys fs.FS) ([]seedmap.Seed, error) {
 	if err != nil {
 		return nil, err
 	}
+	shared, err := loadSharedModules(fsys)
+	if err != nil {
+		return nil, err
+	}
 	seeds := make([]seedmap.Seed, 0, len(names))
 	owner := make(map[string]string, len(names))
 	for _, name := range names {
@@ -60,7 +80,7 @@ func LoadFS(fsys fs.FS) ([]seedmap.Seed, error) {
 		if err != nil {
 			return nil, err
 		}
-		seed, err := Parse(name, data)
+		seed, err := Parse(name, data, shared)
 		if err != nil {
 			return nil, err
 		}
@@ -74,8 +94,21 @@ func LoadFS(fsys fs.FS) ([]seedmap.Seed, error) {
 	return seeds, nil
 }
 
-// Parse decodes one seat-type file strictly and builds its seed; errors name the file and field.
-func Parse(name string, data []byte) (seedmap.Seed, error) {
+func loadSharedModules(fsys fs.FS) ([]seedmap.SeedModule, error) {
+	modules := make([]seedmap.SeedModule, 0, len(sharedModuleFiles))
+	for _, f := range sharedModuleFiles {
+		data, err := fs.ReadFile(fsys, sharedModulesDir+"/"+f.file)
+		if err != nil {
+			return nil, err
+		}
+		modules = append(modules, seedmap.SeedModule{Slug: f.slug, Kind: f.kind, Content: string(data)})
+	}
+	return modules, nil
+}
+
+// Parse decodes one seat-type file strictly and builds its seed, which also carries the shared
+// modules; errors name the file and field.
+func Parse(name string, data []byte, shared []seedmap.SeedModule) (seedmap.Seed, error) {
 	var file seatTypeFile
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
@@ -96,7 +129,7 @@ func Parse(name string, data []byte) (seedmap.Seed, error) {
 	}
 	spec := seedmap.Spec{
 		Slug: file.Slug, Name: file.Name, Description: file.Description, DefaultRuntime: file.DefaultRuntime,
-		Role: file.Role, OutputFormat: file.OutputFormat,
+		Role: file.Role, OutputFormat: file.OutputFormat, Shared: shared,
 	}
 	for i, rule := range file.Rules {
 		if strings.TrimSpace(rule.Content) == "" {

@@ -11,6 +11,7 @@ import (
 
 	"agenthub/fastmcp/agent_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/seedlibrary"
 
 	"gopkg.in/yaml.v3"
 )
@@ -274,6 +275,76 @@ func TestRenderSeatToolModulesMerge(t *testing.T) {
 	}
 	if !reflect.DeepEqual(parsed.Profiles["default"].Uses.RuntimeResources, []string{"claude-mcp", "claude-settings"}) {
 		t.Fatalf("uses.runtime_resources = %v", parsed.Profiles["default"].Uses.RuntimeResources)
+	}
+}
+
+func TestMergeToolModulesPermissions(t *testing.T) {
+	merge := func(contents ...string) (map[string]any, error) {
+		modules := make([]resolver.ResolvedModule, len(contents))
+		for i, c := range contents {
+			modules[i] = resolver.ResolvedModule{Slug: "tool." + string(rune('a'+i)), Kind: resolver.KindTool, Content: c}
+		}
+		return mergeToolModules(modules)
+	}
+	merged, err := merge(
+		`{"permissions":{"deny":["x","y"],"allow":["p"],"defaultMode":"plan"},"model":"one"}`,
+		`{"permissions":{"deny":["y","z"],"ask":["q"],"defaultMode":"acceptEdits"},"model":"two","env":{"A":"1"}}`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := json.Marshal(merged)
+	want := `{"env":{"A":"1"},"model":"two","permissions":{"allow":["p"],"ask":["q"],"defaultMode":"acceptEdits","deny":["x","y","z"]}}`
+	if string(got) != want {
+		t.Fatalf("merged = %s\nwant     %s", got, want)
+	}
+
+	for name, contents := range map[string][]string{
+		"deny not an array":  {`{"permissions":{"deny":"x"}}`},
+		"allow not strings":  {`{"permissions":{"allow":[1]}}`},
+		"ask not an array":   {`{"permissions":{"deny":["x"]}}`, `{"permissions":{"ask":{"a":1}}}`},
+		"permissions scalar": {`{"permissions":"all"}`},
+	} {
+		if _, err := merge(contents...); err == nil {
+			t.Errorf("%s: want an error", name)
+		}
+	}
+}
+
+// The seeded comm-guard keeps its deny rules when another tool module also sets permissions,
+// and the seat carries the skill that names seatcheck as the only send path.
+func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
+	seeds, err := seedlibrary.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var modules []resolver.ResolvedModule
+	for _, m := range seeds[0].Modules {
+		modules = append(modules, resolver.ResolvedModule{Slug: m.Slug, Version: m.Version, Kind: m.Kind, Content: m.Content})
+	}
+	modules = append(modules, resolver.ResolvedModule{
+		Slug: "tool.extra", Version: "1.0.0", Kind: resolver.KindTool,
+		Content: `{"permissions":{"deny":["Bash(rm:*)"],"allow":["Read"]}}`,
+	})
+	spec, err := RenderSeat(withModules(seatFixture("claude-code"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+	var settings struct {
+		Permissions struct {
+			Deny  []string `json:"deny"`
+			Allow []string `json:"allow"`
+		} `json:"permissions"`
+	}
+	if err := json.Unmarshal([]byte(fileContent(t, spec, settingsFragmentPath)), &settings); err != nil {
+		t.Fatal(err)
+	}
+	wantDeny := "Bash(rig send:*)|Bash(rig queue:*)|Bash(rig broadcast:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
+	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Read" {
+		t.Fatalf("permissions = %+v", settings.Permissions)
+	}
+	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+		t.Fatalf("skill does not name seatcheck send:\n%s", skill)
 	}
 }
 

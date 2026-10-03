@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"agenthub/fastmcp/agent_management/application/services"
@@ -242,8 +243,13 @@ func writeGuidanceSection(b *strings.Builder, heading, content string) {
 	}
 }
 
-// mergeToolModules shallow-merges tool module JSON objects in module order;
-// later modules win per top-level key.
+// permissionListKeys are the permissions lists that tool modules add to rather than replace,
+// so a later module cannot drop another module's deny rule.
+var permissionListKeys = []string{"deny", "allow", "ask"}
+
+// mergeToolModules merges tool module JSON objects in module order. A top-level key present
+// in several modules takes the later value, except `permissions`: its deny, allow and ask lists
+// are the deduplicated union in order of appearance, and its other keys follow later-wins.
 func mergeToolModules(modules []resolver.ResolvedModule) (map[string]any, error) {
 	merged := make(map[string]any)
 	for _, m := range modules {
@@ -252,10 +258,65 @@ func mergeToolModules(modules []resolver.ResolvedModule) (map[string]any, error)
 			return nil, fmt.Errorf("tool module %q: content is not a JSON object: %w", m.Slug, err)
 		}
 		for key, value := range obj {
-			merged[key] = value
+			if key != "permissions" {
+				merged[key] = value
+				continue
+			}
+			permissions, err := mergePermissions(merged[key], value)
+			if err != nil {
+				return nil, fmt.Errorf("tool module %q: %w", m.Slug, err)
+			}
+			merged[key] = permissions
 		}
 	}
 	return merged, nil
+}
+
+func mergePermissions(current, incoming any) (map[string]any, error) {
+	next, ok := incoming.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("permissions must be a JSON object")
+	}
+	out := make(map[string]any)
+	if previous, ok := current.(map[string]any); ok {
+		for key, value := range previous {
+			out[key] = value
+		}
+	}
+	for key, value := range next {
+		if !slices.Contains(permissionListKeys, key) {
+			out[key] = value
+			continue
+		}
+		list, err := stringList(value)
+		if err != nil {
+			return nil, fmt.Errorf("permissions.%s: %w", key, err)
+		}
+		union, _ := out[key].([]any)
+		for _, entry := range list {
+			if !slices.Contains(union, any(entry)) {
+				union = append(union, entry)
+			}
+		}
+		out[key] = union
+	}
+	return out, nil
+}
+
+func stringList(value any) ([]string, error) {
+	items, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("must be an array of strings")
+	}
+	out := make([]string, len(items))
+	for i, item := range items {
+		str, ok := item.(string)
+		if !ok {
+			return nil, fmt.Errorf("must be an array of strings")
+		}
+		out[i] = str
+	}
+	return out, nil
 }
 
 func renderMCPFragment(mcpURL string) (string, error) {

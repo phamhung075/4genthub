@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — comm-guard shared modules and permissions union
+
+- Added: `TestMergeToolModulesPermissions` (union/dedupe/order, later-wins for other keys, 4 error cases), `TestRenderSeatKeepsCommGuardNextToAnotherToolModule` (real seeded modules plus a second tool module: 5 deny entries plus the extra, allow kept, skill names `seatcheck send`), `TestFromSpecSharedModules` (claude-code gets tool and skill, codex only the skill, version stamped), `TestLoadEmbeddedSeedsCarryCommGuard` (all 9 seeds), `TestLoadFSMissingSharedModuleFails`. Updated seedmap tests to the `seedVersion` constant and the health version test to 0.0.11. Mutation check: making the merge shallow again failed the two renderer tests. seatrenderer, seedlibrary, seedmap, httpapp ok.
+
 ## 2026-10-03 — TestToolConfigParity expected the Python tool list without manage_seat
 
 - Fixed: `TestToolConfigParity` (configuration) red at HEAD because the Go default tool list has `manage_seat`; fixture updated, `go test -count=1 ./fastmcp/task_management/infrastructure/configuration/` ok.

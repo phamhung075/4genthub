@@ -9,7 +9,9 @@ import (
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-const seedVersion = "1.0.0"
+// seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
+// immutable, so a changed module set needs a new version.
+const seedVersion = "1.1.0"
 
 type SeedModule struct {
 	Slug    string
@@ -33,6 +35,9 @@ type Spec struct {
 	Role           string
 	Rules          []Rule
 	OutputFormat   string
+	// Shared modules are appended to the seat type's own modules. Tool modules are Claude
+	// settings fragments, so they are skipped for a codex seat type, which gets the others.
+	Shared []SeedModule
 }
 
 type Seed struct {
@@ -97,7 +102,13 @@ func FromSpec(spec Spec) (Seed, error) {
 		Slug: spec.Slug + "-output-format", Kind: resolver.KindDocument, Version: seedVersion, Content: outputFormat + "\n",
 	})
 
-	// Tool modules are Claude settings JSON merged by the renderer, so the seed creates none.
+	for _, shared := range spec.Shared {
+		if shared.Kind == resolver.KindTool && spec.DefaultRuntime == "codex" {
+			continue
+		}
+		shared.Version = seedVersion
+		seed.Modules = append(seed.Modules, shared)
+	}
 
 	seed.ModuleRefs = make([]resolver.ModuleRef, len(seed.Modules))
 	for i, module := range seed.Modules {
