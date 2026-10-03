@@ -1300,3 +1300,34 @@ func seatAdminDetail(t *testing.T, rec *httptest.ResponseRecorder) string {
 	}
 	return body.Detail
 }
+
+func TestSeatAdminOverlayRoutesRejectSecretContent(t *testing.T) {
+	const secret = "AKIAABCDEFGHIJKLMNOP"
+	body := `{"ops":[{"kind":"override","slug":"m","content":"key ` + secret + `"}]}`
+	for _, path := range []string{
+		"/api/v2/openrig/overlay",
+		"/api/v2/openrig/rooms/dev/overlay",
+		"/api/v2/openrig/rooms/dev/seats/alice/overlay",
+	} {
+		t.Run(path, func(t *testing.T) {
+			fake := newFakeSeatAdmin()
+			room := fake.seedRoom("dev")
+			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"})
+			mux := seatAdminTestMux(t, fake)
+			rec := doAgentsRequest(t, mux, http.MethodPut, path, body)
+			if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), "secret detected in content") {
+				t.Fatalf("status = %d, body %s, want 422 secret detected", rec.Code, rec.Body.String())
+			}
+			if strings.Contains(rec.Body.String(), secret) {
+				t.Errorf("response echoes the secret: %s", rec.Body.String())
+			}
+			if len(fake.overlays) != 0 {
+				t.Errorf("overlay stored despite the secret: %+v", fake.overlays)
+			}
+			clean := `{"ops":[{"kind":"override","slug":"m","content":"no secret here"}]}`
+			if rec := doAgentsRequest(t, mux, http.MethodPut, path, clean); rec.Code != http.StatusOK {
+				t.Errorf("clean overlay: status = %d: %s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}

@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — overlay secret scan
+
+- Added: `TestSeatAdminOverlayRoutesRejectSecretContent` (company, room and seat route: 422, secret not echoed, nothing stored, clean content still 200). httpapp ok.
+
 ## 2026-10-03 — seat removal is a hard delete
 
 - Added: `TestSeatAdminRemoveSeatIsAHardDelete` (other user 404 and nothing deleted, links of both directions, overlay, snapshots and statuses gone, second delete 404, rigspec without the seat or its edges, re-adding the key starts clean), `TestRemoveSeatDeletesOnlyThatSeatsRows`, `TestRemoveSeatAbsentRoomOrSeat`, and a `DeleteSeatStatusForSeat` block in `TestSeatDeletesIntegration` (other tenant, other seat and other room delete nothing).

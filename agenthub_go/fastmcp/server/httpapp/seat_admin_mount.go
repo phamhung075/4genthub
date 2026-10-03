@@ -1026,6 +1026,10 @@ func seatAdminOverlayOps(w http.ResponseWriter, r *http.Request) ([]resolver.Op,
 			writeDetail(w, http.StatusBadRequest, invalid)
 			return nil, false
 		}
+		if secretscan.Contains(op.Content) {
+			writeDetail(w, http.StatusUnprocessableEntity, "secret detected in content")
+			return nil, false
+		}
 		ops = append(ops, resolver.Op{Kind: kind, Slug: op.Slug, Version: op.Version, Content: op.Content})
 	}
 	return ops, true
