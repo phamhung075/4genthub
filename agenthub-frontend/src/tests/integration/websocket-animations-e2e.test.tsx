@@ -83,8 +83,8 @@ describe('WebSocket Animations E2E Flow', () => {
     document.body.appendChild(element);
     testElements.set(elementId, element);
 
-    // Register with AnimationFactory (simulating what useTaskAnimation/etc would do)
-    animationFactory.registerElement(elementId, element, {
+    // Register with AnimationFactory (simulating what the entity animation hooks do)
+    animationFactory.registerElement(elementId, element, 'task', {
       onAnimationStart: vi.fn(),
       onAnimationEnd: vi.fn()
     });

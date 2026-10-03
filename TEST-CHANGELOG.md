@@ -86,6 +86,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
 
+## 2026-10-03 — Remove the legacy TaskRow test
+
+- Removed: `agenthub-frontend/src/tests/components/TaskRow.test.tsx` (17 tests of the unused legacy `TaskRow.tsx`; the live row is covered by the `TaskRow/` tests).
+- Changed: `AnimationFactory.test.ts` and `websocket-animations-e2e.test.tsx` pass the entity type to `registerElement`.
+
 ## 2026-10-03 — Frontend drift badge
 
 - Added: 5 tests in `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (in sync green, drift amber with both short hashes, unknown neutral, "3 drifted" equals three drift badges, seat card shows the latest report's badge) and `agenthub-frontend/src/tests/utils/machineSeats.test.ts` (3 `driftedSeatCount` tests); `machineSeat` fixture gains `expected_hash` and `sync`.

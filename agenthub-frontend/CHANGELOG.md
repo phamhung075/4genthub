@@ -13,6 +13,17 @@
     `src/lib/machineSeats.ts`, `src/components/seats/MachinesPanel.tsx` (`SeatSyncBadge`),
     `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`, `src/tests/utils/machineSeats.test.ts` (new)
 
+### Removed
+- **Legacy `TaskRow` and `useTaskAnimation` hook** - 2026-10-03
+  - `src/components/TaskRow.tsx` was imported only by its own test (the app uses
+    `src/components/TaskRow/TaskRowRefactored.tsx`), and was the only user of `src/hooks/useTaskAnimation.ts`;
+    both are deleted with `src/tests/components/TaskRow.test.tsx`. Note: the earlier TypeScript cleanup
+    (`ccc82b2d`) changed that hook's `registerElement` call, which was not behavior-neutral (callbacks
+    started firing, the CSS class stopped being `[object Object]...`); the hook was unreachable, so the
+    change had no effect in the app.
+  - `src/tests/services/AnimationFactory.test.ts` and `src/tests/integration/websocket-animations-e2e.test.tsx`
+    now call `registerElement(id, element, 'task', callbacks?)` as the factory requires.
+
 ### Changed
 - **TypeScript: 23 pre-existing errors removed (`npx tsc --noEmit -p .` reports 0)** - 2026-10-03
   - `LazySubtaskList`: `UseSubtaskDialogsReturn` gains `setActiveDialog`, `UseSubtaskFiltersReturn` lists every

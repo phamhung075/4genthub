@@ -62,7 +62,7 @@ describe('AnimationFactory', () => {
     it('should register element successfully', () => {
       const elementId = 'test-element';
 
-      animationFactory.registerElement(elementId, mockElement, mockCallbacks);
+      animationFactory.registerElement(elementId, mockElement, 'task', mockCallbacks);
 
       // Should not throw and element should be registered
       expect(() => {
@@ -74,7 +74,7 @@ describe('AnimationFactory', () => {
       const elementId = 'test-element';
 
       // Register element
-      animationFactory.registerElement(elementId, mockElement);
+      animationFactory.registerElement(elementId, mockElement, 'task');
 
       // Start animation to create state
       animationFactory.animate(elementId, 'create');
@@ -94,7 +94,7 @@ describe('AnimationFactory', () => {
         // onAnimationEnd intentionally missing
       };
 
-      animationFactory.registerElement(elementId, mockElement, partialCallbacks);
+      animationFactory.registerElement(elementId, mockElement, 'task', partialCallbacks);
 
       const result = animationFactory.animate(elementId, 'create');
       expect(result).toBe(true);
@@ -104,7 +104,7 @@ describe('AnimationFactory', () => {
 
   describe('CSS Class Application', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should apply correct CSS class for CREATE animation', () => {
@@ -155,7 +155,7 @@ describe('AnimationFactory', () => {
 
   describe('Animation Durations', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should have correct duration for CREATE animation (500ms)', () => {
@@ -209,7 +209,7 @@ describe('AnimationFactory', () => {
 
   describe('Animation Coordination and Cooldown', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should prevent double-triggering within cooldown period', () => {
@@ -272,7 +272,7 @@ describe('AnimationFactory', () => {
 
   describe('Priority System', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should enforce priority order: mount > websocket > callback', () => {
@@ -311,7 +311,7 @@ describe('AnimationFactory', () => {
 
   describe('Animation Cleanup', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should clean up CSS classes after animation completes', () => {
@@ -347,7 +347,7 @@ describe('AnimationFactory', () => {
     it('should handle cleanup with missing callbacks gracefully', () => {
       // Register without callbacks
       animationFactory.unregisterElement('test-task');
-      animationFactory.registerElement('test-task', mockElement);
+      animationFactory.registerElement('test-task', mockElement, 'task');
 
       animationFactory.animate('test-task', 'create');
 
@@ -365,14 +365,14 @@ describe('AnimationFactory', () => {
     });
 
     it('should handle missing element gracefully', () => {
-      animationFactory.registerElement('test-task', null as any);
+      animationFactory.registerElement('test-task', null as any, 'task');
 
       const result = animationFactory.animate('test-task', 'create');
       expect(result).toBe(false);
     });
 
     it('should handle invalid animation types gracefully', () => {
-      animationFactory.registerElement('test-task', mockElement);
+      animationFactory.registerElement('test-task', mockElement, 'task');
 
       const result = animationFactory.animate('test-task', 'invalid' as any);
       expect(result).toBe(false);
@@ -385,9 +385,9 @@ describe('AnimationFactory', () => {
       const element2 = createMockElement();
       const element3 = createMockElement();
 
-      animationFactory.registerElement('task-1', element1);
-      animationFactory.registerElement('task-2', element2);
-      animationFactory.registerElement('task-3', element3);
+      animationFactory.registerElement('task-1', element1, 'task');
+      animationFactory.registerElement('task-2', element2, 'task');
+      animationFactory.registerElement('task-3', element3, 'task');
 
       // Animate all elements
       const result1 = animationFactory.animate('task-1', 'create');
@@ -408,8 +408,8 @@ describe('AnimationFactory', () => {
       const element1 = createMockElement();
       const element2 = createMockElement();
 
-      animationFactory.registerElement('task-1', element1);
-      animationFactory.registerElement('task-2', element2);
+      animationFactory.registerElement('task-1', element1, 'task');
+      animationFactory.registerElement('task-2', element2, 'task');
 
       // Start animations on both elements
       animationFactory.animate('task-1', 'create', 'callback');
@@ -431,8 +431,8 @@ describe('AnimationFactory', () => {
 
   describe('Debug Information', () => {
     it('should provide useful debug information', () => {
-      animationFactory.registerElement('task-1', mockElement);
-      animationFactory.registerElement('task-2', createMockElement());
+      animationFactory.registerElement('task-1', mockElement, 'task');
+      animationFactory.registerElement('task-2', createMockElement(), 'task');
 
       animationFactory.animate('task-1', 'create');
 
