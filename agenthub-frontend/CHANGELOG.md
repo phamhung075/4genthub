@@ -27,6 +27,13 @@
   - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (new)
 
 ### Added
+- **Delete a room** - 2026-10-03
+  - The room view has a Delete room button (`seatApi.deleteRoom`, `useDeleteRoom`) behind a confirmation that
+    names what is lost: the room hard-deletes with all its seats, links, overlays and the room overlay. The
+    seat list closes and the room list refetches. The remove-seat confirmation no longer says the seat is
+    "marked removed"; the server hard-deletes it.
+  - Files: `src/services/seatApi.ts`, `src/hooks/useSeats.ts`, `src/pages/SeatsPage.tsx`,
+    `src/tests/pages/SeatsPage.test.tsx` (3 tests added), `src/tests/services/seatApi.test.ts` (1 test added)
 - **Delete a seat link** - 2026-10-03
   - The Links tab said links cannot be deleted, but `DELETE /rooms/{room}/seats/{seat}/links/{to}/{kind}`
     exists. Each link row now has a Delete button (`seatApi.deleteLink`, `useDeleteSeatLink`); the list

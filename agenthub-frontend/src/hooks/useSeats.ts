@@ -73,6 +73,19 @@ export function useCreateRoom() {
   });
 }
 
+export function useDeleteRoom() {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: (room: string) => seatApi.deleteRoom(room),
+    onSuccess: (_response, room) => {
+      queryClient.removeQueries({ queryKey: seatKeys.seats(room) });
+      queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+      showSuccess(`Room "${room}" deleted`);
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Seat types
 // ---------------------------------------------------------------------------

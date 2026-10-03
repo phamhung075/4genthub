@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — delete room
+
+- Added: `SeatsPage > delete room` (confirm deletes `dev` and closes the seat list; cancel sends nothing; a server error is shown and the room stays; 23 tests in the file) and `deletes a room with DELETE /rooms/{room}` in `seatApi.test.ts`.
+
 ## 2026-10-03 — delete seat link
 
 - Added: `deletes a link and refetches the list` and `shows the server error when deleting a link fails` in `SeatDetailPage.test.tsx` (10 tests in the file); `seatApi.test.ts` (new) checks the DELETE URL (path segments encoded) and method.

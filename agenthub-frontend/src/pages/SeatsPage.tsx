@@ -31,6 +31,7 @@ import { isValidSeatModel, isValidSeatName, SEAT_MODEL_MESSAGE, SEAT_NAME_MESSAG
 import {
   useCreateRoom,
   useCreateSeat,
+  useDeleteRoom,
   useMachines,
   useRemoveSeat,
   useRooms,
@@ -54,6 +55,7 @@ export const SeatsPage: React.FC = () => {
     useSeatSettings();
   const updateSettings = useUpdateSeatSettings();
   const createRoom = useCreateRoom();
+  const deleteRoom = useDeleteRoom();
   const { machines } = useMachines();
 
   const [selectedRoom, setSelectedRoom] = useState('');
@@ -74,6 +76,7 @@ export const SeatsPage: React.FC = () => {
   });
 
   const [seatToRemove, setSeatToRemove] = useState<Seat | null>(null);
+  const [deleteRoomOpen, setDeleteRoomOpen] = useState(false);
 
   const roomSlugValid = isValidSeatName(roomSlug);
   const roomSlugInvalid = roomSlug !== '' && !roomSlugValid;
@@ -121,6 +124,12 @@ export const SeatsPage: React.FC = () => {
     }
     await removeSeat.mutateAsync(seatToRemove.seat_key);
     setSeatToRemove(null);
+  };
+
+  const handleDeleteRoom = async () => {
+    await deleteRoom.mutateAsync(selectedRoom);
+    setDeleteRoomOpen(false);
+    setSelectedRoom('');
   };
 
   const seatTypeOptions = seatTypes.map(type => (
@@ -294,9 +303,14 @@ export const SeatsPage: React.FC = () => {
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" /> Seats in {selectedRoom}
             </h2>
-            <Button onClick={() => setAddSeatOpen(true)} disabled={seatTypesLoading}>
-              <Plus className="h-4 w-4" /> Add seat
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="destructive" onClick={() => setDeleteRoomOpen(true)}>
+                <Trash2 className="h-4 w-4" /> Delete room
+              </Button>
+              <Button onClick={() => setAddSeatOpen(true)} disabled={seatTypesLoading}>
+                <Plus className="h-4 w-4" /> Add seat
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">
             A seat is an OpenRig member (a fixed role slot).
@@ -526,7 +540,8 @@ export const SeatsPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Remove seat?</DialogTitle>
             <DialogDescription>
-              Seat "{seatToRemove?.seat_key}" will be marked removed. This cannot be undone.
+              Seat "{seatToRemove?.seat_key}" is deleted with its links, overlay and reported statuses. This
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -536,6 +551,34 @@ export const SeatsPage: React.FC = () => {
             <Button variant="destructive" onClick={handleRemoveSeat} disabled={removeSeat.isPending}>
               {removeSeat.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Remove seat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete room confirmation */}
+      <Dialog open={deleteRoomOpen} onOpenChange={setDeleteRoomOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete room?</DialogTitle>
+            <DialogDescription>
+              Room "{selectedRoom}" is deleted with all of its seats, their links and overlays, and its room
+              overlay. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteRoom.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{deleteRoom.error.message}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteRoomOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteRoom} disabled={deleteRoom.isPending}>
+              {deleteRoom.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Delete room
             </Button>
           </DialogFooter>
         </DialogContent>

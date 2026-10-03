@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
@@ -16,6 +16,7 @@ vi.mock('../../services/seatApi', () => ({
     listSeats: vi.fn(),
     createSeat: vi.fn(),
     removeSeat: vi.fn(),
+    deleteRoom: vi.fn(),
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     listLinks: vi.fn(),
@@ -126,6 +127,51 @@ describe('SeatsPage', () => {
     expect(await screen.findByText('alice')).toBeInTheDocument();
     expect(mockApi.listSeats).toHaveBeenCalledWith('dev');
     expect(screen.getAllByText('coder').length).toBeGreaterThan(0);
+  });
+
+  describe('delete room', () => {
+    const openDeleteDialog = async () => {
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+      fireEvent.click(screen.getByRole('button', { name: /delete room/i }));
+      return screen.findByText('Delete room?');
+    };
+
+    it('deletes the selected room after confirmation and closes its seat list', async () => {
+      mockApi.deleteRoom.mockResolvedValue({ success: true });
+      const title = await openDeleteDialog();
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+      expect(within(dialog).getByText(/Room "dev" is deleted with all of its seats/)).toBeInTheDocument();
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
+
+      await waitFor(() => expect(mockApi.deleteRoom).toHaveBeenCalledWith('dev'));
+      await waitFor(() => expect(screen.queryByText('Seats in dev')).not.toBeInTheDocument());
+      await waitFor(() => expect(mockApi.listRooms).toHaveBeenCalledTimes(2));
+    });
+
+    it('does not delete when the confirmation is cancelled', async () => {
+      const title = await openDeleteDialog();
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+      await waitFor(() => expect(screen.queryByText('Delete room?')).not.toBeInTheDocument());
+      expect(mockApi.deleteRoom).not.toHaveBeenCalled();
+      expect(screen.getByText('Seats in dev')).toBeInTheDocument();
+    });
+
+    it('shows the server error and keeps the room when the delete fails', async () => {
+      mockApi.deleteRoom.mockRejectedValue(new Error('room "dev" not found'));
+      const title = await openDeleteDialog();
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
+
+      expect(await within(dialog).findByText('room "dev" not found')).toBeInTheDocument();
+      expect(screen.getByText('Seats in dev')).toBeInTheDocument();
+    });
   });
 
   const openAddSeatDialog = async () => {

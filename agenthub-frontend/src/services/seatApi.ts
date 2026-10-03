@@ -73,6 +73,9 @@ export const seatApi = {
   createRoom: (data: CreateRoomRequest) =>
     apiRequest<RoomResponse>(`${OPENRIG}/rooms`, jsonBody(data)),
 
+  deleteRoom: (room: string) =>
+    apiRequest<DeletedResponse>(`${OPENRIG}/rooms/${segment(room)}`, { method: 'DELETE' }),
+
   // Seat types and modules
   listSeatTypes: () => apiRequest<SeatTypesResponse>(`${OPENRIG}/seat-types`),
 
