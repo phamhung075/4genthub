@@ -109,8 +109,8 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 
 	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
-	// Codex seats get no MCP fragment: OpenRig has no codex MCP fragment resource type, only codex_config_fragment.
-	if seat.Runtime == resolver.RuntimeClaudeCode {
+	// Codex and agy seats get no MCP fragment: OpenRig has no codex/agy MCP fragment resource type, only claude_mcp_fragment.
+	if receivesClaudeFragments(seat.Runtime) {
 		var err error
 		mcpFragment, err = renderMCPFragment(mcpURL)
 		if err != nil {
@@ -149,7 +149,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 			Content: m.Content,
 		})
 	}
-	if seat.Runtime == resolver.RuntimeClaudeCode {
+	if receivesClaudeFragments(seat.Runtime) {
 		files = append(files, services.OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
 		if settingsFragment != "" {
 			files = append(files, services.OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
@@ -162,6 +162,10 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 		Version: seat.SeatTypeVersion,
 		Files:   files,
 	}, nil
+}
+
+func receivesClaudeFragments(runtime string) bool {
+	return runtime != resolver.RuntimeCodex && runtime != resolver.RuntimeAgy
 }
 
 func renderAgentYAML(seat resolver.ResolvedSeat, runtimeResources []runtimeResourceYAML) (string, error) {

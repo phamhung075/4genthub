@@ -449,3 +449,34 @@ func TestRenderSeatRigValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderSeatAgy(t *testing.T) {
+	seat := seatFixture("agy")
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+	wantPaths := []string{
+		"agent.yaml",
+		"guidance/role.md",
+		"skills/skill.alpha/SKILL.md",
+	}
+	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
+		t.Fatalf("file paths = %v, want %v", got, wantPaths)
+	}
+	for _, path := range filePaths(spec) {
+		if strings.HasPrefix(path, "runtime/") {
+			t.Fatalf("agy seat rendered runtime fragment %q", path)
+		}
+	}
+	guidance := fileContent(t, spec, guidancePath)
+	if !strings.HasPrefix(guidance, "<!-- seat-hash: "+seat.Hash+" -->") {
+		t.Fatalf("guidance missing seat hash:\n%s", guidance)
+	}
+	assertNoSecret(t, spec)
+
+	parsed := parseAgentYAML(t, spec)
+	if parsed.Defaults.Runtime != "agy" {
+		t.Fatalf("runtime = %q, want agy", parsed.Defaults.Runtime)
+	}
+}

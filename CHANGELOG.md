@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Support for agy (Gemini/Antigravity) runtime** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `CheckRuntime` now accepts `"agy"`.
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer.go`: `RenderSeat` uses a shared predicate to explicitly reject both `codex` and `agy` runtimes from receiving Claude fragments, treating `agy` similarly to `codex`.
+- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`: `ValidateOccupant` explicitly rejects Claude models for both `codex` and `agy`.
+
 ### Fixed
 
 **Decouple seat types seed from AGENTHUB_PUBLIC_URL requirement** (2026-10-03)

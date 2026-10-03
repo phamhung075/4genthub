@@ -1169,8 +1169,8 @@ func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 	mux := seatAdminTestMux(t, fake)
 	for _, runtime := range []string{"pi", "omp"} {
 		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"`+runtime+`"}`)
-		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `\"claude-code\" and \"codex\"`) {
-			t.Errorf("runtime %s: status = %d, body %s, want 400 naming claude-code and codex", runtime, rec.Code, rec.Body.String())
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `claude-code, codex, agy`) {
+			t.Errorf("runtime %s: status = %d, body %s, want 400 naming the supported runtimes", runtime, rec.Code, rec.Body.String())
 		}
 	}
 }

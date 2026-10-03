@@ -52,8 +52,8 @@ func ValidateOccupant(runtime, model string) error {
 	if err := ValidateModel(model); err != nil {
 		return err
 	}
-	if runtime == resolver.RuntimeCodex && strings.HasPrefix(model, "claude-") {
-		return fmt.Errorf("model %q is a Claude model and cannot run on the codex runtime", model)
+	if (runtime == resolver.RuntimeCodex || runtime == resolver.RuntimeAgy) && strings.HasPrefix(model, "claude-") {
+		return fmt.Errorf("model %q is a Claude model and cannot run on the %s runtime", model, runtime)
 	}
 	return nil
 }
