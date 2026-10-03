@@ -308,9 +308,12 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
   });
 };
 
-// Generic authenticated JSON request over the shared V2 client.
+// Generic authenticated JSON request over the shared V2 client: the Bearer token from the
+// access_token cookie is always sent; headers in init override the defaults.
 export const apiRequest = <T>(path: string, init?: RequestInit): Promise<T> => {
-  return fetchWithRetry(`${API_BASE_URL}${path}`, init) as Promise<T>;
+  const headers = new Headers(getAuthHeaders());
+  new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
+  return fetchWithRetry(`${API_BASE_URL}${path}`, { ...init, headers }) as Promise<T>;
 };
 
 // Task API V2 - User-isolated endpoints

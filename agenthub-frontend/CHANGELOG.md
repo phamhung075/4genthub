@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Seat screens sent no `Authorization` header** - 2026-10-03
+  - `apiRequest` (used by every `seatApi` call) passed only `credentials: 'include'`, so the Go seat routes,
+    which require the Bearer header and ignore cookies, answered "Not authenticated" and `/seats` showed empty
+    lists. `apiRequest` now sends `getAuthHeaders()` (Bearer token from the `access_token` cookie, JSON content
+    type) and lets the caller's headers override them.
+  - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (new)
+
 ### Added
 - **Drift badge on bridge seats** - 2026-10-03
   - Each machine seat shows a sync badge from `GET /api/v2/openrig/machines` (`sync`, `hash`,

@@ -150,6 +150,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
 
+## 2026-10-03 — apiRequest sends the Bearer token
+
+- Added: `agenthub-frontend/src/tests/services/apiRequest.test.ts` (4 tests: Bearer from the `access_token` cookie on GET, caller headers/method/body preserved on POST, caller override of a default header, no Authorization without a cookie). The seat tests mock `apiRequest`, which is why the missing header was never caught; the first two tests fail without the fix.
+
 ## 2026-10-03 — Nested Router in component tests
 
 - Fixed: `render` from `src/tests/test-utils.tsx` already provides `BrowserRouter`, `QueryClientProvider` and `AuthProvider`; removed the duplicate `BrowserRouter`/`MemoryRouter` wrappers in `Header`, `UserProfileDropdown`, `TokenManagement`, `SubtaskRowRefactored` (2 files) and `TaskRowMobile` (2 files) tests. These 7 files: 133 failing tests before, 63 passing / 70 failing after (the "cannot render a <Router> inside another <Router>" error is gone; the rest are other causes: missing ThemeProvider, named vs default import of `SubtaskRowRefactored`, `task` vs `summary` prop in the Mobile test, shared-wrapper AuthContext).
