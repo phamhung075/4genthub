@@ -117,6 +117,9 @@ func (a *App) Handler() http.Handler {
 	mountWebSockets(mux, a.Sessions)
 	mountAgentManagementRoutes(mux, a.Sessions)
 	mountAgentsRoutes(mux, a.Sessions)
+	mountOpenRigRoutes(mux, a.Sessions)
+	mountSeatRoutes(mux, a.Sessions)
+	mountSeatAdminRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)
 	return withCORS(mux)
 }

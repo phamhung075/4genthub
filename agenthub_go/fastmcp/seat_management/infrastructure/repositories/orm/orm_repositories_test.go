@@ -1,0 +1,656 @@
+package orm
+
+import (
+	"context"
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"io"
+	"reflect"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
+	seatdb "agenthub/fastmcp/seat_management/infrastructure/database"
+	"agenthub/fastmcp/task_management/infrastructure/database"
+)
+
+// fakeDriver is a scripted database/sql driver: it records every prepared statement and
+// answers queries through respond. SELECT 1 (the connection check) is answered by Exec.
+type fakeDriver struct {
+	mu      sync.Mutex
+	queries []string
+	respond func(q string, args []driver.Value) (cols []string, rows [][]driver.Value, err error)
+}
+
+func (f *fakeDriver) record(q string) {
+	f.mu.Lock()
+	f.queries = append(f.queries, q)
+	f.mu.Unlock()
+}
+
+func (f *fakeDriver) recorded() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.queries...)
+}
+
+func (f *fakeDriver) open() *sql.DB { return sql.OpenDB(fakeConnector{f}) }
+
+type fakeConnector struct{ f *fakeDriver }
+
+func (c fakeConnector) Connect(context.Context) (driver.Conn, error) { return &fakeConn{f: c.f}, nil }
+func (c fakeConnector) Driver() driver.Driver                        { return nil }
+
+type fakeConn struct{ f *fakeDriver }
+
+func (c *fakeConn) Prepare(q string) (driver.Stmt, error) { return &fakeStmt{f: c.f, q: q}, nil }
+func (c *fakeConn) Close() error                          { return nil }
+func (c *fakeConn) Begin() (driver.Tx, error)             { return fakeTx{}, nil }
+
+type fakeTx struct{}
+
+func (fakeTx) Commit() error   { return nil }
+func (fakeTx) Rollback() error { return nil }
+
+type fakeStmt struct {
+	f *fakeDriver
+	q string
+}
+
+func (s *fakeStmt) Close() error  { return nil }
+func (s *fakeStmt) NumInput() int { return -1 }
+
+func (s *fakeStmt) Exec([]driver.Value) (driver.Result, error) {
+	s.f.record(s.q)
+	return driver.RowsAffected(1), nil
+}
+
+func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
+	s.f.record(s.q)
+	if s.f.respond == nil {
+		return &fakeRows{}, nil
+	}
+	cols, rows, err := s.f.respond(s.q, args)
+	if err != nil {
+		return nil, err
+	}
+	return &fakeRows{cols: cols, rows: rows}, nil
+}
+
+type fakeRows struct {
+	cols []string
+	rows [][]driver.Value
+	i    int
+}
+
+func (r *fakeRows) Columns() []string { return r.cols }
+func (r *fakeRows) Close() error      { return nil }
+func (r *fakeRows) Next(dest []driver.Value) error {
+	if r.i >= len(r.rows) {
+		return io.EOF
+	}
+	copy(dest, r.rows[r.i])
+	r.i++
+	return nil
+}
+
+func newFakeManager(t *testing.T, f *fakeDriver) *database.SessionManager {
+	t.Helper()
+	db := f.open()
+	t.Cleanup(func() { _ = db.Close() })
+	return database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
+}
+
+func fakeRow(values ...any) []driver.Value {
+	out := make([]driver.Value, len(values))
+	for i, v := range values {
+		out[i] = v
+	}
+	return out
+}
+
+const (
+	testUser       = "user-1"
+	testOtherUser  = "user-2"
+	testModuleID   = "11111111-1111-4111-8111-111111111111"
+	testVersionID  = "44444444-4444-4444-8444-444444444444"
+	testSeatTypeID = "33333333-3333-4333-8333-333333333333"
+	testSeatID     = "22222222-2222-4222-8222-222222222222"
+	testRoomID     = "55555555-5555-4555-8555-555555555555"
+)
+
+var (
+	moduleCols              = []string{"id", "user_id", "slug", "kind", "created_at"}
+	moduleVersionCols       = []string{"id", "user_id", "module_id", "version", "content", "checksum", "created_at"}
+	moduleJoinCols          = []string{"id", "user_id", "module_id", "version", "content", "checksum", "created_at", "slug", "kind"}
+	seatTypeVersionJoinCols = []string{"id", "user_id", "seat_type_id", "version", "module_refs", "created_at", "slug"}
+	overlayCols             = []string{"id", "user_id", "scope", "room_id", "seat_id", "ops", "created_at", "updated_at"}
+)
+
+func TestModuleAddVersionImmutable(t *testing.T) {
+	ctx := context.Background()
+	content := "hello"
+	checksum := moduleVersionChecksum(content)
+	now := time.Now().UTC()
+	moduleRow := fakeRow(testModuleID, testUser, "instr", "instruction", now)
+
+	env := func(existingChecksum string) (*ORMModuleRepository, *fakeDriver) {
+		f := &fakeDriver{}
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			switch {
+			case strings.Contains(q, `FROM "modules"`):
+				return moduleCols, [][]driver.Value{moduleRow}, nil
+			case strings.Contains(q, `FROM "module_versions"`):
+				return moduleVersionCols, [][]driver.Value{
+					fakeRow(testVersionID, testUser, testModuleID, "1.0.0", content, existingChecksum, now),
+				}, nil
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMModuleRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatalf("NewORMModuleRepository: %v", err)
+		}
+		return repo, f
+	}
+
+	repo, f := env(checksum)
+	got, err := repo.AddVersion(ctx, testUser, "instr", "1.0.0", content)
+	if err != nil {
+		t.Fatalf("AddVersion(same checksum) = %v", err)
+	}
+	if got == nil || got.Checksum != checksum || got.Slug != "instr" {
+		t.Fatalf("AddVersion = %+v", got)
+	}
+	assertNoStatement(t, f, `INSERT INTO "module_versions"`)
+
+	repo, f = env(moduleVersionChecksum("other"))
+	if _, err := repo.AddVersion(ctx, testUser, "instr", "1.0.0", content); err == nil || !strings.Contains(err.Error(), "different checksum") {
+		t.Fatalf("AddVersion(different checksum) = %v, want a different-checksum error", err)
+	}
+	assertNoStatement(t, f, `INSERT INTO "module_versions"`)
+}
+
+func TestModuleSaveModuleGetOrCreate(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `INSERT INTO "modules"`):
+			return moduleCols, [][]driver.Value{fakeRow(testModuleID, testUser, "instr", "instruction", now)}, nil
+		case strings.Contains(q, `FROM "modules"`):
+			return moduleCols, nil, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMModuleRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.SaveModule(ctx, testUser, "instr", resolver.KindInstruction)
+	if err != nil {
+		t.Fatalf("SaveModule: %v", err)
+	}
+	if got.Slug != "instr" || got.Kind != resolver.KindInstruction {
+		t.Fatalf("SaveModule = %+v", got)
+	}
+
+	f2 := &fakeDriver{}
+	f2.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `FROM "modules"`) {
+			return moduleCols, [][]driver.Value{fakeRow(testModuleID, testUser, "instr", "instruction", now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo2, _ := NewORMModuleRepository(newFakeManager(t, f2))
+	again, err := repo2.SaveModule(ctx, testUser, "instr", resolver.KindInstruction)
+	if err != nil || again == nil {
+		t.Fatalf("SaveModule(existing) = %+v, %v", again, err)
+	}
+	assertNoStatement(t, f2, `INSERT INTO "modules"`)
+
+	if _, err := repo2.SaveModule(ctx, testUser, "instr", resolver.KindDocument); err == nil {
+		t.Fatal("SaveModule with a different kind must fail")
+	}
+}
+
+func TestTenantScoping(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `INSERT INTO "modules"`):
+			return moduleCols, [][]driver.Value{fakeRow(testModuleID, testUser, "instr", "instruction", now)}, nil
+		case strings.Contains(q, `FROM "modules"`):
+			return moduleCols, nil, nil
+		case strings.Contains(q, "FROM module_versions AS mv"):
+			return moduleJoinCols, nil, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMModuleRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.SaveModule(ctx, testUser, "instr", resolver.KindInstruction); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.GetVersion(ctx, testUser, "instr", "1.0.0"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.LatestVersion(ctx, testUser, "instr"); err != nil {
+		t.Fatal(err)
+	}
+
+	sawModule, sawJoin := false, false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `FROM "modules"`) {
+			sawModule = true
+			if !strings.Contains(q, `"user_id" = $1`) {
+				t.Errorf("modules query not tenant-scoped: %s", q)
+			}
+		}
+		if strings.Contains(q, "FROM module_versions AS mv") {
+			sawJoin = true
+			if !strings.Contains(q, `mv."user_id" = $1`) {
+				t.Errorf("module join query not tenant-scoped: %s", q)
+			}
+		}
+	}
+	if !sawModule || !sawJoin {
+		t.Fatalf("expected tenant-scoped queries, sawModule=%v sawJoin=%v", sawModule, sawJoin)
+	}
+}
+
+func TestDBCatalogLatestOrderingAndGet(t *testing.T) {
+	now := time.Now().UTC()
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, "FROM module_versions AS mv") {
+			return moduleJoinCols, [][]driver.Value{
+				fakeRow("a", testUser, testModuleID, "2.0.0", "newest", moduleVersionChecksum("newest"), now, "instr", "instruction"),
+				fakeRow("b", testUser, testModuleID, "1.0.0", "older", moduleVersionChecksum("older"), now.Add(-time.Hour), "instr", "instruction"),
+			}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMModuleRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	catalog := NewDBCatalog(repo, testUser)
+	version, ok := catalog.Latest("instr")
+	if !ok || version != "2.0.0" {
+		t.Fatalf("Latest = %q, %v", version, ok)
+	}
+	mv, ok := catalog.Get("instr", "2.0.0")
+	if !ok || mv.Version != "2.0.0" || mv.Kind != resolver.KindInstruction || mv.Content != "newest" {
+		t.Fatalf("Get = %+v, %v", mv, ok)
+	}
+	if err := catalog.Err(); err != nil {
+		t.Fatalf("Err = %v", err)
+	}
+	sawOrdered := false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, "FROM module_versions AS mv") && strings.Contains(q, "ORDER BY") {
+			sawOrdered = true
+			if !strings.Contains(q, `ORDER BY mv."created_at" DESC, mv."id" DESC`) {
+				t.Errorf("latest query not ordered by created_at then id: %s", q)
+			}
+		}
+	}
+	if !sawOrdered {
+		t.Fatalf("no ordered latest query recorded: %v", f.recorded())
+	}
+}
+
+func TestErrorsAreNotSwallowed(t *testing.T) {
+	ctx := context.Background()
+	boom := errors.New("db boom")
+
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `FROM "modules"`) || strings.Contains(q, "FROM module_versions AS mv") {
+			return nil, nil, boom
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMModuleRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.SaveModule(ctx, testUser, "instr", resolver.KindInstruction); err == nil {
+		t.Fatal("SaveModule swallowed the database error")
+	}
+	if _, err := repo.LatestVersion(ctx, testUser, "instr"); err == nil {
+		t.Fatal("LatestVersion swallowed the database error")
+	}
+
+	// A conversion error must surface, not be reported as not found.
+	bad := &fakeDriver{}
+	bad.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, "FROM seat_type_versions AS stv") {
+			return seatTypeVersionJoinCols, [][]driver.Value{
+				fakeRow("v", testUser, testSeatTypeID, "1.0.0", []byte("{not json"), time.Now().UTC(), "seat.standard"),
+			}, nil
+		}
+		return nil, nil, nil
+	}
+	seatTypes, err := NewORMSeatTypeRepository(newFakeManager(t, bad))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := seatTypes.GetVersion(ctx, testUser, "seat.standard", "1.0.0"); err == nil {
+		t.Fatal("GetVersion swallowed a conversion error")
+	}
+}
+
+func TestSeatTypeAddVersionImmutable(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	refs := []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
+	encoded, err := encodeModuleRefs(refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seatTypeRow := fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", "go1.23", now)
+
+	env := func(stored json.RawMessage) (*ORMSeatTypeRepository, *fakeDriver) {
+		f := &fakeDriver{}
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			switch {
+			case strings.Contains(q, `FROM "seat_types"`):
+				return []string{"id", "user_id", "slug", "name", "description", "default_runtime", "created_at"}, [][]driver.Value{seatTypeRow}, nil
+			case strings.Contains(q, `FROM "seat_type_versions"`):
+				return []string{"id", "user_id", "seat_type_id", "version", "module_refs", "created_at"}, [][]driver.Value{
+					fakeRow("v", testUser, testSeatTypeID, "1.0.0", []byte(stored), now),
+				}, nil
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMSeatTypeRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return repo, f
+	}
+
+	repo, f := env(encoded)
+	got, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", refs)
+	if err != nil {
+		t.Fatalf("AddVersion(same refs) = %v", err)
+	}
+	if got == nil || len(got.ModuleRefs) != 1 || got.ModuleRefs[0].Slug != "instr" {
+		t.Fatalf("AddVersion = %+v", got)
+	}
+	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
+
+	different := json.RawMessage(`[{"slug":"other","version":"2.0.0"}]`)
+	repo, f = env(different)
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", refs); err == nil || !strings.Contains(err.Error(), "different module refs") {
+		t.Fatalf("AddVersion(different refs) = %v", err)
+	}
+	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
+}
+
+func TestOverlayUpsertScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	ops, err := encodeOps([]resolver.Op{{Kind: resolver.OpAdd, Slug: "instr", Version: "1.0.0"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `UPDATE "overlays"`):
+			return overlayCols, [][]driver.Value{fakeRow("o1", testUser, "company", nil, nil, []byte(ops), now, now.Add(time.Minute))}, nil
+		case strings.Contains(q, `INSERT INTO "overlays"`):
+			return overlayCols, [][]driver.Value{fakeRow("o2", testUser, "company", nil, nil, []byte(ops), now, now)}, nil
+		case strings.Contains(q, `FROM "overlays"`):
+			return overlayCols, nil, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMOverlayRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := repo.Upsert(ctx, testUser, domainrepo.Overlay{Scope: domainrepo.ScopeCompany, Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "instr", Version: "1.0.0"}}})
+	if err != nil {
+		t.Fatalf("Upsert(create): %v", err)
+	}
+	if created == nil || created.Scope != domainrepo.ScopeCompany || len(created.Ops) != 1 {
+		t.Fatalf("Upsert(create) = %+v", created)
+	}
+
+	// Existing target: the update must stay inside the tenant.
+	f2 := &fakeDriver{}
+	f2.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `UPDATE "overlays"`):
+			return overlayCols, [][]driver.Value{fakeRow("o1", testUser, "company", nil, nil, []byte(ops), now, now.Add(time.Minute))}, nil
+		case strings.Contains(q, `FROM "overlays"`):
+			return overlayCols, [][]driver.Value{fakeRow("o1", testUser, "company", nil, nil, []byte("[]"), now, now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo2, _ := NewORMOverlayRepository(newFakeManager(t, f2))
+	if _, err := repo2.Upsert(ctx, testUser, domainrepo.Overlay{Scope: domainrepo.ScopeCompany, Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "instr", Version: "1.0.0"}}}); err != nil {
+		t.Fatalf("Upsert(update): %v", err)
+	}
+	scoped := false
+	for _, q := range f2.recorded() {
+		if strings.Contains(q, `UPDATE "overlays"`) {
+			scoped = strings.Contains(q, `"user_id" = $3`)
+		}
+	}
+	if !scoped {
+		t.Fatalf("overlay update not tenant-scoped: %v", f2.recorded())
+	}
+}
+
+func TestSeatTypeListOrderedBySlug(t *testing.T) {
+	now := time.Now().UTC()
+	seatTypeCols := []string{"id", "user_id", "slug", "name", "description", "default_runtime", "created_at"}
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `FROM "seat_types"`) {
+			return seatTypeCols, [][]driver.Value{
+				fakeRow("b", testUser, "zeta", "Zeta", "d", "go1.23", now),
+				fakeRow("a", testUser, "alpha", "Alpha", "d", "go1.23", now),
+			}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatTypeRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.List(context.Background(), testUser)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(got) != 2 || got[0].Slug != "alpha" || got[1].Slug != "zeta" {
+		t.Fatalf("List = %+v", got)
+	}
+	scoped := false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `FROM "seat_types"`) && strings.Contains(q, `"user_id" = $1`) {
+			scoped = true
+		}
+	}
+	if !scoped {
+		t.Fatalf("seat type list not tenant-scoped: %v", f.recorded())
+	}
+}
+
+func TestSeatSettingsGetDefaultsFalse(t *testing.T) {
+	f := &fakeDriver{}
+	repo, err := NewORMSeatSettingsRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.Get(context.Background(), testUser)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got == nil || got.UserID != testUser || got.FollowLatest {
+		t.Fatalf("Get(no row) = %+v", got)
+	}
+}
+
+func TestSeatSettingsSetInsertsThenUpdates(t *testing.T) {
+	now := time.Now().UTC()
+	settingsCols := []string{"user_id", "follow_latest", "updated_at"}
+
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `INSERT INTO "seat_settings"`):
+			return settingsCols, [][]driver.Value{fakeRow(testUser, true, now)}, nil
+		case strings.Contains(q, `FROM "seat_settings"`):
+			return settingsCols, nil, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatSettingsRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	created, err := repo.Set(context.Background(), testUser, true)
+	if err != nil || created == nil || !created.FollowLatest {
+		t.Fatalf("Set(create) = %+v, %v", created, err)
+	}
+
+	f2 := &fakeDriver{}
+	f2.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `UPDATE "seat_settings"`):
+			return settingsCols, [][]driver.Value{fakeRow(testUser, false, now)}, nil
+		case strings.Contains(q, `FROM "seat_settings"`):
+			return settingsCols, [][]driver.Value{fakeRow(testUser, true, now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo2, _ := NewORMSeatSettingsRepository(newFakeManager(t, f2))
+	updated, err := repo2.Set(context.Background(), testUser, false)
+	if err != nil || updated == nil || updated.FollowLatest {
+		t.Fatalf("Set(update) = %+v, %v", updated, err)
+	}
+	scoped := false
+	for _, q := range f2.recorded() {
+		if strings.Contains(q, `UPDATE "seat_settings"`) {
+			scoped = strings.Contains(q, `"user_id" = $3`)
+		}
+	}
+	if !scoped {
+		t.Fatalf("settings update not tenant-scoped: %v", f2.recorded())
+	}
+}
+
+func TestSeatSettingsErrorsNotSwallowed(t *testing.T) {
+	boom := errors.New("db boom")
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `"seat_settings"`) {
+			return nil, nil, boom
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatSettingsRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.Get(context.Background(), testUser); err == nil {
+		t.Fatal("Get swallowed the database error")
+	}
+	if _, err := repo.Set(context.Background(), testUser, true); err == nil {
+		t.Fatal("Set swallowed the database error")
+	}
+}
+
+func TestSeatTableMetadataMatchesStructs(t *testing.T) {
+	cases := []struct {
+		table string
+		typ   reflect.Type
+	}{
+		{"modules", reflect.TypeOf(seatdb.ModuleORM{})},
+		{"module_versions", reflect.TypeOf(seatdb.ModuleVersionORM{})},
+		{"seat_types", reflect.TypeOf(seatdb.SeatTypeORM{})},
+		{"seat_type_versions", reflect.TypeOf(seatdb.SeatTypeVersionORM{})},
+		{"rooms", reflect.TypeOf(seatdb.RoomORM{})},
+		{"seats", reflect.TypeOf(seatdb.SeatORM{})},
+		{"overlays", reflect.TypeOf(seatdb.OverlayORM{})},
+		{"seat_links", reflect.TypeOf(seatdb.SeatLinkORM{})},
+		{"resolved_seats", reflect.TypeOf(seatdb.ResolvedSeatORM{})},
+		{"seat_settings", reflect.TypeOf(seatdb.SeatSettingsORM{})},
+	}
+	byName := map[string]database.TableDef{}
+	for _, def := range database.Tables {
+		byName[def.Name] = def
+	}
+	for _, tc := range cases {
+		def, ok := byName[tc.table]
+		if !ok {
+			t.Errorf("table %s is not registered", tc.table)
+			continue
+		}
+		cols := map[string]bool{}
+		for _, c := range def.Columns {
+			cols[c.Name] = true
+		}
+		for i := 0; i < tc.typ.NumField(); i++ {
+			tag := tc.typ.Field(i).Tag.Get("db")
+			if !cols[tag] {
+				t.Errorf("table %s: field %s (db %q) missing from metadata", tc.table, tc.typ.Field(i).Name, tag)
+			}
+		}
+	}
+}
+
+func TestRepositoryConstructors(t *testing.T) {
+	sessions := database.NewSessionManager(&database.DatabaseConfig{})
+	if _, err := NewORMModuleRepository(sessions); err != nil {
+		t.Fatalf("NewORMModuleRepository: %v", err)
+	}
+	if _, err := NewORMSeatTypeRepository(sessions); err != nil {
+		t.Fatalf("NewORMSeatTypeRepository: %v", err)
+	}
+	if _, err := NewORMRoomRepository(sessions); err != nil {
+		t.Fatalf("NewORMRoomRepository: %v", err)
+	}
+	if _, err := NewORMSeatRepository(sessions); err != nil {
+		t.Fatalf("NewORMSeatRepository: %v", err)
+	}
+	if _, err := NewORMOverlayRepository(sessions); err != nil {
+		t.Fatalf("NewORMOverlayRepository: %v", err)
+	}
+	if _, err := NewORMSeatLinkRepository(sessions); err != nil {
+		t.Fatalf("NewORMSeatLinkRepository: %v", err)
+	}
+	if _, err := NewORMResolvedSeatRepository(sessions); err != nil {
+		t.Fatalf("NewORMResolvedSeatRepository: %v", err)
+	}
+	if _, err := NewORMSeatSettingsRepository(sessions); err != nil {
+		t.Fatalf("NewORMSeatSettingsRepository: %v", err)
+	}
+}
+
+func assertNoStatement(t *testing.T, f *fakeDriver, substr string) {
+	t.Helper()
+	for _, q := range f.recorded() {
+		if strings.Contains(q, substr) {
+			t.Fatalf("unexpected statement %q", q)
+		}
+	}
+}
