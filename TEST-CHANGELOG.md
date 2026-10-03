@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Seat checker: install-checker and a PATH check in pull and rig
+
+- Added in `test_openrig_seat_sync.py`: link missing / resolves elsewhere / correct link for `pull` and `rig`; `install-checker` build command, env and cwd, atomic replacement of an existing link, PATH failure with the link still created, no `go`, build failure (nothing linked). An autouse fixture stubs the requirement for the older pull/rig tests. `src/tests/scripts` 149 passed.
+
 ## 2026-10-03 — seatcheck delivers to the full session name
 
 - Changed: `TestSendAllowedDelivers` expects the roster session name (`pod-b@r`). Added `TestSendAllowedRecipientOutsideRosterFails` (exit 1, allowed decision audited, nothing delivered) and `TestParseWhoamiRoster` (peers keyed by member, other rigs ignored, missing identity is an error). cmd/seatcheck ok.

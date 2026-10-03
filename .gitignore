@@ -560,6 +560,7 @@ agenthub_go/.gocache/
 agenthub_go/.gomodcache/
 agenthub_go/.gotmp/
 agenthub_go/agenthub
+agenthub_go/seatcheck
 agenthub_go/scratch/
 testground/
 

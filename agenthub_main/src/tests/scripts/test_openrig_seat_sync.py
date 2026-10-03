@@ -189,6 +189,39 @@ def env(monkeypatch, server):
     return server
 
 
+REAL_REQUIRE_CHECKER = getattr(seat_sync, "require_checker", None)
+
+
+@pytest.fixture(autouse=True)
+def checker_present(monkeypatch):
+    """Most tests are not about the checker binary: stub the requirement."""
+    monkeypatch.setattr(seat_sync, "require_checker", lambda out: None, raising=False)
+
+
+@pytest.fixture
+def real_checker_requirement(monkeypatch):
+    monkeypatch.setattr(seat_sync, "require_checker", REAL_REQUIRE_CHECKER)
+
+
+@pytest.fixture
+def checker_home(monkeypatch, tmp_path):
+    """A temp HOME whose ~/.local/bin is the only PATH entry."""
+    home = tmp_path / "home"
+    link_dir = home / ".local" / "bin"
+    link_dir.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("PATH", str(link_dir))
+    return link_dir
+
+
+def make_binary(out):
+    binary = out / "bin" / "seatcheck"
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    binary.write_text("#!/bin/sh\n")
+    binary.chmod(0o755)
+    return binary
+
+
 def run_cli(argv):
     try:
         return seat_sync.main(argv)
@@ -964,3 +997,116 @@ def test_rig_invalid_permission_policy_exits_2(env, tmp_path, capsys):
     assert code == 2
     assert "invalid choice" in err
     assert env.gets == []
+
+
+# --- seat checker binary ---
+
+
+@pytest.mark.parametrize("command", [["pull", "room1", "seat1"], ["rig", "room1"]])
+def test_pull_and_rig_fail_loudly_without_the_link(
+    env, real_checker_requirement, checker_home, tmp_path, capsys, command
+):
+    env.set_seat(HASH_A)
+    pins = tmp_path / "pins"
+    code = run_cli([*command, "--out", str(pins)])
+    _, err = capsys.readouterr()
+    assert code == 2
+    assert str(pins / "bin" / "seatcheck") in err
+    assert "install-checker" in err and str(checker_home) in err
+    assert env.gets == []
+    assert not (pins / "room1").exists()
+
+
+def test_pull_fails_when_seatcheck_resolves_elsewhere(
+    env, real_checker_requirement, checker_home, tmp_path, capsys
+):
+    pins = tmp_path / "pins"
+    make_binary(pins)
+    other = make_binary(tmp_path / "other")
+    (checker_home / "seatcheck").symlink_to(other)
+    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 2
+    err = capsys.readouterr().err
+    assert str(other) in err and "install-checker" in err
+
+
+def test_pull_runs_when_the_link_points_at_the_store_binary(
+    env, real_checker_requirement, checker_home, tmp_path, capsys
+):
+    env.set_seat(HASH_A)
+    pins = tmp_path / "pins"
+    (checker_home / "seatcheck").symlink_to(make_binary(pins))
+    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 0
+
+
+def fake_go_build(calls):
+    def run(command, **kwargs):
+        calls.append((command, kwargs))
+        make_binary(Path(command[3]).parent.parent)
+        return subprocess.CompletedProcess(command, 0)
+
+    return run
+
+
+def test_install_checker_builds_and_links_on_path(
+    real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
+):
+    pins = tmp_path / "pins"
+    old = make_binary(tmp_path / "old")
+    (checker_home / "seatcheck").symlink_to(old)
+    calls = []
+    monkeypatch.setattr(seat_sync.subprocess, "run", fake_go_build(calls))
+
+    code = run_cli(["install-checker", "--out", str(pins)])
+    out, _ = capsys.readouterr()
+
+    binary = pins.resolve() / "bin" / "seatcheck"
+    assert code == 0
+    assert out.strip() == f"checker:{binary}"
+    assert (checker_home / "seatcheck").resolve() == binary
+    ((command, kwargs),) = calls
+    assert command == ["go", "build", "-o", str(binary), "./cmd/seatcheck"]
+    assert (
+        kwargs["cwd"]
+        == seat_sync.AGENTHUB_GO_DIR
+        == MODULE_PATH.parents[1] / "agenthub_go"
+    )
+    assert kwargs["env"]["GOCACHE"] == str(seat_sync.AGENTHUB_GO_DIR / ".gocache")
+    assert kwargs["env"]["TMPDIR"] == str(seat_sync.AGENTHUB_GO_DIR / ".gotmp")
+    assert kwargs["check"] is True
+    # The installed link now satisfies pull's check.
+    assert seat_sync.resolve_checker(pins.resolve())
+
+
+def test_install_checker_fails_loudly_when_the_link_dir_is_not_on_path(
+    real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
+):
+    monkeypatch.setenv("PATH", str(tmp_path / "elsewhere"))
+    monkeypatch.setattr(seat_sync.subprocess, "run", fake_go_build([]))
+    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
+    err = capsys.readouterr().err
+    assert f"add {checker_home} to PATH" in err
+    assert (checker_home / "seatcheck").is_symlink()
+
+
+def test_install_checker_without_go_exits_2_and_links_nothing(
+    checker_home, monkeypatch, tmp_path, capsys
+):
+    def no_go(command, **kwargs):
+        raise FileNotFoundError("go")
+
+    monkeypatch.setattr(seat_sync.subprocess, "run", no_go)
+    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
+    assert "go is not installed" in capsys.readouterr().err
+    assert not (checker_home / "seatcheck").exists()
+
+
+def test_install_checker_build_failure_exits_1_and_links_nothing(
+    checker_home, monkeypatch, tmp_path, capsys
+):
+    def failing(command, **kwargs):
+        raise subprocess.CalledProcessError(3, command)
+
+    monkeypatch.setattr(seat_sync.subprocess, "run", failing)
+    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 1
+    assert "go build failed with exit code 3" in capsys.readouterr().err
+    assert not (checker_home / "seatcheck").exists()

@@ -44,8 +44,14 @@ Usage:
   openrig_seat_sync.py rig ROOM [--out DIR] [--update]
                        [--permission-policy locked|standard|open|yolo|none]
   openrig_seat_sync.py bundle ROOM SEAT --rig-yaml PATH --rig-root DIR [--out-dir DIR]
+  openrig_seat_sync.py install-checker [--out DIR]
   openrig_seat_sync.py switch ROOM SEAT [--runtime R] [--model M]
                        [--apply none|set-model|restart] [--reason TEXT]
+
+``install-checker`` builds ``agenthub_go/cmd/seatcheck`` to ``<DIR>/bin/seatcheck`` (DIR is the
+seat store) and links ``~/.local/bin/seatcheck`` to it. Seats run the bare name
+``seatcheck send ...``, so it must resolve on the PATH the seats inherit; ``pull`` and ``rig``
+fail until it resolves to the store's binary.
 
 ``switch`` changes the LLM of one seat: 4genthub records the occupant, then
 OpenRig applies it. Fields not given keep their current cloud value. A model
@@ -72,6 +78,8 @@ import urllib.request
 from pathlib import Path, PurePosixPath
 
 DEFAULT_OUT = Path.home() / ".openrig" / "agenthub-seats"
+AGENTHUB_GO_DIR = Path(__file__).resolve().parent.parent / "agenthub_go"
+CHECKER_NAME = "seatcheck"
 SEATS_PATH = "/api/v2/openrig/seats"
 ROOMS_PATH = "/api/v2/openrig/rooms"
 
@@ -150,7 +158,9 @@ def request_json(
             body = json.load(response)
     except urllib.error.HTTPError as err:
         detail = err.read().decode("utf-8", "replace")[:300]
-        raise SyncError(f"{method} {path} failed: HTTP {err.code} {detail}", EXIT_REMOTE)
+        raise SyncError(
+            f"{method} {path} failed: HTTP {err.code} {detail}", EXIT_REMOTE
+        )
     except urllib.error.URLError as err:
         raise SyncError(f"{method} {path} failed: {err.reason}", EXIT_REMOTE)
     except (TimeoutError, OSError) as err:
@@ -204,7 +214,9 @@ def extract_files(resolved: dict) -> list[tuple[PurePosixPath, str]]:
             or not isinstance(file.get("path"), str)
             or not isinstance(file.get("content"), str)
         ):
-            raise SyncError("resolved_seat contains a malformed file entry", EXIT_REMOTE)
+            raise SyncError(
+                "resolved_seat contains a malformed file entry", EXIT_REMOTE
+            )
         entries.append((safe_relative(file["path"]), file["content"]))
     return entries
 
@@ -268,7 +280,9 @@ def pull_seat(
     """
     resolved = fetch_seat(base_url, token, room, seat)
     if resolved.get("room") != room or resolved.get("seat") != seat:
-        raise SyncError("server returned a snapshot for a different room/seat", EXIT_REMOTE)
+        raise SyncError(
+            "server returned a snapshot for a different room/seat", EXIT_REMOTE
+        )
     fetched_hash = validate_hash(resolved.get("hash"))
     entries = extract_files(resolved)
     policy = resolved.get("policy", {})
@@ -301,13 +315,77 @@ def pull_seat(
     return hash_dir
 
 
+def checker_binary(out: Path) -> Path:
+    return out / "bin" / CHECKER_NAME
+
+
+def checker_link() -> Path:
+    return Path.home() / ".local" / "bin" / CHECKER_NAME
+
+
+def resolve_checker(out: Path) -> bool:
+    """True when the bare name ``seatcheck`` resolves to the seat store's binary."""
+    found = shutil.which(CHECKER_NAME)
+    return found is not None and os.path.realpath(found) == os.path.realpath(
+        checker_binary(out)
+    )
+
+
+def describe_found() -> str:
+    found = shutil.which(CHECKER_NAME)
+    return f"{found} -> {os.path.realpath(found)}" if found else "not on PATH"
+
+
+def require_checker(out: Path) -> None:
+    if not resolve_checker(out):
+        raise SyncError(
+            f"{CHECKER_NAME} does not resolve to {checker_binary(out)} on PATH "
+            f"(found: {describe_found()}); "
+            "run `openrig_seat_sync.py install-checker` and put "
+            f"{checker_link().parent} on PATH",
+            EXIT_USAGE,
+        )
+
+
+def cmd_install_checker(args: argparse.Namespace) -> None:
+    out = (args.out or DEFAULT_OUT).expanduser().resolve()
+    binary = checker_binary(out)
+    binary.parent.mkdir(parents=True, exist_ok=True)
+    cache, tmp = AGENTHUB_GO_DIR / ".gocache", AGENTHUB_GO_DIR / ".gotmp"
+    for directory in (cache, tmp):
+        directory.mkdir(exist_ok=True)
+    try:
+        subprocess.run(
+            ["go", "build", "-o", str(binary), "./cmd/seatcheck"],
+            cwd=AGENTHUB_GO_DIR,
+            env={**os.environ, "GOCACHE": str(cache), "TMPDIR": str(tmp)},
+            check=True,
+        )
+    except FileNotFoundError:
+        raise SyncError(
+            "go is not installed; cannot build the seat checker", EXIT_USAGE
+        )
+    except subprocess.CalledProcessError as err:
+        raise SyncError(f"go build failed with exit code {err.returncode}", EXIT_REMOTE)
+    place_agent(binary, checker_link())
+    if not resolve_checker(out):
+        raise SyncError(
+            f"installed {binary} and linked {checker_link()}, but {CHECKER_NAME} does not "
+            f"resolve to it on PATH (found: {describe_found()}); "
+            f"add {checker_link().parent} to PATH",
+            EXIT_USAGE,
+        )
+    print(f"checker:{binary}")
+
+
 def cmd_pull(args: argparse.Namespace) -> None:
     room = validate_name("room", args.room)
     seat = validate_name("seat", args.seat)
+    out = (args.out or DEFAULT_OUT).expanduser().resolve()
+    require_checker(out)
     base_url = require_env("AGENTHUB_URL")
     token = require_env("AGENTHUB_TOKEN")
 
-    out = (args.out or DEFAULT_OUT).expanduser().resolve()
     hash_dir = pull_seat(base_url, token, room, seat, out, args.update)
     print(f"path:{hash_dir}")
 
@@ -340,7 +418,9 @@ def swap_dir(staging: Path, target: Path) -> None:
     """Move ``staging`` onto ``target``, restoring ``target`` if the move fails."""
     backup = None
     if target.exists() or target.is_symlink():
-        backup = Path(tempfile.mkdtemp(prefix=f".{target.name}.old.", dir=target.parent))
+        backup = Path(
+            tempfile.mkdtemp(prefix=f".{target.name}.old.", dir=target.parent)
+        )
         backup.rmdir()
         target.rename(backup)
     try:
@@ -355,6 +435,8 @@ def swap_dir(staging: Path, target: Path) -> None:
 
 def cmd_rig(args: argparse.Namespace) -> None:
     room = validate_name("room", args.room)
+    out = (args.out or DEFAULT_OUT).expanduser().resolve()
+    require_checker(out)
     base_url = require_env("AGENTHUB_URL")
     token = require_env("AGENTHUB_TOKEN")
 
@@ -379,13 +461,14 @@ def cmd_rig(args: argparse.Namespace) -> None:
             raise SyncError(f"rigspec lists seat {seat!r} twice", EXIT_REMOTE)
         seats.append(seat)
 
-    out = (args.out or DEFAULT_OUT).expanduser().resolve()
     pinned: dict[str, Path] = {}
     for seat in seats:
         try:
             pinned[seat] = pull_seat(base_url, token, room, seat, out, args.update)
         except SyncError as err:
-            raise SyncError(f"seat {seat} could not be pulled: {err}", EXIT_REMOTE) from err
+            raise SyncError(
+                f"seat {seat} could not be pulled: {err}", EXIT_REMOTE
+            ) from err
 
     room_dir = out / room
     room_dir.mkdir(parents=True, exist_ok=True)
@@ -449,11 +532,18 @@ def cmd_bundle(args: argparse.Namespace) -> None:
     print(str(bundle_path))
 
 
-def validate_choice(kind: str, value: str, pattern: re.Pattern | None, allowed=None) -> str:
+def validate_choice(
+    kind: str, value: str, pattern: re.Pattern | None, allowed=None
+) -> str:
     if allowed is not None and value not in allowed:
-        raise SyncError(f"invalid {kind}: {value!r} (expected one of {', '.join(allowed)})", EXIT_USAGE)
+        raise SyncError(
+            f"invalid {kind}: {value!r} (expected one of {', '.join(allowed)})",
+            EXIT_USAGE,
+        )
     if pattern is not None and not pattern.fullmatch(value):
-        raise SyncError(f"invalid {kind}: {value!r} (expected {pattern.pattern})", EXIT_USAGE)
+        raise SyncError(
+            f"invalid {kind}: {value!r} (expected {pattern.pattern})", EXIT_USAGE
+        )
     return value
 
 
@@ -503,7 +593,10 @@ def apply_to_rig(room: str, seat: str, model: str, restart: bool, reason: str) -
     try:
         session = canonical_session(room, seat)
     except FileNotFoundError:
-        print("note: `rig` not found on PATH; the cloud change is recorded only", file=sys.stderr)
+        print(
+            "note: `rig` not found on PATH; the cloud change is recorded only",
+            file=sys.stderr,
+        )
         return "none"
     except subprocess.CalledProcessError as err:
         raise SyncError(f"rig ps failed with exit code {err.returncode}", EXIT_REMOTE)
@@ -516,14 +609,18 @@ def apply_to_rig(room: str, seat: str, model: str, restart: bool, reason: str) -
 
     commands = []
     if model:
-        commands.append(["rig", "seat", "set-model", session, "--model", model, "--reason", reason])
+        commands.append(
+            ["rig", "seat", "set-model", session, "--model", model, "--reason", reason]
+        )
     if restart:
         print(
             f"warning: restarting {session} interrupts it and loses its live context",
             file=sys.stderr,
         )
         commands.append(["rig", "seat", "stop", session, "--reason", reason])
-        commands.append(["rig", "seat", "launch", session, "--fresh", "--reason", reason])
+        commands.append(
+            ["rig", "seat", "launch", session, "--fresh", "--reason", reason]
+        )
     for command in commands:
         try:
             run_rig(command)
@@ -531,7 +628,8 @@ def apply_to_rig(room: str, seat: str, model: str, restart: bool, reason: str) -
             raise SyncError("`rig` executable not found on PATH", EXIT_REMOTE)
         except subprocess.CalledProcessError as err:
             raise SyncError(
-                f"`rig seat {command[2]}` failed with exit code {err.returncode}", EXIT_REMOTE
+                f"`rig seat {command[2]}` failed with exit code {err.returncode}",
+                EXIT_REMOTE,
             )
     if restart:
         return "restart"
@@ -554,7 +652,9 @@ def cmd_switch(args: argparse.Namespace) -> None:
     runtime = args.runtime if args.runtime is not None else current.get("runtime") or ""
     model = args.model if args.model is not None else current.get("model") or ""
     path = f"{ROOMS_PATH}/{room}/seats/{seat}/occupant"
-    body = request_json("PUT", base_url, token, path, {"runtime": runtime, "model": model})
+    body = request_json(
+        "PUT", base_url, token, path, {"runtime": runtime, "model": model}
+    )
     if body.get("success") is not True:
         raise SyncError(f"PUT {path} returned an error response", EXIT_REMOTE)
 
@@ -579,7 +679,9 @@ def cmd_switch(args: argparse.Namespace) -> None:
             file=sys.stderr,
         )
     elif mode != "none":
-        applied = apply_to_rig(room, seat, model if model_changed else "", mode == "restart", reason)
+        applied = apply_to_rig(
+            room, seat, model if model_changed else "", mode == "restart", reason
+        )
     print(f"switched:{room}/{seat} runtime={runtime} model={model} applied={applied}")
 
 
@@ -643,6 +745,15 @@ def main(argv: list[str] | None = None) -> int:
         help="where to write the .rigbundle (default: current directory)",
     )
     bundle.set_defaults(func=cmd_bundle)
+
+    install = subparsers.add_parser(
+        "install-checker",
+        help="build seatcheck into the seat store and link it on PATH",
+    )
+    install.add_argument(
+        "--out", type=Path, default=None, help=f"seat store (default {DEFAULT_OUT})"
+    )
+    install.set_defaults(func=cmd_install_checker)
 
     switch = subparsers.add_parser(
         "switch", help="change the LLM of a seat: cloud records it, OpenRig applies it"
