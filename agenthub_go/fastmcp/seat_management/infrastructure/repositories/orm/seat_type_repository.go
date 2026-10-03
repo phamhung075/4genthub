@@ -12,6 +12,7 @@ import (
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	seatdb "agenthub/fastmcp/seat_management/infrastructure/database"
+	"agenthub/fastmcp/task_management/domain/exceptions"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
@@ -103,41 +104,53 @@ func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, ve
 	if err != nil {
 		return nil, err
 	}
-	existing, err := r.versions.FindOneBy(ctx, baserepo.NewKwargs("user_id", userID, "seat_type_id", seatType.ID, "version", version))
+	existing, err := r.findVersion(ctx, userID, seatType.ID, version)
 	if err != nil {
 		return nil, err
 	}
-	if existing != nil {
-		existingChecksum, err := moduleRefsChecksum(existing.ModuleRefs)
-		if err != nil {
+	if existing == nil {
+		created, err := r.versions.Create(ctx, baserepo.NewKwargs(
+			"user_id", userID,
+			"seat_type_id", seatType.ID,
+			"version", version,
+			"default_runtime", defaultRuntime,
+			"module_refs", encoded,
+		))
+		if err == nil {
+			out, err := seatTypeVersionToDomain(created)
+			if err != nil {
+				return nil, err
+			}
+			out.Slug = seatType.Slug
+			return out, nil
+		}
+		// A concurrent writer may have inserted the same version between the read and the
+		// insert (unique violation); re-read it and judge its content like any existing row.
+		var integrity *exceptions.DatabaseIntegrityException
+		if !errors.As(err, &integrity) {
 			return nil, err
 		}
-		if existing.DefaultRuntime != defaultRuntime || existingChecksum != checksum {
-			return nil, fmt.Errorf("seat type %q version %q already exists with a different runtime or module refs: %w", slug, version, domainrepo.ErrSeatTypeVersionConflict)
-		}
-		out, err := seatTypeVersionToDomain(existing)
-		if err != nil {
+		if existing, _ = r.findVersion(ctx, userID, seatType.ID, version); existing == nil {
 			return nil, err
 		}
-		out.Slug = seatType.Slug
-		return out, nil
 	}
-	created, err := r.versions.Create(ctx, baserepo.NewKwargs(
-		"user_id", userID,
-		"seat_type_id", seatType.ID,
-		"version", version,
-		"default_runtime", defaultRuntime,
-		"module_refs", encoded,
-	))
+	existingChecksum, err := moduleRefsChecksum(existing.ModuleRefs)
 	if err != nil {
 		return nil, err
 	}
-	out, err := seatTypeVersionToDomain(created)
+	if existing.DefaultRuntime != defaultRuntime || existingChecksum != checksum {
+		return nil, fmt.Errorf("seat type %q version %q already exists with a different runtime or module refs: %w", slug, version, domainrepo.ErrSeatTypeVersionConflict)
+	}
+	out, err := seatTypeVersionToDomain(existing)
 	if err != nil {
 		return nil, err
 	}
 	out.Slug = seatType.Slug
 	return out, nil
+}
+
+func (r *ORMSeatTypeRepository) findVersion(ctx context.Context, userID, seatTypeID, version string) (*seatdb.SeatTypeVersionORM, error) {
+	return r.versions.FindOneBy(ctx, baserepo.NewKwargs("user_id", userID, "seat_type_id", seatTypeID, "version", version))
 }
 
 // GetVersion returns one version by slug, or nil when absent.

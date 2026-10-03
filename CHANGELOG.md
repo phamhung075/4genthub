@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Concurrent seat-type version creation returns 409, not 500** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_type_repository.go`: when the insert of a seat type version hits the unique constraint because another writer took the same version, `AddVersion` re-reads the winner's row. Identical runtime and module refs return that row; anything else is `ErrSeatTypeVersionConflict` (HTTP 409).
+
+### Fixed
+
 **Deleting a room deletes its seat status** (2026-10-03)
 
 - `DELETE /api/v2/openrig/rooms/{room}` also removes the room's `seat_status` rows (every machine, this user only) in the same transaction (`MachineStatusRepository.DeleteSeatStatusForRoom`, `RoomDeletionService`). Before, they stayed until the bridge replaced the machine snapshot.

@@ -6,6 +6,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
 
+## 2026-10-03 — Seat-type version race
+
+- Added: `TestSeatTypeAddVersionLostRace` (fake driver returns SQLSTATE 23505 on insert; identical content returns the winner, another runtime or refs is `ErrSeatTypeVersionConflict`).
+
 ## 2026-10-03 — Room deletion removes seat status
 
 - Added: `TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped` (fake driver); seat status step in `TestDeleteRoomRemovesDependentsBeforeParents` and `TestSeatAdminDeleteRoom`; Postgres integration checks (another tenant and another room untouched; skipped without `SEAT_TEST_DATABASE_URL`).

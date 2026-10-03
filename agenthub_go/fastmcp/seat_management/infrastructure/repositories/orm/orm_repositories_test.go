@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"github.com/jackc/pgx/v5/pgconn"
 	"io"
 	"reflect"
 	"strings"
@@ -411,6 +412,61 @@ func TestSeatTypeAddVersionImmutable(t *testing.T) {
 		t.Fatalf("AddVersion(different runtime) = %v, want ErrSeatTypeVersionConflict", err)
 	}
 	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
+}
+
+// A writer that loses the race for the next version gets a unique violation on insert. Its
+// result must be decided by the winner's row, not reported as an internal error.
+func TestSeatTypeAddVersionLostRace(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	refs := []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
+	encoded, err := encodeModuleRefs(refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	winner := func(runtime string, stored []byte) (*ORMSeatTypeRepository, *fakeDriver) {
+		f := &fakeDriver{}
+		versionReads := 0
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			switch {
+			case strings.Contains(q, `FROM "seat_types"`):
+				return []string{"id", "user_id", "slug", "name", "description", "created_at"}, [][]driver.Value{
+					fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", now),
+				}, nil
+			case strings.Contains(q, `INSERT INTO "seat_type_versions"`):
+				return nil, nil, &pgconn.PgError{Code: "23505", Message: "duplicate key value violates unique constraint"}
+			case strings.Contains(q, `FROM "seat_type_versions"`):
+				versionReads++
+				if versionReads == 1 {
+					return []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at"}, nil, nil
+				}
+				return []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at"}, [][]driver.Value{
+					fakeRow("v", testUser, testSeatTypeID, "1.0.1", runtime, stored, now),
+				}, nil
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMSeatTypeRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return repo, f
+	}
+
+	repo, _ := winner("go1.23", []byte(encoded))
+	got, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.1", "go1.23", refs)
+	if err != nil || got == nil || got.Version != "1.0.1" {
+		t.Fatalf("lost race with identical content = %+v, %v, want the winner's row", got, err)
+	}
+
+	repo, _ = winner("codex", []byte(encoded))
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.1", "go1.23", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("lost race with another runtime = %v, want ErrSeatTypeVersionConflict", err)
+	}
+	repo, _ = winner("go1.23", []byte(`[{"slug":"other","version":"2.0.0"}]`))
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.1", "go1.23", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("lost race with other refs = %v, want ErrSeatTypeVersionConflict", err)
+	}
 }
 
 func TestOverlayUpsertScoped(t *testing.T) {
