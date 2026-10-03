@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
 	seatdb "agenthub/fastmcp/seat_management/infrastructure/database"
-	"agenthub/fastmcp/task_management/domain/exceptions"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
@@ -30,15 +30,15 @@ func NewORMMachineTokenRepository(sessions *database.SessionManager) (*ORMMachin
 }
 
 // Create stores an active token. The partial unique index uq_machine_tokens_active allows one
-// active token per (user, machine); a violation is ErrMachineTokenExists.
+// active token per (user, machine); a violation of that index is ErrMachineTokenExists, any
+// other error, including another integrity violation, is returned as it is.
 func (r *ORMMachineTokenRepository) Create(ctx context.Context, userID, machineID, tokenHash string) (*domainrepo.MachineToken, error) {
 	created, err := r.ORMRepository.Create(ctx, baserepo.NewKwargs(
 		"user_id", userID,
 		"machine_id", machineID,
 		"token_hash", tokenHash,
 	))
-	var integrity *exceptions.DatabaseIntegrityException
-	if errors.As(err, &integrity) {
+	if isUniqueViolation(err) && strings.Contains(err.Error(), "uq_machine_tokens_active") {
 		return nil, domainrepo.ErrMachineTokenExists
 	}
 	if err != nil {

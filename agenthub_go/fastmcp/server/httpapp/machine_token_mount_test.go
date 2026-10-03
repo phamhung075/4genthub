@@ -100,6 +100,7 @@ func newTokenFixture(t *testing.T) *tokenFixture {
 	f.mux = http.NewServeMux()
 	mountSeatStatusRoutes(f.mux, nil)
 	mountMachineTokenRoutes(f.mux, nil)
+	mountSeatAdminRoutes(f.mux, nil)
 	return f
 }
 
@@ -289,6 +290,17 @@ func TestMachineTokenScopeIsTheBridgeReportEndpointOnly(t *testing.T) {
 			t.Errorf("machine token on %s %s: %d, want 401/403", c.method, c.path, rec.Code)
 		}
 	}
+	// the user-authenticated admin routes reject a machine token before touching any data
+	for _, c := range []struct{ method, path, body string }{
+		{http.MethodGet, "/api/v2/openrig/rooms", ""},
+		{http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"x","name":"x"}`},
+		{http.MethodGet, "/api/v2/openrig/seat-types", ""},
+		{http.MethodPost, "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex"}`},
+	} {
+		if rec := f.do(c.method, c.path, token, c.body); rec.Code != http.StatusUnauthorized && rec.Code != http.StatusForbidden {
+			t.Errorf("machine token on %s %s: %d, want 401/403", c.method, c.path, rec.Code)
+		}
+	}
 	if len(f.tokens.tokens) != 1 || f.tokens.tokens[0].RevokedAt != nil {
 		t.Errorf("a machine token changed token state: %+v", f.tokens.tokens)
 	}
@@ -317,6 +329,32 @@ func TestMachineTokenBadCredentials(t *testing.T) {
 		if strings.Contains(rec.Body.String(), bearer) && bearer != "" {
 			t.Errorf("%s: the response echoes the credential", name)
 		}
+	}
+}
+
+// An unknown, a revoked and a malformed token get the same 401 body, so a caller cannot tell
+// a once-valid token from a made-up one.
+func TestMachineTokenRejectionsHaveIdenticalBodies(t *testing.T) {
+	f := newTokenFixture(t)
+	revoked := f.register("pc-home")
+	if rec := f.do(http.MethodDelete, "/api/v2/openrig/machines/pc-home/token", "user-jwt", ""); rec.Code != http.StatusOK {
+		t.Fatalf("revoke: %d %s", rec.Code, rec.Body.String())
+	}
+	f.register("pc-home")
+	bodies := map[string]string{}
+	for name, bearer := range map[string]string{
+		"revoked":   revoked,
+		"unknown":   "mt_" + strings.Repeat("a", 43),
+		"malformed": "nope",
+	} {
+		rec := f.do(http.MethodPost, "/api/v2/openrig/seat-status", bearer, validSeatStatusBody)
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("%s: %d, want 401", name, rec.Code)
+		}
+		bodies[name] = rec.Body.String()
+	}
+	if bodies["revoked"] != bodies["unknown"] || bodies["unknown"] != bodies["malformed"] {
+		t.Fatalf("rejection bodies differ: %v", bodies)
 	}
 }
 

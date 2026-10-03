@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — machine token review follow-ups
+
+- Added: `TestMachineTokenCreateOtherIntegrityErrorsAreNotConflicts` (23503, other 23505, 23502), `TestMachineTokenRejectionsHaveIdenticalBodies` (revoked, unknown and malformed tokens get the same 401 body); the scope test now also sends a machine token to the rooms and seat-types routes (401/403). The conflict test's fake error names `uq_machine_tokens_active`. seat_management and server packages ok.
+
 ## 2026-10-03 — seat link launch cycles
 
 - Added: `TestFindLaunchCycle` (9 cases: chain, opposite, 3 seats, spawned_by reversal, mixed kinds, descriptive kinds, tail), `TestSeatAdminLinkRejectsLaunchCycles` (opposite and 3-seat cycles named in the 400, nothing stored; agreeing spawned_by ok; descriptive kinds and `allow:false` ok; re-putting a link ok; removed seats ignored). `TestSeatAdminLinkKinds` puts spawned_by on another seat (alice delegates_to bob plus alice spawned_by bob is a real cycle). Mutation: disabling the check fails the cycle test. seat_management and server packages ok.

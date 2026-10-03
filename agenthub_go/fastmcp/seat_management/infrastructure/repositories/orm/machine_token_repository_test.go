@@ -84,7 +84,7 @@ func TestMachineTokenCreateStoresOnlyTheHashAndMapsUniqueViolation(t *testing.T)
 	f2 := &fakeDriver{}
 	f2.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 		if strings.Contains(q, `INSERT INTO "machine_tokens"`) {
-			return nil, nil, &pgconn.PgError{Code: "23505", Message: "duplicate key value violates unique constraint"}
+			return nil, nil, &pgconn.PgError{Code: "23505", Message: `duplicate key value violates unique constraint "uq_machine_tokens_active"`}
 		}
 		return nil, nil, nil
 	}
@@ -94,6 +94,31 @@ func TestMachineTokenCreateStoresOnlyTheHashAndMapsUniqueViolation(t *testing.T)
 	}
 	if _, err := repo2.Create(ctx, testUser, testMachineIDHome, testMachineTokenHash); !errors.Is(err, domainrepo.ErrMachineTokenExists) {
 		t.Fatalf("Create(unique violation) = %v, want ErrMachineTokenExists", err)
+	}
+}
+
+// Only a violation of the one-active-token index is "already has an active token"; any other
+// integrity error is not reported as a conflict.
+func TestMachineTokenCreateOtherIntegrityErrorsAreNotConflicts(t *testing.T) {
+	for name, pgErr := range map[string]*pgconn.PgError{
+		"foreign key":  {Code: "23503", Message: `insert violates foreign key constraint "fk"`},
+		"other unique": {Code: "23505", Message: `duplicate key value violates unique constraint "machine_tokens_token_hash_key"`},
+		"not null":     {Code: "23502", Message: `null value in column "machine_id"`},
+	} {
+		f := &fakeDriver{}
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			if strings.Contains(q, `INSERT INTO "machine_tokens"`) {
+				return nil, nil, pgErr
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMMachineTokenRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := repo.Create(context.Background(), testUser, testMachineIDHome, testMachineTokenHash); err == nil || errors.Is(err, domainrepo.ErrMachineTokenExists) {
+			t.Errorf("%s: Create = %v, want a non-conflict error", name, err)
+		}
 	}
 }
 
