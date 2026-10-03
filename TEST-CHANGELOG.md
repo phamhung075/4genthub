@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — hard-delete cycle subtest, exact expected-hash row count
+
+- Changed: the launch-cycle subtest now deletes the middle seat (a -> b -> c, c -> a is 400, delete b, c -> a is 200) instead of the vacuous "removed seats do not count"; `TestMachineExpectedHashIntegration` asserts exactly three seat rows so a duplicate cannot hide behind the map. The self-loop cases (`a delegates_to a`, `a spawned_by a`) were already in `TestFindLaunchCycle`. Real PG (fresh database), vet and tests for seat_management and httpapp: ok.
+
 ## 2026-10-03 — seatcheck end to end and outcome audit failure
 
 - Added: `TestSendEndToEndDeliversThroughRig` (runSend with the real `rigSend` against a fake `rig` on PATH: argv is exactly `[send -- pod-b@r "fix the bug"]`, audit is decision then `delivered`), `TestSendOutcomeAuditFailureAfterDeliveryKeepsExitZero` (the outcome line cannot be written after delivery: exit 0 with a warning when delivered, exit 5 when not; one decision line remains). Drafted by deepseek (session fa08f03c-98de-4c23-b6ae-c1d09b72b09e); mutation check: restoring `return exitAuditFailed` fails them.
