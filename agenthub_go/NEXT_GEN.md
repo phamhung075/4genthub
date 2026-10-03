@@ -167,6 +167,12 @@ Bridge v1 (status up only, no commands down) built and verified:
 - Verified live: bridge `once` against the Go server on a real Postgres; 422 on a secret, 200 on empty arrays, 403 without token.
 - Open: seat names come from OpenRig `logicalId` minus `<pod>.` (from CLI source; not seen on a live daemon, the rig daemon was down); machine registration and per-machine tokens; commands down (restart/stop) with approval; production has none of this deployed.
 
+## Request 14 — "agent library is obsolete, make it adapted to OpenRig, generic for all projects, users customize seats on the frontend later" (2026-10-03)
+
+- Done: nine generic seat types embedded in the Go binary (`domain/seedlibrary/seat-types/*.yaml`); seed endpoint independent of `AGENT_LIBRARY_DIR_PATH`; verified live (seed 9, room renders, `rig spec validate` valid, preflight ready).
+- Open: the old `agenthub_main/agent-library` (32 agents, 2.1 MB) still feeds `call_agent`, the AgentSpec route (`/api/v2/openrig/agents`) and `-seed-agents`; retire or replace those with the seat model; production still has no library in the image so those paths stay broken there (F0b). Seat types created by the old seed stay in existing databases.
+- Open: frontend authoring of seat types and modules (create or edit modules, new seat type versions); today users customize through overlays only.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

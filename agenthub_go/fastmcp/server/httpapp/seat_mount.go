@@ -3,7 +3,7 @@ package httpapp
 // seat_mount.go serves the company-workplace seats to the OpenRig client.
 //
 //	GET  /api/v2/openrig/seats/{room}/{seat}   resolved, rendered and stored snapshot
-//	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the agent library
+//	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the embedded library
 //
 // A snapshot is immutable: the same seat definition always returns the same hash, so the
 // client can pin it and OpenRig materializes exactly those files.
@@ -14,22 +14,19 @@ import (
 	"os"
 	"strings"
 
-	agentservices "agenthub/fastmcp/agent_management/application/services"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
-	"agenthub/fastmcp/seat_management/domain/seedmap"
+	"agenthub/fastmcp/seat_management/domain/seedlibrary"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-const agentLibraryEnv = "AGENT_LIBRARY_DIR_PATH"
-
 // seatSource is what the seat routes need from the seat_management use cases.
 type seatSource interface {
 	ResolveSeat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.ResolvedSeat, error)
-	SeedSeatTypes(ctx context.Context, userID, libraryPath string) (int, error)
+	SeedSeatTypes(ctx context.Context, userID string) (int, error)
 }
 
 // newSeatSource is a package variable so tests can substitute a fake without a database.
@@ -82,12 +79,8 @@ func (u *seatUseCases) ResolveSeat(ctx context.Context, userID, roomSlug, seatKe
 	return u.resolution.ResolveSeat(ctx, userID, roomSlug, seatKey)
 }
 
-func (u *seatUseCases) SeedSeatTypes(ctx context.Context, userID, libraryPath string) (int, error) {
-	loader, err := agentservices.NewYAMLAgentTemplateLoader(libraryPath)
-	if err != nil {
-		return 0, err
-	}
-	seeds, err := seedmap.MapAll(loader.LoadAllAgents())
+func (u *seatUseCases) SeedSeatTypes(ctx context.Context, userID string) (int, error) {
+	seeds, err := seedlibrary.Load()
 	if err != nil {
 		return 0, err
 	}
@@ -156,16 +149,11 @@ func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 }
 
 func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
-	library := os.Getenv(agentLibraryEnv)
-	if library == "" {
-		writeDetail(w, http.StatusInternalServerError, agentLibraryEnv+" is not set")
-		return
-	}
 	source, ok := seatSourceFor(w, sessions)
 	if !ok {
 		return
 	}
-	count, err := source.SeedSeatTypes(r.Context(), userID(u), library)
+	count, err := source.SeedSeatTypes(r.Context(), userID(u))
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return

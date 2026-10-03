@@ -13,6 +13,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Added: `test_openrig_scrub.py` (19) and `test_openrig_bridge.py` (26), `secretscan_test.go`, `seat_status_mount_test.go`, machine repository tests (fake driver and Postgres integration); 4 frontend tests in `SeatsPage.test.tsx`.
 - Shared fixture `scan_cases.json` is used by both the Go scanner and the Python scrubber.
 
+## 2026-10-03 — Seat library
+
+- Added: `seedlibrary_test.go` (loader, strictness, embedded set of 9), updated `seedmap_test.go`, `seat_mount_test.go`, and the Postgres integration test now seeds from the embedded library.
+
 ## Current Status
 
 | Metric | Value | Notes |

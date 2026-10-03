@@ -135,7 +135,7 @@ const healthServerName = "agenthub - Task Management & Agent Orchestration"
 // healthVersion is the release the server reports on /health. Bump it with every
 // change that must be confirmable after a deploy: the Docker build context has
 // no .git, so no commit id can be embedded.
-const healthVersion = "0.0.7"
+const healthVersion = "0.0.8"
 
 // HealthStatusProvider supplies the connection figures the Python /health
 // handler reads from get_connection_manager() and get_status_broadcaster(). The

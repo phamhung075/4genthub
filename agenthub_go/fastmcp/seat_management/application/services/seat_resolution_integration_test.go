@@ -11,22 +11,21 @@ import (
 	"testing"
 	"time"
 
-	agentservices "agenthub/fastmcp/agent_management/application/services"
 	"agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
-	"agenthub/fastmcp/seat_management/domain/seedmap"
+	"agenthub/fastmcp/seat_management/domain/seedlibrary"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // TestSeatResolutionEndToEnd runs seed -> room/seat -> resolve against a real PostgreSQL
-// (SEAT_TEST_DATABASE_URL) with the real agent library (AGENT_LIBRARY_DIR_PATH).
+// (SEAT_TEST_DATABASE_URL) with the embedded seat library.
 func TestSeatResolutionEndToEnd(t *testing.T) {
-	url, library := os.Getenv("SEAT_TEST_DATABASE_URL"), os.Getenv("AGENT_LIBRARY_DIR_PATH")
-	if url == "" || library == "" {
-		t.Skip("SEAT_TEST_DATABASE_URL and AGENT_LIBRARY_DIR_PATH are required")
+	url := os.Getenv("SEAT_TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("SEAT_TEST_DATABASE_URL is required")
 	}
 	db, err := sql.Open("pgx", url)
 	if err != nil {
@@ -60,9 +59,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	resolved, err := seatorm.NewORMResolvedSeatRepository(sessions)
 	must(t, err)
 
-	loader, err := agentservices.NewYAMLAgentTemplateLoader(library)
-	must(t, err)
-	seeds, err := seedmap.MapAll(loader.LoadAllAgents())
+	seeds, err := seedlibrary.Load()
 	must(t, err)
 	must(t, services.SeedSeatTypes(ctx, user, seeds, modules, seatTypes))
 	must(t, services.SeedSeatTypes(ctx, user, seeds, modules, seatTypes)) // idempotent
@@ -75,8 +72,8 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 
 	room, err := rooms.Save(ctx, user, repositories.Room{Slug: "dev", Name: "Dev room"})
 	must(t, err)
-	coder := mustSeat(t, ctx, seats, user, room.ID, "coder", seatTypes, "coding-agent")
-	reviewer := mustSeat(t, ctx, seats, user, room.ID, "reviewer", seatTypes, "code-reviewer-agent")
+	coder := mustSeat(t, ctx, seats, user, room.ID, "coder", seatTypes, "developer")
+	reviewer := mustSeat(t, ctx, seats, user, room.ID, "reviewer", seatTypes, "reviewer")
 
 	first, err := svc.ResolveSeat(ctx, user, "dev", "coder")
 	must(t, err)
@@ -87,7 +84,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	}
 	guidance := fileContent(t, first, "guidance/role.md")
 	t.Logf("guidance head: %.300q", guidance)
-	if !strings.Contains(guidance, "## coding-agent-role") || !strings.Contains(guidance, "Core Purpose") {
+	if !strings.Contains(guidance, "## developer-role") {
 		t.Errorf("role guidance missing the role module")
 	}
 	if first.Runtime != "claude-code" {
@@ -97,7 +94,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	// A seat overlay that removes the output-format document changes the snapshot.
 	_, err = overlays.Upsert(ctx, user, repositories.Overlay{
 		Scope: repositories.ScopeSeat, SeatID: coder.ID,
-		Ops: []resolver.Op{{Kind: resolver.OpRemove, Slug: "coding-agent-output-format"}},
+		Ops: []resolver.Op{{Kind: resolver.OpRemove, Slug: "developer-output-format"}},
 	})
 	must(t, err)
 	changed, err := svc.ResolveSeat(ctx, user, "dev", "coder")
@@ -105,7 +102,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	if changed.Hash == first.Hash {
 		t.Fatal("overlay did not change the snapshot")
 	}
-	if strings.Contains(fileContent(t, changed, "guidance/role.md"), "Document: coding-agent-output-format") {
+	if strings.Contains(fileContent(t, changed, "guidance/role.md"), "Document: developer-output-format") {
 		t.Error("removed module still rendered")
 	}
 

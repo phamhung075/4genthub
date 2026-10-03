@@ -22,7 +22,7 @@ func (f *fakeSeatSource) ResolveSeat(_ context.Context, _, _, _ string) (*reposi
 	return f.resolved, f.err
 }
 
-func (f *fakeSeatSource) SeedSeatTypes(_ context.Context, _, _ string) (int, error) {
+func (f *fakeSeatSource) SeedSeatTypes(_ context.Context, _ string) (int, error) {
 	return f.seeded, f.err
 }
 
@@ -85,16 +85,11 @@ func TestSeatRoutesNeedPublicURLAndAuth(t *testing.T) {
 	}
 }
 
-func TestSeedSeatTypesNeedsLibraryAndReportsCount(t *testing.T) {
+func TestSeedSeatTypesReportsCount(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
-	t.Setenv(agentLibraryEnv, "")
-	mux := seatTestMux(t, &fakeSeatSource{seeded: 32})
-	if rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", ""); rec.Code != http.StatusInternalServerError {
-		t.Errorf("without library: status = %d", rec.Code)
-	}
-	t.Setenv(agentLibraryEnv, t.TempDir())
+	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
 	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":32`) {
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
 		t.Errorf("seed: %d %s", rec.Code, rec.Body.String())
 	}
 }
