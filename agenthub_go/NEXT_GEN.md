@@ -193,6 +193,40 @@ Bridge v1 (status up only, no commands down) built and verified:
 - Open items done (owner-stated 2026-10-03): the production `seat_links` constraint change, the team setup on production, the team launch. Still open: `set_occupant` has not been tested on production.
 - Open: OpenRig supports runtimes `pi` and `omp` (other providers via `provider/model` ids); the renderer supports only `claude-code` and `codex`.
 
+## Team progress and open work (2026-10-03, reported by the lead; not verified in production)
+
+Committed locally, reviewed or in review. None is claimed verified in production, and nothing is pushed:
+- `ab45180f` module listing and seat-type versions; `04556eea` link and room deletion; `961e1da1` `default_runtime` on `seat_type_versions` (needs G1a); `93b0cd81` authoring page.
+- `410a0999` room deletion removes seat status; `d0e0a8a5` lost version race reported as conflict; `258e1424` typed `default_runtime` and authoring error-path tests; `3b65c027` schema apply serialized across integration packages.
+- `9468eb28` URL credentials redacted in the status scanners; `c3d2400c`, `16a32f04`, `5a759abf` test-isolation fixes.
+
+Open defects (from the debugger):
+- [ ] The bridge drops the pod from the seat key, so seats from different pods collide, and the "invalid names" message is wrong.
+- [ ] An empty database without `AUTO_MIGRATE` returns 500 `relation machines does not exist`.
+- [ ] `POST seat-types/seed` needs `AGENTHUB_PUBLIC_URL`.
+- [ ] `POST` rooms is an upsert.
+- [ ] A runtime and model mismatch is accepted on seat switch.
+- [ ] The URL scan misses a URL with an empty user or password.
+- [ ] The bridge error and backoff path has no test.
+
+Planner's plan (items 2 and 3). Tasks T1 to T4 are independent; reviewer reviews each commit, tester runs the live stack for T1, T2 and T6:
+- [ ] T1 (go-dev, architect decides the L2 install): wire `seatcheck` to seats. `openrig_seat_sync.py pull` writes a seat directory whose guidance and Claude settings deny direct `rig send`, `rig queue`, `rig broadcast` and tmux, and name `seatcheck send` as the only send path. `agenthub_go/seatcheck` (untracked binary) must not be committed.
+- [ ] T2 (go-dev, then web-dev): drift between the resolved hash and the running hash. `GET /api/v2/openrig/machines` returns `expected_hash` and `sync` (`in_sync`, `drift`, `unknown`) per seat; the Seats page shows a drift badge. `expected_hash` is the latest stored snapshot, no re-resolve on read (the architect confirms).
+- [ ] T3 (go-dev, web-dev): `set_occupant` verified on production (owner-approved run); renderer accepts `pi` and `omp` or the API rejects unsupported runtimes with a clear error (decision needed); occupant panel in the seat detail page.
+- [ ] T4 (go-dev, in progress): per-machine tokens, with cross-tenant, revoke, machine A cannot report for B, and bridge status recording the token's machine.
+- [ ] T5 (architect, owner; depends on D1 to D3): read-only export of the 58 production `user_agent_instances` saved off-repo; the owner states drop or keep; the writer records it here.
+- [ ] T6 (go-dev; depends on D1): remove the Go `call_agent` tool, routes and wiring, the loader, the seeder, `-seed-agents`, the library path utils and the health field `agent_library_dir`.
+- [ ] T7 (go-dev, web-dev; depends on T6): delete `/api/v2/openrig/agents`, `scripts/openrig_sync.py`, the `agent_templates` and `user_agent_instances` tables, ORM and DDL; replace the frontend agent pages with seat screens.
+- [ ] T8 (go-dev or writer for hooks, reviewer; depends on D1, D3): remove `agenthub_main/agent-library`, the Python `call_agent` and agent management, the agent scripts, `.claude/agents/*.md` and the `call_agent` hooks.
+- [ ] T9 (writer; depends on T6 to T8): CHANGELOG, frontend CHANGELOG, TEST-CHANGELOG (fix the stale "32 library agents" line).
+- [ ] T10 (owner; after verified commits): bump `healthVersion`, approve the push; production needs the new image and the seat DDL (G1a).
+
+Pending owner decisions:
+- [ ] D1: remove `call_agent` (planner recommends) or keep a thin version that returns a resolved seat.
+- [ ] D2: export the 58 production instances, then drop them (planner recommends), or keep them (keeping blocks deleting the old agent-management code).
+- [ ] D3: replace the "ABSOLUTE FIRST PRIORITY: call master-orchestrator-agent" block in `CLAUDE.md` with "read your seat files; run `rig whoami`" (planner recommends). It also changes the `session_start` hook messages and the 31 `.claude/agents` files.
+- [ ] G1a: the manual production schema change for `961e1da1` (see G1a above). Owner approval pending.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

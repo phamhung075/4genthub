@@ -38,6 +38,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+**`NEXT_GEN.md` records team progress and open work** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: new section with the local commits, seven open defects, the planner's T1 to T10 plan and the pending decisions D1 to D3 and G1a. Documentation only, no tests run.
+
 **`NEXT_GEN.md` matches the owner decisions** (2026-10-03)
 
 - `agenthub_go/NEXT_GEN.md`: F0b to F0d, F2 and F3 marked superseded; F1 and F4 marked implemented; one open item F0e (retire `call_agent` and `agenthub_main/agent-library`) and G1a (production schema change for `961e1da1`) added; G1, G2, G6 and Requests 12 to 16 status updated; standing owner permissions, deploy loop and production facts recorded. Documentation only, no tests run.
