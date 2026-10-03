@@ -39,6 +39,8 @@ SECRET_PARTS = {
     "password-pair": "hunter2hunter2",
     "secret-colon": "s3cr3tValue-9981",
     "token-equals": "abc123def456ghi789",
+    "url-credentials": "s3cretpass",
+    "url-at-in-password": "ssw0rd99",
 }
 
 

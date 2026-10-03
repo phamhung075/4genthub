@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Secret scanners miss URL credentials** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/secretscan.go`, `scripts/openrig_scrub.py`: new pattern `://user:password@` (greedy to the last `@`, so a password containing `@` is covered). Before, `postgres://agent:pass@db/app` in a seat `detail` passed the server scan (200) and the bridge scrubber left it unredacted.
+- Shared fixture `secretscan/testdata/scan_cases.json`: `url-credentials`, `url-at-in-password`, `url-plain` (no credentials, not flagged).
+- Known limits: empty user or empty password (`://:pass@host`) is not detected; the Python `\s` is Unicode while Go's is ASCII, so exotic whitespace inside the userinfo can differ.
+
 **Concurrent seat-type version creation returns 409, not 500** (2026-10-03)
 
 - `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_type_repository.go`: when the insert of a seat type version hits the unique constraint because another writer took the same version, `AddVersion` re-reads the winner's row. Identical runtime and module refs return that row; anything else is `ErrSeatTypeVersionConflict` (HTTP 409).

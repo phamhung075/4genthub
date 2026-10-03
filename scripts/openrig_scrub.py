@@ -24,6 +24,7 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("sk", re.compile(r"sk-[A-Za-z0-9_-]{20,}")),
     ("aws", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("github", re.compile(r"gh[pousr]_[A-Za-z0-9]{30,}")),
+    ("url-credentials", re.compile(r"://[^\s/:@]+:[^\s/]+@")),
 ]
 
 _PAIR_RE = re.compile(

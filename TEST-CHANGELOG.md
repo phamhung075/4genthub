@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — URL credentials in secret scanners
+
+- Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
+
 ## 2026-10-03 — Frontend seat authoring
 
 - Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
