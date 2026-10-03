@@ -11,7 +11,8 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useMachines } from '../../hooks/useSeats';
-import type { MachineStatus, SeatRunState } from '../../types/seatTypes';
+import { driftedSeatCount } from '../../lib/machineSeats';
+import type { MachineSeatStatus, MachineStatus, SeatRunState, SeatSync } from '../../types/seatTypes';
 
 const STATE_CLASSES: Record<SeatRunState, string> = {
   running: 'bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100',
@@ -26,6 +27,32 @@ export const SeatStateBadge: React.FC<{ state: SeatRunState }> = ({ state }) => 
     {state}
   </Badge>
 );
+
+const SYNC_CLASSES: Record<SeatSync, string> = {
+  in_sync: 'bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100',
+  drift: 'bg-amber-50 text-amber-800 dark:bg-amber-900 dark:text-amber-100',
+  unknown: 'bg-transparent text-gray-500 dark:text-gray-400',
+};
+
+const shortHash = (hash: string) => hash.slice(0, 8);
+
+export const SeatSyncBadge: React.FC<{ seat: Pick<MachineSeatStatus, 'sync' | 'hash' | 'expected_hash'> }> = ({
+  seat,
+}) => {
+  const className = SYNC_CLASSES[seat.sync] ?? SYNC_CLASSES.unknown;
+  if (seat.sync === 'drift') {
+    return (
+      <Badge variant="outline" className={className}>
+        drift · running {shortHash(seat.hash)} · expected {shortHash(seat.expected_hash)}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className={className}>
+      {seat.sync === 'in_sync' ? 'in sync' : 'sync unknown'}
+    </Badge>
+  );
+};
 
 const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
   <Card>
@@ -49,6 +76,7 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
               <th className="font-medium">State</th>
               <th className="font-medium">Runtime</th>
               <th className="font-medium">Hash</th>
+              <th className="font-medium">Sync</th>
               <th className="font-medium">Detail</th>
             </tr>
           </thead>
@@ -62,7 +90,10 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
                   <SeatStateBadge state={seat.state} />
                 </td>
                 <td>{seat.runtime}</td>
-                <td className="font-mono">{seat.hash.slice(0, 8)}</td>
+                <td className="font-mono">{shortHash(seat.hash)}</td>
+                <td>
+                  <SeatSyncBadge seat={seat} />
+                </td>
                 <td>
                   {seat.detail}
                   {seat.redacted && (
@@ -93,11 +124,17 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
 
 export const MachinesPanel: React.FC = () => {
   const { machines, isLoading, error, refetch } = useMachines();
+  const drifted = driftedSeatCount(machines);
 
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <Monitor className="h-5 w-5 text-primary" /> Bridge machines
+        {drifted > 0 && (
+          <Badge variant="outline" className={SYNC_CLASSES.drift}>
+            {drifted} drifted
+          </Badge>
+        )}
       </h2>
       {isLoading && (
         <div className="flex items-center gap-2 text-muted-foreground">

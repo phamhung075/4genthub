@@ -61,6 +61,8 @@ const machineSeat = {
   state: 'running' as const,
   runtime: 'claude-code',
   hash: 'abcdef0123456789',
+  expected_hash: 'abcdef0123456789',
+  sync: 'in_sync' as const,
   detail: '<b>working</b>',
   redacted: false,
   reported_at: iso(1),
@@ -338,6 +340,108 @@ describe('SeatsPage', () => {
       expect(screen.getAllByText('idle')).toHaveLength(2);
       expect(screen.getAllByText('blocked')).toHaveLength(1);
       expect(screen.getAllByText('running')).toHaveLength(1);
+    });
+
+    it('shows an in-sync badge with green classes and no drifted header badge', async () => {
+      mockApi.fetchMachines.mockResolvedValue({ success: true, machines: [machine] });
+      renderPage();
+
+      const badge = await screen.findByText('in sync');
+      expect(badge).toHaveClass('bg-green-50');
+      expect(screen.queryByText(/drifted/)).not.toBeInTheDocument();
+    });
+
+    it('shows drift with the running and expected short hashes and amber classes', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          {
+            ...machine,
+            seats: [
+              {
+                ...machineSeat,
+                hash: 'aaaaaaaa11111111',
+                expected_hash: 'bbbbbbbb22222222',
+                sync: 'drift' as const,
+              },
+            ],
+          },
+        ],
+      });
+      renderPage();
+
+      const badge = await screen.findByText('drift · running aaaaaaaa · expected bbbbbbbb');
+      expect(badge).toHaveClass('bg-amber-50');
+    });
+
+    it('shows sync unknown with neutral classes', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          { ...machine, seats: [{ ...machineSeat, expected_hash: '', sync: 'unknown' as const }] },
+        ],
+      });
+      renderPage();
+
+      const badge = await screen.findByText('sync unknown');
+      expect(badge).not.toHaveClass('bg-green-50');
+      expect(badge).not.toHaveClass('bg-amber-50');
+    });
+
+    it('counts drifted seats across machines and shows one badge per drifted row', async () => {
+      const drifted = (seat: string, hash: string) => ({
+        ...machineSeat,
+        seat,
+        hash,
+        expected_hash: 'ffffffff00000000',
+        sync: 'drift' as const,
+      });
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          { ...machine, seats: [drifted('alice', 'aaaaaaaa11111111'), drifted('bob', 'bbbbbbbb22222222')] },
+          { ...machine, machine_id: 'pc-work', seats: [drifted('carol', 'cccccccc33333333')] },
+        ],
+      });
+      renderPage();
+
+      expect(await screen.findByText('3 drifted')).toBeInTheDocument();
+      expect(screen.getAllByText(/^drift ·/)).toHaveLength(3);
+    });
+
+    it('shows the latest reported sync badge on the selected room seat card', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          {
+            ...machine,
+            machine_id: 'pc-old',
+            seats: [{ ...machineSeat, reported_at: iso(10), sync: 'in_sync' as const }],
+          },
+          {
+            ...machine,
+            machine_id: 'pc-new',
+            seats: [
+              {
+                ...machineSeat,
+                reported_at: iso(0),
+                hash: 'aaaaaaaa11111111',
+                expected_hash: 'bbbbbbbb22222222',
+                sync: 'drift' as const,
+              },
+            ],
+          },
+        ],
+      });
+      renderPage();
+      await screen.findByText('pc-new');
+
+      fireEvent.click(screen.getByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+
+      // the panel shows both reports; the seat card adds only the latest (drift)
+      expect(screen.getAllByText('drift · running aaaaaaaa · expected bbbbbbbb')).toHaveLength(2);
+      expect(screen.getAllByText('in sync')).toHaveLength(1);
     });
   });
 });

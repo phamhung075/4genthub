@@ -181,12 +181,19 @@ export interface ResolvedSeat {
 
 export type SeatRunState = 'running' | 'idle' | 'blocked' | 'stopped' | 'unknown';
 
+/** Running hash against the seat's latest resolved snapshot, computed by the server. */
+export type SeatSync = 'in_sync' | 'drift' | 'unknown';
+
 export interface MachineSeatStatus {
   room: string;
   seat: string;
   state: SeatRunState;
   runtime: string;
+  /** Hash the machine is running. */
   hash: string;
+  /** Hash of the seat's latest resolved snapshot; empty when the seat is not in the cloud. */
+  expected_hash: string;
+  sync: SeatSync;
   detail: string;
   redacted: boolean;
   reported_at: string;

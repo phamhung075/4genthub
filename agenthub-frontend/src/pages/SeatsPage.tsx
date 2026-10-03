@@ -26,7 +26,7 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
-import { MachinesPanel, SeatStateBadge } from '../components/seats/MachinesPanel';
+import { MachinesPanel, SeatStateBadge, SeatSyncBadge } from '../components/seats/MachinesPanel';
 import { latestSeatStatus } from '../lib/machineSeats';
 import { isValidSeatName, SEAT_NAME_MESSAGE } from '../lib/seatNames';
 import {
@@ -336,6 +336,7 @@ export const SeatsPage: React.FC = () => {
                     <span>{seat.seat_key}</span>
                     <span className="flex items-center gap-2">
                       {live && <SeatStateBadge state={live.state} />}
+                      {live && <SeatSyncBadge seat={live} />}
                       <Badge variant="outline">{seat.status}</Badge>
                     </span>
                   </CardTitle>

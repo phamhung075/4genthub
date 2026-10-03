@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+- **Drift badge on bridge seats** - 2026-10-03
+  - Each machine seat shows a sync badge from `GET /api/v2/openrig/machines` (`sync`, `hash`,
+    `expected_hash`): green "in sync", amber "drift · running <8> · expected <8>", neutral "sync unknown".
+    The machines table has a Sync column, seat cards on `/seats` show the badge of the latest report,
+    and the "Bridge machines" heading shows "N drifted" from `driftedSeatCount` (same `sync === 'drift'`
+    predicate as the badges).
+  - Files: `src/types/seatTypes.ts` (`SeatSync`, `MachineSeatStatus.expected_hash/sync`),
+    `src/lib/machineSeats.ts`, `src/components/seats/MachinesPanel.tsx` (`SeatSyncBadge`),
+    `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`, `src/tests/utils/machineSeats.test.ts` (new)
+
 ### Changed
 - **TypeScript: 23 pre-existing errors removed (`npx tsc --noEmit -p .` reports 0)** - 2026-10-03
   - `LazySubtaskList`: `UseSubtaskDialogsReturn` gains `setActiveDialog`, `UseSubtaskFiltersReturn` lists every
