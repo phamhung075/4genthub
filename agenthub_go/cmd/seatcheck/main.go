@@ -1,6 +1,10 @@
 // Command seatcheck checks a pinned communication policy before a seat sends a
 // message, and records the outcome. It is what a seat runs instead of calling
 // `rig send` directly.
+//
+// Every send is audited in two steps: a decision line before delivery and, for an allowed
+// message, an outcome line after it. A decision line with no outcome line means the delivery
+// outcome is unknown (seatcheck was interrupted in between); the message may have been delivered.
 package main
 
 import (
@@ -156,9 +160,10 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 	if code != 0 {
 		record.Outcome = commpolicy.OutcomeDeliveryFailed
 	}
+	// A failed outcome line must not change the exit code: after a delivery that succeeded, a
+	// non-zero exit would make a retrying caller send the message twice.
 	if err := appendAudit(auditPath, record); err != nil {
-		fmt.Fprintf(stderr, "seatcheck send: audit: %v\n", err)
-		return exitAuditFailed
+		fmt.Fprintf(stderr, "seatcheck send: warning: the message was handled (%s) but its outcome could not be audited: %v\n", record.Outcome, err)
 	}
 	if code != 0 {
 		return exitDeliveryFailed

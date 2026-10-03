@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -393,5 +394,71 @@ func TestAuditScanCleanExits0(t *testing.T) {
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+}
+
+// A send end to end through the real delivery seam: seatcheck joins the message words and
+// hands the roster session the whole text as one positional argument after --.
+func TestSendEndToEndDeliversThroughRig(t *testing.T) {
+	seatDir, _ := seatEnv(t, allowPolicy)
+	deliver = rigSend
+	dir := t.TempDir()
+	argsPath := filepath.Join(dir, "args")
+	t.Setenv(fakeRigArgsVar, argsPath)
+	t.Setenv(fakeRigStdinVar, filepath.Join(dir, "stdin"))
+	fakeRig(t, fakeRigArgvNul)
+
+	code, _, stderr := send("--to", "b", "--intent", "task", "--", "fix", "the", "bug")
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr %q, want 0", code, stderr)
+	}
+	got := readArgv(t, argsPath)
+	want := []string{"send", "--", "pod-b@r", "fix the bug"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("argv = %q, want %q", got, want)
+	}
+	records := auditRecords(t, seatDir)
+	if len(records) != 2 || records[0].Outcome != "" || records[1].Outcome != commpolicy.OutcomeDelivered {
+		t.Fatalf("audit = %+v, want the decision line then delivered", records)
+	}
+}
+
+// A delivery that succeeds but whose outcome line cannot be written must still exit 0: a
+// retrying caller must not send the message twice. A failed delivery keeps its own code.
+func TestSendOutcomeAuditFailureAfterDeliveryKeepsExitZero(t *testing.T) {
+	cases := []struct {
+		name     string
+		delivery int
+		want     int
+	}{
+		{"delivery succeeds", 0, 0},
+		{"delivery fails", 3, exitDeliveryFailed},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			seatDir, got := seatEnv(t, allowPolicy)
+			deliver = func(target, text string, _, _ io.Writer) int {
+				got.calls++
+				got.target, got.text = target, text
+				if err := os.Chmod(filepath.Join(seatDir, "audit.jsonl"), 0644); err != nil {
+					t.Fatalf("chmod audit: %v", err)
+				}
+				return tc.delivery
+			}
+			code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
+			if code != tc.want {
+				t.Fatalf("exit = %d, stderr %q, want %d", code, stderr, tc.want)
+			}
+			if !strings.Contains(stderr, "outcome could not be audited") {
+				t.Fatalf("stderr = %q, want it to mention the unaudited outcome", stderr)
+			}
+			if got.calls != 1 {
+				t.Fatalf("delivery calls = %d, want exactly 1", got.calls)
+			}
+			records := auditRecords(t, seatDir)
+			if len(records) != 1 || records[0].Outcome != "" {
+				t.Fatalf("audit = %+v, want exactly the decision line", records)
+			}
+		})
 	}
 }

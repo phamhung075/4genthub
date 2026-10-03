@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck end to end and outcome audit failure
+
+- Added: `TestSendEndToEndDeliversThroughRig` (runSend with the real `rigSend` against a fake `rig` on PATH: argv is exactly `[send -- pod-b@r "fix the bug"]`, audit is decision then `delivered`), `TestSendOutcomeAuditFailureAfterDeliveryKeepsExitZero` (the outcome line cannot be written after delivery: exit 0 with a warning when delivered, exit 5 when not; one decision line remains). Drafted by deepseek (session fa08f03c-98de-4c23-b6ae-c1d09b72b09e); mutation check: restoring `return exitAuditFailed` fails them.
+
 ## 2026-10-03 — seat checker PATH limit
 
 - Changed (`test_openrig_seat_sync.py`): the pull-without-checker and install-checker-not-on-PATH tests also assert the daemon-PATH note (`rig daemon stop`, "inherit", "does not expose"). file: 66 passed.
