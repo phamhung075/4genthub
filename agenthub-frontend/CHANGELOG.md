@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+### Added
+- **🪑 Seats pages (company-workplace model)** - 2026-10-03
+  - `/seats`: rooms list plus create-room form; selecting a room shows its seats as cards
+    (seat key, seat type, runtime, model, pinned version or "Follows latest", status) with an
+    "Add seat" dialog (seat type, runtime, model, pin choice: pin to latest / follow latest /
+    company default) and a remove action with confirmation.
+  - `/seats/:room/:seat`: tabs for Modules (effective module list from seat type module refs
+    with company/room/seat overlays applied, tagged by overlay op, lazy `GET /modules/...`
+    content viewer, and an overlay editor that reads the current ordered ops and PUTs the full
+    list for the selected scope), Links (outgoing links with allow + kind, add/replace and
+    allow toggle; the UI states that allow=false is the way to block because the API has no
+    delete), Preview (resolved snapshot hash/runtime/files/policy and a copy button for
+    `scripts/openrig_seat_sync.py pull {room} {seat}`) and Brain (runtime/model read-only).
+  - Company settings strip on `/seats` toggles `follow_latest` and explains that pinning is the
+    default.
+  - Loading, error (with retry) and empty states for every query; mutations only invalidate the
+    affected query keys.
+  - Files: `src/types/seatTypes.ts` (new), `src/types/index.ts`,
+    `src/services/seatApi.ts` (new), `src/services/apiV2.ts` (exported `apiRequest` helper),
+    `src/hooks/useSeats.ts` (new), `src/hooks/index.ts`,
+    `src/lib/seatModules.ts` (new), `src/pages/SeatsPage.tsx` (new),
+    `src/pages/SeatDetailPage.tsx` (new), `src/App.tsx`, `src/components/Header.tsx`,
+    `src/tests/pages/SeatsPage.test.tsx` (new), `src/tests/pages/SeatDetailPage.test.tsx` (new)
+  - Tests: `npx vitest run src/tests/pages/SeatsPage.test.tsx src/tests/pages/SeatDetailPage.test.tsx`
+    passes (9 tests: rooms list/create, add-seat POST body per pin choice, overlay ops list for
+    add/remove/override/pin plus op delete, link allow toggle, resolved preview hash and file
+    switch, settings PUT).
+
 ### Removed
 - **🧹 Final Session Cleanup - Debug Artifacts** - 2025-11-07
   - Removed debug print statement from backend task facade
@@ -336,7 +364,7 @@
 - **🎯 Enhanced Task List Assignees Display & Fixed Table Layout** - 2025-09-10
   - Updated LazyTaskList to properly display assigned agents in both card and table views
   - Modified TaskSummary interface to include `assignees: string[]` field
-  - Updated task summary conversion logic to include assignees from API response  
+  - Updated task summary conversion logic to include assignees from API response
   - Changed both card and table views to use summary.assignees instead of relying on fullTasks
   - **Improved responsive design**: Made Assignees column visible on medium screens (md+) instead of extra-large (xl+)
   - **Better prioritization**: Dependencies column moved to xl+ screens, Assignees more prominent at md+ screens
@@ -345,7 +373,7 @@
   - Files modified:
     - `src/components/LazyTaskList.tsx` (lines 38, 98, 318-329, 476-492, 637-638)
     - `src/components/ClickableAssignees.tsx` (lines 12, 22, 72-84)
-  - Impact: 
+  - Impact:
     - Assignees column now displays actual agent names (e.g., @coding_agent, @devops_agent) instead of "Unassigned"
     - Assignees column visible on tablets and larger screens (768px+) instead of only desktop (1280px+)
     - **Agents display inline as badges within the table cell**, not as separate rows

@@ -38,6 +38,8 @@ const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => (
 const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
 const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
+const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
+const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
@@ -95,7 +97,7 @@ function Dashboard() {
     <div className="flex flex-col h-screen bg-gradient-to-br from-base via-base-secondary to-base-tertiary text-base-primary transition-theme">
       {/* Header */}
       <Header />
-      
+
       {/* Main content area */}
       <div className="flex flex-1 relative overflow-hidden">
         {/* Modern Sidebar */}
@@ -172,14 +174,14 @@ function Dashboard() {
           </div>
         </main>
       </div>
-      
+
       {/* Global Context Dialog - rendered outside all containers */}
       <GlobalContextDialog
         open={showGlobalContext}
         onOpenChange={setShowGlobalContext}
         onClose={() => setShowGlobalContext(false)}
       />
-      
+
       {/* Project Details Dialog - rendered outside all containers */}
       <ProjectDetailsDialog
         open={!!showProjectDetails}
@@ -187,7 +189,7 @@ function Dashboard() {
         project={showProjectDetails}
         onClose={() => setShowProjectDetails(null)}
       />
-      
+
       {/* Branch Details Dialog - rendered outside all containers */}
       <BranchDetailsDialog
         open={!!showBranchDetails}
@@ -369,6 +371,30 @@ function App() {
               </Suspense>
             }
           />
+          <Route
+            path="/seats"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SeatsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/seats/:room/:seat"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SeatDetailPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
           {/*<Route
             path="/performance"
             element={
@@ -396,4 +422,3 @@ function App() {
 }
 
 export default App;
-

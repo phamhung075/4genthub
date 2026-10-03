@@ -1,4 +1,4 @@
-import { HelpCircle, Home, Key, Menu, Moon, Settings, Sun, X, Store, Users } from 'lucide-react';
+import { Armchair, HelpCircle, Home, Key, Menu, Moon, Settings, Sun, X, Store, Users } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -59,6 +59,13 @@ export const Header: React.FC = () => {
       href: "/tokens",
       gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",
+    },
+    {
+      icon: Armchair,
+      label: "Seats",
+      href: "/seats",
+      gradient: "radial-gradient(circle, rgba(20,184,166,0.15) 0%, rgba(13,148,136,0.06) 50%, rgba(15,118,110,0) 100%)",
+      iconColor: "text-teal-500",
     },
     {
       icon: HelpCircle,
@@ -169,6 +176,13 @@ export const Header: React.FC = () => {
                     title="Tokens"
                   >
                     <Key className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/seats"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Seats"
+                  >
+                    <Armchair className="h-5 w-5" />
                   </Link>
                   <Link
                     to="/help-setup"

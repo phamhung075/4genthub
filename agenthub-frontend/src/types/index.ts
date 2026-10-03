@@ -47,6 +47,11 @@ export * from './serviceTypes';
 export * from './componentTypes';
 
 // ============================================
+// SEAT TYPES (Company-workplace model)
+// ============================================
+export * from './seatTypes';
+
+// ============================================
 // UTILITY TYPES
 // ============================================
 export * from './hookTypes';

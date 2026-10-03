@@ -46,7 +46,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
   if (response.status === 204) {
     return { success: true, message: 'Operation completed successfully' } as T;
   }
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
 
@@ -239,7 +239,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
 // Token refresh function
 const refreshTokenAndRetry = async (): Promise<void> => {
   const refresh_token = Cookies.get('refresh_token');
-  
+
   if (!refresh_token) {
     throw new Error('No refresh token available');
   }
@@ -266,17 +266,17 @@ const refreshTokenAndRetry = async (): Promise<void> => {
   }
 
   const data = await response.json();
-  
+
   // Update cookies with new tokens
-  Cookies.set('access_token', data.access_token, { 
+  Cookies.set('access_token', data.access_token, {
     expires: 7,
     sameSite: 'strict',
     secure: import.meta.env.MODE === 'production'
   });
-  
+
   // Only update refresh token if a new one is provided
   if (data.refresh_token) {
-    Cookies.set('refresh_token', data.refresh_token, { 
+    Cookies.set('refresh_token', data.refresh_token, {
       expires: 30,
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
@@ -306,6 +306,11 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
     });
     return handleResponse(response, url, init);
   });
+};
+
+// Generic authenticated JSON request over the shared V2 client.
+export const apiRequest = <T>(path: string, init?: RequestInit): Promise<T> => {
+  return fetchWithRetry(`${API_BASE_URL}${path}`, init) as Promise<T>;
 };
 
 // Task API V2 - User-isolated endpoints
@@ -962,7 +967,7 @@ export const agentApiV2 = {
     // Normalize agent name: remove @ prefix and ensure kebab-case
     let normalizedName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
     normalizedName = normalizedName.replace(/_/g, '-').toLowerCase();
-    
+
     const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
       method: 'POST',
       headers: {
@@ -1202,12 +1207,12 @@ export const isAuthenticated = (): boolean => {
 export const getCurrentUserId = (): string | null => {
   const token = getAuthToken();
   if (!token) return null;
-  
+
   try {
     // Decode JWT token (basic base64 decode of payload)
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     const payload = JSON.parse(atob(parts[1]));
     return payload.sub || payload.user_id || null;
   } catch (error) {
