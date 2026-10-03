@@ -15,7 +15,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - New `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` (`{"permission_policy": "..."}`, tenant scoped, 404 for an unknown room or seat); `SeatBody` and `POST .../seats` carry `permission_policy`. A seat already launched keeps the posture it launched with; the next rigspec render carries the change.
 - Production schema: `seats.permission_policy` is a new NOT NULL column (owner decision through the lead; no migration helper is shipped).
 - Files: `seat_management/domain/{resolver,rigspec,repositories}`, `application/services/seat_admin_service.go`, `infrastructure/{database,repositories/orm,schema}`, `server/httpapp/{seat_admin_mount,seat_rigspec_mount}.go`, `scripts/openrig_seat_sync.py`.
-- Verified: go vet, `go test ./seat_management/... ./server/...`, pytest `test_openrig_seat_sync.py` (58 passed), and the real `rig spec validate` + `rig spec preflight` on a rendered room for every policy (yolo preflights as `full_bypass`, none as `floor`). Not run: Postgres integration tests.
+- Verified: go vet, `go test ./seat_management/... ./server/...`, pytest `test_openrig_seat_sync.py` (66 passed), and the real `rig spec validate` + `rig spec preflight` on a rendered room for every policy (yolo preflights as `full_bypass`, none as `floor`). Not run: Postgres integration tests.
 
 ### Fixed
 
