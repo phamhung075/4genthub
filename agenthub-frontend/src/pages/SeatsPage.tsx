@@ -26,10 +26,13 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
+import { MachinesPanel, SeatStateBadge } from '../components/seats/MachinesPanel';
+import { latestSeatStatus } from '../lib/machineSeats';
 import { isValidSeatName, SEAT_NAME_MESSAGE } from '../lib/seatNames';
 import {
   useCreateRoom,
   useCreateSeat,
+  useMachines,
   useRemoveSeat,
   useRooms,
   useSeatSettings,
@@ -53,6 +56,7 @@ export const SeatsPage: React.FC = () => {
     useSeatSettings();
   const updateSettings = useUpdateSeatSettings();
   const createRoom = useCreateRoom();
+  const { machines } = useMachines();
 
   const [selectedRoom, setSelectedRoom] = useState('');
   const { seats, isLoading: seatsLoading, error: seatsError, refetch: refetchSeats } = useSeats(selectedRoom);
@@ -321,12 +325,17 @@ export const SeatsPage: React.FC = () => {
           )}
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {seats.map(seat => (
+            {seats.map(seat => {
+              const live = latestSeatStatus(machines, selectedRoom, seat.seat_key);
+              return (
               <Card key={seat.id}>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center justify-between">
                     <span>{seat.seat_key}</span>
-                    <Badge variant="outline">{seat.status}</Badge>
+                    <span className="flex items-center gap-2">
+                      {live && <SeatStateBadge state={live.state} />}
+                      <Badge variant="outline">{seat.status}</Badge>
+                    </span>
                   </CardTitle>
                   <CardDescription>{seat.seat_type}</CardDescription>
                 </CardHeader>
@@ -372,10 +381,13 @@ export const SeatsPage: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
+
+      <MachinesPanel />
 
       {/* Add seat dialog */}
       <Dialog open={addSeatOpen} onOpenChange={setAddSeatOpen}>

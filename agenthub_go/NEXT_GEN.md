@@ -157,6 +157,16 @@ Seat/room/link model aligned with OpenRig's real model. Done and verified:
 - Not verified: the ORM-wired default constructor of the rigspec handler against a real Postgres (unit tests use fakes).
 - Open: `permission_policy` per seat in the rendered spec; room-level RigSpec top-level cross-room edges; link deletion API.
 
+## Request 13 — "Can we make one service running on background detect herdr and openrig status for sync automatic with 4genthub in cloud via API ?" and "Can wrap auto remove secret when sent ?" (2026-10-03)
+
+Bridge v1 (status up only, no commands down) built and verified:
+- `scripts/openrig_bridge.py run|once|install-service`: reads `rig ps --json --nodes -A` and `herdr api snapshot`, builds the payload from an allow-list (never terminal output, cwd or titles), sends on change plus a 60 s heartbeat, backs off on errors. `install-service` only prints a systemd user unit.
+- `scripts/openrig_scrub.py`: redacts exact env secret values (plain, base64, URL-encoded) and known formats; fails closed.
+- Server: `POST /api/v2/openrig/seat-status`, `GET /api/v2/openrig/machines`, tables `machines` and `seat_status`; `secretscan` rejects any body string that still contains a secret with 422 and never echoes it. Go and Python share the fixture `secretscan/testdata/scan_cases.json`.
+- UI: "Bridge machines" panel and a state badge per seat.
+- Verified live: bridge `once` against the Go server on a real Postgres; 422 on a secret, 200 on empty arrays, 403 without token.
+- Open: seat names come from OpenRig `logicalId` minus `<pod>.` (from CLI source; not seen on a live daemon, the rig daemon was down); machine registration and per-machine tokens; commands down (restart/stop) with approval; production has none of this deployed.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

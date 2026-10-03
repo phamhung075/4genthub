@@ -121,3 +121,25 @@ type SeatSettingsORM struct {
 	FollowLatest bool      `db:"follow_latest"`
 	UpdatedAt    time.Time `db:"updated_at"`
 }
+
+// MachineORM is a row of machines. (user_id, machine_id) is the primary key.
+type MachineORM struct {
+	UserID    string          `db:"user_id"`
+	MachineID string          `db:"machine_id"`
+	LastSeen  time.Time       `db:"last_seen"`
+	Agents    json.RawMessage `db:"agents"`
+}
+
+// SeatStatusORM is a row of seat_status. (user_id, machine_id, room, seat) is the primary key.
+type SeatStatusORM struct {
+	UserID      string    `db:"user_id"`
+	MachineID   string    `db:"machine_id"`
+	Room        string    `db:"room"`
+	Seat        string    `db:"seat"`
+	State       string    `db:"state"`
+	Runtime     string    `db:"runtime"`
+	RunningHash string    `db:"running_hash"`
+	Detail      string    `db:"detail"`
+	Redacted    bool      `db:"redacted"`
+	ReportedAt  time.Time `db:"reported_at"`
+}

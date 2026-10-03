@@ -197,3 +197,31 @@ CREATE TABLE IF NOT EXISTS seat_settings (
     follow_latest BOOLEAN NOT NULL DEFAULT false,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+-- Table: machines
+-- One row per (user, bridge machine). agents is the latest herdr agent snapshot, a JSON
+-- array of {agent, status, pane_id}; last_seen is server time of the last status report.
+CREATE TABLE IF NOT EXISTS machines (
+    user_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL,
+    last_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    agents JSONB NOT NULL DEFAULT '[]'::jsonb,
+    PRIMARY KEY (user_id, machine_id)
+);
+
+-- Table: seat_status
+-- The latest reported state of each seat on a machine. A report replaces the machine's
+-- whole set; room and seat are reported names, not foreign keys.
+CREATE TABLE IF NOT EXISTS seat_status (
+    user_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    seat TEXT NOT NULL,
+    state TEXT NOT NULL,
+    runtime TEXT NOT NULL,
+    running_hash TEXT NOT NULL DEFAULT '',
+    detail TEXT NOT NULL DEFAULT '',
+    redacted BOOLEAN NOT NULL DEFAULT false,
+    reported_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (user_id, machine_id, room, seat)
+);

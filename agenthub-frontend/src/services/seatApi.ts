@@ -12,6 +12,7 @@ import { apiRequest } from './apiV2';
 import type {
   CreateRoomRequest,
   CreateSeatRequest,
+  MachinesResponse,
   ModuleVersionResponse,
   PutSeatOverlayRequest,
   RemoveSeatResponse,
@@ -108,6 +109,9 @@ export const seatApi = {
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links`,
       jsonPut(data)
     ),
+
+  // Bridge machines
+  fetchMachines: () => apiRequest<MachinesResponse>(`${OPENRIG}/machines`),
 
   // Settings
   getSettings: () => apiRequest<SeatSettingsResponse>(`${OPENRIG}/settings`),

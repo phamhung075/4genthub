@@ -66,6 +66,11 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	machines, err := NewORMMachineStatusRepository(sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// create
 	if _, err := modules.SaveModule(ctx, userID, "instr", resolver.KindInstruction); err != nil {
 		t.Fatalf("SaveModule: %v", err)
@@ -191,6 +196,37 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 	settingsFalse, err := settings.Set(ctx, userID, false)
 	if err != nil || settingsFalse == nil || settingsFalse.FollowLatest {
 		t.Fatalf("Set settings(false) = %+v, %v", settingsFalse, err)
+	}
+
+	// machine status: a report replaces the machine's seat set, tenants stay isolated
+	reportedAt := time.Now().UTC().Truncate(time.Second)
+	firstReport := domainrepo.Machine{
+		MachineID: "pc-home", LastSeen: reportedAt,
+		Seats: []domainrepo.SeatStatus{
+			{Room: "eng", Seat: "coder", State: "running", Runtime: "claude-code", RunningHash: "h1", Detail: "busy", ReportedAt: reportedAt},
+			{Room: "eng", Seat: "qa", State: "idle", Runtime: "codex", Redacted: true, ReportedAt: reportedAt},
+		},
+		Agents: []domainrepo.MachineAgent{{Agent: "claude", Status: "working", PaneID: "w5:p3"}},
+	}
+	if err := machines.ReplaceSnapshot(ctx, userID, firstReport); err != nil {
+		t.Fatalf("ReplaceSnapshot first: %v", err)
+	}
+	secondReport := domainrepo.Machine{
+		MachineID: "pc-home", LastSeen: reportedAt.Add(time.Minute),
+		Seats:  []domainrepo.SeatStatus{{Room: "eng", Seat: "coder", State: "idle", Runtime: "claude-code", ReportedAt: reportedAt.Add(time.Minute)}},
+		Agents: []domainrepo.MachineAgent{},
+	}
+	if err := machines.ReplaceSnapshot(ctx, userID, secondReport); err != nil {
+		t.Fatalf("ReplaceSnapshot second: %v", err)
+	}
+	listed, err := machines.List(ctx, userID)
+	if err != nil || len(listed) != 1 || listed[0].MachineID != "pc-home" ||
+		len(listed[0].Seats) != 1 || listed[0].Seats[0].State != "idle" || listed[0].Seats[0].RunningHash != "" ||
+		len(listed[0].Agents) != 0 || !listed[0].LastSeen.Equal(reportedAt.Add(time.Minute)) {
+		t.Fatalf("List machines after replace = %+v, %v", listed, err)
+	}
+	if other, err := machines.List(ctx, userID+"-other"); err != nil || len(other) != 0 {
+		t.Fatalf("List machines for another tenant = %+v, %v", other, err)
 	}
 }
 

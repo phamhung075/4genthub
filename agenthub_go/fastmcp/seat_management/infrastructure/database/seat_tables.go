@@ -244,6 +244,46 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (user_id)\n" +
 			")",
 	}},
+	{Name: "machines", Model: "MachineORM", Columns: []taskdb.ColumnDef{
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "last_seen", Attr: "last_seen", GoField: "LastSeen", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		{Name: "agents", Attr: "agents", GoField: "Agents", SQLType: "JSON", Nullable: false, Default: taskdb.DefaultEmptyList},
+	}, DDL: []string{
+		"CREATE TABLE machines (\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL,\n" +
+			"\tlast_seen TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tagents JSONB NOT NULL DEFAULT '[]'::jsonb,\n" +
+			"\tPRIMARY KEY (user_id, machine_id)\n" +
+			")",
+	}},
+	{Name: "seat_status", Model: "SeatStatusORM", Columns: []taskdb.ColumnDef{
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "seat", Attr: "seat", GoField: "Seat", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "state", Attr: "state", GoField: "State", SQLType: "TEXT", Nullable: false},
+		{Name: "runtime", Attr: "runtime", GoField: "Runtime", SQLType: "TEXT", Nullable: false},
+		{Name: "running_hash", Attr: "running_hash", GoField: "RunningHash", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+		{Name: "detail", Attr: "detail", GoField: "Detail", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+		{Name: "redacted", Attr: "redacted", GoField: "Redacted", SQLType: "BOOLEAN", Nullable: false, Default: taskdb.DefaultBool, DefaultValue: "false"},
+		{Name: "reported_at", Attr: "reported_at", GoField: "ReportedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false},
+	}, DDL: []string{
+		"CREATE TABLE seat_status (\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tseat TEXT NOT NULL,\n" +
+			"\tstate TEXT NOT NULL,\n" +
+			"\truntime TEXT NOT NULL,\n" +
+			"\trunning_hash TEXT NOT NULL DEFAULT '',\n" +
+			"\tdetail TEXT NOT NULL DEFAULT '',\n" +
+			"\tredacted BOOLEAN NOT NULL DEFAULT false,\n" +
+			"\treported_at TIMESTAMP WITH TIME ZONE NOT NULL,\n" +
+			"\tPRIMARY KEY (user_id, machine_id, room, seat)\n" +
+			")",
+	}},
 }
 
 func init() { taskdb.Tables = append(taskdb.Tables, seatManagementDatabaseTables...) }

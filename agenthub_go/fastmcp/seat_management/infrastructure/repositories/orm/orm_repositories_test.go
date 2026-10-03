@@ -25,6 +25,7 @@ type fakeDriver struct {
 	mu      sync.Mutex
 	queries []string
 	respond func(q string, args []driver.Value) (cols []string, rows [][]driver.Value, err error)
+	execErr func(q string) error
 }
 
 func (f *fakeDriver) record(q string) {
@@ -67,6 +68,11 @@ func (s *fakeStmt) NumInput() int { return -1 }
 
 func (s *fakeStmt) Exec([]driver.Value) (driver.Result, error) {
 	s.f.record(s.q)
+	if s.f.execErr != nil {
+		if err := s.f.execErr(s.q); err != nil {
+			return nil, err
+		}
+	}
 	return driver.RowsAffected(1), nil
 }
 
@@ -579,6 +585,95 @@ func TestSeatSettingsErrorsNotSwallowed(t *testing.T) {
 	}
 }
 
+func TestMachineReplaceSnapshotUpsertsThenReplacesSeats(t *testing.T) {
+	f := &fakeDriver{}
+	repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	err = repo.ReplaceSnapshot(context.Background(), testUser, domainrepo.Machine{
+		MachineID: "pc-home", LastSeen: now,
+		Seats: []domainrepo.SeatStatus{
+			{Room: "eng", Seat: "coder", State: "running", Runtime: "claude-code", ReportedAt: now},
+			{Room: "eng", Seat: "qa", State: "idle", Runtime: "codex", ReportedAt: now},
+		},
+		Agents: []domainrepo.MachineAgent{{Agent: "claude", Status: "idle", PaneID: "w5:p3"}},
+	})
+	if err != nil {
+		t.Fatalf("ReplaceSnapshot: %v", err)
+	}
+	var order []string
+	for _, q := range f.recorded() {
+		switch {
+		case strings.Contains(q, `INSERT INTO "machines"`) && strings.Contains(q, `ON CONFLICT ("user_id", "machine_id")`):
+			order = append(order, "upsert")
+		case strings.Contains(q, `DELETE FROM "seat_status"`) && strings.Contains(q, `"user_id" = $1 AND "machine_id" = $2`):
+			order = append(order, "delete")
+		case strings.Contains(q, `INSERT INTO "seat_status"`):
+			order = append(order, "insert")
+		}
+	}
+	if got := strings.Join(order, ","); got != "upsert,delete,insert,insert" {
+		t.Fatalf("statement order = %s", got)
+	}
+}
+
+func TestMachineReplaceSnapshotErrorNotSwallowed(t *testing.T) {
+	boom := errors.New("db boom")
+	f := &fakeDriver{execErr: func(q string) error {
+		if strings.Contains(q, `DELETE FROM "seat_status"`) {
+			return boom
+		}
+		return nil
+	}}
+	repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.ReplaceSnapshot(context.Background(), testUser, domainrepo.Machine{MachineID: "pc-home"}); err == nil {
+		t.Fatal("ReplaceSnapshot swallowed the database error")
+	}
+}
+
+func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
+	now := time.Now().UTC()
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `FROM "machines"`):
+			return []string{"machine_id", "last_seen", "agents"}, [][]driver.Value{
+				fakeRow("pc-home", now, []byte(`[{"agent":"claude","status":"idle","pane_id":"w5:p3"}]`)),
+				fakeRow("pc-work", now, []byte(`[]`)),
+			}, nil
+		case strings.Contains(q, `FROM "seat_status"`):
+			return []string{"machine_id", "room", "seat", "state", "runtime", "running_hash", "detail", "redacted", "reported_at"}, [][]driver.Value{
+				fakeRow("pc-home", "eng", "coder", "running", "claude-code", "abc", "busy", true, now),
+			}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.List(context.Background(), testUser)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(got) != 2 || len(got[0].Seats) != 1 || got[0].Seats[0].RunningHash != "abc" || !got[0].Seats[0].Redacted ||
+		len(got[0].Agents) != 1 || got[0].Agents[0].PaneID != "w5:p3" || len(got[1].Seats) != 0 {
+		t.Fatalf("List = %+v", got)
+	}
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `FROM "machines"`) || strings.Contains(q, `FROM "seat_status"`) {
+			if !strings.Contains(q, `"user_id" = $1`) {
+				t.Fatalf("machine list not tenant-scoped: %s", q)
+			}
+		}
+	}
+}
+
 func TestSeatTableMetadataMatchesStructs(t *testing.T) {
 	cases := []struct {
 		table string
@@ -594,6 +689,8 @@ func TestSeatTableMetadataMatchesStructs(t *testing.T) {
 		{"seat_links", reflect.TypeOf(seatdb.SeatLinkORM{})},
 		{"resolved_seats", reflect.TypeOf(seatdb.ResolvedSeatORM{})},
 		{"seat_settings", reflect.TypeOf(seatdb.SeatSettingsORM{})},
+		{"machines", reflect.TypeOf(seatdb.MachineORM{})},
+		{"seat_status", reflect.TypeOf(seatdb.SeatStatusORM{})},
 	}
 	byName := map[string]database.TableDef{}
 	for _, def := range database.Tables {
@@ -643,6 +740,9 @@ func TestRepositoryConstructors(t *testing.T) {
 	}
 	if _, err := NewORMSeatSettingsRepository(sessions); err != nil {
 		t.Fatalf("NewORMSeatSettingsRepository: %v", err)
+	}
+	if _, err := NewORMMachineStatusRepository(sessions); err != nil {
+		t.Fatalf("NewORMMachineStatusRepository: %v", err)
 	}
 }
 

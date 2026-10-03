@@ -169,6 +169,37 @@ export interface ResolvedSeat {
 }
 
 // =============================================================================
+// Bridge machines (live status reported by scripts/openrig_bridge.py)
+// =============================================================================
+
+export type SeatRunState = 'running' | 'idle' | 'blocked' | 'stopped' | 'unknown';
+
+export interface MachineSeatStatus {
+  room: string;
+  seat: string;
+  state: SeatRunState;
+  runtime: string;
+  hash: string;
+  detail: string;
+  redacted: boolean;
+  reported_at: string;
+}
+
+export interface MachineAgentStatus {
+  agent: string;
+  status: 'idle' | 'working' | 'blocked' | 'done' | 'unknown';
+  pane_id: string;
+}
+
+export interface MachineStatus {
+  machine_id: string;
+  last_seen: string;
+  online: boolean;
+  seats: MachineSeatStatus[];
+  agents: MachineAgentStatus[];
+}
+
+// =============================================================================
 // Settings
 // =============================================================================
 
@@ -289,4 +320,9 @@ export interface SeatSettingsResponse {
 export interface ResolvedSeatResponse {
   success: boolean;
   resolved_seat: ResolvedSeat;
+}
+
+export interface MachinesResponse {
+  success: boolean;
+  machines: MachineStatus[];
 }

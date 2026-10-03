@@ -23,6 +23,7 @@ vi.mock('../../services/seatApi', () => ({
     getSettings: vi.fn(),
     putSettings: vi.fn(),
     getResolvedSeat: vi.fn(),
+    fetchMachines: vi.fn(),
   },
 }));
 
@@ -52,6 +53,27 @@ const seatType = {
   module_refs: [{ slug: 'rules', version: '1.0.0' }],
 };
 
+const iso = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60000).toISOString();
+
+const machineSeat = {
+  room: 'dev',
+  seat: 'alice',
+  state: 'running' as const,
+  runtime: 'claude-code',
+  hash: 'abcdef0123456789',
+  detail: '<b>working</b>',
+  redacted: false,
+  reported_at: iso(1),
+};
+
+const machine = {
+  machine_id: 'pc-home',
+  last_seen: iso(5),
+  online: true,
+  seats: [machineSeat],
+  agents: [{ agent: 'claude', status: 'idle' as const, pane_id: 'w5:p3' }],
+};
+
 const seat = {
   id: 'seat-1',
   room_id: 'room-1',
@@ -70,6 +92,7 @@ describe('SeatsPage', () => {
     mockApi.listSeatTypes.mockResolvedValue({ success: true, seat_types: [seatType] });
     mockApi.listSeats.mockResolvedValue({ success: true, seats: [seat] });
     mockApi.getSettings.mockResolvedValue({ success: true, settings: { follow_latest: false } });
+    mockApi.fetchMachines.mockResolvedValue({ success: true, machines: [] });
     mockApi.createRoom.mockResolvedValue({
       success: true,
       room: { id: 'room-2', slug: 'eng', name: 'Engineering' },
@@ -246,6 +269,75 @@ describe('SeatsPage', () => {
         runtime: 'claude-code',
         model: 'sonnet',
       });
+    });
+  });
+
+  describe('bridge machines', () => {
+    it('shows the empty state when no bridge is connected', async () => {
+      renderPage();
+      expect(
+        await screen.findByText('No bridge connected. Run scripts/openrig_bridge.py on your PC.')
+      ).toBeInTheDocument();
+    });
+
+    it('renders online and offline machines with seats, short hash and agents', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          machine,
+          { ...machine, machine_id: 'pc-work', online: false, last_seen: iso(120), seats: [], agents: [] },
+        ],
+      });
+      renderPage();
+
+      expect(await screen.findByText('pc-home')).toBeInTheDocument();
+      expect(screen.getByText('online')).toBeInTheDocument();
+      expect(screen.getByText('offline')).toBeInTheDocument();
+      expect(screen.getByText('last seen 5 minutes ago')).toBeInTheDocument();
+      expect(screen.getByText('last seen about 2 hours ago')).toBeInTheDocument();
+      expect(screen.getByText('dev/alice')).toBeInTheDocument();
+      expect(screen.getByText('running')).toBeInTheDocument();
+      expect(screen.getByText('abcdef01')).toBeInTheDocument();
+      expect(screen.getByText(/claude · idle · w5:p3/)).toBeInTheDocument();
+    });
+
+    it('renders detail as plain text and marks redacted seats', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [{ ...machine, seats: [{ ...machineSeat, redacted: true }] }],
+      });
+      renderPage();
+
+      expect(await screen.findByText(/<b>working<\/b>/)).toBeInTheDocument();
+      expect(screen.getByText('redacted')).toBeInTheDocument();
+    });
+
+    it('shows the most recently reported state on the seat row', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          machine,
+          {
+            ...machine,
+            machine_id: 'pc-work',
+            seats: [{ ...machineSeat, state: 'blocked' as const, reported_at: iso(10) }],
+          },
+          {
+            ...machine,
+            machine_id: 'pc-new',
+            seats: [{ ...machineSeat, state: 'idle' as const, reported_at: iso(0) }],
+          },
+        ],
+      });
+      renderPage();
+      await screen.findByText('pc-new');
+
+      fireEvent.click(screen.getByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+      // the panel shows each state once; the seat row adds only the newest report (idle)
+      expect(screen.getAllByText('idle')).toHaveLength(2);
+      expect(screen.getAllByText('blocked')).toHaveLength(1);
+      expect(screen.getAllByText('running')).toHaveLength(1);
     });
   });
 });

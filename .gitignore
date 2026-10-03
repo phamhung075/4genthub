@@ -67,6 +67,8 @@ agenthub_main/.claude/
 *secret*
 !*secret*.md
 !*secret*.test.*
+!agenthub_go/fastmcp/seat_management/domain/secretscan/
+!agenthub_go/fastmcp/seat_management/domain/secretscan/**
 
 # =============================================================================
 # BUILD OUTPUTS AND DEPENDENCIES

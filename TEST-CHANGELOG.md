@@ -8,6 +8,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Changed: `seat_admin_mount_test.go`, `policy_test.go` use OpenRig kinds and ids.
 - Added 10 `rig` tests in `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (38 total); 4 frontend tests in `SeatsPage.test.tsx`/`SeatDetailPage.test.tsx` (13 total).
 
+## 2026-10-03 — Bridge v1
+
+- Added: `test_openrig_scrub.py` (19) and `test_openrig_bridge.py` (26), `secretscan_test.go`, `seat_status_mount_test.go`, machine repository tests (fake driver and Postgres integration); 4 frontend tests in `SeatsPage.test.tsx`.
+- Shared fixture `scan_cases.json` is used by both the Go scanner and the Python scrubber.
+
 ## Current Status
 
 | Metric | Value | Notes |

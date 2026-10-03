@@ -14,6 +14,7 @@ import { useSuccessToast } from '../components/ui/toast';
 import type {
   CreateRoomRequest,
   CreateSeatRequest,
+  MachineStatus,
   SeatLinkRequest,
   SeatOverlay,
   SeatOverlayOp,
@@ -29,6 +30,7 @@ export const seatKeys = {
   rooms: ['seatRooms'] as const,
   seatTypes: ['seatTypes'] as const,
   settings: ['seatSettings'] as const,
+  machines: ['seatMachines'] as const,
   seats: (room: string) => ['seatSeats', room] as const,
   overlays: (room: string, seat: string) => ['seatOverlays', room, seat] as const,
   links: (room: string, seat: string) => ['seatLinks', room, seat] as const,
@@ -135,6 +137,24 @@ export function useRemoveSeat(room: string) {
       showSuccess(`Seat "${seat}" removed`);
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Bridge machines
+// ---------------------------------------------------------------------------
+
+const MACHINES_REFETCH_MS = 15000;
+
+export function useMachines() {
+  const query = useQuery({
+    queryKey: seatKeys.machines,
+    queryFn: async (): Promise<MachineStatus[]> => {
+      const response = await seatApi.fetchMachines();
+      return response.machines ?? [];
+    },
+    refetchInterval: MACHINES_REFETCH_MS,
+  });
+  return { machines: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
 }
 
 // ---------------------------------------------------------------------------

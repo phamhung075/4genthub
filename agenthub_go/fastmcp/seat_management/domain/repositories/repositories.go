@@ -208,3 +208,39 @@ type SeatSettingsRepository interface {
 	Get(ctx context.Context, userID string) (*SeatSettings, error)
 	Set(ctx context.Context, userID string, followLatest bool) (*SeatSettings, error)
 }
+
+// SeatStatus is the reported state of one seat on a machine.
+type SeatStatus struct {
+	Room        string
+	Seat        string
+	State       string
+	Runtime     string
+	RunningHash string
+	Detail      string
+	Redacted    bool
+	ReportedAt  time.Time
+}
+
+// MachineAgent is one herdr agent pane reported by a machine.
+type MachineAgent struct {
+	Agent  string `json:"agent"`
+	Status string `json:"status"`
+	PaneID string `json:"pane_id"`
+}
+
+// Machine is one bridge machine with its latest seat statuses and agent snapshot.
+type Machine struct {
+	MachineID string
+	LastSeen  time.Time
+	Seats     []SeatStatus
+	Agents    []MachineAgent
+}
+
+// MachineStatusRepository stores the latest status snapshot per machine.
+type MachineStatusRepository interface {
+	// ReplaceSnapshot upserts the machine with lastSeen and atomically replaces its
+	// seat statuses and agent snapshot.
+	ReplaceSnapshot(ctx context.Context, userID string, machine Machine) error
+	// List returns the user's machines ordered by machine id, seats by room then seat.
+	List(ctx context.Context, userID string) ([]Machine, error)
+}

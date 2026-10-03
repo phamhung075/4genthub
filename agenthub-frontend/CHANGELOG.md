@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Added
+- **Live bridge status on `/seats`** - 2026-10-03
+  - "Bridge machines" panel: one card per machine from `GET /api/v2/openrig/machines`
+    (online/offline badge, "last seen" relative time, seats table with colour-coded state,
+    runtime, 8-char hash, plain-text detail with a "redacted" marker, herdr agent list);
+    refetches every 15s; empty state "No bridge connected. Run scripts/openrig_bridge.py on your PC."
+  - Seat cards show the state badge of the most recently reported matching room/seat.
+  - Files: `src/types/seatTypes.ts`, `src/services/seatApi.ts` (`fetchMachines`),
+    `src/hooks/useSeats.ts` (`useMachines`), `src/components/seats/MachinesPanel.tsx` (new),
+    `src/lib/machineSeats.ts` (new), `src/pages/SeatsPage.tsx`,
+    `src/tests/pages/SeatsPage.test.tsx`
 - **🪑 Seats pages (company-workplace model)** - 2026-10-03
   - `/seats`: rooms list plus create-room form; selecting a room shows its seats as cards
     (seat key, seat type, runtime, model, pinned version or "Follows latest", status) with an
