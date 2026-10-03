@@ -5,6 +5,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,6 +17,12 @@ const (
 	ScopeCompany = "company"
 	ScopeRoom    = "room"
 	ScopeSeat    = "seat"
+)
+
+// Conflicts reported by ModuleRepository; callers match them with errors.Is.
+var (
+	ErrModuleKindConflict    = errors.New("module kind conflict")
+	ErrModuleVersionConflict = errors.New("module version conflict")
 )
 
 // Module is a tenant-scoped unit of seat content.

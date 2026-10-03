@@ -6,6 +6,7 @@ package httpapp
 //	GET    /api/v2/openrig/rooms
 //	GET    /api/v2/openrig/seat-types
 //	GET    /api/v2/openrig/modules/{slug}/versions/{version}
+//	PUT    /api/v2/openrig/modules/{slug}/versions/{version}
 //	POST   /api/v2/openrig/rooms/{room}/seats
 //	GET    /api/v2/openrig/rooms/{room}/seats
 //	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}
@@ -25,6 +26,7 @@ package httpapp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -32,6 +34,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/secretscan"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -46,6 +49,8 @@ type seatAdminSource interface {
 	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
 	GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error)
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
+	SaveModule(ctx context.Context, userID, slug string, kind resolver.ModuleKind) (*repositories.Module, error)
+	AddModuleVersion(ctx context.Context, userID, slug, version, content string) (*repositories.ModuleVersion, error)
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	CreateSeat(ctx context.Context, userID string, seat repositories.Seat) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
@@ -131,6 +136,14 @@ func (s *seatAdminRepos) GetModuleVersion(ctx context.Context, userID, slug, ver
 	return s.modules.GetVersion(ctx, userID, slug, version)
 }
 
+func (s *seatAdminRepos) SaveModule(ctx context.Context, userID, slug string, kind resolver.ModuleKind) (*repositories.Module, error) {
+	return s.modules.SaveModule(ctx, userID, slug, kind)
+}
+
+func (s *seatAdminRepos) AddModuleVersion(ctx context.Context, userID, slug, version, content string) (*repositories.ModuleVersion, error) {
+	return s.modules.AddVersion(ctx, userID, slug, version, content)
+}
+
 func (s *seatAdminRepos) FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error) {
 	return s.seats.FindByRoomAndKey(ctx, userID, roomID, seatKey)
 }
@@ -183,6 +196,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetModuleVersion(w, r, u, sessions)
+	}))
+	mux.HandleFunc("PUT /api/v2/openrig/modules/{slug}/versions/{version}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handlePutModuleVersion(w, r, u, sessions)
 	}))
 	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateSeat(w, r, u, sessions)
@@ -423,6 +439,75 @@ func handleGetModuleVersion(w http.ResponseWriter, r *http.Request, u *authdomai
 	body.Set("success", true)
 	body.Set("module", seatAdminModuleBody(module))
 	writeJSON(w, http.StatusOK, body)
+}
+
+const maxModuleContentBytes = 65536
+
+type putModuleRequest struct {
+	Kind    string `json:"kind"`
+	Content string `json:"content"`
+}
+
+func handlePutModuleVersion(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	slug, version := r.PathValue("slug"), r.PathValue("version")
+	if err := repositories.ValidateModuleSlug(slug); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := repositories.ValidateConcreteVersion(version); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	var req putModuleRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	kind := resolver.ModuleKind(req.Kind)
+	if !resolver.ValidKind(kind) {
+		writeDetail(w, http.StatusBadRequest, "kind \""+req.Kind+"\" is not a module kind")
+		return
+	}
+	if req.Content == "" || len(req.Content) > maxModuleContentBytes {
+		writeDetail(w, http.StatusBadRequest, "content must be 1 to 65536 bytes")
+		return
+	}
+	if secretscan.Contains(req.Content) {
+		writeDetail(w, http.StatusUnprocessableEntity, "secret detected in content")
+		return
+	}
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	if _, err := source.SaveModule(r.Context(), userID(u), slug, kind); err != nil {
+		writeModuleSaveError(w, err, slug, version)
+		return
+	}
+	saved, err := source.AddModuleVersion(r.Context(), userID(u), slug, version, req.Content)
+	if err != nil {
+		writeModuleSaveError(w, err, slug, version)
+		return
+	}
+	module := entities.NewOrderedMap[any]()
+	module.Set("slug", saved.Slug)
+	module.Set("kind", saved.Kind)
+	module.Set("version", saved.Version)
+	module.Set("sha256", saved.Checksum)
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("module", module)
+	writeJSON(w, http.StatusOK, body)
+}
+
+func writeModuleSaveError(w http.ResponseWriter, err error, slug, version string) {
+	switch {
+	case errors.Is(err, repositories.ErrModuleKindConflict):
+		writeDetail(w, http.StatusConflict, err.Error())
+	case errors.Is(err, repositories.ErrModuleVersionConflict):
+		writeDetail(w, http.StatusConflict, "version "+version+" of module "+slug+" already exists with different content")
+	default:
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+	}
 }
 
 func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {

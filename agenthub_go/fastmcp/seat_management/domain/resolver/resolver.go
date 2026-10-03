@@ -21,6 +21,15 @@ const (
 	KindMemory      ModuleKind = "memory"
 )
 
+// ValidKind reports whether kind is one of the module kinds.
+func ValidKind(kind ModuleKind) bool {
+	switch kind {
+	case KindInstruction, KindDocument, KindSkill, KindTool, KindMemory:
+		return true
+	}
+	return false
+}
+
 type ModuleVersion struct {
 	Slug    string
 	Version string

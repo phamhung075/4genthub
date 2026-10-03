@@ -46,7 +46,7 @@ func (r *ORMModuleRepository) SaveModule(ctx context.Context, userID, slug strin
 	}
 	if row != nil {
 		if row.Kind != string(kind) {
-			return nil, fmt.Errorf("module %q already exists with kind %q", slug, row.Kind)
+			return nil, fmt.Errorf("module %q already exists with kind %q: %w", slug, row.Kind, domainrepo.ErrModuleKindConflict)
 		}
 		return moduleToDomain(row), nil
 	}
@@ -74,7 +74,7 @@ func (r *ORMModuleRepository) AddVersion(ctx context.Context, userID, slug, vers
 	}
 	if existing != nil {
 		if existing.Checksum != checksum {
-			return nil, fmt.Errorf("module %q version %q already exists with a different checksum", slug, version)
+			return nil, fmt.Errorf("module %q version %q already exists with a different checksum: %w", slug, version, domainrepo.ErrModuleVersionConflict)
 		}
 		out := moduleVersionToDomain(existing)
 		out.Slug, out.Kind = module.Slug, resolver.ModuleKind(module.Kind)

@@ -30,3 +30,26 @@ func TestValidateNameErrorNamesField(t *testing.T) {
 		t.Fatalf("error %q does not name the field and value", err)
 	}
 }
+
+func TestValidateModuleSlugAndVersion(t *testing.T) {
+	for _, slug := range []string{"a", "my-skill", "a1-b2"} {
+		if err := ValidateModuleSlug(slug); err != nil {
+			t.Errorf("ValidateModuleSlug(%q) = %v", slug, err)
+		}
+	}
+	for _, slug := range []string{"", "1a", "-a", "A", "a_b", "a.b"} {
+		if ValidateModuleSlug(slug) == nil {
+			t.Errorf("ValidateModuleSlug(%q) = nil, want error", slug)
+		}
+	}
+	for _, version := range []string{"0.0.0", "1.2.3", "10.20.30"} {
+		if err := ValidateConcreteVersion(version); err != nil {
+			t.Errorf("ValidateConcreteVersion(%q) = %v", version, err)
+		}
+	}
+	for _, version := range []string{"", "latest", "1.0", "01.0.0", "1.0.0-rc1", "v1.0.0"} {
+		if ValidateConcreteVersion(version) == nil {
+			t.Errorf("ValidateConcreteVersion(%q) = nil, want error", version)
+		}
+	}
+}

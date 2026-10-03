@@ -173,6 +173,12 @@ Bridge v1 (status up only, no commands down) built and verified:
 - Open: the old `agenthub_main/agent-library` (32 agents, 2.1 MB) still feeds `call_agent`, the AgentSpec route (`/api/v2/openrig/agents`) and `-seed-agents`; retire or replace those with the seat model; production still has no library in the image so those paths stay broken there (F0b). Seat types created by the old seed stay in existing databases.
 - Open: frontend authoring of seat types and modules (create or edit modules, new seat type versions); today users customize through overlays only.
 
+## Request 15 — "create a complete team working on this project ... continue develop and maintain" and "need fix continue this app for make it clean and perfection" (2026-10-03)
+
+- Plan: room `4genthub-dev` (lead, planner, architect, go-dev, web-dev, reviewer, tester, debugger, writer), created through the API by `scripts/openrig_team_setup.py`; project context, area context and the standing mission live as modules in `scripts/team/4genthub/` (applied as company and seat overlays). Needs the module authoring endpoint `PUT /api/v2/openrig/modules/{slug}/versions/{version}`.
+- Boundaries (owner rules): the team commits locally and asks the owner before every push (a push to main auto-deploys production); the GitHub pipeline test job is explicitly out of scope; real sessions are launched only after the owner confirms.
+- Status: see the progress notes below as work lands.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

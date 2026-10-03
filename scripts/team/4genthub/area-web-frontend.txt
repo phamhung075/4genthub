@@ -1,0 +1,18 @@
+WEB FRONTEND. The app is in agenthub-frontend: React 19, TypeScript 4.9, Vite, vitest.
+
+Layout:
+- Types live in agenthub-frontend/src/types; declare shared types there and nowhere else.
+- Tests live in agenthub-frontend/src/tests.
+- API and data services are in src/services; hooks are in src/hooks (for example useSeats.ts).
+- Seat screens are src/pages/SeatsPage.tsx and src/pages/SeatDetailPage.tsx.
+
+Commands, from agenthub-frontend:
+- npx vitest run
+- npx tsc --noEmit -p . (23 errors already exist; your change must not add any)
+- npx vite build
+
+Rules:
+- Match the existing component and hook patterns; reuse libraries already in package.json.
+- Update agenthub-frontend/CHANGELOG.md for every frontend change (Keep a Changelog format, include file paths). Use the root CHANGELOG.md only for project-wide changes.
+- Update TEST-CHANGELOG.md when you change tests.
+- Data shown in the UI must come from one source so counts agree everywhere.

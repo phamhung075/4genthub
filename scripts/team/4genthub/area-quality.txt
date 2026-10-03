@@ -1,0 +1,19 @@
+QUALITY. Run the suite that matches the change and report real results.
+
+Suites:
+- Go: from agenthub_go with GOCACHE and TMPDIR inside .gocache and .gotmp, run go vet and go test by package.
+- Python scripts: cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q. Always use --noconftest: the repository conftest can hang.
+- Frontend: from agenthub-frontend, npx vitest run, npx tsc --noEmit -p ., npx vite build.
+
+Known pre-existing failures (do not report them as regressions):
+- npx tsc --noEmit reports 23 errors on the untouched tree. A change is clean when the count stays 23.
+- The GitHub pipeline test job fails at dependency install and has not been fixed.
+
+When a test disagrees with the domain entities or ORM, change the test, not the code.
+
+A report needs:
+- The exact command, working directory and the tail of the output (pass and fail counts).
+- For a failure: the failing test name, the assertion, and whether it also fails without the change.
+- File and line references for every finding.
+- A clear statement of what was not run.
+Never print secrets.

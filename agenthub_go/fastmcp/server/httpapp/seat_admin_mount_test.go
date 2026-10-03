@@ -2,6 +2,9 @@ package httpapp
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -18,6 +21,7 @@ type fakeSeatAdmin struct {
 	seatVersions   map[string]map[string]*repositories.SeatTypeVersion
 	seatTypeList   []*repositories.SeatType
 	moduleVersions map[string]*repositories.ModuleVersion
+	moduleKinds    map[string]resolver.ModuleKind
 	seats          []*repositories.Seat
 	overlays       map[string]*repositories.Overlay
 	links          []*repositories.SeatLink
@@ -29,6 +33,7 @@ func newFakeSeatAdmin() *fakeSeatAdmin {
 		seatTypes:      map[string]*repositories.SeatTypeVersion{},
 		seatVersions:   map[string]map[string]*repositories.SeatTypeVersion{},
 		moduleVersions: map[string]*repositories.ModuleVersion{},
+		moduleKinds:    map[string]resolver.ModuleKind{},
 		overlays:       map[string]*repositories.Overlay{},
 		settings:       map[string]*repositories.SeatSettings{},
 	}
@@ -99,6 +104,29 @@ func (f *fakeSeatAdmin) GetSeatTypeVersion(_ context.Context, _, slug, version s
 
 func (f *fakeSeatAdmin) GetModuleVersion(_ context.Context, _, slug, version string) (*repositories.ModuleVersion, error) {
 	return f.moduleVersions[slug+"@"+version], nil
+}
+
+func (f *fakeSeatAdmin) SaveModule(_ context.Context, _, slug string, kind resolver.ModuleKind) (*repositories.Module, error) {
+	if existing, ok := f.moduleKinds[slug]; ok && existing != kind {
+		return nil, fmt.Errorf("module %q already exists with kind %q: %w", slug, existing, repositories.ErrModuleKindConflict)
+	}
+	f.moduleKinds[slug] = kind
+	return &repositories.Module{Slug: slug, Kind: kind}, nil
+}
+
+func (f *fakeSeatAdmin) AddModuleVersion(_ context.Context, _, slug, version, content string) (*repositories.ModuleVersion, error) {
+	sum := sha256.Sum256([]byte(content))
+	checksum := hex.EncodeToString(sum[:])
+	key := slug + "@" + version
+	if existing, ok := f.moduleVersions[key]; ok {
+		if existing.Checksum != checksum {
+			return nil, fmt.Errorf("different checksum: %w", repositories.ErrModuleVersionConflict)
+		}
+		return existing, nil
+	}
+	created := &repositories.ModuleVersion{Slug: slug, Kind: f.moduleKinds[slug], Version: version, Content: content, Checksum: checksum}
+	f.moduleVersions[key] = created
+	return created, nil
 }
 
 func (f *fakeSeatAdmin) FindSeat(_ context.Context, _, roomID, seatKey string) (*repositories.Seat, error) {
@@ -287,6 +315,60 @@ func TestSeatAdminListSeatTypes(t *testing.T) {
 	} {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Errorf("list seat types missing %s: %s", want, rec.Body.String())
+		}
+	}
+}
+
+func TestSeatAdminPutModuleVersion(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/modules/my-skill/versions/1.0.0"
+	sum := sha256.Sum256([]byte("hello"))
+	sha := hex.EncodeToString(sum[:])
+
+	rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"hello"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create: status = %d: %s", rec.Code, rec.Body.String())
+	}
+	want := `{"success":true,"module":{"slug":"my-skill","kind":"skill","version":"1.0.0","sha256":"` + sha + `"}}`
+	if strings.TrimSpace(rec.Body.String()) != want {
+		t.Errorf("create body = %s, want %s", rec.Body.String(), want)
+	}
+	if rec = doAgentsRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"hello"}`); rec.Code != http.StatusOK {
+		t.Errorf("idempotent repeat: status = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	rec = doAgentsRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"changed"}`)
+	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "version 1.0.0 of module my-skill already exists with different content") {
+		t.Errorf("content conflict: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec = doAgentsRequest(t, mux, http.MethodPut, path, `{"kind":"document","content":"hello"}`); rec.Code != http.StatusConflict {
+		t.Errorf("kind mismatch: status = %d, want 409: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSeatAdminPutModuleVersionRejectsInvalidInput(t *testing.T) {
+	mux := seatAdminTestMux(t, newFakeSeatAdmin())
+	cases := []struct {
+		name, path, body string
+		status           int
+	}{
+		{"bad slug", "/api/v2/openrig/modules/Bad_Slug/versions/1.0.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"latest version", "/api/v2/openrig/modules/m/versions/latest", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"partial version", "/api/v2/openrig/modules/m/versions/1.0", `{"kind":"skill","content":"x"}`, http.StatusBadRequest},
+		{"bad kind", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"widget","content":"x"}`, http.StatusBadRequest},
+		{"empty content", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":""}`, http.StatusBadRequest},
+		{"oversize content", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"` + strings.Repeat("a", 65537) + `"}`, http.StatusBadRequest},
+		{"unknown field", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"x","extra":1}`, http.StatusBadRequest},
+		{"secret", "/api/v2/openrig/modules/m/versions/1.0.0", `{"kind":"skill","content":"key AKIAABCDEFGHIJKLMNOP"}`, http.StatusUnprocessableEntity},
+	}
+	for _, c := range cases {
+		rec := doAgentsRequest(t, mux, http.MethodPut, c.path, c.body)
+		if rec.Code != c.status {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.status, rec.Body.String())
+		}
+		if c.name == "secret" && (!strings.Contains(rec.Body.String(), "secret detected in content") || strings.Contains(rec.Body.String(), "AKIA")) {
+			t.Errorf("secret body = %s", rec.Body.String())
 		}
 	}
 }
@@ -587,6 +669,7 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 		{http.MethodGet, "/api/v2/openrig/rooms"},
 		{http.MethodGet, "/api/v2/openrig/seat-types"},
 		{http.MethodGet, "/api/v2/openrig/modules/instr/versions/1.0.0"},
+		{http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0"},
 		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice"},

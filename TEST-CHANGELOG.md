@@ -17,6 +17,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: `seedlibrary_test.go` (loader, strictness, embedded set of 9), updated `seedmap_test.go`, `seat_mount_test.go`, and the Postgres integration test now seeds from the embedded library.
 
+## 2026-10-03 — Module authoring and team setup
+
+- Added: module PUT handler tests in `seat_admin_mount_test.go`, `names_test.go` validators, `test_openrig_team_setup.py` (21 tests).
+
 ## Current Status
 
 | Metric | Value | Notes |
