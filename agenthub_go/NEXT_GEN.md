@@ -236,6 +236,14 @@ Pending owner decisions:
 - [ ] D3: replace the "ABSOLUTE FIRST PRIORITY: call master-orchestrator-agent" block in `CLAUDE.md` with "read your seat files; run `rig whoami`" (planner recommends). It also changes the `session_start` hook messages and the 31 `.claude/agents` files.
 - [x] G1a: the manual production schema change for `961e1da1` was applied 2026-10-03 and deployed as 0.0.11 (owner-reported).
 
+Architect's recommendations for D1 to D3 and T5 to T9 (2026-10-03). These are recommendations; the owner decides each D item. Nothing here was run on production.
+- D1, remove `call_agent`: seats replace it. Identity comes from `rig whoami` and the seat files from the seat sync. A thin version that returns a resolved seat is a compatibility layer, which the project rules forbid. Owner approves.
+- D2, export then drop the 58 `user_agent_instances`: the export is read-only and saved off-repo (T5). The drop is a destructive production step and needs the owner's explicit go-ahead for the export and again for the drop. T7 and T8 are blocked until the owner states drop or keep.
+- D3, replace the "call master-orchestrator-agent" block in `CLAUDE.md` with "read your seat files; run `rig whoami`", and update the `session_start` hook messages and the 31 `.claude/agents` files. Owner approves, because it changes shared instructions.
+- Order for go-dev: T6 (after D1), then T7 (after T6 and D2) and T8 (after D1 and D3) in parallel, then T9 (writer). T7 changes the DDL and needs a manual production schema step like G1a. T6 changes the health payload (`agent_library_dir`).
+- Owner approval points: D1, D2 (export and drop), D3, the T7 production schema step, and every push.
+- Bridge naming: the rig name is the local OpenRig name and the room slug is the cloud grouping; they are different concepts. The Rig note above is stale: the rig is `4genthub-dev` on `claude-code` again (verified with `rig whoami`, 2026-10-03). The bridge should map rig to room by an explicit field, not by name equality. Not yet checked against `scripts/openrig_bridge.py` and `scripts/openrig_seat_sync.py`; go-dev confirms before building.
+
 ## Verified live 2026-10-03 (tester, scratch rigs, throwaway Postgres)
 
 Reported by the tester through the lead. The writer did not run these checks.
