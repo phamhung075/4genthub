@@ -17,6 +17,7 @@ type RoomDeletionStore interface {
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
+	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
 	// InTransaction runs fn so that all its store calls commit or roll back together.
 	InTransaction(ctx context.Context, fn func(ctx context.Context) error) error
@@ -33,7 +34,7 @@ func NewRoomDeletionService(store RoomDeletionStore) *RoomDeletionService {
 }
 
 // DeleteRoom hard-deletes the room and everything under it, including seats already
-// marked removed, in one transaction. An absent room is ErrRoomNotFound.
+// marked removed and the room's reported seat statuses, in one transaction. An absent room is ErrRoomNotFound.
 func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug string) error {
 	room, err := s.store.GetRoomBySlug(ctx, userID, roomSlug)
 	if err != nil {
@@ -62,6 +63,9 @@ func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug s
 			}
 		}
 		if err := s.store.DeleteRoomOverlay(ctx, userID, room.ID); err != nil {
+			return err
+		}
+		if err := s.store.DeleteSeatStatusForRoom(ctx, userID, room.Slug); err != nil {
 			return err
 		}
 		return s.store.DeleteRoom(ctx, userID, room.ID)

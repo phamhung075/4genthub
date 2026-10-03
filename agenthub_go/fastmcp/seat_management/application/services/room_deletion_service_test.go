@@ -53,6 +53,10 @@ func (f *fakeRoomDeletionStore) DeleteRoomOverlay(_ context.Context, _, roomID s
 	return f.record("room-overlay:" + roomID)
 }
 
+func (f *fakeRoomDeletionStore) DeleteSeatStatusForRoom(_ context.Context, _, roomSlug string) error {
+	return f.record("status:" + roomSlug)
+}
+
 func (f *fakeRoomDeletionStore) DeleteRoom(_ context.Context, _, roomID string) error {
 	return f.record("room:" + roomID)
 }
@@ -69,7 +73,7 @@ func TestDeleteRoomRemovesDependentsBeforeParents(t *testing.T) {
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
 	}
-	want := "links:s1,overlay:s1,resolved:s1,seat:s1,links:s2,overlay:s2,resolved:s2,seat:s2,room-overlay:r1,room:r1"
+	want := "links:s1,overlay:s1,resolved:s1,seat:s1,links:s2,overlay:s2,resolved:s2,seat:s2,room-overlay:r1,status:dev,room:r1"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}

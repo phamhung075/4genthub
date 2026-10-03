@@ -31,6 +31,8 @@ type fakeSeatAdmin struct {
 
 	deletedResolved []string
 	addVersionErr   error
+
+	deletedStatusRooms []string
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -269,6 +271,11 @@ func (f *fakeSeatAdmin) DeleteSeatOverlay(_ context.Context, _, seatID string) e
 
 func (f *fakeSeatAdmin) DeleteRoomOverlay(_ context.Context, _, roomID string) error {
 	delete(f.overlays, repositories.ScopeRoom+"|"+roomID+"|")
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatStatusForRoom(_ context.Context, _, roomSlug string) error {
+	f.deletedStatusRooms = append(f.deletedStatusRooms, roomSlug)
 	return nil
 }
 
@@ -855,6 +862,9 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	}
 	if strings.Join(fake.deletedResolved, ",") != "seat-a,seat-b" {
 		t.Errorf("resolved snapshots deleted for %v, want seat-a,seat-b", fake.deletedResolved)
+	}
+	if strings.Join(fake.deletedStatusRooms, ",") != "dev" {
+		t.Errorf("seat status deleted for rooms %v, want only dev", fake.deletedStatusRooms)
 	}
 	if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("delete again: status = %d, want 404", rec.Code)

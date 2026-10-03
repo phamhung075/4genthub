@@ -265,4 +265,7 @@ type MachineStatusRepository interface {
 	ReplaceSnapshot(ctx context.Context, userID string, machine Machine) error
 	// List returns the user's machines ordered by machine id, seats by room then seat.
 	List(ctx context.Context, userID string) ([]Machine, error)
+	// DeleteSeatStatusForRoom removes the reported statuses of every seat of the room, on
+	// every machine; seat_status stores the room slug, not a foreign key.
+	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 }

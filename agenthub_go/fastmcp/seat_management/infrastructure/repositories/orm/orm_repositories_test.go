@@ -662,6 +662,26 @@ func TestMachineReplaceSnapshotErrorNotSwallowed(t *testing.T) {
 	}
 }
 
+func TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped(t *testing.T) {
+	f := &fakeDriver{}
+	repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.DeleteSeatStatusForRoom(context.Background(), testUser, "eng"); err != nil {
+		t.Fatalf("DeleteSeatStatusForRoom: %v", err)
+	}
+	found := false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `DELETE FROM "seat_status" WHERE "user_id" = $1 AND "room" = $2`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("no tenant and room scoped delete: %v", f.recorded())
+	}
+}
+
 func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 	now := time.Now().UTC()
 	f := &fakeDriver{}

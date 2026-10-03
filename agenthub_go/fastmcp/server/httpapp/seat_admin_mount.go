@@ -72,6 +72,7 @@ type seatAdminSource interface {
 	DeleteSeatLinksOfSeat(ctx context.Context, userID, seatID string) error
 	DeleteSeatOverlay(ctx context.Context, userID, seatID string) error
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
+	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
@@ -114,12 +115,17 @@ var newSeatAdminSource = func(sessions *database.SessionManager) (seatAdminSourc
 	if err != nil {
 		return nil, err
 	}
-	return &seatAdminRepos{sessions: sessions, resolved: resolved, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
+	machines, err := seatorm.NewORMMachineStatusRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatAdminRepos{sessions: sessions, resolved: resolved, machines: machines, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
 }
 
 type seatAdminRepos struct {
 	sessions  *database.SessionManager
 	resolved  repositories.ResolvedSeatRepository
+	machines  repositories.MachineStatusRepository
 	rooms     repositories.RoomRepository
 	seatTypes repositories.SeatTypeRepository
 	modules   repositories.ModuleRepository
@@ -225,6 +231,10 @@ func (s *seatAdminRepos) DeleteSeatOverlay(ctx context.Context, userID, seatID s
 
 func (s *seatAdminRepos) DeleteRoomOverlay(ctx context.Context, userID, roomID string) error {
 	return s.overlays.DeleteForRoom(ctx, userID, roomID)
+}
+
+func (s *seatAdminRepos) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.machines.DeleteSeatStatusForRoom(ctx, userID, roomSlug)
 }
 
 func (s *seatAdminRepos) DeleteResolvedSeats(ctx context.Context, userID, seatID string) error {

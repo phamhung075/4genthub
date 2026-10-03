@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**Deleting a room deletes its seat status** (2026-10-03)
+
+- `DELETE /api/v2/openrig/rooms/{room}` also removes the room's `seat_status` rows (every machine, this user only) in the same transaction (`MachineStatusRepository.DeleteSeatStatusForRoom`, `RoomDeletionService`). Before, they stayed until the bridge replaced the machine snapshot.
+
 ### Changed
 
 **`default_runtime` is versioned** (2026-10-03)

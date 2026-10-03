@@ -293,6 +293,7 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	links, _ := NewORMSeatLinkRepository(sessions)
 	overlays, _ := NewORMOverlayRepository(sessions)
 	resolved, _ := NewORMResolvedSeatRepository(sessions)
+	machines, _ := NewORMMachineStatusRepository(sessions)
 
 	seatType, err := seatTypes.Save(ctx, userID, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d"})
 	if err != nil {
@@ -325,6 +326,19 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	}
 	if _, err := resolved.Save(ctx, userID, domainrepo.ResolvedSeat{SeatID: a.ID, Hash: "h", Runtime: "claude-code"}); err != nil {
 		t.Fatal(err)
+	}
+	reportedAt := time.Now().UTC()
+	for _, user := range []string{userID, other} {
+		if err := machines.ReplaceSnapshot(ctx, user, domainrepo.Machine{
+			MachineID: "pc", LastSeen: reportedAt,
+			Seats: []domainrepo.SeatStatus{
+				{Room: "dev", Seat: "alice", State: "running", Runtime: "claude-code", ReportedAt: reportedAt},
+				{Room: "ops", Seat: "carol", State: "idle", Runtime: "codex", ReportedAt: reportedAt},
+			},
+			Agents: []domainrepo.MachineAgent{},
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	count := func(query string, args ...any) int {
 		t.Helper()
@@ -386,6 +400,21 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	}
 	if err := overlays.DeleteForRoom(ctx, userID, room.ID); err != nil {
 		t.Fatal(err)
+	}
+	if err := machines.DeleteSeatStatusForRoom(ctx, other, "dev"); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1`, userID); n != 2 {
+		t.Fatalf("seat_status after another tenant's delete = %d, want 2", n)
+	}
+	if err := machines.DeleteSeatStatusForRoom(ctx, userID, "dev"); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1 AND room = 'dev'`, userID); n != 0 {
+		t.Fatalf("seat_status of the deleted room = %d, want 0", n)
+	}
+	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1 AND room = 'ops'`, userID); n != 1 {
+		t.Fatalf("seat_status of another room = %d, want 1", n)
 	}
 	if err := rooms.Delete(ctx, userID, room.ID); err != nil {
 		t.Fatal(err)
