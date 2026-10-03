@@ -9,6 +9,9 @@ import type { EntityType } from './serviceTypes';
 // Animation Factory Types
 // =============================================================================
 
+/** Entity types that have a `{entity}Row{Animation}Animation` CSS class. */
+export type AnimatedEntityType = Extract<EntityType, 'task' | 'subtask' | 'branch' | 'project'>;
+
 export type AnimationType = 'create' | 'delete' | 'update' | 'complete';
 export type AnimationSource = 'websocket' | 'callback' | 'mount';
 
@@ -26,7 +29,7 @@ export interface AnimationState {
 
 export interface ElementRegistration {
   element: HTMLElement;
-  entityType: EntityType; // ✅ FIX 2025-11-22: Added entity type for correct CSS class selection
+  entityType: AnimatedEntityType; // ✅ FIX 2025-11-22: Added entity type for correct CSS class selection
   callbacks?: {
     onAnimationStart?: (type: AnimationType) => void;
     onAnimationEnd?: (type: AnimationType) => void;

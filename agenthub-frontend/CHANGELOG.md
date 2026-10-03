@@ -25,6 +25,13 @@
     now call `registerElement(id, element, 'task', callbacks?)` as the factory requires.
 
 ### Changed
+- **Animation entity type narrowed; unused edit-dialog prop removed** - 2026-10-03
+  - `AnimatedEntityType` (derived from `EntityType` with `Extract`: task, subtask, branch, project) types
+    `registerElement` and `ElementRegistration`, so entities without a CSS animation class cannot be registered.
+  - `SubtaskEditDialog` no longer takes `parentTaskId` (its agent list does not depend on it) and its
+    effect depends on `open` only.
+  - Files: `src/types/animationTypes.ts`, `src/services/AnimationFactory.ts`,
+    `src/components/SubtaskEditDialog.tsx`, `src/components/LazySubtaskList/components/SubtaskDialogs.tsx`
 - **TypeScript: 23 pre-existing errors removed (`npx tsc --noEmit -p .` reports 0)** - 2026-10-03
   - `LazySubtaskList`: `UseSubtaskDialogsReturn` gains `setActiveDialog`, `UseSubtaskFiltersReturn` lists every
     member the hook returns (sort, filter helpers, stats, available values); removed the unused

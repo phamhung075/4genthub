@@ -6,13 +6,13 @@
  */
 
 import type {
+  AnimatedEntityType,
   AnimationDefinition,
   AnimationSource,
   AnimationState,
   AnimationType,
   ElementRegistration
 } from '../types/animationTypes';
-import type { EntityType } from '../types/serviceTypes';
 import logger from '../utils/logger';
 
 class AnimationFactory {
@@ -57,7 +57,7 @@ class AnimationFactory {
   registerElement(
     elementId: string,
     element: HTMLElement,
-    entityType: EntityType,
+    entityType: AnimatedEntityType,
     callbacks?: {
       onAnimationStart?: (type: AnimationType) => void;
       onAnimationEnd?: (type: AnimationType) => void;
@@ -146,7 +146,7 @@ class AnimationFactory {
    * - buildCssClass('subtask', 'delete') → 'subtaskRowDeleteAnimation'
    * - buildCssClass('branch', 'create') → 'branchRowCreateAnimation'
    */
-  private buildCssClass(entityType: EntityType, animationType: AnimationType): string {
+  private buildCssClass(entityType: AnimatedEntityType, animationType: AnimationType): string {
     // Capitalize first letter of animation type (delete → Delete)
     const capitalizedType = animationType.charAt(0).toUpperCase() + animationType.slice(1);
 

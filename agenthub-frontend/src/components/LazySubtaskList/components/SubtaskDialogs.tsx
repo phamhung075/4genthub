@@ -136,7 +136,6 @@ export function SubtaskDialogs({
               }
             }}
             subtask={activeDialog.subtask}
-            parentTaskId={parentTaskId}
             onClose={() => onActiveDialogChange({ type: null })}
             onUpdated={(updatedSubtask) => {
               logger.debug('Subtask updated:', updatedSubtask);

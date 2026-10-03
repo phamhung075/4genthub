@@ -12,7 +12,6 @@ interface SubtaskEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subtask: Subtask;
-  parentTaskId: string;
   onClose: () => void;
   onUpdated?: (subtask: Subtask) => void;
 }
@@ -21,7 +20,6 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   open,
   onOpenChange,
   subtask,
-  parentTaskId,
   onClose,
   onUpdated,
 }) => {
@@ -62,7 +60,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
         setAvailableAgents(availAgents);
       });
     }
-  }, [open, parentTaskId]);
+  }, [open]);
 
   const handleUpdate = async () => {
     if (!title.trim()) {
