@@ -14,6 +14,17 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ---
 
+## [2026-10-03]
+
+### Added
+
+- Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
+- Frontend: `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (6) and `SeatDetailPage.test.tsx` (3). The rest of the frontend suite already had 710 failing tests before this change (59 files); the count is unchanged.
+- Python: `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (22 unit tests for `scripts/openrig_seat_sync.py`).
+- Gated tests skip without their environment variables. Run the Postgres ones against a throwaway container: `SEAT_TEST_DATABASE_URL=postgres://... AGENT_LIBRARY_DIR_PATH=agenthub_main/agent-library go test ./fastmcp/seat_management/...`.
+
+---
+
 ## [2025-11-11]
 
 ### Fixed
@@ -358,4 +369,3 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Top blockers: ProjectList (37 failures), LazyTaskList (37), WebSocketAnimation (49)
 - Strategy: Systematic assertion updates for CSS classes and animation expectations
 - Estimated: 2-3 additional focused sessions needed
-

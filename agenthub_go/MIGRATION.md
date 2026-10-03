@@ -3,6 +3,9 @@
 Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` (module `agenthub`), same directory layout, one `.go` file per `.py` module.
 `__init__.py` files map to the Go package clause (no file). Files whose stem ends in a Go-reserved suffix get `_py` appended.
 
+**Scope:** this file tracks only the Python → Go port. New features and the OpenRig integration live in `NEXT_GEN.md` (split on 2026-10-02).
+**Closing rule:** when every Slice box and `Final` in the parity checklist and groups A–B below are checked, close this file (mark it archived at the top). Do not add new work here.
+
 ## Slice order
 0 shared/config → 1 domain → 2 infrastructure/db → 3 application → 4 server routes/MCP → 5 auth → 6 websocket
 
@@ -811,7 +814,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 - [ ] Slice 6: websocket protocol v2.0 + session_stream (uncommitted Python work included)
 - [ ] Final: endpoint/behavior comparison against the running Python server; owner+user parity confirmation before any Python removal
 
-### Owner requests (details in "Post-migration requests from the owner" below)
+### Port items from the owner's requests (details in "Port requirements from the owner's requests" below)
 
 Rules: do not start a group before the one above it is done. Tick a box only when its check is met. Never commit, push, deploy, or touch the production server without the owner's go-ahead. Never print secrets (`.mcp.json` bearer token, `*_SECRET*`, `*PASSWORD*`).
 
@@ -829,71 +832,13 @@ Rules: do not start a group before the one above it is done. Tick a box only whe
 - [ ] B1: confirm `Base.metadata.create_all` creates the two new tables on a Postgres 14 instance (local test DB first; production only with the owner's go-ahead).
 - [ ] B2: make the `session_stream` tests runnable in CI with the repo's normal conftest (it needs a Postgres DB `agenthub_test`), or document `--noconftest` in the test file header.
 
-**C. New features (after the Go port is verified)** — Requests 2, 3, 6
-- [ ] C1: connector CLI for the user's WSL: list tmux sessions, tail `~/.claude/projects/*/*.jsonl`, redact secrets locally before upload, reconnect with backoff, send the Request 5 frames. Check: a real Claude Code session appears in `GET /api/v2/sessions` for the right user only. **Superseded by F4 (`rigd`): fold into it, do not build separately.**
-- [ ] C2: connector token flow: a user creates an API token with scope `sessions:write` from the dashboard (the token endpoint already accepts arbitrary scopes; default is `["read"]`).
-- [ ] C3: dashboard page in `agenthub-frontend`: own session list, live view over `/ws/sessions/{id}`, optional xterm.js raw-terminal tab (Keycloak login).
-- [ ] C4: two-user end-to-end test: user A and user B each connect a connector and each sees only their own sessions.
-- [ ] C5: deploy check: CapRover "Websocket Support" on for `4genthub-backend`, nginx `Upgrade`/`Connection` headers and long `proxy_read_timeout` work for `/ws/*`.
-
-**D. tmux messaging and web input** — Request 1 and Request 6.3
-- [ ] D1: ask the owner which case is wanted (agent↔agent, agent→human, or both) and record the answer here before building. Answer: _pending owner_.
-- [ ] D2: MCP tool `send_to_agent(name, message)` using the tmux recipe (temp file → `load-buffer` → `paste-buffer -d -r -p` → separate `C-m`), per-pane lock, `has-session` check. Check: a multi-line message arrives as one submission, not one per line. **Superseded by F4 (`rigd`): fold into it, do not build separately.**
-- [ ] D3: human notification path chosen in D1 (WSL toast, `tmux display-message`, or dashboard push).
-- [ ] D4: web → tmux input, opt-in per session, scope `sessions:input`, read-only by default, commands accepted only for sessions the same connector registered, rate limit, audit log. **Superseded by F4 (`rigd`): fold into it, do not build separately.**
-- [ ] D5: teams/sharing (`team_id`, owner/viewer roles). Low priority, single-owner first.
-
-**E. Already done (keep for traceability)**
-- [x] E1: deepseek-offload installed in `~/__projects__/4genthub` (Request 4); `doctor` all ok, smoke job returned a correct report.
-- [x] E2: Python session-streaming backend written with 9 passing tests (Request 5), uncommitted.
-- [x] E3: owner requests written into this file (Request 7).
-- [x] E4: Request 8 recorded and planned as group F below (plan only; no code written). Plan file: `~/.claude/plans/compressed-conjuring-aurora.md`.
-
-**F. OpenRig-style system topology in Go, full runtime** — Request 8. Gate: Slices 2, 4, 5 and 6 of this migration are done. Go only (owner decision); do not write a Python version.
-- [ ] F1 (spec domain, `fastmcp/rig/spec/`): RigSpec 0.2 structs (`pods[].members[]`, pod-local `edges`, cross-pod `pod.member` edges, `startup.files/actions`, `services`, `continuity_policy`, `restore_policy`), YAML codec (`gopkg.in/yaml.v3`), validator (edge kinds `delegates_to`, `spawned_by`, `can_observe`, `collaborates_with`, `escalates_to`; duplicate ids; unknown refs; cycle detection over `delegates_to`/`spawned_by` only), exporter. Sources: `~/__projects__/openrig/docs/reference/rig-spec.md`, `edge-types.md`, `packages/daemon/src/domain/rigspec-schema.ts`, `rigspec-codec.ts`, `rigspec-exporter.ts`. Check: `openrig/demo/rig.yaml` round-trips unchanged; invalid fixtures from `openrig/packages/test-system/scenarios/*.yaml` are rejected for the same reasons.
-- [ ] F2 (persistence): tables `rigs`, `pods` (unique `rig_id`+`namespace`), `nodes` (`logical_id` unique per rig; role, runtime, model, cwd), `edges` (source and target must be in the same rig), `bindings` (node → tmux session/window/pane), `sessions` (node → live state), each with `user_id` filtered in one repository. Sources: `openrig/packages/daemon/src/db/migrations/001_core_schema.ts`, `002_bindings_sessions.ts`, `017_pod_namespace.ts`. Check: identical schema on SQLite and Postgres 14; cross-tenant read/write test (user B gets 404 for user A's rig).
-- [ ] F3 (API + MCP): `/api/v2/rigs` CRUD, spec import/export, `ps`; MCP tools `rig_up`, `rig_down`, `rig_ps`, `rig_send`, `rig_whoami`, `rig_capture`. Agent members reference 4genthub agents as `template:<slug>` (from `agent_templates`) or `instance:<id>` (from `user_agent_instances`); the system prompt is injected at launch like the `spawn-team` proxy pattern. A rig may link to a `project_id`. Check: endpoint tests; `whoami` returns identity plus incoming/outgoing edges.
-- [ ] F4 (local daemon `cmd/rigd`, replaces C1, D2 and D4): runs on the user's machine and dials OUT over WSS to the server (the Request 5 frames are a subset of its protocol; add command frames `up`, `down`, `send`, `capture`). Contains: tmux adapter ported from `openrig/packages/daemon/src/adapters/tmux.ts` (paste recipe, guarded input, buffer cleanup), a `RuntimeAdapter` interface (`listInstalled`, `project`, `deliverStartup`, `launchHarness`, `checkReady`) with `claude-code`, `codex`, `terminal` adapters (see `domain/runtime-adapter.ts:131`, `adapters/terminal-adapter.ts`), a topological instantiator (see `domain/rigspec-instantiator.ts`), bindings, and the JSONL transcript tailer with local redaction. Check: using a stub runtime (model: `adapters/stub-runtime-adapter.ts`) a 5-member spec launches in edge order in real tmux; a multi-line `send` arrives as one submission; killing the connection reconnects with backoff.
-- [ ] F5 (restore and snapshots): port the essentials of `domain/restore-orchestrator.ts` and `snapshot-capture.ts` (resume tokens, launch order on restore). Check: kill the tmux server, restore, and the same nodes are re-bound in edge order.
-- [ ] F6 (CLI `cmd/rig`): `up`, `down`, `ps`, `send`, `capture`, `whoami`, `restore`, `snapshot`, `specs` (stdlib `flag` or at most one small dependency). Reference command list: `openrig/packages/cli/src/commands/`.
-- [ ] F7 (dashboard): topology graph in `agenthub-frontend` (pods as groups, edges drawn by kind) plus a seats table, live via `/ws/sessions`.
-- [ ] F8 (safety): a server command is remote command execution on the user's machine, so `rigd` enforces a LOCAL allowlist (cwd roots, runtimes, permission policy) and refuses anything else; per-user tokens bound to one account; audit log; read-only by default; opt-in for `send`/`up`.
-- [ ] F9 (spike, do first): run tmux + Claude Code under WSL2 through `rigd`. OpenRig's own README says WSL2 is untested.
-- [ ] F10 (out of scope for now): OpenRig queue, inbox/outbox, workflows, watchdog, TUI, gateway/Slack.
-
+New-feature groups C–F (connector, dashboard, tmux messaging, OpenRig integration) moved to `NEXT_GEN.md` on 2026-10-02.
 
 ---
 
-# Post-migration requests from the owner (session of 2026-09-30)
+# Port requirements from the owner's requests
 
-Written by the session that built the Python `session_stream` feature. **Do these AFTER the Go migration is finished** (or fold them into Slice 4/5/6 where noted). The owner's requests are quoted as typed, then interpreted. Status is as of 2026-09-30 23:5x; nothing below is committed or deployed. Do not print or copy secret values from servers or `.mcp.json`.
-
-## Request 1 — "make 4genthub work like openrig workspace and tmux send message direct to pc user"
-Interpreted: agents in tmux sessions should be addressable and receive messages (agent↔agent), and the human at the PC should be notifiable.
-- Status: **design only, not built.** OpenRig reference: `~/__projects__/openrig/packages/daemon/src/adapters/tmux.ts` (`sendText`, lines ~470-520) and `domain/seat-delivery-guard.ts`.
-- Delivery recipe (do not use plain `send-keys` for text): write text to a temp file → `tmux load-buffer -b <unique> <file>` → `tmux paste-buffer -t <pane> -b <unique> -d -r -p` → separate `tmux send-keys -t <pane> C-m`. `-p` brackets the paste, `-r` keeps LF (default turns LF into Enter = submit), `-d` drops the buffer. Serialize sends per pane and check `tmux has-session` first.
-- To build: an MCP tool `send_to_agent(name, message)`; panes named per agent (`tmux new -d -s agent-<name> 'claude'`). Optional: per-agent message queue table.
-- Human notification (owner must choose): WSL→Windows toast (`powershell.exe` BurntToast or `msg.exe`), `tmux display-message`, or a dashboard push over WebSocket. **Open question to ask the owner: agent↔agent, agent→human, or both.**
-- Note: tmux must run inside WSL; the backend must run in WSL or call `wsl tmux ...`.
-
-## Request 2 — "is possible reading session direct on 4genthub.com ? how i can link session running to web"
-- Status: **backend ingest done in Python; connector and dashboard not built.**
-- Architecture (WSL is behind NAT, so the session side dials OUT): `tmux pane / Claude JSONL → local connector (WSL) ══outbound WSS══▶ 4genthub.com ──▶ browser`.
-- Sources the connector reads: (a) Claude Code transcripts `~/.claude/projects/<project>/<session-id>.jsonl` (structured, preferred for a chat view); (b) optional raw terminal via `tmux pipe-pane -o -t <pane> 'cat >> file'` (live) or `tmux capture-pane -p -t <pane> -S -200` (snapshot), rendered with xterm.js. OpenRig reference: `packages/daemon/src/domain/transcript-capture.ts` and `transcript-redaction.ts`.
-- Risks: transcripts contain secrets → **redact on the user's machine before upload**; batch `pipe-pane` output (~100 ms) and cap sizes.
-
-## Request 3 — "4genthub can use of different user, each user can connect his own session project via 4genthub"
-- Status: **tenant isolation implemented in Python; connector and UI pending.**
-- Verified by SSH (`ssh 4genthub`, alias in `~/.ssh/config`): CapRover host running `4genthub-backend` (8000), `4genthub-frontend` (3800), `4genthubdb` (Postgres 14.5, database `postgresdb`, user `postgres`), `keycloak` + `keycloak-db` (Postgres 17). Backend env: `AUTH_ENABLED=true`, `AUTH_PROVIDER=keycloak`, `KEYCLOAK_URL=https://keycloak.4genthub.com`, `KEYCLOAK_REALM=mcp`, `KEYCLOAK_CLIENT_ID=mcp-api` (plus secrets — names only: `KEYCLOAK_CLIENT_SECRET`, `JWT_SECRET_KEY`, `DATABASE_PASSWORD`).
-- Existing prod tables relevant here: `api_tokens` (id, user_id, name, token_hash, scopes jsonb, created_at, expires_at, last_used_at, usage_count, rate_limit, is_active, token_metadata, usage_stats), `users`, `projects.user_id`, `user_sessions` (login sessions, NOT terminal sessions; empty). Prod had no agent-session tables before this work.
-- Isolation rule: PostgreSQL has no row-level security here (that was a Supabase feature), so **every query must filter on `user_id`**, centralized in one repository. The Go port must keep that property and its tests.
-
-## Request 4 — "install deepseek-offload on this project" (make a plan first)
-- Status: **DONE** (plan approved, installed, doctor all `ok`, smoke job `job-20260930-230009-7474` returned a correct report).
-- Installed from `~/__projects__/deepseek-offload` into `~/__projects__/4genthub` with `install.sh --with-mcp-config --permission allow`. Added untracked `4genthub/.agents/` (symlinks to the package) and a `deepseek` entry in git-ignored `.mcp.json` and `.agents/mcp_config.json`; `sequential-thinking` and `agenthub_http` entries unchanged. Rewrote `~/.dsh/profiles/acp/cordis.patch.yml` (model pin `deepseek-flash`).
-- Owner chose `--permission allow` (jobs may write files; git commits refused by `git-guard.cjs`, pushes to `origin` redirected to a sandbox). Delegated jobs get no MCP tools. Uninstall: `~/__projects__/deepseek-offload/install.sh --uninstall --project ~/__projects__/4genthub`.
-- Use it for read-heavy Go-migration chunks: `node .agents/skills/deepseek-offload/scripts/dsh-offload.mjs start "<task>" --label x` then `status`/`result <jobId>`. Review any file changes a job makes.
-- Plan file: `~/.claude/plans/compressed-conjuring-aurora.md`.
+Request 5 below is the Python reference the Go port must reproduce (groups A–B). The other owner requests (1–4, 6–10) moved to `NEXT_GEN.md`. Do not print or copy secret values from servers or `.mcp.json`.
 
 ## Request 5 — "yes" (start step 1: session streaming backend) — **DONE in Python, must be ported to Go**
 Python reference (all uncommitted in `agenthub_main`):
@@ -912,30 +857,7 @@ Behavior the Go port MUST reproduce exactly (the map rows above already list the
 - **Hub**: in-process fan-out, bounded queue (1000) per viewer, slow viewer dropped. This is **single-process only**; with more than one backend replica (CapRover) events will not cross replicas. Decision needed from the owner: Postgres `LISTEN/NOTIFY` or Redis if scaling out.
 - Go-side parity test to add: same inputs through Python and Go repositories must yield the same session ids and event rows.
 
-## Request 6 — remaining steps of the same feature (not started; build in Go after migration, or in Python first if the owner wants it sooner)
-1. **Connector CLI** (runs in the user's WSL): discover sessions with `tmux list-sessions` and map to JSONL files; tail `~/.claude/projects/*/*.jsonl`; redact secrets locally; open `wss://<host>/ws/connector` with an API token that has scope `sessions:write` (the existing token endpoint `server/routes/token_router.py` already accepts arbitrary scopes; default is `["read"]`); reconnect with backoff; package for `pipx`/`go install`. Send the frames listed above.
-2. **Dashboard page** in `agenthub-frontend` (React/Vite, port 3800): list own sessions (`/api/v2/sessions`), live view over `/ws/sessions/{id}`, optional xterm.js tab for raw terminal. Auth is Keycloak.
-3. **Web → tmux input**, opt-in per session, behind a separate scope `sessions:input`. This is remote command execution on the user's machine: read-only by default, per-user tokens, each connector bound to one account, only accept commands for sessions that same connector registered, rate-limit, audit log. Use the tmux delivery recipe from Request 1.
-4. **Teams/sharing** (later): `team_id` and roles (owner/viewer); start single-owner.
-5. **Security follow-ups**: store only token hashes (already the case in `api_tokens`), support revocation, rate-limit per connection.
-6. **Deploy notes**: the WebSocket must pass through CapRover's nginx (`Upgrade`/`Connection` headers, long `proxy_read_timeout`); confirm "Websocket Support" is enabled for `4genthub-backend`. Verify `create_all` creates the two new tables on the prod Postgres before relying on them. Do not deploy without the owner's go-ahead.
-
-## Request 7 — "you need write to agenthub_go/MIGRATION.md all demande i ask you, other session will do it when finish migration"
-- Status: **DONE** — this section. It was appended to the end of the file (the file is being edited concurrently by the migration session, so nothing above was rewritten). If you fold items into the slice plan, leave this section's request text intact so the owner's asks stay traceable.
-
-## Request 8 — "i want 4genthub have same system topology like openrig" (recorded 2026-10-01)
-- Owner decisions (asked and answered): scope = **full runtime** (model + API + dashboard graph + a daemon that launches each member in tmux, bindings, `up`/`down`/`send`/`restore`); language = **Go only in `agenthub_go`, wait for the migration** (no Python version).
-- Status: **plan only, nothing built.** Checklist group **F** above holds the work items. Full plan with the OpenRig reference analysis: `~/.claude/plans/compressed-conjuring-aurora.md` (may be overwritten by later plans; this section and group F are the durable record).
-- What "OpenRig topology" means (verified in `~/__projects__/openrig`): a `rig` contains `pod`s (namespaced), pods contain `member`s/nodes (a seat = agent + runtime + cwd + model) and `edge`s. Spec format RigSpec 0.2. Only `delegates_to` (source launches before target) and `spawned_by` (parent launches before child) affect launch order (topological sort, a cycle fails); `can_observe`, `collaborates_with`, `escalates_to` are descriptive. A daemon persists rigs/pods/nodes/edges/bindings/sessions in SQLite, launches each node in a tmux pane through a runtime adapter (`claude-code`, `codex`, `terminal`), and exposes `rig up/down/ps/send/capture/whoami/restore/snapshot`.
-- What 4genthub has today: agents are configuration rows (`agent_templates` 32, `user_agent_instances` 58, `agents` 3), not running processes; the data model is projects → branches → tasks → subtasks; there is no rig/pod/member/edge, no binding and no daemon.
-- Target design: hub-and-spoke. The 4genthub server (multi-user, Keycloak) stores topology with `user_id` on every row. A local `rigd` on each user's machine launches seats and dials OUT to the server, so the server never reaches into a user's machine. `rigd` is the same component as the session-stream connector (Requests 2, 3, 5), so **F4 supersedes C1, D2 and D4: fold them, do not build both.**
-- Risks: the TypeScript runtime is large (instantiator ~2.5k lines, restore ~1.9k, tmux ~1k), so F4/F5 are the expensive parts while F1–F3 already deliver value alone; remote launch is remote command execution (see F8); WSL2 is untested upstream (see F9).
-
 ## Environment facts useful to the next session
-- Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
-- `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.
-- `agenthub-frontend/` is REQUIRED (owner confirmed 2026-10-01): it is the live dashboard and the home of C3 and F7. It was found deleted from the working tree (384 tracked files, cause unknown, not done by the session that wrote this section) and was restored with `git checkout -- agenthub-frontend`. Do not delete or move it during the Go migration. `node_modules` was lost and needs `pnpm install` there; untracked/ignored files such as a local `.env` could not be recovered.
-- The OpenRig repo (`~/__projects__/openrig`) is only a reference for the tmux delivery design; nothing was changed there.
 
 - Repositories/interfaces convention: repository methods take `ctx context.Context` and return `(value, error)`; dict returns are `map[string]any`; optional args are pointers. Interface Python properties become accessor methods; `**kwargs` become `map[string]any`; `@contextmanager` becomes `(value, closeFn, err)`.
 - Import-cycle hooks: `domain.UserIDNormalizer` (constants.go) must be registered by infrastructure `uuid_column_type`; `entities.AgentNameResolver` by application `use_cases/agent_mappings`. `entities.GitBranchCreator` is a consumer-side interface because Python duck-types methods missing from the ABC.
