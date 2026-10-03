@@ -198,9 +198,22 @@ func TestColumnDriftFindsMissingAndBlockingColumns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	f.statements = nil
 	drift, err := ColumnDrift(context.Background(), cfg.Engine)
 	if err != nil {
 		t.Fatal(err)
+	}
+	queries := 0
+	for _, q := range f.statements {
+		if strings.Contains(q, "information_schema") {
+			queries++
+			if !strings.Contains(q, "current_schema()") {
+				t.Errorf("drift query is not scoped to the current schema: %s", q)
+			}
+		}
+	}
+	if queries != 1 {
+		t.Errorf("ColumnDrift ran %d information_schema queries, want exactly one: %v", queries, f.statements)
 	}
 	if len(drift) != 1 {
 		t.Fatalf("drift = %+v, want exactly one entry for %q", drift, def.Name)

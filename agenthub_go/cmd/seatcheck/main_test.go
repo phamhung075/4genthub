@@ -535,7 +535,7 @@ func TestSendUnknownRecipientListsSeatKeys(t *testing.T) {
 	if !strings.HasPrefix(stderr, "denied: no link\n") {
 		t.Fatalf("stderr = %q, want it to start with denied: no link", stderr)
 	}
-	want := `unknown recipient "ghost@nowhere"; use a seat key: a, b`
+	want := `unknown recipient "ghost@nowhere"; use a seat key: b`
 	if !strings.Contains(stderr, want) {
 		t.Fatalf("stderr = %q, want it to contain %q", stderr, want)
 	}
@@ -592,5 +592,31 @@ func TestResolveRecipient(t *testing.T) {
 					tc.to, recipient, session, known, tc.wantRecipient, tc.wantSession, tc.wantKnown)
 			}
 		})
+	}
+}
+
+// The hint names only the seats the caller's policy allows for the intent, never other roster
+// members, and says so when there are none.
+func TestSendUnknownRecipientHintListsOnlyAllowedSeats(t *testing.T) {
+	_, _ = seatEnv(t, `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true},{"From":"a","To":"d","Kind":"delegates_to","Allow":false}]}`)
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{
+			"b": {"pod-b@r"}, "c": {"pod-c@r"}, "d": {"pod-d@r"},
+		}}, nil
+	}
+	_, _, stderr := send("--to", "ghost", "--intent", "task", "--", "hi")
+	if !strings.Contains(stderr, `unknown recipient "ghost"; use a seat key: b`+"\n") {
+		t.Fatalf("stderr = %q, want only b listed", stderr)
+	}
+	for _, other := range []string{", c", ", d", "key: c", "key: d"} {
+		if strings.Contains(stderr, other) {
+			t.Errorf("stderr %q names a seat the caller may not message (%q)", stderr, other)
+		}
+	}
+
+	_, _ = seatEnv(t, noLinkPolicy)
+	_, _, stderr = send("--to", "ghost", "--intent", "task", "--", "hi")
+	if !strings.Contains(stderr, `unknown recipient "ghost"; your policy allows no recipient for intent "task"`) {
+		t.Fatalf("stderr = %q, want the no-recipient hint", stderr)
 	}
 }

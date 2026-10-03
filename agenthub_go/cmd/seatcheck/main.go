@@ -157,7 +157,7 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 	if !decision.Allowed {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
 		if !known {
-			fmt.Fprintf(stderr, "unknown recipient %q; use a seat key: %s\n", *to, strings.Join(seatKeys(who, policy), ", "))
+			fmt.Fprintf(stderr, "unknown recipient %q; %s\n", *to, recipientHint(who, policy, intent, *intentName))
 		}
 		return exitDenied
 	}
@@ -218,6 +218,21 @@ func seatKeys(who identity, policy commpolicy.Policy) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// recipientHint tells the caller which seat keys its policy allows for this intent, and only
+// those: naming a seat the caller may not message would reveal nothing it is allowed to use.
+func recipientHint(who identity, policy commpolicy.Policy, intent commpolicy.Intent, intentName string) string {
+	var allowed []string
+	for _, key := range seatKeys(who, policy) {
+		if commpolicy.Decide(policy, key, intent).Allowed {
+			allowed = append(allowed, key)
+		}
+	}
+	if len(allowed) == 0 {
+		return fmt.Sprintf("your policy allows no recipient for intent %q", intentName)
+	}
+	return "use a seat key: " + strings.Join(allowed, ", ")
 }
 
 // deliverTo delivers to session when it is known, otherwise to the roster session of the seat

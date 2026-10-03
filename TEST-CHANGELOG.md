@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck recipient hint and drift query shape
+
+- Added: `TestSendUnknownRecipientHintListsOnlyAllowedSeats` (a roster seat the policy does not allow, and an explicitly denied one, are not named; no allowed seat gives the no-recipient message; a mutation listing every seat fails it). `TestColumnDriftFindsMissingAndBlockingColumns` now asserts that exactly one `information_schema` query ran and that it is scoped by `current_schema()`.
+- Changed: `TestSendUnknownRecipientListsSeatKeys` expects `use a seat key: b`.
+
 ## 2026-10-03 — create-seat occupant validation
 
 - Added: `TestSeatAdminCreateSeatValidatesOccupant` (codex + Claude model, a model with spaces/shell characters and a leading dash are 400 and store nothing; a codex model, a Claude model on claude-code and an empty model are 200). Fails without the fix.
