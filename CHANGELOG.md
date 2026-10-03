@@ -14,6 +14,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+**`NEXT_GEN.md` matches the owner decisions** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: F0b to F0d, F2 and F3 marked superseded; F1 and F4 marked implemented; one open item F0e (retire `call_agent` and `agenthub_main/agent-library`) and G1a (production schema change for `961e1da1`) added; G1, G2, G6 and Requests 12 to 16 status updated; standing owner permissions, deploy loop and production facts recorded. Documentation only, no tests run.
+
 **`default_runtime` is versioned** (2026-10-03)
 
 - `agenthub_go/fastmcp/seat_management`: `default_runtime` moved from `seat_types` to the immutable `seat_type_versions` (ORM structs, `seat_tables.go`, `seat_management_postgresql.sql`). A version is written in one insert, `SeatTypeRepository.SetDefaultRuntime` is gone, and `AddVersion` takes the runtime; the same version with another runtime or module refs is `ErrSeatTypeVersionConflict`. `SeatResolutionService` takes the runtime of a seat that sets none from its pinned version, so a new version never changes a pinned seat. The seed library writes its runtime on the version.
