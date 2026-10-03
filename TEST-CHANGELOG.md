@@ -4,7 +4,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-03 — Frontend seat authoring
 
-- Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection).
+- Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
 
 ## 2026-10-03 — Room deletion removes seat status
 

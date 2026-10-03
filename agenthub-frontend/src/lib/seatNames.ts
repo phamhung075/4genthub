@@ -1,8 +1,10 @@
 /**
- * Seat names - OpenRig room slugs (pod ids) and seat keys (member ids).
+ * Seat naming rules - OpenRig room slugs (pod ids), seat keys (member ids),
+ * model ids, and module slugs, versions and refs. Each pattern mirrors the
+ * server rule in seat_management/domain/repositories/names.go.
  *
- * Both must start with a letter or digit and contain only letters, digits,
- * "_" or "-" (no dots or spaces).
+ * Room slugs and seat keys must start with a letter or digit and contain only
+ * letters, digits, "_" or "-" (no dots or spaces).
  *
  * @module lib/seatNames
  * @version 1.0.0

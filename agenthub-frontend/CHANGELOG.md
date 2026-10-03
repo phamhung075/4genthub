@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+- **Seat type `default_runtime` is typed** - 2026-10-03
+  - `SeatType.default_runtime` is `SeatRuntime | null` (the API returns the latest version's runtime,
+    null for a seat type with no version); the seat type version form falls back to the first runtime.
+  - Files: `src/types/seatTypes.ts`, `src/components/seats/SeatTypeVersionForm.tsx`,
+    `src/pages/SeatAuthoringPage.tsx`, `src/lib/seatNames.ts` (header lists the module rules)
+
 ### Added
 - **Seat authoring page: modules and seat types** - 2026-10-03
   - `/seats/authoring` (button on `/seats`): module list (latest version per slug,

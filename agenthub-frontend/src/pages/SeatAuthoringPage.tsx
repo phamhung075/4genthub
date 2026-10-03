@@ -106,7 +106,7 @@ export const SeatAuthoringPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{type.name}</span>
                 <code className="text-xs text-muted-foreground">{type.slug}</code>
-                <Badge variant="secondary">{type.default_runtime}</Badge>
+                <Badge variant="secondary">{type.default_runtime ?? 'no runtime'}</Badge>
                 <Badge variant="outline">{type.latest_version ?? 'no version'}</Badge>
               </div>
               {type.description && <p className="text-sm text-muted-foreground">{type.description}</p>}

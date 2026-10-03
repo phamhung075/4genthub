@@ -172,4 +172,64 @@ describe('SeatAuthoringPage', () => {
     fill('Module refs', '');
     expect(create).toBeEnabled();
   });
+
+  it('disables Publish for empty content and for content over the size limit', async () => {
+    renderPage();
+    await screen.findByText('Coder');
+    fill('Module slug', 'rules');
+    fill('Module version', '1.1.0');
+    const publish = screen.getByRole('button', { name: 'Publish' });
+
+    expect(publish).toBeDisabled();
+
+    fill('Module content', 'x'.repeat(65537));
+    expect(publish).toBeDisabled();
+    expect(screen.getByText(/limit is 65536/)).toBeInTheDocument();
+
+    fill('Module content', 'x'.repeat(65536));
+    expect(publish).toBeEnabled();
+  });
+
+  it('shows the server error when creating a seat type version fails', async () => {
+    mockApi.createSeatTypeVersion.mockRejectedValue(new Error('module "style" version 2.1.0 does not exist'));
+    renderPage();
+    await screen.findByText('abcdef01');
+    fireEvent.change(screen.getByLabelText('Seat type'), { target: { value: 'coder' } });
+    fill('Module refs', 'style@2.1.0');
+    fireEvent.click(screen.getByRole('button', { name: 'Create version' }));
+
+    expect(await screen.findByText(/does not exist/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Module refs')).toHaveValue('style@2.1.0');
+  });
+
+  it('refetches the module and seat type lists after a successful publish and create', async () => {
+    renderPage();
+    await screen.findByText('abcdef01');
+    expect(mockApi.listModules).toHaveBeenCalledTimes(1);
+
+    fill('Module slug', 'rules');
+    fill('Module version', '1.1.0');
+    fill('Module content', 'Be precise.');
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await waitFor(() => expect(mockApi.listModules).toHaveBeenCalledTimes(2));
+
+    fireEvent.change(screen.getByLabelText('Seat type'), { target: { value: 'coder' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create version' }));
+    await waitFor(() => expect(mockApi.listSeatTypes).toHaveBeenCalledTimes(2));
+  });
+
+  it('prefills the first runtime for a seat type that has no version yet', async () => {
+    mockApi.listSeatTypes.mockResolvedValue({
+      success: true,
+      seat_types: [{ ...seatType, default_runtime: null, latest_version: null, module_refs: [] }],
+    });
+    renderPage();
+    await screen.findByText('no version');
+    expect(screen.getByText('no runtime')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Seat type'), { target: { value: 'coder' } });
+
+    expect(screen.getByLabelText('Default runtime')).toHaveValue('claude-code');
+    expect(screen.getByLabelText('Module refs')).toHaveValue('');
+  });
 });

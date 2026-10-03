@@ -40,7 +40,8 @@ export interface SeatType {
   slug: string;
   name: string;
   description: string;
-  default_runtime: string;
+  /** From the latest version; null for a seat type with no version. */
+  default_runtime: SeatRuntime | null;
   latest_version: string | null;
   module_refs: SeatTypeModuleRef[];
 }
@@ -330,7 +331,7 @@ export interface ModulesResponse {
 export interface SeatTypeVersion {
   slug: string;
   version: string;
-  default_runtime: string;
+  default_runtime: SeatRuntime;
   module_refs: SeatTypeModuleRef[];
 }
 

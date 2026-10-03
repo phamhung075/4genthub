@@ -40,7 +40,7 @@ export const SeatTypeVersionForm: React.FC<SeatTypeVersionFormProps> = ({ seatTy
     setSlug(value);
     const seatType = seatTypes.find(type => type.slug === value);
     if (seatType) {
-      setRuntime(seatType.default_runtime as SeatRuntime);
+      setRuntime(seatType.default_runtime ?? SEAT_RUNTIMES[0]);
       setRefs(refsText(seatType));
     }
   };
