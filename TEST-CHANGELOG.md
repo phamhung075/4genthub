@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — comm-guard on both runtimes
+
+- Replaced `TestRenderSeatCodexRejectsToolModules` with `TestRenderSeatSameModulesOnBothRuntimes` (the real seeded modules render on claude-code with the 5 denies and the allow, and on codex with no `runtime/` files and the skill). `TestFromSpecSharedModules`: a codex seat type carries the same modules. `TestMergeToolModulesPermissions`: an empty list stays `[]`. Mutations: re-adding the codex error and the nil-union both fail the renderer tests. seat_management and server packages ok.
+
 ## 2026-10-03 — one list of seat runtimes
 
 - Added: `TestCheckRuntime` (pi, omp, gemini, empty, wrong case rejected; message names both supported runtimes), `TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes` (400 for pi and omp). seat_management and server packages ok.

@@ -35,8 +35,8 @@ type Spec struct {
 	Role           string
 	Rules          []Rule
 	OutputFormat   string
-	// Shared modules are appended to the seat type's own modules. Tool modules are Claude
-	// settings fragments, so they are skipped for a codex seat type, which gets the others.
+	// Shared modules are appended to the seat type's own modules, whatever its default runtime:
+	// the runtime of the seat decides at render time which of them apply.
 	Shared []SeedModule
 }
 
@@ -103,9 +103,6 @@ func FromSpec(spec Spec) (Seed, error) {
 	})
 
 	for _, shared := range spec.Shared {
-		if shared.Kind == resolver.KindTool && spec.DefaultRuntime == resolver.RuntimeCodex {
-			continue
-		}
 		shared.Version = seedVersion
 		seed.Modules = append(seed.Modules, shared)
 	}

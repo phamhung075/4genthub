@@ -299,6 +299,15 @@ func TestMergeToolModulesPermissions(t *testing.T) {
 		t.Fatalf("merged = %s\nwant     %s", got, want)
 	}
 
+	// an empty list stays a list (never null)
+	empty, err := merge(`{"permissions":{"deny":[]}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := json.Marshal(empty); string(got) != `{"permissions":{"deny":[]}}` {
+		t.Fatalf("empty deny list merged to %s", got)
+	}
+
 	for name, contents := range map[string][]string{
 		"deny not an array":  {`{"permissions":{"deny":"x"}}`},
 		"allow not strings":  {`{"permissions":{"allow":[1]}}`},
@@ -357,12 +366,38 @@ func TestRenderSeatToolModuleInvalidJSONError(t *testing.T) {
 	}
 }
 
-func TestRenderSeatCodexRejectsToolModules(t *testing.T) {
-	seat := withModules(seatFixture("codex"), []resolver.ResolvedModule{
-		{Slug: "tool.alpha", Version: "1.0.0", Kind: resolver.KindTool, Content: `{"a":1}`},
-	})
-	if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "tool modules") {
-		t.Fatalf("error = %v, want tool modules rejection", err)
+// A seat can switch runtime while its pinned seat type version keeps the seeded modules, so
+// the same modules must render on both runtimes: claude-code applies the tool module, codex
+// skips it (a tool module is a Claude settings fragment) and keeps the skill.
+func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
+	seeds, err := seedlibrary.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var modules []resolver.ResolvedModule
+	for _, m := range seeds[0].Modules {
+		modules = append(modules, resolver.ResolvedModule{Slug: m.Slug, Version: m.Version, Kind: m.Kind, Content: m.Content})
+	}
+
+	claude, err := RenderSeat(withModules(seatFixture("claude-code"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("claude-code: %v", err)
+	}
+	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 6 {
+		t.Fatalf("claude-code settings fragment should carry the 5 denies and the allow:\n%s", settings)
+	}
+
+	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("codex: %v", err)
+	}
+	for _, path := range filePaths(codex) {
+		if strings.HasPrefix(path, "runtime/") {
+			t.Errorf("codex seat has a runtime file %q", path)
+		}
+	}
+	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+		t.Fatalf("codex skill does not name seatcheck send:\n%s", skill)
 	}
 }
 

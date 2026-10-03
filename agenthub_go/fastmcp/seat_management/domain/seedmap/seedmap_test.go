@@ -126,12 +126,13 @@ func TestFromSpecSharedModules(t *testing.T) {
 	if len(claude.ModuleRefs) != 4 {
 		t.Fatalf("module refs = %v, want one per module", claude.ModuleRefs)
 	}
-	// A tool module is Claude settings JSON: a codex seat type gets only the skill.
+	// The runtime of the seat decides at render time which shared modules apply, so a codex
+	// seat type carries the same modules.
 	codex, err := FromSpec(Spec{Slug: "dev", Role: "Dev.", OutputFormat: "Out.", DefaultRuntime: "codex", Shared: shared})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := slugs(codex); got != "dev-role,dev-output-format,guard-skill" {
+	if got := slugs(codex); got != "dev-role,dev-output-format,guard,guard-skill" {
 		t.Fatalf("codex modules = %s", got)
 	}
 }

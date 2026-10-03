@@ -103,10 +103,9 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 		return nil, err
 	}
 
+	// A tool module is a Claude settings fragment: a seat on another runtime does not apply it
+	// (a seat can switch runtime while its pinned seat type version keeps the tool module).
 	toolModules := modulesOfKind(seat.Modules, resolver.KindTool)
-	if len(toolModules) > 0 && seat.Runtime != resolver.RuntimeClaudeCode {
-		return nil, fmt.Errorf("runtime %q cannot carry tool modules: tool content is a Claude settings fragment", seat.Runtime)
-	}
 
 	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
@@ -288,7 +287,10 @@ func mergePermissions(current, incoming any) (map[string]any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("permissions.%s: %w", key, err)
 		}
-		union, _ := out[key].([]any)
+		union, ok := out[key].([]any)
+		if !ok {
+			union = []any{}
+		}
 		for _, entry := range list {
 			if !slices.Contains(union, any(entry)) {
 				union = append(union, entry)
