@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — POST /rooms silently returned an existing room
+
+- Added: duplicate-slug 409 assertions in `TestSeatAdminRooms`; `TestSeatAdminCreateRoomRejectsLongName` (200 ok, 201 rejected); `TestValidateRoomName`. httpapp, domain, services ok.
+
 ## 2026-10-03 — Seat occupant accepted a Claude model on the codex runtime
 
 - Added: `TestValidateOccupant`; a `codex` + `claude-sonnet-5-5` case in `TestSeatAdminServiceSetOccupantErrors` and `TestSeatAdminSetOccupantRejectsInvalidInput`. Red before (undefined `ValidateOccupant`), green after: services, repositories, httpapp ok.

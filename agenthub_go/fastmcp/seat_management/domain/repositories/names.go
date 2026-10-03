@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"agenthub/fastmcp/seat_management/domain/resolver"
 )
@@ -32,6 +33,18 @@ func ValidateRuntime(runtime string) error {
 func ValidateModel(model string) error {
 	if model != "" && !modelPattern.MatchString(model) {
 		return fmt.Errorf("model %q must be empty or match %s", model, modelPattern)
+	}
+	return nil
+}
+
+// MaxRoomNameLength bounds a room's display name. The rooms.name column is unbounded TEXT, so
+// this domain rule is the only limit.
+const MaxRoomNameLength = 200
+
+// ValidateRoomName requires a non-empty name of at most MaxRoomNameLength characters.
+func ValidateRoomName(name string) error {
+	if strings.TrimSpace(name) == "" || utf8.RuneCountInString(name) > MaxRoomNameLength {
+		return fmt.Errorf("room name must be 1 to %d characters", MaxRoomNameLength)
 	}
 	return nil
 }

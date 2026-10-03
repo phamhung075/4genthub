@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -348,6 +349,27 @@ func TestSeatAdminRooms(t *testing.T) {
 	rec = doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"name":"Development"`) {
 		t.Errorf("list rooms: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// A second create of the same slug is a conflict that keeps the stored name.
+	rec = doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"dev","name":"Renamed"}`)
+	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "already exists") {
+		t.Errorf("duplicate room: status = %d, want 409 already exists: %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	if !strings.Contains(rec.Body.String(), `"name":"Development"`) || strings.Contains(rec.Body.String(), "Renamed") {
+		t.Errorf("duplicate create changed the room: %s", rec.Body.String())
+	}
+}
+
+func TestSeatAdminCreateRoomRejectsLongName(t *testing.T) {
+	mux := seatAdminTestMux(t, newFakeSeatAdmin())
+	for name, want := range map[string]int{strings.Repeat("n", 200): http.StatusOK, strings.Repeat("n", 201): http.StatusBadRequest} {
+		slug := "r" + strconv.Itoa(len(name))
+		rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"`+slug+`","name":"`+name+`"}`)
+		if rec.Code != want {
+			t.Errorf("name of %d chars: status = %d, want %d: %s", len(name), rec.Code, want, rec.Body.String())
+		}
 	}
 }
 

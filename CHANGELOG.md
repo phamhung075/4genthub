@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**POST /rooms silently returned an existing room** (2026-10-03)
+
+- `server/httpapp/seat_admin_mount.go` `handleCreateRoom`: an existing slug now returns 409 `room "x" already exists` (before: 200 with the stored room, the posted name silently discarded), the same convention as `POST .../seats`. This makes the `(409 exists: ok)` branch of `openrig_team_setup.py` for rooms live instead of dead.
+- `seat_management/domain/repositories/names.go`: `ValidateRoomName`, 1 to `MaxRoomNameLength` (200) characters. The ORM column `rooms.name` is unbounded `TEXT`, so there was no ORM limit; 200 is a new domain rule. Before: a 5000-character name was accepted.
+- Client note: the frontend `createRoom` now gets a 409 for an existing slug.
+
 **Seat occupant accepted a Claude model on the codex runtime** (2026-10-03)
 
 - `seat_management/domain/repositories/names.go`: new `ValidateOccupant(runtime, model)` (runtime, model pattern, and `claude-*` models only on `claude-code`); `SeatAdminService.SetOccupant` uses it, so `PUT .../occupant`, MCP `manage_seat set_occupant` and `openrig_seat_sync.py switch` get a 400 `invalid occupant: model "claude-..." is a Claude model and cannot run on the codex runtime`. The check is one-directional because claude-code also takes aliases such as `sonnet`.

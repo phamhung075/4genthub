@@ -440,6 +440,19 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := repositories.ValidateRoomName(req.Name); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	existing, err := source.GetRoomBySlug(r.Context(), userID(u), req.Slug)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if existing != nil {
+		writeDetail(w, http.StatusConflict, "room \""+req.Slug+"\" already exists")
+		return
+	}
 	room, err := source.SaveRoom(r.Context(), userID(u), repositories.Room{Slug: req.Slug, Name: req.Name})
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())

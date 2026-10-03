@@ -67,6 +67,19 @@ func TestValidateRuntime(t *testing.T) {
 	}
 }
 
+func TestValidateRoomName(t *testing.T) {
+	for _, name := range []string{"Dev", strings.Repeat("n", MaxRoomNameLength), strings.Repeat("é", MaxRoomNameLength)} {
+		if err := ValidateRoomName(name); err != nil {
+			t.Errorf("ValidateRoomName(%d chars) = %v", len(name), err)
+		}
+	}
+	for _, name := range []string{"", "   ", strings.Repeat("n", MaxRoomNameLength+1)} {
+		if ValidateRoomName(name) == nil {
+			t.Errorf("ValidateRoomName(%d chars) = nil, want error", len(name))
+		}
+	}
+}
+
 func TestValidateOccupant(t *testing.T) {
 	for _, c := range [][2]string{{"codex", ""}, {"codex", "gpt-5"}, {"claude-code", ""}, {"claude-code", "claude-sonnet-5-5"}, {"claude-code", "sonnet"}} {
 		if err := ValidateOccupant(c[0], c[1]); err != nil {
