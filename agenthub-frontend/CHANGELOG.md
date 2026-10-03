@@ -27,6 +27,14 @@
   - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (new)
 
 ### Added
+- **Delete a seat link** - 2026-10-03
+  - The Links tab said links cannot be deleted, but `DELETE /rooms/{room}/seats/{seat}/links/{to}/{kind}`
+    exists. Each link row now has a Delete button (`seatApi.deleteLink`, `useDeleteSeatLink`); the list
+    refetches and a server error is shown. `RemoveSeatResponse` is renamed `DeletedResponse` because every
+    delete route answers `{success: true}`.
+  - Files: `src/services/seatApi.ts`, `src/hooks/useSeats.ts`, `src/pages/SeatDetailPage.tsx`,
+    `src/types/seatTypes.ts`, `src/tests/pages/SeatDetailPage.test.tsx` (2 tests added),
+    `src/tests/services/seatApi.test.ts` (new)
 - **Drift badge on bridge seats** - 2026-10-03
   - Each machine seat shows a sync badge from `GET /api/v2/openrig/machines` (`sync`, `hash`,
     `expected_hash`): green "in sync", amber "drift · running <8> · expected <8>", neutral "sync unknown".

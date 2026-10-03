@@ -37,6 +37,7 @@ import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Textarea } from '../components/ui/textarea';
 import {
+  useDeleteSeatLink,
   useModuleVersion,
   useResolvedSeat,
   useSeatLinks,
@@ -372,6 +373,7 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
   const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
   const { links, isLoading, error, refetch } = useSeatLinks(room, seat);
   const upsertLink = useUpsertSeatLink(room, seat);
+  const deleteLink = useDeleteSeatLink(room, seat);
 
   const [target, setTarget] = useState('');
   const [kind, setKind] = useState<SeatLinkKind>('delegates_to');
@@ -400,8 +402,8 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
         <CardHeader>
           <CardTitle className="text-base">Outgoing links</CardTitle>
           <CardDescription>
-            Links cannot be deleted through the API. Turn Allow off to block a link instead; an allowed
-            link is a normal edge and a blocked one is an explicit deny.
+            Delete a link to remove the edge. Turn Allow off to keep it as an explicit deny instead; an
+            allowed link is a normal edge and a blocked one blocks sending.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -424,20 +426,38 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
                     <span className="font-medium">{targetKey}</span>
                     <Badge variant="secondary">{link.kind}</Badge>
                   </span>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox
-                      aria-label={`Allow ${targetKey} (${link.kind})`}
-                      checked={link.allow}
-                      disabled={upsertLink.isPending}
-                      onCheckedChange={checked =>
-                        upsertLink.mutate({ to_seat: targetKey, kind: link.kind, allow: checked })
-                      }
-                    />
-                    <span className="text-muted-foreground">Allow</span>
-                  </label>
+                  <span className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        aria-label={`Allow ${targetKey} (${link.kind})`}
+                        checked={link.allow}
+                        disabled={upsertLink.isPending}
+                        onCheckedChange={checked =>
+                          upsertLink.mutate({ to_seat: targetKey, kind: link.kind, allow: checked })
+                        }
+                      />
+                      <span className="text-muted-foreground">Allow</span>
+                    </label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Delete ${targetKey} (${link.kind})`}
+                      disabled={deleteLink.isPending}
+                      onClick={() => deleteLink.mutate({ to: targetKey, kind: link.kind })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </span>
                 </div>
               );
             })}
+          {deleteLink.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{deleteLink.error.message}</AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 

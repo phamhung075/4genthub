@@ -19,6 +19,7 @@ import type {
   MachineStatus,
   OccupantUpdate,
   PutModuleVersionRequest,
+  SeatLinkKind,
   SeatLinkRequest,
   SeatOverlay,
   SeatOverlayOp,
@@ -313,6 +314,19 @@ export function useUpsertSeatLink(room: string, seat: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seat) });
       showSuccess('Seat link saved');
+    },
+  });
+}
+
+export function useDeleteSeatLink(room: string, seat: string) {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: ({ to, kind }: { to: string; kind: SeatLinkKind }) =>
+      seatApi.deleteLink(room, seat, to, kind),
+    onSuccess: (_response, { to, kind }) => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seat) });
+      showSuccess(`Link ${kind} to "${to}" deleted`);
     },
   });
 }

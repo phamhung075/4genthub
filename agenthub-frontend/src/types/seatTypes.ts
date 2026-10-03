@@ -359,7 +359,7 @@ export interface SeatResponse {
   seat: Seat;
 }
 
-export interface RemoveSeatResponse {
+export interface DeletedResponse {
   success: boolean;
 }
 

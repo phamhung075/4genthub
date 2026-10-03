@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — delete seat link
+
+- Added: `deletes a link and refetches the list` and `shows the server error when deleting a link fails` in `SeatDetailPage.test.tsx` (10 tests in the file); `seatApi.test.ts` (new) checks the DELETE URL (path segments encoded) and method.
+
 ## 2026-10-03 — apiRequest 404 detail
 
 - Added: `rejects a 404 with the server detail as the message` and `keeps the generic message for a 404 without a detail` in `apiRequest.test.ts` (8 tests in the file, all pass). The first fails without the fix.

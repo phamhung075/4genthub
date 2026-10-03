@@ -21,11 +21,12 @@ import type {
   PutModuleVersionRequest,
   PutModuleVersionResponse,
   PutSeatOverlayRequest,
-  RemoveSeatResponse,
+  DeletedResponse,
   ResolvedSeatResponse,
   RoomResponse,
   RoomsResponse,
   SeatLinksResponse,
+  SeatLinkKind,
   SeatLinkRequest,
   SeatLinkResponse,
   SeatOverlayResponse,
@@ -102,7 +103,7 @@ export const seatApi = {
     apiRequest<SeatResponse>(`${OPENRIG}/rooms/${segment(room)}/seats`, jsonBody(data)),
 
   removeSeat: (room: string, seat: string) =>
-    apiRequest<RemoveSeatResponse>(
+    apiRequest<DeletedResponse>(
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}`,
       { method: 'DELETE' }
     ),
@@ -134,6 +135,12 @@ export const seatApi = {
     apiRequest<SeatLinkResponse>(
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links`,
       jsonPut(data)
+    ),
+
+  deleteLink: (room: string, seat: string, to: string, kind: SeatLinkKind) =>
+    apiRequest<DeletedResponse>(
+      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links/${segment(to)}/${segment(kind)}`,
+      { method: 'DELETE' }
     ),
 
   // Bridge machines

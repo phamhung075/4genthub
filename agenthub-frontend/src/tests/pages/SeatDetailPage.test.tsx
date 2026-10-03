@@ -21,6 +21,7 @@ vi.mock('../../services/seatApi', () => ({
     putOverlay: vi.fn(),
     listLinks: vi.fn(),
     putLink: vi.fn(),
+    deleteLink: vi.fn(),
     getSettings: vi.fn(),
     putSettings: vi.fn(),
     getResolvedSeat: vi.fn(),
@@ -213,6 +214,32 @@ describe('SeatDetailPage', () => {
         allow: false,
       });
     });
+  });
+
+  it('deletes a link and refetches the list', async () => {
+    mockApi.deleteLink.mockResolvedValue({ success: true });
+    renderDetail();
+    await screen.findByText('rules');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+    expect(mockApi.listLinks).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+
+    await waitFor(() => {
+      expect(mockApi.deleteLink).toHaveBeenCalledWith('dev', 'alice', 'bob', 'delegates_to');
+    });
+    await waitFor(() => expect(mockApi.listLinks).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows the server error when deleting a link fails', async () => {
+    mockApi.deleteLink.mockRejectedValue(new Error('link alice delegates_to bob not found'));
+    renderDetail();
+    await screen.findByText('rules');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+
+    fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+
+    expect(await screen.findByText(/link alice delegates_to bob not found/)).toBeInTheDocument();
   });
 
   it('shows the resolved hash and switches files', async () => {
