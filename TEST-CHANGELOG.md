@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — deterministic bridge timeout, permission-policy route
+
+- Changed (`test_openrig_bridge.py`): the run-loop timeout step no longer races a 0.5 s server sleep against a 0.2 s client timeout; the server holds the request open until the fixture releases it and `SEND_TIMEOUT` is 1 s, so the timeout is certain and normal requests have a wide margin under load. Three runs: 33 passed.
+- Added: `TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped` (PUT permission-policy: another tenant 404 and unchanged, invalid value 400 and not rendered, valid value stored and rendered on the member in the rigspec). The 400 and valid-store cases were already in `TestSeatAdminSetPermissionPolicy`.
+
 ## 2026-10-03 — hard-delete cycle subtest, exact expected-hash row count
 
 - Changed: the launch-cycle subtest now deletes the middle seat (a -> b -> c, c -> a is 400, delete b, c -> a is 200) instead of the vacuous "removed seats do not count"; `TestMachineExpectedHashIntegration` asserts exactly three seat rows so a duplicate cannot hide behind the map. The self-loop cases (`a delegates_to a`, `a spawned_by a`) were already in `TestFindLaunchCycle`. Real PG (fresh database), vet and tests for seat_management and httpapp: ok.

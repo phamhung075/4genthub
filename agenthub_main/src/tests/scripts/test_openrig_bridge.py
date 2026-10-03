@@ -3,7 +3,6 @@
 import importlib.util
 import json
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -345,7 +344,8 @@ class _Handler(BaseHTTPRequestHandler):
         self.server.requests.append(
             (self.path, self.headers.get("Authorization"), self.rfile.read(length))
         )
-        time.sleep(self.server.delay)
+        if self.server.hang:
+            self.server.release.wait(30)
         self.send_response(self.server.status)
         self.end_headers()
 
@@ -356,10 +356,12 @@ class _Handler(BaseHTTPRequestHandler):
 @pytest.fixture
 def server():
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
-    srv.requests, srv.status, srv.delay = [], 200, 0.0
+    srv.requests, srv.status, srv.hang = [], 200, False
+    srv.release = threading.Event()
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()
     yield srv
+    srv.release.set()
     srv.shutdown()
     srv.server_close()
 
@@ -443,15 +445,15 @@ class _RecordingStop(threading.Event):
 
 
 def _run_against(server, tmp_path, monkeypatch, steps):
-    """Run the loop over one real HTTP exchange per step; a step is (status, delay_seconds)."""
-    monkeypatch.setattr(bridge_mod, "SEND_TIMEOUT", 0.2)
+    """Run the loop over one real HTTP exchange per step; a step is (status, hang); a hanging request never answers."""
+    monkeypatch.setattr(bridge_mod, "SEND_TIMEOUT", 1.0)
     send = bridge_mod.make_sender(f"http://127.0.0.1:{server.server_port}", FAKE_TOKEN)
     bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), send)
     stop = _RecordingStop(len(steps))
     original = server.RequestHandlerClass.do_POST
 
     def stepped(handler):
-        server.status, server.delay = steps[len(server.requests)]
+        server.status, server.hang = steps[len(server.requests)]
         original(handler)
 
     monkeypatch.setattr(server.RequestHandlerClass, "do_POST", stepped)
@@ -462,9 +464,9 @@ def _run_against(server, tmp_path, monkeypatch, steps):
 def test_run_loop_backs_off_on_401_500_and_timeout_then_resets(
     server, tmp_path, monkeypatch
 ):
-    steps = [(401, 0.0), (500, 0.0), (200, 0.5), (200, 0.0), (200, 0.0)]
+    steps = [(401, False), (500, False), (200, True), (200, False), (200, False)]
     bridge, waits = _run_against(server, tmp_path, monkeypatch, steps)
-    # 401 -> 20, 500 -> 40, timeout (slow 200) -> 80, success resets -> 20; the unchanged
+    # 401 -> 20, 500 -> 40, timeout (a request that never answers) -> 80, success resets -> 20; the unchanged
     # payload is not resent, so the last cycle just waits one interval.
     assert waits == [20.0, 40.0, 80.0, 20.0, 20.0]
     assert bridge.backoff == 0.0
@@ -475,7 +477,7 @@ def test_run_loop_backs_off_on_401_500_and_timeout_then_resets(
 
 
 def test_run_loop_failures_never_leak_the_token(server, tmp_path, monkeypatch, capsys):
-    steps = [(401, 0.0), (500, 0.0), (200, 0.5)]
+    steps = [(401, False), (500, False), (200, True)]
     _run_against(server, tmp_path, monkeypatch, steps)
     err = capsys.readouterr()
     output = err.out + err.err
