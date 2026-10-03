@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat link launch cycles
+
+- Added: `TestFindLaunchCycle` (9 cases: chain, opposite, 3 seats, spawned_by reversal, mixed kinds, descriptive kinds, tail), `TestSeatAdminLinkRejectsLaunchCycles` (opposite and 3-seat cycles named in the 400, nothing stored; agreeing spawned_by ok; descriptive kinds and `allow:false` ok; re-putting a link ok; removed seats ignored). `TestSeatAdminLinkKinds` puts spawned_by on another seat (alice delegates_to bob plus alice spawned_by bob is a real cycle). Mutation: disabling the check fails the cycle test. seat_management and server packages ok.
+
 ## 2026-10-03 — Seat checker: install-checker and a PATH check in pull and rig
 
 - Added in `test_openrig_seat_sync.py`: link missing / resolves elsewhere / correct link for `pull` and `rig`; `install-checker` build command, env and cwd, atomic replacement of an existing link, PATH failure with the link still created, no `go`, build failure (nothing linked). An autouse fixture stubs the requirement for the older pull/rig tests. `src/tests/scripts` 149 passed.

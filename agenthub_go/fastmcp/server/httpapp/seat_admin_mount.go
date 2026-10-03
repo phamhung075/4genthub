@@ -860,7 +860,7 @@ func handleSetSeatOccupant(w http.ResponseWriter, r *http.Request, u *authdomain
 
 func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion):
+	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion), errors.Is(err, seatservices.ErrLinkCycle):
 		writeDetail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())
@@ -1080,11 +1080,11 @@ func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if req.Allow != nil {
 		allow = *req.Allow
 	}
-	link, err := source.UpsertSeatLink(r.Context(), userID(u), repositories.SeatLink{
+	link, err := seatservices.NewSeatLinkService(source).UpsertSeatLink(r.Context(), userID(u), room.ID, repositories.SeatLink{
 		FromSeatID: from.ID, ToSeatID: to.ID, Kind: req.Kind, Allow: allow,
 	})
 	if err != nil {
-		writeDetail(w, http.StatusInternalServerError, err.Error())
+		writeSeatAdminServiceError(w, err)
 		return
 	}
 	body := entities.NewOrderedMap[any]()

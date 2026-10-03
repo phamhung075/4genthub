@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -965,10 +966,16 @@ func TestSeatAdminLinkKinds(t *testing.T) {
 	fake.seats = append(fake.seats,
 		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
 		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
+		&repositories.Seat{ID: "seat-c", RoomID: room.ID, SeatKey: "carol", Status: "active"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	for _, kind := range []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"} {
-		body := `{"to_seat":"bob","kind":"` + kind + `"}`
+		target := "bob"
+		if kind == "spawned_by" {
+			// alice delegates_to bob and alice spawned_by bob would be a launch cycle
+			target = "carol"
+		}
+		body := `{"to_seat":"` + target + `","kind":"` + kind + `"}`
 		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", body)
 		if rec.Code != http.StatusOK {
 			t.Errorf("kind %q: status = %d, want 200: %s", kind, rec.Code, rec.Body.String())
@@ -1160,4 +1167,93 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 			t.Errorf("%s %s: status = %d, want 401/403", p.method, p.path, rec.Code)
 		}
 	}
+}
+
+func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
+	setup := func() (*fakeSeatAdmin, *http.ServeMux) {
+		fake := newFakeSeatAdmin()
+		room := fake.seedRoom("dev")
+		for _, key := range []string{"a", "b", "c"} {
+			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-" + key, RoomID: room.ID, SeatKey: key, Status: "active"})
+		}
+		return fake, seatAdminTestMux(t, fake)
+	}
+	put := func(mux *http.ServeMux, from, to, kind, extra string) *httptest.ResponseRecorder {
+		return doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/"+from+"/links",
+			`{"to_seat":"`+to+`","kind":"`+kind+`"`+extra+`}`)
+	}
+
+	t.Run("opposite delegates_to", func(t *testing.T) {
+		fake, mux := setup()
+		if rec := put(mux, "a", "b", "delegates_to", ""); rec.Code != http.StatusOK {
+			t.Fatalf("first link: %d %s", rec.Code, rec.Body.String())
+		}
+		rec := put(mux, "b", "a", "delegates_to", "")
+		if rec.Code != http.StatusBadRequest || !strings.Contains(seatAdminDetail(t, rec), "launch cycle: a -> b -> a") {
+			t.Fatalf("opposite link: %d %s, want 400 naming the cycle", rec.Code, rec.Body.String())
+		}
+		if len(fake.links) != 1 {
+			t.Fatalf("the rejected link was stored: %d links", len(fake.links))
+		}
+	})
+	t.Run("three seats", func(t *testing.T) {
+		_, mux := setup()
+		put(mux, "a", "b", "delegates_to", "")
+		put(mux, "b", "c", "delegates_to", "")
+		rec := put(mux, "c", "a", "delegates_to", "")
+		if rec.Code != http.StatusBadRequest || !strings.Contains(seatAdminDetail(t, rec), "a -> b -> c -> a") {
+			t.Fatalf("3-seat cycle: %d %s", rec.Code, rec.Body.String())
+		}
+	})
+	t.Run("spawned_by closes a delegates_to cycle", func(t *testing.T) {
+		_, mux := setup()
+		put(mux, "a", "b", "delegates_to", "")
+		// b spawned_by a means a launches first: same direction as a delegates_to b, no cycle
+		if rec := put(mux, "b", "a", "spawned_by", ""); rec.Code != http.StatusOK {
+			t.Fatalf("agreeing spawned_by: %d %s", rec.Code, rec.Body.String())
+		}
+		if rec := put(mux, "a", "b", "spawned_by", ""); rec.Code != http.StatusBadRequest {
+			t.Fatalf("spawned_by against delegates_to: %d %s, want 400", rec.Code, rec.Body.String())
+		}
+	})
+	t.Run("descriptive kinds and disallowed links never cycle", func(t *testing.T) {
+		_, mux := setup()
+		put(mux, "a", "b", "delegates_to", "")
+		for _, kind := range []string{"collaborates_with", "escalates_to", "can_observe"} {
+			if rec := put(mux, "b", "a", kind, ""); rec.Code != http.StatusOK {
+				t.Errorf("%s back-link: %d %s, want 200", kind, rec.Code, rec.Body.String())
+			}
+		}
+		if rec := put(mux, "b", "a", "delegates_to", `,"allow":false`); rec.Code != http.StatusOK {
+			t.Errorf("disallowed opposite link: %d %s, want 200 (it is not rendered)", rec.Code, rec.Body.String())
+		}
+	})
+	t.Run("re-putting an existing link is not a cycle", func(t *testing.T) {
+		_, mux := setup()
+		put(mux, "a", "b", "delegates_to", "")
+		if rec := put(mux, "a", "b", "delegates_to", ""); rec.Code != http.StatusOK {
+			t.Fatalf("same link again: %d %s", rec.Code, rec.Body.String())
+		}
+	})
+	t.Run("removed seats do not count", func(t *testing.T) {
+		fake, mux := setup()
+		put(mux, "a", "b", "delegates_to", "")
+		fake.seats[1].Status = "removed"
+		fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b2", RoomID: fake.seats[0].RoomID, SeatKey: "b2", Status: "active"})
+		if rec := put(mux, "b2", "a", "delegates_to", ""); rec.Code != http.StatusOK {
+			t.Fatalf("link next to a link of a removed seat: %d %s", rec.Code, rec.Body.String())
+		}
+	})
+}
+
+// seatAdminDetail returns the decoded "detail" of an error response (JSON escapes ">").
+func seatAdminDetail(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var body struct {
+		Detail string `json:"detail"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode %s: %v", rec.Body.String(), err)
+	}
+	return body.Detail
 }
