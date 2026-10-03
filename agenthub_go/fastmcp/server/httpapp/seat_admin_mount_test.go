@@ -1032,6 +1032,7 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 		`{"model":"sonnet"}`,
 		`{"runtime":"codex","model":"-bad"}`,
 		`{"runtime":"codex","model":"has space"}`,
+		`{"runtime":"codex","model":"claude-sonnet-5-5"}`,
 		`{"runtime":"codex","model":"` + strings.Repeat("a", 129) + `"}`,
 		`{"runtime":"codex","extra":1}`,
 		`not json`,

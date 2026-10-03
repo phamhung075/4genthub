@@ -153,7 +153,7 @@ func TestSeatAdminServiceSetOccupantKeepsPin(t *testing.T) {
 func TestSeatAdminServiceSetOccupantErrors(t *testing.T) {
 	service, store := newSeatAdminFixture()
 	ctx := context.Background()
-	invalid := [][2]string{{"gemini", ""}, {"", ""}, {"codex", "-bad"}, {"codex", "a b"}}
+	invalid := [][2]string{{"gemini", ""}, {"", ""}, {"codex", "-bad"}, {"codex", "a b"}, {"codex", "claude-sonnet-5-5"}}
 	for _, c := range invalid {
 		if _, err := service.SetOccupant(ctx, "u", "dev", "alice", c[0], c[1]); !errors.Is(err, ErrInvalidOccupant) {
 			t.Errorf("SetOccupant(%q, %q) error = %v, want ErrInvalidOccupant", c[0], c[1], err)

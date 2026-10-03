@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Seat occupant accepted a Claude model on the codex runtime
+
+- Added: `TestValidateOccupant`; a `codex` + `claude-sonnet-5-5` case in `TestSeatAdminServiceSetOccupantErrors` and `TestSeatAdminSetOccupantRejectsInvalidInput`. Red before (undefined `ValidateOccupant`), green after: services, repositories, httpapp ok.
+
 ## 2026-10-03 — `TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository
 
 - Fixed: `TestFindProjectRootEnvAndUpward` fixture gets a `.git` directory so the nearest root wins. Red before, green after with TMPDIR inside and outside the repo.

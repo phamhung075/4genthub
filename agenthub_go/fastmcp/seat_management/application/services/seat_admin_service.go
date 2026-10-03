@@ -97,10 +97,7 @@ func (s *SeatAdminService) GetSeat(ctx context.Context, userID, roomSlug, seatKe
 // SetOccupant switches the seat to runtime and model. The seat keeps its pinned seat type
 // version; the next resolve renders the new runtime into a new snapshot.
 func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, seatKey, runtime, model string) (*SeatView, error) {
-	if err := repositories.ValidateRuntime(runtime); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
-	}
-	if err := repositories.ValidateModel(model); err != nil {
+	if err := repositories.ValidateOccupant(runtime, model); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
 	}
 	room, seat, err := s.seat(ctx, userID, roomSlug, seatKey)

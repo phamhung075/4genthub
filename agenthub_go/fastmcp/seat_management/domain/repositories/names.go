@@ -36,6 +36,22 @@ func ValidateModel(model string) error {
 	return nil
 }
 
+// ValidateOccupant checks the runtime and model of a seat's occupant together. Claude models
+// run only on the claude-code runtime; claude-code also takes aliases such as "sonnet", so the
+// check is one-directional.
+func ValidateOccupant(runtime, model string) error {
+	if err := ValidateRuntime(runtime); err != nil {
+		return err
+	}
+	if err := ValidateModel(model); err != nil {
+		return err
+	}
+	if runtime == "codex" && strings.HasPrefix(model, "claude-") {
+		return fmt.Errorf("model %q is a Claude model and cannot run on the codex runtime", model)
+	}
+	return nil
+}
+
 // ValidateModuleSlug checks slug against the module slug rule.
 func ValidateModuleSlug(slug string) error {
 	if !moduleSlugPattern.MatchString(slug) {

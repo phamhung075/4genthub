@@ -67,6 +67,19 @@ func TestValidateRuntime(t *testing.T) {
 	}
 }
 
+func TestValidateOccupant(t *testing.T) {
+	for _, c := range [][2]string{{"codex", ""}, {"codex", "gpt-5"}, {"claude-code", ""}, {"claude-code", "claude-sonnet-5-5"}, {"claude-code", "sonnet"}} {
+		if err := ValidateOccupant(c[0], c[1]); err != nil {
+			t.Errorf("ValidateOccupant(%q, %q) = %v", c[0], c[1], err)
+		}
+	}
+	for _, c := range [][2]string{{"codex", "claude-sonnet-5-5"}, {"codex", "claude-opus-5-5"}, {"gemini", ""}, {"codex", "a b"}} {
+		if ValidateOccupant(c[0], c[1]) == nil {
+			t.Errorf("ValidateOccupant(%q, %q) = nil, want error", c[0], c[1])
+		}
+	}
+}
+
 func TestValidateModel(t *testing.T) {
 	valid := []string{"", "sonnet", "gpt-5.1", "claude-opus-4-1:thinking", "openai/gpt-4o", "a", strings.Repeat("a", 128)}
 	for _, model := range valid {

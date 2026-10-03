@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Seat occupant accepted a Claude model on the codex runtime** (2026-10-03)
+
+- `seat_management/domain/repositories/names.go`: new `ValidateOccupant(runtime, model)` (runtime, model pattern, and `claude-*` models only on `claude-code`); `SeatAdminService.SetOccupant` uses it, so `PUT .../occupant`, MCP `manage_seat set_occupant` and `openrig_seat_sync.py switch` get a 400 `invalid occupant: model "claude-..." is a Claude model and cannot run on the codex runtime`. The check is one-directional because claude-code also takes aliases such as `sonnet`.
+
 **`TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository** (2026-10-03)
 
 - `tools/tool_path_test.go`: the upward search tries `.git` before the other markers (documented order in Python `tool_path.py`), so the repository's own `.git` above the temp dir won over the fixture's `pyproject.toml`. The fixture now has its own `.git` directory. No production code changed.
