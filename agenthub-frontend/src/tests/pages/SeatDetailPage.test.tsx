@@ -17,6 +17,7 @@ vi.mock('../../services/seatApi', () => ({
     createSeat: vi.fn(),
     removeSeat: vi.fn(),
     updateSeatOccupant: vi.fn(),
+    putPermissionPolicy: vi.fn(),
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     listLinks: vi.fn(),
@@ -65,6 +66,7 @@ const seats = [
     pinned_version: '1.0.0',
     runtime: 'claude-code',
     model: 'sonnet',
+    permission_policy: 'standard',
   },
   {
     id: 'seat-2',
@@ -74,6 +76,7 @@ const seats = [
     pinned_version: null,
     runtime: 'codex',
     model: 'gpt',
+    permission_policy: 'standard',
   },
 ];
 
@@ -278,6 +281,56 @@ describe('SeatDetailPage', () => {
     expect(screen.getByText('Escalates to')).toBeInTheDocument();
 
     expect(screen.getByText(/never allow sending/i)).toBeInTheDocument();
+  });
+
+  describe('Permissions panel', () => {
+    const openPermissions = async () => {
+      renderDetail();
+      await screen.findByText('rules');
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /permissions/i }), { button: 0 });
+      return (await screen.findByLabelText('Permission policy')) as HTMLSelectElement;
+    };
+
+    it('shows the current policy, offers the five server policies and keeps Save disabled', async () => {
+      const select = await openPermissions();
+
+      expect(select.value).toBe('standard');
+      expect(Array.from(select.options).map(option => option.value)).toEqual([
+        'locked',
+        'standard',
+        'open',
+        'yolo',
+        'none',
+      ]);
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    });
+
+    it('saves the new policy, refreshes the seats and warns about yolo', async () => {
+      mockApi.putPermissionPolicy.mockResolvedValue({
+        success: true,
+        seat: { ...seats[0], permission_policy: 'yolo' },
+      });
+      const select = await openPermissions();
+
+      fireEvent.change(select, { target: { value: 'yolo' } });
+      expect(screen.getByText(/full permission bypass/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(mockApi.putPermissionPolicy).toHaveBeenCalledWith('dev', 'alice', 'yolo');
+      });
+      await waitFor(() => expect(mockApi.listSeats).toHaveBeenCalledTimes(2));
+    });
+
+    it('shows the API error when the policy is rejected', async () => {
+      mockApi.putPermissionPolicy.mockRejectedValue(new Error('unsupported permission policy "open"'));
+      const select = await openPermissions();
+
+      fireEvent.change(select, { target: { value: 'open' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText(/unsupported permission policy/)).toBeInTheDocument();
+    });
   });
 
   describe('LLM panel', () => {

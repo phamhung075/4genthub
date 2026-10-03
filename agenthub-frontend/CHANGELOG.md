@@ -27,6 +27,14 @@
   - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (new)
 
 ### Added
+- **Show and edit a seat's permission policy** - 2026-10-03
+  - The seat body carries `permission_policy` and `PUT .../permission-policy` changes it, but the UI had
+    neither. The seat detail page has a Permissions tab (`SeatPermissionPolicyPanel`) with the five server
+    policies (locked, standard, open, yolo, none), a yolo warning and the server error on rejection.
+    `Seat.permission_policy` and `SEAT_PERMISSION_POLICIES` are added to `src/types/seatTypes.ts`.
+  - Files: `src/components/seats/SeatPermissionPolicyPanel.tsx` (new), `src/pages/SeatDetailPage.tsx`,
+    `src/services/seatApi.ts`, `src/hooks/useSeats.ts`, `src/types/seatTypes.ts`,
+    `src/tests/pages/SeatDetailPage.test.tsx` (3 tests added), `src/tests/services/seatApi.test.ts` (1 test added)
 - **Delete a room** - 2026-10-03
   - The room view has a Delete room button (`seatApi.deleteRoom`, `useDeleteRoom`) behind a confirmation that
     names what is lost: the room hard-deletes with all its seats, links, overlays and the room overlay. The

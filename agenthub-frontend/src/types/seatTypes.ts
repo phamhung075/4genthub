@@ -18,6 +18,10 @@ export type SeatRuntime = 'claude-code' | 'codex';
 /** Single source of truth for the runtimes offered in the UI. */
 export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex'];
 
+/** Single source of truth for the policies the server accepts (resolver.PermissionPolicies). */
+export const SEAT_PERMISSION_POLICIES = ['locked', 'standard', 'open', 'yolo', 'none'] as const;
+export type SeatPermissionPolicy = (typeof SEAT_PERMISSION_POLICIES)[number];
+
 export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'memory';
 
 /** Single source of truth for the module kinds offered in the UI. */
@@ -54,6 +58,7 @@ export interface Seat {
   pinned_version: string | null;
   runtime: string;
   model: string;
+  permission_policy: SeatPermissionPolicy;
 }
 
 export interface SeatModuleVersion {
@@ -285,6 +290,11 @@ export interface SeatModulesTabProps {
 }
 
 export interface SeatLlmPanelProps {
+  room: string;
+  seat: Seat;
+}
+
+export interface SeatPermissionPolicyPanelProps {
   room: string;
   seat: Seat;
 }

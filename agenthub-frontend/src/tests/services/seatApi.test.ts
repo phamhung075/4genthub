@@ -32,6 +32,15 @@ describe('seatApi', () => {
     expect(init.method).toBe('DELETE');
   });
 
+  it('sets a permission policy with PUT .../permission-policy and the policy in the body', async () => {
+    await seatApi.putPermissionPolicy('dev', 'alice', 'locked');
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toMatch(/\/api\/v2\/openrig\/rooms\/dev\/seats\/alice\/permission-policy$/);
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe(JSON.stringify({ permission_policy: 'locked' }));
+  });
+
   it('deletes a room with DELETE /rooms/{room}', async () => {
     await seatApi.deleteRoom('dev room');
 

@@ -20,6 +20,7 @@ import type {
   OccupantUpdate,
   PutModuleVersionRequest,
   SeatLinkKind,
+  SeatPermissionPolicy,
   SeatLinkRequest,
   SeatOverlay,
   SeatOverlayOp,
@@ -203,6 +204,19 @@ export function useUpdateSeatOccupant(room: string, seat: string) {
       queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
       queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seat) });
       showSuccess(`Seat "${seat}" LLM saved`);
+    },
+  });
+}
+
+export function useSetSeatPermissionPolicy(room: string, seat: string) {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: (policy: SeatPermissionPolicy) => seatApi.putPermissionPolicy(room, seat, policy),
+    onSuccess: (_response, policy) => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+      queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seat) });
+      showSuccess(`Seat "${seat}" permission policy set to ${policy}`);
     },
   });
 }

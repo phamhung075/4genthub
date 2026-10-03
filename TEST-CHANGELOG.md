@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat permission policy
+
+- Added: `SeatDetailPage > Permissions panel` (current policy and the five options, Save disabled when unchanged; save calls `putPermissionPolicy('dev','alice','yolo')`, refetches seats and shows the yolo warning; a rejected policy shows the server error; 13 tests in the file) and `sets a permission policy with PUT .../permission-policy` in `seatApi.test.ts`.
+- Changed: the `SeatDetailPage` seat fixtures carry `permission_policy`.
+
 ## 2026-10-03 — delete room
 
 - Added: `SeatsPage > delete room` (confirm deletes `dev` and closes the seat list; cancel sends nothing; a server error is shown and the room stays; 23 tests in the file) and `deletes a room with DELETE /rooms/{room}` in `seatApi.test.ts`.

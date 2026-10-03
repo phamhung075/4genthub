@@ -24,6 +24,7 @@ import {
   Loader2,
   Package,
   Plus,
+  ShieldCheck,
   Trash2,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
@@ -48,6 +49,7 @@ import {
   useUpsertSeatLink,
 } from '../hooks/useSeats';
 import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
+import { SeatPermissionPolicyPanel } from '../components/seats/SeatPermissionPolicyPanel';
 import { computeEffectiveModules } from '../lib/seatModules';
 import { SEAT_LINK_KINDS } from '../types/seatTypes';
 import type {
@@ -701,6 +703,9 @@ export const SeatDetailPage: React.FC = () => {
             <TabsTrigger value="llm">
               <Brain className="mr-1 h-4 w-4" /> LLM
             </TabsTrigger>
+            <TabsTrigger value="permissions">
+              <ShieldCheck className="mr-1 h-4 w-4" /> Permissions
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="modules">
@@ -714,6 +719,9 @@ export const SeatDetailPage: React.FC = () => {
           </TabsContent>
           <TabsContent value="llm">
             <SeatLlmPanel room={room} seat={currentSeat} />
+          </TabsContent>
+          <TabsContent value="permissions">
+            <SeatPermissionPolicyPanel room={room} seat={currentSeat} />
           </TabsContent>
         </Tabs>
       )}

@@ -27,6 +27,7 @@ import type {
   RoomsResponse,
   SeatLinksResponse,
   SeatLinkKind,
+  SeatPermissionPolicy,
   SeatLinkRequest,
   SeatLinkResponse,
   SeatOverlayResponse,
@@ -138,6 +139,12 @@ export const seatApi = {
     apiRequest<SeatLinkResponse>(
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links`,
       jsonPut(data)
+    ),
+
+  putPermissionPolicy: (room: string, seat: string, permissionPolicy: SeatPermissionPolicy) =>
+    apiRequest<SeatResponse>(
+      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/permission-policy`,
+      jsonPut({ permission_policy: permissionPolicy })
     ),
 
   deleteLink: (room: string, seat: string, to: string, kind: SeatLinkKind) =>
