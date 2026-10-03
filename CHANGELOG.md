@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Team culture recorded as an owner demand** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md`: "Request 17" (added in `f5bb43f0`): each seat's session is the chef (takes demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers do bounded jobs, get priority for delegable work, and their output is never forwarded unreviewed. Documentation only; no behavior change, no tests.
+
 **Support for agy (Gemini/Antigravity) runtime** (2026-10-03)
 
 - `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `CheckRuntime` now accepts `"agy"`.
