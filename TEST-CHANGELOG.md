@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — `AddVersion` lost-race re-read
+
+- Changed: `TestSeatTypeAddVersionLostRace` now fails any statement on `seat_type_versions` that is not scoped to the user and seat type (covers the re-read). Added `TestSeatTypeAddVersionOnlyReReadsAfterUniqueViolation` (23503 not re-read, re-read failure reported). Mutation check: matching any SQLSTATE 23 made both tests fail. orm package ok.
+
 ## 2026-10-03 — POST /rooms silently returned an existing room
 
 - Added: duplicate-slug 409 assertions in `TestSeatAdminRooms`; `TestSeatAdminCreateRoomRejectsLongName` (200 ok, 201 rejected); `TestValidateRoomName`. httpapp, domain, services ok.

@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`AddVersion` lost-race re-read was too broad and hid its own error** (2026-10-03)
+
+- `seat_management/infrastructure/repositories/orm/seat_type_repository.go` `AddVersion`: the winner is re-read only after a unique violation (SQLSTATE 23505), not after any integrity error (a foreign key violation is returned as it is), and a failing re-read is returned (wrapped) instead of being discarded.
+
 **POST /rooms silently returned an existing room** (2026-10-03)
 
 - `server/httpapp/seat_admin_mount.go` `handleCreateRoom`: an existing slug now returns 409 `room "x" already exists` (before: 200 with the stored room, the posted name silently discarded), the same convention as `POST .../seats`. This makes the `(409 exists: ok)` branch of `openrig_team_setup.py` for rooms live instead of dead.

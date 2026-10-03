@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
@@ -126,11 +127,15 @@ func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, ve
 		}
 		// A concurrent writer may have inserted the same version between the read and the
 		// insert (unique violation); re-read it and judge its content like any existing row.
-		var integrity *exceptions.DatabaseIntegrityException
-		if !errors.As(err, &integrity) {
+		if !isUniqueViolation(err) {
 			return nil, err
 		}
-		if existing, _ = r.findVersion(ctx, userID, seatType.ID, version); existing == nil {
+		var rereadErr error
+		existing, rereadErr = r.findVersion(ctx, userID, seatType.ID, version)
+		if rereadErr != nil {
+			return nil, fmt.Errorf("re-read seat type %q version %q after a unique violation: %w", slug, version, rereadErr)
+		}
+		if existing == nil {
 			return nil, err
 		}
 	}
@@ -147,6 +152,14 @@ func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, ve
 	}
 	out.Slug = seatType.Slug
 	return out, nil
+}
+
+// isUniqueViolation reports a PostgreSQL unique violation (SQLSTATE 23505). The base
+// repository turns driver errors into exceptions that keep only the driver's message, which
+// ends in "(SQLSTATE <code>)", so the code is read from the text.
+func isUniqueViolation(err error) bool {
+	var integrity *exceptions.DatabaseIntegrityException
+	return errors.As(err, &integrity) && strings.Contains(err.Error(), "(SQLSTATE 23505)")
 }
 
 func (r *ORMSeatTypeRepository) findVersion(ctx context.Context, userID, seatTypeID, version string) (*seatdb.SeatTypeVersionORM, error) {

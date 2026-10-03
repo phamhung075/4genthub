@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgconn"
 	"io"
 	"reflect"
@@ -428,6 +429,14 @@ func TestSeatTypeAddVersionLostRace(t *testing.T) {
 		f := &fakeDriver{}
 		versionReads := 0
 		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			if strings.Contains(q, `"seat_type_versions"`) {
+				// every statement on the versions table, the re-read included, is scoped to the user
+				// and to this seat type
+				joined := fmt.Sprint(args)
+				if !strings.Contains(joined, testUser) || !strings.Contains(joined, testSeatTypeID) {
+					t.Errorf("unscoped statement %q with args %v", q, args)
+				}
+			}
 			switch {
 			case strings.Contains(q, `FROM "seat_types"`):
 				return []string{"id", "user_id", "slug", "name", "description", "created_at"}, [][]driver.Value{
@@ -466,6 +475,52 @@ func TestSeatTypeAddVersionLostRace(t *testing.T) {
 	repo, _ = winner("go1.23", []byte(`[{"slug":"other","version":"2.0.0"}]`))
 	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.1", "go1.23", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
 		t.Fatalf("lost race with other refs = %v, want ErrSeatTypeVersionConflict", err)
+	}
+}
+
+// Only a unique violation means "someone else took the version"; any other integrity error
+// is returned as it is, and a failing re-read is not hidden behind the original error.
+func TestSeatTypeAddVersionOnlyReReadsAfterUniqueViolation(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	refs := []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
+	versionCols := []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at"}
+	run := func(insertErr, rereadErr error) (error, int) {
+		f := &fakeDriver{}
+		reads := 0
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			switch {
+			case strings.Contains(q, `FROM "seat_types"`):
+				return []string{"id", "user_id", "slug", "name", "description", "created_at"}, [][]driver.Value{
+					fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", now),
+				}, nil
+			case strings.Contains(q, `INSERT INTO "seat_type_versions"`):
+				return nil, nil, insertErr
+			case strings.Contains(q, `FROM "seat_type_versions"`):
+				reads++
+				if reads == 1 {
+					return versionCols, nil, nil
+				}
+				return nil, nil, rereadErr
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMSeatTypeRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = repo.AddVersion(ctx, testUser, "seat.standard", "1.0.1", "go1.23", refs)
+		return err, reads
+	}
+
+	// a foreign key violation (SQLSTATE 23503) is not a lost race: no re-read
+	if err, reads := run(&pgconn.PgError{Code: "23503", Message: "violates foreign key constraint"}, nil); err == nil || errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) || reads != 1 {
+		t.Errorf("foreign key violation: err = %v, reads = %d, want the original error after one read", err, reads)
+	}
+	// a failing re-read is reported, not replaced by the integrity error
+	boom := errors.New("re-read boom")
+	if err, _ := run(&pgconn.PgError{Code: "23505", Message: "duplicate key"}, &pgconn.PgError{Code: "08006", Message: boom.Error()}); err == nil || !strings.Contains(err.Error(), "re-read") || !strings.Contains(err.Error(), boom.Error()) {
+		t.Errorf("re-read failure: err = %v, want it to name the re-read and its cause", err)
 	}
 }
 
