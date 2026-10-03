@@ -12,6 +12,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
 - Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed) pass after it.
 
+## 2026-10-04 — remove tests for APIs the code does not have
+
+- Removed: `src/tests/utils/contextHelpers.test.ts` (33 tests) and `src/tests/api-lazy.test.ts` (10 tests); every test failed with "is not a function" because the functions they call do not exist in the source (see the frontend CHANGELOG).
+- Context: the first full `npx vitest run` (3 forks, 2 GB heap): 1720 tests, 1422 passed, 298 failed in 31 files, plus 9 files that do not load. The 710 in NEXT_GEN G6 was stale. This is cluster 1 of the triage.
+
 ## 2026-10-04 — useSubtaskExpansion timer cleanup
 
 - Added: `src/tests/hooks/useSubtaskExpansion.test.ts` (1 test): no timer is pending after the hook unmounts (fails without the fix: 2 timers left).

@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **Removed two test files for APIs the code does not have** - 2026-10-04
+  - `src/tests/utils/contextHelpers.test.ts` (33 tests) called `parseContextData`, `stringifyContextData`,
+    `mergeContextData`, `extractContextValue`, `isValidContextData` and `sanitizeContextData`;
+    `src/tests/api-lazy.test.ts` (10 tests) called `createLazyTaskLoader` and `createLazySubtaskLoader`. None of
+    these exist in `src/utils/contextHelpers.ts` or `src/api-lazy.ts`, they never did in git history, and no
+    code calls them, so the 43 tests failed with "is not a function". The code is the truth, so the tests go.
 - **useSubtaskExpansion cancels its pending timers on unmount** - 2026-10-04
   - The hook's four `setTimeout` calls (dialog auto-clear, staggered create/update animations, trigger clear)
     were never cancelled, so one could fire after unmount or test teardown (`window is not defined` unhandled
