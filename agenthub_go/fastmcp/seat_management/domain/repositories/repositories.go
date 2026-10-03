@@ -53,6 +53,8 @@ type ModuleRepository interface {
 	AddVersion(ctx context.Context, userID, slug, version, content string) (*ModuleVersion, error)
 	GetVersion(ctx context.Context, userID, slug, version string) (*ModuleVersion, error)
 	LatestVersion(ctx context.Context, userID, slug string) (*ModuleVersion, error)
+	// ListLatest returns the newest version of every module, ordered by slug.
+	ListLatest(ctx context.Context, userID string) ([]ModuleVersion, error)
 }
 
 // SeatType is a tenant-scoped template for a seat.
@@ -85,6 +87,7 @@ type SeatTypeRepository interface {
 	AddVersion(ctx context.Context, userID, slug, version string, moduleRefs []resolver.ModuleRef) (*SeatTypeVersion, error)
 	GetVersion(ctx context.Context, userID, slug, version string) (*SeatTypeVersion, error)
 	LatestVersion(ctx context.Context, userID, slug string) (*SeatTypeVersion, error)
+	SetDefaultRuntime(ctx context.Context, userID, slug, runtime string) error
 }
 
 // Room is a tenant-scoped grouping of seats.

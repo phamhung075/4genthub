@@ -112,6 +112,36 @@ func (r *ORMModuleRepository) LatestVersion(ctx context.Context, userID, slug st
 	return r.moduleVersionQuery(ctx, query, userID, slug)
 }
 
+// ListLatest returns the newest version of every module ordered by slug; Content is not loaded.
+func (r *ORMModuleRepository) ListLatest(ctx context.Context, userID string) ([]domainrepo.ModuleVersion, error) {
+	query := `SELECT DISTINCT ON (m."slug") mv."id"::text, mv."module_id"::text, mv."version", mv."checksum", ` +
+		`mv."created_at", m."slug", m."kind" FROM module_versions AS mv ` +
+		`JOIN modules AS m ON m."id" = mv."module_id" WHERE mv."user_id" = $1 ` +
+		`ORDER BY m."slug", mv."created_at" DESC, mv."id" DESC`
+	out := []domainrepo.ModuleVersion{}
+	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		rows, err := s.QueryContext(ctx, query, userID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			mv := domainrepo.ModuleVersion{UserID: userID}
+			var kind string
+			if err := rows.Scan(&mv.ID, &mv.ModuleID, &mv.Version, &mv.Checksum, &mv.CreatedAt, &mv.Slug, &kind); err != nil {
+				return err
+			}
+			mv.Kind = resolver.ModuleKind(kind)
+			out = append(out, mv)
+		}
+		return rows.Err()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (r *ORMModuleRepository) moduleVersionQuery(ctx context.Context, query string, args ...any) (*domainrepo.ModuleVersion, error) {
 	var (
 		id, userID, moduleID, version, content, checksum, slug, kind string

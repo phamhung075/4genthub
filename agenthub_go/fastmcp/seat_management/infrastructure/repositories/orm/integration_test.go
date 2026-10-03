@@ -94,6 +94,17 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 		t.Fatal("AddVersion(different checksum) must fail")
 	}
 
+	// latest module version per slug, tenant scoped
+	if _, err := modules.AddVersion(ctx, userID, "instr", "1.1.0", "newer"); err != nil {
+		t.Fatalf("AddVersion 1.1.0: %v", err)
+	}
+	if listed, err := modules.ListLatest(ctx, userID); err != nil || len(listed) != 1 || listed[0].Slug != "instr" || listed[0].Version != "1.1.0" || listed[0].Checksum != moduleVersionChecksum("newer") {
+		t.Fatalf("ListLatest = %+v, %v", listed, err)
+	}
+	if listed, err := modules.ListLatest(ctx, "other-user"); err != nil || len(listed) != 0 {
+		t.Fatalf("ListLatest other tenant = %+v, %v", listed, err)
+	}
+
 	// seat type + immutable versions
 	seatType, err := seatTypeRepo.Save(ctx, userID, domainrepo.SeatType{
 		Slug: "seat.standard", Name: "Standard", Description: "d", DefaultRuntime: "go1.23",
@@ -111,6 +122,15 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0",
 		[]resolver.ModuleRef{{Slug: "instr", Version: "2.0.0"}}); err == nil {
 		t.Fatal("AddVersion seat type (different refs) must fail")
+	}
+	if err := seatTypeRepo.SetDefaultRuntime(ctx, "other-user", "seat.standard", "codex"); err != nil {
+		t.Fatalf("SetDefaultRuntime other tenant: %v", err)
+	}
+	if err := seatTypeRepo.SetDefaultRuntime(ctx, userID, "seat.standard", "codex"); err != nil {
+		t.Fatalf("SetDefaultRuntime: %v", err)
+	}
+	if got, err := seatTypeRepo.GetByID(ctx, userID, seatType.ID); err != nil || got == nil || got.DefaultRuntime != "codex" {
+		t.Fatalf("seat type after SetDefaultRuntime = %+v, %v", got, err)
 	}
 	latestSeatType, err := seatTypeRepo.LatestVersion(ctx, userID, "seat.standard")
 	if err != nil || latestSeatType == nil || latestSeatType.Version != "1.0.0" {

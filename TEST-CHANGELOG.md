@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Module list and seat-type versions
+
+- Added: `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`, `TestSeatAdminCreateSeatTypeVersionRejects`, auth probes in `seat_admin_mount_test.go`; `TestParseModuleRef`, `TestNextPatchVersion` in `names_test.go`; `ListLatest` and `SetDefaultRuntime` tenant checks in the Postgres integration test (skipped without `SEAT_TEST_DATABASE_URL`).
+
 ## 2026-10-03 — OpenRig coherence for seats
 
 - Added: `commpolicy` mapping tests, `repositories/names_test.go`, `domain/rigspec/rigspec_test.go` (incl. real `rig spec validate`/`preflight` when a daemon runs), `server/httpapp/seat_rigspec_mount_test.go`.

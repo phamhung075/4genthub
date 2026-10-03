@@ -3,6 +3,10 @@ package repositories
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
+
+	"agenthub/fastmcp/seat_management/domain/resolver"
 )
 
 // namePattern is OpenRig's pod/member id rule. Room slugs (pod ids) and seat keys
@@ -55,4 +59,32 @@ func ValidateName(kind, value string) error {
 		return fmt.Errorf("%s %q must match %s", kind, value, namePattern)
 	}
 	return nil
+}
+
+// ParseModuleRef parses "slug@version" into a ModuleRef with a valid slug and a concrete version.
+func ParseModuleRef(ref string) (resolver.ModuleRef, error) {
+	slug, version, found := strings.Cut(ref, "@")
+	if !found {
+		return resolver.ModuleRef{}, fmt.Errorf("module ref %q must be slug@version", ref)
+	}
+	if err := ValidateModuleSlug(slug); err != nil {
+		return resolver.ModuleRef{}, err
+	}
+	if err := ValidateConcreteVersion(version); err != nil {
+		return resolver.ModuleRef{}, err
+	}
+	return resolver.ModuleRef{Slug: slug, Version: version}, nil
+}
+
+// NextPatchVersion returns version with its patch number incremented.
+func NextPatchVersion(version string) (string, error) {
+	if err := ValidateConcreteVersion(version); err != nil {
+		return "", err
+	}
+	parts := strings.Split(version, ".")
+	patch, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return "", fmt.Errorf("version %q: %w", version, err)
+	}
+	return parts[0] + "." + parts[1] + "." + strconv.Itoa(patch+1), nil
 }

@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Module list and seat-type versions API** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `GET /api/v2/openrig/modules` lists the latest version of each module (`slug`, `kind`, `version`, `sha256`, no content). `POST /api/v2/openrig/seat-types/{slug}/versions` with `{module_refs: ["slug@version"], default_runtime}` appends the next patch version (`1.0.0` when none); 404 unknown seat type, 400 malformed, duplicate or unknown module refs and invalid runtime.
+- `seat_management`: `ModuleRepository.ListLatest`, `SeatTypeRepository.SetDefaultRuntime`, `ParseModuleRef`, `NextPatchVersion`.
+- Note: `default_runtime` is a column of `seat_types`, not of a version, so the POST updates it on the seat type for every version.
+
 **Switch a seat's LLM, Claude bypass policy, delegation rule** (2026-10-03)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`, `seat_management/application/services/seat_admin_service.go`: `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` changes a seat's runtime (`claude-code`, `codex`) and model; one `SeatAdminService` serves REST and MCP.

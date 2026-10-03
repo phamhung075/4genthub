@@ -85,6 +85,16 @@ func (r *ORMSeatTypeRepository) List(ctx context.Context, userID string) ([]doma
 	return out, nil
 }
 
+// SetDefaultRuntime sets the default runtime of the seat type; it is not part of any version.
+func (r *ORMSeatTypeRepository) SetDefaultRuntime(ctx context.Context, userID, slug, runtime string) error {
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`UPDATE "seat_types" SET "default_runtime" = $1 WHERE "user_id" = $2 AND "slug" = $3`,
+			runtime, userID, slug)
+		return err
+	})
+}
+
 // AddVersion appends an immutable seat type version. Re-adding the same (slug, version)
 // with the same module refs is a no-op; different refs are an error.
 func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, version string, moduleRefs []resolver.ModuleRef) (*domainrepo.SeatTypeVersion, error) {

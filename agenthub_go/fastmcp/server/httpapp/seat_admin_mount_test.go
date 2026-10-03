@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 
@@ -104,6 +105,31 @@ func (f *fakeSeatAdmin) GetSeatTypeVersion(_ context.Context, _, slug, version s
 
 func (f *fakeSeatAdmin) GetModuleVersion(_ context.Context, _, slug, version string) (*repositories.ModuleVersion, error) {
 	return f.moduleVersions[slug+"@"+version], nil
+}
+
+func (f *fakeSeatAdmin) ListLatestModuleVersions(_ context.Context, _ string) ([]repositories.ModuleVersion, error) {
+	out := make([]repositories.ModuleVersion, 0, len(f.moduleVersions))
+	for _, mv := range f.moduleVersions {
+		out = append(out, *mv)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
+	return out, nil
+}
+
+func (f *fakeSeatAdmin) AddSeatTypeVersion(_ context.Context, _, slug, version string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
+	created := &repositories.SeatTypeVersion{SeatTypeID: "st-" + slug, Slug: slug, Version: version, ModuleRefs: refs}
+	f.seatVersions[slug][version] = created
+	f.seatTypes[slug] = created
+	return created, nil
+}
+
+func (f *fakeSeatAdmin) SetSeatTypeDefaultRuntime(_ context.Context, _, slug, runtime string) error {
+	for _, st := range f.seatTypeList {
+		if st.Slug == slug {
+			st.DefaultRuntime = runtime
+		}
+	}
+	return nil
 }
 
 func (f *fakeSeatAdmin) SaveModule(_ context.Context, _, slug string, kind resolver.ModuleKind) (*repositories.Module, error) {
@@ -379,6 +405,88 @@ func TestSeatAdminPutModuleVersionRejectsInvalidInput(t *testing.T) {
 		if c.name == "secret" && (!strings.Contains(rec.Body.String(), "secret detected in content") || strings.Contains(rec.Body.String(), "AKIA")) {
 			t.Errorf("secret body = %s", rec.Body.String())
 		}
+	}
+}
+
+func TestSeatAdminListModules(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	mux := seatAdminTestMux(t, fake)
+	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules", "")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"modules":[]`) {
+		t.Fatalf("empty list: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/zeta/versions/1.0.0", `{"kind":"skill","content":"z"}`); rec.Code != http.StatusOK {
+		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/alpha/versions/1.2.0", `{"kind":"instruction","content":"a"}`); rec.Code != http.StatusOK {
+		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/modules", "")
+	body := rec.Body.String()
+	alpha := strings.Index(body, `"slug":"alpha","kind":"instruction","version":"1.2.0","sha256":"`)
+	zeta := strings.Index(body, `"slug":"zeta","kind":"skill","version":"1.0.0","sha256":"`)
+	if rec.Code != http.StatusOK || alpha < 0 || zeta < alpha || strings.Contains(body, `"content"`) {
+		t.Errorf("list modules: %d %s", rec.Code, body)
+	}
+}
+
+func TestSeatAdminCreateSeatTypeVersion(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	for _, put := range []string{"instr/versions/1.0.0", "skill-x/versions/2.1.0"} {
+		kind := "instruction"
+		if strings.HasPrefix(put, "skill") {
+			kind = "skill"
+		}
+		if rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+put, `{"kind":"`+kind+`","content":"c"}`); rec.Code != http.StatusOK {
+			t.Fatalf("put module %s: %d %s", put, rec.Code, rec.Body.String())
+		}
+	}
+	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/coder/versions",
+		`{"module_refs":["instr@1.0.0","skill-x@2.1.0"],"default_runtime":"codex"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create version: %d %s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`"slug":"coder"`, `"version":"1.0.1"`, `"default_runtime":"codex"`,
+		`"module_refs":[{"slug":"instr","version":"1.0.0"},{"slug":"skill-x","version":"2.1.0"}]`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("body missing %s: %s", want, rec.Body.String())
+		}
+	}
+	rec = doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	if !strings.Contains(rec.Body.String(), `"default_runtime":"codex","latest_version":"1.0.1"`) {
+		t.Errorf("seat type not updated: %s", rec.Body.String())
+	}
+}
+
+func TestSeatAdminCreateSeatTypeVersionRejects(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	if rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+		t.Fatalf("put module: %d", rec.Code)
+	}
+	cases := []struct {
+		name, path, body string
+		want             int
+	}{
+		{"unknown seat type", "/api/v2/openrig/seat-types/ghost/versions", `{"module_refs":[],"default_runtime":"codex"}`, http.StatusNotFound},
+		{"unknown module", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["ghost@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"unknown module version", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@9.9.9"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"no at sign", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"latest alias", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@latest"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"duplicate slug", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":["instr@1.0.0","instr@1.0.0"],"default_runtime":"codex"}`, http.StatusBadRequest},
+		{"bad runtime", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"gemini"}`, http.StatusBadRequest},
+		{"unknown field", "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex","x":1}`, http.StatusBadRequest},
+	}
+	for _, c := range cases {
+		if rec := doAgentsRequest(t, mux, http.MethodPost, c.path, c.body); rec.Code != c.want {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
+		}
+	}
+	if fake.seatVersions["coder"]["1.0.1"] != nil {
+		t.Error("a rejected request created a version")
 	}
 }
 
@@ -752,6 +860,8 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 		{http.MethodGet, "/api/v2/openrig/seat-types"},
 		{http.MethodGet, "/api/v2/openrig/modules/instr/versions/1.0.0"},
 		{http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0"},
+		{http.MethodGet, "/api/v2/openrig/modules"},
+		{http.MethodPost, "/api/v2/openrig/seat-types/coder/versions"},
 		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice"},

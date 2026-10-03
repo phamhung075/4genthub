@@ -81,3 +81,26 @@ func TestValidateModel(t *testing.T) {
 		}
 	}
 }
+
+func TestParseModuleRef(t *testing.T) {
+	ref, err := ParseModuleRef("my-skill@1.2.3")
+	if err != nil || ref.Slug != "my-skill" || ref.Version != "1.2.3" {
+		t.Fatalf("ParseModuleRef = %+v, %v", ref, err)
+	}
+	for _, bad := range []string{"", "a", "a@", "@1.0.0", "A@1.0.0", "a@latest", "a@1.0", "a@1.0.0@2"} {
+		if _, err := ParseModuleRef(bad); err == nil {
+			t.Errorf("ParseModuleRef(%q) = nil, want error", bad)
+		}
+	}
+}
+
+func TestNextPatchVersion(t *testing.T) {
+	for in, want := range map[string]string{"1.0.0": "1.0.1", "0.9.9": "0.9.10", "2.3.41": "2.3.42"} {
+		if got, err := NextPatchVersion(in); err != nil || got != want {
+			t.Errorf("NextPatchVersion(%q) = %q, %v, want %q", in, got, err, want)
+		}
+	}
+	if _, err := NextPatchVersion("latest"); err == nil {
+		t.Error("NextPatchVersion(latest) = nil, want error")
+	}
+}
