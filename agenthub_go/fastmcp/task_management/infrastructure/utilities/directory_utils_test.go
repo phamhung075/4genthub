@@ -38,6 +38,15 @@ func TestFindProjectRootParity(t *testing.T) {
 		env := utilities.DefaultEnv()
 		env.Anchor = filepath.Join(root, c.Anchor, "directory_utils.py")
 		env.Cwd = filepath.Join(root, c.Cwd)
+		// Only paths under root exist: the tree above a TMPDIR inside the repository holds a real
+		// agenthub_main directory that the upward search would otherwise find.
+		env.Exists = func(p string) bool {
+			if p != root && !strings.HasPrefix(p, root+string(filepath.Separator)) {
+				return false
+			}
+			_, err := os.Stat(p)
+			return err == nil
+		}
 		env.Getenv = func(k string) (string, bool) {
 			if k == "AGENTHUB_DATA_PATH" && c.Data != nil {
 				return filepath.Join(root, *c.Data), true

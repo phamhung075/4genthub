@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — `TestFindProjectRootParity` failed under a TMPDIR inside the repository
+
+- Fixed: `TestFindProjectRootParity` used the real filesystem above the fixture root; `env.Exists` is now scoped to it. Red before, green after with TMPDIR inside and outside the repo.
+
 ## 2026-10-03 — Parser tests failed under a TMPDIR inside the repository
 
 - Fixed: `TestParseMarkdownSections`, `TestParseJSON` depended on the absolute temp path; they now use `writeRelTemp`. Red before (TMPDIR inside `agenthub_go`), green after with TMPDIR inside and outside the repo.

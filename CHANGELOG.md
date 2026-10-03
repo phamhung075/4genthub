@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`TestFindProjectRootParity` failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `utilities/directory_utils_test.go`: case 2 returned the real repository root instead of `<R>/data`. `FindProjectRoot` (matches Python `_find_project_root`) walks up from the anchor and the real `agenthub_main` above the temp tree was found. The test now injects `Env.Exists` that only reports paths under the fixture root. No production code changed.
+
 **Parser tests failed under a TMPDIR inside the repository** (2026-10-03)
 
 - `parsers/rule_content_parser_test.go`: `TestParseMarkdownSections` and `TestParseJSON` expected `general` but got `agent`. `classifyRuleType` (a port of Python `_classify_rule_type`, unchanged) classifies on the lowercase absolute path, and the temp file lived under `agenthub_go/.gotmp`, whose name contains "agent". The two tests now use a relative file name (`writeRelTemp`, working directory = temp dir). No production code changed.
