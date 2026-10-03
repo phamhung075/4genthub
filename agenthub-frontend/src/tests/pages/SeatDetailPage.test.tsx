@@ -16,6 +16,7 @@ vi.mock('../../services/seatApi', () => ({
     listSeats: vi.fn(),
     createSeat: vi.fn(),
     removeSeat: vi.fn(),
+    updateSeatOccupant: vi.fn(),
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     listLinks: vi.fn(),
@@ -252,5 +253,70 @@ describe('SeatDetailPage', () => {
     expect(screen.getByText('Escalates to')).toBeInTheDocument();
 
     expect(screen.getByText(/never allow sending/i)).toBeInTheDocument();
+  });
+
+  describe('LLM panel', () => {
+    const openLlm = async () => {
+      renderDetail();
+      await screen.findByText('rules');
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /llm/i }), { button: 0 });
+      return screen.findByLabelText('LLM model');
+    };
+
+    it('shows the current runtime and model and keeps Save disabled when unchanged', async () => {
+      const model = (await openLlm()) as HTMLInputElement;
+
+      expect(model.value).toBe('sonnet');
+      expect((screen.getByLabelText('LLM runtime') as HTMLSelectElement).value).toBe('claude-code');
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+      expect(screen.getByText(/openrig_seat_sync.py switch/)).toBeInTheDocument();
+    });
+
+    it('disables Save and explains the rule when the model is invalid', async () => {
+      const model = await openLlm();
+
+      fireEvent.change(model, { target: { value: '-bad model' } });
+
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+      expect(
+        screen.getByText('Use letters, digits, ".", "_", ":", "/" or "-"; start with a letter or digit.')
+      ).toBeInTheDocument();
+    });
+
+    it('saves the new runtime and model and refreshes the seats', async () => {
+      mockApi.updateSeatOccupant.mockResolvedValue({
+        success: true,
+        seat: { ...seats[0], runtime: 'codex', model: 'gpt-5' },
+      });
+      const model = await openLlm();
+
+      fireEvent.change(screen.getByLabelText('LLM runtime'), { target: { value: 'codex' } });
+      fireEvent.change(model, { target: { value: 'gpt-5' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(mockApi.updateSeatOccupant).toHaveBeenCalledWith('dev', 'alice', {
+          runtime: 'codex',
+          model: 'gpt-5',
+        });
+      });
+      await waitFor(() => expect(mockApi.listSeats).toHaveBeenCalledTimes(2));
+    });
+
+    it('allows an empty model and shows the API error on failure', async () => {
+      mockApi.updateSeatOccupant.mockRejectedValue(new Error('seat is removed'));
+      const model = await openLlm();
+
+      fireEvent.change(model, { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        expect(mockApi.updateSeatOccupant).toHaveBeenCalledWith('dev', 'alice', {
+          runtime: 'claude-code',
+          model: '',
+        });
+      });
+      expect(await screen.findByText('seat is removed')).toBeInTheDocument();
+    });
   });
 });

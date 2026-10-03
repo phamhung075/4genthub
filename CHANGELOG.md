@@ -8,6 +8,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Switch a seat's LLM, Claude bypass policy, delegation rule** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`, `seat_management/application/services/seat_admin_service.go`: `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` changes a seat's runtime (`claude-code`, `codex`) and model; one `SeatAdminService` serves REST and MCP.
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`: MCP tool `manage_seat` (`list`, `get`, `set_occupant`).
+- `scripts/openrig_seat_sync.py`: `switch ROOM SEAT [--runtime] [--model] [--apply none|set-model|restart]` records the change in 4genthub and applies a model change with `rig seat set-model` (runtime changes need `rig down`/`rig up`, printed as manual steps); `rig ROOM --permission-policy locked|standard|open|yolo|none`.
+- `GET /api/v2/openrig/rooms/{room}/rigspec?permission_policy=...` renders a rig-level `permission_policy: builtin:<name>`; `yolo` makes OpenRig launch Claude with `--dangerously-skip-permissions` (verified: `rig spec preflight` reports `launch_posture=full_bypass`).
+- `scripts/team/4genthub/delegate-deepseek.txt`: company-wide rule to delegate parallel work to deepseek-offload workers.
+- Frontend: "LLM" tab on the seat page, see `agenthub-frontend/CHANGELOG.md`.
+- `/health` reports `0.0.10`.
+- Production note: the `seat_links` check constraint `ck_seat_links_kind` created by the first seat deploy still lists the old kinds; `collaborates_with`, `spawned_by` and `can_observe` links fail there until the constraint is replaced by hand.
+
+### Added
+
 **Module authoring and the 4genthub development team** (2026-10-03)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `PUT /api/v2/openrig/modules/{slug}/versions/{version}` creates a module version (immutable; identical content is a no-op, different content for the same version is 409, secrets are rejected with 422); sentinel errors `ErrModuleKindConflict` and `ErrModuleVersionConflict` in `repositories.go`; validators in `names.go`; `resolver.ValidKind`.

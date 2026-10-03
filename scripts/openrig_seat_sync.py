@@ -42,7 +42,16 @@ Environment:
 Usage:
   openrig_seat_sync.py pull ROOM SEAT [--out DIR] [--update]
   openrig_seat_sync.py rig ROOM [--out DIR] [--update]
+                       [--permission-policy locked|standard|open|yolo|none]
   openrig_seat_sync.py bundle ROOM SEAT --rig-yaml PATH --rig-root DIR [--out-dir DIR]
+  openrig_seat_sync.py switch ROOM SEAT [--runtime R] [--model M]
+                       [--apply none|set-model|restart] [--reason TEXT]
+
+``switch`` changes the LLM of one seat: 4genthub records the occupant, then
+OpenRig applies it. Fields not given keep their current cloud value. A model
+change is applied with ``rig seat set-model``; ``--apply restart`` also stops and
+freshly launches the seat (interrupts it and loses live context). OpenRig cannot
+change a runtime in place, so a runtime change prints the manual steps instead.
 
 Exit codes:
   0  success
@@ -71,6 +80,10 @@ EXIT_REMOTE = 1
 EXIT_USAGE = 2
 
 NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*")
+MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
+RUNTIMES = ("claude-code", "codex")
+APPLY_MODES = ("none", "set-model", "restart")
+PERMISSION_POLICIES = ("locked", "standard", "open", "yolo", "none")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
@@ -121,27 +134,37 @@ def safe_relative(path: str) -> PurePosixPath:
     return PurePosixPath(*parts)
 
 
-def get_json(base_url: str, token: str, path: str) -> dict:
+def request_json(
+    method: str, base_url: str, token: str, path: str, payload: dict | None = None
+) -> dict:
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+    data = None
+    if payload is not None:
+        data = json.dumps(payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
     request = urllib.request.Request(
-        base_url.rstrip("/") + path,
-        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+        base_url.rstrip("/") + path, data=data, headers=headers, method=method
     )
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
             body = json.load(response)
     except urllib.error.HTTPError as err:
         detail = err.read().decode("utf-8", "replace")[:300]
-        raise SyncError(f"GET {path} failed: HTTP {err.code} {detail}", EXIT_REMOTE)
+        raise SyncError(f"{method} {path} failed: HTTP {err.code} {detail}", EXIT_REMOTE)
     except urllib.error.URLError as err:
-        raise SyncError(f"GET {path} failed: {err.reason}", EXIT_REMOTE)
+        raise SyncError(f"{method} {path} failed: {err.reason}", EXIT_REMOTE)
     except (TimeoutError, OSError) as err:
-        raise SyncError(f"GET {path} failed: {err}", EXIT_REMOTE)
+        raise SyncError(f"{method} {path} failed: {err}", EXIT_REMOTE)
     except json.JSONDecodeError as err:
-        raise SyncError(f"GET {path} returned invalid JSON: {err}", EXIT_REMOTE)
+        raise SyncError(f"{method} {path} returned invalid JSON: {err}", EXIT_REMOTE)
 
     if not isinstance(body, dict):
-        raise SyncError(f"GET {path} returned a malformed response", EXIT_REMOTE)
+        raise SyncError(f"{method} {path} returned a malformed response", EXIT_REMOTE)
     return body
+
+
+def get_json(base_url: str, token: str, path: str) -> dict:
+    return request_json("GET", base_url, token, path)
 
 
 def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
@@ -155,8 +178,12 @@ def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
     return resolved
 
 
-def fetch_rigspec(base_url: str, token: str, room: str) -> dict:
+def fetch_rigspec(
+    base_url: str, token: str, room: str, permission_policy: str | None = None
+) -> dict:
     path = f"{ROOMS_PATH}/{room}/rigspec"
+    if permission_policy is not None:
+        path += f"?permission_policy={permission_policy}"
     body = get_json(base_url, token, path)
     if body.get("success") is not True:
         raise SyncError(f"GET {path} returned an error response", EXIT_REMOTE)
@@ -331,7 +358,7 @@ def cmd_rig(args: argparse.Namespace) -> None:
     base_url = require_env("AGENTHUB_URL")
     token = require_env("AGENTHUB_TOKEN")
 
-    rigspec = fetch_rigspec(base_url, token, room)
+    rigspec = fetch_rigspec(base_url, token, room, args.permission_policy)
     if rigspec.get("name") != room:
         raise SyncError("server returned a rigspec for a different room", EXIT_REMOTE)
     yaml_text = rigspec.get("yaml")
@@ -422,6 +449,140 @@ def cmd_bundle(args: argparse.Namespace) -> None:
     print(str(bundle_path))
 
 
+def validate_choice(kind: str, value: str, pattern: re.Pattern | None, allowed=None) -> str:
+    if allowed is not None and value not in allowed:
+        raise SyncError(f"invalid {kind}: {value!r} (expected one of {', '.join(allowed)})", EXIT_USAGE)
+    if pattern is not None and not pattern.fullmatch(value):
+        raise SyncError(f"invalid {kind}: {value!r} (expected {pattern.pattern})", EXIT_USAGE)
+    return value
+
+
+def current_occupant(base_url: str, token: str, room: str, seat: str) -> dict:
+    path = f"{ROOMS_PATH}/{room}/seats"
+    body = get_json(base_url, token, path)
+    seats = body.get("seats")
+    if body.get("success") is not True or not isinstance(seats, list):
+        raise SyncError(f"GET {path} returned an error response", EXIT_REMOTE)
+    for entry in seats:
+        if isinstance(entry, dict) and entry.get("seat_key") == seat:
+            return entry
+    raise SyncError(f"seat {room}/{seat} not found in the cloud", EXIT_REMOTE)
+
+
+def run_rig(command: list[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(command, check=True, capture_output=True, text=True)
+
+
+def canonical_session(room: str, seat: str) -> str | None:
+    """Find the live canonical session name of a seat, or None if OpenRig lacks it."""
+    result = run_rig(["rig", "ps", "--json", "--nodes", "--rig", room])
+    try:
+        nodes = json.loads(result.stdout)
+    except json.JSONDecodeError as err:
+        raise SyncError(f"rig ps returned invalid JSON: {err}", EXIT_REMOTE)
+    if isinstance(nodes, dict):
+        nodes = nodes.get("items")
+    for node in nodes if isinstance(nodes, list) else []:
+        if not isinstance(node, dict):
+            continue
+        logical = node.get("logicalId")
+        name = node.get("canonicalSessionName")
+        if (
+            isinstance(logical, str)
+            and isinstance(name, str)
+            and name
+            and node.get("rigName", room) == room
+            and logical.partition(".")[2] == seat
+        ):
+            return name
+    return None
+
+
+def apply_to_rig(room: str, seat: str, model: str, restart: bool, reason: str) -> str:
+    """Apply the model through OpenRig; return the applied mode actually reached."""
+    try:
+        session = canonical_session(room, seat)
+    except FileNotFoundError:
+        print("note: `rig` not found on PATH; the cloud change is recorded only", file=sys.stderr)
+        return "none"
+    except subprocess.CalledProcessError as err:
+        raise SyncError(f"rig ps failed with exit code {err.returncode}", EXIT_REMOTE)
+    if session is None:
+        print(
+            f"note: seat {room}/{seat} is not in `rig ps`; the cloud change is recorded only",
+            file=sys.stderr,
+        )
+        return "none"
+
+    commands = []
+    if model:
+        commands.append(["rig", "seat", "set-model", session, "--model", model, "--reason", reason])
+    if restart:
+        print(
+            f"warning: restarting {session} interrupts it and loses its live context",
+            file=sys.stderr,
+        )
+        commands.append(["rig", "seat", "stop", session, "--reason", reason])
+        commands.append(["rig", "seat", "launch", session, "--fresh", "--reason", reason])
+    for command in commands:
+        try:
+            run_rig(command)
+        except FileNotFoundError:
+            raise SyncError("`rig` executable not found on PATH", EXIT_REMOTE)
+        except subprocess.CalledProcessError as err:
+            raise SyncError(
+                f"`rig seat {command[2]}` failed with exit code {err.returncode}", EXIT_REMOTE
+            )
+    if restart:
+        return "restart"
+    return "set-model" if commands else "none"
+
+
+def cmd_switch(args: argparse.Namespace) -> None:
+    room = validate_name("room", args.room)
+    seat = validate_name("seat", args.seat)
+    if args.runtime is None and args.model is None:
+        raise SyncError("at least one of --runtime or --model is required", EXIT_USAGE)
+    if args.runtime is not None:
+        validate_choice("runtime", args.runtime, None, RUNTIMES)
+    if args.model is not None:
+        validate_choice("model", args.model, MODEL_RE)
+    base_url = require_env("AGENTHUB_URL")
+    token = require_env("AGENTHUB_TOKEN")
+
+    current = current_occupant(base_url, token, room, seat)
+    runtime = args.runtime if args.runtime is not None else current.get("runtime") or ""
+    model = args.model if args.model is not None else current.get("model") or ""
+    path = f"{ROOMS_PATH}/{room}/seats/{seat}/occupant"
+    body = request_json("PUT", base_url, token, path, {"runtime": runtime, "model": model})
+    if body.get("success") is not True:
+        raise SyncError(f"PUT {path} returned an error response", EXIT_REMOTE)
+
+    runtime_changed = runtime != (current.get("runtime") or "")
+    model_changed = model != (current.get("model") or "")
+    reason = args.reason or f"4genthub switch {room}/{seat}"
+    if args.apply is not None:
+        mode = args.apply
+    elif runtime_changed:
+        mode = "manual"
+    else:
+        mode = "set-model" if model_changed else "none"
+
+    applied = "none"
+    if mode != "none" and runtime_changed:
+        applied = "manual"
+        print(
+            f"runtime changed: OpenRig cannot switch a runtime in place. Run:\n"
+            f"  openrig_seat_sync.py rig {room} --update\n"
+            f"  rig down {room}\n"
+            f"  rig up <path of the rig.yaml printed by the first command>",
+            file=sys.stderr,
+        )
+    elif mode != "none":
+        applied = apply_to_rig(room, seat, model if model_changed else "", mode == "restart", reason)
+    print(f"switched:{room}/{seat} runtime={runtime} model={model} applied={applied}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="openrig_seat_sync.py",
@@ -460,6 +621,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="adopt fetched snapshots even if different pins exist",
     )
+    rig.add_argument(
+        "--permission-policy",
+        choices=PERMISSION_POLICIES,
+        default=None,
+        help="ask the server to render the rigspec with this permission policy",
+    )
     rig.set_defaults(func=cmd_rig)
 
     bundle = subparsers.add_parser(
@@ -476,6 +643,24 @@ def main(argv: list[str] | None = None) -> int:
         help="where to write the .rigbundle (default: current directory)",
     )
     bundle.set_defaults(func=cmd_bundle)
+
+    switch = subparsers.add_parser(
+        "switch", help="change the LLM of a seat: cloud records it, OpenRig applies it"
+    )
+    switch.add_argument("room")
+    switch.add_argument("seat")
+    switch.add_argument("--runtime", default=None)
+    switch.add_argument("--model", default=None)
+    switch.add_argument(
+        "--apply",
+        choices=APPLY_MODES,
+        default=None,
+        help="default: manual steps when the runtime changed, else set-model when "
+        "the model changed, else none; "
+        "restart also stops and relaunches the seat fresh",
+    )
+    switch.add_argument("--reason", default=None, help="audit reason passed to rig")
+    switch.set_defaults(func=cmd_switch)
 
     args = parser.parse_args(argv)
     try:

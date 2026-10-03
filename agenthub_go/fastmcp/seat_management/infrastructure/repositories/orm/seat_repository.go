@@ -94,3 +94,17 @@ func (r *ORMSeatRepository) MarkRemoved(ctx context.Context, userID, seatID stri
 		return err
 	})
 }
+
+// UpdateOccupant sets the runtime and model of the seat.
+func (r *ORMSeatRepository) UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`UPDATE "seats" SET "runtime" = $1, "model" = $2, "updated_at" = $3 WHERE "user_id" = $4 AND "id" = $5`,
+			runtime, model, time.Now().UTC(), userID, id)
+		return err
+	})
+}

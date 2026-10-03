@@ -136,6 +136,19 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 		t.Fatalf("FindByRoomAndKey = %+v, %v", found, err)
 	}
 
+	if err := seats.UpdateOccupant(ctx, userID, seat.ID, "codex", "gpt-5.1"); err != nil {
+		t.Fatalf("UpdateOccupant: %v", err)
+	}
+	if found, err := seats.GetByID(ctx, userID, seat.ID); err != nil || found == nil || found.Runtime != "codex" || found.Model != "gpt-5.1" {
+		t.Fatalf("seat after UpdateOccupant = %+v, %v", found, err)
+	}
+	if err := seats.UpdateOccupant(ctx, "other-user", seat.ID, "claude-code", ""); err != nil {
+		t.Fatalf("UpdateOccupant other tenant: %v", err)
+	}
+	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.Runtime != "codex" {
+		t.Fatalf("another tenant changed the seat: %+v", found)
+	}
+
 	// resolved seat is idempotent by (seat_id, hash)
 	snapshot := domainrepo.ResolvedSeat{
 		SeatID: seat.ID, Hash: "hash-1", Runtime: "go1.23",

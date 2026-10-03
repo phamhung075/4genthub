@@ -101,8 +101,8 @@ func TestHealthPayloadSuccessShape(t *testing.T) {
 	if got := body["server"]; got != healthServerName {
 		t.Fatalf("server = %v, want %q", got, healthServerName)
 	}
-	if got := body["version"]; got != "0.0.9" {
-		t.Fatalf("version = %v, want %q", got, "0.0.9")
+	if got := body["version"]; got != "0.0.10" {
+		t.Fatalf("version = %v, want %q", got, "0.0.10")
 	}
 	if got, ok := body["auth_enabled"].(bool); !ok || !got {
 		t.Fatalf("auth_enabled = %v (%T), want true", body["auth_enabled"], body["auth_enabled"])

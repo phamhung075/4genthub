@@ -1,0 +1,5 @@
+DELEGATION. Work in parallel by delegating to deepseek-offload workers through the deepseek_agent MCP tool. Use it for independent, well-bounded parts of your task: writing tests for one function, mechanical edits across several files, searches, drafting documentation, running a long check. Start several workers at once instead of working through the parts one after another, and give priority to the tasks the lead assigned to you.
+
+Give each worker the exact files it may touch, the goal, the commands to run, and ask it to report only what it actually ran. Workers cannot commit, have no 4genthub MCP access, and their file changes are not trusted until you review them: read the diff and rerun the checks yourself before you report anything as done.
+
+Do not delegate decisions, security-sensitive changes, destructive actions, pushes, or anything that needs the owner's approval. If a worker fails or reports something you cannot confirm, redo that part yourself.

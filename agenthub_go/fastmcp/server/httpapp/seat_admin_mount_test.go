@@ -168,6 +168,15 @@ func (f *fakeSeatAdmin) MarkSeatRemoved(_ context.Context, _, seatID string) err
 	return nil
 }
 
+func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.Runtime, s.Model = runtime, model
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdmin) UpsertOverlay(_ context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {
 	if err := overlay.ValidateTarget(); err != nil {
 		return nil, err
@@ -636,6 +645,79 @@ func TestSeatAdminNameValidation(t *testing.T) {
 	}
 }
 
+func TestSeatAdminSetOccupant(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	pinned := "1.0.0"
+	fake.seats = append(fake.seats, &repositories.Seat{
+		ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", PinnedVersion: &pinned,
+		Runtime: "claude-code", Model: "sonnet", Status: "active",
+	})
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+
+	rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"runtime":"codex","model":"gpt-5.1:high"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("set occupant: status = %d: %s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`"success":true`, `"seat_key":"alice"`, `"seat_type":"coder"`, `"pinned_version":"1.0.0"`, `"runtime":"codex"`, `"model":"gpt-5.1:high"`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("set occupant body missing %s: %s", want, rec.Body.String())
+		}
+	}
+	if got := fake.seats[0]; got.Runtime != "codex" || got.Model != "gpt-5.1:high" || got.PinnedVersion == nil || *got.PinnedVersion != "1.0.0" {
+		t.Errorf("stored seat = %+v", got)
+	}
+
+	rec = doAgentsRequest(t, mux, http.MethodPut, path, `{"runtime":"claude-code","model":""}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"model":""`) {
+		t.Errorf("empty model: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", Status: "active"})
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+	for _, body := range []string{
+		`{"runtime":"gemini"}`,
+		`{"runtime":""}`,
+		`{"model":"sonnet"}`,
+		`{"runtime":"codex","model":"-bad"}`,
+		`{"runtime":"codex","model":"has space"}`,
+		`{"runtime":"codex","model":"` + strings.Repeat("a", 129) + `"}`,
+		`{"runtime":"codex","extra":1}`,
+		`not json`,
+	} {
+		if rec := doAgentsRequest(t, mux, http.MethodPut, path, body); rec.Code != http.StatusBadRequest {
+			t.Errorf("body %q: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	if fake.seats[0].Runtime != "claude-code" {
+		t.Errorf("a rejected request changed the seat: %+v", fake.seats[0])
+	}
+}
+
+func TestSeatAdminSetOccupantNotFoundAndRemoved(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "removed"})
+	mux := seatAdminTestMux(t, fake)
+	body := `{"runtime":"codex","model":""}`
+	for path, want := range map[string]int{
+		"/api/v2/openrig/rooms/ghost/seats/bob/occupant": http.StatusNotFound,
+		"/api/v2/openrig/rooms/dev/seats/ghost/occupant": http.StatusNotFound,
+		"/api/v2/openrig/rooms/dev/seats/bob/occupant":   http.StatusConflict,
+	} {
+		if rec := doAgentsRequest(t, mux, http.MethodPut, path, body); rec.Code != want {
+			t.Errorf("PUT %s: status = %d, want %d: %s", path, rec.Code, want, rec.Body.String())
+		}
+	}
+}
+
 func TestSeatAdminNotFound(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	fake.seedRoom("dev")
@@ -673,6 +755,7 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice"},
+		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant"},
 		{http.MethodGet, "/api/v2/openrig/overlay"},
 		{http.MethodPut, "/api/v2/openrig/rooms/dev/overlay"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/overlay"},

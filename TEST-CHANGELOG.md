@@ -21,6 +21,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: module PUT handler tests in `seat_admin_mount_test.go`, `names_test.go` validators, `test_openrig_team_setup.py` (21 tests).
 
+## 2026-10-03 — Seat switching
+
+- Added: `seat_admin_service_test.go`, `manage_seat_controller_test.go`, `manage_seat_mcp_test.go`, occupant handler and repository tests, rigspec `permission_policy` tests, 14 `switch` and policy tests in `test_openrig_seat_sync.py` (script suite 127), 4 frontend tests in `SeatDetailPage.test.tsx` (21 seat page tests).
+
 ## Current Status
 
 | Metric | Value | Notes |

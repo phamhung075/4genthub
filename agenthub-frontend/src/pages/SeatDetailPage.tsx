@@ -5,7 +5,7 @@
  *  1. Modules - seat type module refs with the seat/room/company overlays applied
  *  2. Links   - outgoing seat links (allow flag + kind)
  *  3. Preview - the resolved snapshot (hash, files, policy)
- *  4. Brain   - runtime and model, read-only
+ *  4. LLM     - runtime and model of the occupant, editable
  *
  * @module pages/SeatDetailPage
  * @version 1.0.0
@@ -46,6 +46,7 @@ import {
   useUpdateOverlay,
   useUpsertSeatLink,
 } from '../hooks/useSeats';
+import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
 import { computeEffectiveModules } from '../lib/seatModules';
 import { SEAT_LINK_KINDS } from '../types/seatTypes';
 import type {
@@ -624,34 +625,6 @@ const PreviewTab: React.FC = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Brain
-// ---------------------------------------------------------------------------
-
-const BrainTab: React.FC<{ seat: Seat }> = ({ seat }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle className="text-base flex items-center gap-2">
-        <Brain className="h-4 w-4" /> Occupant brain
-      </CardTitle>
-      <CardDescription>
-        The runtime and model belong to the occupant, not the seat. Changing the brain is done in OpenRig
-        by launching or replacing the occupant; there is no API for it yet.
-      </CardDescription>
-    </CardHeader>
-    <CardContent className="grid gap-4 sm:grid-cols-2">
-      <div>
-        <p className="text-sm text-muted-foreground">Runtime</p>
-        <p className="text-lg font-medium">{seat.runtime}</p>
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">Model</p>
-        <p className="text-lg font-medium">{seat.model || '—'}</p>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -680,6 +653,7 @@ export const SeatDetailPage: React.FC = () => {
           Room {room}
           {currentSeat && ` · ${currentSeat.seat_type}`}
           {currentSeat && ` · ${currentSeat.pinned_version ? `pinned ${currentSeat.pinned_version}` : 'follows latest'}`}
+          {currentSeat && ` · ${currentSeat.runtime} / ${currentSeat.model || 'default model'}`}
         </p>
       </div>
 
@@ -704,8 +678,8 @@ export const SeatDetailPage: React.FC = () => {
             <TabsTrigger value="preview">
               <FileCode className="mr-1 h-4 w-4" /> Preview
             </TabsTrigger>
-            <TabsTrigger value="brain">
-              <Brain className="mr-1 h-4 w-4" /> Brain
+            <TabsTrigger value="llm">
+              <Brain className="mr-1 h-4 w-4" /> LLM
             </TabsTrigger>
           </TabsList>
 
@@ -718,8 +692,8 @@ export const SeatDetailPage: React.FC = () => {
           <TabsContent value="preview">
             <PreviewTab />
           </TabsContent>
-          <TabsContent value="brain">
-            <BrainTab seat={currentSeat} />
+          <TabsContent value="llm">
+            <SeatLlmPanel room={room} seat={currentSeat} />
           </TabsContent>
         </Tabs>
       )}

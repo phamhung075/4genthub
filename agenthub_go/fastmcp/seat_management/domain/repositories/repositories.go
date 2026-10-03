@@ -128,6 +128,7 @@ type SeatRepository interface {
 	FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*Seat, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
 	MarkRemoved(ctx context.Context, userID, seatID string) error
+	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 }
 
 // Overlay is the ordered op list applied to one scope target. RoomID and SeatID are set

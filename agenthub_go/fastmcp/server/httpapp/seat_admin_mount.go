@@ -10,6 +10,7 @@ package httpapp
 //	POST   /api/v2/openrig/rooms/{room}/seats
 //	GET    /api/v2/openrig/rooms/{room}/seats
 //	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}
+//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/occupant
 //	GET    /api/v2/openrig/overlay
 //	PUT    /api/v2/openrig/overlay
 //	GET    /api/v2/openrig/rooms/{room}/overlay
@@ -31,6 +32,7 @@ import (
 	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
@@ -55,6 +57,7 @@ type seatAdminSource interface {
 	CreateSeat(ctx context.Context, userID string, seat repositories.Seat) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	MarkSeatRemoved(ctx context.Context, userID, seatID string) error
+	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
 	UpsertSeatLink(ctx context.Context, userID string, link repositories.SeatLink) (*repositories.SeatLink, error)
@@ -160,6 +163,10 @@ func (s *seatAdminRepos) MarkSeatRemoved(ctx context.Context, userID, seatID str
 	return s.seats.MarkRemoved(ctx, userID, seatID)
 }
 
+func (s *seatAdminRepos) UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error {
+	return s.seats.UpdateOccupant(ctx, userID, seatID, runtime, model)
+}
+
 func (s *seatAdminRepos) UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {
 	return s.overlays.Upsert(ctx, userID, overlay)
 }
@@ -209,6 +216,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRemoveSeat(w, r, u, sessions)
 	}))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSetSeatOccupant(w, r, u, sessions)
+	}))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
 	}))
@@ -253,6 +263,11 @@ type seatAdminSeatRequest struct {
 	Runtime       string  `json:"runtime"`
 	Model         string  `json:"model"`
 	FollowLatest  *bool   `json:"follow_latest"`
+}
+
+type seatAdminOccupantRequest struct {
+	Runtime string `json:"runtime"`
+	Model   string `json:"model"`
 }
 
 type seatAdminSettingsRequest struct {
@@ -527,8 +542,8 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if !seatAdminRuntime(req.Runtime) {
-		writeDetail(w, http.StatusBadRequest, "runtime must be \"claude-code\" or \"codex\"")
+	if err := repositories.ValidateRuntime(req.Runtime); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
@@ -590,7 +605,7 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
-	body.Set("seat", seatAdminSeatBody(seat, req.SeatType))
+	body.Set("seat", seatservices.SeatBody(seat, req.SeatType))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -622,7 +637,7 @@ func handleListSeats(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 		if seats[i].Status == "removed" {
 			continue
 		}
-		out = append(out, seatAdminSeatBody(&seats[i], slugByID[seats[i].SeatTypeID]))
+		out = append(out, seatservices.SeatBody(&seats[i], slugByID[seats[i].SeatTypeID]))
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
@@ -650,6 +665,39 @@ func handleRemoveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	writeJSON(w, http.StatusOK, body)
+}
+
+func handleSetSeatOccupant(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminOccupantRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	view, err := seatservices.NewSeatAdminService(source).SetOccupant(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), req.Runtime, req.Model)
+	if err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))
+	writeJSON(w, http.StatusOK, body)
+}
+
+func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, seatservices.ErrInvalidOccupant):
+		writeDetail(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound):
+		writeDetail(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, seatservices.ErrSeatRemoved):
+		writeDetail(w, http.StatusConflict, err.Error())
+	default:
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+	}
 }
 
 func handleCompanyOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
@@ -945,14 +993,6 @@ func writeSeatAdminSettings(w http.ResponseWriter, settings *repositories.SeatSe
 	writeJSON(w, http.StatusOK, body)
 }
 
-func seatAdminRuntime(runtime string) bool {
-	switch runtime {
-	case "claude-code", "codex":
-		return true
-	}
-	return false
-}
-
 func seatAdminLinkKind(kind string) bool {
 	return commpolicy.ValidKind(commpolicy.LinkKind(kind))
 }
@@ -972,24 +1012,6 @@ func seatAdminModuleBody(module *repositories.ModuleVersion) *entities.OrderedMa
 	body.Set("version", module.Version)
 	body.Set("content", module.Content)
 	body.Set("checksum", module.Checksum)
-	return body
-}
-
-func seatAdminSeatBody(seat *repositories.Seat, seatTypeSlug string) *entities.OrderedMap[any] {
-	body := entities.NewOrderedMap[any]()
-	body.Set("id", seat.ID)
-	body.Set("room_id", seat.RoomID)
-	body.Set("seat_key", seat.SeatKey)
-	body.Set("seat_type_id", seat.SeatTypeID)
-	body.Set("seat_type", seatTypeSlug)
-	if seat.PinnedVersion == nil {
-		body.Set("pinned_version", nil)
-	} else {
-		body.Set("pinned_version", *seat.PinnedVersion)
-	}
-	body.Set("runtime", seat.Runtime)
-	body.Set("model", seat.Model)
-	body.Set("status", seat.Status)
 	return body
 }
 

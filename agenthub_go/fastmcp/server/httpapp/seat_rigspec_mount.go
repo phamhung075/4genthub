@@ -2,7 +2,7 @@ package httpapp
 
 // seat_rigspec_mount.go serves one room as a launchable OpenRig RigSpec v0.2:
 //
-//	GET /api/v2/openrig/rooms/{room}/rigspec
+//	GET /api/v2/openrig/rooms/{room}/rigspec[?permission_policy=locked|standard|open|yolo|none]
 //
 // The room becomes a pod, its active seats become members resolved to their pinned
 // snapshot hashes, and allowed seat links become pod-local edges. The route is authed
@@ -127,6 +127,11 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !ok {
 		return
 	}
+	policy := r.URL.Query().Get("permission_policy")
+	if err := rigspec.ValidatePermissionPolicy(policy); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	uid := userID(u)
 	roomSlug := r.PathValue("room")
 	room, err := source.GetRoomBySlug(r.Context(), uid, roomSlug)
@@ -185,7 +190,7 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	doc, err := rigspec.RenderRoom(room.Slug, room.Name, specSeats, edges)
+	doc, err := rigspec.RenderRoom(room.Slug, room.Name, policy, specSeats, edges)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return

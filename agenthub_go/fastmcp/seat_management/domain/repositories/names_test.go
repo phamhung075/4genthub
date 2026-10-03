@@ -53,3 +53,31 @@ func TestValidateModuleSlugAndVersion(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateRuntime(t *testing.T) {
+	for _, runtime := range []string{"claude-code", "codex"} {
+		if err := ValidateRuntime(runtime); err != nil {
+			t.Errorf("ValidateRuntime(%q) = %v", runtime, err)
+		}
+	}
+	for _, runtime := range []string{"", "gemini", "Codex", "claude_code"} {
+		if ValidateRuntime(runtime) == nil {
+			t.Errorf("ValidateRuntime(%q) = nil, want error", runtime)
+		}
+	}
+}
+
+func TestValidateModel(t *testing.T) {
+	valid := []string{"", "sonnet", "gpt-5.1", "claude-opus-4-1:thinking", "openai/gpt-4o", "a", strings.Repeat("a", 128)}
+	for _, model := range valid {
+		if err := ValidateModel(model); err != nil {
+			t.Errorf("ValidateModel(%q) = %v", model, err)
+		}
+	}
+	invalid := []string{"-x", ".x", "a b", "a\nb", "é", strings.Repeat("a", 129)}
+	for _, model := range invalid {
+		if ValidateModel(model) == nil {
+			t.Errorf("ValidateModel(%q) = nil, want error", model)
+		}
+	}
+}

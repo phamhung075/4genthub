@@ -179,6 +179,13 @@ Bridge v1 (status up only, no commands down) built and verified:
 - Boundaries (owner rules): the team commits locally and asks the owner before every push (a push to main auto-deploys production); the GitHub pipeline test job is explicitly out of scope; real sessions are launched only after the owner confirms.
 - Status: see the progress notes below as work lands.
 
+## Request 16 — "make seat switch easy using 4genthub MCP and OpenRig, for change llm on this seat"; "close all seat and reopen with Claude dangerous-bypass-permission"; "each member use deepseek-offload" (2026-10-03)
+
+- Done and verified live (local server on Postgres + real rig 0.6.3): occupant endpoint, MCP `manage_seat`, `openrig_seat_sync.py switch` (model change applied live via `rig seat set-model`), runtime change recorded in the cloud with manual `rig down`/`rig up` steps (OpenRig cannot switch a runtime in place), `permission_policy=yolo` on the rigspec.
+- "Close all seats": there were no OpenRig-managed seats running (default daemon down); the live herdr agents belong to other projects and this session, so none were closed. Bypass is applied at launch through the rigspec policy.
+- Open: apply the production `seat_links` constraint change (owner runs the SQL), re-run `scripts/openrig_team_setup.py apply` on production, launch the team (owner confirms; yolo removes every permission prompt and a push to main deploys production), verify `manage_seat` on production after this deploy.
+- Open: OpenRig supports runtimes `pi` and `omp` (other providers via `provider/model` ids); the renderer supports only `claude-code` and `codex`.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

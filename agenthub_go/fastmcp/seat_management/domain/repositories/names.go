@@ -13,7 +13,24 @@ var namePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
 var (
 	moduleSlugPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 	semverPattern     = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
+	modelPattern      = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$`)
 )
+
+// ValidateRuntime accepts the runtimes seatrenderer can render.
+func ValidateRuntime(runtime string) error {
+	if runtime != "claude-code" && runtime != "codex" {
+		return fmt.Errorf("runtime %q must be \"claude-code\" or \"codex\"", runtime)
+	}
+	return nil
+}
+
+// ValidateModel accepts an empty model (the runtime default) or a model id.
+func ValidateModel(model string) error {
+	if model != "" && !modelPattern.MatchString(model) {
+		return fmt.Errorf("model %q must be empty or match %s", model, modelPattern)
+	}
+	return nil
+}
 
 // ValidateModuleSlug checks slug against the module slug rule.
 func ValidateModuleSlug(slug string) error {

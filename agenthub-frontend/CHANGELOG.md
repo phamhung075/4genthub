@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Added
+- **Switch the LLM of a seat** - 2026-10-03
+  - `/seats/:room/:seat` "LLM" tab (replaces the read-only Brain tab): runtime select and model
+    input (model rule `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$`, empty = runtime default), Save disabled
+    when unchanged or invalid, `PUT .../seats/{seat}/occupant`, plus the sync/`rig up` note.
+    The seat header now shows runtime and model.
+  - `SEAT_RUNTIMES` is shared with the Add-seat dialog.
+  - Files: `src/types/seatTypes.ts`, `src/lib/seatNames.ts`, `src/services/seatApi.ts`
+    (`updateSeatOccupant`), `src/hooks/useSeats.ts` (`useUpdateSeatOccupant`),
+    `src/components/seats/SeatLlmPanel.tsx` (new), `src/pages/SeatDetailPage.tsx`,
+    `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatDetailPage.test.tsx`
 - **Live bridge status on `/seats`** - 2026-10-03
   - "Bridge machines" panel: one card per machine from `GET /api/v2/openrig/machines`
     (online/offline badge, "last seen" relative time, seats table with colour-coded state,

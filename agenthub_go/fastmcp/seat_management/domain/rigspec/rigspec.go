@@ -40,7 +40,8 @@ var (
 		"collaborates_with": true,
 		"escalates_to":      true,
 	}
-	edgeKindList = []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"}
+	permissionPolicies = []string{"locked", "standard", "open", "yolo", "none"}
+	edgeKindList       = []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"}
 )
 
 type quotedString string
@@ -50,10 +51,11 @@ func (q quotedString) MarshalYAML() (any, error) {
 }
 
 type rigYAML struct {
-	Version quotedString `yaml:"version"`
-	Name    string       `yaml:"name"`
-	Pods    []podYAML    `yaml:"pods"`
-	Edges   []edgeYAML   `yaml:"edges"`
+	Version          quotedString `yaml:"version"`
+	Name             string       `yaml:"name"`
+	PermissionPolicy string       `yaml:"permission_policy,omitempty"`
+	Pods             []podYAML    `yaml:"pods"`
+	Edges            []edgeYAML   `yaml:"edges"`
 }
 
 type podYAML struct {
@@ -78,11 +80,36 @@ type edgeYAML struct {
 	To   string `yaml:"to"`
 }
 
+// ValidatePermissionPolicy accepts "" (no policy line) or one of locked, standard, open, yolo, none.
+func ValidatePermissionPolicy(policy string) error {
+	if policy == "" {
+		return nil
+	}
+	for _, valid := range permissionPolicies {
+		if policy == valid {
+			return nil
+		}
+	}
+	return fmt.Errorf("rigspec: permission policy %q must be one of %v", policy, permissionPolicies)
+}
+
+// permissionPolicyValue is the rig-level value: builtin:<name>, or the literal none.
+func permissionPolicyValue(policy string) string {
+	if policy == "" || policy == "none" {
+		return policy
+	}
+	return "builtin:" + policy
+}
+
 // RenderRoom renders one room as a deterministic OpenRig RigSpec v0.2 document.
 // Seats are sorted by key, edges by (kind, from, to); the output is identical for
-// any input order.
-func RenderRoom(roomSlug, roomName string, seats []Seat, edges []Edge) (string, error) {
+// any input order. A non-empty permissionPolicy adds a rig-level permission_policy
+// line between name and pods.
+func RenderRoom(roomSlug, roomName, permissionPolicy string, seats []Seat, edges []Edge) (string, error) {
 	if err := validateName("room slug", roomSlug); err != nil {
+		return "", err
+	}
+	if err := ValidatePermissionPolicy(permissionPolicy); err != nil {
 		return "", err
 	}
 	if roomName == "" {
@@ -148,8 +175,9 @@ func RenderRoom(roomSlug, roomName string, seats []Seat, edges []Edge) (string, 
 	}
 
 	doc := rigYAML{
-		Version: quotedString("0.2"),
-		Name:    roomSlug,
+		Version:          quotedString("0.2"),
+		Name:             roomSlug,
+		PermissionPolicy: permissionPolicyValue(permissionPolicy),
 		Pods: []podYAML{{
 			ID:      roomSlug,
 			Label:   roomName,

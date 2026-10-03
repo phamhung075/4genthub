@@ -33,6 +33,7 @@ SEAT_TYPES = {
 }
 WORD_LIMITS = {
     "project-4genthub": (350, 500),
+    "delegate-deepseek": (100, 180),
     "area-go-backend": (120, 250),
     "area-web-frontend": (100, 200),
     "area-quality": (100, 200),
@@ -184,7 +185,8 @@ def test_overlays_send_full_op_lists(server, env, capsys):
     }
     company = overlays["/api/v2/openrig/overlay"]
     assert company["ops"] == [
-        {"kind": "add", "slug": "project-4genthub", "version": "1.0.0", "content": ""}
+        {"kind": "add", "slug": "project-4genthub", "version": "1.0.0", "content": ""},
+        {"kind": "add", "slug": "delegate-deepseek", "version": "1.0.0", "content": ""},
     ]
     room = "/api/v2/openrig/rooms/4genthub-dev/seats"
 

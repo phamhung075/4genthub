@@ -16,3 +16,13 @@ export const SEAT_NAME_MESSAGE =
 export function isValidSeatName(value: string): boolean {
   return SEAT_NAME_PATTERN.test(value);
 }
+
+export const SEAT_MODEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
+
+export const SEAT_MODEL_MESSAGE =
+  'Use letters, digits, ".", "_", ":", "/" or "-"; start with a letter or digit.';
+
+/** An empty model is valid: the runtime default is used. */
+export function isValidSeatModel(value: string): boolean {
+  return value === '' || SEAT_MODEL_PATTERN.test(value);
+}

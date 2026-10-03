@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"agenthub/fastmcp/agent_management/interface/mcp_controllers"
+	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -39,6 +40,7 @@ type DDDCompliantMCPTools struct {
 	GitBranchController  *branchctl.GitBranchMCPController
 	AgentController      *agent_mcp_controller.AgentMCPController
 	CallAgentController  *mcp_controllers.CallAgentMCPController
+	ManageSeatController *seatcontrollers.ManageSeatController
 	ContextController    *contextctl.UnifiedContextMCPController // nil when the database is unavailable
 	WorkflowHintEnhancer *workflow_hint_enhancer.WorkflowHintEnhancer
 }
@@ -50,6 +52,7 @@ type Dependencies struct {
 	// DatabaseAvailable mirrors `get_db_config().SessionLocal` succeeding.
 	DatabaseAvailable bool
 	CallAgent         *mcp_controllers.CallAgentMCPController
+	ManageSeat        *seatcontrollers.ManageSeatController
 }
 
 // NewDDDCompliantMCPTools ports __init__(projects_file_path, config_overrides,
@@ -74,7 +77,7 @@ func NewDDDCompliantMCPTools(deps Dependencies, configOverrides map[string]any) 
 	}
 	wireAuthHooks()
 	wireWorkflowGuidance()
-	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, CallAgentController: deps.CallAgent}
+	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, CallAgentController: deps.CallAgent, ManageSeatController: deps.ManageSeat}
 	formatter := utils.NewMCPResponseFormatter()
 	if err := t.initControllers(deps, formatter); err != nil {
 		return nil, err
@@ -254,7 +257,7 @@ func (t *DDDCompliantMCPTools) ToolDefinitions() []ToolDefinition {
 }
 
 // RegisterTools ports register_tools(mcp): task, subtask, context, project, git
-// branch and agent tools, then call_agent through its own controller.
+// branch and agent tools, then call_agent and manage_seat through their own controllers.
 func (t *DDDCompliantMCPTools) RegisterTools(mcp MCPServer) {
 	schemaServer, withSchema := mcp.(SchemaMCPServer)
 	for _, def := range t.ToolDefinitions() {
@@ -266,6 +269,9 @@ func (t *DDDCompliantMCPTools) RegisterTools(mcp MCPServer) {
 	}
 	if t.CallAgentController != nil {
 		t.CallAgentController.RegisterTools(mcp)
+	}
+	if t.ManageSeatController != nil {
+		t.ManageSeatController.RegisterTools(mcp)
 	}
 }
 

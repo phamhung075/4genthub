@@ -12,6 +12,7 @@ import (
 	"agenthub/fastmcp/auth"
 	authperm "agenthub/fastmcp/auth/domain"
 	"agenthub/fastmcp/auth/middleware"
+	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	interfacelayer "agenthub/fastmcp/task_management/interface"
@@ -236,7 +237,7 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 		return []map[string]any{}, nil
 	}
 	defs := a.mcpTools.ToolDefinitions()
-	tools := make([]map[string]any, 0, len(defs)+1)
+	tools := make([]map[string]any, 0, len(defs)+3)
 	for _, def := range defs {
 		schema, err := plainJSON(def.Parameters)
 		if err != nil {
@@ -256,6 +257,15 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 		"name":        "call_agent",
 		"description": callAgentToolDescription,
 		"inputSchema": callSchema,
+	})
+	seatSchema, err := plainJSON(seatcontrollers.ManageSeatInputSchema())
+	if err != nil {
+		return nil, err
+	}
+	tools = append(tools, map[string]any{
+		"name":        seatcontrollers.ManageSeatToolName,
+		"description": seatcontrollers.ManageSeatToolDescription,
+		"inputSchema": seatSchema,
 	})
 	connTool, err := connectionToolDefinition()
 	if err != nil {
@@ -433,6 +443,14 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			return res, false
 		}
 		return map[string]any{"error": "CallAgentController not initialized"}, true
+
+	case seatcontrollers.ManageSeatToolName:
+		if a.mcpTools != nil && a.mcpTools.ManageSeatController != nil {
+			res := a.mcpTools.ManageSeatController.ManageSeat(ctx, action, getOptStringPtr(args, "room"), getOptStringPtr(args, "seat"),
+				getOptStringPtr(args, "runtime"), getOptStringPtr(args, "model"), userID)
+			return res, false
+		}
+		return map[string]any{"error": "ManageSeatController not initialized"}, true
 
 	default:
 		return map[string]any{"error": fmt.Sprintf("Unknown tool: %s", name)}, true

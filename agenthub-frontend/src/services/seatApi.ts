@@ -13,6 +13,7 @@ import type {
   CreateRoomRequest,
   CreateSeatRequest,
   MachinesResponse,
+  OccupantUpdate,
   ModuleVersionResponse,
   PutSeatOverlayRequest,
   RemoveSeatResponse,
@@ -85,6 +86,12 @@ export const seatApi = {
     apiRequest<RemoveSeatResponse>(
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}`,
       { method: 'DELETE' }
+    ),
+
+  updateSeatOccupant: (room: string, seat: string, data: OccupantUpdate) =>
+    apiRequest<SeatResponse>(
+      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/occupant`,
+      jsonPut(data)
     ),
 
   // Overlays

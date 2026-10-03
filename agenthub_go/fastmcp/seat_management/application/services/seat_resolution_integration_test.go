@@ -122,6 +122,23 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 		t.Errorf("decision = %+v", d)
 	}
 
+	// Switching the runtime of a pinned seat resolves to a new snapshot of the same pinned version.
+	latest, err := seatTypes.LatestVersion(ctx, user, "developer")
+	must(t, err)
+	pinned, err := seats.Create(ctx, user, repositories.Seat{
+		RoomID: room.ID, SeatKey: "pinned", SeatTypeID: latest.SeatTypeID, PinnedVersion: &latest.Version,
+		Runtime: "claude-code", Model: "sonnet", Status: "active",
+	})
+	must(t, err)
+	beforeSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
+	must(t, err)
+	must(t, seats.UpdateOccupant(ctx, user, pinned.ID, "codex", "gpt-5.1"))
+	afterSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
+	must(t, err)
+	if afterSwitch.Runtime != "codex" || afterSwitch.Hash == beforeSwitch.Hash {
+		t.Fatalf("runtime switch of a pinned seat: runtime %s, hash unchanged = %v", afterSwitch.Runtime, afterSwitch.Hash == beforeSwitch.Hash)
+	}
+
 	// A removed seat cannot be resolved.
 	must(t, seats.MarkRemoved(ctx, user, reviewer.ID))
 	if _, err := svc.ResolveSeat(ctx, user, "dev", "reviewer"); err == nil {

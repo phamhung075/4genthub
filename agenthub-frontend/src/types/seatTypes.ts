@@ -15,6 +15,9 @@
 
 export type SeatRuntime = 'claude-code' | 'codex';
 
+/** Single source of truth for the runtimes offered in the UI. */
+export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex'];
+
 export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'memory';
 
 export type SeatStatus = 'active' | 'removed';
@@ -235,6 +238,12 @@ export interface SeatLinkRequest {
   allow: boolean;
 }
 
+/** An empty model means the runtime default. */
+export interface OccupantUpdate {
+  runtime: SeatRuntime;
+  model: string;
+}
+
 export interface PutSeatOverlayRequest {
   ops: SeatOverlayOp[];
 }
@@ -253,6 +262,11 @@ export type SeatPinChoice = 'pin-latest' | 'follow-latest' | 'company-default';
 
 export interface SeatModulesTabProps {
   seatType: SeatType | undefined;
+}
+
+export interface SeatLlmPanelProps {
+  room: string;
+  seat: Seat;
 }
 
 export interface SeatLinksTabProps {

@@ -15,6 +15,7 @@ import type {
   CreateRoomRequest,
   CreateSeatRequest,
   MachineStatus,
+  OccupantUpdate,
   SeatLinkRequest,
   SeatOverlay,
   SeatOverlayOp,
@@ -135,6 +136,19 @@ export function useRemoveSeat(room: string) {
     onSuccess: (_response, seat) => {
       queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
       showSuccess(`Seat "${seat}" removed`);
+    },
+  });
+}
+
+export function useUpdateSeatOccupant(room: string, seat: string) {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: (data: OccupantUpdate) => seatApi.updateSeatOccupant(room, seat, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+      queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seat) });
+      showSuccess(`Seat "${seat}" LLM saved`);
     },
   });
 }

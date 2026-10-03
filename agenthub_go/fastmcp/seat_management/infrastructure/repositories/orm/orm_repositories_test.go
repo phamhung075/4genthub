@@ -564,6 +564,26 @@ func TestSeatSettingsSetInsertsThenUpdates(t *testing.T) {
 	}
 }
 
+func TestSeatUpdateOccupantTenantScoped(t *testing.T) {
+	f := &fakeDriver{}
+	repo, err := NewORMSeatRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.UpdateOccupant(context.Background(), testUser, testSeatID, "codex", "gpt-5.1"); err != nil {
+		t.Fatalf("UpdateOccupant: %v", err)
+	}
+	updated := false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `UPDATE "seats" SET "runtime" = $1, "model" = $2`) {
+			updated = strings.Contains(q, `"user_id" = $4 AND "id" = $5`)
+		}
+	}
+	if !updated {
+		t.Fatalf("occupant update missing or not tenant-scoped: %v", f.recorded())
+	}
+}
+
 func TestSeatSettingsErrorsNotSwallowed(t *testing.T) {
 	boom := errors.New("db boom")
 	f := &fakeDriver{}

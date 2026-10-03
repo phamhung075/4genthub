@@ -50,7 +50,29 @@ seat_sync = _load_module()
 
 class _SeatHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        route = self.server.routes.get(self.path)
+        self.server.gets.append(self.path)
+        route = self.server.routes.get(self.path.partition("?")[0])
+        if route is None:
+            self.send_error(404)
+            return
+        status, body = route
+        payload = json.dumps(body).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def do_PUT(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        self.server.puts.append(
+            (
+                self.path,
+                json.loads(self.rfile.read(length)),
+                self.headers.get("Authorization"),
+            )
+        )
+        route = self.server.routes.get(("PUT", self.path))
         if route is None:
             self.send_error(404)
             return
@@ -71,6 +93,10 @@ class SeatServer:
         self.routes = {}
         self.httpd = HTTPServer(("127.0.0.1", 0), _SeatHandler)
         self.httpd.routes = self.routes
+        self.puts = []
+        self.httpd.puts = self.puts
+        self.gets = []
+        self.httpd.gets = self.gets
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.thread.start()
 
@@ -127,6 +153,21 @@ class SeatServer:
         else:
             body = {"success": False, "error": error}
         self.routes[path] = (status, body)
+
+    def set_occupants(self, seats, room="room1"):
+        self.routes[f"/api/v2/openrig/rooms/{room}/seats"] = (
+            200,
+            {"success": True, "seats": seats},
+        )
+
+    def set_put(self, status=200, room="room1", seat="seat1"):
+        path = f"/api/v2/openrig/rooms/{room}/seats/{seat}/occupant"
+        body = (
+            {"success": True, "seat": {}}
+            if status == 200
+            else {"success": False, "error": "no"}
+        )
+        self.routes[("PUT", path)] = (status, body)
 
     def close(self):
         self.httpd.shutdown()
@@ -600,3 +641,326 @@ def test_help_states_offline_use_is_manual(capsys):
     assert code == 0
     assert "rig up <bundle> --target <dir>" in out
     assert "never falls back" in out
+
+
+# --- switch -----------------------------------------------------------------
+
+PS_NODES = [
+    {
+        "rigName": "room1",
+        "logicalId": "main.other",
+        "canonicalSessionName": "other-1@room1",
+    },
+    {
+        "rigName": "room1",
+        "logicalId": "main.seat1",
+        "canonicalSessionName": "seat1-2@room1",
+    },
+]
+
+
+class FakeRig:
+    """Stands in for subprocess.run; records every rig command in order."""
+
+    def __init__(self, nodes=None, missing=False):
+        self.nodes = PS_NODES if nodes is None else nodes
+        self.missing = missing
+        self.calls = []
+
+    def __call__(self, command, **kwargs):
+        self.calls.append(list(command))
+        if self.missing:
+            raise FileNotFoundError("rig")
+        stdout = json.dumps(self.nodes) if command[1] == "ps" else ""
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    def seat_calls(self):
+        return [c for c in self.calls if c[1] == "seat"]
+
+
+@pytest.fixture
+def rig(monkeypatch):
+    fake = FakeRig()
+    monkeypatch.setattr(seat_sync.subprocess, "run", fake)
+    return fake
+
+
+def occupant(runtime="claude-code", model="old-model"):
+    return {"seat_key": "seat1", "runtime": runtime, "model": model}
+
+
+def setup_switch(env, **kwargs):
+    env.set_occupants([occupant(**kwargs)])
+    env.set_put()
+
+
+def test_switch_model_puts_body_keeps_runtime_and_sets_model(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(
+        ["switch", "room1", "seat1", "--model", "new-model", "--reason", "why"]
+    )
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert env.puts == [
+        (
+            "/api/v2/openrig/rooms/room1/seats/seat1/occupant",
+            {"runtime": "claude-code", "model": "new-model"},
+            "Bearer test-token",
+        )
+    ]
+    assert rig.seat_calls() == [
+        [
+            "rig",
+            "seat",
+            "set-model",
+            "seat1-2@room1",
+            "--model",
+            "new-model",
+            "--reason",
+            "why",
+        ]
+    ]
+    assert (
+        out.strip()
+        == "switched:room1/seat1 runtime=claude-code model=new-model applied=set-model"
+    )
+    assert "test-token" not in out + err
+
+
+def test_switch_runtime_only_keeps_current_model_and_prints_manual_steps(
+    env, rig, capsys
+):
+    setup_switch(env)
+
+    code = run_cli(["switch", "room1", "seat1", "--runtime", "codex"])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert env.puts[0][1] == {"runtime": "codex", "model": "old-model"}
+    assert rig.calls == []
+    assert "rig down room1" in err
+    assert (
+        out.strip()
+        == "switched:room1/seat1 runtime=codex model=old-model applied=manual"
+    )
+
+
+def test_switch_explicit_apply_none_with_runtime_change_skips_manual(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(
+        ["switch", "room1", "seat1", "--runtime", "codex", "--apply", "none"]
+    )
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert rig.calls == []
+    assert err == ""
+    assert out.strip().endswith("applied=none")
+
+
+def test_switch_restart_stops_then_launches_fresh_with_warning(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(
+        [
+            "switch",
+            "room1",
+            "seat1",
+            "--model",
+            "new-model",
+            "--apply",
+            "restart",
+            "--reason",
+            "r",
+        ]
+    )
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert [c[2] for c in rig.seat_calls()] == ["set-model", "stop", "launch"]
+    assert rig.seat_calls()[1] == [
+        "rig",
+        "seat",
+        "stop",
+        "seat1-2@room1",
+        "--reason",
+        "r",
+    ]
+    assert rig.seat_calls()[2] == [
+        "rig",
+        "seat",
+        "launch",
+        "seat1-2@room1",
+        "--fresh",
+        "--reason",
+        "r",
+    ]
+    assert "warning" in err and "loses its live context" in err
+    assert out.strip().endswith("applied=restart")
+
+
+def test_switch_runtime_change_prints_manual_steps_and_skips_rig(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(["switch", "room1", "seat1", "--runtime", "codex", "--model", "m2"])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert rig.calls == []
+    assert "openrig_seat_sync.py rig room1 --update" in err
+    assert "rig down room1" in err
+    assert "rig up" in err
+    assert out.strip() == "switched:room1/seat1 runtime=codex model=m2 applied=manual"
+
+
+def test_switch_apply_none_never_calls_rig(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(
+        ["switch", "room1", "seat1", "--model", "new-model", "--apply", "none"]
+    )
+    out, _ = capsys.readouterr()
+
+    assert code == 0
+    assert rig.calls == []
+    assert out.strip().endswith("applied=none")
+
+
+def test_switch_missing_rig_binary_records_cloud_and_exits_0(env, monkeypatch, capsys):
+    setup_switch(env)
+    monkeypatch.setattr(seat_sync.subprocess, "run", FakeRig(missing=True))
+
+    code = run_cli(["switch", "room1", "seat1", "--model", "new-model"])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert len(env.puts) == 1
+    assert "`rig` not found" in err
+    assert out.strip().endswith("applied=none")
+
+
+def test_switch_seat_not_in_rig_ps_exits_0(env, monkeypatch, capsys):
+    setup_switch(env)
+    fake = FakeRig(nodes=[])
+    monkeypatch.setattr(seat_sync.subprocess, "run", fake)
+
+    code = run_cli(["switch", "room1", "seat1", "--model", "new-model"])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "not in `rig ps`" in err
+    assert fake.seat_calls() == []
+    assert out.strip().endswith("applied=none")
+
+
+def test_switch_rig_command_failure_exits_1(env, monkeypatch, capsys):
+    setup_switch(env)
+
+    def failing(command, **kwargs):
+        if command[1] == "seat":
+            raise subprocess.CalledProcessError(3, command)
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps(PS_NODES))
+
+    monkeypatch.setattr(seat_sync.subprocess, "run", failing)
+
+    code = run_cli(["switch", "room1", "seat1", "--model", "new-model"])
+    out, err = capsys.readouterr()
+
+    assert code == 1
+    assert out == ""
+    assert "exit code 3" in err
+
+
+@pytest.mark.parametrize("status", [404, 409])
+def test_switch_put_error_exits_1(env, rig, capsys, status):
+    env.set_occupants([occupant()])
+    env.set_put(status=status)
+
+    code = run_cli(["switch", "room1", "seat1", "--model", "new-model"])
+    out, err = capsys.readouterr()
+
+    assert code == 1
+    assert out == ""
+    assert f"HTTP {status}" in err
+    assert rig.calls == []
+    assert "test-token" not in err
+
+
+def test_switch_unknown_seat_in_cloud_exits_1(env, rig, capsys):
+    env.set_occupants([])
+
+    code = run_cli(["switch", "room1", "seat1", "--model", "new-model"])
+    _, err = capsys.readouterr()
+
+    assert code == 1
+    assert "not found in the cloud" in err
+    assert env.puts == []
+
+
+@pytest.mark.parametrize(
+    "argv, message",
+    [
+        (["switch", "room1", "seat1"], "at least one of"),
+        (["switch", "room1", "seat1", "--runtime", "gpt"], "invalid runtime"),
+        (["switch", "room1", "seat1", "--model=-bad"], "invalid model"),
+        (["switch", "room1", "seat1", "--model", ""], "invalid model"),
+        (["switch", "../x", "seat1", "--model", "m"], "invalid room name"),
+        (["switch", "room1", "se.at", "--model", "m"], "invalid seat name"),
+    ],
+)
+def test_switch_usage_errors_exit_2(env, rig, capsys, argv, message):
+    code = run_cli(argv)
+    out, err = capsys.readouterr()
+
+    assert code == 2
+    assert out == ""
+    assert message in err
+    assert env.puts == [] and rig.calls == []
+
+
+def test_switch_invalid_apply_choice_exits_2(env, rig, capsys):
+    code = run_cli(["switch", "room1", "seat1", "--model", "m", "--apply", "bogus"])
+
+    assert code == 2
+
+
+# --- rig --permission-policy --------------------------------------------------
+
+RIGSPEC_PATH = "/api/v2/openrig/rooms/room1/rigspec"
+
+
+def test_rig_permission_policy_adds_query(env, tmp_path):
+    env.set_rigspec()
+    env.set_seat(HASH_A)
+
+    code = run_cli(
+        ["rig", "room1", "--out", str(tmp_path), "--permission-policy", "yolo"]
+    )
+
+    assert code == 0
+    assert f"{RIGSPEC_PATH}?permission_policy=yolo" in env.gets
+
+
+def test_rig_without_permission_policy_requests_plain_path(env, tmp_path):
+    env.set_rigspec()
+    env.set_seat(HASH_A)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+
+    assert code == 0
+    assert RIGSPEC_PATH in env.gets
+    assert not any("permission_policy" in g for g in env.gets)
+
+
+def test_rig_invalid_permission_policy_exits_2(env, tmp_path, capsys):
+    code = run_cli(
+        ["rig", "room1", "--out", str(tmp_path), "--permission-policy", "bogus"]
+    )
+    _, err = capsys.readouterr()
+
+    assert code == 2
+    assert "invalid choice" in err
+    assert env.gets == []

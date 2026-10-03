@@ -39,6 +39,12 @@
       "version": "1.0.0",
       "kind": "instruction",
       "file": "mission.md"
+    },
+    {
+      "slug": "delegate-deepseek",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "delegate-deepseek.txt"
     }
   ],
   "seats": [
@@ -205,7 +211,8 @@
     }
   ],
   "company_overlay": [
-    "project-4genthub"
+    "project-4genthub",
+    "delegate-deepseek"
   ],
   "seat_overlays": {
     "lead": [

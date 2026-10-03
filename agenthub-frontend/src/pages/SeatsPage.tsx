@@ -40,9 +40,8 @@ import {
   useSeats,
   useUpdateSeatSettings,
 } from '../hooks/useSeats';
+import { SEAT_RUNTIMES } from '../types/seatTypes';
 import type { Seat, SeatPinChoice, SeatRuntime } from '../types/seatTypes';
-
-const RUNTIMES: SeatRuntime[] = ['claude-code', 'codex'];
 
 const pinLabel = (seat: Seat) =>
   seat.pinned_version ? `Pinned ${seat.pinned_version}` : 'Follows latest';
@@ -446,7 +445,7 @@ export const SeatsPage: React.FC = () => {
                   value={seatForm.runtime}
                   onChange={e => setSeatForm(prev => ({ ...prev, runtime: e.target.value as SeatRuntime }))}
                 >
-                  {RUNTIMES.map(runtime => (
+                  {SEAT_RUNTIMES.map(runtime => (
                     <option key={runtime} value={runtime}>
                       {runtime}
                     </option>

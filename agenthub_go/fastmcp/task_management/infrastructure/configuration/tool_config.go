@@ -20,7 +20,7 @@ type ToolConfig struct {
 
 var toolEnvDefaults = []struct{ tool, env string }{
 	{"manage_project", "TOOL_MANAGE_PROJECT"}, {"manage_task", "TOOL_MANAGE_TASK"}, {"manage_subtask", "TOOL_MANAGE_SUBTASK"},
-	{"manage_agent", "TOOL_MANAGE_AGENT"}, {"call_agent", "TOOL_CALL_AGENT"}, {"manage_document", "TOOL_MANAGE_DOCUMENT"},
+	{"manage_agent", "TOOL_MANAGE_AGENT"}, {"call_agent", "TOOL_CALL_AGENT"}, {"manage_seat", "TOOL_MANAGE_SEAT"}, {"manage_document", "TOOL_MANAGE_DOCUMENT"},
 	{"update_auto_rule", "TOOL_UPDATE_AUTO_RULE"}, {"validate_rules", "TOOL_VALIDATE_RULES"},
 	{"regenerate_auto_rule", "TOOL_REGENERATE_AUTO_RULE"}, {"validate_tasks_json", "TOOL_VALIDATE_TASKS_JSON"},
 	{"create_context_file", "TOOL_CREATE_CONTEXT_FILE"}, {"manage_context", "TOOL_MANAGE_CONTEXT"},
