@@ -12,7 +12,7 @@ var patterns = []*regexp.Regexp{
 	regexp.MustCompile(`AKIA[0-9A-Z]{16}`),
 	regexp.MustCompile(`gh[pousr]_[A-Za-z0-9]{30,}`),
 	regexp.MustCompile(`-----BEGIN [A-Z ]*PRIVATE KEY-----`),
-	regexp.MustCompile(`://[^\s/:@]+:[^\s/]+@`),
+	regexp.MustCompile(`://[^\s/:@]*:[^\s/]+@`),
 	regexp.MustCompile(`(?i)(password|passwd|secret|token|api[_-]?key)\s*[=:]\s*\S{6,}`),
 }
 

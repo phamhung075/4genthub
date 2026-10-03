@@ -41,6 +41,9 @@ SECRET_PARTS = {
     "token-equals": "abc123def456ghi789",
     "url-credentials": "s3cretpass",
     "url-at-in-password": "ssw0rd99",
+    "url-empty-user": "onlypass",
+    "url-nbsp-in-password": "pass\u00a0word123",
+    "url-vtab-in-password": "pa\u000bss1234",
 }
 
 

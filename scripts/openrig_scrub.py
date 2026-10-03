@@ -15,20 +15,25 @@ from collections.abc import Mapping
 MAX_LEN = 200
 MIN_SECRET_LEN = 6
 
+# Go RE2 `\s` is exactly [\t\n\f\r ]; Python's is Unicode. These spell the Go class out so both
+# scanners split text at the same characters (shared fixture: secretscan/testdata/scan_cases.json).
+_WS = r"[\t\n\f\r ]"
+_NOT_WS = r"[^\t\n\f\r ]"
+
 _SECRET_NAME_RE = re.compile(r"TOKEN|SECRET|KEY|PASSWORD|PASSWD|CREDENTIAL", re.IGNORECASE)
 
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("pem", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\Z)", re.DOTALL)),
     ("jwt", re.compile(r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")),
-    ("bearer", re.compile(r"Bearer\s+[A-Za-z0-9._~+/=-]{20,}", re.IGNORECASE)),
+    ("bearer", re.compile(r"Bearer" + _WS + r"+[A-Za-z0-9._~+/=-]{20,}", re.IGNORECASE)),
     ("sk", re.compile(r"sk-[A-Za-z0-9_-]{20,}")),
     ("aws", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("github", re.compile(r"gh[pousr]_[A-Za-z0-9]{30,}")),
-    ("url-credentials", re.compile(r"://[^\s/:@]+:[^\s/]+@")),
+    ("url-credentials", re.compile(r"://[^\t\n\f\r /:@]*:[^\t\n\f\r /]+@")),
 ]
 
 _PAIR_RE = re.compile(
-    r"((?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*)(?!\[REDACTED)(\S{6,})",
+    r"((?:password|passwd|secret|token|api[_-]?key)" + _WS + r"*[=:]" + _WS + r"*)(?!\[REDACTED)(" + _NOT_WS + r"{6,})",
     re.IGNORECASE,
 )
 
