@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck send identity and pins layout
+
+- Rewrote the `send` tests in `cmd/seatcheck/main_test.go` around the `identify`/`deliver` seams (the re-exec helper process is gone): allowed (target `b@r`, joined text, audit 0600), exit code passthrough, denied (no link, wrong intent, explicit deny, unlinked recipient; stderr equals the audit reason, nothing delivered), policy missing/corrupt (exit 2, no audit, no delivery), usage errors, identity failure, audit append, audit failure (exit 1, no delivery). `audit-scan` now flags `rig send b@r hi` and not `seatcheck send ...`. Real binary smoke: exit 2 without policy, exit 3 with an empty policy. cmd/seatcheck ok.
+
 ## 2026-10-03 — openrig_team_setup.py apply failed with 404 seat type not found on a fresh database
 
 - Changed: `test_openrig_team_setup.py` order test starts with the seed; `test_409_on_a_module_is_an_error` expects 2 requests (seed, failing module). Added: `test_seed_failure_stops_before_any_other_call`. 23 passed (red before: order test).

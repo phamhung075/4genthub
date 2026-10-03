@@ -3,45 +3,211 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
 )
 
-// TestMain doubles as the delivery helper: the test re-invokes this binary with
-// GO_WANT_HELPER_PROCESS set.
-func TestMain(m *testing.M) {
-	if os.Getenv("GO_WANT_HELPER_PROCESS") == "1" {
-		helperProcess()
-		return
-	}
-	os.Exit(m.Run())
+const (
+	testRig       = "r"
+	testMember    = "a"
+	allowPolicy   = `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true}]}`
+	noLinkPolicy  = `{"Seat":"a"}`
+	explicitDeny  = `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":false}]}`
+	unknownIntent = "gossip"
+)
+
+type delivery struct {
+	calls  int
+	target string
+	text   string
+	code   int
 }
 
-func helperProcess() {
-	if path := os.Getenv("SEATCHECK_HELPER_ARGS"); path != "" {
-		args := strings.Join(os.Args[1:], "\n") + "\n"
-		if err := os.WriteFile(path, []byte(args), 0600); err != nil {
-			os.Exit(98)
+// seatEnv installs identity and delivery stubs and returns the pins dir, the seat dir and the
+// recorded delivery. policy "" writes no policy file.
+func seatEnv(t *testing.T, policy string) (pins, seatDir string, got *delivery) {
+	t.Helper()
+	pins = t.TempDir()
+	seatDir = filepath.Join(pins, testRig, testMember)
+	if err := os.MkdirAll(seatDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if policy != "" {
+		if err := os.WriteFile(filepath.Join(seatDir, "policy.json"), []byte(policy), 0600); err != nil {
+			t.Fatal(err)
 		}
 	}
-	code := 0
-	if v := os.Getenv("SEATCHECK_HELPER_EXIT"); v != "" {
-		parsed, err := strconv.Atoi(v)
-		if err != nil {
-			os.Exit(97)
-		}
-		code = parsed
+	got = &delivery{}
+	oldIdentify, oldDeliver := identify, deliver
+	identify = func() (string, string, error) { return testRig, testMember, nil }
+	deliver = func(target, text string, _, _ io.Writer) int {
+		got.calls++
+		got.target, got.text = target, text
+		return got.code
 	}
-	os.Exit(code)
+	t.Cleanup(func() { identify, deliver = oldIdentify, oldDeliver })
+	return pins, seatDir, got
 }
 
-const allowPolicy = `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true}]}`
-const denyPolicy = `{"Seat":"a"}`
+func send(pins string, args ...string) (code int, stdout, stderr string) {
+	var out, errb bytes.Buffer
+	code = run(append([]string{"send", "--pins", pins}, args...), &out, &errb)
+	return code, out.String(), errb.String()
+}
+
+func auditRecords(t *testing.T, seatDir string) []commpolicy.AuditRecord {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(seatDir, "audit.jsonl"))
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	var records []commpolicy.AuditRecord
+	for _, line := range strings.Split(strings.TrimSuffix(string(data), "\n"), "\n") {
+		var r commpolicy.AuditRecord
+		if err := json.Unmarshal([]byte(line), &r); err != nil {
+			t.Fatalf("audit line %q: %v", line, err)
+		}
+		records = append(records, r)
+	}
+	return records
+}
+
+func TestSendAllowedDelivers(t *testing.T) {
+	pins, seatDir, got := seatEnv(t, allowPolicy)
+	code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hello", "world")
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr %q)", code, stderr)
+	}
+	if got.calls != 1 || got.target != "b@r" || got.text != "hello world" {
+		t.Fatalf("delivery = %+v, want one call to b@r with %q", got, "hello world")
+	}
+	records := auditRecords(t, seatDir)
+	if len(records) != 1 || !records[0].Allowed || records[0].From != "a" || records[0].To != "b" || records[0].Intent != commpolicy.IntentTask {
+		t.Fatalf("audit = %+v", records)
+	}
+	info, err := os.Stat(filepath.Join(seatDir, "audit.jsonl"))
+	if err != nil || info.Mode().Perm() != 0600 {
+		t.Fatalf("audit file mode = %v, %v, want 0600", info, err)
+	}
+}
+
+func TestSendDeliveryExitCodePassesThrough(t *testing.T) {
+	pins, _, got := seatEnv(t, allowPolicy)
+	got.code = 7
+	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 7 {
+		t.Fatalf("exit = %d, want 7", code)
+	}
+}
+
+func TestSendDeniedWritesAuditAndSkipsDelivery(t *testing.T) {
+	cases := []struct {
+		name, policy, to, intent, reason string
+	}{
+		{"no link", noLinkPolicy, "b", "task", "no link"},
+		{"wrong intent", allowPolicy, "b", "report", ""},
+		{"explicit deny", explicitDeny, "b", "task", ""},
+		{"unlinked recipient", allowPolicy, "c", "task", "no link"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			pins, seatDir, got := seatEnv(t, tc.policy)
+			code, stdout, stderr := send(pins, "--to", tc.to, "--intent", tc.intent, "--", "hi")
+			if code != 3 {
+				t.Fatalf("exit = %d, want 3 (stderr %q)", code, stderr)
+			}
+			records := auditRecords(t, seatDir)
+			if len(records) != 1 || records[0].Allowed || records[0].Reason == "" {
+				t.Fatalf("audit = %+v, want one denied record with a reason", records)
+			}
+			if stderr != "denied: "+records[0].Reason+"\n" {
+				t.Fatalf("stderr = %q, want denied: %s", stderr, records[0].Reason)
+			}
+			if tc.reason != "" && records[0].Reason != tc.reason {
+				t.Fatalf("reason = %q, want %q", records[0].Reason, tc.reason)
+			}
+			if got.calls != 0 || stdout != "" {
+				t.Fatalf("delivery ran on a denied send: %+v, stdout %q", got, stdout)
+			}
+		})
+	}
+}
+
+func TestSendPolicyMissingOrCorruptFailsClosed(t *testing.T) {
+	for name, policy := range map[string]string{"missing": "", "corrupt": `{"Seat":`} {
+		t.Run(name, func(t *testing.T) {
+			pins, seatDir, got := seatEnv(t, policy)
+			code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hi")
+			if code != 2 || stderr == "" {
+				t.Fatalf("exit = %d, stderr %q, want 2 with a message", code, stderr)
+			}
+			if got.calls != 0 {
+				t.Fatal("delivery ran without a usable policy")
+			}
+			if records := auditRecords(t, seatDir); len(records) != 0 {
+				t.Fatalf("audit = %+v, want none", records)
+			}
+		})
+	}
+}
+
+func TestSendUsageErrorsExit2(t *testing.T) {
+	cases := map[string][]string{
+		"no recipient":   {"--intent", "task", "--", "hi"},
+		"no intent":      {"--to", "b", "--", "hi"},
+		"no message":     {"--to", "b", "--intent", "task"},
+		"unknown intent": {"--to", "b", "--intent", unknownIntent, "--", "hi"},
+		"bad flag":       {"--bogus"},
+	}
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			pins, seatDir, got := seatEnv(t, allowPolicy)
+			if code, _, stderr := send(pins, args...); code != 2 || stderr == "" {
+				t.Fatalf("exit = %d, stderr %q, want 2 with a message", code, stderr)
+			}
+			if got.calls != 0 || len(auditRecords(t, seatDir)) != 0 {
+				t.Fatal("a usage error must neither deliver nor audit")
+			}
+		})
+	}
+}
+
+func TestSendIdentityFailureExits2(t *testing.T) {
+	pins, _, got := seatEnv(t, allowPolicy)
+	identify = func() (string, string, error) { return "", "", io.ErrUnexpectedEOF }
+	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 {
+		t.Fatalf("exit = %d, calls = %d, want 2 and no delivery", code, got.calls)
+	}
+}
+
+func TestSendAuditAppendsAcrossRuns(t *testing.T) {
+	pins, seatDir, _ := seatEnv(t, allowPolicy)
+	for i := 0; i < 2; i++ {
+		if code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 0 {
+			t.Fatalf("run %d exit = %d (stderr %q)", i, code, stderr)
+		}
+	}
+	if got := auditRecords(t, seatDir); len(got) != 2 {
+		t.Fatalf("audit lines = %d, want 2", len(got))
+	}
+}
+
+func TestSendAuditFailureExits1WithoutDelivery(t *testing.T) {
+	pins, seatDir, got := seatEnv(t, allowPolicy)
+	if err := os.Mkdir(filepath.Join(seatDir, "audit.jsonl"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 1 || got.calls != 0 {
+		t.Fatalf("exit = %d, calls = %d, want 1 and no delivery", code, got.calls)
+	}
+}
 
 func writeFile(t *testing.T, path, content string) string {
 	t.Helper()
@@ -51,171 +217,17 @@ func writeFile(t *testing.T, path, content string) string {
 	return path
 }
 
-func auditLines(t *testing.T, path string) []string {
-	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read audit: %v", err)
-	}
-	text := strings.TrimSuffix(string(data), "\n")
-	if text == "" {
-		return nil
-	}
-	return strings.Split(text, "\n")
-}
-
-func readAudit(t *testing.T, path string) commpolicy.AuditRecord {
-	t.Helper()
-	lines := auditLines(t, path)
-	if len(lines) != 1 {
-		t.Fatalf("audit lines = %d, want 1", len(lines))
-	}
-	var record commpolicy.AuditRecord
-	if err := json.Unmarshal([]byte(lines[0]), &record); err != nil {
-		t.Fatalf("unmarshal audit line %q: %v", lines[0], err)
-	}
-	return record
-}
-
-func TestSendAllowedDryDecision(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), allowPolicy)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-
-	var stdout, stderr bytes.Buffer
-	code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--", "hi"}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit = %d, want 0 (stderr %q)", code, stderr.String())
-	}
-	if stdout.String() != "allowed\n" {
-		t.Fatalf("stdout = %q, want %q", stdout.String(), "allowed\n")
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("stderr = %q, want empty", stderr.String())
-	}
-	record := readAudit(t, auditPath)
-	if !record.Allowed || record.Reason != "allowed" || record.From != "a" || record.To != "b" || record.Intent != commpolicy.IntentTask {
-		t.Fatalf("audit = %+v", record)
-	}
-	if record.PolicyHash != commpolicy.PolicyHash(commpolicy.Policy{Seat: "a", Links: []commpolicy.Link{{From: "a", To: "b", Kind: commpolicy.KindDelegatesTo, Allow: true}}}) {
-		t.Fatalf("audit policy hash = %q", record.PolicyHash)
-	}
-}
-
-func TestSendDeniedWritesAuditAndSkipsDeliver(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), denyPolicy)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-	argsFile := filepath.Join(dir, "args.txt")
-
-	t.Setenv("GO_WANT_HELPER_PROCESS", "1")
-	t.Setenv("SEATCHECK_HELPER_ARGS", argsFile)
-	t.Setenv("SEATCHECK_HELPER_EXIT", "0")
-
-	var stdout, stderr bytes.Buffer
-	code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--deliver-cmd", os.Args[0], "--", "hi"}, &stdout, &stderr)
-	if code != 3 {
-		t.Fatalf("exit = %d, want 3", code)
-	}
-	if stderr.String() != "denied: no link\n" {
-		t.Fatalf("stderr = %q, want %q", stderr.String(), "denied: no link\n")
-	}
-	if stdout.Len() != 0 {
-		t.Fatalf("stdout = %q, want empty", stdout.String())
-	}
-	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
-		t.Fatalf("delivery command ran on a denied send (args file err = %v)", err)
-	}
-	record := readAudit(t, auditPath)
-	if record.Allowed || record.Reason != "no link" || record.To != "b" {
-		t.Fatalf("audit = %+v", record)
-	}
-}
-
-func TestSendAllowedDeliverReceivesArgsAndExitCode(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), allowPolicy)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-	argsFile := filepath.Join(dir, "args.txt")
-
-	t.Setenv("GO_WANT_HELPER_PROCESS", "1")
-	t.Setenv("SEATCHECK_HELPER_ARGS", argsFile)
-	t.Setenv("SEATCHECK_HELPER_EXIT", "7")
-
-	var stdout, stderr bytes.Buffer
-	code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--deliver-cmd", os.Args[0], "--", "hello", "world"}, &stdout, &stderr)
-	if code != 7 {
-		t.Fatalf("exit = %d, want 7 (stderr %q)", code, stderr.String())
-	}
-	got, err := os.ReadFile(argsFile)
-	if err != nil {
-		t.Fatalf("read helper args: %v", err)
-	}
-	if string(got) != "b\nhello\nworld\n" {
-		t.Fatalf("helper args = %q, want %q", string(got), "b\nhello\nworld\n")
-	}
-	if !readAudit(t, auditPath).Allowed {
-		t.Fatal("audit recorded a denied send for an allowed one")
-	}
-}
-
-func TestSendBadFlagExits2(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), allowPolicy)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-
-	var stdout, stderr bytes.Buffer
-	code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--bogus"}, &stdout, &stderr)
-	if code != 2 {
-		t.Fatalf("exit = %d, want 2", code)
-	}
-	if stderr.Len() == 0 {
-		t.Fatal("stderr empty, want a clear message")
-	}
-}
-
-func TestSendMalformedPolicyExits2(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), `{"Seat":`)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-
-	var stdout, stderr bytes.Buffer
-	code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--", "hi"}, &stdout, &stderr)
-	if code != 2 {
-		t.Fatalf("exit = %d, want 2", code)
-	}
-	if !strings.Contains(stderr.String(), "parse policy") {
-		t.Fatalf("stderr = %q, want a parse policy message", stderr.String())
-	}
-}
-
-func TestSendAuditAppendsAcrossRuns(t *testing.T) {
-	dir := t.TempDir()
-	policyPath := writeFile(t, filepath.Join(dir, "policy.json"), allowPolicy)
-	auditPath := filepath.Join(dir, "audit.jsonl")
-
-	for i := 0; i < 2; i++ {
-		var stdout, stderr bytes.Buffer
-		if code := run([]string{"send", "--policy", policyPath, "--to", "b", "--intent", "task", "--audit", auditPath, "--", "hi"}, &stdout, &stderr); code != 0 {
-			t.Fatalf("run %d exit = %d (stderr %q)", i, code, stderr.String())
-		}
-	}
-	if got := auditLines(t, auditPath); len(got) != 2 {
-		t.Fatalf("audit lines = %d, want 2", len(got))
-	}
-}
-
 func TestAuditScanFindsBypassAndSkipsKnownWrapper(t *testing.T) {
 	dir := t.TempDir()
 	observed := writeFile(t, filepath.Join(dir, "observed.txt"),
-		"rig send x\nFOO=1 /usr/bin/rig queue y\nagenthub-send rig send z\nrig status\n")
+		"rig send b@r hi\nFOO=1 /usr/bin/rig queue y\nseatcheck send --to b --intent task -- hi\nrig status\n")
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"audit-scan", "--known", "agenthub-send", "--file", observed}, &stdout, &stderr)
+	code := run([]string{"audit-scan", "--known", "seatcheck", "--file", observed}, &stdout, &stderr)
 	if code != 4 {
 		t.Fatalf("exit = %d, want 4 (stderr %q)", code, stderr.String())
 	}
-	want := "bypass-suspected: rig send x\nbypass-suspected: FOO=1 /usr/bin/rig queue y\n"
+	want := "bypass-suspected: rig send b@r hi\nbypass-suspected: FOO=1 /usr/bin/rig queue y\n"
 	if stdout.String() != want {
 		t.Fatalf("stdout = %q, want %q", stdout.String(), want)
 	}
@@ -223,10 +235,10 @@ func TestAuditScanFindsBypassAndSkipsKnownWrapper(t *testing.T) {
 
 func TestAuditScanCleanExits0(t *testing.T) {
 	dir := t.TempDir()
-	observed := writeFile(t, filepath.Join(dir, "observed.txt"), "agenthub-send rig send z\nrig status\n")
+	observed := writeFile(t, filepath.Join(dir, "observed.txt"), "seatcheck send --to b --intent task -- hi\nrig status\n")
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"audit-scan", "--known", "agenthub-send", "--file", observed}, &stdout, &stderr)
+	code := run([]string{"audit-scan", "--known", "seatcheck", "--file", observed}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr %q)", code, stderr.String())
 	}

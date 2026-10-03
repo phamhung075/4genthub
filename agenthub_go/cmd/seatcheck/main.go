@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -45,22 +46,33 @@ var intents = map[string]commpolicy.Intent{
 	"notice":     commpolicy.IntentNotice,
 }
 
+// defaultPinsDir is where scripts/openrig_seat_sync.py writes the pinned seat directories
+// (its DEFAULT_OUT), relative to the home directory.
+const defaultPinsDir = ".openrig/agenthub-seats"
+
+// Package-level seams, replaced by tests.
+var (
+	// identify returns the OpenRig rig name and member name of the calling seat.
+	identify = rigWhoami
+	// deliver sends text to target (<seat>@<rig>) and returns the exit code.
+	deliver = rigSend
+)
+
 func runSend(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("send", flag.ContinueOnError)
 	fs.SetOutput(stderr)
-	policyPath := fs.String("policy", "", "path to the pinned policy JSON")
 	to := fs.String("to", "", "recipient seat")
 	intentName := fs.String("intent", "", "message intent")
-	auditPath := fs.String("audit", "", "path to the audit JSONL file")
-	deliverCmd := fs.String("deliver-cmd", "", "program to run when the send is allowed")
+	pins := fs.String("pins", "", "pinned seats directory (default ~/"+defaultPinsDir+")")
 	fs.Usage = func() {
-		fmt.Fprintln(stderr, "usage: seatcheck send --policy <policy.json> --to <seat> --intent <task|escalation|report|question|notice> --audit <audit.jsonl> [--deliver-cmd <path>] -- <message words...>")
+		fmt.Fprintln(stderr, "usage: seatcheck send --to <seat> --intent <task|escalation|report|question|notice> -- <message words...>")
 	}
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	if *policyPath == "" || *to == "" || *intentName == "" || *auditPath == "" {
-		fmt.Fprintln(stderr, "seatcheck send: --policy, --to, --intent and --audit are required")
+	words := fs.Args()
+	if *to == "" || *intentName == "" || len(words) == 0 {
+		fmt.Fprintln(stderr, "seatcheck send: --to, --intent and a message are required")
 		return 2
 	}
 	intent, ok := intents[*intentName]
@@ -68,8 +80,22 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "seatcheck send: unknown intent %q\n", *intentName)
 		return 2
 	}
+	if *pins == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			fmt.Fprintf(stderr, "seatcheck send: home directory: %v\n", err)
+			return 2
+		}
+		*pins = filepath.Join(home, defaultPinsDir)
+	}
+	rig, member, err := identify()
+	if err != nil {
+		fmt.Fprintf(stderr, "seatcheck send: identity: %v\n", err)
+		return 2
+	}
+	seatDir := filepath.Join(*pins, rig, member)
 
-	data, err := os.ReadFile(*policyPath)
+	data, err := os.ReadFile(filepath.Join(seatDir, "policy.json"))
 	if err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: read policy: %v\n", err)
 		return 2
@@ -90,7 +116,7 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		Reason:     decision.Reason,
 		PolicyHash: commpolicy.PolicyHash(policy),
 	}
-	if err := appendAudit(*auditPath, record); err != nil {
+	if err := appendAudit(filepath.Join(seatDir, "audit.jsonl"), record); err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: audit: %v\n", err)
 		return 1
 	}
@@ -98,11 +124,28 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
 		return 3
 	}
-	if *deliverCmd == "" {
-		fmt.Fprintln(stdout, "allowed")
-		return 0
+	return deliver(*to+"@"+rig, strings.Join(words, " "), stdout, stderr)
+}
+
+// rigWhoami reads the calling seat's rig and member from `rig whoami --json`.
+func rigWhoami() (rig, member string, err error) {
+	out, err := exec.Command("rig", "whoami", "--json").Output()
+	if err != nil {
+		return "", "", fmt.Errorf("rig whoami: %w", err)
 	}
-	return deliver(*deliverCmd, *to, fs.Args(), stdout, stderr)
+	var who struct {
+		Identity struct {
+			RigName  string `json:"rigName"`
+			MemberID string `json:"memberId"`
+		} `json:"identity"`
+	}
+	if err := json.Unmarshal(out, &who); err != nil {
+		return "", "", fmt.Errorf("parse rig whoami: %w", err)
+	}
+	if who.Identity.RigName == "" || who.Identity.MemberID == "" {
+		return "", "", errors.New("rig whoami returned no rig or member")
+	}
+	return who.Identity.RigName, who.Identity.MemberID, nil
 }
 
 func appendAudit(path string, record commpolicy.AuditRecord) error {
@@ -119,8 +162,9 @@ func appendAudit(path string, record commpolicy.AuditRecord) error {
 	return err
 }
 
-func deliver(program, to string, words []string, stdout, stderr io.Writer) int {
-	cmd := exec.Command(program, append([]string{to}, words...)...)
+// rigSend delivers text to target with `rig send`; its exit code is passed through.
+func rigSend(target, text string, stdout, stderr io.Writer) int {
+	cmd := exec.Command("rig", "send", target, text)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
