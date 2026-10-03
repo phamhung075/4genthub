@@ -44,7 +44,9 @@ func seatEnv(t *testing.T, policy string) (pins, seatDir string, got *delivery) 
 	}
 	got = &delivery{}
 	oldIdentify, oldDeliver := identify, deliver
-	identify = func() (string, string, error) { return testRig, testMember, nil }
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string]string{"b": "pod-b@r"}}, nil
+	}
 	deliver = func(target, text string, _, _ io.Writer) int {
 		got.calls++
 		got.target, got.text = target, text
@@ -86,8 +88,8 @@ func TestSendAllowedDelivers(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr %q)", code, stderr)
 	}
-	if got.calls != 1 || got.target != "b@r" || got.text != "hello world" {
-		t.Fatalf("delivery = %+v, want one call to b@r with %q", got, "hello world")
+	if got.calls != 1 || got.target != "pod-b@r" || got.text != "hello world" {
+		t.Fatalf("delivery = %+v, want one call to pod-b@r with %q", got, "hello world")
 	}
 	records := auditRecords(t, seatDir)
 	if len(records) != 1 || !records[0].Allowed || records[0].From != "a" || records[0].To != "b" || records[0].Intent != commpolicy.IntentTask {
@@ -181,9 +183,37 @@ func TestSendUsageErrorsExit2(t *testing.T) {
 
 func TestSendIdentityFailureExits2(t *testing.T) {
 	pins, _, got := seatEnv(t, allowPolicy)
-	identify = func() (string, string, error) { return "", "", io.ErrUnexpectedEOF }
+	identify = func() (identity, error) { return identity{}, io.ErrUnexpectedEOF }
 	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 {
 		t.Fatalf("exit = %d, calls = %d, want 2 and no delivery", code, got.calls)
+	}
+}
+
+// The policy may allow a recipient that is not in the rig roster: nothing is delivered.
+func TestSendAllowedRecipientOutsideRosterFails(t *testing.T) {
+	pins, seatDir, got := seatEnv(t, `{"Seat":"a","Links":[{"From":"a","To":"ghost","Kind":"delegates_to","Allow":true}]}`)
+	code, _, stderr := send(pins, "--to", "ghost", "--intent", "task", "--", "hi")
+	if code != 1 || !strings.Contains(stderr, "not a seat of rig") || got.calls != 0 {
+		t.Fatalf("exit = %d, stderr %q, calls = %d, want 1, a roster message, no delivery", code, stderr, got.calls)
+	}
+	if records := auditRecords(t, seatDir); len(records) != 1 || !records[0].Allowed {
+		t.Fatalf("audit = %+v, want the allowed decision recorded", records)
+	}
+}
+
+// parseWhoami reads the roster the way rig whoami prints it: peers are keyed by member name
+// and carry the full session name rig send needs.
+func TestParseWhoamiRoster(t *testing.T) {
+	who, err := parseWhoami([]byte(`{"identity":{"rigName":"scratchcomm","memberId":"alpha","sessionName":"scratchcomm-alpha@scratchcomm"},` +
+		`"peers":[{"logicalId":"scratchcomm.beta","sessionName":"scratchcomm-beta@scratchcomm"},{"logicalId":"other.x","sessionName":"o-x@o"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if who.Rig != "scratchcomm" || who.Member != "alpha" || len(who.Peers) != 1 || who.Peers["beta"] != "scratchcomm-beta@scratchcomm" {
+		t.Fatalf("identity = %+v", who)
+	}
+	if _, err := parseWhoami([]byte(`{"identity":{}}`)); err == nil {
+		t.Fatal("an identity without rig or member must fail")
 	}
 }
 

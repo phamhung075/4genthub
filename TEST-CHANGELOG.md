@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck delivers to the full session name
+
+- Changed: `TestSendAllowedDelivers` expects the roster session name (`pod-b@r`). Added `TestSendAllowedRecipientOutsideRosterFails` (exit 1, allowed decision audited, nothing delivered) and `TestParseWhoamiRoster` (peers keyed by member, other rigs ignored, missing identity is an error). cmd/seatcheck ok.
+
 ## 2026-10-03 — comm-guard on both runtimes
 
 - Replaced `TestRenderSeatCodexRejectsToolModules` with `TestRenderSeatSameModulesOnBothRuntimes` (the real seeded modules render on claude-code with the 5 denies and the allow, and on codex with no `runtime/` files and the skill). `TestFromSpecSharedModules`: a codex seat type carries the same modules. `TestMergeToolModulesPermissions`: an empty list stays `[]`. Mutations: re-adding the codex error and the nil-union both fail the renderer tests. seat_management and server packages ok.

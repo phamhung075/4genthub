@@ -52,9 +52,9 @@ const defaultPinsDir = ".openrig/agenthub-seats"
 
 // Package-level seams, replaced by tests.
 var (
-	// identify returns the OpenRig rig name and member name of the calling seat.
+	// identify returns who the calling seat is.
 	identify = rigWhoami
-	// deliver sends text to target (<seat>@<rig>) and returns the exit code.
+	// deliver sends text to the session named target and returns the exit code.
 	deliver = rigSend
 )
 
@@ -88,12 +88,12 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		}
 		*pins = filepath.Join(home, defaultPinsDir)
 	}
-	rig, member, err := identify()
+	who, err := identify()
 	if err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: identity: %v\n", err)
 		return 2
 	}
-	seatDir := filepath.Join(*pins, rig, member)
+	seatDir := filepath.Join(*pins, who.Rig, who.Member)
 
 	data, err := os.ReadFile(filepath.Join(seatDir, "policy.json"))
 	if err != nil {
@@ -124,28 +124,57 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
 		return 3
 	}
-	return deliver(*to+"@"+rig, strings.Join(words, " "), stdout, stderr)
+	// rig send resolves only full session names (<pod>-<member>@<rig>), which the roster of
+	// rig whoami carries.
+	session, ok := who.Peers[*to]
+	if !ok {
+		fmt.Fprintf(stderr, "seatcheck send: %q is not a seat of rig %q\n", *to, who.Rig)
+		return 1
+	}
+	return deliver(session, strings.Join(words, " "), stdout, stderr)
 }
 
-// rigWhoami reads the calling seat's rig and member from `rig whoami --json`.
-func rigWhoami() (rig, member string, err error) {
+// identity is the calling seat: its rig, its member name and the session name of every other
+// member of the rig, keyed by member name.
+type identity struct {
+	Rig, Member string
+	Peers       map[string]string
+}
+
+// rigWhoami reads the calling seat's identity from `rig whoami --json`.
+func rigWhoami() (identity, error) {
 	out, err := exec.Command("rig", "whoami", "--json").Output()
 	if err != nil {
-		return "", "", fmt.Errorf("rig whoami: %w", err)
+		return identity{}, fmt.Errorf("rig whoami: %w", err)
 	}
+	return parseWhoami(out)
+}
+
+func parseWhoami(data []byte) (identity, error) {
 	var who struct {
 		Identity struct {
 			RigName  string `json:"rigName"`
 			MemberID string `json:"memberId"`
 		} `json:"identity"`
+		Peers []struct {
+			LogicalID   string `json:"logicalId"`
+			SessionName string `json:"sessionName"`
+		} `json:"peers"`
 	}
-	if err := json.Unmarshal(out, &who); err != nil {
-		return "", "", fmt.Errorf("parse rig whoami: %w", err)
+	if err := json.Unmarshal(data, &who); err != nil {
+		return identity{}, fmt.Errorf("parse rig whoami: %w", err)
 	}
-	if who.Identity.RigName == "" || who.Identity.MemberID == "" {
-		return "", "", errors.New("rig whoami returned no rig or member")
+	rig, member := who.Identity.RigName, who.Identity.MemberID
+	if rig == "" || member == "" {
+		return identity{}, errors.New("rig whoami returned no rig or member")
 	}
-	return who.Identity.RigName, who.Identity.MemberID, nil
+	peers := make(map[string]string, len(who.Peers))
+	for _, p := range who.Peers {
+		if name, ok := strings.CutPrefix(p.LogicalID, rig+"."); ok && p.SessionName != "" {
+			peers[name] = p.SessionName
+		}
+	}
+	return identity{Rig: rig, Member: member, Peers: peers}, nil
 }
 
 func appendAudit(path string, record commpolicy.AuditRecord) error {

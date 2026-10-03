@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`seatcheck send` could not deliver an allowed message** (2026-10-03)
+
+- `cmd/seatcheck/main.go`: delivery targeted `<seat>@<rig>`, but `rig send` resolves only full session names (`<pod>-<member>@<rig>`), so an allowed send failed with `Session beta@scratchcomm not found` (exit 1). The target session is now taken from the `peers` roster of `rig whoami --json` (`parseWhoami`, keyed by member name), the one place that names sessions, instead of rebuilding the name from the rig. A recipient that the policy allows but the rig roster does not list exits 1 with `"x" is not a seat of rig "r"` after the allowed decision is audited, and nothing is delivered. Reported by the tester's live run.
+
+### Fixed
+
 **Seat on codex failed to render when its seat type carried comm-guard** (2026-10-03)
 
 - `seatrenderer/renderer.go`: a tool module on a codex seat is skipped instead of failing the render with `runtime "codex" cannot carry tool modules` (a tool module is a Claude settings fragment). `SetOccupant` can switch a seat's runtime while its pinned seat type version keeps the seeded `comm-guard` tool module, so the decision belongs to the seat's runtime at render time. A codex seat renders the skill and no `runtime/` files, so it is not deny-guarded; a codex-default seat type switched to claude-code now gets the deny.
