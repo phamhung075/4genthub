@@ -59,14 +59,13 @@ CREATE INDEX IF NOT EXISTS ix_module_versions_user_id ON module_versions (user_i
 CREATE INDEX IF NOT EXISTS ix_module_versions_module_id ON module_versions (module_id);
 
 -- Table: seat_types
--- A tenant-scoped template for a seat (default runtime plus a pinned module set).
+-- A tenant-scoped template for a seat; its default runtime and module set live in the versions.
 CREATE TABLE IF NOT EXISTS seat_types (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
-    default_runtime TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_seat_types_user_slug UNIQUE (user_id, slug)
 );
@@ -75,12 +74,14 @@ CREATE INDEX IF NOT EXISTS ix_seat_types_user_id ON seat_types (user_id);
 
 -- Table: seat_type_versions
 -- Immutable: append-only. The application never issues an UPDATE against this table.
--- module_refs is a JSON array of {"slug": ..., "version": ...} objects.
+-- default_runtime is the runtime of a seat that sets none. module_refs is a JSON array of
+-- {"slug": ..., "version": ...} objects.
 CREATE TABLE IF NOT EXISTS seat_type_versions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL,
     seat_type_id UUID NOT NULL REFERENCES seat_types (id),
     version TEXT NOT NULL,
+    default_runtime TEXT NOT NULL,
     module_refs JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_seat_type_versions_seat_type_version UNIQUE (seat_type_id, version)

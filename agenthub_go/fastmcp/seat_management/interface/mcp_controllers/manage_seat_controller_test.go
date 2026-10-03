@@ -7,6 +7,7 @@ import (
 
 	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
 	tmentities "agenthub/fastmcp/task_management/domain/entities"
 )
 
@@ -52,6 +53,18 @@ func (f *fakeStore) ListSeats(context.Context, string, string) ([]repositories.S
 		out = append(out, *s)
 	}
 	return out, nil
+}
+
+func (f *fakeStore) GetModuleVersion(context.Context, string, string, string) (*repositories.ModuleVersion, error) {
+	return nil, nil
+}
+
+func (f *fakeStore) LatestSeatTypeVersion(context.Context, string, string) (*repositories.SeatTypeVersion, error) {
+	return nil, nil
+}
+
+func (f *fakeStore) AddSeatTypeVersion(context.Context, string, string, string, string, []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
+	return nil, nil
 }
 
 func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {

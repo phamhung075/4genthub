@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +30,7 @@ type fakeSeatAdmin struct {
 	settings       map[string]*repositories.SeatSettings
 
 	deletedResolved []string
+	addVersionErr   error
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -49,15 +51,15 @@ func (f *fakeSeatAdmin) seedRoom(slug string) *repositories.Room {
 }
 
 func (f *fakeSeatAdmin) seedSeatType(slug, latest string, versions ...string) {
-	f.seatTypes[slug] = &repositories.SeatTypeVersion{ID: "stv-" + slug, SeatTypeID: "st-" + slug, Slug: slug, Version: latest}
+	f.seatTypes[slug] = &repositories.SeatTypeVersion{ID: "stv-" + slug, SeatTypeID: "st-" + slug, Slug: slug, Version: latest, DefaultRuntime: "claude-code"}
 	f.seatVersions[slug] = map[string]*repositories.SeatTypeVersion{
-		latest: {ID: "stv-" + slug + "-" + latest, SeatTypeID: "st-" + slug, Slug: slug, Version: latest},
+		latest: {ID: "stv-" + slug + "-" + latest, SeatTypeID: "st-" + slug, Slug: slug, Version: latest, DefaultRuntime: "claude-code"},
 	}
 	for _, v := range versions {
-		f.seatVersions[slug][v] = &repositories.SeatTypeVersion{ID: "stv-" + slug + "-" + v, SeatTypeID: "st-" + slug, Slug: slug, Version: v}
+		f.seatVersions[slug][v] = &repositories.SeatTypeVersion{ID: "stv-" + slug + "-" + v, SeatTypeID: "st-" + slug, Slug: slug, Version: v, DefaultRuntime: "claude-code"}
 	}
 	f.seatTypeList = append(f.seatTypeList, &repositories.SeatType{
-		ID: "st-" + slug, Slug: slug, Name: slug, Description: "desc-" + slug, DefaultRuntime: "claude-code",
+		ID: "st-" + slug, Slug: slug, Name: slug, Description: "desc-" + slug,
 	})
 }
 
@@ -118,20 +120,14 @@ func (f *fakeSeatAdmin) ListLatestModuleVersions(_ context.Context, _ string) ([
 	return out, nil
 }
 
-func (f *fakeSeatAdmin) AddSeatTypeVersion(_ context.Context, _, slug, version string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
-	created := &repositories.SeatTypeVersion{SeatTypeID: "st-" + slug, Slug: slug, Version: version, ModuleRefs: refs}
+func (f *fakeSeatAdmin) AddSeatTypeVersion(_ context.Context, _, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
+	if f.addVersionErr != nil {
+		return nil, f.addVersionErr
+	}
+	created := &repositories.SeatTypeVersion{SeatTypeID: "st-" + slug, Slug: slug, Version: version, DefaultRuntime: defaultRuntime, ModuleRefs: refs}
 	f.seatVersions[slug][version] = created
 	f.seatTypes[slug] = created
 	return created, nil
-}
-
-func (f *fakeSeatAdmin) SetSeatTypeDefaultRuntime(_ context.Context, _, slug, runtime string) error {
-	for _, st := range f.seatTypeList {
-		if st.Slug == slug {
-			st.DefaultRuntime = runtime
-		}
-	}
-	return nil
 }
 
 func (f *fakeSeatAdmin) SaveModule(_ context.Context, _, slug string, kind resolver.ModuleKind) (*repositories.Module, error) {
@@ -399,7 +395,7 @@ func TestSeatAdminListSeatTypes(t *testing.T) {
 	fake.seedSeatType("coder", "1.0.0")
 	fake.seatTypes["coder"].ModuleRefs = []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
 	fake.seatTypeList = append(fake.seatTypeList, &repositories.SeatType{
-		ID: "st-empty", Slug: "empty", Name: "Empty", Description: "desc-empty", DefaultRuntime: "codex",
+		ID: "st-empty", Slug: "empty", Name: "Empty", Description: "desc-empty",
 	})
 	mux := seatAdminTestMux(t, fake)
 	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
@@ -410,7 +406,7 @@ func TestSeatAdminListSeatTypes(t *testing.T) {
 		`"slug":"coder"`, `"name":"coder"`, `"description":"desc-coder"`,
 		`"default_runtime":"claude-code"`, `"latest_version":"1.0.0"`,
 		`"module_refs":[{"slug":"instr","version":"1.0.0"}]`,
-		`"slug":"empty"`, `"latest_version":null`, `"module_refs":[]`,
+		`"slug":"empty"`, `"default_runtime":null`, `"latest_version":null`, `"module_refs":[]`,
 	} {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Errorf("list seat types missing %s: %s", want, rec.Body.String())
@@ -520,7 +516,10 @@ func TestSeatAdminCreateSeatTypeVersion(t *testing.T) {
 	}
 	rec = doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
 	if !strings.Contains(rec.Body.String(), `"default_runtime":"codex","latest_version":"1.0.1"`) {
-		t.Errorf("seat type not updated: %s", rec.Body.String())
+		t.Errorf("seat type listing does not show the new version's runtime: %s", rec.Body.String())
+	}
+	if fake.seatVersions["coder"]["1.0.0"].DefaultRuntime != "claude-code" {
+		t.Error("the new version changed the runtime of the earlier version")
 	}
 }
 
@@ -551,6 +550,27 @@ func TestSeatAdminCreateSeatTypeVersionRejects(t *testing.T) {
 	}
 	if fake.seatVersions["coder"]["1.0.1"] != nil {
 		t.Error("a rejected request created a version")
+	}
+}
+
+func TestSeatAdminCreateSeatTypeVersionMapsStoreErrors(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	cases := []struct {
+		name string
+		err  error
+		want int
+	}{
+		{"concurrent writer took the version", fmt.Errorf("exists: %w", repositories.ErrSeatTypeVersionConflict), http.StatusConflict},
+		{"database failure", errors.New("connection reset"), http.StatusInternalServerError},
+	}
+	for _, c := range cases {
+		fake.addVersionErr = c.err
+		rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/coder/versions", `{"module_refs":[],"default_runtime":"codex"}`)
+		if rec.Code != c.want {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
+		}
 	}
 }
 

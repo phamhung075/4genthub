@@ -59,7 +59,6 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 		{Name: "slug", Attr: "slug", GoField: "Slug", SQLType: "TEXT", Nullable: false},
 		{Name: "name", Attr: "name", GoField: "Name", SQLType: "TEXT", Nullable: false},
 		{Name: "description", Attr: "description", GoField: "Description", SQLType: "TEXT", Nullable: false},
-		{Name: "default_runtime", Attr: "default_runtime", GoField: "DefaultRuntime", SQLType: "TEXT", Nullable: false},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 	}, DDL: []string{
 		"CREATE TABLE seat_types (\n" +
@@ -68,7 +67,6 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tslug TEXT NOT NULL,\n" +
 			"\tname TEXT NOT NULL,\n" +
 			"\tdescription TEXT NOT NULL,\n" +
-			"\tdefault_runtime TEXT NOT NULL,\n" +
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +
 			"\tCONSTRAINT uq_seat_types_user_slug UNIQUE (user_id, slug)\n" +
@@ -80,6 +78,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
 		{Name: "seat_type_id", Attr: "seat_type_id", GoField: "SeatTypeID", SQLType: "UUID", Nullable: false},
 		{Name: "version", Attr: "version", GoField: "Version", SQLType: "TEXT", Nullable: false},
+		{Name: "default_runtime", Attr: "default_runtime", GoField: "DefaultRuntime", SQLType: "TEXT", Nullable: false},
 		{Name: "module_refs", Attr: "module_refs", GoField: "ModuleRefs", SQLType: "JSON", Nullable: false, Default: taskdb.DefaultEmptyList},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 	}, DDL: []string{
@@ -88,6 +87,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tuser_id TEXT NOT NULL,\n" +
 			"\tseat_type_id UUID NOT NULL REFERENCES seat_types (id),\n" +
 			"\tversion TEXT NOT NULL,\n" +
+			"\tdefault_runtime TEXT NOT NULL,\n" +
 			"\tmodule_refs JSONB NOT NULL DEFAULT '[]'::jsonb,\n" +
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +

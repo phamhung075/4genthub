@@ -191,7 +191,7 @@ func moduleVersionToDomain(row *seatdb.ModuleVersionORM) *domainrepo.ModuleVersi
 func seatTypeToDomain(row *seatdb.SeatTypeORM) *domainrepo.SeatType {
 	return &domainrepo.SeatType{
 		ID: row.ID, UserID: row.UserID, Slug: row.Slug, Name: row.Name,
-		Description: row.Description, DefaultRuntime: row.DefaultRuntime, CreatedAt: row.CreatedAt,
+		Description: row.Description, CreatedAt: row.CreatedAt,
 	}
 }
 
@@ -202,7 +202,7 @@ func seatTypeVersionToDomain(row *seatdb.SeatTypeVersionORM) (*domainrepo.SeatTy
 	}
 	return &domainrepo.SeatTypeVersion{
 		ID: row.ID, UserID: row.UserID, SeatTypeID: row.SeatTypeID, Version: row.Version,
-		ModuleRefs: refs, CreatedAt: row.CreatedAt,
+		DefaultRuntime: row.DefaultRuntime, ModuleRefs: refs, CreatedAt: row.CreatedAt,
 	}, nil
 }
 

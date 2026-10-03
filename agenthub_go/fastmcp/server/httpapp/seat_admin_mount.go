@@ -56,8 +56,7 @@ type seatAdminSource interface {
 	GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error)
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
 	ListLatestModuleVersions(ctx context.Context, userID string) ([]repositories.ModuleVersion, error)
-	AddSeatTypeVersion(ctx context.Context, userID, slug, version string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error)
-	SetSeatTypeDefaultRuntime(ctx context.Context, userID, slug, runtime string) error
+	AddSeatTypeVersion(ctx context.Context, userID, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error)
 	SaveModule(ctx context.Context, userID, slug string, kind resolver.ModuleKind) (*repositories.Module, error)
 	AddModuleVersion(ctx context.Context, userID, slug, version, content string) (*repositories.ModuleVersion, error)
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
@@ -164,12 +163,8 @@ func (s *seatAdminRepos) ListLatestModuleVersions(ctx context.Context, userID st
 	return s.modules.ListLatest(ctx, userID)
 }
 
-func (s *seatAdminRepos) AddSeatTypeVersion(ctx context.Context, userID, slug, version string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
-	return s.seatTypes.AddVersion(ctx, userID, slug, version, refs)
-}
-
-func (s *seatAdminRepos) SetSeatTypeDefaultRuntime(ctx context.Context, userID, slug, runtime string) error {
-	return s.seatTypes.SetDefaultRuntime(ctx, userID, slug, runtime)
+func (s *seatAdminRepos) AddSeatTypeVersion(ctx context.Context, userID, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
+	return s.seatTypes.AddVersion(ctx, userID, slug, version, defaultRuntime, refs)
 }
 
 func (s *seatAdminRepos) SaveModule(ctx context.Context, userID, slug string, kind resolver.ModuleKind) (*repositories.Module, error) {
@@ -497,16 +492,17 @@ func seatAdminSeatTypeBody(w http.ResponseWriter, r *http.Request, source seatAd
 		return nil, false
 	}
 	moduleRefs := seatAdminModuleRefBodies(nil)
-	var latestVersion any
+	var latestVersion, latestRuntime any
 	if latest != nil {
 		latestVersion = latest.Version
+		latestRuntime = latest.DefaultRuntime
 		moduleRefs = seatAdminModuleRefBodies(latest.ModuleRefs)
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("slug", seatType.Slug)
 	body.Set("name", seatType.Name)
 	body.Set("description", seatType.Description)
-	body.Set("default_runtime", seatType.DefaultRuntime)
+	body.Set("default_runtime", latestRuntime)
 	body.Set("latest_version", latestVersion)
 	body.Set("module_refs", moduleRefs)
 	return body, true
@@ -548,90 +544,24 @@ func handleListModules(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	writeJSON(w, http.StatusOK, body)
 }
 
-// handleCreateSeatTypeVersion appends the next patch version of a seat type with the given
-// module refs. default_runtime is stored on the seat type itself, not on the version.
 func handleCreateSeatTypeVersion(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	var req seatAdminSeatTypeVersionRequest
 	if !decodeSeatAdminBody(w, r, &req) {
 		return
 	}
-	if err := repositories.ValidateRuntime(req.DefaultRuntime); err != nil {
-		writeDetail(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	refs := make([]resolver.ModuleRef, 0, len(req.ModuleRefs))
-	seen := make(map[string]bool, len(req.ModuleRefs))
-	for _, raw := range req.ModuleRefs {
-		ref, err := repositories.ParseModuleRef(raw)
-		if err != nil {
-			writeDetail(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		if seen[ref.Slug] {
-			writeDetail(w, http.StatusBadRequest, "module \""+ref.Slug+"\" is referenced twice")
-			return
-		}
-		seen[ref.Slug] = true
-		refs = append(refs, ref)
-	}
 	source, ok := seatAdminSourceFor(w, sessions)
 	if !ok {
 		return
 	}
-	uid, slug := userID(u), r.PathValue("slug")
-	seatTypes, err := source.ListSeatTypes(r.Context(), uid)
+	saved, err := seatservices.NewSeatAdminService(source).CreateSeatTypeVersion(r.Context(), userID(u), r.PathValue("slug"), req.ModuleRefs, req.DefaultRuntime)
 	if err != nil {
-		writeDetail(w, http.StatusInternalServerError, err.Error())
+		writeSeatAdminServiceError(w, err)
 		return
-	}
-	var seatType *repositories.SeatType
-	for i := range seatTypes {
-		if seatTypes[i].Slug == slug {
-			seatType = &seatTypes[i]
-		}
-	}
-	if seatType == nil {
-		writeDetail(w, http.StatusNotFound, "seat type \""+slug+"\" not found")
-		return
-	}
-	for _, ref := range refs {
-		module, err := source.GetModuleVersion(r.Context(), uid, ref.Slug, ref.Version)
-		if err != nil {
-			writeDetail(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		if module == nil {
-			writeDetail(w, http.StatusBadRequest, "module ref \""+ref.Slug+"@"+ref.Version+"\" does not exist")
-			return
-		}
-	}
-	version := "1.0.0"
-	latest, err := source.LatestSeatTypeVersion(r.Context(), uid, slug)
-	if err != nil {
-		writeDetail(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	if latest != nil {
-		if version, err = repositories.NextPatchVersion(latest.Version); err != nil {
-			writeDetail(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
-	saved, err := source.AddSeatTypeVersion(r.Context(), uid, slug, version, refs)
-	if err != nil {
-		writeDetail(w, http.StatusConflict, err.Error())
-		return
-	}
-	if seatType.DefaultRuntime != req.DefaultRuntime {
-		if err := source.SetSeatTypeDefaultRuntime(r.Context(), uid, slug, req.DefaultRuntime); err != nil {
-			writeDetail(w, http.StatusInternalServerError, err.Error())
-			return
-		}
 	}
 	entry := entities.NewOrderedMap[any]()
 	entry.Set("slug", saved.Slug)
 	entry.Set("version", saved.Version)
-	entry.Set("default_runtime", req.DefaultRuntime)
+	entry.Set("default_runtime", saved.DefaultRuntime)
 	entry.Set("module_refs", seatAdminModuleRefBodies(saved.ModuleRefs))
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
@@ -907,11 +837,11 @@ func handleSetSeatOccupant(w http.ResponseWriter, r *http.Request, u *authdomain
 
 func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, seatservices.ErrInvalidOccupant):
+	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion):
 		writeDetail(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound):
+	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, seatservices.ErrSeatRemoved):
+	case errors.Is(err, seatservices.ErrSeatRemoved), errors.Is(err, repositories.ErrSeatTypeVersionConflict):
 		writeDetail(w, http.StatusConflict, err.Error())
 	default:
 		writeDetail(w, http.StatusInternalServerError, err.Error())

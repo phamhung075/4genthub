@@ -17,7 +17,7 @@ import (
 )
 
 const seatTypeVersionJoinSelect = `stv."id"::text, stv."user_id", stv."seat_type_id"::text, ` +
-	`stv."version", stv."module_refs", stv."created_at", st."slug"`
+	`stv."version", stv."default_runtime", stv."module_refs", stv."created_at", st."slug"`
 
 // ORMSeatTypeRepository is the ORM SeatTypeRepository over seat_types and seat_type_versions.
 type ORMSeatTypeRepository struct {
@@ -54,7 +54,6 @@ func (r *ORMSeatTypeRepository) Save(ctx context.Context, userID string, seatTyp
 		"slug", seatType.Slug,
 		"name", seatType.Name,
 		"description", seatType.Description,
-		"default_runtime", seatType.DefaultRuntime,
 	))
 	if err != nil {
 		return nil, err
@@ -85,19 +84,10 @@ func (r *ORMSeatTypeRepository) List(ctx context.Context, userID string) ([]doma
 	return out, nil
 }
 
-// SetDefaultRuntime sets the default runtime of the seat type; it is not part of any version.
-func (r *ORMSeatTypeRepository) SetDefaultRuntime(ctx context.Context, userID, slug, runtime string) error {
-	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx,
-			`UPDATE "seat_types" SET "default_runtime" = $1 WHERE "user_id" = $2 AND "slug" = $3`,
-			runtime, userID, slug)
-		return err
-	})
-}
-
-// AddVersion appends an immutable seat type version. Re-adding the same (slug, version)
-// with the same module refs is a no-op; different refs are an error.
-func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, version string, moduleRefs []resolver.ModuleRef) (*domainrepo.SeatTypeVersion, error) {
+// AddVersion appends an immutable seat type version in one insert. Re-adding the same
+// (slug, version) with the same runtime and module refs is a no-op; anything different is
+// ErrSeatTypeVersionConflict.
+func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, version, defaultRuntime string, moduleRefs []resolver.ModuleRef) (*domainrepo.SeatTypeVersion, error) {
 	seatType, err := r.FindOneBy(ctx, baserepo.NewKwargs("user_id", userID, "slug", slug))
 	if err != nil {
 		return nil, err
@@ -122,8 +112,8 @@ func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, ve
 		if err != nil {
 			return nil, err
 		}
-		if existingChecksum != checksum {
-			return nil, fmt.Errorf("seat type %q version %q already exists with different module refs", slug, version)
+		if existing.DefaultRuntime != defaultRuntime || existingChecksum != checksum {
+			return nil, fmt.Errorf("seat type %q version %q already exists with a different runtime or module refs: %w", slug, version, domainrepo.ErrSeatTypeVersionConflict)
 		}
 		out, err := seatTypeVersionToDomain(existing)
 		if err != nil {
@@ -136,6 +126,7 @@ func (r *ORMSeatTypeRepository) AddVersion(ctx context.Context, userID, slug, ve
 		"user_id", userID,
 		"seat_type_id", seatType.ID,
 		"version", version,
+		"default_runtime", defaultRuntime,
 		"module_refs", encoded,
 	))
 	if err != nil {
@@ -168,12 +159,12 @@ func (r *ORMSeatTypeRepository) LatestVersion(ctx context.Context, userID, slug 
 
 func (r *ORMSeatTypeRepository) seatTypeVersionQuery(ctx context.Context, query string, args ...any) (*domainrepo.SeatTypeVersion, error) {
 	var (
-		id, userID, seatTypeID, version, slug string
-		raw                                   []byte
-		createdAt                             time.Time
+		id, userID, seatTypeID, version, defaultRuntime, slug string
+		raw                                                   []byte
+		createdAt                                             time.Time
 	)
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		return s.QueryRowContext(ctx, query, args...).Scan(&id, &userID, &seatTypeID, &version, &raw, &createdAt, &slug)
+		return s.QueryRowContext(ctx, query, args...).Scan(&id, &userID, &seatTypeID, &version, &defaultRuntime, &raw, &createdAt, &slug)
 	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -187,6 +178,6 @@ func (r *ORMSeatTypeRepository) seatTypeVersionQuery(ctx context.Context, query 
 	}
 	return &domainrepo.SeatTypeVersion{
 		ID: id, UserID: userID, SeatTypeID: seatTypeID, Slug: slug, Version: version,
-		ModuleRefs: refs, CreatedAt: createdAt,
+		DefaultRuntime: defaultRuntime, ModuleRefs: refs, CreatedAt: createdAt,
 	}, nil
 }

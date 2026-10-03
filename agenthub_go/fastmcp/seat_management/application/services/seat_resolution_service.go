@@ -73,7 +73,7 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 
 	runtime := seat.Runtime
 	if runtime == "" {
-		runtime = seatType.DefaultRuntime
+		runtime = version.DefaultRuntime
 	}
 	catalog := s.NewCatalog(userID)
 	resolved, err := resolver.Resolve(catalog, resolver.SeatTypeVersion{

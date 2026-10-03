@@ -23,6 +23,8 @@ const (
 var (
 	ErrModuleKindConflict    = errors.New("module kind conflict")
 	ErrModuleVersionConflict = errors.New("module version conflict")
+	// ErrSeatTypeVersionConflict means the version exists with a different runtime or module refs.
+	ErrSeatTypeVersionConflict = errors.New("seat type version conflict")
 )
 
 // Module is a tenant-scoped unit of seat content.
@@ -59,13 +61,12 @@ type ModuleRepository interface {
 
 // SeatType is a tenant-scoped template for a seat.
 type SeatType struct {
-	ID             string
-	UserID         string
-	Slug           string
-	Name           string
-	Description    string
-	DefaultRuntime string
-	CreatedAt      time.Time
+	ID          string
+	UserID      string
+	Slug        string
+	Name        string
+	Description string
+	CreatedAt   time.Time
 }
 
 // SeatTypeVersion is one immutable revision of a seat type.
@@ -75,8 +76,10 @@ type SeatTypeVersion struct {
 	SeatTypeID string
 	Slug       string
 	Version    string
-	ModuleRefs []resolver.ModuleRef
-	CreatedAt  time.Time
+	// DefaultRuntime is the runtime of a seat that sets none; fixed by the version.
+	DefaultRuntime string
+	ModuleRefs     []resolver.ModuleRef
+	CreatedAt      time.Time
 }
 
 // SeatTypeRepository stores seat types and their immutable versions.
@@ -84,10 +87,9 @@ type SeatTypeRepository interface {
 	Save(ctx context.Context, userID string, seatType SeatType) (*SeatType, error)
 	GetByID(ctx context.Context, userID, seatTypeID string) (*SeatType, error)
 	List(ctx context.Context, userID string) ([]SeatType, error)
-	AddVersion(ctx context.Context, userID, slug, version string, moduleRefs []resolver.ModuleRef) (*SeatTypeVersion, error)
+	AddVersion(ctx context.Context, userID, slug, version, defaultRuntime string, moduleRefs []resolver.ModuleRef) (*SeatTypeVersion, error)
 	GetVersion(ctx context.Context, userID, slug, version string) (*SeatTypeVersion, error)
 	LatestVersion(ctx context.Context, userID, slug string) (*SeatTypeVersion, error)
-	SetDefaultRuntime(ctx context.Context, userID, slug, runtime string) error
 }
 
 // Room is a tenant-scoped grouping of seats.

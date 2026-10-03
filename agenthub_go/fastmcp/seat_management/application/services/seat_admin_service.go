@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
 
@@ -14,6 +15,9 @@ var (
 	ErrRoomNotFound    = errors.New("room not found")
 	ErrSeatNotFound    = errors.New("seat not found")
 	ErrSeatRemoved     = errors.New("seat removed")
+
+	ErrSeatTypeNotFound       = errors.New("seat type not found")
+	ErrInvalidSeatTypeVersion = errors.New("invalid seat type version")
 )
 
 // SeatAdminStore is the persistence surface SeatAdminService reads and writes.
@@ -24,6 +28,9 @@ type SeatAdminStore interface {
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
+	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
+	AddSeatTypeVersion(ctx context.Context, userID, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error)
 }
 
 // SeatView is a seat with the slugs of its room and seat type.
@@ -105,6 +112,64 @@ func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, se
 	}
 	seat.Runtime, seat.Model = runtime, model
 	return s.view(ctx, userID, room, seat)
+}
+
+// CreateSeatTypeVersion appends the next patch version (1.0.0 when none) of a seat type with
+// the given "slug@version" module refs and default runtime, in one immutable row. Bad input
+// and unknown module refs are ErrInvalidSeatTypeVersion, an absent seat type is
+// ErrSeatTypeNotFound, and a concurrent writer that took the same version with different
+// content is repositories.ErrSeatTypeVersionConflict.
+func (s *SeatAdminService) CreateSeatTypeVersion(ctx context.Context, userID, slug string, moduleRefs []string, defaultRuntime string) (*repositories.SeatTypeVersion, error) {
+	if err := repositories.ValidateRuntime(defaultRuntime); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidSeatTypeVersion, err)
+	}
+	refs := make([]resolver.ModuleRef, 0, len(moduleRefs))
+	seen := make(map[string]bool, len(moduleRefs))
+	for _, raw := range moduleRefs {
+		ref, err := repositories.ParseModuleRef(raw)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidSeatTypeVersion, err)
+		}
+		if seen[ref.Slug] {
+			return nil, fmt.Errorf("%w: module %q is referenced twice", ErrInvalidSeatTypeVersion, ref.Slug)
+		}
+		seen[ref.Slug] = true
+		refs = append(refs, ref)
+	}
+	seatTypes, err := s.store.ListSeatTypes(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	found := false
+	for _, st := range seatTypes {
+		if st.Slug == slug {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("%w: %q", ErrSeatTypeNotFound, slug)
+	}
+	for _, ref := range refs {
+		module, err := s.store.GetModuleVersion(ctx, userID, ref.Slug, ref.Version)
+		if err != nil {
+			return nil, err
+		}
+		if module == nil {
+			return nil, fmt.Errorf("%w: module ref %s@%s does not exist", ErrInvalidSeatTypeVersion, ref.Slug, ref.Version)
+		}
+	}
+	version := "1.0.0"
+	latest, err := s.store.LatestSeatTypeVersion(ctx, userID, slug)
+	if err != nil {
+		return nil, err
+	}
+	if latest != nil {
+		if version, err = repositories.NextPatchVersion(latest.Version); err != nil {
+			return nil, err
+		}
+	}
+	return s.store.AddSeatTypeVersion(ctx, userID, slug, version, defaultRuntime, refs)
 }
 
 func (s *SeatAdminService) room(ctx context.Context, userID, slug string) (*repositories.Room, error) {

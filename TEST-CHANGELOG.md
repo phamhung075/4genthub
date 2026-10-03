@@ -6,6 +6,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection).
 
+## 2026-10-03 — Versioned default_runtime
+
+- Added: `TestResolveSeatRuntimeComesFromThePinnedVersion` (new version leaves a pinned seat's runtime unchanged, moves a follow-latest seat), `TestCreateSeatTypeVersion`, `TestCreateSeatTypeVersionErrors` (typed errors, no version on rejection), `TestSeatAdminCreateSeatTypeVersionMapsStoreErrors` (409 vs 500); runtime-conflict case in the seat type `AddVersion` repository test.
+- Changed: Postgres integration test proves another tenant cannot add or read a version (replaces the weak `SetDefaultRuntime` check); fake drivers and fakes carry the runtime on the version.
+
 ## 2026-10-03 — Link and room deletion
 
 - Added: `TestSeatAdminDeleteLink` (rigspec before/after, 404s, other user), `TestSeatAdminDeleteRoom` (cascade, other user untouched, company overlay kept) and auth/404 probes in `seat_admin_mount_test.go`; `room_deletion_service_test.go` (dependency order, absent room, stop on failure); `TestSeatDeletesIntegration` (other tenant deletes nothing, no FK cascade; skipped without `SEAT_TEST_DATABASE_URL`).

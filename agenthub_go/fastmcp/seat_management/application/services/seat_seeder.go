@@ -22,11 +22,11 @@ func SeedSeatTypes(ctx context.Context, userID string, seeds []seedmap.Seed, mod
 			}
 		}
 		if _, err := seatTypes.Save(ctx, userID, repositories.SeatType{
-			Slug: seed.SeatTypeSlug, Name: seed.SeatTypeName, Description: seed.Description, DefaultRuntime: seed.DefaultRuntime,
+			Slug: seed.SeatTypeSlug, Name: seed.SeatTypeName, Description: seed.Description,
 		}); err != nil {
 			return fmt.Errorf("seed %s: %w", seed.SeatTypeSlug, err)
 		}
-		if _, err := seatTypes.AddVersion(ctx, userID, seed.SeatTypeSlug, seed.Version, seed.ModuleRefs); err != nil {
+		if _, err := seatTypes.AddVersion(ctx, userID, seed.SeatTypeSlug, seed.Version, seed.DefaultRuntime, seed.ModuleRefs); err != nil {
 			return fmt.Errorf("seed %s@%s: %w", seed.SeatTypeSlug, seed.Version, err)
 		}
 	}

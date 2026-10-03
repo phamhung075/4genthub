@@ -3,6 +3,7 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -107,30 +108,33 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 
 	// seat type + immutable versions
 	seatType, err := seatTypeRepo.Save(ctx, userID, domainrepo.SeatType{
-		Slug: "seat.standard", Name: "Standard", Description: "d", DefaultRuntime: "go1.23",
+		Slug: "seat.standard", Name: "Standard", Description: "d",
 	})
 	if err != nil {
 		t.Fatalf("Save seat type: %v", err)
 	}
 	refs := []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
-	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", refs); err != nil {
+	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", "go1.23", refs); err != nil {
 		t.Fatalf("AddVersion seat type: %v", err)
 	}
-	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", refs); err != nil {
+	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", "go1.23", refs); err != nil {
 		t.Fatalf("AddVersion seat type (same refs) = %v", err)
 	}
-	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0",
-		[]resolver.ModuleRef{{Slug: "instr", Version: "2.0.0"}}); err == nil {
-		t.Fatal("AddVersion seat type (different refs) must fail")
+	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", "go1.23",
+		[]resolver.ModuleRef{{Slug: "instr", Version: "2.0.0"}}); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("AddVersion seat type (different refs) = %v, want ErrSeatTypeVersionConflict", err)
 	}
-	if err := seatTypeRepo.SetDefaultRuntime(ctx, "other-user", "seat.standard", "codex"); err != nil {
-		t.Fatalf("SetDefaultRuntime other tenant: %v", err)
+	if _, err := seatTypeRepo.AddVersion(ctx, userID, "seat.standard", "1.0.0", "codex", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("AddVersion seat type (different runtime) = %v, want ErrSeatTypeVersionConflict", err)
 	}
-	if err := seatTypeRepo.SetDefaultRuntime(ctx, userID, "seat.standard", "codex"); err != nil {
-		t.Fatalf("SetDefaultRuntime: %v", err)
+	if _, err := seatTypeRepo.AddVersion(ctx, "other-user", "seat.standard", "1.0.1", "codex", refs); err == nil {
+		t.Fatal("another tenant must not add a version to this seat type")
 	}
-	if got, err := seatTypeRepo.GetByID(ctx, userID, seatType.ID); err != nil || got == nil || got.DefaultRuntime != "codex" {
-		t.Fatalf("seat type after SetDefaultRuntime = %+v, %v", got, err)
+	if got, err := seatTypeRepo.GetVersion(ctx, userID, "seat.standard", "1.0.0"); err != nil || got == nil || got.DefaultRuntime != "go1.23" {
+		t.Fatalf("version runtime = %+v, %v, want go1.23", got, err)
+	}
+	if other, err := seatTypeRepo.LatestVersion(ctx, "other-user", "seat.standard"); err != nil || other != nil {
+		t.Fatalf("LatestVersion other tenant = %+v, %v, want nil", other, err)
 	}
 	latestSeatType, err := seatTypeRepo.LatestVersion(ctx, userID, "seat.standard")
 	if err != nil || latestSeatType == nil || latestSeatType.Version != "1.0.0" {
@@ -290,7 +294,7 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	overlays, _ := NewORMOverlayRepository(sessions)
 	resolved, _ := NewORMResolvedSeatRepository(sessions)
 
-	seatType, err := seatTypes.Save(ctx, userID, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d", DefaultRuntime: "claude-code"})
+	seatType, err := seatTypes.Save(ctx, userID, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d"})
 	if err != nil {
 		t.Fatal(err)
 	}

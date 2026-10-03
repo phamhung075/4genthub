@@ -134,7 +134,7 @@ var (
 	moduleCols              = []string{"id", "user_id", "slug", "kind", "created_at"}
 	moduleVersionCols       = []string{"id", "user_id", "module_id", "version", "content", "checksum", "created_at"}
 	moduleJoinCols          = []string{"id", "user_id", "module_id", "version", "content", "checksum", "created_at", "slug", "kind"}
-	seatTypeVersionJoinCols = []string{"id", "user_id", "seat_type_id", "version", "module_refs", "created_at", "slug"}
+	seatTypeVersionJoinCols = []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at", "slug"}
 	overlayCols             = []string{"id", "user_id", "scope", "room_id", "seat_id", "ops", "created_at", "updated_at"}
 )
 
@@ -345,7 +345,7 @@ func TestErrorsAreNotSwallowed(t *testing.T) {
 	bad.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 		if strings.Contains(q, "FROM seat_type_versions AS stv") {
 			return seatTypeVersionJoinCols, [][]driver.Value{
-				fakeRow("v", testUser, testSeatTypeID, "1.0.0", []byte("{not json"), time.Now().UTC(), "seat.standard"),
+				fakeRow("v", testUser, testSeatTypeID, "1.0.0", "go1.23", []byte("{not json"), time.Now().UTC(), "seat.standard"),
 			}, nil
 		}
 		return nil, nil, nil
@@ -367,17 +367,17 @@ func TestSeatTypeAddVersionImmutable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	seatTypeRow := fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", "go1.23", now)
+	seatTypeRow := fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", now)
 
 	env := func(stored json.RawMessage) (*ORMSeatTypeRepository, *fakeDriver) {
 		f := &fakeDriver{}
 		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 			switch {
 			case strings.Contains(q, `FROM "seat_types"`):
-				return []string{"id", "user_id", "slug", "name", "description", "default_runtime", "created_at"}, [][]driver.Value{seatTypeRow}, nil
+				return []string{"id", "user_id", "slug", "name", "description", "created_at"}, [][]driver.Value{seatTypeRow}, nil
 			case strings.Contains(q, `FROM "seat_type_versions"`):
-				return []string{"id", "user_id", "seat_type_id", "version", "module_refs", "created_at"}, [][]driver.Value{
-					fakeRow("v", testUser, testSeatTypeID, "1.0.0", []byte(stored), now),
+				return []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at"}, [][]driver.Value{
+					fakeRow("v", testUser, testSeatTypeID, "1.0.0", "go1.23", []byte(stored), now),
 				}, nil
 			}
 			return nil, nil, nil
@@ -390,19 +390,25 @@ func TestSeatTypeAddVersionImmutable(t *testing.T) {
 	}
 
 	repo, f := env(encoded)
-	got, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", refs)
+	got, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", "go1.23", refs)
 	if err != nil {
 		t.Fatalf("AddVersion(same refs) = %v", err)
 	}
-	if got == nil || len(got.ModuleRefs) != 1 || got.ModuleRefs[0].Slug != "instr" {
+	if got == nil || len(got.ModuleRefs) != 1 || got.ModuleRefs[0].Slug != "instr" || got.DefaultRuntime != "go1.23" {
 		t.Fatalf("AddVersion = %+v", got)
 	}
 	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
 
 	different := json.RawMessage(`[{"slug":"other","version":"2.0.0"}]`)
 	repo, f = env(different)
-	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", refs); err == nil || !strings.Contains(err.Error(), "different module refs") {
-		t.Fatalf("AddVersion(different refs) = %v", err)
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", "go1.23", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("AddVersion(different refs) = %v, want ErrSeatTypeVersionConflict", err)
+	}
+	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
+
+	repo, f = env(encoded)
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "1.0.0", "codex", refs); !errors.Is(err, domainrepo.ErrSeatTypeVersionConflict) {
+		t.Fatalf("AddVersion(different runtime) = %v, want ErrSeatTypeVersionConflict", err)
 	}
 	assertNoStatement(t, f, `INSERT INTO "seat_type_versions"`)
 }
@@ -467,13 +473,13 @@ func TestOverlayUpsertScoped(t *testing.T) {
 
 func TestSeatTypeListOrderedBySlug(t *testing.T) {
 	now := time.Now().UTC()
-	seatTypeCols := []string{"id", "user_id", "slug", "name", "description", "default_runtime", "created_at"}
+	seatTypeCols := []string{"id", "user_id", "slug", "name", "description", "created_at"}
 	f := &fakeDriver{}
 	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 		if strings.Contains(q, `FROM "seat_types"`) {
 			return seatTypeCols, [][]driver.Value{
-				fakeRow("b", testUser, "zeta", "Zeta", "d", "go1.23", now),
-				fakeRow("a", testUser, "alpha", "Alpha", "d", "go1.23", now),
+				fakeRow("b", testUser, "zeta", "Zeta", "d", now),
+				fakeRow("a", testUser, "alpha", "Alpha", "d", now),
 			}, nil
 		}
 		return nil, nil, nil

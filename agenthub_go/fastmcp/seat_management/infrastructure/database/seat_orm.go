@@ -36,23 +36,23 @@ type ModuleVersionORM struct {
 
 // SeatTypeORM is a row of seat_types.
 type SeatTypeORM struct {
-	ID             string    `db:"id"`
-	UserID         string    `db:"user_id"`
-	Slug           string    `db:"slug"`
-	Name           string    `db:"name"`
-	Description    string    `db:"description"`
-	DefaultRuntime string    `db:"default_runtime"`
-	CreatedAt      time.Time `db:"created_at"`
+	ID          string    `db:"id"`
+	UserID      string    `db:"user_id"`
+	Slug        string    `db:"slug"`
+	Name        string    `db:"name"`
+	Description string    `db:"description"`
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 // SeatTypeVersionORM is a row of seat_type_versions. Immutable: append-only, never updated.
 type SeatTypeVersionORM struct {
-	ID         string          `db:"id"`
-	UserID     string          `db:"user_id"`
-	SeatTypeID string          `db:"seat_type_id"`
-	Version    string          `db:"version"`
-	ModuleRefs json.RawMessage `db:"module_refs"`
-	CreatedAt  time.Time       `db:"created_at"`
+	ID             string          `db:"id"`
+	UserID         string          `db:"user_id"`
+	SeatTypeID     string          `db:"seat_type_id"`
+	Version        string          `db:"version"`
+	DefaultRuntime string          `db:"default_runtime"`
+	ModuleRefs     json.RawMessage `db:"module_refs"`
+	CreatedAt      time.Time       `db:"created_at"`
 }
 
 // RoomORM is a row of rooms.

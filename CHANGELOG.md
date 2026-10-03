@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**`default_runtime` is versioned** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management`: `default_runtime` moved from `seat_types` to the immutable `seat_type_versions` (ORM structs, `seat_tables.go`, `seat_management_postgresql.sql`). A version is written in one insert, `SeatTypeRepository.SetDefaultRuntime` is gone, and `AddVersion` takes the runtime; the same version with another runtime or module refs is `ErrSeatTypeVersionConflict`. `SeatResolutionService` takes the runtime of a seat that sets none from its pinned version, so a new version never changes a pinned seat. The seed library writes its runtime on the version.
+- `GET /api/v2/openrig/seat-types`: `default_runtime` is the latest version's runtime, `null` when the seat type has no version.
+- `POST /api/v2/openrig/seat-types/{slug}/versions`: logic moved from the handler to `SeatAdminService.CreateSeatTypeVersion`; errors map by type: 400 invalid input or unknown module ref, 404 unknown seat type, 409 a concurrent writer took the version with different content, 500 anything else.
+- Production note: tables created by the earlier DDL still have `seat_types.default_runtime` and no `seat_type_versions.default_runtime`; the new schema is not applied over them by `CREATE TABLE IF NOT EXISTS`.
+
 ### Added
 
 **Delete a seat link and delete a room** (2026-10-03)

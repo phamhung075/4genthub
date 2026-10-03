@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
 )
 
 type fakeSeatAdminStore struct {
@@ -13,6 +14,10 @@ type fakeSeatAdminStore struct {
 	seatTypes []repositories.SeatType
 	seats     []*repositories.Seat
 	updateErr error
+
+	modules  map[string]bool
+	versions []*repositories.SeatTypeVersion
+	addErr   error
 }
 
 func (f *fakeSeatAdminStore) ListRooms(context.Context, string) ([]repositories.Room, error) {
@@ -62,6 +67,29 @@ func (f *fakeSeatAdminStore) UpdateSeatOccupant(_ context.Context, _, seatID, ru
 		}
 	}
 	return nil
+}
+
+func (f *fakeSeatAdminStore) GetModuleVersion(_ context.Context, _, slug, version string) (*repositories.ModuleVersion, error) {
+	if !f.modules[slug+"@"+version] {
+		return nil, nil
+	}
+	return &repositories.ModuleVersion{Slug: slug, Version: version}, nil
+}
+
+func (f *fakeSeatAdminStore) LatestSeatTypeVersion(context.Context, string, string) (*repositories.SeatTypeVersion, error) {
+	if len(f.versions) == 0 {
+		return nil, nil
+	}
+	return f.versions[len(f.versions)-1], nil
+}
+
+func (f *fakeSeatAdminStore) AddSeatTypeVersion(_ context.Context, _, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error) {
+	if f.addErr != nil {
+		return nil, f.addErr
+	}
+	created := &repositories.SeatTypeVersion{Slug: slug, Version: version, DefaultRuntime: defaultRuntime, ModuleRefs: refs}
+	f.versions = append(f.versions, created)
+	return created, nil
 }
 
 func newSeatAdminFixture() (*SeatAdminService, *fakeSeatAdminStore) {
@@ -147,5 +175,58 @@ func TestSeatAdminServiceSetOccupantErrors(t *testing.T) {
 	store.updateErr = boom
 	if _, err := service.SetOccupant(ctx, "u", "dev", "alice", "codex", ""); !errors.Is(err, boom) {
 		t.Errorf("store error = %v, want %v", err, boom)
+	}
+}
+
+func TestCreateSeatTypeVersion(t *testing.T) {
+	svc, store := newSeatAdminFixture()
+	store.modules = map[string]bool{"instr@1.0.0": true, "skill-x@2.1.0": true}
+	ctx := context.Background()
+
+	first, err := svc.CreateSeatTypeVersion(ctx, "u", "coder", []string{"instr@1.0.0"}, "claude-code")
+	if err != nil || first.Version != "1.0.0" || first.DefaultRuntime != "claude-code" {
+		t.Fatalf("first = %+v, %v, want 1.0.0 claude-code", first, err)
+	}
+	second, err := svc.CreateSeatTypeVersion(ctx, "u", "coder", []string{"instr@1.0.0", "skill-x@2.1.0"}, "codex")
+	if err != nil || second.Version != "1.0.1" || second.DefaultRuntime != "codex" || len(second.ModuleRefs) != 2 {
+		t.Fatalf("second = %+v, %v, want 1.0.1 codex with 2 refs", second, err)
+	}
+	if first.DefaultRuntime != "claude-code" {
+		t.Errorf("the new version changed the earlier one: %+v", first)
+	}
+}
+
+func TestCreateSeatTypeVersionErrors(t *testing.T) {
+	svc, store := newSeatAdminFixture()
+	store.modules = map[string]bool{"instr@1.0.0": true}
+	boom := errors.New("connection reset")
+	cases := []struct {
+		name    string
+		slug    string
+		refs    []string
+		runtime string
+		addErr  error
+		want    error
+	}{
+		{"unknown seat type", "ghost", nil, "codex", nil, ErrSeatTypeNotFound},
+		{"bad runtime", "coder", nil, "gemini", nil, ErrInvalidSeatTypeVersion},
+		{"malformed ref", "coder", []string{"instr"}, "codex", nil, ErrInvalidSeatTypeVersion},
+		{"duplicate module", "coder", []string{"instr@1.0.0", "instr@1.0.0"}, "codex", nil, ErrInvalidSeatTypeVersion},
+		{"unknown module", "coder", []string{"ghost@1.0.0"}, "codex", nil, ErrInvalidSeatTypeVersion},
+		{"concurrent writer", "coder", nil, "codex", repositories.ErrSeatTypeVersionConflict, repositories.ErrSeatTypeVersionConflict},
+		{"database failure", "coder", nil, "codex", boom, boom},
+	}
+	for _, c := range cases {
+		store.addErr = c.addErr
+		_, err := svc.CreateSeatTypeVersion(context.Background(), "u", c.slug, c.refs, c.runtime)
+		if !errors.Is(err, c.want) {
+			t.Errorf("%s: err = %v, want %v", c.name, err, c.want)
+		}
+		if c.want == boom && (errors.Is(err, ErrInvalidSeatTypeVersion) || errors.Is(err, repositories.ErrSeatTypeVersionConflict)) {
+			t.Errorf("%s: an internal error was typed as a client error: %v", c.name, err)
+		}
+	}
+	if len(store.versions) != 0 {
+		t.Errorf("rejected requests created versions: %+v", store.versions)
 	}
 }
