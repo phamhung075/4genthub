@@ -27,6 +27,8 @@ type fakeSeatAdmin struct {
 	overlays       map[string]*repositories.Overlay
 	links          []*repositories.SeatLink
 	settings       map[string]*repositories.SeatSettings
+
+	deletedResolved []string
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -78,9 +80,9 @@ func (f *fakeSeatAdmin) ListRooms(_ context.Context, _ string) ([]repositories.R
 	return out, nil
 }
 
-func (f *fakeSeatAdmin) GetRoomBySlug(_ context.Context, _, slug string) (*repositories.Room, error) {
+func (f *fakeSeatAdmin) GetRoomBySlug(_ context.Context, userID, slug string) (*repositories.Room, error) {
 	for _, r := range f.rooms {
-		if r.Slug == slug {
+		if r.Slug == slug && (r.UserID == "" || r.UserID == userID) {
 			return r, nil
 		}
 	}
@@ -241,6 +243,68 @@ func (f *fakeSeatAdmin) ListSeatLinks(_ context.Context, _, seatID string) ([]re
 		}
 	}
 	return out, nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatLink(_ context.Context, _, fromSeatID, toSeatID, kind string) (bool, error) {
+	for i, l := range f.links {
+		if l.FromSeatID == fromSeatID && l.ToSeatID == toSeatID && l.Kind == kind {
+			f.links = append(f.links[:i], f.links[i+1:]...)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatLinksOfSeat(_ context.Context, _, seatID string) error {
+	kept := f.links[:0]
+	for _, l := range f.links {
+		if l.FromSeatID != seatID && l.ToSeatID != seatID {
+			kept = append(kept, l)
+		}
+	}
+	f.links = kept
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatOverlay(_ context.Context, _, seatID string) error {
+	delete(f.overlays, repositories.ScopeSeat+"||"+seatID)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteRoomOverlay(_ context.Context, _, roomID string) error {
+	delete(f.overlays, repositories.ScopeRoom+"|"+roomID+"|")
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteResolvedSeats(_ context.Context, _, seatID string) error {
+	f.deletedResolved = append(f.deletedResolved, seatID)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeat(_ context.Context, _, seatID string) error {
+	kept := f.seats[:0]
+	for _, seat := range f.seats {
+		if seat.ID != seatID {
+			kept = append(kept, seat)
+		}
+	}
+	f.seats = kept
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteRoom(_ context.Context, _, roomID string) error {
+	kept := f.rooms[:0]
+	for _, room := range f.rooms {
+		if room.ID != roomID {
+			kept = append(kept, room)
+		}
+	}
+	f.rooms = kept
+	return nil
+}
+
+func (f *fakeSeatAdmin) InTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return fn(ctx)
 }
 
 func (f *fakeSeatAdmin) GetSettings(_ context.Context, userID string) (*repositories.SeatSettings, error) {
@@ -635,6 +699,148 @@ func TestSeatAdminRemoveSeat(t *testing.T) {
 	}
 }
 
+// rigSpecOverAdminFake serves the rigspec route from the admin fake's rows so a test can
+// change links through the admin API and render the result.
+type rigSpecOverAdminFake struct{ *fakeSeatAdmin }
+
+func (f rigSpecOverAdminFake) ListSeatsByRoom(ctx context.Context, userID, roomID string) ([]repositories.Seat, error) {
+	return f.ListSeats(ctx, userID, roomID)
+}
+
+func (f rigSpecOverAdminFake) ResolveSeat(_ context.Context, _, _, seatKey string) (*repositories.ResolvedSeat, error) {
+	return &repositories.ResolvedSeat{Hash: "h-" + seatKey, Runtime: "claude-code"}, nil
+}
+
+func (f rigSpecOverAdminFake) ListSeatLinksFrom(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error) {
+	return f.ListSeatLinks(ctx, userID, seatID)
+}
+
+func (f rigSpecOverAdminFake) GetSeatByID(_ context.Context, _, seatID string) (*repositories.Seat, error) {
+	for _, seat := range f.seats {
+		if seat.ID == seatID {
+			return seat, nil
+		}
+	}
+	return nil, nil
+}
+
+func TestSeatAdminDeleteLink(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats,
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
+	)
+	mux := seatAdminTestMux(t, fake)
+	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
+	linkPath := "/api/v2/openrig/rooms/dev/seats/alice/links"
+	if rec := doAgentsRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"delegates_to"}`); rec.Code != http.StatusOK {
+		t.Fatalf("upsert link: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doAgentsRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"can_observe"}`); rec.Code != http.StatusOK {
+		t.Fatalf("upsert second link: %d %s", rec.Code, rec.Body.String())
+	}
+	rec := doAgentsRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	if !strings.Contains(rec.Body.String(), "delegates_to") {
+		t.Fatalf("rigspec before delete lacks the link: %d %s", rec.Code, rec.Body.String())
+	}
+
+	if rec = doAgentsRequest(t, mux, http.MethodDelete, linkPath+"/bob/delegates_to", ""); rec.Code != http.StatusOK {
+		t.Fatalf("delete link: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodGet, linkPath, "")
+	if strings.Contains(rec.Body.String(), "delegates_to") || !strings.Contains(rec.Body.String(), "can_observe") {
+		t.Errorf("list after delete should keep only the other kind: %s", rec.Body.String())
+	}
+	rec = doAgentsRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	var doc rigSpecHTTPResponse = decodeRigSpec(t, rec)
+	if strings.Contains(doc.RigSpec.YAML, "delegates_to") || !strings.Contains(doc.RigSpec.YAML, "can_observe") {
+		t.Errorf("rigspec after delete: %s", doc.RigSpec.YAML)
+	}
+
+	cases := []struct {
+		name, path string
+		want       int
+	}{
+		{"already deleted", linkPath + "/bob/delegates_to", http.StatusNotFound},
+		{"unknown target", linkPath + "/ghost/can_observe", http.StatusNotFound},
+		{"unknown source", "/api/v2/openrig/rooms/dev/seats/ghost/links/bob/can_observe", http.StatusNotFound},
+		{"unknown room", "/api/v2/openrig/rooms/ghost/seats/alice/links/bob/can_observe", http.StatusNotFound},
+		{"bad kind", linkPath + "/bob/hates", http.StatusBadRequest},
+	}
+	for _, c := range cases {
+		if rec := doAgentsRequest(t, mux, http.MethodDelete, c.path, ""); rec.Code != c.want {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
+		}
+	}
+
+	room.UserID = "another-user"
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, linkPath+"/bob/can_observe", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("other user's room: status = %d, want 404", rec.Code)
+	}
+	if len(fake.links) != 1 {
+		t.Errorf("another user's request changed links: %d left, want 1", len(fake.links))
+	}
+}
+
+func TestSeatAdminDeleteRoom(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	dev := fake.seedRoom("dev")
+	ops := repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: dev.ID, Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "m", Version: "1.0.0"}}}
+	other := fake.seedRoom("other")
+	fake.seats = append(fake.seats,
+		&repositories.Seat{ID: "seat-a", RoomID: dev.ID, SeatKey: "alice", Status: "active"},
+		&repositories.Seat{ID: "seat-b", RoomID: dev.ID, SeatKey: "bob", Status: "removed"},
+		&repositories.Seat{ID: "seat-x", RoomID: other.ID, SeatKey: "xena", Status: "active"},
+	)
+	fake.links = append(fake.links,
+		&repositories.SeatLink{FromSeatID: "seat-a", ToSeatID: "seat-b", Kind: "delegates_to", Allow: true},
+		&repositories.SeatLink{FromSeatID: "seat-b", ToSeatID: "seat-a", Kind: "escalates_to", Allow: true},
+	)
+	mux := seatAdminTestMux(t, fake)
+	if _, err := fake.UpsertOverlay(context.Background(), "u", ops); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fake.UpsertOverlay(context.Background(), "u", repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: "seat-a", Ops: ops.Ops}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fake.UpsertOverlay(context.Background(), "u", repositories.Overlay{Scope: repositories.ScopeCompany, Ops: ops.Ops}); err != nil {
+		t.Fatal(err)
+	}
+
+	dev.UserID = "another-user"
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
+		t.Fatalf("other user's room: status = %d, want 404", rec.Code)
+	}
+	if len(fake.rooms) != 2 || len(fake.seats) != 3 || len(fake.links) != 2 {
+		t.Fatalf("another user's request deleted rows: %d rooms, %d seats, %d links", len(fake.rooms), len(fake.seats), len(fake.links))
+	}
+	dev.UserID = ""
+
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusOK {
+		t.Fatalf("delete room: %d %s", rec.Code, rec.Body.String())
+	}
+	if len(fake.rooms) != 1 || fake.rooms[0].Slug != "other" {
+		t.Errorf("rooms left = %+v, want only other", fake.rooms)
+	}
+	if len(fake.seats) != 1 || fake.seats[0].SeatKey != "xena" {
+		t.Errorf("seats left = %+v, want only xena (removed seats go too)", fake.seats)
+	}
+	if len(fake.links) != 0 {
+		t.Errorf("links left = %d, want 0", len(fake.links))
+	}
+	if len(fake.overlays) != 1 || fake.overlays[repositories.ScopeCompany+"||"] == nil {
+		t.Errorf("overlays left = %v, want only the company overlay", fake.overlays)
+	}
+	if strings.Join(fake.deletedResolved, ",") != "seat-a,seat-b" {
+		t.Errorf("resolved snapshots deleted for %v, want seat-a,seat-b", fake.deletedResolved)
+	}
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("delete again: status = %d, want 404", rec.Code)
+	}
+}
+
 func TestSeatAdminOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
@@ -841,6 +1047,7 @@ func TestSeatAdminNotFound(t *testing.T) {
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", ""},
 		{http.MethodGet, "/api/v2/openrig/modules/ghost/versions/1.0.0", ""},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/links", ""},
+		{http.MethodDelete, "/api/v2/openrig/rooms/ghost", ""},
 	}
 	for _, c := range cases {
 		rec := doAgentsRequest(t, mux, c.method, c.path, c.body)
@@ -874,6 +1081,8 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/overlay"},
 		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/alice/links"},
+		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice/links/bob/delegates_to"},
+		{http.MethodDelete, "/api/v2/openrig/rooms/dev"},
 		{http.MethodGet, "/api/v2/openrig/settings"},
 		{http.MethodPut, "/api/v2/openrig/settings"},
 	}

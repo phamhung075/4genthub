@@ -108,3 +108,15 @@ func (r *ORMSeatRepository) UpdateOccupant(ctx context.Context, userID, seatID, 
 		return err
 	})
 }
+
+// Delete removes the seat row; the application layer removes its dependents first.
+func (r *ORMSeatRepository) Delete(ctx context.Context, userID, seatID string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "seats" WHERE "user_id" = $1 AND "id" = $2`, userID, id)
+		return err
+	})
+}

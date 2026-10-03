@@ -93,3 +93,15 @@ func (r *ORMResolvedSeatRepository) GetLatest(ctx context.Context, userID, seatI
 		Files: files, Policy: policy, CreatedAt: createdAt,
 	}, nil
 }
+
+// DeleteBySeat removes every snapshot of the seat; used only when the seat itself is deleted.
+func (r *ORMResolvedSeatRepository) DeleteBySeat(ctx context.Context, userID, seatID string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "resolved_seats" WHERE "user_id" = $1 AND "seat_id" = $2`, userID, id)
+		return err
+	})
+}

@@ -102,3 +102,24 @@ func (r *ORMOverlayRepository) updateOps(ctx context.Context, userID, overlayID 
 	}
 	return row, nil
 }
+
+// DeleteForRoom removes the room's overlay.
+func (r *ORMOverlayRepository) DeleteForRoom(ctx context.Context, userID, roomID string) error {
+	return r.deleteForTarget(ctx, userID, "room_id", roomID)
+}
+
+// DeleteForSeat removes the seat's overlay.
+func (r *ORMOverlayRepository) DeleteForSeat(ctx context.Context, userID, seatID string) error {
+	return r.deleteForTarget(ctx, userID, "seat_id", seatID)
+}
+
+func (r *ORMOverlayRepository) deleteForTarget(ctx context.Context, userID, column, targetID string) error {
+	id, err := database.UnifiedUUIDBindParam(targetID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "overlays" WHERE "user_id" = $1 AND "`+column+`" = $2`, userID, id)
+		return err
+	})
+}

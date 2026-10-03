@@ -106,6 +106,7 @@ type RoomRepository interface {
 	GetBySlug(ctx context.Context, userID, slug string) (*Room, error)
 	GetByID(ctx context.Context, userID, roomID string) (*Room, error)
 	List(ctx context.Context, userID string) ([]Room, error)
+	Delete(ctx context.Context, userID, roomID string) error
 }
 
 // Seat is a seat inside a room; PinnedVersion nil means follow the seat type's latest
@@ -132,6 +133,7 @@ type SeatRepository interface {
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
 	MarkRemoved(ctx context.Context, userID, seatID string) error
 	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	Delete(ctx context.Context, userID, seatID string) error
 }
 
 // Overlay is the ordered op list applied to one scope target. RoomID and SeatID are set
@@ -164,6 +166,8 @@ func (o Overlay) ValidateTarget() error {
 type OverlayRepository interface {
 	Upsert(ctx context.Context, userID string, overlay Overlay) (*Overlay, error)
 	Find(ctx context.Context, userID, scope, roomID, seatID string) (*Overlay, error)
+	DeleteForRoom(ctx context.Context, userID, roomID string) error
+	DeleteForSeat(ctx context.Context, userID, seatID string) error
 }
 
 // SeatLink is a directed communication edge between two seats.
@@ -181,6 +185,10 @@ type SeatLink struct {
 type SeatLinkRepository interface {
 	Upsert(ctx context.Context, userID string, link SeatLink) (*SeatLink, error)
 	ListFrom(ctx context.Context, userID, seatID string) ([]SeatLink, error)
+	// Delete removes the (from, to, kind) link and reports whether it existed.
+	Delete(ctx context.Context, userID, fromSeatID, toSeatID, kind string) (bool, error)
+	// DeleteBySeat removes every link that starts or ends at the seat.
+	DeleteBySeat(ctx context.Context, userID, seatID string) error
 }
 
 // ResolvedFile is one rendered file of a resolved seat.
@@ -205,6 +213,7 @@ type ResolvedSeat struct {
 type ResolvedSeatRepository interface {
 	Save(ctx context.Context, userID string, seat ResolvedSeat) (*ResolvedSeat, error)
 	GetLatest(ctx context.Context, userID, seatID string) (*ResolvedSeat, error)
+	DeleteBySeat(ctx context.Context, userID, seatID string) error
 }
 
 // SeatSettings is one user's company-wide seat defaults. A missing row reads as

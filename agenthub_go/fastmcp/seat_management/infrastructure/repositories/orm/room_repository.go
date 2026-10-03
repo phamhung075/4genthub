@@ -73,3 +73,15 @@ func (r *ORMRoomRepository) List(ctx context.Context, userID string) ([]domainre
 	sort.Slice(out, func(i, j int) bool { return out[i].Slug < out[j].Slug })
 	return out, nil
 }
+
+// Delete removes the room row; the application layer removes its seats and overlay first.
+func (r *ORMRoomRepository) Delete(ctx context.Context, userID, roomID string) error {
+	id, err := database.UnifiedUUIDBindParam(roomID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "rooms" WHERE "user_id" = $1 AND "id" = $2`, userID, id)
+		return err
+	})
+}

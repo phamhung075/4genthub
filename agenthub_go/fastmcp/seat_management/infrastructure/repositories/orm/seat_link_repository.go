@@ -86,6 +86,44 @@ func (r *ORMSeatLinkRepository) updateAllow(ctx context.Context, userID, linkID 
 	return row, nil
 }
 
+// Delete removes the link and reports whether it existed.
+func (r *ORMSeatLinkRepository) Delete(ctx context.Context, userID, fromSeatID, toSeatID, kind string) (bool, error) {
+	from, err := database.UnifiedUUIDBindParam(fromSeatID, database.DialectPostgres)
+	if err != nil {
+		return false, err
+	}
+	to, err := database.UnifiedUUIDBindParam(toSeatID, database.DialectPostgres)
+	if err != nil {
+		return false, err
+	}
+	deleted := false
+	err = r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		res, err := s.ExecContext(ctx,
+			`DELETE FROM "seat_links" WHERE "user_id" = $1 AND "from_seat_id" = $2 AND "to_seat_id" = $3 AND "kind" = $4`,
+			userID, from, to, kind)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		deleted = n > 0
+		return err
+	})
+	return deleted, err
+}
+
+// DeleteBySeat removes every link that starts or ends at the seat.
+func (r *ORMSeatLinkRepository) DeleteBySeat(ctx context.Context, userID, seatID string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`DELETE FROM "seat_links" WHERE "user_id" = $1 AND ("from_seat_id" = $2 OR "to_seat_id" = $2)`, userID, id)
+		return err
+	})
+}
+
 // ListFrom returns the links originating at a seat, ordered by target then kind.
 func (r *ORMSeatLinkRepository) ListFrom(ctx context.Context, userID, seatID string) ([]domainrepo.SeatLink, error) {
 	rows, err := r.FindBy(ctx, baserepo.NewKwargs("user_id", userID, "from_seat_id", seatID))

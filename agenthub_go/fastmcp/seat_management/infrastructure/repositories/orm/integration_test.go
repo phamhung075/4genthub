@@ -263,6 +263,134 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 	}
 }
 
+// TestSeatDeletesIntegration checks the delete repositories against a real PostgreSQL: another
+// tenant deletes nothing, and a parent row cannot go before its dependents (no FK cascade).
+func TestSeatDeletesIntegration(t *testing.T) {
+	url := os.Getenv("SEAT_TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("SEAT_TEST_DATABASE_URL not set")
+	}
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, seatIntegrationSchema(t)); err != nil {
+		t.Fatalf("apply schema: %v", err)
+	}
+	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
+	userID := fmt.Sprintf("seat-del-%d", time.Now().UnixNano())
+	const other = "seat-del-other-user"
+
+	seatTypes, _ := NewORMSeatTypeRepository(sessions)
+	rooms, _ := NewORMRoomRepository(sessions)
+	seats, _ := NewORMSeatRepository(sessions)
+	links, _ := NewORMSeatLinkRepository(sessions)
+	overlays, _ := NewORMOverlayRepository(sessions)
+	resolved, _ := NewORMResolvedSeatRepository(sessions)
+
+	seatType, err := seatTypes.Save(ctx, userID, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d", DefaultRuntime: "claude-code"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	room, err := rooms.Save(ctx, userID, domainrepo.Room{Slug: "dev", Name: "Dev"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "bob", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := links.Upsert(ctx, userID, domainrepo.SeatLink{FromSeatID: a.ID, ToSeatID: b.ID, Kind: "delegates_to", Allow: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := links.Upsert(ctx, userID, domainrepo.SeatLink{FromSeatID: b.ID, ToSeatID: a.ID, Kind: "escalates_to", Allow: true}); err != nil {
+		t.Fatal(err)
+	}
+	ops := []resolver.Op{{Kind: resolver.OpRemove, Slug: "instr"}}
+	if _, err := overlays.Upsert(ctx, userID, domainrepo.Overlay{Scope: domainrepo.ScopeRoom, RoomID: room.ID, Ops: ops}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := overlays.Upsert(ctx, userID, domainrepo.Overlay{Scope: domainrepo.ScopeSeat, SeatID: a.ID, Ops: ops}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolved.Save(ctx, userID, domainrepo.ResolvedSeat{SeatID: a.ID, Hash: "h", Runtime: "claude-code"}); err != nil {
+		t.Fatal(err)
+	}
+	count := func(query string, args ...any) int {
+		t.Helper()
+		var n int
+		if err := db.QueryRowContext(ctx, query, args...).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+
+	// another tenant deletes nothing
+	if deleted, err := links.Delete(ctx, other, a.ID, b.ID, "delegates_to"); err != nil || deleted {
+		t.Fatalf("Delete link other tenant = %v, %v", deleted, err)
+	}
+	for name, fn := range map[string]func() error{
+		"links":    func() error { return links.DeleteBySeat(ctx, other, a.ID) },
+		"overlays": func() error { return overlays.DeleteForSeat(ctx, other, a.ID) },
+		"room ov.": func() error { return overlays.DeleteForRoom(ctx, other, room.ID) },
+		"resolved": func() error { return resolved.DeleteBySeat(ctx, other, a.ID) },
+		"seat":     func() error { return seats.Delete(ctx, other, a.ID) },
+		"room":     func() error { return rooms.Delete(ctx, other, room.ID) },
+	} {
+		if err := fn(); err != nil {
+			t.Fatalf("%s delete as another tenant: %v", name, err)
+		}
+	}
+	if n := count(`SELECT (SELECT count(*) FROM seat_links WHERE user_id = $1) + (SELECT count(*) FROM overlays WHERE user_id = $1) + (SELECT count(*) FROM resolved_seats WHERE user_id = $1) + (SELECT count(*) FROM seats WHERE user_id = $1) + (SELECT count(*) FROM rooms WHERE user_id = $1)`, userID); n != 8 {
+		t.Fatalf("rows after another tenant's deletes = %d, want 8", n)
+	}
+
+	// no cascade: the seat cannot go while a link still references it
+	if err := seats.Delete(ctx, userID, a.ID); err == nil {
+		t.Fatal("Delete seat with links must fail: foreign keys do not cascade")
+	}
+
+	// one link, then everything under the room in dependency order
+	if deleted, err := links.Delete(ctx, userID, a.ID, b.ID, "delegates_to"); err != nil || !deleted {
+		t.Fatalf("Delete link = %v, %v", deleted, err)
+	}
+	if deleted, err := links.Delete(ctx, userID, a.ID, b.ID, "delegates_to"); err != nil || deleted {
+		t.Fatalf("Delete link again = %v, %v", deleted, err)
+	}
+	if n := count(`SELECT count(*) FROM seat_links WHERE user_id = $1`, userID); n != 1 {
+		t.Fatalf("links after one delete = %d, want 1", n)
+	}
+	for _, seat := range []*domainrepo.Seat{a, b} {
+		if err := links.DeleteBySeat(ctx, userID, seat.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := overlays.DeleteForSeat(ctx, userID, seat.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := resolved.DeleteBySeat(ctx, userID, seat.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := seats.Delete(ctx, userID, seat.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := overlays.DeleteForRoom(ctx, userID, room.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := rooms.Delete(ctx, userID, room.ID); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(`SELECT (SELECT count(*) FROM seat_links WHERE user_id = $1) + (SELECT count(*) FROM overlays WHERE user_id = $1) + (SELECT count(*) FROM resolved_seats WHERE user_id = $1) + (SELECT count(*) FROM seats WHERE user_id = $1) + (SELECT count(*) FROM rooms WHERE user_id = $1)`, userID); n != 0 {
+		t.Fatalf("rows left after deletes = %d, want 0", n)
+	}
+}
+
 // seatIntegrationSchema reads the seat schema DDL next to this test.
 func seatIntegrationSchema(t *testing.T) string {
 	t.Helper()

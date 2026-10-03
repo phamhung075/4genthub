@@ -4,6 +4,7 @@ package httpapp
 //
 //	POST   /api/v2/openrig/rooms
 //	GET    /api/v2/openrig/rooms
+//	DELETE /api/v2/openrig/rooms/{room}
 //	GET    /api/v2/openrig/seat-types
 //	POST   /api/v2/openrig/seat-types/{slug}/versions
 //	GET    /api/v2/openrig/modules
@@ -21,6 +22,7 @@ package httpapp
 //	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/overlay
 //	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/links
 //	GET    /api/v2/openrig/rooms/{room}/seats/{seat}/links
+//	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}
 //	GET    /api/v2/openrig/settings
 //	PUT    /api/v2/openrig/settings
 //
@@ -67,6 +69,14 @@ type seatAdminSource interface {
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
 	UpsertSeatLink(ctx context.Context, userID string, link repositories.SeatLink) (*repositories.SeatLink, error)
 	ListSeatLinks(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error)
+	DeleteSeatLink(ctx context.Context, userID, fromSeatID, toSeatID, kind string) (bool, error)
+	DeleteSeatLinksOfSeat(ctx context.Context, userID, seatID string) error
+	DeleteSeatOverlay(ctx context.Context, userID, seatID string) error
+	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
+	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
+	DeleteSeat(ctx context.Context, userID, seatID string) error
+	DeleteRoom(ctx context.Context, userID, roomID string) error
+	InTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 	GetSettings(ctx context.Context, userID string) (*repositories.SeatSettings, error)
 	SetSettings(ctx context.Context, userID string, followLatest bool) (*repositories.SeatSettings, error)
 }
@@ -101,10 +111,16 @@ var newSeatAdminSource = func(sessions *database.SessionManager) (seatAdminSourc
 	if err != nil {
 		return nil, err
 	}
-	return &seatAdminRepos{rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
+	resolved, err := seatorm.NewORMResolvedSeatRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatAdminRepos{sessions: sessions, resolved: resolved, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
 }
 
 type seatAdminRepos struct {
+	sessions  *database.SessionManager
+	resolved  repositories.ResolvedSeatRepository
 	rooms     repositories.RoomRepository
 	seatTypes repositories.SeatTypeRepository
 	modules   repositories.ModuleRepository
@@ -200,6 +216,38 @@ func (s *seatAdminRepos) ListSeatLinks(ctx context.Context, userID, seatID strin
 	return s.links.ListFrom(ctx, userID, seatID)
 }
 
+func (s *seatAdminRepos) DeleteSeatLink(ctx context.Context, userID, fromSeatID, toSeatID, kind string) (bool, error) {
+	return s.links.Delete(ctx, userID, fromSeatID, toSeatID, kind)
+}
+
+func (s *seatAdminRepos) DeleteSeatLinksOfSeat(ctx context.Context, userID, seatID string) error {
+	return s.links.DeleteBySeat(ctx, userID, seatID)
+}
+
+func (s *seatAdminRepos) DeleteSeatOverlay(ctx context.Context, userID, seatID string) error {
+	return s.overlays.DeleteForSeat(ctx, userID, seatID)
+}
+
+func (s *seatAdminRepos) DeleteRoomOverlay(ctx context.Context, userID, roomID string) error {
+	return s.overlays.DeleteForRoom(ctx, userID, roomID)
+}
+
+func (s *seatAdminRepos) DeleteResolvedSeats(ctx context.Context, userID, seatID string) error {
+	return s.resolved.DeleteBySeat(ctx, userID, seatID)
+}
+
+func (s *seatAdminRepos) DeleteSeat(ctx context.Context, userID, seatID string) error {
+	return s.seats.Delete(ctx, userID, seatID)
+}
+
+func (s *seatAdminRepos) DeleteRoom(ctx context.Context, userID, roomID string) error {
+	return s.rooms.Delete(ctx, userID, roomID)
+}
+
+func (s *seatAdminRepos) InTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
+	return s.sessions.Transaction(ctx, fn)
+}
+
 func (s *seatAdminRepos) GetSettings(ctx context.Context, userID string) (*repositories.SeatSettings, error) {
 	return s.settings.Get(ctx, userID)
 }
@@ -214,6 +262,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListRooms(w, r, u, sessions)
+	}))
+	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleDeleteRoom(w, r, u, sessions)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatTypes(w, r, u, sessions)
@@ -265,6 +316,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatLinks(w, r, u, sessions)
+	}))
+	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleDeleteSeatLink(w, r, u, sessions)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/settings", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetSettings(w, r, u, sessions)
@@ -795,6 +849,20 @@ func handleListSeats(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	writeJSON(w, http.StatusOK, body)
 }
 
+func handleDeleteRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	if err := seatservices.NewRoomDeletionService(source).DeleteRoom(r.Context(), userID(u), r.PathValue("room")); err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	writeJSON(w, http.StatusOK, body)
+}
+
 func handleRemoveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	source, ok := seatAdminSourceFor(w, sessions)
 	if !ok {
@@ -1069,6 +1137,50 @@ func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("link", seatAdminLinkBody(link))
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleDeleteSeatLink deletes one link. The target may be a removed seat so that links
+// left behind by a seat removal can still be cleaned up.
+func handleDeleteSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	kind := r.PathValue("kind")
+	if !seatAdminLinkKind(kind) {
+		writeDetail(w, http.StatusBadRequest, "kind \""+kind+"\" is not a seat link kind")
+		return
+	}
+	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	if !ok {
+		return
+	}
+	from, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
+	if !ok {
+		return
+	}
+	toKey := r.PathValue("to")
+	to, err := source.FindSeat(r.Context(), userID(u), room.ID, toKey)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if to == nil {
+		writeDetail(w, http.StatusNotFound, "seat \""+toKey+"\" not found")
+		return
+	}
+	deleted, err := source.DeleteSeatLink(r.Context(), userID(u), from.ID, to.ID, kind)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !deleted {
+		writeDetail(w, http.StatusNotFound, "link "+from.SeatKey+" "+kind+" "+toKey+" not found")
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
 	writeJSON(w, http.StatusOK, body)
 }
 

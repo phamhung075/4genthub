@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Frontend seat authoring
+
+- Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection).
+
+## 2026-10-03 — Link and room deletion
+
+- Added: `TestSeatAdminDeleteLink` (rigspec before/after, 404s, other user), `TestSeatAdminDeleteRoom` (cascade, other user untouched, company overlay kept) and auth/404 probes in `seat_admin_mount_test.go`; `room_deletion_service_test.go` (dependency order, absent room, stop on failure); `TestSeatDeletesIntegration` (other tenant deletes nothing, no FK cascade; skipped without `SEAT_TEST_DATABASE_URL`).
+
 ## 2026-10-03 — Module list and seat-type versions
 
 - Added: `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`, `TestSeatAdminCreateSeatTypeVersionRejects`, auth probes in `seat_admin_mount_test.go`; `TestParseModuleRef`, `TestNextPatchVersion` in `names_test.go`; `ListLatest` and `SetDefaultRuntime` tenant checks in the Postgres integration test (skipped without `SEAT_TEST_DATABASE_URL`).
