@@ -910,7 +910,7 @@ func handleCompanyOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.
 		return
 	}
 	ops, ok := seatAdminOverlayOps(w, r)
-	if !ok {
+	if !ok || !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
 	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeCompany, Ops: ops})
@@ -932,6 +932,9 @@ func handleRoomOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	}
 	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
+		return
+	}
+	if !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
 	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: room.ID, Ops: ops})
@@ -957,6 +960,9 @@ func handleSeatOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	}
 	seat, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
 	if !ok {
+		return
+	}
+	if !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
 	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: seat.ID, Ops: ops})
@@ -1077,6 +1083,44 @@ func seatAdminOverlayOps(w http.ResponseWriter, r *http.Request) ([]resolver.Op,
 		ops = append(ops, resolver.Op{Kind: kind, Slug: op.Slug, Version: op.Version, Content: op.Content})
 	}
 	return ops, true
+}
+
+// seatAdminOverlayModulesExist answers 422 when an add or pin op names a module (or module
+// version) the catalog does not hold: such an overlay would make every resolution of the seats it
+// reaches fail. remove and override ops may name modules that only the seat type supplies.
+func seatAdminOverlayModulesExist(w http.ResponseWriter, r *http.Request, source seatAdminSource, uid string, ops []resolver.Op) bool {
+	for _, op := range ops {
+		if op.Kind != resolver.OpAdd && op.Kind != resolver.OpPin {
+			continue
+		}
+		var found bool
+		if op.Version == "" || op.Version == "latest" {
+			latest, err := source.ListLatestModuleVersions(r.Context(), uid)
+			if err != nil {
+				writeDetail(w, http.StatusInternalServerError, err.Error())
+				return false
+			}
+			for _, mv := range latest {
+				found = found || mv.Slug == op.Slug
+			}
+		} else {
+			mv, err := source.GetModuleVersion(r.Context(), uid, op.Slug, op.Version)
+			if err != nil {
+				writeDetail(w, http.StatusInternalServerError, err.Error())
+				return false
+			}
+			found = mv != nil
+		}
+		if !found {
+			version := op.Version
+			if version == "" {
+				version = "latest"
+			}
+			writeDetail(w, http.StatusUnprocessableEntity, "module "+op.Slug+"@"+version+" not found in catalog")
+			return false
+		}
+	}
+	return true
 }
 
 func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {

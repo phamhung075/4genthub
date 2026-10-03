@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — overlay ops must name catalog modules
+
+- Added: `TestSeatAdminOverlayRejectsUnknownModules` (add of an unknown module and of a missing version, pin of an unknown module: 422 "not found in catalog", nothing stored; add of a known module and remove of a type-supplied module: 200).
+- Changed: `TestSeatAdminOverlays` and `TestSeatAdminGetOverlays` seed the module versions their ops name.
+
 ## 2026-10-03 — seatcheck recipient hint and drift query shape
 
 - Added: `TestSendUnknownRecipientHintListsOnlyAllowedSeats` (a roster seat the policy does not allow, and an explicitly denied one, are not named; no allowed seat gives the no-recipient message; a mutation listing every seat fails it). `TestColumnDriftFindsMissingAndBlockingColumns` now asserts that exactly one `information_schema` query ran and that it is scoped by `current_schema()`.

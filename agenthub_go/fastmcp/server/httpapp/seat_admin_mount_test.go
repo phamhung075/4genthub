@@ -632,6 +632,7 @@ func TestSeatAdminGetModuleVersion(t *testing.T) {
 
 func TestSeatAdminGetOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
+	fake.moduleVersions["instr@1"] = &repositories.ModuleVersion{Slug: "instr", Version: "1"}
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
@@ -947,6 +948,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 
 func TestSeatAdminOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
+	fake.moduleVersions["m@2"] = &repositories.ModuleVersion{Slug: "m", Version: "2"}
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
@@ -964,6 +966,39 @@ func TestSeatAdminOverlays(t *testing.T) {
 		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), c.want) {
 			t.Errorf("PUT %s: %d %s", c.path, rec.Code, rec.Body.String())
 		}
+	}
+}
+
+func TestSeatAdminOverlayRejectsUnknownModules(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+		code int
+	}{
+		{"add unknown latest", `{"ops":[{"kind":"add","slug":"ghost"}]}`, http.StatusUnprocessableEntity},
+		{"add unknown version", `{"ops":[{"kind":"add","slug":"m","version":"9"}]}`, http.StatusUnprocessableEntity},
+		{"pin unknown module", `{"ops":[{"kind":"pin","slug":"ghost","version":"1"}]}`, http.StatusUnprocessableEntity},
+		{"add known latest", `{"ops":[{"kind":"add","slug":"m"}]}`, http.StatusOK},
+		{"remove a type-supplied module", `{"ops":[{"kind":"remove","slug":"ghost"}]}`, http.StatusOK},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			fake := newFakeSeatAdmin()
+			fake.moduleVersions["m@2"] = &repositories.ModuleVersion{Slug: "m", Version: "2"}
+			mux := seatAdminTestMux(t, fake)
+			rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay", c.body)
+			if rec.Code != c.code {
+				t.Fatalf("status = %d, body %s, want %d", rec.Code, rec.Body.String(), c.code)
+			}
+			if c.code == http.StatusUnprocessableEntity {
+				if !strings.Contains(rec.Body.String(), "not found in catalog") {
+					t.Errorf("body %s lacks the catalog message", rec.Body.String())
+				}
+				if len(fake.overlays) != 0 {
+					t.Errorf("overlay stored despite the unknown module: %+v", fake.overlays)
+				}
+			}
+		})
 	}
 }
 
