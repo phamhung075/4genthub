@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **401 retry keeps the caller headers; the access token is no longer logged** - 2026-10-03
+  - After a token refresh, `handleResponse` rebuilt the headers by spreading the `Headers` object that
+    `apiRequest` now passes, which gave `{}`: the retried request lost `Content-Type` and any caller header.
+    It now copies them with `new Headers(...)`. `getAuthHeaders` no longer debug-logs the first 50
+    characters of the JWT (commit `aa370d07`).
+  - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (2 tests added)
 - **Seat screens sent no `Authorization` header** - 2026-10-03
   - `apiRequest` (used by every `seatApi` call) passed only `credentials: 'include'`, so the Go seat routes,
     which require the Bearer header and ignore cookies, answered "Not authenticated" and `/seats` showed empty

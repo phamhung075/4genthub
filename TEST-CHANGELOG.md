@@ -177,6 +177,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-03 — apiRequest sends the Bearer token
 
+- Added: 2 tests in `apiRequest.test.ts`: a 401 followed by a refresh retries with the caller headers, Content-Type and the new Bearer; no logger level receives any character of the access token. Both fail without the fixes (`aa370d07`).
 - Added: `agenthub-frontend/src/tests/services/apiRequest.test.ts` (4 tests: Bearer from the `access_token` cookie on GET, caller headers/method/body preserved on POST, caller override of a default header, no Authorization without a cookie). The seat tests mock `apiRequest`, which is why the missing header was never caught; the first two tests fail without the fix.
 
 ## 2026-10-03 — Nested Router in component tests
