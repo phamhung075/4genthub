@@ -6,6 +6,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**Seat model coherent with OpenRig** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/commpolicy/policy.go`, `infrastructure/schema/seat_management_postgresql.sql`, `infrastructure/database/seat_tables.go`: link kinds are now OpenRig's five (`delegates_to`, `spawned_by`, `can_observe`, `collaborates_with`, `escalates_to`); `reports_to`, `consults`, `notifies` removed; intent-to-kind mapping documented in `agenthub_go/NEXT_GEN.md`.
+- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`, `server/httpapp/seat_admin_mount.go`: room slugs and seat keys validated with OpenRig's id rule (no dots or spaces).
+- `scripts/openrig_seat_sync.py`: safe-name rule relaxed to the OpenRig rule (uppercase allowed).
+
+### Added
+
+- `agenthub_go/fastmcp/seat_management/domain/rigspec/`, `server/httpapp/seat_rigspec_mount.go`: `GET /api/v2/openrig/rooms/{room}/rigspec` renders a room as RigSpec 0.2 (validated with real `rig spec validate` and `rig spec preflight`).
+- `scripts/openrig_seat_sync.py`: `rig ROOM` subcommand builds a launchable `rig.yaml` plus pinned `agents/<seat>` links.
+
 ### Added
 
 **Go port of the server (`agenthub_go/`) - HTTP composition root with projects, branches, tasks and subtasks live** (2026-10-02)

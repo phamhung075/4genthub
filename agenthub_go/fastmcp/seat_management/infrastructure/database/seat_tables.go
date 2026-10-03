@@ -200,7 +200,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +
 			"\tCONSTRAINT uq_seat_links_from_to_kind UNIQUE (from_seat_id, to_seat_id, kind),\n" +
-			"\tCONSTRAINT ck_seat_links_kind CHECK (kind IN ('delegates_to', 'escalates_to', 'reports_to', 'consults', 'notifies')),\n" +
+			"\tCONSTRAINT ck_seat_links_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),\n" +
 			"\tCONSTRAINT ck_seat_links_distinct CHECK (from_seat_id <> to_seat_id)\n" +
 			")",
 		"CREATE INDEX ix_seat_links_user_id ON seat_links (user_id)",

@@ -144,6 +144,19 @@ Owner's words, in two messages: "each team (pod) have seat, seat is defind it ne
 - Decisions (owner, 2026-10-03): (1) communication rules are **enforced**, not advisory (level L1/L2/L3 still to be confirmed, see below and G3); (2) offline mode is explicit and uses **OpenRig bundles** (G4), never a silent fallback; (3) module versions are **pinned by default**, with follow-latest as an opt-in per company; (4) Jev is an **option** defined as a completion gate (G7), started after the core works.
 - Enforcement findings (2026-10-03): OpenRig has no communication enforcement and removed sender refusals on purpose ("deliver and label", `routes/require-sender-identity.ts`). The sender is a header the CLI stamps from the seat's environment (`X-OpenRig-Session`), so it is forgeable by any local process, and `rig send` can reach any seat. Three levels are possible: L1 advisory (instructions plus edges in `rig whoami`, what exists today); L2 guarded (the only communication tool a seat has is a policy-checking one, direct `rig send`/`rig queue`/`rig broadcast`/tmux denied in the seat's permissions, every message audited, messages that bypass the audit flagged); L3 hard (daemon-side ACL with authenticated identity plus OS sandboxing, which needs an OpenRig fork). L2 stops mistakes and normal agent behavior but is not a security boundary against a seat that deliberately bypasses it. Which level to build is open (see G3). Not read: `daemon/src/domain/policies/edge-artifact-required.ts` (a policy tied to edges; check whether it helps).
 
+## Request 12 — "need make is corherence with openrig" (2026-10-03)
+
+Seat/room/link model aligned with OpenRig's real model. Done and verified:
+- Mapping: room = OpenRig pod (id = room slug), seat = member (id = seat key), seat link = pod edge. Slugs and keys use OpenRig's name rule `^[a-zA-Z0-9][a-zA-Z0-9_-]*$` (no dot, because edges qualify ends as `pod.member`); enforced in the admin API and the UI.
+- Link kinds are exactly OpenRig's five: `delegates_to`, `spawned_by`, `can_observe`, `collaborates_with`, `escalates_to`. `reports_to`, `consults`, `notifies` were removed (clean break, DDL CHECK changed).
+- L2 intent to kind mapping (default deny, explicit deny wins): task -> `delegates_to`; escalation and report -> `escalates_to`; question and notice -> `collaborates_with`. `spawned_by` and `can_observe` never authorize a message (`can_observe` means reading output via `rig capture`).
+- `GET /api/v2/openrig/rooms/{room}/rigspec` renders the room as RigSpec 0.2 (active seats, `allow=true` links between active seats, hashes of the pinned snapshots); 404 absent room, 409 no active seats.
+- Client: `openrig_seat_sync.py rig ROOM` pulls every seat at its pin and builds `<out>/<room>/rig/{rig.yaml,agents/<seat>}`; prints `rig:<path>` so the operator runs `rig up <path>`.
+- Verified with the real `rig` 0.6.3 (isolated daemon): `rig spec validate` valid, `rig spec preflight` ready. Warning "permission_policy absent; launch_posture=floor" is OpenRig advice, not an error.
+- Finding: `agent_ref` must be `local:agents/<seat>` (relative to the spec dir); `path:` requires an absolute path and fails validation.
+- Not verified: the ORM-wired default constructor of the rigspec handler against a real Postgres (unit tests use fakes).
+- Open: `permission_policy` per seat in the rendered spec; room-level RigSpec top-level cross-room edges; link deletion API.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.

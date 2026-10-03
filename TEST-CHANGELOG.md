@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — OpenRig coherence for seats
+
+- Added: `commpolicy` mapping tests, `repositories/names_test.go`, `domain/rigspec/rigspec_test.go` (incl. real `rig spec validate`/`preflight` when a daemon runs), `server/httpapp/seat_rigspec_mount_test.go`.
+- Changed: `seat_admin_mount_test.go`, `policy_test.go` use OpenRig kinds and ids.
+- Added 10 `rig` tests in `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (38 total); 4 frontend tests in `SeatsPage.test.tsx`/`SeatDetailPage.test.tsx` (13 total).
+
 ## Current Status
 
 | Metric | Value | Notes |

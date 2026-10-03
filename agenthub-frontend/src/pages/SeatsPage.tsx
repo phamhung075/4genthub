@@ -26,6 +26,7 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
+import { isValidSeatName, SEAT_NAME_MESSAGE } from '../lib/seatNames';
 import {
   useCreateRoom,
   useCreateSeat,
@@ -72,9 +73,14 @@ export const SeatsPage: React.FC = () => {
 
   const [seatToRemove, setSeatToRemove] = useState<Seat | null>(null);
 
+  const roomSlugValid = isValidSeatName(roomSlug);
+  const roomSlugInvalid = roomSlug !== '' && !roomSlugValid;
+  const seatKeyValid = isValidSeatName(seatForm.seat_key);
+  const seatKeyInvalid = seatForm.seat_key !== '' && !seatKeyValid;
+
   const handleCreateRoom = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!roomSlug.trim() || !roomName.trim()) {
+    if (!roomSlugValid || !roomName.trim()) {
       return;
     }
     const response = await createRoom.mutateAsync({ slug: roomSlug.trim(), name: roomName.trim() });
@@ -85,6 +91,9 @@ export const SeatsPage: React.FC = () => {
 
   const handleAddSeat = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!seatKeyValid || !seatForm.seat_type || !seatForm.model.trim()) {
+      return;
+    }
     const body = {
       seat_key: seatForm.seat_key.trim(),
       seat_type: seatForm.seat_type,
@@ -191,10 +200,17 @@ export const SeatsPage: React.FC = () => {
               <Input
                 id="room-slug"
                 aria-label="Room slug"
+                aria-invalid={roomSlugInvalid}
+                aria-describedby={roomSlugInvalid ? 'room-slug-error' : undefined}
                 value={roomSlug}
                 onChange={e => setRoomSlug(e.target.value)}
                 placeholder="engineering"
               />
+              {roomSlugInvalid && (
+                <p id="room-slug-error" className="text-xs text-destructive">
+                  {SEAT_NAME_MESSAGE}
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="room-name">
@@ -208,7 +224,7 @@ export const SeatsPage: React.FC = () => {
                 placeholder="Engineering"
               />
             </div>
-            <Button type="submit" disabled={createRoom.isPending || !roomSlug.trim() || !roomName.trim()}>
+            <Button type="submit" disabled={createRoom.isPending || !roomSlugValid || !roomName.trim()}>
               {createRoom.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Create room
             </Button>
@@ -227,6 +243,7 @@ export const SeatsPage: React.FC = () => {
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <DoorOpen className="h-5 w-5 text-primary" /> Rooms
         </h2>
+        <p className="text-xs text-muted-foreground">A room is an OpenRig pod.</p>
         {roomsLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading rooms...
@@ -275,6 +292,9 @@ export const SeatsPage: React.FC = () => {
               <Plus className="h-4 w-4" /> Add seat
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            A seat is an OpenRig member (a fixed role slot).
+          </p>
 
           {seatsLoading && (
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -375,11 +395,18 @@ export const SeatsPage: React.FC = () => {
               <Input
                 id="seat-key"
                 aria-label="Seat key"
+                aria-invalid={seatKeyInvalid}
+                aria-describedby={seatKeyInvalid ? 'seat-key-error' : undefined}
                 value={seatForm.seat_key}
                 onChange={e => setSeatForm(prev => ({ ...prev, seat_key: e.target.value }))}
                 placeholder="alice"
                 required
               />
+              {seatKeyInvalid && (
+                <p id="seat-key-error" className="text-xs text-destructive">
+                  {SEAT_NAME_MESSAGE}
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="seat-type">
@@ -464,10 +491,7 @@ export const SeatsPage: React.FC = () => {
               <Button
                 type="submit"
                 disabled={
-                  createSeat.isPending ||
-                  !seatForm.seat_key.trim() ||
-                  !seatForm.seat_type ||
-                  !seatForm.model.trim()
+                  createSeat.isPending || !seatKeyValid || !seatForm.seat_type || !seatForm.model.trim()
                 }
               >
                 {createSeat.isPending && <Loader2 className="h-4 w-4 animate-spin" />}

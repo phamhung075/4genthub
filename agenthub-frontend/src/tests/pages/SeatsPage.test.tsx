@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { SeatsPage } from '../../pages/SeatsPage';
 import { seatApi } from '../../services/seatApi';
+import { SEAT_NAME_MESSAGE } from '../../lib/seatNames';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -184,6 +185,67 @@ describe('SeatsPage', () => {
 
     await waitFor(() => {
       expect(mockApi.putSettings).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it('blocks invalid room slugs and shows the name rule', async () => {
+    renderPage();
+    await screen.findByText('Development');
+
+    fireEvent.change(screen.getByLabelText('Room name'), { target: { value: 'Engineering' } });
+    const slug = screen.getByLabelText('Room slug');
+
+    for (const invalid of ['eng.one', 'eng one', '-eng']) {
+      fireEvent.change(slug, { target: { value: invalid } });
+      expect(screen.getByText(SEAT_NAME_MESSAGE)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /create room/i })).toBeDisabled();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+    expect(mockApi.createRoom).not.toHaveBeenCalled();
+  });
+
+  it('accepts an uppercase room slug', async () => {
+    renderPage();
+    await screen.findByText('Development');
+
+    fireEvent.change(screen.getByLabelText('Room slug'), { target: { value: 'Eng' } });
+    fireEvent.change(screen.getByLabelText('Room name'), { target: { value: 'Engineering' } });
+
+    expect(screen.queryByText(SEAT_NAME_MESSAGE)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+
+    await waitFor(() => {
+      expect(mockApi.createRoom).toHaveBeenCalledWith({ slug: 'Eng', name: 'Engineering' });
+    });
+  });
+
+  it('blocks invalid seat keys and accepts an uppercase key', async () => {
+    await openAddSeatDialog();
+    const seatKey = screen.getByLabelText('Seat key');
+    const submit = () => {
+      const buttons = screen.getAllByRole('button', { name: /add seat/i });
+      return buttons[buttons.length - 1];
+    };
+
+    for (const invalid of ['bo.b', 'bo b', '-bob']) {
+      fireEvent.change(seatKey, { target: { value: invalid } });
+      expect(screen.getByText(SEAT_NAME_MESSAGE)).toBeInTheDocument();
+      expect(submit()).toBeDisabled();
+    }
+    expect(mockApi.createSeat).not.toHaveBeenCalled();
+
+    fireEvent.change(seatKey, { target: { value: 'Bob' } });
+    expect(screen.queryByText(SEAT_NAME_MESSAGE)).not.toBeInTheDocument();
+    fireEvent.click(submit());
+
+    await waitFor(() => {
+      expect(mockApi.createSeat).toHaveBeenCalledWith('dev', {
+        seat_key: 'Bob',
+        seat_type: 'coder',
+        runtime: 'claude-code',
+        model: 'sonnet',
+      });
     });
   });
 });

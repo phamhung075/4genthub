@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
@@ -317,6 +318,10 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, "slug and name are required")
 		return
 	}
+	if err := repositories.ValidateName("room slug", req.Slug); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	room, err := source.SaveRoom(r.Context(), userID(u), repositories.Room{Slug: req.Slug, Name: req.Name})
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
@@ -431,6 +436,10 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	if strings.TrimSpace(req.SeatKey) == "" || strings.TrimSpace(req.SeatType) == "" {
 		writeDetail(w, http.StatusBadRequest, "seat_key and seat_type are required")
+		return
+	}
+	if err := repositories.ValidateName("seat key", req.SeatKey); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if !seatAdminRuntime(req.Runtime) {
@@ -860,11 +869,7 @@ func seatAdminRuntime(runtime string) bool {
 }
 
 func seatAdminLinkKind(kind string) bool {
-	switch kind {
-	case "delegates_to", "escalates_to", "reports_to", "consults", "notifies":
-		return true
-	}
-	return false
+	return commpolicy.ValidKind(commpolicy.LinkKind(kind))
 }
 
 func seatAdminRoomBody(room *repositories.Room) *entities.OrderedMap[any] {

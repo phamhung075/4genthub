@@ -113,12 +113,34 @@ export interface SeatModuleChange {
 // Links
 // =============================================================================
 
+/** The five edge kinds OpenRig accepts. */
 export type SeatLinkKind =
   | 'delegates_to'
-  | 'escalates_to'
-  | 'reports_to'
-  | 'consults'
-  | 'notifies';
+  | 'spawned_by'
+  | 'can_observe'
+  | 'collaborates_with'
+  | 'escalates_to';
+
+export interface SeatLinkKindOption {
+  kind: SeatLinkKind;
+  /** Short plain-English label shown in the Links tab. */
+  label: string;
+  /** One-line hint for the kind. */
+  hint: string;
+}
+
+/** Single source of truth for the link kinds offered in the UI. */
+export const SEAT_LINK_KINDS: SeatLinkKindOption[] = [
+  { kind: 'delegates_to', label: 'Gives work to', hint: 'Launches first.' },
+  { kind: 'spawned_by', label: 'Was created by', hint: 'Parent launches first.' },
+  {
+    kind: 'can_observe',
+    label: 'Can observe',
+    hint: 'Can read the output of; does not allow sending.',
+  },
+  { kind: 'collaborates_with', label: 'Collaborates with', hint: 'Peer.' },
+  { kind: 'escalates_to', label: 'Escalates to', hint: 'Escalates problems up to.' },
+];
 
 export interface SeatLink {
   id: string;

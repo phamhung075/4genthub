@@ -16,6 +16,18 @@ prints a notice when the cloud has a newer snapshot. Pass ``--update`` to adopt
 the newer snapshot and move the pin. A pin whose directory is missing on disk
 is an error; the script never silently falls back to another snapshot.
 
+``rig`` materializes a whole room in one command. It fetches the room's rigspec,
+pulls every listed seat with the same pinning rules as ``pull``, then builds::
+
+    <out>/<room>/rig/rig.yaml         the server's RigSpec, written verbatim
+    <out>/<room>/rig/agents/<seat>    link to that seat's pinned hash directory
+
+The ``agents/<seat>`` link makes the ``local:agents/<seat>`` references in the
+YAML resolve. The rig directory is built in a staging directory and swapped in
+only after every seat is pinned, so a failed run leaves a previous rig directory
+untouched. Print only ``rig:<path to rig.yaml>`` so the operator can run
+``rig up <that path>``.
+
 Offline use is an explicit operator choice. ``bundle`` produces a self-contained
 ``.rigbundle`` from the pinned snapshot; it is never used automatically as a
 fallback. To run a seat offline, operate the bundle yourself::
@@ -29,6 +41,7 @@ Environment:
 
 Usage:
   openrig_seat_sync.py pull ROOM SEAT [--out DIR] [--update]
+  openrig_seat_sync.py rig ROOM [--out DIR] [--update]
   openrig_seat_sync.py bundle ROOM SEAT --rig-yaml PATH --rig-root DIR [--out-dir DIR]
 
 Exit codes:
@@ -51,12 +64,13 @@ from pathlib import Path, PurePosixPath
 
 DEFAULT_OUT = Path.home() / ".openrig" / "agenthub-seats"
 SEATS_PATH = "/api/v2/openrig/seats"
+ROOMS_PATH = "/api/v2/openrig/rooms"
 
 EXIT_OK = 0
 EXIT_REMOTE = 1
 EXIT_USAGE = 2
 
-NAME_RE = re.compile(r"[a-z0-9][a-z0-9_-]*")
+NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
@@ -78,7 +92,7 @@ def require_env(name: str) -> str:
 def validate_name(kind: str, value: str) -> str:
     if not isinstance(value, str) or not NAME_RE.fullmatch(value):
         raise SyncError(
-            f"invalid {kind} name: {value!r} (expected [a-z0-9][a-z0-9_-]*)",
+            f"invalid {kind} name: {value!r} (expected [a-zA-Z0-9][a-zA-Z0-9_-]*)",
             EXIT_USAGE,
         )
     return value
@@ -107,8 +121,7 @@ def safe_relative(path: str) -> PurePosixPath:
     return PurePosixPath(*parts)
 
 
-def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
-    path = f"{SEATS_PATH}/{room}/{seat}"
+def get_json(base_url: str, token: str, path: str) -> dict:
     request = urllib.request.Request(
         base_url.rstrip("/") + path,
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
@@ -126,12 +139,31 @@ def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
     except json.JSONDecodeError as err:
         raise SyncError(f"GET {path} returned invalid JSON: {err}", EXIT_REMOTE)
 
-    if not isinstance(body, dict) or body.get("success") is not True:
+    if not isinstance(body, dict):
+        raise SyncError(f"GET {path} returned a malformed response", EXIT_REMOTE)
+    return body
+
+
+def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
+    path = f"{SEATS_PATH}/{room}/{seat}"
+    body = get_json(base_url, token, path)
+    if body.get("success") is not True:
         raise SyncError(f"GET {path} returned an error response", EXIT_REMOTE)
     resolved = body.get("resolved_seat")
     if not isinstance(resolved, dict):
         raise SyncError(f"GET {path} response has no resolved_seat", EXIT_REMOTE)
     return resolved
+
+
+def fetch_rigspec(base_url: str, token: str, room: str) -> dict:
+    path = f"{ROOMS_PATH}/{room}/rigspec"
+    body = get_json(base_url, token, path)
+    if body.get("success") is not True:
+        raise SyncError(f"GET {path} returned an error response", EXIT_REMOTE)
+    rigspec = body.get("rigspec")
+    if not isinstance(rigspec, dict):
+        raise SyncError(f"GET {path} response has no rigspec", EXIT_REMOTE)
+    return rigspec
 
 
 def extract_files(resolved: dict) -> list[tuple[PurePosixPath, str]]:
@@ -199,12 +231,14 @@ def materialize(hash_dir: Path, entries: list[tuple[PurePosixPath, str]]) -> Non
         raise
 
 
-def cmd_pull(args: argparse.Namespace) -> None:
-    room = validate_name("room", args.room)
-    seat = validate_name("seat", args.seat)
-    base_url = require_env("AGENTHUB_URL")
-    token = require_env("AGENTHUB_TOKEN")
+def pull_seat(
+    base_url: str, token: str, room: str, seat: str, out: Path, update: bool
+) -> Path:
+    """Pin one seat and return the directory of the adopted snapshot.
 
+    The lock is the pin: without ``update`` a newer cloud snapshot only prints a
+    notice, and a pin whose directory is missing is a loud failure.
+    """
     resolved = fetch_seat(base_url, token, room, seat)
     if resolved.get("room") != room or resolved.get("seat") != seat:
         raise SyncError("server returned a snapshot for a different room/seat", EXIT_REMOTE)
@@ -212,13 +246,12 @@ def cmd_pull(args: argparse.Namespace) -> None:
     entries = extract_files(resolved)
     policy = resolved.get("policy", {})
 
-    out = (args.out or DEFAULT_OUT).expanduser().resolve()
     seat_dir = out / room / seat
     seat_dir.mkdir(parents=True, exist_ok=True)
     lock_path = seat_dir / "pinned.json"
     lock = read_lock(lock_path)
 
-    if lock is not None and not args.update and fetched_hash != lock["hash"]:
+    if lock is not None and not update and fetched_hash != lock["hash"]:
         pinned_hash = validate_hash(lock["hash"])
         pinned_dir = seat_dir / pinned_hash
         if not pinned_dir.is_dir():
@@ -231,15 +264,117 @@ def cmd_pull(args: argparse.Namespace) -> None:
             f"newer snapshot available: {fetched_hash} (run with --update to adopt)",
             file=sys.stderr,
         )
-        print(f"path:{pinned_dir}")
-        return
+        return pinned_dir
 
     hash_dir = seat_dir / fetched_hash
     materialize(hash_dir, entries)
     write_json_atomic(seat_dir / "policy.json", policy)
-    if lock is None or lock["hash"] != fetched_hash or args.update:
+    if lock is None or lock["hash"] != fetched_hash or update:
         write_json_atomic(lock_path, {"hash": fetched_hash, "path": str(hash_dir)})
+    return hash_dir
+
+
+def cmd_pull(args: argparse.Namespace) -> None:
+    room = validate_name("room", args.room)
+    seat = validate_name("seat", args.seat)
+    base_url = require_env("AGENTHUB_URL")
+    token = require_env("AGENTHUB_TOKEN")
+
+    out = (args.out or DEFAULT_OUT).expanduser().resolve()
+    hash_dir = pull_seat(base_url, token, room, seat, out, args.update)
     print(f"path:{hash_dir}")
+
+
+def remove_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+
+
+def place_agent(source: Path, target: Path) -> None:
+    """Point ``target`` at ``source``, copying if this OS has no symlinks."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.parent / f".{target.name}.{os.getpid()}.tmp"
+    remove_path(temporary)
+    try:
+        os.symlink(os.path.relpath(source, target.parent), temporary)
+    except OSError:
+        remove_path(temporary)
+        shutil.copytree(source, temporary, symlinks=True)
+    try:
+        os.replace(temporary, target)
+    except OSError:
+        remove_path(target)
+        os.replace(temporary, target)
+
+
+def swap_dir(staging: Path, target: Path) -> None:
+    """Move ``staging`` onto ``target``, restoring ``target`` if the move fails."""
+    backup = None
+    if target.exists() or target.is_symlink():
+        backup = Path(tempfile.mkdtemp(prefix=f".{target.name}.old.", dir=target.parent))
+        backup.rmdir()
+        target.rename(backup)
+    try:
+        staging.rename(target)
+    except BaseException:
+        if backup is not None:
+            backup.rename(target)
+        raise
+    if backup is not None:
+        shutil.rmtree(backup, ignore_errors=True)
+
+
+def cmd_rig(args: argparse.Namespace) -> None:
+    room = validate_name("room", args.room)
+    base_url = require_env("AGENTHUB_URL")
+    token = require_env("AGENTHUB_TOKEN")
+
+    rigspec = fetch_rigspec(base_url, token, room)
+    if rigspec.get("name") != room:
+        raise SyncError("server returned a rigspec for a different room", EXIT_REMOTE)
+    yaml_text = rigspec.get("yaml")
+    if not isinstance(yaml_text, str):
+        raise SyncError("rigspec has no yaml text", EXIT_REMOTE)
+    listed = rigspec.get("seats")
+    if not isinstance(listed, list) or not listed:
+        raise SyncError("rigspec has no seats", EXIT_REMOTE)
+
+    seats: list[str] = []
+    for entry in listed:
+        if not isinstance(entry, dict) or not isinstance(entry.get("seat"), str):
+            raise SyncError("rigspec contains a malformed seat entry", EXIT_REMOTE)
+        if not isinstance(entry.get("hash"), str):
+            raise SyncError("rigspec seat entry has no hash", EXIT_REMOTE)
+        seat = validate_name("seat", entry["seat"])
+        if seat in seats:
+            raise SyncError(f"rigspec lists seat {seat!r} twice", EXIT_REMOTE)
+        seats.append(seat)
+
+    out = (args.out or DEFAULT_OUT).expanduser().resolve()
+    pinned: dict[str, Path] = {}
+    for seat in seats:
+        try:
+            pinned[seat] = pull_seat(base_url, token, room, seat, out, args.update)
+        except SyncError as err:
+            raise SyncError(f"seat {seat} could not be pulled: {err}", EXIT_REMOTE) from err
+
+    room_dir = out / room
+    room_dir.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".rig.", dir=room_dir))
+    try:
+        (staging / "rig.yaml").write_text(yaml_text, encoding="utf-8")
+        agents = staging / "agents"
+        agents.mkdir()
+        for seat in seats:
+            place_agent(pinned[seat], agents / seat)
+        swap_dir(staging, room_dir / "rig")
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+
+    print(f"rig:{room_dir / 'rig' / 'rig.yaml'}")
 
 
 def cmd_bundle(args: argparse.Namespace) -> None:
@@ -312,6 +447,20 @@ def main(argv: list[str] | None = None) -> int:
         help="adopt the fetched snapshot even if a different pin exists",
     )
     pull.set_defaults(func=cmd_pull)
+
+    rig = subparsers.add_parser(
+        "rig", help="materialize a whole room: rig.yaml plus agent links"
+    )
+    rig.add_argument("room")
+    rig.add_argument(
+        "--out", type=Path, default=None, help=f"seat store (default {DEFAULT_OUT})"
+    )
+    rig.add_argument(
+        "--update",
+        action="store_true",
+        help="adopt fetched snapshots even if different pins exist",
+    )
+    rig.set_defaults(func=cmd_rig)
 
     bundle = subparsers.add_parser(
         "bundle", help="build a .rigbundle from the pinned snapshot"

@@ -229,4 +229,28 @@ describe('SeatDetailPage', () => {
 
     expect(screen.getByText('B content')).toBeInTheDocument();
   });
+
+  it('offers the five OpenRig link kinds with labels and message rules', async () => {
+    renderDetail();
+    await screen.findByText('rules');
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+
+    const select = (await screen.findByLabelText('Link kind')) as HTMLSelectElement;
+    expect(Array.from(select.options).map(option => option.value)).toEqual([
+      'delegates_to',
+      'spawned_by',
+      'can_observe',
+      'collaborates_with',
+      'escalates_to',
+    ]);
+
+    expect(screen.getByText('Gives work to')).toBeInTheDocument();
+    expect(screen.getByText('Was created by')).toBeInTheDocument();
+    expect(screen.getByText('Can observe')).toBeInTheDocument();
+    expect(screen.getByText('Collaborates with')).toBeInTheDocument();
+    expect(screen.getByText('Escalates to')).toBeInTheDocument();
+
+    expect(screen.getByText(/never allow sending/i)).toBeInTheDocument();
+  });
 });

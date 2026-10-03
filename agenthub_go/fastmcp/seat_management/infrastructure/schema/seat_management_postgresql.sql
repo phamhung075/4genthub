@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS seat_links (
     allow BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_seat_links_from_to_kind UNIQUE (from_seat_id, to_seat_id, kind),
-    CONSTRAINT ck_seat_links_kind CHECK (kind IN ('delegates_to', 'escalates_to', 'reports_to', 'consults', 'notifies')),
+    CONSTRAINT ck_seat_links_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),
     CONSTRAINT ck_seat_links_distinct CHECK (from_seat_id <> to_seat_id)
 );
 

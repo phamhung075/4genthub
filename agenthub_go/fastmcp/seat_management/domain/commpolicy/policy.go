@@ -20,12 +20,14 @@ import (
 
 type LinkKind string
 
+// Edge kinds accepted by OpenRig. Only delegates_to and spawned_by affect
+// launch order, and edges never route messages.
 const (
-	KindDelegatesTo LinkKind = "delegates_to"
-	KindEscalatesTo LinkKind = "escalates_to"
-	KindReportsTo   LinkKind = "reports_to"
-	KindConsults    LinkKind = "consults"
-	KindNotifies    LinkKind = "notifies"
+	KindDelegatesTo      LinkKind = "delegates_to"
+	KindSpawnedBy        LinkKind = "spawned_by"
+	KindCanObserve       LinkKind = "can_observe"
+	KindCollaboratesWith LinkKind = "collaborates_with"
+	KindEscalatesTo      LinkKind = "escalates_to"
 )
 
 type Intent string
@@ -76,39 +78,42 @@ type AuditRecord struct {
 	PolicyHash string
 }
 
-// kindForIntent maps a message intent to the link kind it must follow.
-func kindForIntent(intent Intent) (LinkKind, bool) {
-	switch intent {
-	case IntentTask:
-		return KindDelegatesTo, true
-	case IntentEscalation:
-		return KindEscalatesTo, true
-	case IntentReport:
-		return KindReportsTo, true
-	case IntentQuestion:
-		return KindConsults, true
-	case IntentNotice:
-		return KindNotifies, true
-	default:
-		return "", false
-	}
+// allowedKinds maps a message intent to the link kinds that authorize it.
+// spawned_by and can_observe never authorize a send; can_observe grants reading
+// output via rig capture/transcript, not sending.
+var allowedKinds = map[Intent][]LinkKind{
+	IntentTask:       {KindDelegatesTo},
+	IntentEscalation: {KindEscalatesTo},
+	IntentReport:     {KindEscalatesTo},
+	IntentQuestion:   {KindCollaboratesWith},
+	IntentNotice:     {KindCollaboratesWith},
 }
 
-func validKind(kind LinkKind) bool {
+// ValidKind reports whether kind is one of the five OpenRig edge kinds.
+func ValidKind(kind LinkKind) bool {
 	switch kind {
-	case KindDelegatesTo, KindEscalatesTo, KindReportsTo, KindConsults, KindNotifies:
+	case KindDelegatesTo, KindSpawnedBy, KindCanObserve, KindCollaboratesWith, KindEscalatesTo:
 		return true
 	default:
 		return false
 	}
 }
 
-// Decide resolves one send. An explicit deny always beats an allow.
+func kindAllowed(kinds []LinkKind, kind LinkKind) bool {
+	for _, k := range kinds {
+		if k == kind {
+			return true
+		}
+	}
+	return false
+}
+
+// Decide resolves one send. An explicit deny on any allowed kind always beats an allow.
 func Decide(policy Policy, to string, intent Intent) Decision {
 	if to == policy.Seat {
 		return Decision{Reason: reasonSelfMessage}
 	}
-	kind, ok := kindForIntent(intent)
+	kinds, ok := allowedKinds[intent]
 	if !ok {
 		return Decision{Reason: reasonUnknownIntent}
 	}
@@ -116,7 +121,7 @@ func Decide(policy Policy, to string, intent Intent) Decision {
 	var allow *Link
 	for i := range policy.Links {
 		link := &policy.Links[i]
-		if link.From != policy.Seat || link.To != to || link.Kind != kind {
+		if link.From != policy.Seat || link.To != to || !kindAllowed(kinds, link.Kind) {
 			continue
 		}
 		if !link.Allow {
@@ -158,7 +163,7 @@ func ParsePolicy(data []byte) (Policy, error) {
 	}
 	seen := make(map[linkKey]bool, len(policy.Links))
 	for _, link := range policy.Links {
-		if !validKind(link.Kind) {
+		if !ValidKind(link.Kind) {
 			return Policy{}, fmt.Errorf("unknown link kind %q", link.Kind)
 		}
 		if link.From != policy.Seat {

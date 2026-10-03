@@ -47,6 +47,7 @@ import {
   useUpsertSeatLink,
 } from '../hooks/useSeats';
 import { computeEffectiveModules } from '../lib/seatModules';
+import { SEAT_LINK_KINDS } from '../types/seatTypes';
 import type {
   EffectiveSeatModule,
   Seat,
@@ -58,14 +59,6 @@ import type {
   SeatOverlayScope,
   SeatOverlays,
 } from '../types/seatTypes';
-
-const LINK_KINDS: SeatLinkKind[] = [
-  'delegates_to',
-  'escalates_to',
-  'reports_to',
-  'consults',
-  'notifies',
-];
 
 const SCOPES: SeatOverlayScope[] = ['seat', 'room', 'company'];
 const OP_KINDS: SeatOverlayOpKind[] = ['add', 'remove', 'override', 'pin'];
@@ -454,7 +447,19 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
             Saving replaces the link to that seat and kind, or creates it when it does not exist.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Task messages are allowed by delegates_to; escalations and reports by escalates_to;
+            questions and notices by collaborates_with. can_observe and spawned_by never allow
+            sending.
+          </p>
+          <ul className="space-y-1 text-xs text-muted-foreground">
+            {SEAT_LINK_KINDS.map(({ kind: optionKind, label, hint }) => (
+              <li key={optionKind}>
+                <span className="font-medium text-foreground">{label}</span> ({optionKind}) — {hint}
+              </li>
+            ))}
+          </ul>
           <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleAddLink}>
             <div className="space-y-1">
               <label className="text-sm font-medium" htmlFor="link-target">
@@ -484,9 +489,9 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
                 value={kind}
                 onChange={e => setKind(e.target.value as SeatLinkKind)}
               >
-                {LINK_KINDS.map(value => (
-                  <option key={value} value={value}>
-                    {value}
+                {SEAT_LINK_KINDS.map(({ kind: optionKind, label }) => (
+                  <option key={optionKind} value={optionKind}>
+                    {label} ({optionKind})
                   </option>
                 ))}
               </Select>

@@ -55,7 +55,7 @@ func TestDecide(t *testing.T) {
 		},
 		{
 			name:       "wrong kind",
-			policy:     Policy{Seat: "a", Links: []Link{{From: "a", To: "b", Kind: KindConsults, Allow: true}}},
+			policy:     Policy{Seat: "a", Links: []Link{{From: "a", To: "b", Kind: KindCollaboratesWith, Allow: true}}},
 			to:         "b",
 			intent:     IntentTask,
 			wantReason: reasonNoLink,
@@ -104,32 +104,66 @@ func TestDecide(t *testing.T) {
 }
 
 func TestDecideIntentKindMapping(t *testing.T) {
-	pairs := []struct {
-		intent Intent
-		kind   LinkKind
-	}{
-		{IntentTask, KindDelegatesTo},
-		{IntentEscalation, KindEscalatesTo},
-		{IntentReport, KindReportsTo},
-		{IntentQuestion, KindConsults},
-		{IntentNotice, KindNotifies},
+	rightKind := map[Intent]LinkKind{
+		IntentTask:       KindDelegatesTo,
+		IntentEscalation: KindEscalatesTo,
+		IntentReport:     KindEscalatesTo,
+		IntentQuestion:   KindCollaboratesWith,
+		IntentNotice:     KindCollaboratesWith,
 	}
-	for _, pair := range pairs {
-		policy := Policy{Seat: "a", Links: []Link{{From: "a", To: "b", Kind: pair.kind, Allow: true}}}
-		if got := Decide(policy, "b", pair.intent); !got.Allowed || got.Reason != reasonAllowed {
-			t.Fatalf("intent %q against kind %q = %+v, want allowed", pair.intent, pair.kind, got)
+	allKinds := []LinkKind{KindDelegatesTo, KindSpawnedBy, KindCanObserve, KindCollaboratesWith, KindEscalatesTo}
+	for intent, want := range rightKind {
+		for _, kind := range allKinds {
+			policy := Policy{Seat: "a", Links: []Link{{From: "a", To: "b", Kind: kind, Allow: true}}}
+			got := Decide(policy, "b", intent)
+			if kind == want {
+				if !got.Allowed || got.Reason != reasonAllowed {
+					t.Errorf("intent %q with kind %q = %+v, want allowed", intent, kind, got)
+				}
+				continue
+			}
+			if got.Allowed || got.Reason != reasonNoLink {
+				t.Errorf("intent %q with kind %q = %+v, want no link", intent, kind, got)
+			}
+		}
+	}
+}
+
+// TestDecideStructuralKindsNeverAllow pins that the two structural edges cannot
+// authorize a send for any intent.
+func TestDecideStructuralKindsNeverAllow(t *testing.T) {
+	intents := []Intent{IntentTask, IntentEscalation, IntentReport, IntentQuestion, IntentNotice}
+	for _, kind := range []LinkKind{KindSpawnedBy, KindCanObserve} {
+		for _, intent := range intents {
+			policy := Policy{Seat: "a", Links: []Link{{From: "a", To: "b", Kind: kind, Allow: true}}}
+			if got := Decide(policy, "b", intent); got.Allowed {
+				t.Errorf("intent %q authorized by structural kind %q: %+v", intent, kind, got)
+			}
+		}
+	}
+}
+
+func TestValidKind(t *testing.T) {
+	for _, kind := range []LinkKind{KindDelegatesTo, KindSpawnedBy, KindCanObserve, KindCollaboratesWith, KindEscalatesTo} {
+		if !ValidKind(kind) {
+			t.Errorf("ValidKind(%q) = false, want true", kind)
+		}
+	}
+	for _, kind := range []LinkKind{"", "reports_to", "consults", "notifies", "shouts"} {
+		if ValidKind(kind) {
+			t.Errorf("ValidKind(%q) = true, want false", kind)
 		}
 	}
 }
 
 func TestDecideReturnsDecidingLink(t *testing.T) {
-	allow := Link{From: "a", To: "b", Kind: KindNotifies, Allow: true}
+	allow := Link{From: "a", To: "b", Kind: KindCollaboratesWith, Allow: true}
 	decision := Decide(Policy{Seat: "a", Links: []Link{allow}}, "b", IntentNotice)
 	if decision.Link == nil || *decision.Link != allow {
 		t.Fatalf("allowed decision link = %+v, want %+v", decision.Link, allow)
 	}
 
-	deny := Link{From: "a", To: "b", Kind: KindNotifies, Allow: false}
+	deny := Link{From: "a", To: "b", Kind: KindCollaboratesWith, Allow: false}
 	decision = Decide(Policy{Seat: "a", Links: []Link{allow, deny}}, "b", IntentNotice)
 	if decision.Link == nil || *decision.Link != deny {
 		t.Fatalf("denied decision link = %+v, want %+v", decision.Link, deny)
@@ -143,7 +177,7 @@ func TestDecideReturnsDecidingLink(t *testing.T) {
 func TestParsePolicyValid(t *testing.T) {
 	data := []byte(`{"Seat":"a","Links":[
 		{"From":"a","To":"b","Kind":"delegates_to","Allow":true},
-		{"From":"a","To":"c","Kind":"consults","Allow":false}
+		{"From":"a","To":"c","Kind":"collaborates_with","Allow":false}
 	]}`)
 	policy, err := ParsePolicy(data)
 	if err != nil {
@@ -157,6 +191,15 @@ func TestParsePolicyValid(t *testing.T) {
 	}
 }
 
+func TestParsePolicyAcceptsAllFiveKinds(t *testing.T) {
+	for _, kind := range []LinkKind{KindDelegatesTo, KindSpawnedBy, KindCanObserve, KindCollaboratesWith, KindEscalatesTo} {
+		data := []byte(`{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"` + string(kind) + `","Allow":true}]}`)
+		if _, err := ParsePolicy(data); err != nil {
+			t.Errorf("ParsePolicy(%s): %v", kind, err)
+		}
+	}
+}
+
 func TestParsePolicyErrors(t *testing.T) {
 	cases := map[string]string{
 		"empty":                     ``,
@@ -166,6 +209,9 @@ func TestParsePolicyErrors(t *testing.T) {
 		"unknown top field":         `{"Seat":"a","Bogus":1}`,
 		"unknown link field":        `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true,"Extra":1}]}`,
 		"unknown link kind":         `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"shouts","Allow":true}]}`,
+		"legacy reports_to":         `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"reports_to","Allow":true}]}`,
+		"legacy consults":           `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"consults","Allow":true}]}`,
+		"legacy notifies":           `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"notifies","Allow":true}]}`,
 		"foreign link":              `{"Seat":"a","Links":[{"From":"x","To":"b","Kind":"delegates_to","Allow":true}]}`,
 		"duplicate triple":          `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true},{"From":"a","To":"b","Kind":"delegates_to","Allow":true}]}`,
 		"duplicate differing allow": `{"Seat":"a","Links":[{"From":"a","To":"b","Kind":"delegates_to","Allow":true},{"From":"a","To":"b","Kind":"delegates_to","Allow":false}]}`,
@@ -195,12 +241,12 @@ func TestParsePolicyAllowsNullAndEmptyLinks(t *testing.T) {
 func TestPolicyHashOrderIndependent(t *testing.T) {
 	first := Policy{Seat: "a", Links: []Link{
 		{From: "a", To: "b", Kind: KindDelegatesTo, Allow: true},
-		{From: "a", To: "c", Kind: KindReportsTo, Allow: true},
-		{From: "a", To: "d", Kind: KindConsults, Allow: false},
+		{From: "a", To: "c", Kind: KindCollaboratesWith, Allow: true},
+		{From: "a", To: "d", Kind: KindSpawnedBy, Allow: false},
 	}}
 	reversed := Policy{Seat: "a", Links: []Link{
-		{From: "a", To: "d", Kind: KindConsults, Allow: false},
-		{From: "a", To: "c", Kind: KindReportsTo, Allow: true},
+		{From: "a", To: "d", Kind: KindSpawnedBy, Allow: false},
+		{From: "a", To: "c", Kind: KindCollaboratesWith, Allow: true},
 		{From: "a", To: "b", Kind: KindDelegatesTo, Allow: true},
 	}}
 	if PolicyHash(first) != PolicyHash(reversed) {
@@ -222,8 +268,8 @@ func TestPolicyHashChanges(t *testing.T) {
 		"seat":  {Seat: "z", Links: base.Links},
 		"allow": {Seat: "a", Links: []Link{{From: "a", To: "b", Kind: KindDelegatesTo, Allow: false}}},
 		"to":    {Seat: "a", Links: []Link{{From: "a", To: "c", Kind: KindDelegatesTo, Allow: true}}},
-		"kind":  {Seat: "a", Links: []Link{{From: "a", To: "b", Kind: KindConsults, Allow: true}}},
-		"extra": {Seat: "a", Links: append(base.Links, Link{From: "a", To: "z", Kind: KindNotifies, Allow: true})},
+		"kind":  {Seat: "a", Links: []Link{{From: "a", To: "b", Kind: KindCollaboratesWith, Allow: true}}},
+		"extra": {Seat: "a", Links: append(base.Links, Link{From: "a", To: "z", Kind: KindSpawnedBy, Allow: true})},
 		"empty": {Seat: "a"},
 	}
 	baseHash := PolicyHash(base)

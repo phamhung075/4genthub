@@ -491,14 +491,66 @@ func TestSeatAdminLinks(t *testing.T) {
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"to_seat_id":"seat-b"`) {
 		t.Errorf("list links: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"alice","kind":"reports_to"}`); rec.Code != http.StatusBadRequest {
+	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"alice","kind":"collaborates_with"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("self link: status = %d, want 400", rec.Code)
 	}
-	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"ghost","kind":"reports_to"}`); rec.Code != http.StatusNotFound {
+	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"ghost","kind":"collaborates_with"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("unknown target: status = %d, want 404", rec.Code)
 	}
 	if rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"hates"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("bad link kind: status = %d, want 400", rec.Code)
+	}
+}
+
+func TestSeatAdminLinkKinds(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats,
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
+	)
+	mux := seatAdminTestMux(t, fake)
+	for _, kind := range []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"} {
+		body := `{"to_seat":"bob","kind":"` + kind + `"}`
+		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", body)
+		if rec.Code != http.StatusOK {
+			t.Errorf("kind %q: status = %d, want 200: %s", kind, rec.Code, rec.Body.String())
+		}
+	}
+	for _, kind := range []string{"reports_to", "consults", "notifies", "hates"} {
+		body := `{"to_seat":"bob","kind":"` + kind + `"}`
+		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", body)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("kind %q: status = %d, want 400: %s", kind, rec.Code, rec.Body.String())
+		}
+	}
+}
+
+func TestSeatAdminNameValidation(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+
+	for _, body := range []string{
+		`{"slug":"bad.slug","name":"Bad"}`,
+		`{"slug":"bad slug","name":"Bad"}`,
+		`{"slug":"-bad","name":"Bad"}`,
+	} {
+		rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", body)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("create room %s: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	for _, body := range []string{
+		`{"seat_key":"bad.key","seat_type":"coder","runtime":"claude-code"}`,
+		`{"seat_key":"bad key","seat_type":"coder","runtime":"claude-code"}`,
+		`{"seat_key":"-bad","seat_type":"coder","runtime":"claude-code"}`,
+	} {
+		rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", body)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("create seat %s: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
+		}
 	}
 }
 

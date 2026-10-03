@@ -30,6 +30,28 @@
     add/remove/override/pin plus op delete, link allow toggle, resolved preview hash and file
     switch, settings PUT).
 
+### Changed
+- **🪑 Seats pages aligned with OpenRig edge kinds and name rules** - 2026-10-03
+  - Link kinds now match OpenRig exactly: `delegates_to`, `spawned_by`, `can_observe`,
+    `collaborates_with`, `escalates_to` (the old `reports_to`/`consults`/`notifies` are removed).
+    `SEAT_LINK_KINDS` in `src/types/seatTypes.ts` is the single definition reused by the UI.
+  - Links tab: each kind shows a plain-English label and a one-line hint, and the tab explains
+    which kinds allow which messages (task -> `delegates_to`; escalation and report ->
+    `escalates_to`; question and notice -> `collaborates_with`; `can_observe` and `spawned_by`
+    never allow sending). The existing "allow=false blocks a link" statement is kept.
+  - Room slugs (create-room form) and seat keys (add-seat dialog) are validated client-side
+    against `^[a-zA-Z0-9][a-zA-Z0-9_-]*$`; submit is disabled and the shared message
+    `Use letters, digits, "_" or "-"; start with a letter or digit (no dots or spaces).` is shown
+    for invalid values.
+  - Help lines added once each: "A room is an OpenRig pod." and
+    "A seat is an OpenRig member (a fixed role slot).".
+  - Files: `src/types/seatTypes.ts`, `src/lib/seatNames.ts` (new), `src/pages/SeatDetailPage.tsx`,
+    `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatDetailPage.test.tsx`,
+    `src/tests/pages/SeatsPage.test.tsx`
+  - Tests: `npx vitest run src/tests/pages/SeatsPage.test.tsx src/tests/pages/SeatDetailPage.test.tsx`
+    passes (13 tests, including the five link kinds in the select and invalid/valid room-slug and
+    seat-key cases).
+
 ### Removed
 - **🧹 Final Session Cleanup - Debug Artifacts** - 2025-11-07
   - Removed debug print statement from backend task facade
