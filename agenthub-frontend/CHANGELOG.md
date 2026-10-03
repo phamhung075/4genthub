@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Fixed
+- **Add-seat dialog accepts an empty model** - 2026-10-03
+  - The Add seat button was disabled while Model was empty, but the server accepts an empty model (runtime
+    default). Model is now optional, validated with the same rule as the LLM tab, with a hint and an error
+    message for an invalid id.
+  - Files: `src/pages/SeatsPage.tsx`, `src/tests/pages/SeatsPage.test.tsx` (2 tests added)
 - **401 retry keeps the caller headers; the access token is no longer logged** - 2026-10-03
   - After a token refresh, `handleResponse` rebuilt the headers by spreading the `Headers` object that
     `apiRequest` now passes, which gave `{}`: the retried request lost `Content-Type` and any caller header.

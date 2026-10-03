@@ -175,6 +175,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
 
+## 2026-10-03 — Add-seat model
+
+- Added: 2 tests in `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (empty model posts `model: ''`; invalid model id disables Add seat and shows the rule).
+
 ## 2026-10-03 — apiRequest sends the Bearer token
 
 - Added: 2 tests in `apiRequest.test.ts`: a 401 followed by a refresh retries with the caller headers, Content-Type and the new Bearer; no logger level receives any character of the access token. Both fail without the fixes (`aa370d07`).

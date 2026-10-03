@@ -27,7 +27,7 @@ import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
 import { MachinesPanel, SeatStateBadge, SeatSyncBadge } from '../components/seats/MachinesPanel';
 import { latestSeatStatus } from '../lib/machineSeats';
-import { isValidSeatName, SEAT_NAME_MESSAGE } from '../lib/seatNames';
+import { isValidSeatModel, isValidSeatName, SEAT_MODEL_MESSAGE, SEAT_NAME_MESSAGE } from '../lib/seatNames';
 import {
   useCreateRoom,
   useCreateSeat,
@@ -79,6 +79,7 @@ export const SeatsPage: React.FC = () => {
   const roomSlugInvalid = roomSlug !== '' && !roomSlugValid;
   const seatKeyValid = isValidSeatName(seatForm.seat_key);
   const seatKeyInvalid = seatForm.seat_key !== '' && !seatKeyValid;
+  const seatModelValid = isValidSeatModel(seatForm.model.trim());
 
   const handleCreateRoom = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -93,7 +94,7 @@ export const SeatsPage: React.FC = () => {
 
   const handleAddSeat = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!seatKeyValid || !seatForm.seat_type || !seatForm.model.trim()) {
+    if (!seatKeyValid || !seatForm.seat_type || !seatModelValid) {
       return;
     }
     const body = {
@@ -463,8 +464,12 @@ export const SeatsPage: React.FC = () => {
                   aria-label="Model"
                   value={seatForm.model}
                   onChange={e => setSeatForm(prev => ({ ...prev, model: e.target.value }))}
-                  placeholder="sonnet"
+                  placeholder="runtime default"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Model id for this runtime, for example sonnet. Empty uses the runtime default.
+                </p>
+                {!seatModelValid && <p className="text-xs text-destructive">{SEAT_MODEL_MESSAGE}</p>}
               </div>
             </div>
 
@@ -504,7 +509,7 @@ export const SeatsPage: React.FC = () => {
               <Button
                 type="submit"
                 disabled={
-                  createSeat.isPending || !seatKeyValid || !seatForm.seat_type || !seatForm.model.trim()
+                  createSeat.isPending || !seatKeyValid || !seatForm.seat_type || !seatModelValid
                 }
               >
                 {createSeat.isPending && <Loader2 className="h-4 w-4 animate-spin" />}

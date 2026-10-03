@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { SeatsPage } from '../../pages/SeatsPage';
 import { seatApi } from '../../services/seatApi';
-import { SEAT_NAME_MESSAGE } from '../../lib/seatNames';
+import { SEAT_MODEL_MESSAGE, SEAT_NAME_MESSAGE } from '../../lib/seatNames';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -199,6 +199,31 @@ describe('SeatsPage', () => {
     const body = mockApi.createSeat.mock.calls[0][1] as Record<string, unknown>;
     expect(body.pinned_version).toBeUndefined();
     expect(body.follow_latest).toBeUndefined();
+  });
+
+  it('adds a seat with an empty model so the runtime default is used', async () => {
+    await openAddSeatDialog();
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: '' } });
+    fireEvent.click(screen.getByLabelText('Use company default'));
+    submitSeat();
+
+    await waitFor(() => {
+      expect(mockApi.createSeat).toHaveBeenCalledWith('dev', {
+        seat_key: 'bob',
+        seat_type: 'coder',
+        runtime: 'claude-code',
+        model: '',
+      });
+    });
+  });
+
+  it('disables adding a seat and explains an invalid model id', async () => {
+    await openAddSeatDialog();
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: '-bad model' } });
+
+    const buttons = screen.getAllByRole('button', { name: /add seat/i });
+    expect(buttons[buttons.length - 1]).toBeDisabled();
+    expect(screen.getByText(SEAT_MODEL_MESSAGE)).toBeInTheDocument();
   });
 
   it('toggles the company follow-latest setting with PUT', async () => {
