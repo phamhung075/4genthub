@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+- `agenthub_go/fastmcp/server/httpapp/http.go`: `/health` reports version `0.0.7` (was `0.0.6`) so a deploy of the seat, rigspec and bridge work can be confirmed live; bump it with each release (the Docker context has no `.git`).
+
 ### Fixed
 
 - `scripts/openrig_bridge.py`: seat name is the part of OpenRig `logicalId` after the first dot (`rig ps` has no `podId`); found by running the stack against a real `rig` daemon.

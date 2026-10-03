@@ -132,10 +132,10 @@ func authenticateUser(ctx context.Context, r *http.Request) (*authdomain.User, e
 // healthServerName is the FastMCP server name (mcp_entry_point.py server = FastMCP(name=...)).
 const healthServerName = "agenthub - Task Management & Agent Orchestration"
 
-// healthVersion is pyproject.toml tool.uv-dynamic-versioning.fallback-version,
-// the value the Python /health handler reports (it reads pyproject.toml, not
-// config.VERSION, which is "0.0.2c").
-const healthVersion = "0.0.6"
+// healthVersion is the release the server reports on /health. Bump it with every
+// change that must be confirmable after a deploy: the Docker build context has
+// no .git, so no commit id can be embedded.
+const healthVersion = "0.0.7"
 
 // HealthStatusProvider supplies the connection figures the Python /health
 // handler reads from get_connection_manager() and get_status_broadcaster(). The
