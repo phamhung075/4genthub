@@ -6,6 +6,10 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
 
+## 2026-10-03 — Parallel schema apply
+
+- Fixed: `TestSeatRepositoriesIntegration`/`TestSeatResolutionEndToEnd` failed on a fresh database when their packages ran in parallel (`CREATE EXTENSION` unique violation). Both prepend `pg_advisory_xact_lock(727274)` to the schema batch, which runs as one transaction. Not run here (no Postgres); to be confirmed by the tester's repro.
+
 ## 2026-10-03 — Seat-type version race
 
 - Added: `TestSeatTypeAddVersionLostRace` (fake driver returns SQLSTATE 23505 on insert; identical content returns the winner, another runtime or refs is `ErrSeatTypeVersionConflict`).

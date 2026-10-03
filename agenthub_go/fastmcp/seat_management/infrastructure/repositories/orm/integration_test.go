@@ -436,5 +436,10 @@ func seatIntegrationSchema(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read schema %s: %v", path, err)
 	}
-	return string(raw)
+	return seatSchemaApplyLock + string(raw)
 }
+
+// seatSchemaApplyLock serializes schema applies from parallel test packages: the statement
+// batch runs as one implicit transaction, so the transaction-scoped lock is held until the
+// whole schema is applied. Without it, concurrent CREATE EXTENSION runs hit a unique violation.
+const seatSchemaApplyLock = "SELECT pg_advisory_xact_lock(727274);\n"

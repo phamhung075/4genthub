@@ -38,7 +38,9 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, string(schema)); err != nil {
+	// One implicit transaction holds the lock until the schema is applied, so parallel
+	// test packages do not race on CREATE EXTENSION.
+	if _, err := db.ExecContext(ctx, "SELECT pg_advisory_xact_lock(727274);\n"+string(schema)); err != nil {
 		t.Fatalf("apply schema: %v", err)
 	}
 	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
