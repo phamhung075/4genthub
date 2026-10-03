@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+**`NEXT_GEN.md` status corrections** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: fixed defects marked with commit hashes; superseded items use `[~]` with a legend; F1 and F4 are unticked (check pending). Documentation only, no tests run.
+
 **Permission policy is a property of each seat, rendered per member** (2026-10-03)
 
 - Breaking, clean cut: the rig-level `permission_policy` line and the `?permission_policy=` query on `GET /api/v2/openrig/rooms/{room}/rigspec` are removed, and so is the `--permission-policy` flag of `scripts/openrig_seat_sync.py rig` (the script now takes the policy from the rendered spec). `rigspec.RenderRoom(roomSlug, roomName, seats, edges)` no longer takes a policy; `rigspec.Seat.PermissionPolicy` renders as `permission_policy: builtin:<name>` (or `none`) on that member.
