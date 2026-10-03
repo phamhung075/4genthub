@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — openrig_team_setup.py apply failed with 404 seat type not found on a fresh database
+
+- Changed: `test_openrig_team_setup.py` order test starts with the seed; `test_409_on_a_module_is_an_error` expects 2 requests (seed, failing module). Added: `test_seed_failure_stops_before_any_other_call`. 23 passed (red before: order test).
+
 ## 2026-10-03 — `AddVersion` lost-race re-read
 
 - Changed: `TestSeatTypeAddVersionLostRace` now fails any statement on `seat_type_versions` that is not scoped to the user and seat type (covers the re-read). Added `TestSeatTypeAddVersionOnlyReReadsAfterUniqueViolation` (23503 not re-read, re-read failure reported). Mutation check: matching any SQLSTATE 23 made both tests fail. orm package ok.

@@ -5,12 +5,14 @@ The team definition (room, seats, links, context modules, overlays) is data in
 ``scripts/team/4genthub/team.json``; the module texts are the files next to it.
 ``apply`` pushes that definition in a fixed order and is idempotent::
 
-    1. context modules   PUT  /api/v2/openrig/modules/{slug}/versions/{version}
-    2. room              POST /api/v2/openrig/rooms                  (409 exists: ok)
-    3. seats             POST /api/v2/openrig/rooms/{room}/seats     (409 exists: ok)
-    4. links             PUT  /api/v2/openrig/rooms/{room}/seats/{seat}/links
-    5. company overlay   PUT  /api/v2/openrig/overlay
-    6. seat overlays     PUT  /api/v2/openrig/rooms/{room}/seats/{seat}/overlay
+    1. seat types        POST /api/v2/openrig/seat-types/seed        (the seats need them;
+                         idempotent, the server needs AGENTHUB_PUBLIC_URL)
+    2. context modules   PUT  /api/v2/openrig/modules/{slug}/versions/{version}
+    3. room              POST /api/v2/openrig/rooms                  (409 exists: ok)
+    4. seats             POST /api/v2/openrig/rooms/{room}/seats     (409 exists: ok)
+    5. links             PUT  /api/v2/openrig/rooms/{room}/seats/{seat}/links
+    6. company overlay   PUT  /api/v2/openrig/overlay
+    7. seat overlays     PUT  /api/v2/openrig/rooms/{room}/seats/{seat}/overlay
 
 Overlay PUTs replace the previous overlay of their scope, so the full op list is
 sent every time. Any other HTTP error stops the run.
@@ -82,7 +84,7 @@ def build_plan(team: dict) -> list:
     """Return the ordered steps: (label, method, path, body, tolerate_exists)."""
     room = team["room"]["slug"]
     seats_path = f"{API}/rooms/{room}/seats"
-    plan = []
+    plan = [("seat types (seed)", "POST", f"{API}/seat-types/seed", {}, False)]
     for m in team["modules"]:
         plan.append((
             f"module {m['slug']}@{m['version']}", "PUT",

@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**openrig_team_setup.py apply failed with 404 seat type not found on a fresh database** (2026-10-03)
+
+- `scripts/openrig_team_setup.py`: `apply` now starts with `POST /api/v2/openrig/seat-types/seed` (idempotent; the server needs `AGENTHUB_PUBLIC_URL`), because the team's seats name seat types that exist only after seeding. Before, a fresh database failed at the first seat with `HTTP 404 seat type "lead" not found` and the docstring did not mention the step. A failing seed stops the run before any other call.
+
 **`AddVersion` lost-race re-read was too broad and hid its own error** (2026-10-03)
 
 - `seat_management/infrastructure/repositories/orm/seat_type_repository.go` `AddVersion`: the winner is re-read only after a unique violation (SQLSTATE 23505), not after any integrity error (a foreign key violation is returned as it is), and a failing re-read is returned (wrapped) instead of being discarded.

@@ -139,7 +139,9 @@ def test_calls_follow_the_documented_order(server, env, capsys):
     kinds = []
     for req in server.requests:
         path = req["path"]
-        if "/modules/" in path:
+        if path.endswith("/seat-types/seed"):
+            kind = "seed"
+        elif "/modules/" in path:
             kind = "module"
         elif path.endswith("/rooms"):
             kind = "room"
@@ -154,6 +156,7 @@ def test_calls_follow_the_documented_order(server, env, capsys):
         if not kinds or kinds[-1] != kind:
             kinds.append(kind)
     assert kinds == [
+        "seed",
         "module",
         "room",
         "seat",
@@ -276,6 +279,17 @@ def test_409_on_a_module_is_an_error(server, env, capsys):
     code, _, err = _run(capsys)
     assert code == 1
     assert "project-4genthub" in err
+    assert len(server.requests) == 2  # the seed, then the failing module
+
+
+def test_seed_failure_stops_before_any_other_call(server, env, capsys):
+    server.overrides[("POST", "/api/v2/openrig/seat-types/seed")] = (
+        500,
+        '{"detail":"AGENTHUB_PUBLIC_URL is not set"}',
+    )
+    code, _, err = _run(capsys)
+    assert code == 1
+    assert "seat types (seed)" in err and "AGENTHUB_PUBLIC_URL" in err
     assert len(server.requests) == 1
 
 
