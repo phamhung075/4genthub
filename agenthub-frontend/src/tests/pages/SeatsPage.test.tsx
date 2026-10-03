@@ -84,7 +84,6 @@ const seat = {
   pinned_version: '1.0.0',
   runtime: 'claude-code',
   model: 'sonnet',
-  status: 'active',
 };
 
 describe('SeatsPage', () => {

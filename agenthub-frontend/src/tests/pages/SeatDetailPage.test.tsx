@@ -64,7 +64,6 @@ const seats = [
     pinned_version: '1.0.0',
     runtime: 'claude-code',
     model: 'sonnet',
-    status: 'active',
   },
   {
     id: 'seat-2',
@@ -74,7 +73,6 @@ const seats = [
     pinned_version: null,
     runtime: 'codex',
     model: 'gpt',
-    status: 'active',
   },
 ];
 

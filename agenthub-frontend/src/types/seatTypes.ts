@@ -23,8 +23,6 @@ export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'me
 /** Single source of truth for the module kinds offered in the UI. */
 export const SEAT_MODULE_KINDS: SeatModuleKind[] = ['instruction', 'document', 'skill', 'tool', 'memory'];
 
-export type SeatStatus = 'active' | 'removed';
-
 export interface Room {
   id: string;
   slug: string;
@@ -56,7 +54,6 @@ export interface Seat {
   pinned_version: string | null;
   runtime: string;
   model: string;
-  status: string;
 }
 
 export interface SeatModuleVersion {

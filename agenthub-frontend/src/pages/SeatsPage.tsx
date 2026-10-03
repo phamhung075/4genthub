@@ -12,7 +12,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowRight, DoorOpen, Loader2, Plus, Trash2, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
@@ -337,7 +336,6 @@ export const SeatsPage: React.FC = () => {
                     <span className="flex items-center gap-2">
                       {live && <SeatStateBadge state={live.state} />}
                       {live && <SeatSyncBadge seat={live} />}
-                      <Badge variant="outline">{seat.status}</Badge>
                     </span>
                   </CardTitle>
                   <CardDescription>{seat.seat_type}</CardDescription>
