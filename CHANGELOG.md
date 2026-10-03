@@ -16,6 +16,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Seat status reports accept the agy runtime** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_status_mount.go`: `validSeatRuntime` replaces the hard-coded `seatRuntimes` map; it accepts every runtime `resolver.CheckRuntime` accepts (claude-code, codex, agy) plus `terminal` and `unknown`, so the runtime list has one source.
+- `scripts/openrig_bridge.py`: `RUNTIMES` includes `agy`, so an agy seat reports `agy` instead of `unknown`.
+- Tests: `TestSeatStatusPostAcceptsEverySeatRuntime`, `test_runtime_mapping_keeps_every_supported_runtime`.
+
 **Decouple seat types seed from AGENTHUB_PUBLIC_URL requirement** (2026-10-03)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `handleSeedSeatTypes` was coupled to `AGENTHUB_PUBLIC_URL` validation through `seatSourceFor`, causing `POST /api/v2/openrig/seat-types/seed` to return 500 when `AGENTHUB_PUBLIC_URL` was unset. Seeding only inserts seed modules and seat type definitions and does not render specs. `seatSourceFor` now decouples the public URL check from source creation, allowing seeding without `AGENTHUB_PUBLIC_URL`, while `handleResolveSeat` preserves the requirement.

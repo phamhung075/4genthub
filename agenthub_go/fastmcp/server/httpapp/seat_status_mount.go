@@ -23,6 +23,7 @@ import (
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seatsync"
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
@@ -40,9 +41,14 @@ const (
 
 var (
 	seatStates    = map[string]bool{"running": true, "idle": true, "blocked": true, "stopped": true, "unknown": true}
-	seatRuntimes  = map[string]bool{"claude-code": true, "codex": true, "terminal": true, "unknown": true}
 	agentStatuses = map[string]bool{"idle": true, "working": true, "blocked": true, "done": true, "unknown": true}
 )
+
+// validSeatRuntime reports whether a status report may carry runtime: a runtime the seat
+// renderer supports, or one of the two values the bridge adds for a seat it cannot classify.
+func validSeatRuntime(runtime string) bool {
+	return resolver.CheckRuntime(runtime) == nil || runtime == "terminal" || runtime == "unknown"
+}
 
 // seatStatusSource is the repository surface the status routes use.
 type seatStatusSource interface {
@@ -220,7 +226,7 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 		if !seatStates[s.State] {
 			return nil, fmt.Errorf("seats[%d].state %q is invalid", i, s.State)
 		}
-		if !seatRuntimes[s.Runtime] {
+		if !validSeatRuntime(s.Runtime) {
 			return nil, fmt.Errorf("seats[%d].runtime %q is invalid", i, s.Runtime)
 		}
 		if utf8.RuneCountInString(s.Detail) > seatStatusMaxDetail {

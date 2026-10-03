@@ -12,6 +12,7 @@ import (
 
 	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -157,6 +158,17 @@ func TestSeatStatusGetMarksStaleMachineOffline(t *testing.T) {
 	}
 	if len(online) != 2 || online["edge"] || !online["fresh"] {
 		t.Fatalf("online = %v (other tenants must not appear; 91s is offline, 90s online)", online)
+	}
+}
+
+// Every runtime the renderer supports can be reported, plus the two the bridge adds itself.
+func TestSeatStatusPostAcceptsEverySeatRuntime(t *testing.T) {
+	for _, runtime := range []string{resolver.RuntimeClaudeCode, resolver.RuntimeCodex, resolver.RuntimeAgy, "terminal", "unknown"} {
+		body := strings.Replace(validSeatStatusBody, `"claude-code"`, `"`+runtime+`"`, 1)
+		rec := postSeatStatus(seatStatusTestMux(t, &fakeSeatStatus{}), body)
+		if rec.Code != http.StatusOK {
+			t.Errorf("runtime %q: status = %d, want 200 (%s)", runtime, rec.Code, rec.Body.String())
+		}
 	}
 }
 

@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat status accepts the agy runtime
+
+- Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
+- Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed) pass after it.
+
 ## 2026-10-03 — frontend tests for token refresh and API URLs
 
 - Changed (commit 5826863a): 16 frontend test files updated for the token refresh and API URL changes: `App`, `Header`, `LazySubtaskList` (two files), `MCPTokenManager`, `ProjectList`, `SubtaskRowRefactored` (two files), `TaskRowMobile`, `TaskSearch`, `websocket-animations-e2e`, `TokenManagement`, `AnimationFactory`, `WebSocketAnimationService` (two files), `apiV2`.

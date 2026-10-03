@@ -135,6 +135,30 @@ def test_seat_state_mapping(node, expected):
     assert bridge_mod.seat_state(node) == expected
 
 
+@pytest.mark.parametrize(
+    "runtime,expected",
+    [
+        ("claude-code", "claude-code"),
+        ("codex", "codex"),
+        ("agy", "agy"),
+        ("terminal", "terminal"),
+        ("weird-runtime", "unknown"),
+    ],
+)
+def test_runtime_mapping_keeps_every_supported_runtime(tmp_path, runtime, expected):
+    node = {
+        "rigName": "eng",
+        "logicalId": "dev.solo",
+        "runtime": runtime,
+        "agentActivity": {"state": "idle"},
+    }
+    bridge = make_bridge(
+        tmp_path, fake_runner(json.dumps([node]), herdr_output()), lambda b: 200
+    )
+    (seat,) = bridge.build_payload()["seats"]
+    assert seat["runtime"] == expected
+
+
 def test_allow_list_never_sends_foreign_fields_or_secrets(tmp_path):
     sent = []
     bridge = make_bridge(

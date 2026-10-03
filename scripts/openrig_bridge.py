@@ -14,7 +14,7 @@ OpenRig source: ``rig ps --json --nodes -A`` (local daemon, all rigs) -> a bare
 list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
   rigName                       -> room
   logicalId (minus "<pod>.")    -> seat
-  runtime                       -> runtime  (claude-code|codex|terminal else unknown)
+  runtime                       -> runtime  (claude-code|codex|agy|terminal else unknown)
   state, first match wins:
     sessionStatus stopped|exited, or lifecycleState detached|recoverable -> stopped
     agentActivity.state needs_input, lifecycleState attention_required,
@@ -83,7 +83,7 @@ HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 PANE_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9:_-]{0,31}")
 
 SEAT_STATES = {"running", "idle", "blocked", "stopped", "unknown"}
-RUNTIMES = {"claude-code", "codex", "terminal", "unknown"}
+RUNTIMES = {"claude-code", "codex", "agy", "terminal", "unknown"}
 AGENT_STATUSES = {"idle", "working", "blocked", "done", "unknown"}
 
 Runner = Callable[[list[str]], str]
