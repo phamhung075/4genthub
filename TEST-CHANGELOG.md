@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — frontend tests for token refresh and API URLs
+
+- Changed (commit 5826863a): 16 frontend test files updated for the token refresh and API URL changes: `App`, `Header`, `LazySubtaskList` (two files), `MCPTokenManager`, `ProjectList`, `SubtaskRowRefactored` (two files), `TaskRowMobile`, `TaskSearch`, `websocket-animations-e2e`, `TokenManagement`, `AnimationFactory`, `WebSocketAnimationService` (two files), `apiV2`.
+- Verified: `npx vitest run` on those 16 files together: 16 files, 445 tests passed; `npx tsc --noEmit -p .`: 0 errors.
+
 ## 2026-10-03 — agy runtime occupant and validation tests
 
 - Updated: `TestValidateRuntime` and `TestValidateOccupant` in `names_test.go` to test the `agy` runtime, ensuring it accepts empty model, Gemini, GPT, and Claude models (e.g., `claude-opus-5-5-high`, `claude-sonnet-5-5-medium`), while `codex` continues to reject Claude models.
