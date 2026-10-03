@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — hash drift on the machines list
+
+- Added: `TestSync` (5 cases), `TestSeatStatusGetReportsExpectedHashAndSync` (sync per seat, key order runtime/hash/expected_hash/sync/detail), `TestMachineExpectedHashIntegration` (Postgres: older running hash still expects the newest snapshot, unknown room/seat expects "", other tenant's same-named seat never leaks; skipped without `SEAT_TEST_DATABASE_URL`, not run locally). `TestMachineListGroupsSeatsAndAgentsPerMachine` now asserts the three joins are user-scoped; removing the `resolved_seats` user filter fails it.
+
 ## 2026-10-03 — Bridge: duplicate seat keys were reported as invalid names
 
 - Added: `test_same_member_in_two_pods_of_one_rig_is_a_named_duplicate`, `test_invalid_names_have_their_own_message`, `test_same_member_in_two_rigs_is_not_a_duplicate`, `test_duplicate_message_wording`. Red before (duplicate case), `src/tests/scripts` 141 passed after.
