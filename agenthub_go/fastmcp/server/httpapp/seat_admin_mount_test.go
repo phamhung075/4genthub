@@ -1286,15 +1286,18 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 			t.Fatalf("same link again: %d %s", rec.Code, rec.Body.String())
 		}
 	})
-	t.Run("a removed seat's links do not count", func(t *testing.T) {
-		fake, mux := setup()
+	t.Run("deleting a seat removes its links from the cycle check", func(t *testing.T) {
+		_, mux := setup()
 		put(mux, "a", "b", "delegates_to", "")
-		if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/b", ""); rec.Code != http.StatusOK {
-			t.Fatalf("remove seat b: %d %s", rec.Code, rec.Body.String())
+		put(mux, "b", "c", "delegates_to", "")
+		if rec := put(mux, "c", "a", "delegates_to", ""); rec.Code != http.StatusBadRequest {
+			t.Fatalf("c -> a while a -> b -> c exists: %d %s, want 400", rec.Code, rec.Body.String())
 		}
-		fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b2", RoomID: fake.seats[0].RoomID, SeatKey: "b2"})
-		if rec := put(mux, "b2", "a", "delegates_to", ""); rec.Code != http.StatusOK {
-			t.Fatalf("link next to the links of a removed seat: %d %s", rec.Code, rec.Body.String())
+		if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/b", ""); rec.Code != http.StatusOK {
+			t.Fatalf("delete seat b: %d %s", rec.Code, rec.Body.String())
+		}
+		if rec := put(mux, "c", "a", "delegates_to", ""); rec.Code != http.StatusOK {
+			t.Fatalf("c -> a after b is deleted: %d %s, want 200", rec.Code, rec.Body.String())
 		}
 	})
 }

@@ -615,6 +615,9 @@ func TestMachineExpectedHashIntegration(t *testing.T) {
 		if err != nil || len(listed) != 1 {
 			t.Fatalf("List = %+v, %v", listed, err)
 		}
+		if len(listed[0].Seats) != 3 {
+			t.Fatalf("List returned %d seat rows, want exactly 3 (a map would hide duplicates): %+v", len(listed[0].Seats), listed[0].Seats)
+		}
 		out := map[string]string{}
 		for _, s := range listed[0].Seats {
 			out[s.Room+"/"+s.Seat] = s.ExpectedHash
