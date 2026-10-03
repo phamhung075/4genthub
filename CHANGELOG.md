@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**`MaxRoomNameLength` lives with the Room entity** (2026-10-03)
+
+- The 200-character room-name limit is defined once, as `repositories.MaxRoomNameLength` directly above `Room` in `seat_management/domain/repositories/repositories.go` (it was in `names.go`); `ValidateRoomName` in `names.go` and the `rooms.name` comment in `seat_management_postgresql.sql` refer to it. No behavior change.
+
 ### Fixed
 
 **Overlay content is scanned for secrets** (2026-10-03)

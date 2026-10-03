@@ -92,6 +92,10 @@ type SeatTypeRepository interface {
 	LatestVersion(ctx context.Context, userID, slug string) (*SeatTypeVersion, error)
 }
 
+// MaxRoomNameLength bounds Room.Name in characters. The rooms.name column is unbounded TEXT, so
+// this is the only limit; ValidateRoomName enforces it.
+const MaxRoomNameLength = 200
+
 // Room is a tenant-scoped grouping of seats.
 type Room struct {
 	ID        string

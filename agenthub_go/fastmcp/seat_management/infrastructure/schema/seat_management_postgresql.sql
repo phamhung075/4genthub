@@ -92,6 +92,7 @@ CREATE INDEX IF NOT EXISTS ix_seat_type_versions_seat_type_id ON seat_type_versi
 
 -- Table: rooms
 -- A tenant-scoped grouping of seats.
+-- rooms.name is unbounded TEXT; its length limit is repositories.MaxRoomNameLength (domain/repositories/repositories.go).
 CREATE TABLE IF NOT EXISTS rooms (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL,

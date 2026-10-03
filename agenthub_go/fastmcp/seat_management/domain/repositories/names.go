@@ -34,10 +34,6 @@ func ValidateModel(model string) error {
 	return nil
 }
 
-// MaxRoomNameLength bounds a room's display name. The rooms.name column is unbounded TEXT, so
-// this domain rule is the only limit.
-const MaxRoomNameLength = 200
-
 // ValidateRoomName requires a non-empty name of at most MaxRoomNameLength characters.
 func ValidateRoomName(name string) error {
 	if strings.TrimSpace(name) == "" || utf8.RuneCountInString(name) > MaxRoomNameLength {
