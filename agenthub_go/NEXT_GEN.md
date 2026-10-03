@@ -199,7 +199,7 @@ Bridge v1 (status up only, no commands down) built and verified:
 - Open items done (owner-stated 2026-10-03): the production `seat_links` constraint change, the team setup on production, the team launch. Still open: `set_occupant` has not been tested on production.
 - Open: OpenRig supports runtimes `pi` and `omp` (other providers via `provider/model` ids); the renderer supports only `claude-code` and `codex`.
 
-Rig note (2026-10-03, owner-reported): the rig `4genthub-dev-gemini` (all seats runtime `agy`) replaced the earlier Claude rig `4genthub-dev`; the cloud records the 9 seats as runtime `agy` with Gemini models and permission_policy `yolo`.
+Rig note (2026-10-03): the rig `4genthub-dev` ran on `claude-code`, moved to `agy` (rig `4genthub-dev-gemini`) at about 21:15, and is back on `claude-code` since about 23:37, after the Antigravity quota ran out (verified with `rig whoami`). The cloud still records the 9 seats as runtime `agy` with Gemini models and permission_policy `yolo` until the owner switches them (not verified in this task). The bridge maps `rigName` to room by name equality by design (`scripts/openrig_bridge.py:15`, `:191`), so a rig rename needs no code change.
 
 ## Team progress and open work (2026-10-03, reported by the lead; not verified in production)
 
