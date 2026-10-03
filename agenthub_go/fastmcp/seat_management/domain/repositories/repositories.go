@@ -263,9 +263,12 @@ type SeatStatus struct {
 	State       string
 	Runtime     string
 	RunningHash string
-	Detail      string
-	Redacted    bool
-	ReportedAt  time.Time
+	// ExpectedHash is the hash of the seat's latest resolved snapshot, empty when the room or
+	// seat is not in the cloud. It is read-only: ReplaceSnapshot ignores it.
+	ExpectedHash string
+	Detail       string
+	Redacted     bool
+	ReportedAt   time.Time
 }
 
 // MachineAgent is one herdr agent pane reported by a machine.

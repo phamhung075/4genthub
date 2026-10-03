@@ -804,8 +804,8 @@ func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 				fakeRow("pc-work", now, []byte(`[]`)),
 			}, nil
 		case strings.Contains(q, `FROM "seat_status"`):
-			return []string{"machine_id", "room", "seat", "state", "runtime", "running_hash", "detail", "redacted", "reported_at"}, [][]driver.Value{
-				fakeRow("pc-home", "eng", "coder", "running", "claude-code", "abc", "busy", true, now),
+			return []string{"machine_id", "room", "seat", "state", "runtime", "running_hash", "expected_hash", "detail", "redacted", "reported_at"}, [][]driver.Value{
+				fakeRow("pc-home", "eng", "coder", "running", "claude-code", "abc", "def", "busy", true, now),
 			}, nil
 		}
 		return nil, nil, nil
@@ -818,7 +818,7 @@ func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
-	if len(got) != 2 || len(got[0].Seats) != 1 || got[0].Seats[0].RunningHash != "abc" || !got[0].Seats[0].Redacted ||
+	if len(got) != 2 || len(got[0].Seats) != 1 || got[0].Seats[0].RunningHash != "abc" || got[0].Seats[0].ExpectedHash != "def" || !got[0].Seats[0].Redacted ||
 		len(got[0].Agents) != 1 || got[0].Agents[0].PaneID != "w5:p3" || len(got[1].Seats) != 0 {
 		t.Fatalf("List = %+v", got)
 	}
@@ -826,6 +826,18 @@ func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 		if strings.Contains(q, `FROM "machines"`) || strings.Contains(q, `FROM "seat_status"`) {
 			if !strings.Contains(q, `"user_id" = $1`) {
 				t.Fatalf("machine list not tenant-scoped: %s", q)
+			}
+		}
+		if strings.Contains(q, `FROM "seat_status"`) {
+			// the expected hash joins rooms, seats and resolved_seats, each on the same user
+			for _, join := range []string{
+				`"rooms" AS r ON r."user_id" = ss."user_id"`,
+				`"seats" AS s ON s."user_id" = ss."user_id"`,
+				`WHERE rs."user_id" = ss."user_id" AND rs."seat_id" = s."id" ORDER BY rs."created_at" DESC, rs."id" DESC LIMIT 1`,
+			} {
+				if !strings.Contains(q, join) {
+					t.Fatalf("expected-hash query missing %q: %s", join, q)
+				}
 			}
 		}
 	}

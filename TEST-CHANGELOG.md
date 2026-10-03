@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — Bridge: duplicate seat keys were reported as invalid names
+
+- Added: `test_same_member_in_two_pods_of_one_rig_is_a_named_duplicate`, `test_invalid_names_have_their_own_message`, `test_same_member_in_two_rigs_is_not_a_duplicate`, `test_duplicate_message_wording`. Red before (duplicate case), `src/tests/scripts` 141 passed after.
+
 ## 2026-10-03 — comm-guard shared modules and permissions union
 
 - Added: `TestMergeToolModulesPermissions` (union/dedupe/order, later-wins for other keys, 4 error cases), `TestRenderSeatKeepsCommGuardNextToAnotherToolModule` (real seeded modules plus a second tool module: 5 deny entries plus the extra, allow kept, skill names `seatcheck send`), `TestFromSpecSharedModules` (claude-code gets tool and skill, codex only the skill, version stamped), `TestLoadEmbeddedSeedsCarryCommGuard` (all 9 seeds), `TestLoadFSMissingSharedModuleFails`. Updated seedmap tests to the `seedVersion` constant and the health version test to 0.0.11. Mutation check: making the merge shallow again failed the two renderer tests. seatrenderer, seedlibrary, seedmap, httpapp ok.

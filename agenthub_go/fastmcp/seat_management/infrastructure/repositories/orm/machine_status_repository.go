@@ -90,8 +90,14 @@ func (r *ORMMachineStatusRepository) List(ctx context.Context, userID string) ([
 		}
 
 		seatRows, err := s.QueryContext(ctx,
-			`SELECT "machine_id", "room", "seat", "state", "runtime", "running_hash", "detail", "redacted", "reported_at" `+
-				`FROM "seat_status" WHERE "user_id" = $1 ORDER BY "room", "seat"`, userID)
+			`SELECT ss."machine_id", ss."room", ss."seat", ss."state", ss."runtime", ss."running_hash", COALESCE(latest."hash", ''), ss."detail", ss."redacted", ss."reported_at" `+
+				`FROM "seat_status" AS ss `+
+				`LEFT JOIN "rooms" AS r ON r."user_id" = ss."user_id" AND r."slug" = ss."room" `+
+				`LEFT JOIN "seats" AS s ON s."user_id" = ss."user_id" AND s."room_id" = r."id" AND s."seat_key" = ss."seat" `+
+				`LEFT JOIN LATERAL (SELECT rs."hash" FROM "resolved_seats" AS rs `+
+				`WHERE rs."user_id" = ss."user_id" AND rs."seat_id" = s."id" `+
+				`ORDER BY rs."created_at" DESC, rs."id" DESC LIMIT 1) AS latest ON TRUE `+
+				`WHERE ss."user_id" = $1 ORDER BY ss."room", ss."seat"`, userID)
 		if err != nil {
 			return err
 		}
@@ -106,7 +112,7 @@ func (r *ORMMachineStatusRepository) List(ctx context.Context, userID string) ([
 				seat      domainrepo.SeatStatus
 			)
 			if err := seatRows.Scan(&machineID, &seat.Room, &seat.Seat, &seat.State, &seat.Runtime,
-				&seat.RunningHash, &seat.Detail, &seat.Redacted, &seat.ReportedAt); err != nil {
+				&seat.RunningHash, &seat.ExpectedHash, &seat.Detail, &seat.Redacted, &seat.ReportedAt); err != nil {
 				return err
 			}
 			if i, ok := index[machineID]; ok {

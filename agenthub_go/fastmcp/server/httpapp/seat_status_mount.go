@@ -23,6 +23,7 @@ import (
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	"agenthub/fastmcp/seat_management/domain/repositories"
+	"agenthub/fastmcp/seat_management/domain/seatsync"
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -283,6 +284,8 @@ func machineBody(m *repositories.Machine, now time.Time) *entities.OrderedMap[an
 		seat.Set("state", s.State)
 		seat.Set("runtime", s.Runtime)
 		seat.Set("hash", s.RunningHash)
+		seat.Set("expected_hash", s.ExpectedHash)
+		seat.Set("sync", seatsync.Sync(s.RunningHash, s.ExpectedHash))
 		seat.Set("detail", s.Detail)
 		seat.Set("redacted", s.Redacted)
 		seat.Set("reported_at", s.ReportedAt.UTC().Format(time.RFC3339))

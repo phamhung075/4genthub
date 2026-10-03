@@ -6,7 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**Bridge: duplicate seat keys were reported as invalid names** (2026-10-03)
+
+- `scripts/openrig_bridge.py` `build_seats`: two pods of one rig with the same member name (e.g. `agy.check` and `dev.check` in rig `4genthub-go`) were skipped as a duplicate but reported as `skipped 2 seat(s) with invalid names`. Invalid names and duplicates are now counted separately: invalid keeps `skipped N seat(s) with invalid names`; a duplicate prints `seat 'check' in rig 4genthub-go exists in pods agy and dev; rename one`. The seat key is unchanged (member name only; architect decision: room = rig, seat = member); the first node is sent.
+
 ### Added
+
+**`GET /api/v2/openrig/machines` reports hash drift per seat** (2026-10-03)
+
+- Each seat now carries `expected_hash` (hash of the seat's latest stored resolved snapshot, empty when the room or seat is not in the cloud; no re-resolve on read) and `sync` (`in_sync` | `drift` | `unknown`), after `hash` (the running hash). `seat_management/domain/seatsync` holds the single rule: `unknown` if either hash is empty, `in_sync` if equal, else `drift`.
+- `machine_status_repository.go` `List`: `seat_status` joins `rooms` (slug), `seats` (seat_key) and the newest `resolved_seats` row (created_at, id), every join on the same `user_id`. `SeatStatus.ExpectedHash` is read-only; `ReplaceSnapshot` ignores it. No schema change.
 
 **Communication guard on every seat type (comm-guard)** (2026-10-03)
 

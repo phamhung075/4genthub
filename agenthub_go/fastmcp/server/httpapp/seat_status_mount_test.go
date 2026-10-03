@@ -220,3 +220,46 @@ func TestSeatStatusRepositoryErrorIs500(t *testing.T) {
 		t.Fatalf("GET = %d", rec.Code)
 	}
 }
+
+func TestSeatStatusGetReportsExpectedHashAndSync(t *testing.T) {
+	const user = "11111111-1111-4111-8111-111111111111"
+	seat := func(name, running, expected string) repositories.SeatStatus {
+		return repositories.SeatStatus{Room: "eng", Seat: name, State: "running", Runtime: "claude-code",
+			RunningHash: running, ExpectedHash: expected, ReportedAt: seatStatusTestNow}
+	}
+	fake := &fakeSeatStatus{byUser: map[string]map[string]repositories.Machine{user: {
+		"pc": {MachineID: "pc", LastSeen: seatStatusTestNow, Seats: []repositories.SeatStatus{
+			seat("same", "h1", "h1"), seat("old", "h1", "h2"), seat("none", "h1", ""), seat("silent", "", "h2"),
+		}},
+	}}}
+	rec := getMachines(seatStatusTestMux(t, fake))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET = %d", rec.Code)
+	}
+	var got struct {
+		Machines []struct {
+			Seats []struct {
+				Seat         string `json:"seat"`
+				Hash         string `json:"hash"`
+				ExpectedHash string `json:"expected_hash"`
+				Sync         string `json:"sync"`
+			} `json:"seats"`
+		} `json:"machines"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	wantSync := map[string]string{"same": "in_sync", "old": "drift", "none": "unknown", "silent": "unknown"}
+	if len(got.Machines) != 1 || len(got.Machines[0].Seats) != 4 {
+		t.Fatalf("GET = %s", rec.Body.String())
+	}
+	for _, s := range got.Machines[0].Seats {
+		if s.Sync != wantSync[s.Seat] {
+			t.Errorf("seat %s sync = %q, want %q", s.Seat, s.Sync, wantSync[s.Seat])
+		}
+	}
+	// key order: runtime, hash (running), expected_hash, sync, detail
+	if !strings.Contains(rec.Body.String(), `"runtime":"claude-code","hash":"h1","expected_hash":"h1","sync":"in_sync","detail":`) {
+		t.Fatalf("seat keys out of order: %s", rec.Body.String())
+	}
+}

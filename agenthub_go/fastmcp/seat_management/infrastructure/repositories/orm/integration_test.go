@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 	"time"
@@ -508,3 +509,97 @@ func seatIntegrationSchema(t *testing.T) string {
 // batch runs as one implicit transaction, so the transaction-scoped lock is held until the
 // whole schema is applied. Without it, concurrent CREATE EXTENSION runs hit a unique violation.
 const seatSchemaApplyLock = "SELECT pg_advisory_xact_lock(727274);\n"
+
+// TestMachineExpectedHashIntegration checks the expected hash of a reported seat against a real
+// PostgreSQL: the newest snapshot wins, a seat missing from the cloud has none, and another
+// tenant's snapshot of the same room and seat names never shows up.
+func TestMachineExpectedHashIntegration(t *testing.T) {
+	url := os.Getenv("SEAT_TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("SEAT_TEST_DATABASE_URL not set")
+	}
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, seatIntegrationSchema(t)); err != nil {
+		t.Fatalf("apply schema: %v", err)
+	}
+	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
+	userID := fmt.Sprintf("seat-sync-%d", time.Now().UnixNano())
+	const other = "seat-sync-other-user"
+
+	seatTypes, _ := NewORMSeatTypeRepository(sessions)
+	rooms, _ := NewORMRoomRepository(sessions)
+	seats, _ := NewORMSeatRepository(sessions)
+	resolved, _ := NewORMResolvedSeatRepository(sessions)
+	machines, _ := NewORMMachineStatusRepository(sessions)
+
+	// both tenants own a room "dev" with seat "alice"; the other tenant's snapshot is newer
+	seed := func(user string, hashes ...string) {
+		t.Helper()
+		seatType, err := seatTypes.Save(ctx, user, domainrepo.SeatType{Slug: "coder", Name: "Coder", Description: "d"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		room, err := rooms.Save(ctx, user, domainrepo.Room{Slug: "dev", Name: "Dev"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		seat, err := seats.Create(ctx, user, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, hash := range hashes {
+			if _, err := resolved.Save(ctx, user, domainrepo.ResolvedSeat{SeatID: seat.ID, Hash: hash, Runtime: "claude-code"}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	seed(userID, "h1", "h2")
+	seed(other, "other-hash")
+
+	report := func(user, hash string) {
+		t.Helper()
+		now := time.Now().UTC()
+		if err := machines.ReplaceSnapshot(ctx, user, domainrepo.Machine{
+			MachineID: "pc", LastSeen: now,
+			Seats: []domainrepo.SeatStatus{
+				{Room: "dev", Seat: "alice", State: "running", Runtime: "claude-code", RunningHash: hash, ReportedAt: now},
+				{Room: "dev", Seat: "ghost", State: "idle", Runtime: "claude-code", RunningHash: hash, ReportedAt: now},
+				{Room: "nowhere", Seat: "alice", State: "idle", Runtime: "claude-code", RunningHash: hash, ReportedAt: now},
+			},
+			Agents: []domainrepo.MachineAgent{},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	expected := func(user string) map[string]string {
+		t.Helper()
+		listed, err := machines.List(ctx, user)
+		if err != nil || len(listed) != 1 {
+			t.Fatalf("List = %+v, %v", listed, err)
+		}
+		out := map[string]string{}
+		for _, s := range listed[0].Seats {
+			out[s.Room+"/"+s.Seat] = s.ExpectedHash
+		}
+		return out
+	}
+	want := map[string]string{"dev/alice": "h2", "dev/ghost": "", "nowhere/alice": ""}
+
+	report(userID, "h1") // running an older snapshot: the expected hash is still the newest
+	if got := expected(userID); !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected hashes after reporting h1 = %v, want %v", got, want)
+	}
+	report(userID, "h2")
+	if got := expected(userID); !reflect.DeepEqual(got, want) {
+		t.Fatalf("expected hashes after reporting h2 = %v, want %v", got, want)
+	}
+	report(other, "x")
+	if got := expected(other); got["dev/alice"] != "other-hash" {
+		t.Fatalf("other tenant expected hashes = %v, want its own snapshot", got)
+	}
+}
