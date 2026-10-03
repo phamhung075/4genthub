@@ -111,4 +111,3 @@ func TestSeedSeatTypesErrorMapping(t *testing.T) {
 		t.Errorf("seed error: status = %d, want 500", rec.Code)
 	}
 }
-

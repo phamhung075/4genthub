@@ -42,9 +42,9 @@ func ValidateRoomName(name string) error {
 	return nil
 }
 
-// ValidateOccupant checks the runtime and model of a seat's occupant together. Claude models
-// run only on the claude-code runtime; claude-code also takes aliases such as "sonnet", so the
-// check is one-directional.
+// ValidateOccupant checks the runtime and model of a seat's occupant together. Codex cannot run
+// Claude models; the agy (Antigravity) runtime can run Claude, GPT and Gemini models, and
+// claude-code also takes aliases such as "sonnet", so the check is one-directional.
 func ValidateOccupant(runtime, model string) error {
 	if err := ValidateRuntime(runtime); err != nil {
 		return err
@@ -52,7 +52,7 @@ func ValidateOccupant(runtime, model string) error {
 	if err := ValidateModel(model); err != nil {
 		return err
 	}
-	if (runtime == resolver.RuntimeCodex || runtime == resolver.RuntimeAgy) && strings.HasPrefix(model, "claude-") {
+	if runtime == resolver.RuntimeCodex && strings.HasPrefix(model, "claude-") {
 		return fmt.Errorf("model %q is a Claude model and cannot run on the %s runtime", model, runtime)
 	}
 	return nil

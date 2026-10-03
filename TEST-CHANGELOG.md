@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — agy runtime occupant and validation tests
+
+- Updated: `TestValidateRuntime` and `TestValidateOccupant` in `names_test.go` to test the `agy` runtime, ensuring it accepts empty model, Gemini, GPT, and Claude models (e.g., `claude-opus-5-5-high`, `claude-sonnet-5-5-medium`), while `codex` continues to reject Claude models.
+- Formatted: `seat_mount_test.go` with `gofmt -w` to remove trailing blank line.
+
 ## 2026-10-03 — seat types seed without AGENTHUB_PUBLIC_URL
 
 - Added: `TestSeedSeatTypesWorksWithoutPublicURL` (verifies `POST /api/v2/openrig/seat-types/seed` succeeds without `AGENTHUB_PUBLIC_URL`), `TestSeedSeatTypesErrorMapping` (verifies 500 status on seed repository error) in `seat_mount_test.go`.

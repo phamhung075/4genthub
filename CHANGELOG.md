@@ -12,7 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `CheckRuntime` now accepts `"agy"`.
 - `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer.go`: `RenderSeat` uses a shared predicate to explicitly reject both `codex` and `agy` runtimes from receiving Claude fragments, treating `agy` similarly to `codex`.
-- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`: `ValidateOccupant` explicitly rejects Claude models for both `codex` and `agy`.
+- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`: `ValidateOccupant` rejects Claude models on `codex` only, while allowing them on `agy` (which supports Claude models such as `claude-opus-5-5-high` and `claude-sonnet-5-5-medium` alongside Gemini and GPT models).
 
 ### Fixed
 

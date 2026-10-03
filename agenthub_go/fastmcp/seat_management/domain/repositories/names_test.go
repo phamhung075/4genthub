@@ -55,12 +55,12 @@ func TestValidateModuleSlugAndVersion(t *testing.T) {
 }
 
 func TestValidateRuntime(t *testing.T) {
-	for _, runtime := range []string{"claude-code", "codex"} {
+	for _, runtime := range []string{"claude-code", "codex", "agy"} {
 		if err := ValidateRuntime(runtime); err != nil {
-			t.Errorf("ValidateRuntime(%q) = %v", runtime, err)
+			t.Errorf("ValidateRuntime(%q) = %v, want nil", runtime, err)
 		}
 	}
-	for _, runtime := range []string{"", "gemini", "Codex", "claude_code"} {
+	for _, runtime := range []string{"", "gemini", "Codex", "claude_code", "antigravity"} {
 		if ValidateRuntime(runtime) == nil {
 			t.Errorf("ValidateRuntime(%q) = nil, want error", runtime)
 		}
@@ -81,12 +81,38 @@ func TestValidateRoomName(t *testing.T) {
 }
 
 func TestValidateOccupant(t *testing.T) {
-	for _, c := range [][2]string{{"codex", ""}, {"codex", "gpt-5"}, {"claude-code", ""}, {"claude-code", "claude-sonnet-5-5"}, {"claude-code", "sonnet"}} {
+	valid := [][2]string{
+		{"codex", ""},
+		{"codex", "gpt-5"},
+		{"claude-code", ""},
+		{"claude-code", "claude-sonnet-5-5"},
+		{"claude-code", "sonnet"},
+		// agy (Antigravity) runs Gemini, GPT and Claude models.
+		{"agy", ""},
+		{"agy", "gemini-2.5-pro"},
+		{"agy", "gpt-oss-120b-medium"},
+		{"agy", "claude-opus-5-5-high"},
+		{"agy", "claude-sonnet-5-5-medium"},
+	}
+	for _, c := range valid {
 		if err := ValidateOccupant(c[0], c[1]); err != nil {
-			t.Errorf("ValidateOccupant(%q, %q) = %v", c[0], c[1], err)
+			t.Errorf("ValidateOccupant(%q, %q) = %v, want nil", c[0], c[1], err)
 		}
 	}
-	for _, c := range [][2]string{{"codex", "claude-sonnet-5-5"}, {"codex", "claude-opus-5-5"}, {"gemini", ""}, {"codex", "a b"}} {
+
+	invalid := [][2]string{
+		// Codex cannot run Claude models; agy can.
+		{"codex", "claude-sonnet-5-5"},
+		{"codex", "claude-opus-5-5"},
+		// Malformed models are rejected on every supported runtime.
+		{"codex", "a b"},
+		{"agy", "a b"},
+		// Unsupported runtimes are rejected even with an otherwise valid model.
+		{"gemini", ""},
+		{"gemini", "gemini-2.5-pro"},
+		{"antigravity", "claude-sonnet-5-5-medium"},
+	}
+	for _, c := range invalid {
 		if ValidateOccupant(c[0], c[1]) == nil {
 			t.Errorf("ValidateOccupant(%q, %q) = nil, want error", c[0], c[1])
 		}
