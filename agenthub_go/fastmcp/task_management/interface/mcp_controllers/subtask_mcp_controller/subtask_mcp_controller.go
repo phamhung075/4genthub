@@ -274,9 +274,13 @@ func (c *SubtaskMCPController) getFacadeForRequest(ctx context.Context, taskID, 
 		switch tf := taskFacadeRaw.(type) {
 		case *facades.TaskApplicationFacade:
 			parentTask = tf.GetTask(ctx, taskID, false, false)
-		case interface{ TaskApplicationFacade() *facades.TaskApplicationFacade }:
+		case interface {
+			TaskApplicationFacade() *facades.TaskApplicationFacade
+		}:
 			parentTask = tf.TaskApplicationFacade().GetTask(ctx, taskID, false, false)
-		case interface{ GetTask(context.Context, string) *entities.OrderedMap[any] }:
+		case interface {
+			GetTask(context.Context, string) *entities.OrderedMap[any]
+		}:
 			parentTask = tf.GetTask(ctx, taskID)
 		case ParentTaskFacade:
 			parentTask, err = tf.GetTask(ctx, taskID)

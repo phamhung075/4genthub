@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**gofmt** (2026-10-03)
+
+- `agenthub_go/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.go`: formatted two type-switch cases (layout only, no behavior change). `gofmt -l` over `agenthub_go` now lists nothing outside the vendored module cache `.gomodcache`.
+
 ### Fixed
 
 **Machine token creation reported any integrity error as a conflict** (2026-10-03)
