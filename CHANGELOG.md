@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**TestToolConfigParity expected the Python tool list without manage_seat** (2026-10-03)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/configuration/testdata/tool_cases.json`: the recorded Python output has no `manage_seat`, which is an intentional Go addition (`tool_config.go:23`, env `TOOL_MANAGE_SEAT`, default enabled). The expected `enabled_tools` and `tools` maps now carry `"manage_seat": true` after `call_agent` in all 400 cases (412 occurrences). No production code changed; the rest of the Python parity is untouched.
+
+### Fixed
+
 **Secret scanners: empty-user URL credentials and whitespace parity** (2026-10-03)
 
 - `secretscan.go`, `openrig_scrub.py`: the URL-credentials user part may be empty, so the standard Redis form `redis://:password@host` is detected and redacted (found by the reviewer in 9468eb28). An empty password (`ftp://user:@host`) is deliberately not flagged: nothing to leak.

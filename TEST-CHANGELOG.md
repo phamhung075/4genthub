@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — TestToolConfigParity expected the Python tool list without manage_seat
+
+- Fixed: `TestToolConfigParity` (configuration) red at HEAD because the Go default tool list has `manage_seat`; fixture updated, `go test -count=1 ./fastmcp/task_management/infrastructure/configuration/` ok.
+
 ## 2026-10-03 — Secret scanners: empty-user URL credentials and whitespace parity
 
 - Added fixture cases `url-empty-user`, `url-empty-password`, `url-nbsp-in-password`, `url-vtab-in-password`, `url-space-ends-userinfo`, `known-gap-url-slash-in-password`; `SECRET_PARTS` entries in `test_openrig_scrub.py`. Red before (Go: url-empty-user; Python: url-empty-user, url-nbsp, url-vtab), green after: secretscan ok, `src/tests/scripts` 137 passed.
