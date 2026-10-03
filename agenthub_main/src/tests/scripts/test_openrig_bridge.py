@@ -189,6 +189,62 @@ def test_bad_names_are_skipped(tmp_path):
     ]
 
 
+def _payload_and_stderr(tmp_path, capsys, nodes):
+    bridge = make_bridge(tmp_path, fake_runner(json.dumps(nodes), None), lambda b: 200)
+    payload = bridge.build_payload()
+    return payload, capsys.readouterr().err
+
+
+def test_same_member_in_two_pods_of_one_rig_is_a_named_duplicate(tmp_path, capsys):
+    nodes = [
+        {"rigName": "4genthub-go", "logicalId": "dev.check"},
+        {"rigName": "4genthub-go", "logicalId": "agy.check"},
+    ]
+    payload, err = _payload_and_stderr(tmp_path, capsys, nodes)
+    assert [(s["room"], s["seat"]) for s in payload["seats"]] == [
+        ("4genthub-go", "check")
+    ]
+    assert (
+        "seat 'check' in rig 4genthub-go exists in pods agy and dev; rename one" in err
+    )
+    assert "invalid" not in err
+
+
+def test_invalid_names_have_their_own_message(tmp_path, capsys):
+    nodes = [
+        {"rigName": "eng", "logicalId": "dev.coder"},
+        {"rigName": "bad room", "logicalId": "dev.x"},
+        {"rigName": "eng", "logicalId": "dev.../etc"},
+    ]
+    payload, err = _payload_and_stderr(tmp_path, capsys, nodes)
+    assert [(s["room"], s["seat"]) for s in payload["seats"]] == [("eng", "coder")]
+    assert "skipped 2 seat(s) with invalid names" in err
+    assert "rename one" not in err
+
+
+def test_duplicate_message_wording():
+    msg = bridge_mod.duplicate_message
+    assert msg("r", "check", ["dev", "agy", "ops"]) == (
+        "seat 'check' in rig r exists in pods agy, dev and ops; rename one"
+    )
+    assert msg("r", "check", ["dev", "dev"]) == (
+        "seat 'check' in rig r is listed twice in pod dev; rename one"
+    )
+
+
+def test_same_member_in_two_rigs_is_not_a_duplicate(tmp_path, capsys):
+    nodes = [
+        {"rigName": "a", "logicalId": "dev.check"},
+        {"rigName": "b", "logicalId": "dev.check"},
+    ]
+    payload, err = _payload_and_stderr(tmp_path, capsys, nodes)
+    assert [(s["room"], s["seat"]) for s in payload["seats"]] == [
+        ("a", "check"),
+        ("b", "check"),
+    ]
+    assert "skipped" not in err and "rename one" not in err
+
+
 def test_pinned_hash_used_when_valid(tmp_path):
     pin = tmp_path / "eng" / "coder"
     pin.mkdir(parents=True)

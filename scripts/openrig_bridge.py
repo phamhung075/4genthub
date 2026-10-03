@@ -22,6 +22,8 @@ list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
     agentActivity.state running                                          -> running
     agentActivity.state idle                                             -> idle
     anything else                                                        -> unknown
+  The seat key is the member name only, so two pods of one rig with the same member name
+  collide: the first node is sent, the others are skipped and named on stderr.
   detail  <- latestError, heldReason, agentActivity.reason (scrubbed, <=200)
   hash    <- ~/.openrig/agenthub-seats/<room>/<seat>/pinned.json "hash", else ""
 
@@ -95,7 +97,9 @@ def run_command(argv: list[str]) -> str:
     )
     if result.returncode != 0:
         first = (result.stderr or "").strip().splitlines()[:1]
-        raise RuntimeError(f"exit {result.returncode}: {first[0][:80] if first else ''}")
+        raise RuntimeError(
+            f"exit {result.returncode}: {first[0][:80] if first else ''}"
+        )
     return result.stdout
 
 
@@ -118,9 +122,14 @@ def seat_state(node: dict) -> str:
     activity = _str(_dict(node.get("agentActivity")).get("state"))
     if session in ("stopped", "exited") or life in ("detached", "recoverable"):
         return "stopped"
-    if activity == "needs_input" or life == "attention_required" or startup in (
-        "attention_required",
-        "failed",
+    if (
+        activity == "needs_input"
+        or life == "attention_required"
+        or startup
+        in (
+            "attention_required",
+            "failed",
+        )
     ):
         return "blocked"
     if activity in ("running", "idle"):
@@ -135,7 +144,9 @@ def seat_name(node: dict) -> str:
 
 def pinned_hash(pins_dir: Path, room: str, seat: str) -> str:
     try:
-        data = json.loads((pins_dir / room / seat / "pinned.json").read_text(encoding="utf-8"))
+        data = json.loads(
+            (pins_dir / room / seat / "pinned.json").read_text(encoding="utf-8")
+        )
     except (OSError, ValueError):
         return ""
     value = _dict(data).get("hash")
@@ -151,19 +162,40 @@ def seat_detail(node: dict) -> str:
     return "; ".join(p for p in parts if p)
 
 
+def seat_pod(node: dict) -> str:
+    logical_id = _str(node.get("logicalId"))
+    return logical_id.partition(".")[0] if "." in logical_id else ""
+
+
+def duplicate_message(room: str, seat: str, pods: list[str]) -> str:
+    names = sorted({pod or "(no pod)" for pod in pods})
+    if len(names) == 1:
+        return (
+            f"seat {seat!r} in rig {room} is listed twice in pod {names[0]}; rename one"
+        )
+    return (
+        f"seat {seat!r} in rig {room} exists in pods "
+        f"{', '.join(names[:-1])} and {names[-1]}; rename one"
+    )
+
+
 def build_seats(
     nodes: list, secrets: dict[str, str], pins_dir: Path, strip_detail: bool
-) -> tuple[list[dict], int]:
+) -> tuple[list[dict], int, list[str]]:
+    """Return (seats, invalid-name count, one message per duplicated seat key)."""
     seats: list[dict] = []
-    seen: set[tuple[str, str]] = set()
-    skipped = 0
+    pods_of: dict[tuple[str, str], list[str]] = {}
+    invalid = 0
     for node in nodes:
         node = _dict(node)
         room, seat = _str(node.get("rigName")), seat_name(node)
-        if not (_valid(NAME_RE, room) and _valid(NAME_RE, seat)) or (room, seat) in seen:
-            skipped += 1
+        if not (_valid(NAME_RE, room) and _valid(NAME_RE, seat)):
+            invalid += 1
             continue
-        seen.add((room, seat))
+        if (room, seat) in pods_of:
+            pods_of[(room, seat)].append(seat_pod(node))
+            continue
+        pods_of[(room, seat)] = [seat_pod(node)]
         if strip_detail:
             detail, redacted = "", True
         else:
@@ -180,7 +212,12 @@ def build_seats(
                 "redacted": redacted,
             }
         )
-    return seats, skipped
+    duplicates = [
+        duplicate_message(room, seat, pods)
+        for (room, seat), pods in pods_of.items()
+        if len(pods) > 1
+    ]
+    return seats, invalid, duplicates
 
 
 def build_agents(raw_agents: list) -> list[dict]:
@@ -210,7 +247,9 @@ def parse_rig_nodes(output: str) -> list:
 
 
 def parse_herdr_agents(output: str) -> list:
-    agents = _dict(_dict(_dict(json.loads(output)).get("result")).get("snapshot")).get("agents")
+    agents = _dict(_dict(_dict(json.loads(output)).get("result")).get("snapshot")).get(
+        "agents"
+    )
     if not isinstance(agents, list):
         raise ValueError("unexpected herdr snapshot JSON shape")
     return agents
@@ -291,11 +330,19 @@ class Bridge:
         return []
 
     def build_payload(self) -> dict:
-        nodes = self._read("rig", ["rig", "ps", "--json", "--nodes", "-A"], parse_rig_nodes)
-        raw_agents = self._read("herdr", ["herdr", "api", "snapshot"], parse_herdr_agents)
-        seats, skipped = build_seats(nodes, self.secrets, self.pins_dir, self.strip_detail)
-        if skipped:
-            self.note("skipped", f"skipped {skipped} seat(s) with invalid names")
+        nodes = self._read(
+            "rig", ["rig", "ps", "--json", "--nodes", "-A"], parse_rig_nodes
+        )
+        raw_agents = self._read(
+            "herdr", ["herdr", "api", "snapshot"], parse_herdr_agents
+        )
+        seats, invalid, duplicates = build_seats(
+            nodes, self.secrets, self.pins_dir, self.strip_detail
+        )
+        if invalid:
+            self.note("invalid", f"skipped {invalid} seat(s) with invalid names")
+        for message in duplicates:
+            self.note(f"duplicate {message}", message)
         return {
             "machine_id": self.machine_id,
             "reported_at": utc_now(),
@@ -325,20 +372,29 @@ class Bridge:
             return self.interval
         if status == 422:
             self.strip_detail = True
-            self.note("send", "server rejected text as secret-bearing (422); dropping detail next cycle")
+            self.note(
+                "send",
+                "server rejected text as secret-bearing (422); dropping detail next cycle",
+            )
             return self.interval
         return self._fail(f"server answered HTTP {status}")
 
     def _fail(self, message: str) -> float:
         self.note("send", message)
-        self.backoff = min(MAX_BACKOFF, self.backoff * 2 if self.backoff else self.interval)
+        self.backoff = min(
+            MAX_BACKOFF, self.backoff * 2 if self.backoff else self.interval
+        )
         return self.backoff
 
     def run(self, stop: threading.Event, once: bool = False) -> int:
         while not stop.is_set():
             delay = self.cycle()
             if once:
-                return EXIT_OK if self.backoff == 0.0 and not self.strip_detail else EXIT_REMOTE
+                return (
+                    EXIT_OK
+                    if self.backoff == 0.0 and not self.strip_detail
+                    else EXIT_REMOTE
+                )
             stop.wait(delay)
         return EXIT_OK
 
@@ -376,7 +432,10 @@ def build_bridge(args, send: Sender) -> Bridge:
 
 
 def sender_from_env() -> Sender:
-    url, token = os.environ.get("AGENTHUB_URL", ""), os.environ.get("AGENTHUB_TOKEN", "")
+    url, token = (
+        os.environ.get("AGENTHUB_URL", ""),
+        os.environ.get("AGENTHUB_TOKEN", ""),
+    )
     if not url or not token:
         print("AGENTHUB_URL and AGENTHUB_TOKEN must be set", file=sys.stderr)
         raise SystemExit(EXIT_USAGE)
