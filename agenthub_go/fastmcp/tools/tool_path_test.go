@@ -31,9 +31,13 @@ func TestFindProjectRootEnvAndUpward(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "pyproject.toml"), []byte(""), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// The upward search tries .git before the other markers: without one here, a .git above a
+	// TMPDIR inside the repository would be found first.
 	nested := filepath.Join(dir, "a", "b")
-	if err := os.MkdirAll(nested, 0o755); err != nil {
-		t.Fatal(err)
+	for _, d := range []string{nested, filepath.Join(dir, ".git")} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
 	}
 	t.Setenv("PROJECT_ROOT_PATH", nested)
 	got := FindProjectRoot(nil)

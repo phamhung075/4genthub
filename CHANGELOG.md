@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `tools/tool_path_test.go`: the upward search tries `.git` before the other markers (documented order in Python `tool_path.py`), so the repository's own `.git` above the temp dir won over the fixture's `pyproject.toml`. The fixture now has its own `.git` directory. No production code changed.
+
 **`TestFindProjectRootParity` failed under a TMPDIR inside the repository** (2026-10-03)
 
 - `utilities/directory_utils_test.go`: case 2 returned the real repository root instead of `<R>/data`. `FindProjectRoot` (matches Python `_find_project_root`) walks up from the anchor and the real `agenthub_main` above the temp tree was found. The test now injects `Env.Exists` that only reports paths under the fixture root. No production code changed.

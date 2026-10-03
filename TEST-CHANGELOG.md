@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — `TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository
+
+- Fixed: `TestFindProjectRootEnvAndUpward` fixture gets a `.git` directory so the nearest root wins. Red before, green after with TMPDIR inside and outside the repo.
+
 ## 2026-10-03 — `TestFindProjectRootParity` failed under a TMPDIR inside the repository
 
 - Fixed: `TestFindProjectRootParity` used the real filesystem above the fixture root; `env.Exists` is now scoped to it. Red before, green after with TMPDIR inside and outside the repo.
