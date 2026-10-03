@@ -25,8 +25,8 @@ func autoMigrateEnabled() bool {
 }
 
 // InitDatabase gets the singleton configuration and, when AUTO_MIGRATE=true, creates the schema.
-// Without the opt-in the configuration is still validated and the existing schema is left
-// untouched. It returns the first configuration error.
+// Without the opt-in the configuration is still validated, the existing schema is left
+// untouched and the tables it lacks are logged. It returns the first configuration error.
 func InitDatabase(ctx context.Context, deps Deps) error {
 	cfg, err := GetInstance(ctx, deps)
 	if err != nil {
@@ -36,6 +36,7 @@ func InitDatabase(ctx context.Context, deps Deps) error {
 		return err
 	}
 	if !autoMigrateEnabled() {
+		logMissingTables(ctx, cfg)
 		return nil
 	}
 	return cfg.CreateTables(ctx)
