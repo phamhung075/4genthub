@@ -32,7 +32,7 @@ const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    logger.debug('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
+    logger.debug('API V2: Adding auth header');
   } else {
     logger.warn('API V2: No auth token found in cookies!');
   }
@@ -61,8 +61,8 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         if (originalUrl && originalInit) {
           const newToken = Cookies.get('access_token');
           if (newToken) {
-            const newHeaders: Record<string, string> = { ...originalInit.headers } as Record<string, string>;
-            newHeaders['Authorization'] = `Bearer ${newToken}`;
+            const newHeaders = new Headers(originalInit.headers);
+            newHeaders.set('Authorization', `Bearer ${newToken}`);
 
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,

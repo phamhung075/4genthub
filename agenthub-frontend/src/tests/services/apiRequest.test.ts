@@ -5,6 +5,7 @@
  */
 
 import Cookies from 'js-cookie';
+import logger from '../../utils/logger';
 import { apiRequest } from '../../services/apiV2';
 
 const fetchMock = vi.fn();
@@ -69,5 +70,45 @@ describe('apiRequest', () => {
     await apiRequest('/api/v2/openrig/rooms-no-token');
 
     expect(sentHeaders().has('Authorization')).toBe(false);
+  });
+
+  it('retries a 401 with the caller headers and the refreshed Bearer token', async () => {
+    Cookies.set('access_token', 'old-token');
+    Cookies.set('refresh_token', 'refresh-token');
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: 'expired' }), { status: 401 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ access_token: 'new-token' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+      .mockImplementationOnce(ok);
+
+    await apiRequest('/api/v2/openrig/rooms-retry', {
+      method: 'PUT',
+      headers: { 'X-Trace': 'abc' },
+      body: JSON.stringify({ slug: 'dev' }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const retry = fetchMock.mock.calls[2][1] as RequestInit;
+    const headers = new Headers(retry.headers);
+    expect(retry.method).toBe('PUT');
+    expect(retry.body).toBe(JSON.stringify({ slug: 'dev' }));
+    expect(headers.get('Authorization')).toBe('Bearer new-token');
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(headers.get('X-Trace')).toBe('abc');
+  });
+
+  it('never logs any character of the access token', async () => {
+    Cookies.set('access_token', 'secret-token-xyz');
+    const spies = (['debug', 'info', 'warn', 'error'] as const).map(level => vi.spyOn(logger, level));
+
+    await apiRequest('/api/v2/openrig/rooms-log');
+
+    const logged = JSON.stringify(spies.flatMap(spy => spy.mock.calls));
+    expect(logged).not.toContain('secret');
+    spies.forEach(spy => spy.mockRestore());
   });
 });
