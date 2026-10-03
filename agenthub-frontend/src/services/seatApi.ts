@@ -10,11 +10,16 @@
 
 import { apiRequest } from './apiV2';
 import type {
+  CreateSeatTypeVersionRequest,
+  ModulesResponse,
+  SeatTypeVersionResponse,
   CreateRoomRequest,
   CreateSeatRequest,
   MachinesResponse,
   OccupantUpdate,
   ModuleVersionResponse,
+  PutModuleVersionRequest,
+  PutModuleVersionResponse,
   PutSeatOverlayRequest,
   RemoveSeatResponse,
   ResolvedSeatResponse,
@@ -70,9 +75,23 @@ export const seatApi = {
   // Seat types and modules
   listSeatTypes: () => apiRequest<SeatTypesResponse>(`${OPENRIG}/seat-types`),
 
+  createSeatTypeVersion: (slug: string, data: CreateSeatTypeVersionRequest) =>
+    apiRequest<SeatTypeVersionResponse>(
+      `${OPENRIG}/seat-types/${segment(slug)}/versions`,
+      jsonBody(data)
+    ),
+
+  listModules: () => apiRequest<ModulesResponse>(`${OPENRIG}/modules`),
+
   getModuleVersion: (slug: string, version: string) =>
     apiRequest<ModuleVersionResponse>(
       `${OPENRIG}/modules/${segment(slug)}/versions/${segment(version)}`
+    ),
+
+  putModuleVersion: (slug: string, version: string, data: PutModuleVersionRequest) =>
+    apiRequest<PutModuleVersionResponse>(
+      `${OPENRIG}/modules/${segment(slug)}/versions/${segment(version)}`,
+      jsonPut(data)
     ),
 
   // Seats

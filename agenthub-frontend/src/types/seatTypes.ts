@@ -20,6 +20,9 @@ export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex'];
 
 export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'memory';
 
+/** Single source of truth for the module kinds offered in the UI. */
+export const SEAT_MODULE_KINDS: SeatModuleKind[] = ['instruction', 'document', 'skill', 'tool', 'memory'];
+
 export type SeatStatus = 'active' | 'removed';
 
 export interface Room {
@@ -244,6 +247,18 @@ export interface OccupantUpdate {
   model: string;
 }
 
+/** Publishes one immutable module version; the slug and version are in the path. */
+export interface PutModuleVersionRequest {
+  kind: SeatModuleKind;
+  content: string;
+}
+
+/** The server assigns the version (next patch of the latest); refs are `slug@x.y.z`. */
+export interface CreateSeatTypeVersionRequest {
+  module_refs: string[];
+  default_runtime: SeatRuntime;
+}
+
 export interface PutSeatOverlayRequest {
   ops: SeatOverlayOp[];
 }
@@ -295,6 +310,38 @@ export interface SeatTypesResponse {
 export interface ModuleVersionResponse {
   success: boolean;
   module: SeatModuleVersion;
+}
+
+export interface PublishedModuleVersion {
+  slug: string;
+  kind: SeatModuleKind;
+  version: string;
+  sha256: string;
+}
+
+/** Latest version of one module, without its content. */
+export type ModuleSummary = PublishedModuleVersion;
+
+export interface ModulesResponse {
+  success: boolean;
+  modules: ModuleSummary[];
+}
+
+export interface SeatTypeVersion {
+  slug: string;
+  version: string;
+  default_runtime: string;
+  module_refs: SeatTypeModuleRef[];
+}
+
+export interface SeatTypeVersionResponse {
+  success: boolean;
+  seat_type_version: SeatTypeVersion;
+}
+
+export interface PutModuleVersionResponse {
+  success: boolean;
+  module: PublishedModuleVersion;
 }
 
 export interface SeatsResponse {

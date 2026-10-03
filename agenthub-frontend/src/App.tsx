@@ -39,6 +39,7 @@ const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
 const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
 const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
+const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
 const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
@@ -378,6 +379,18 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <SeatsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/seats/authoring"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SeatAuthoringPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>

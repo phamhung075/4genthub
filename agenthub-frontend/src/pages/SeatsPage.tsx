@@ -138,6 +138,9 @@ export const SeatsPage: React.FC = () => {
             Rooms hold fixed role slots. Each seat's occupant and modules are replaceable.
           </p>
         </div>
+        <Button variant="outline" onClick={() => navigate('/seats/authoring')}>
+          Author modules and seat types
+        </Button>
       </div>
 
       {/* Company pin policy */}

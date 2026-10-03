@@ -26,3 +26,19 @@ export const SEAT_MODEL_MESSAGE =
 export function isValidSeatModel(value: string): boolean {
   return value === '' || SEAT_MODEL_PATTERN.test(value);
 }
+
+export const MODULE_SLUG_PATTERN = /^[a-z][a-z0-9-]*$/;
+
+export const MODULE_SLUG_MESSAGE =
+  'Use lowercase letters, digits or "-"; start with a lowercase letter.';
+
+export const MODULE_VERSION_PATTERN = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/;
+
+export const MODULE_VERSION_MESSAGE = 'Use a concrete semver such as 1.0.0.';
+
+export const MODULE_REF_PATTERN = /^[a-z][a-z0-9-]*@(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/;
+
+export const MODULE_REF_MESSAGE = 'Use one slug@x.y.z per line, for example rules@1.0.0 (no "latest").';
+
+/** Server limit on module content (bytes). */
+export const MODULE_CONTENT_MAX_BYTES = 65536;

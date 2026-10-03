@@ -12,10 +12,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { seatApi } from '../services/seatApi';
 import { useSuccessToast } from '../components/ui/toast';
 import type {
+  CreateSeatTypeVersionRequest,
+  ModuleSummary,
   CreateRoomRequest,
   CreateSeatRequest,
   MachineStatus,
   OccupantUpdate,
+  PutModuleVersionRequest,
   SeatLinkRequest,
   SeatOverlay,
   SeatOverlayOp,
@@ -36,6 +39,7 @@ export const seatKeys = {
   overlays: (room: string, seat: string) => ['seatOverlays', room, seat] as const,
   links: (room: string, seat: string) => ['seatLinks', room, seat] as const,
   resolved: (room: string, seat: string) => ['seatResolved', room, seat] as const,
+  modules: ['seatModules'] as const,
   module: (slug: string, version: string) => ['seatModule', slug, version] as const,
 };
 
@@ -88,6 +92,18 @@ export function useSeatTypes() {
   };
 }
 
+export function useCreateSeatTypeVersion(slug: string) {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: (data: CreateSeatTypeVersionRequest) => seatApi.createSeatTypeVersion(slug, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.seatTypes });
+      showSuccess(`Seat type ${slug} version ${response.seat_type_version.version} created`);
+    },
+  });
+}
+
 export function useModuleVersion(slug: string | null, version: string | null, enabled = true) {
   const query = useQuery({
     queryKey: seatKeys.module(slug ?? '', version ?? ''),
@@ -98,6 +114,30 @@ export function useModuleVersion(slug: string | null, version: string | null, en
     enabled: enabled && !!slug && !!version && version !== 'latest',
   });
   return { module: query.data ?? null, isLoading: query.isLoading, error: query.error };
+}
+
+export function useModules() {
+  const query = useQuery({
+    queryKey: seatKeys.modules,
+    queryFn: async (): Promise<ModuleSummary[]> => {
+      const response = await seatApi.listModules();
+      return response.modules ?? [];
+    },
+  });
+  return { modules: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+export function usePublishModuleVersion() {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: ({ slug, version, ...data }: PutModuleVersionRequest & { slug: string; version: string }) =>
+      seatApi.putModuleVersion(slug, version, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.modules });
+      showSuccess(`Module ${response.module.slug}@${response.module.version} published`);
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------

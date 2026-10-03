@@ -3,6 +3,21 @@
 ## [Unreleased]
 
 ### Added
+- **Seat authoring page: modules and seat types** - 2026-10-03
+  - `/seats/authoring` (button on `/seats`): module list (latest version per slug,
+    `GET /api/v2/openrig/modules`), seat type version form (seat type, default runtime, `slug@x.y.z`
+    module refs one per line, prefilled from the selected type; the server assigns the version via
+    `POST /api/v2/openrig/seat-types/{slug}/versions`), and a form to publish an immutable module version
+    (slug `^[a-z][a-z0-9-]*$`, semver `x.y.z`, kind, content up to 65536 bytes) through
+    `PUT /api/v2/openrig/modules/{slug}/versions/{version}`; server errors (for example a version
+    that exists with different content) are shown inline. Read-only list of seat types with default
+    runtime, latest version and `slug@version` module refs.
+  - Files: `src/types/seatTypes.ts`, `src/lib/seatNames.ts`, `src/services/seatApi.ts`
+    (`putModuleVersion`, `listModules`, `createSeatTypeVersion`), `src/hooks/useSeats.ts`
+    (`usePublishModuleVersion`, `useModules`, `useCreateSeatTypeVersion`),
+    `src/components/seats/ModulePublishForm.tsx` (new), `src/components/seats/SeatTypeVersionForm.tsx` (new),
+    `src/pages/SeatAuthoringPage.tsx` (new),
+    `src/pages/SeatsPage.tsx`, `src/App.tsx`, `src/tests/pages/SeatAuthoringPage.test.tsx` (new)
 - **Switch the LLM of a seat** - 2026-10-03
   - `/seats/:room/:seat` "LLM" tab (replaces the read-only Brain tab): runtime select and model
     input (model rule `^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$`, empty = runtime default), Save disabled
