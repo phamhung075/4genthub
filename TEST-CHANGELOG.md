@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seatcheck hardening tests
+
+- Added: `TestSendHasNoPinsFlag`, `TestSendRefusesAPolicyOfAnotherSeat`, `TestSendRefusesAnIdentityThatIsNotADirectoryName`, `TestSendAuditsBeforeDelivering` (the stub reads the audit file at delivery time), `TestSendAuditFileMustBePrivate`, `TestSendDeliveryFailureIsItsOwnExitCode` (rig exits 1,2,3,4,7 all become 5, audit shows the decision then delivery_failed), repeated-member tests; and `exec_test.go` running the real `rigSend` and `rigWhoami` against a fake `rig` on PATH (argv `send -- <session> --rig=x`, message with shell metacharacters is one argument and not evaluated, stdin detached with a pipe holding LEAK on os.Stdin, exit code and missing binary, whoami argv and failures). `exec_test.go` drafted by deepseek session e2c71135-50ac-4873-8cac-5ecdb0c55167 (the worker ran it with `go test -overlay`; I applied it, unescaped, and re-ran it). Mutations: dropping `--` fails `TestRigSendArgv` and the message test; dropping the seat check fails the mismatch test. cmd/seatcheck ok.
+
+## 2026-10-03 — comm-guard allows rig whoami
+
+- Changed: `TestLoadEmbeddedSeedsCarryCommGuard` expects the allow list `seatcheck send`, `rig whoami` and the skill to explain exit codes 2, 3 and 5; the renderer tests expect 5 denies and 2 allows (7 `Bash(` entries) on claude-code and the extra allow order. seatrenderer, seedlibrary, seedmap ok.
+
 ## 2026-10-03 — missing-tables startup notice
 
 - Added (`missing_tables_test.go`): `TestMissingTablesListsOnlyAbsentRegisteredTables`, `TestInitDatabaseNamesMissingTablesWithoutAutoMigrate` (log names a missing table and the AUTO_MIGRATE hint, startup succeeds, no DDL), `TestInitDatabaseWithAutoMigrateDoesNotReportMissingTables`, `TestMissingTablesNoticeNamesTablesAndHint`. database package ok.

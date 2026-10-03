@@ -349,7 +349,7 @@ func TestRenderSeatKeepsCommGuardNextToAnotherToolModule(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantDeny := "Bash(rig send:*)|Bash(rig queue:*)|Bash(rig broadcast:*)|Bash(tmux send-keys:*)|Bash(tmux paste-buffer:*)|Bash(rm:*)"
-	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Read" {
+	if strings.Join(settings.Permissions.Deny, "|") != wantDeny || strings.Join(settings.Permissions.Allow, "|") != "Bash(seatcheck send:*)|Bash(rig whoami:*)|Read" {
 		t.Fatalf("permissions = %+v", settings.Permissions)
 	}
 	if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
@@ -383,8 +383,8 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claude-code: %v", err)
 	}
-	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 6 {
-		t.Fatalf("claude-code settings fragment should carry the 5 denies and the allow:\n%s", settings)
+	if settings := fileContent(t, claude, settingsFragmentPath); strings.Count(settings, "Bash(") != 7 {
+		t.Fatalf("claude-code settings fragment should carry the 5 denies and the 2 allows:\n%s", settings)
 	}
 
 	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
