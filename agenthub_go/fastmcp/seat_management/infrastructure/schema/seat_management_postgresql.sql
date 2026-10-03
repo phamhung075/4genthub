@@ -210,6 +210,22 @@ CREATE TABLE IF NOT EXISTS machines (
     PRIMARY KEY (user_id, machine_id)
 );
 
+-- Table: machine_tokens
+-- Bearer tokens of the per-PC bridge, one active token per (user, machine). Only the SHA-256
+-- hex of a token is stored; the token itself is shown once at registration. A revoked token
+-- keeps its row (revoked_at set) and never authenticates again.
+CREATE TABLE IF NOT EXISTS machine_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    revoked_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT uq_machine_tokens_token_hash UNIQUE (token_hash)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_machine_tokens_active ON machine_tokens (user_id, machine_id) WHERE revoked_at IS NULL;
+
 -- Table: seat_status
 -- The latest reported state of each seat on a machine. A report replaces the machine's
 -- whole set; room and seat are reported names, not foreign keys.

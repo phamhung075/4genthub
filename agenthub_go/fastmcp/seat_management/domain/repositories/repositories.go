@@ -231,6 +231,31 @@ type SeatSettingsRepository interface {
 	Set(ctx context.Context, userID string, followLatest bool) (*SeatSettings, error)
 }
 
+// ErrMachineTokenExists means the machine already has an active token.
+var ErrMachineTokenExists = errors.New("machine already has an active token")
+
+// MachineToken is a bearer token bound to one machine of one user. Only the SHA-256 hex of
+// the token is kept; RevokedAt is nil while the token is active.
+type MachineToken struct {
+	ID        string
+	UserID    string
+	MachineID string
+	TokenHash string
+	CreatedAt time.Time
+	RevokedAt *time.Time
+}
+
+// MachineTokenRepository stores machine tokens.
+type MachineTokenRepository interface {
+	// Create stores an active token; ErrMachineTokenExists when the machine has one.
+	Create(ctx context.Context, userID, machineID, tokenHash string) (*MachineToken, error)
+	// Revoke revokes the machine's active token and reports whether there was one.
+	Revoke(ctx context.Context, userID, machineID string) (bool, error)
+	// FindActive returns the active token with the hash, or nil. The hash is the credential,
+	// so it identifies the user; no user filter applies.
+	FindActive(ctx context.Context, tokenHash string) (*MachineToken, error)
+}
+
 // SeatStatus is the reported state of one seat on a machine.
 type SeatStatus struct {
 	Room        string

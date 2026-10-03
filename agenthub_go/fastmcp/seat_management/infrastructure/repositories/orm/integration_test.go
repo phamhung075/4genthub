@@ -424,6 +424,71 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	}
 }
 
+// TestMachineTokensIntegration checks the machine token repository against a real PostgreSQL:
+// one active token per (user, machine), revocation, and lookup by hash only.
+func TestMachineTokensIntegration(t *testing.T) {
+	url := os.Getenv("SEAT_TEST_DATABASE_URL")
+	if url == "" {
+		t.Skip("SEAT_TEST_DATABASE_URL not set")
+	}
+	db, err := sql.Open("pgx", url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, seatIntegrationSchema(t)); err != nil {
+		t.Fatalf("apply schema: %v", err)
+	}
+	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
+	tokens, err := NewORMMachineTokenRepository(sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stamp := time.Now().UnixNano()
+	userA, userB := fmt.Sprintf("tok-a-%d", stamp), fmt.Sprintf("tok-b-%d", stamp)
+	hashA, hashA2, hashB := fmt.Sprintf("hash-a-%d", stamp), fmt.Sprintf("hash-a2-%d", stamp), fmt.Sprintf("hash-b-%d", stamp)
+
+	created, err := tokens.Create(ctx, userA, "pc-home", hashA)
+	if err != nil || created.UserID != userA || created.MachineID != "pc-home" || created.RevokedAt != nil {
+		t.Fatalf("Create = %+v, %v", created, err)
+	}
+	if _, err := tokens.Create(ctx, userA, "pc-home", hashA2); !errors.Is(err, domainrepo.ErrMachineTokenExists) {
+		t.Fatalf("second active token = %v, want ErrMachineTokenExists", err)
+	}
+	if _, err := tokens.Create(ctx, userB, "pc-home", hashB); err != nil {
+		t.Fatalf("the same machine id for another user: %v", err)
+	}
+	if found, err := tokens.FindActive(ctx, hashA); err != nil || found == nil || found.UserID != userA || found.MachineID != "pc-home" {
+		t.Fatalf("FindActive = %+v, %v", found, err)
+	}
+	if found, err := tokens.FindActive(ctx, "no-such-hash"); err != nil || found != nil {
+		t.Fatalf("FindActive unknown = %+v, %v", found, err)
+	}
+
+	if revoked, err := tokens.Revoke(ctx, userB, "pc-other"); err != nil || revoked {
+		t.Fatalf("Revoke of a machine without a token = %v, %v", revoked, err)
+	}
+	if found, _ := tokens.FindActive(ctx, hashA); found == nil {
+		t.Fatal("another user's revoke attempt changed this token")
+	}
+	if revoked, err := tokens.Revoke(ctx, userA, "pc-home"); err != nil || !revoked {
+		t.Fatalf("Revoke = %v, %v", revoked, err)
+	}
+	if found, err := tokens.FindActive(ctx, hashA); err != nil || found != nil {
+		t.Fatalf("FindActive after revoke = %+v, %v, want nil", found, err)
+	}
+	if found, _ := tokens.FindActive(ctx, hashB); found == nil {
+		t.Fatal("revoking user A's token revoked user B's")
+	}
+	if revoked, err := tokens.Revoke(ctx, userA, "pc-home"); err != nil || revoked {
+		t.Fatalf("second Revoke = %v, %v, want false", revoked, err)
+	}
+	if _, err := tokens.Create(ctx, userA, "pc-home", hashA2); err != nil {
+		t.Fatalf("a revoked machine can be registered again: %v", err)
+	}
+}
+
 // seatIntegrationSchema reads the seat schema DDL next to this test.
 func seatIntegrationSchema(t *testing.T) string {
 	t.Helper()

@@ -258,6 +258,26 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (user_id, machine_id)\n" +
 			")",
 	}},
+	{Name: "machine_tokens", Model: "MachineTokenORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false},
+		{Name: "token_hash", Attr: "token_hash", GoField: "TokenHash", SQLType: "TEXT", Nullable: false},
+		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		{Name: "revoked_at", Attr: "revoked_at", GoField: "RevokedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
+	}, DDL: []string{
+		"CREATE TABLE machine_tokens (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL,\n" +
+			"\ttoken_hash TEXT NOT NULL,\n" +
+			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\trevoked_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tPRIMARY KEY (id),\n" +
+			"\tCONSTRAINT uq_machine_tokens_token_hash UNIQUE (token_hash)\n" +
+			")",
+		"CREATE UNIQUE INDEX uq_machine_tokens_active ON machine_tokens (user_id, machine_id) WHERE revoked_at IS NULL",
+	}},
 	{Name: "seat_status", Model: "SeatStatusORM", Columns: []taskdb.ColumnDef{
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
 		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},

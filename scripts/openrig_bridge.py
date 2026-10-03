@@ -34,7 +34,9 @@ continues; the condition is logged to stderr once per change.
 
 Environment:
   AGENTHUB_URL    base URL of the 4genthub server
-  AGENTHUB_TOKEN  bearer token (sent as a header, never logged or written)
+  AGENTHUB_TOKEN  machine token (sent as a header, never logged or written), issued once by
+                  POST /api/v2/openrig/machines {"machine_id": ID} and valid only for that
+                  machine id (--machine-id), revocable with DELETE .../machines/ID/token
 
 Usage:
   openrig_bridge.py run [--interval 20] [--machine-id ID] [--once]

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -46,13 +47,26 @@ func (f *fakeSeatStatus) List(_ context.Context, userID string) ([]repositories.
 
 var seatStatusTestNow = time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
 
+// seatStatusTestToken is the machine token of machine pc-home of the test user.
+const seatStatusTestToken = "mt_seat-status-test-token"
+
 func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 	t.Helper()
 	previous := newSeatStatusSource
 	newSeatStatusSource = func(*database.SessionManager) (seatStatusSource, error) { return source, nil }
 	previousNow := seatStatusNow
 	seatStatusNow = func() time.Time { return seatStatusTestNow }
-	t.Cleanup(func() { newSeatStatusSource = previous; seatStatusNow = previousNow })
+	previousTokens := newMachineTokenRepo
+	tokens := &fakeMachineTokens{tokens: []*repositories.MachineToken{{
+		ID: "tok", UserID: "11111111-1111-4111-8111-111111111111", MachineID: "pc-home",
+		TokenHash: seatservices.HashMachineToken(seatStatusTestToken),
+	}}}
+	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return tokens, nil }
+	t.Cleanup(func() {
+		newSeatStatusSource = previous
+		seatStatusNow = previousNow
+		newMachineTokenRepo = previousTokens
+	})
 	authenticateAgentsTestUser(t)
 	mux := http.NewServeMux()
 	mountSeatStatusRoutes(mux, nil)
@@ -61,7 +75,7 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 
 func postSeatStatus(mux *http.ServeMux, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seat-status", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer test-token")
+	req.Header.Set("Authorization", "Bearer "+seatStatusTestToken)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	return rec
