@@ -1068,6 +1068,20 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 	}
 }
 
+// A runtime the renderer cannot render is a 400 that names the supported ones.
+func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", Status: "active"})
+	mux := seatAdminTestMux(t, fake)
+	for _, runtime := range []string{"pi", "omp"} {
+		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"`+runtime+`"}`)
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `\"claude-code\" and \"codex\"`) {
+			t.Errorf("runtime %s: status = %d, body %s, want 400 naming claude-code and codex", runtime, rec.Code, rec.Body.String())
+		}
+	}
+}
+
 func TestSeatAdminSetOccupantNotFoundAndRemoved(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")

@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**One list of seat runtimes** (2026-10-03)
+
+- `seat_management/domain/resolver/runtime.go`: `RuntimeClaudeCode`, `RuntimeCodex` and `CheckRuntime`, the single definition of the runtimes the renderer can render. `repositories.ValidateRuntime` (API, MCP `manage_seat`, seat-type versions), `rigspec`, `seedlibrary`, `seedmap` and `seatrenderer` all read it; the four separate lists are gone. A runtime such as `pi` or `omp` is a 400 `unsupported runtime "pi": supported runtimes are "claude-code" and "codex"` on `PUT .../occupant`, `POST .../seats` and `POST /seat-types/{slug}/versions`.
+
 ### Fixed
 
 **Bridge: duplicate seat keys were reported as invalid names** (2026-10-03)

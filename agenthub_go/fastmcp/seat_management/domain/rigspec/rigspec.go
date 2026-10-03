@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"sort"
 
+	"agenthub/fastmcp/seat_management/domain/resolver"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,7 +34,6 @@ const agentRefPrefix = "local:agents/"
 
 var (
 	namePattern    = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
-	validRuntimes  = map[string]bool{"claude-code": true, "codex": true}
 	validEdgeKinds = map[string]bool{
 		"delegates_to":      true,
 		"spawned_by":        true,
@@ -132,8 +133,8 @@ func RenderRoom(roomSlug, roomName, permissionPolicy string, seats []Seat, edges
 			return "", fmt.Errorf("rigspec: duplicate seat key %q", seat.Key)
 		}
 		keys[seat.Key] = true
-		if !validRuntimes[seat.Runtime] {
-			return "", fmt.Errorf("rigspec: seat %q runtime %q must be \"claude-code\" or \"codex\"", seat.Key, seat.Runtime)
+		if err := resolver.CheckRuntime(seat.Runtime); err != nil {
+			return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)
 		}
 		members = append(members, memberYAML{
 			ID:       seat.Key,

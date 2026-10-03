@@ -23,10 +23,7 @@ var (
 
 // ValidateRuntime accepts the runtimes seatrenderer can render.
 func ValidateRuntime(runtime string) error {
-	if runtime != "claude-code" && runtime != "codex" {
-		return fmt.Errorf("runtime %q must be \"claude-code\" or \"codex\"", runtime)
-	}
-	return nil
+	return resolver.CheckRuntime(runtime)
 }
 
 // ValidateModel accepts an empty model (the runtime default) or a model id.
@@ -59,7 +56,7 @@ func ValidateOccupant(runtime, model string) error {
 	if err := ValidateModel(model); err != nil {
 		return err
 	}
-	if runtime == "codex" && strings.HasPrefix(model, "claude-") {
+	if runtime == resolver.RuntimeCodex && strings.HasPrefix(model, "claude-") {
 		return fmt.Errorf("model %q is a Claude model and cannot run on the codex runtime", model)
 	}
 	return nil

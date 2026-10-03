@@ -25,8 +25,6 @@ const (
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
 	mcpServerName        = "agenthub_http"
-	runtimeClaudeCode    = "claude-code"
-	runtimeCodex         = "codex"
 	deliveryHintSendText = "send_text"
 	typeClaudeMCP        = "claude_mcp_fragment"
 	typeClaudeSettings   = "claude_settings_fragment"
@@ -101,28 +99,26 @@ type startupFileYAML struct {
 // seat guidance, one SKILL.md per skill module, and the runtime fragments the
 // seat's runtime supports.
 func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpec, error) {
-	switch seat.Runtime {
-	case runtimeClaudeCode, runtimeCodex:
-	default:
-		return nil, fmt.Errorf("unsupported runtime %q: OpenRig seats support %q and %q", seat.Runtime, runtimeClaudeCode, runtimeCodex)
+	if err := resolver.CheckRuntime(seat.Runtime); err != nil {
+		return nil, err
 	}
 
 	toolModules := modulesOfKind(seat.Modules, resolver.KindTool)
-	if len(toolModules) > 0 && seat.Runtime != runtimeClaudeCode {
+	if len(toolModules) > 0 && seat.Runtime != resolver.RuntimeClaudeCode {
 		return nil, fmt.Errorf("runtime %q cannot carry tool modules: tool content is a Claude settings fragment", seat.Runtime)
 	}
 
 	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
 	// Codex seats get no MCP fragment: OpenRig has no codex MCP fragment resource type, only codex_config_fragment.
-	if seat.Runtime == runtimeClaudeCode {
+	if seat.Runtime == resolver.RuntimeClaudeCode {
 		var err error
 		mcpFragment, err = renderMCPFragment(mcpURL)
 		if err != nil {
 			return nil, err
 		}
 		runtimeResources = append(runtimeResources, runtimeResourceYAML{
-			ID: mcpResourceID, Path: mcpFragmentPath, Runtime: runtimeClaudeCode, Type: typeClaudeMCP,
+			ID: mcpResourceID, Path: mcpFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeMCP,
 		})
 		if len(toolModules) > 0 {
 			settings, err := mergeToolModules(toolModules)
@@ -134,7 +130,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 				return nil, err
 			}
 			runtimeResources = append(runtimeResources, runtimeResourceYAML{
-				ID: settingsResourceID, Path: settingsFragmentPath, Runtime: runtimeClaudeCode, Type: typeClaudeSettings,
+				ID: settingsResourceID, Path: settingsFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeSettings,
 			})
 		}
 	}
@@ -154,7 +150,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 			Content: m.Content,
 		})
 	}
-	if seat.Runtime == runtimeClaudeCode {
+	if seat.Runtime == resolver.RuntimeClaudeCode {
 		files = append(files, services.OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
 		if settingsFragment != "" {
 			files = append(files, services.OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})

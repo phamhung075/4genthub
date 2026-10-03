@@ -103,7 +103,7 @@ func FromSpec(spec Spec) (Seed, error) {
 	})
 
 	for _, shared := range spec.Shared {
-		if shared.Kind == resolver.KindTool && spec.DefaultRuntime == "codex" {
+		if shared.Kind == resolver.KindTool && spec.DefaultRuntime == resolver.RuntimeCodex {
 			continue
 		}
 		shared.Version = seedVersion

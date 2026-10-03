@@ -40,7 +40,6 @@ var sharedModuleFiles = []struct {
 
 var (
 	slugPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
-	runtimes    = map[string]bool{"claude-code": true, "codex": true}
 )
 
 type ruleFile struct {
@@ -124,8 +123,8 @@ func Parse(name string, data []byte, shared []seedmap.SeedModule) (seedmap.Seed,
 	if strings.TrimSpace(file.Name) == "" {
 		return seedmap.Seed{}, fmt.Errorf("%s: field name is empty", name)
 	}
-	if !runtimes[file.DefaultRuntime] {
-		return seedmap.Seed{}, fmt.Errorf("%s: field default_runtime %q must be claude-code or codex", name, file.DefaultRuntime)
+	if err := resolver.CheckRuntime(file.DefaultRuntime); err != nil {
+		return seedmap.Seed{}, fmt.Errorf("%s: field default_runtime: %w", name, err)
 	}
 	spec := seedmap.Spec{
 		Slug: file.Slug, Name: file.Name, Description: file.Description, DefaultRuntime: file.DefaultRuntime,

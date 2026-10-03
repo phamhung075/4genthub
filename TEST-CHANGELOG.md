@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — one list of seat runtimes
+
+- Added: `TestCheckRuntime` (pi, omp, gemini, empty, wrong case rejected; message names both supported runtimes), `TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes` (400 for pi and omp). seat_management and server packages ok.
+
 ## 2026-10-03 — hash drift on the machines list
 
 - Added: `TestSync` (5 cases), `TestSeatStatusGetReportsExpectedHashAndSync` (sync per seat, key order runtime/hash/expected_hash/sync/detail), `TestMachineExpectedHashIntegration` (Postgres: older running hash still expects the newest snapshot, unknown room/seat expects "", other tenant's same-named seat never leaks; skipped without `SEAT_TEST_DATABASE_URL`, not run locally). `TestMachineListGroupsSeatsAndAgentsPerMachine` now asserts the three joins are user-scoped; removing the `resolved_seats` user filter fails it.
