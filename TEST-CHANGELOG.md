@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — SubtaskEditDialog effects
+
+- Added: `src/tests/components/SubtaskEditDialog.test.tsx` (5 tests): both agent lists load when the dialog opens and not while closed; a subtask change while open does not reload them; the form pre-fills on open and again on a subtask change; unsaved edits are discarded on close and reopen. Mutation check: adding `subtask` to the agent-load effect's deps fails the reload test.
+
 ## 2026-10-03 — seat permission policy
 
 - Added: `SeatDetailPage > Permissions panel` (current policy and the five options, Save disabled when unchanged; save calls `putPermissionPolicy('dev','alice','yolo')`, refetches seats and shows the yolo warning; a rejected policy shows the server error; 13 tests in the file) and `sets a permission policy with PUT .../permission-policy` in `seatApi.test.ts`.
