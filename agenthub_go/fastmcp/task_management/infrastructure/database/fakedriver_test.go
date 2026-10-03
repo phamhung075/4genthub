@@ -17,6 +17,14 @@ type fakeDB struct {
 	statements []string
 	tables     map[string][]string
 	failExec   func(q string) error
+	// schema is what the column drift query returns; blocking marks a NOT NULL column without a default.
+	schema    []fakeColumn
+	failQuery func(q string) error
+}
+
+type fakeColumn struct {
+	table, column string
+	blocking      bool
 }
 
 func newFakeDB() *fakeDB {
@@ -72,6 +80,17 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 			}
 		}
 		return &fakeRows{cols: []string{"table_name"}, rows: rows}, nil
+	case strings.Contains(s.q, "information_schema.columns") && strings.Contains(s.q, "column_default"):
+		if s.f.failQuery != nil {
+			if err := s.f.failQuery(s.q); err != nil {
+				return nil, err
+			}
+		}
+		var rows [][]driver.Value
+		for _, c := range s.f.schema {
+			rows = append(rows, []driver.Value{c.table, c.column, c.blocking})
+		}
+		return &fakeRows{cols: []string{"table_name", "column_name", "blocking"}, rows: rows}, nil
 	case strings.Contains(s.q, "information_schema.columns"):
 		var rows [][]driver.Value
 		for _, c := range s.f.tables[args[0].(string)] {

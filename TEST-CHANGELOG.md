@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — column drift notice
+
+- Added: `TestMissingTablesNilEngine`, `TestLogMissingTablesReportsACheckFailure` (nil engine and a failing query are logged, never fatal), `TestColumnDriftFindsMissingAndBlockingColumns` (a missing column and an unknown NOT NULL column without default are reported, an unknown nullable one is not, complete tables and absent tables are not), `TestInitDatabaseLogsColumnDriftWithoutAutoMigrate` (startup succeeds, no DDL runs), `TestColumnDriftNoticeNamesBothKinds`; `fakedriver_test.go` answers the drift query (`schema`, `failQuery`). Drafted by deepseek (session c23cf86b-f5cc-49e0-87e0-35388f9222f1), verified with two mutations.
+- Changed: `TestMissingTablesListsOnlyAbsentRegisteredTables` derives the expected count from the registry instead of `len(Tables)-2`.
+- Note: the `seat_management` tables are not linked into this package's test binary, so the drift fixture uses a registered task_management table; the seats case (status NOT NULL, no permission_policy) is the same comparison and is not covered against a real database.
+
 ## 2026-10-03 — permission policy is never empty
 
 - Added: `TestSeatPermissionPolicyCheckMatchesResolver` (the CHECK list in the SQL file and the seats DDL equals `resolver.PermissionPolicies`), an empty policy case in `TestRenderRoomRejectsInvalidMemberPolicy`.
