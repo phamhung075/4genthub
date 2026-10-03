@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **useSubtaskExpansion cancels its pending timers on unmount** - 2026-10-04
+  - The hook's four `setTimeout` calls (dialog auto-clear, staggered create/update animations, trigger clear)
+    were never cancelled, so one could fire after unmount or test teardown (`window is not defined` unhandled
+    error, which made a LazySubtaskList test run exit 1 although all tests passed). They now go through one
+    scheduler that tracks the timers and clears them on unmount.
+  - Files: `src/components/LazySubtaskList/hooks/useSubtaskExpansion.ts`, `src/tests/hooks/useSubtaskExpansion.test.ts` (1 test added)
 - **A 404 shows the server's detail instead of "Resource not found"** - 2026-10-03
   - The 404 branch of `handleResponse` discarded the response `detail`, so the seat Preview tab showed a
     generic "Resource not found" for an unresolvable module ref. The error message is now the server detail

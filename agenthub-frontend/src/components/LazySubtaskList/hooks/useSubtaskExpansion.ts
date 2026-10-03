@@ -37,6 +37,16 @@ export function useSubtaskExpansion(
   // Row animation callback registry
   const rowAnimationCallbacks = useRef<Map<string, RowAnimationCallbacks>>(new Map());
 
+  // Pending timers, cancelled on unmount so none fires after teardown
+  const pendingTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const schedule = useCallback((callback: () => void, delay: number) => {
+    const timer = setTimeout(() => {
+      pendingTimers.current.delete(timer);
+      callback();
+    }, delay);
+    pendingTimers.current.add(timer);
+  }, []);
+
   // Track previous subtasks for change detection
   const previousSubtasksRef = useRef<Map<string, SubtaskSummary>>(new Map());
 
@@ -116,11 +126,11 @@ export function useSubtaskExpansion(
 
     if (opening) {
       // Auto-clear after timeout to prevent stuck state
-      setTimeout(() => {
+      schedule(() => {
         setIsOpeningDialog(false);
       }, ANIMATION_CONFIG.ANIMATION_CLEANUP_TIMEOUT);
     }
-  }, []);
+  }, [schedule]);
 
   /**
    * Process animation triggers based on subtask changes
@@ -140,7 +150,7 @@ export function useSubtaskExpansion(
 
     // Created animations
     changes.created.forEach(subtaskId => {
-      setTimeout(() => {
+      schedule(() => {
         triggerAnimation(subtaskId, 'create');
       }, delay);
       delay += ANIMATION_CONFIG.ANIMATION_STAGGER_DELAY;
@@ -148,7 +158,7 @@ export function useSubtaskExpansion(
 
     // Updated animations
     changes.updated.forEach(subtaskId => {
-      setTimeout(() => {
+      schedule(() => {
         triggerAnimation(subtaskId, 'update');
       }, delay);
       delay += ANIMATION_CONFIG.ANIMATION_STAGGER_DELAY;
@@ -175,20 +185,20 @@ export function useSubtaskExpansion(
       deleted: changes.deleted.size
     });
 
-  }, [subtaskSummaries, triggerAnimation]);
+  }, [subtaskSummaries, triggerAnimation, schedule]);
 
   /**
    * Clear animation triggers after animations complete
    */
   const clearAnimationTriggers = useCallback(() => {
-    setTimeout(() => {
+    schedule(() => {
       setAnimationTriggers({
         created: new Set(),
         updated: new Set(),
         deleted: new Set()
       });
     }, ANIMATION_CONFIG.ROW_ANIMATION_DURATION + 100);
-  }, []);
+  }, [schedule]);
 
   // Process animations when subtasks change
   useEffect(() => {
@@ -200,7 +210,10 @@ export function useSubtaskExpansion(
 
   // Cleanup on unmount
   useEffect(() => {
+    const timers = pendingTimers.current;
     return () => {
+      timers.forEach(clearTimeout);
+      timers.clear();
       rowAnimationCallbacks.current.clear();
     };
   }, []);

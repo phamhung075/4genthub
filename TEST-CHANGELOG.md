@@ -7,6 +7,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
 - Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed) pass after it.
 
+## 2026-10-04 — useSubtaskExpansion timer cleanup
+
+- Added: `src/tests/hooks/useSubtaskExpansion.test.ts` (1 test): no timer is pending after the hook unmounts (fails without the fix: 2 timers left).
+- Verified: 10 runs of both LazySubtaskList files plus the new test, 45 tests passed and exit 0 every run. Before the fix 1 of 10 runs exited 1 with an unhandled `window is not defined` error.
+
 ## 2026-10-03 — frontend tests for token refresh and API URLs
 
 - Changed (commit 5826863a): 16 frontend test files updated for the token refresh and API URL changes: `App`, `Header`, `LazySubtaskList` (two files), `MCPTokenManager`, `ProjectList`, `SubtaskRowRefactored` (two files), `TaskRowMobile`, `TaskSearch`, `websocket-animations-e2e`, `TokenManagement`, `AnimationFactory`, `WebSocketAnimationService` (two files), `apiV2`.
