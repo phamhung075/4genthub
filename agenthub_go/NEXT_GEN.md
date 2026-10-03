@@ -231,6 +231,22 @@ Pending owner decisions:
 - [ ] D3: replace the "ABSOLUTE FIRST PRIORITY: call master-orchestrator-agent" block in `CLAUDE.md` with "read your seat files; run `rig whoami`" (planner recommends). It also changes the `session_start` hook messages and the 31 `.claude/agents` files.
 - [ ] G1a: the manual production schema change for `961e1da1` (see G1a above). Owner approval pending.
 
+## Verified live 2026-10-03 (tester, scratch rigs, throwaway Postgres)
+
+Reported by the tester through the lead. The writer did not run these checks.
+- Integration tests passed 5/5 on 3 fresh clusters without `-p 1` at `751f4168`; `go vet` and `go test ./...` all green.
+- Machine-token acceptance passed 17/17. Hash drift reports `in_sync`, `drift` and `unknown` as designed. Cycle rejection returns 400.
+- Real Claude seats under `yolo`: `rig send` and tmux `send-keys` were denied; a `seatcheck` policy deny exits 3; real delivery alpha to beta works.
+- Scope: scratch rigs and a throwaway Postgres only. Nothing here was verified on production.
+
+Open items from this run:
+- [ ] The `seatcheck` PATH check uses the operator's shell `PATH`, not the `PATH` seats inherit from the rig daemon. A seat can still get `seatcheck: command not found` when the two differ.
+- [ ] Under the default non-yolo policy, seats prompt for the startup `rig whoami`. Fix queued: an allow rule.
+- [ ] A seat key is not reusable after DELETE. Decided: hard delete; in progress.
+- [ ] Overlay content is stored without `secretscan`. In progress.
+- [ ] Codex seats have no deny (see G3).
+- [ ] Owner action: a production bearer token may be exposed in git-ignored local logs and `claude-hooks` transcripts. Check those files, rotate the token if it appears, and clear the files. No value is recorded here.
+
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
 - `4genthub/.mcp.json` is git-ignored and contains a plaintext bearer token for `agenthub_http` — treat as a secret, never paste it.
