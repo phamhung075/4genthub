@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — delegate-deepseek module 1.1.0
+
+- Added: `test_delegate_module_carries_the_chef_and_worker_wording` (`test_openrig_team_setup.py`): the module text has the chef wording and `team.json` carries version 1.1.0. Changed: the company overlay test expects `delegate-deepseek@1.1.0`; the word limit for the module is 100-230 (was 100-180).
+- Verified: the new test and the overlay test failed before the change; `test_openrig_team_setup.py` 24 passed after it.
+
 ## 2026-10-03 — seat status accepts the agy runtime
 
 - Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.

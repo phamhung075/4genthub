@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**delegate-deepseek module 1.1.0: chef/worker wording** (2026-10-04)
+
+- `scripts/team/4genthub/delegate-deepseek.txt`: opens with the owner's culture rule (Request 17): each seat's session is the chef (takes the demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers only do bounded jobs for it, get priority for delegable work, and their output is never forwarded unreviewed. `scripts/team/4genthub/team.json`: module version `1.0.0` to `1.1.0`, so the next `openrig_team_setup.py apply` publishes a new immutable version and the company overlay pins it; version 1.0.0 is not edited. Not applied to any server.
+
 **Team culture recorded as an owner demand** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md`: "Request 17" (added in `f5bb43f0`): each seat's session is the chef (takes demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers do bounded jobs, get priority for delegable work, and their output is never forwarded unreviewed. Documentation only; no behavior change, no tests.

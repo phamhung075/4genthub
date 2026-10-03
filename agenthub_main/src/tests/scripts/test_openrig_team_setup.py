@@ -33,7 +33,7 @@ SEAT_TYPES = {
 }
 WORD_LIMITS = {
     "project-4genthub": (350, 500),
-    "delegate-deepseek": (100, 180),
+    "delegate-deepseek": (100, 230),
     "area-go-backend": (120, 250),
     "area-web-frontend": (100, 200),
     "area-quality": (100, 200),
@@ -189,7 +189,7 @@ def test_overlays_send_full_op_lists(server, env, capsys):
     company = overlays["/api/v2/openrig/overlay"]
     assert company["ops"] == [
         {"kind": "add", "slug": "project-4genthub", "version": "1.0.0", "content": ""},
-        {"kind": "add", "slug": "delegate-deepseek", "version": "1.0.0", "content": ""},
+        {"kind": "add", "slug": "delegate-deepseek", "version": "1.1.0", "content": ""},
     ]
     room = "/api/v2/openrig/rooms/4genthub-dev/seats"
 
@@ -369,6 +369,15 @@ def test_context_files_respect_word_limits(slug):
     low, high = WORD_LIMITS[slug]
     words = len(_context_file(slug).read_text(encoding="utf-8").split())
     assert low <= words <= high, f"{slug}: {words} words, expected {low}-{high}"
+
+
+def test_delegate_module_carries_the_chef_and_worker_wording():
+    text = (TEAM_DIR / "delegate-deepseek.txt").read_text(encoding="utf-8")
+    assert "Each seat's session is the chef" in text
+    assert "accountable for the result" in text
+    assert "never forwarded unreviewed" in text
+    versions = {m["slug"]: m["version"] for m in _team()["modules"]}
+    assert versions["delegate-deepseek"] == "1.1.0"
 
 
 def test_project_brief_starts_with_the_safety_rule():
