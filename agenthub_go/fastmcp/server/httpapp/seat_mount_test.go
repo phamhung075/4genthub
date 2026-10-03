@@ -93,3 +93,22 @@ func TestSeedSeatTypesReportsCount(t *testing.T) {
 		t.Errorf("seed: %d %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestSeedSeatTypesWorksWithoutPublicURL(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
+	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
+	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
+		t.Errorf("seed without %s: status = %d %s", publicURLEnv, rec.Code, rec.Body.String())
+	}
+}
+
+func TestSeedSeatTypesErrorMapping(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
+	mux := seatTestMux(t, &fakeSeatSource{err: errors.New("database down")})
+	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("seed error: status = %d, want 500", rec.Code)
+	}
+}
+

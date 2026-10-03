@@ -100,12 +100,11 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 }
 
 func seatSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (seatSource, bool) {
-	publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/")
-	if publicURL == "" {
-		writeDetail(w, http.StatusInternalServerError, publicURLEnv+" is not set")
-		return nil, false
+	var mcpURL string
+	if publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/"); publicURL != "" {
+		mcpURL = publicURL + "/mcp"
 	}
-	source, err := newSeatSource(sessions, publicURL+"/mcp")
+	source, err := newSeatSource(sessions, mcpURL)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return nil, false
@@ -114,6 +113,10 @@ func seatSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (se
 }
 
 func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	if publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/"); publicURL == "" {
+		writeDetail(w, http.StatusInternalServerError, publicURLEnv+" is not set")
+		return
+	}
 	source, ok := seatSourceFor(w, sessions)
 	if !ok {
 		return

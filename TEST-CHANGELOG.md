@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat types seed without AGENTHUB_PUBLIC_URL
+
+- Added: `TestSeedSeatTypesWorksWithoutPublicURL` (verifies `POST /api/v2/openrig/seat-types/seed` succeeds without `AGENTHUB_PUBLIC_URL`), `TestSeedSeatTypesErrorMapping` (verifies 500 status on seed repository error) in `seat_mount_test.go`.
+
 ## 2026-10-03 — SubtaskEditDialog effects
 
 - Added: `src/tests/components/SubtaskEditDialog.test.tsx` (5 tests): both agent lists load when the dialog opens and not while closed; a subtask change while open does not reload them; the form pre-fills on open and again on a subtask change; unsaved edits are discarded on close and reopen. Mutation check: adding `subtask` to the agent-load effect's deps fails the reload test.
