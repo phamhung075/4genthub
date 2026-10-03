@@ -3,6 +3,11 @@
 ## [Unreleased]
 
 ### Fixed
+- **A 404 shows the server's detail instead of "Resource not found"** - 2026-10-03
+  - The 404 branch of `handleResponse` discarded the response `detail`, so the seat Preview tab showed a
+    generic "Resource not found" for an unresolvable module ref. The error message is now the server detail
+    when it is a non-empty string; the generic message stays when there is none.
+  - Files: `src/services/apiV2.ts`, `src/tests/services/apiRequest.test.ts` (2 tests added)
 - **Add-seat dialog accepts an empty model** - 2026-10-03
   - The Add seat button was disabled while Model was empty, but the server accepts an empty model (runtime
     default). Model is now optional, validated with the same rule as the LLM tab, with a hint and an error

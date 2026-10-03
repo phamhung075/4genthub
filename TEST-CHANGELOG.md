@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — apiRequest 404 detail
+
+- Added: `rejects a 404 with the server detail as the message` and `keeps the generic message for a 404 without a detail` in `apiRequest.test.ts` (8 tests in the file, all pass). The first fails without the fix.
+
 ## 2026-10-03 — overlay ops must name catalog modules
 
 - Added: `TestSeatAdminOverlayRejectsUnknownModules` (add of an unknown module and of a missing version, pin of an unknown module: 422 "not found in catalog", nothing stored; add of a known module and remove of a type-supplied module: 200).

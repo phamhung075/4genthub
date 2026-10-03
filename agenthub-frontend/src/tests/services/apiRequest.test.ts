@@ -111,4 +111,22 @@ describe('apiRequest', () => {
     expect(logged).not.toContain('secret');
     spies.forEach(spy => spy.mockRestore());
   });
+
+  it('rejects a 404 with the server detail as the message', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: 'module rules@latest not found in catalog' }), { status: 404 })
+    );
+
+    await expect(apiRequest('/api/v2/openrig/seats/dev/alice-404-detail')).rejects.toMatchObject({
+      name: 'NotFoundError',
+      status: 404,
+      message: 'module rules@latest not found in catalog',
+    });
+  });
+
+  it('keeps the generic message for a 404 without a detail', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+
+    await expect(apiRequest('/api/v2/openrig/seats/dev/alice-404-plain')).rejects.toThrow('Resource not found');
+  });
 });

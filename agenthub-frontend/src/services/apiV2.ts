@@ -107,7 +107,10 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
       const resourceId = url.substring(url.lastIndexOf('/') + 1);
 
       // Create a structured 404 error with context
-      const notFoundError = new Error(`${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`) as any;
+      const serverDetail = typeof error.detail === 'string' && error.detail !== '' ? error.detail : undefined;
+      const notFoundError = new Error(
+        serverDetail ?? `${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`
+      ) as any;
       notFoundError.name = 'NotFoundError';
       notFoundError.status = 404;
       notFoundError.resourceType = resourceType;
