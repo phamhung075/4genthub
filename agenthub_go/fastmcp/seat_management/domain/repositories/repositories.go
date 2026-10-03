@@ -126,8 +126,11 @@ type Seat struct {
 	PinnedVersion *string
 	Runtime       string
 	Model         string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	// PermissionPolicy is the OpenRig permission_policy name (resolver.PermissionPolicies)
+	// rendered on the seat's member.
+	PermissionPolicy string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 // SeatRepository stores seats.
@@ -137,6 +140,7 @@ type SeatRepository interface {
 	FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*Seat, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
 	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdatePermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	Delete(ctx context.Context, userID, seatID string) error
 }
 

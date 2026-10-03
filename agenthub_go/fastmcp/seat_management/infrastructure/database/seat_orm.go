@@ -67,16 +67,17 @@ type RoomORM struct {
 
 // SeatORM is a row of seats. PinnedVersion nil means follow the seat type's latest version.
 type SeatORM struct {
-	ID            string    `db:"id"`
-	UserID        string    `db:"user_id"`
-	RoomID        string    `db:"room_id"`
-	SeatKey       string    `db:"seat_key"`
-	SeatTypeID    string    `db:"seat_type_id"`
-	PinnedVersion *string   `db:"pinned_version"`
-	Runtime       string    `db:"runtime"`
-	Model         string    `db:"model"`
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
+	ID               string    `db:"id"`
+	UserID           string    `db:"user_id"`
+	RoomID           string    `db:"room_id"`
+	SeatKey          string    `db:"seat_key"`
+	SeatTypeID       string    `db:"seat_type_id"`
+	PinnedVersion    *string   `db:"pinned_version"`
+	Runtime          string    `db:"runtime"`
+	Model            string    `db:"model"`
+	PermissionPolicy string    `db:"permission_policy"`
+	CreatedAt        time.Time `db:"created_at"`
+	UpdatedAt        time.Time `db:"updated_at"`
 }
 
 // OverlayORM is a row of overlays. RoomID/SeatID are set according to Scope.

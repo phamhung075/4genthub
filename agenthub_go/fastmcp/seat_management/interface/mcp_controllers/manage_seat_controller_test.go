@@ -67,6 +67,15 @@ func (f *fakeStore) AddSeatTypeVersion(context.Context, string, string, string, 
 	return nil, nil
 }
 
+func (f *fakeStore) UpdateSeatPermissionPolicy(_ context.Context, _, seatID, permissionPolicy string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PermissionPolicy = permissionPolicy
+		}
+	}
+	return nil
+}
+
 func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {

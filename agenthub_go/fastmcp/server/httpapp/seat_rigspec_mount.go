@@ -2,10 +2,11 @@ package httpapp
 
 // seat_rigspec_mount.go serves one room as a launchable OpenRig RigSpec v0.2:
 //
-//	GET /api/v2/openrig/rooms/{room}/rigspec[?permission_policy=locked|standard|open|yolo|none]
+//	GET /api/v2/openrig/rooms/{room}/rigspec
 //
 // The room becomes a pod, its seats become members resolved to their pinned
-// snapshot hashes, and allowed seat links become pod-local edges. The route is authed
+// snapshot hashes (each carrying its own permission policy), and allowed seat links become
+// pod-local edges. The route is authed
 // and tenant-scoped by the caller's user id.
 
 import (
@@ -127,11 +128,6 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !ok {
 		return
 	}
-	policy := r.URL.Query().Get("permission_policy")
-	if err := rigspec.ValidatePermissionPolicy(policy); err != nil {
-		writeDetail(w, http.StatusBadRequest, err.Error())
-		return
-	}
 	uid := userID(u)
 	roomSlug := r.PathValue("room")
 	room, err := source.GetRoomBySlug(r.Context(), uid, roomSlug)
@@ -176,7 +172,7 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		if runtime == "" {
 			runtime = seat.Runtime
 		}
-		specSeats = append(specSeats, rigspec.Seat{Key: seat.SeatKey, Runtime: runtime, Model: seat.Model})
+		specSeats = append(specSeats, rigspec.Seat{Key: seat.SeatKey, Runtime: runtime, Model: seat.Model, PermissionPolicy: seat.PermissionPolicy})
 		hashes = append(hashes, resolvedSeat{key: seat.SeatKey, hash: resolved.Hash})
 	}
 
@@ -185,7 +181,7 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	doc, err := rigspec.RenderRoom(room.Slug, room.Name, policy, specSeats, edges)
+	doc, err := rigspec.RenderRoom(room.Slug, room.Name, specSeats, edges)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return

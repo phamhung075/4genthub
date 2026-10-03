@@ -960,24 +960,14 @@ def test_switch_invalid_apply_choice_exits_2(env, rig, capsys):
     assert code == 2
 
 
-# --- rig --permission-policy --------------------------------------------------
+# --- rig permission policy comes from the spec --------------------------------
 
 RIGSPEC_PATH = "/api/v2/openrig/rooms/room1/rigspec"
 
 
-def test_rig_permission_policy_adds_query(env, tmp_path):
-    env.set_rigspec()
-    env.set_seat(HASH_A)
-
-    code = run_cli(
-        ["rig", "room1", "--out", str(tmp_path), "--permission-policy", "yolo"]
-    )
-
-    assert code == 0
-    assert f"{RIGSPEC_PATH}?permission_policy=yolo" in env.gets
-
-
-def test_rig_without_permission_policy_requests_plain_path(env, tmp_path):
+def test_rig_requests_plain_path_and_has_no_permission_policy_flag(
+    env, tmp_path, capsys
+):
     env.set_rigspec()
     env.set_seat(HASH_A)
 
@@ -987,126 +977,58 @@ def test_rig_without_permission_policy_requests_plain_path(env, tmp_path):
     assert RIGSPEC_PATH in env.gets
     assert not any("permission_policy" in g for g in env.gets)
 
-
-def test_rig_invalid_permission_policy_exits_2(env, tmp_path, capsys):
     code = run_cli(
-        ["rig", "room1", "--out", str(tmp_path), "--permission-policy", "bogus"]
+        ["rig", "room1", "--out", str(tmp_path), "--permission-policy", "yolo"]
     )
     _, err = capsys.readouterr()
 
     assert code == 2
-    assert "invalid choice" in err
-    assert env.gets == []
+    assert "unrecognized arguments" in err
 
 
-# --- seat checker binary ---
+def test_place_agent_links_a_directory_and_a_file(tmp_path):
+    directory = tmp_path / "pins" / "room" / "seat"
+    directory.mkdir(parents=True)
+    (directory / "AGENTS.md").write_text("x")
+    binary = tmp_path / "pins" / "bin" / "seatcheck"
+    binary.parent.mkdir(parents=True)
+    binary.write_text("#!/bin/sh\n")
+    seat_sync.place_agent(directory, tmp_path / "agents" / "seat")
+    seat_sync.place_agent(binary, tmp_path / "home" / ".local" / "bin" / "seatcheck")
+    assert (tmp_path / "agents" / "seat" / "AGENTS.md").read_text() == "x"
+    link = tmp_path / "home" / ".local" / "bin" / "seatcheck"
+    assert link.is_symlink() and link.resolve() == binary.resolve()
+    assert (tmp_path / "agents" / "seat").is_symlink()
 
 
-@pytest.mark.parametrize("command", [["pull", "room1", "seat1"], ["rig", "room1"]])
-def test_pull_and_rig_fail_loudly_without_the_link(
-    env, real_checker_requirement, checker_home, tmp_path, capsys, command
+def test_place_agent_replaces_a_real_directory_and_an_older_link(tmp_path):
+    first = tmp_path / "pins" / "a"
+    second = tmp_path / "pins" / "b"
+    for source in (first, second):
+        source.mkdir(parents=True)
+    target = tmp_path / "agents" / "seat"
+    target.mkdir(parents=True)
+    (target / "stale.txt").write_text("old")
+    seat_sync.place_agent(first, target)
+    assert target.is_symlink() and target.resolve() == first.resolve()
+    seat_sync.place_agent(second, target)
+    assert target.resolve() == second.resolve()
+    assert not (first / "stale.txt").exists()
+
+
+def test_place_agent_without_symlinks_fails_loudly_and_copies_nothing(
+    tmp_path, monkeypatch
 ):
-    env.set_seat(HASH_A)
-    pins = tmp_path / "pins"
-    code = run_cli([*command, "--out", str(pins)])
-    _, err = capsys.readouterr()
-    assert code == 2
-    assert str(pins / "bin" / "seatcheck") in err
-    assert "install-checker" in err and str(checker_home) in err
-    assert env.gets == []
-    assert not (pins / "room1").exists()
+    source = tmp_path / "pins" / "seatcheck"
+    source.parent.mkdir()
+    source.write_text("bin")
 
+    def no_symlink(*args, **kwargs):
+        raise OSError("symlinks not permitted")
 
-def test_pull_fails_when_seatcheck_resolves_elsewhere(
-    env, real_checker_requirement, checker_home, tmp_path, capsys
-):
-    pins = tmp_path / "pins"
-    make_binary(pins)
-    other = make_binary(tmp_path / "other")
-    (checker_home / "seatcheck").symlink_to(other)
-    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 2
-    err = capsys.readouterr().err
-    assert str(other) in err and "install-checker" in err
-
-
-def test_pull_runs_when_the_link_points_at_the_store_binary(
-    env, real_checker_requirement, checker_home, tmp_path, capsys
-):
-    env.set_seat(HASH_A)
-    pins = tmp_path / "pins"
-    (checker_home / "seatcheck").symlink_to(make_binary(pins))
-    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 0
-
-
-def fake_go_build(calls):
-    def run(command, **kwargs):
-        calls.append((command, kwargs))
-        make_binary(Path(command[3]).parent.parent)
-        return subprocess.CompletedProcess(command, 0)
-
-    return run
-
-
-def test_install_checker_builds_and_links_on_path(
-    real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
-):
-    pins = tmp_path / "pins"
-    old = make_binary(tmp_path / "old")
-    (checker_home / "seatcheck").symlink_to(old)
-    calls = []
-    monkeypatch.setattr(seat_sync.subprocess, "run", fake_go_build(calls))
-
-    code = run_cli(["install-checker", "--out", str(pins)])
-    out, _ = capsys.readouterr()
-
-    binary = pins.resolve() / "bin" / "seatcheck"
-    assert code == 0
-    assert out.strip() == f"checker:{binary}"
-    assert (checker_home / "seatcheck").resolve() == binary
-    ((command, kwargs),) = calls
-    assert command == ["go", "build", "-o", str(binary), "./cmd/seatcheck"]
-    assert (
-        kwargs["cwd"]
-        == seat_sync.AGENTHUB_GO_DIR
-        == MODULE_PATH.parents[1] / "agenthub_go"
-    )
-    assert kwargs["env"]["GOCACHE"] == str(seat_sync.AGENTHUB_GO_DIR / ".gocache")
-    assert kwargs["env"]["TMPDIR"] == str(seat_sync.AGENTHUB_GO_DIR / ".gotmp")
-    assert kwargs["check"] is True
-    # The installed link now satisfies pull's check.
-    assert seat_sync.resolve_checker(pins.resolve())
-
-
-def test_install_checker_fails_loudly_when_the_link_dir_is_not_on_path(
-    real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
-):
-    monkeypatch.setenv("PATH", str(tmp_path / "elsewhere"))
-    monkeypatch.setattr(seat_sync.subprocess, "run", fake_go_build([]))
-    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
-    err = capsys.readouterr().err
-    assert f"add {checker_home} to PATH" in err
-    assert (checker_home / "seatcheck").is_symlink()
-
-
-def test_install_checker_without_go_exits_2_and_links_nothing(
-    checker_home, monkeypatch, tmp_path, capsys
-):
-    def no_go(command, **kwargs):
-        raise FileNotFoundError("go")
-
-    monkeypatch.setattr(seat_sync.subprocess, "run", no_go)
-    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
-    assert "go is not installed" in capsys.readouterr().err
-    assert not (checker_home / "seatcheck").exists()
-
-
-def test_install_checker_build_failure_exits_1_and_links_nothing(
-    checker_home, monkeypatch, tmp_path, capsys
-):
-    def failing(command, **kwargs):
-        raise subprocess.CalledProcessError(3, command)
-
-    monkeypatch.setattr(seat_sync.subprocess, "run", failing)
-    assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 1
-    assert "go build failed with exit code 3" in capsys.readouterr().err
-    assert not (checker_home / "seatcheck").exists()
+    monkeypatch.setattr(seat_sync.os, "symlink", no_symlink)
+    target = tmp_path / "bin" / "seatcheck"
+    with pytest.raises(seat_sync.SyncError, match="cannot link") as raised:
+        seat_sync.place_agent(source, target)
+    assert raised.value.code == seat_sync.EXIT_USAGE
+    assert not target.exists() and not list(target.parent.glob(".*"))

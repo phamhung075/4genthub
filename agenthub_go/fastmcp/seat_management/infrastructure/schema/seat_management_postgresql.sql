@@ -108,6 +108,7 @@ CREATE INDEX IF NOT EXISTS ix_rooms_user_id ON rooms (user_id);
 -- Table: seats
 -- A seat inside a room. seat_key is the OpenRig member id.
 -- pinned_version NULL means the seat follows the seat type's latest version.
+-- permission_policy is the OpenRig permission_policy name rendered on the member.
 CREATE TABLE IF NOT EXISTS seats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL,
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS seats (
     pinned_version TEXT,
     runtime TEXT NOT NULL,
     model TEXT NOT NULL,
+    permission_policy TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key)

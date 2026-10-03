@@ -185,6 +185,15 @@ func (f *fakeSeatAdmin) ListSeats(_ context.Context, _, roomID string) ([]reposi
 	return out, nil
 }
 
+func (f *fakeSeatAdmin) UpdateSeatPermissionPolicy(_ context.Context, _, seatID, permissionPolicy string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PermissionPolicy = permissionPolicy
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {
@@ -1188,6 +1197,7 @@ func TestSeatAdminRoutesNeedAuth(t *testing.T) {
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats"},
 		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice"},
 		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant"},
+		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"},
 		{http.MethodGet, "/api/v2/openrig/overlay"},
 		{http.MethodPut, "/api/v2/openrig/rooms/dev/overlay"},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/overlay"},
@@ -1338,3 +1348,53 @@ func TestSeatAdminOverlayRoutesRejectSecretContent(t *testing.T) {
 	}
 }
 
+func TestSeatAdminSetPermissionPolicy(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"
+
+	rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"permission_policy":"yolo"}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"permission_policy":"yolo"`) || fake.seats[0].PermissionPolicy != "yolo" {
+		t.Fatalf("set policy: %d %s; stored %q", rec.Code, rec.Body.String(), fake.seats[0].PermissionPolicy)
+	}
+	for _, body := range []string{`{"permission_policy":"strict"}`, `{"permission_policy":""}`, `{}`, `{"permission_policy":"open","extra":1}`, `not json`} {
+		if rec := doAgentsRequest(t, mux, http.MethodPut, path, body); rec.Code != http.StatusBadRequest {
+			t.Errorf("body %q: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	if fake.seats[0].PermissionPolicy != "yolo" {
+		t.Errorf("a rejected request changed the seat: %+v", fake.seats[0])
+	}
+	for _, p := range []string{"/api/v2/openrig/rooms/ghost/seats/alice/permission-policy", "/api/v2/openrig/rooms/dev/seats/ghost/permission-policy"} {
+		if rec := doAgentsRequest(t, mux, http.MethodPut, p, `{"permission_policy":"open"}`); rec.Code != http.StatusNotFound {
+			t.Errorf("PUT %s: status = %d, want 404", p, rec.Code)
+		}
+	}
+}
+
+// A new seat is conservative unless the caller picks a policy: omitted means standard, never yolo.
+func TestSeatAdminCreateSeatPermissionPolicy(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/rooms/dev/seats"
+
+	rec := doAgentsRequest(t, mux, http.MethodPost, path, `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"permission_policy":"standard"`) {
+		t.Fatalf("default policy: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodPost, path, `{"seat_key":"bob","seat_type":"coder","runtime":"codex","permission_policy":"locked"}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"permission_policy":"locked"`) {
+		t.Fatalf("explicit policy: %d %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodPost, path, `{"seat_key":"carol","seat_type":"coder","runtime":"codex","permission_policy":"strict"}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "permission policy") {
+		t.Errorf("invalid policy: %d %s", rec.Code, rec.Body.String())
+	}
+	if len(fake.seats) != 2 {
+		t.Errorf("a rejected create stored a seat: %d seats", len(fake.seats))
+	}
+}

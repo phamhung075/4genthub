@@ -48,7 +48,7 @@ func parseRig(t *testing.T, yamlText string) parsedRig {
 }
 
 func TestRenderRoomRendersPodMembersAndEdges(t *testing.T) {
-	out, err := RenderRoom("dev", "Development", "",
+	out, err := RenderRoom("dev", "Development",
 		[]Seat{
 			{Key: "lead", Runtime: "claude-code"},
 			{Key: "dev", Runtime: "codex", Model: "gpt-5"},
@@ -120,13 +120,13 @@ func TestRenderRoomRendersPodMembersAndEdges(t *testing.T) {
 }
 
 func TestRenderRoomDeterministic(t *testing.T) {
-	first, err := RenderRoom("dev", "Development", "",
+	first, err := RenderRoom("dev", "Development",
 		[]Seat{{Key: "lead", Runtime: "claude-code"}, {Key: "dev", Runtime: "codex"}, {Key: "qa", Runtime: "claude-code"}},
 		[]Edge{{Kind: "delegates_to", From: "lead", To: "dev"}, {Kind: "can_observe", From: "lead", To: "qa"}})
 	if err != nil {
 		t.Fatalf("first RenderRoom: %v", err)
 	}
-	second, err := RenderRoom("dev", "Development", "",
+	second, err := RenderRoom("dev", "Development",
 		[]Seat{{Key: "qa", Runtime: "claude-code"}, {Key: "dev", Runtime: "codex"}, {Key: "lead", Runtime: "claude-code"}},
 		[]Edge{{Kind: "can_observe", From: "lead", To: "qa"}, {Kind: "delegates_to", From: "lead", To: "dev"}})
 	if err != nil {
@@ -134,45 +134,6 @@ func TestRenderRoomDeterministic(t *testing.T) {
 	}
 	if first != second {
 		t.Fatalf("rendering the same room in different input order differs:\n--- first ---\n%s\n--- second ---\n%s", first, second)
-	}
-}
-
-func TestRenderRoomPermissionPolicy(t *testing.T) {
-	seats := []Seat{{Key: "lead", Runtime: "claude-code"}}
-	cases := map[string]string{
-		"locked":   "permission_policy: builtin:locked\n",
-		"standard": "permission_policy: builtin:standard\n",
-		"open":     "permission_policy: builtin:open\n",
-		"yolo":     "permission_policy: builtin:yolo\n",
-		"none":     "permission_policy: none\n",
-	}
-	for policy, line := range cases {
-		out, err := RenderRoom("dev", "Development", policy, seats, nil)
-		if err != nil {
-			t.Fatalf("RenderRoom(%s): %v", policy, err)
-		}
-		nameAt, policyAt, podsAt := strings.Index(out, "\nname: dev\n"), strings.Index(out, "\n"+line), strings.Index(out, "\npods:\n")
-		if nameAt < 0 || policyAt < 0 || podsAt < 0 || !(nameAt < policyAt && policyAt < podsAt) {
-			t.Errorf("policy %s: line %q is not between name and pods:\n%s", policy, line, out)
-		}
-		again, _ := RenderRoom("dev", "Development", policy, seats, nil)
-		if again != out {
-			t.Errorf("policy %s: rendering is not deterministic", policy)
-		}
-	}
-
-	plain, err := RenderRoom("dev", "Development", "", seats, nil)
-	if err != nil {
-		t.Fatalf("RenderRoom without policy: %v", err)
-	}
-	if strings.Contains(plain, "permission_policy") {
-		t.Errorf("absent policy still rendered a line:\n%s", plain)
-	}
-
-	for _, bad := range []string{"YOLO", "builtin:yolo", "strict", " "} {
-		if _, err := RenderRoom("dev", "Development", bad, seats, nil); err == nil || !strings.Contains(err.Error(), "permission policy") {
-			t.Errorf("RenderRoom policy %q error = %v, want permission policy error", bad, err)
-		}
 	}
 }
 
@@ -199,7 +160,7 @@ func TestRenderRoomRejectsInvalidInput(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			out, err := RenderRoom(c.roomSlug, c.roomName, "", c.seats, c.edges)
+			out, err := RenderRoom(c.roomSlug, c.roomName, c.seats, c.edges)
 			if err == nil {
 				t.Fatalf("RenderRoom succeeded, want error containing %q:\n%s", c.want, out)
 			}
@@ -230,7 +191,7 @@ func TestRenderRoomRigCLI(t *testing.T) {
 	if err != nil {
 		t.Skip("rig binary not on PATH")
 	}
-	for _, policy := range []string{"", "yolo"} {
+	for _, policy := range []string{"", "locked", "standard", "yolo", "none"} {
 		t.Run("policy="+policy, func(t *testing.T) { validateRoomWithRig(t, rigPath, policy) })
 	}
 }
@@ -240,21 +201,21 @@ func validateRoomWithRig(t *testing.T, rigPath, policy string) {
 
 	dir := t.TempDir()
 	seats := []Seat{
-		{Key: "lead", Runtime: "claude-code"},
-		{Key: "dev", Runtime: "codex"},
-		{Key: "qa", Runtime: "claude-code"},
+		{Key: "lead", Runtime: "claude-code", PermissionPolicy: policy},
+		{Key: "dev", Runtime: "codex", PermissionPolicy: policy},
+		{Key: "qa", Runtime: "claude-code", PermissionPolicy: policy},
 	}
 	edges := []Edge{
 		{Kind: "delegates_to", From: "lead", To: "dev"},
 		{Kind: "delegates_to", From: "dev", To: "qa"},
 		{Kind: "can_observe", From: "lead", To: "qa"},
 	}
-	rendered, err := RenderRoom("dev", "Development", policy, seats, edges)
+	rendered, err := RenderRoom("dev", "Development", seats, edges)
 	if err != nil {
 		t.Fatalf("RenderRoom: %v", err)
 	}
-	if policy == "yolo" && !strings.Contains(rendered, "permission_policy: builtin:yolo") {
-		t.Fatalf("rendered spec has no builtin:yolo policy:\n%s", rendered)
+	if policy != "" && strings.Count(rendered, "permission_policy: "+permissionPolicyValue(policy)) != len(seats) {
+		t.Fatalf("rendered spec does not carry %s on every member:\n%s", policy, rendered)
 	}
 	rigFile := filepath.Join(dir, "rig.yaml")
 	if err := os.WriteFile(rigFile, []byte(rendered), 0o644); err != nil {
@@ -316,7 +277,7 @@ func TestFindLaunchCycle(t *testing.T) {
 }
 
 func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
-	out, err := RenderRoom("dev", "Development", "",
+	out, err := RenderRoom("dev", "Development",
 		[]Seat{
 			{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
 			{Key: "bob", Runtime: "claude-code", PermissionPolicy: "standard"},
@@ -358,35 +319,9 @@ func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
 	}
 }
 
-func TestRenderRoomMemberPolicyOverridesRigLevel(t *testing.T) {
-	out, err := RenderRoom("dev", "Development", "standard",
-		[]Seat{
-			{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
-			{Key: "bob", Runtime: "codex"},
-		}, nil)
-	if err != nil {
-		t.Fatalf("RenderRoom: %v", err)
-	}
-	const (
-		rigLine    = "permission_policy: builtin:standard"
-		memberLine = "permission_policy: builtin:yolo"
-	)
-	if strings.Count(out, rigLine) != 1 || strings.Count(out, memberLine) != 1 {
-		t.Fatalf("want each policy line once:\n%s", out)
-	}
-	nameAt, rigAt, podsAt := strings.Index(out, "\nname: dev\n"), strings.Index(out, "\n"+rigLine+"\n"), strings.Index(out, "\npods:\n")
-	if nameAt < 0 || !(nameAt < rigAt && rigAt < podsAt) {
-		t.Fatalf("rig-level line is not between name and pods:\n%s", out)
-	}
-	aliceAt, memberAt, bobAt := strings.Index(out, "id: alice"), strings.Index(out, memberLine), strings.Index(out, "id: bob")
-	if aliceAt < 0 || !(aliceAt < memberAt && memberAt < bobAt) {
-		t.Fatalf("member line is not inside alice's member block:\n%s", out)
-	}
-}
-
 func TestRenderRoomRejectsInvalidMemberPolicy(t *testing.T) {
 	for _, bad := range []string{"bypass", "builtin:yolo", "Yolo"} {
-		out, err := RenderRoom("dev", "Development", "", []Seat{{Key: "alice", Runtime: "claude-code", PermissionPolicy: bad}}, nil)
+		out, err := RenderRoom("dev", "Development", []Seat{{Key: "alice", Runtime: "claude-code", PermissionPolicy: bad}}, nil)
 		if err == nil {
 			t.Fatalf("member policy %q rendered, want an error:\n%s", bad, out)
 		}
@@ -403,16 +338,40 @@ func TestRenderRoomMemberPolicyIsDeterministic(t *testing.T) {
 		{Key: "dave", Runtime: "claude-code", PermissionPolicy: "none"},
 		{Key: "carol", Runtime: "claude-code"},
 	}
-	first, err := RenderRoom("dev", "Development", "", seats, nil)
+	first, err := RenderRoom("dev", "Development", seats, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	reversed := []Seat{seats[3], seats[2], seats[1], seats[0]}
-	second, err := RenderRoom("dev", "Development", "", reversed, nil)
+	second, err := RenderRoom("dev", "Development", reversed, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if first != second {
 		t.Fatalf("input order changed the output:\n%s\n---\n%s", first, second)
+	}
+}
+
+func TestRenderRoomPermissionPolicyPerSeat(t *testing.T) {
+	seats := []Seat{{Key: "lead", Runtime: "claude-code", PermissionPolicy: "standard"}}
+	cases := map[string]string{
+		"locked":   "permission_policy: builtin:locked",
+		"standard": "permission_policy: builtin:standard",
+		"open":     "permission_policy: builtin:open",
+		"yolo":     "permission_policy: builtin:yolo",
+		"none":     "permission_policy: none",
+	}
+	for policy, line := range cases {
+		seats[0].PermissionPolicy = policy
+		out, err := RenderRoom("dev", "Development", seats, nil)
+		if err != nil {
+			t.Fatalf("RenderRoom(%s): %v", policy, err)
+		}
+		if strings.Count(out, "permission_policy") != 1 || !strings.Contains(out, line+"\n") {
+			t.Errorf("policy %s: want exactly %q:\n%s", policy, line, out)
+		}
+		if nameAt, polAt := strings.Index(out, "\nname: dev\n"), strings.Index(out, line); polAt < nameAt || strings.Index(out, "\npods:\n") > polAt {
+			t.Errorf("policy %s: the line must sit inside the member, after pods:\n%s", policy, out)
+		}
 	}
 }

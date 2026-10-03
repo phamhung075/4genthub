@@ -217,7 +217,7 @@ func seatToDomain(row *seatdb.SeatORM) *domainrepo.Seat {
 	return &domainrepo.Seat{
 		ID: row.ID, UserID: row.UserID, RoomID: row.RoomID, SeatKey: row.SeatKey,
 		SeatTypeID: row.SeatTypeID, PinnedVersion: row.PinnedVersion, Runtime: row.Runtime,
-		Model: row.Model, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		Model: row.Model, PermissionPolicy: row.PermissionPolicy, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}
 }
 

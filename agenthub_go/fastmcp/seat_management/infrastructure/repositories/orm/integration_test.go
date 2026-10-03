@@ -152,7 +152,7 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 		t.Fatalf("Save room: %v", err)
 	}
 	seat, err := seats.Create(ctx, userID, domainrepo.Seat{
-		RoomID: room.ID, SeatKey: "alpha", SeatTypeID: seatType.ID, Runtime: "go1.23", Model: "deepseek",
+		RoomID: room.ID, SeatKey: "alpha", SeatTypeID: seatType.ID, Runtime: "go1.23", Model: "deepseek", PermissionPolicy: "standard",
 	})
 	if err != nil {
 		t.Fatalf("Create seat: %v", err)
@@ -172,6 +172,22 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 	}
 	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.Runtime != "codex" {
 		t.Fatalf("another tenant changed the seat: %+v", found)
+	}
+
+	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.PermissionPolicy != "standard" {
+		t.Fatalf("created seat lost its permission policy: %+v", found)
+	}
+	if err := seats.UpdatePermissionPolicy(ctx, "other-user", seat.ID, "yolo"); err != nil {
+		t.Fatalf("UpdatePermissionPolicy other tenant: %v", err)
+	}
+	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.PermissionPolicy != "standard" {
+		t.Fatalf("another tenant changed the permission policy: %+v", found)
+	}
+	if err := seats.UpdatePermissionPolicy(ctx, userID, seat.ID, "locked"); err != nil {
+		t.Fatalf("UpdatePermissionPolicy: %v", err)
+	}
+	if found, _ := seats.GetByID(ctx, userID, seat.ID); found == nil || found.PermissionPolicy != "locked" || found.Runtime != "codex" {
+		t.Fatalf("seat after UpdatePermissionPolicy = %+v", found)
 	}
 
 	// resolved seat is idempotent by (seat_id, hash)

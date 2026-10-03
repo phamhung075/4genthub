@@ -57,6 +57,18 @@ func (f *fakeSeatAdminStore) ListSeats(_ context.Context, _, roomID string) ([]r
 	return out, nil
 }
 
+func (f *fakeSeatAdminStore) UpdateSeatPermissionPolicy(_ context.Context, _, seatID, permissionPolicy string) error {
+	if f.updateErr != nil {
+		return f.updateErr
+	}
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PermissionPolicy = permissionPolicy
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdminStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	if f.updateErr != nil {
 		return f.updateErr
@@ -230,5 +242,31 @@ func TestSeatBodyHasNoStatusKey(t *testing.T) {
 		if key == "status" {
 			t.Fatalf("seat body carries a status key: %v", body.Keys())
 		}
+	}
+}
+
+func TestSeatAdminServiceSetPermissionPolicy(t *testing.T) {
+	service, store := newSeatAdminFixture()
+	ctx := context.Background()
+	for _, policy := range resolver.PermissionPolicies {
+		view, err := service.SetPermissionPolicy(ctx, "u", "dev", "alice", policy)
+		if err != nil || view.Seat.PermissionPolicy != policy || store.seats[0].PermissionPolicy != policy {
+			t.Fatalf("SetPermissionPolicy(%s) = %+v, %v; stored %q", policy, view, err, store.seats[0].PermissionPolicy)
+		}
+	}
+	store.seats[0].PermissionPolicy = "locked"
+	for _, bad := range []string{"", "YOLO", "builtin:yolo", "strict"} {
+		if _, err := service.SetPermissionPolicy(ctx, "u", "dev", "alice", bad); !errors.Is(err, ErrInvalidPermissionPolicy) {
+			t.Errorf("SetPermissionPolicy(%q) error = %v, want ErrInvalidPermissionPolicy", bad, err)
+		}
+	}
+	if _, err := service.SetPermissionPolicy(ctx, "u", "ghost", "alice", "open"); !errors.Is(err, ErrRoomNotFound) {
+		t.Errorf("unknown room error = %v", err)
+	}
+	if _, err := service.SetPermissionPolicy(ctx, "u", "dev", "ghost", "open"); !errors.Is(err, ErrSeatNotFound) {
+		t.Errorf("unknown seat error = %v", err)
+	}
+	if store.seats[0].PermissionPolicy != "locked" {
+		t.Errorf("a rejected call changed the seat: %+v", store.seats[0])
 	}
 }

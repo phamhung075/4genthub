@@ -14,6 +14,7 @@ package httpapp
 //	GET    /api/v2/openrig/rooms/{room}/seats
 //	DELETE /api/v2/openrig/rooms/{room}/seats/{seat}
 //	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/occupant
+//	PUT    /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy
 //	GET    /api/v2/openrig/overlay
 //	PUT    /api/v2/openrig/overlay
 //	GET    /api/v2/openrig/rooms/{room}/overlay
@@ -63,6 +64,7 @@ type seatAdminSource interface {
 	CreateSeat(ctx context.Context, userID string, seat repositories.Seat) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
 	UpsertSeatLink(ctx context.Context, userID string, link repositories.SeatLink) (*repositories.SeatLink, error)
@@ -197,6 +199,10 @@ func (s *seatAdminRepos) UpdateSeatOccupant(ctx context.Context, userID, seatID,
 	return s.seats.UpdateOccupant(ctx, userID, seatID, runtime, model)
 }
 
+func (s *seatAdminRepos) UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error {
+	return s.seats.UpdatePermissionPolicy(ctx, userID, seatID, permissionPolicy)
+}
+
 func (s *seatAdminRepos) UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {
 	return s.overlays.Upsert(ctx, userID, overlay)
 }
@@ -298,6 +304,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatOccupant(w, r, u, sessions)
 	}))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSetSeatPermissionPolicy(w, r, u, sessions)
+	}))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
 	}))
@@ -345,6 +354,8 @@ type seatAdminSeatRequest struct {
 	Runtime       string  `json:"runtime"`
 	Model         string  `json:"model"`
 	FollowLatest  *bool   `json:"follow_latest"`
+	// PermissionPolicy defaults to resolver.DefaultPermissionPolicy when omitted.
+	PermissionPolicy string `json:"permission_policy"`
 }
 
 type seatAdminSeatTypeVersionRequest struct {
@@ -355,6 +366,10 @@ type seatAdminSeatTypeVersionRequest struct {
 type seatAdminOccupantRequest struct {
 	Runtime string `json:"runtime"`
 	Model   string `json:"model"`
+}
+
+type seatAdminPermissionPolicyRequest struct {
+	PermissionPolicy string `json:"permission_policy"`
 }
 
 type seatAdminSettingsRequest struct {
@@ -703,6 +718,13 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if req.PermissionPolicy == "" {
+		req.PermissionPolicy = resolver.DefaultPermissionPolicy
+	}
+	if err := resolver.CheckPermissionPolicy(req.PermissionPolicy); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
 		return
@@ -754,7 +776,7 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	seat, err := source.CreateSeat(r.Context(), userID(u), repositories.Seat{
 		RoomID: room.ID, SeatKey: req.SeatKey, SeatTypeID: latest.SeatTypeID,
-		PinnedVersion: pinned, Runtime: req.Runtime, Model: req.Model,
+		PinnedVersion: pinned, Runtime: req.Runtime, Model: req.Model, PermissionPolicy: req.PermissionPolicy,
 	})
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
@@ -847,9 +869,29 @@ func handleSetSeatOccupant(w http.ResponseWriter, r *http.Request, u *authdomain
 	writeJSON(w, http.StatusOK, body)
 }
 
+func handleSetSeatPermissionPolicy(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminPermissionPolicyRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	view, err := seatservices.NewSeatAdminService(source).SetPermissionPolicy(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), req.PermissionPolicy)
+	if err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))
+	writeJSON(w, http.StatusOK, body)
+}
+
 func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion), errors.Is(err, seatservices.ErrLinkCycle):
+	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidPermissionPolicy), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion), errors.Is(err, seatservices.ErrLinkCycle):
 		writeDetail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())

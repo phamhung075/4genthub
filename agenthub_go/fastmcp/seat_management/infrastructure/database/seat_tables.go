@@ -125,6 +125,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 		{Name: "pinned_version", Attr: "pinned_version", GoField: "PinnedVersion", SQLType: "TEXT", Nullable: true},
 		{Name: "runtime", Attr: "runtime", GoField: "Runtime", SQLType: "TEXT", Nullable: false},
 		{Name: "model", Attr: "model", GoField: "Model", SQLType: "TEXT", Nullable: false},
+		{Name: "permission_policy", Attr: "permission_policy", GoField: "PermissionPolicy", SQLType: "TEXT", Nullable: false},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 	}, DDL: []string{
@@ -137,6 +138,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tpinned_version TEXT,\n" +
 			"\truntime TEXT NOT NULL,\n" +
 			"\tmodel TEXT NOT NULL,\n" +
+			"\tpermission_policy TEXT NOT NULL,\n" +
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +

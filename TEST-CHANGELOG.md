@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — per-seat permission policy
+
+- Added: `TestRenderRoomPermissionPolicyPerSeat` (all five policies render exactly once, on the member), `TestRoomRigSpecRendersPermissionPolicyPerSeat` (three seats, three policies, none on the rig, a `?permission_policy=` query changes nothing), `TestSeatAdminServiceSetPermissionPolicy`, `TestSeatAdminSetPermissionPolicy` (200, 400 for invalid/empty/unknown field, 404 for unknown room/seat, rejected call leaves the seat unchanged), `TestSeatAdminCreateSeatPermissionPolicy` (default `standard`, explicit, invalid is 400 and stores nothing), `TestSeatUpdatePermissionPolicyIsUserScoped`, tenant and update checks in the Postgres integration test, and a probe for the new route in the auth table.
+- Changed: `TestRenderRoomRigCLI` runs the real `rig spec validate` + `preflight` for `""`, `locked`, `standard`, `yolo`, `none` with the policy on every seat; the rig-level and override tests are removed. `test_openrig_seat_sync.py`: the `--permission-policy` tests become one test that the plain path is requested and the flag is rejected.
+
+## 2026-10-03 — place_agent
+
+- Added (`test_openrig_seat_sync.py`): `test_place_agent_links_a_directory_and_a_file`, `test_place_agent_replaces_a_real_directory_and_an_older_link`, `test_place_agent_without_symlinks_fails_loudly_and_copies_nothing`. scripts suite file: 61 passed.
+
 ## 2026-10-03 — reviewer-requested seat removal and overlay tests
 
 - Added: `TestRemoveSeatFailureInTheTransactionStopsAndPropagates` (a failing delete at each of the five steps ends the transaction body at that step and returns the error, so `InTransaction` rolls back; the fake now records `tx-begin`/`tx-end`), `TestSeatBodyHasNoStatusKey`, a check in `TestSeatDeletesIntegration` that deleting a seat's `seat_status` leaves another tenant's row of the same seat, and slug/version secret cases in `TestSeatAdminOverlayRoutesRejectSecretContent` (all three routes). Real PG (fresh database): ok.

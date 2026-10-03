@@ -6,6 +6,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Changed
+
+**Permission policy is a property of each seat, rendered per member** (2026-10-03)
+
+- Breaking, clean cut: the rig-level `permission_policy` line and the `?permission_policy=` query on `GET /api/v2/openrig/rooms/{room}/rigspec` are removed, and so is the `--permission-policy` flag of `scripts/openrig_seat_sync.py rig` (the script now takes the policy from the rendered spec). `rigspec.RenderRoom(roomSlug, roomName, seats, edges)` no longer takes a policy; `rigspec.Seat.PermissionPolicy` renders as `permission_policy: builtin:<name>` (or `none`) on that member.
+- `seats.permission_policy TEXT NOT NULL` (ORM `SeatORM`, `seat_tables.go`, `seat_management_postgresql.sql`). The accepted values are `resolver.PermissionPolicies` (`locked`, `standard`, `open`, `yolo`, `none`), the one list shared by the seat service, the admin routes and the renderer. A seat created without a policy gets `resolver.DefaultPermissionPolicy` (`standard`, never `yolo`); an unknown one is a 400 naming the accepted values.
+- New `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` (`{"permission_policy": "..."}`, tenant scoped, 404 for an unknown room or seat); `SeatBody` and `POST .../seats` carry `permission_policy`. A seat already launched keeps the posture it launched with; the next rigspec render carries the change.
+- Production schema: `seats.permission_policy` is a new NOT NULL column (owner decision through the lead; no migration helper is shipped).
+- Files: `seat_management/domain/{resolver,rigspec,repositories}`, `application/services/seat_admin_service.go`, `infrastructure/{database,repositories/orm,schema}`, `server/httpapp/{seat_admin_mount,seat_rigspec_mount}.go`, `scripts/openrig_seat_sync.py`.
+- Verified: go vet, `go test ./seat_management/... ./server/...`, pytest `test_openrig_seat_sync.py` (58 passed), and the real `rig spec validate` + `rig spec preflight` on a rendered room for every policy (yolo preflights as `full_bypass`, none as `floor`). Not run: Postgres integration tests.
+
+### Fixed
+
+**`place_agent` links a file or a directory, with no copy fallback** (2026-10-03)
+
+- `scripts/openrig_seat_sync.py`: `place_agent` tried a symlink and fell back to `shutil.copytree`, which cannot copy the file `install-checker` links (the seatcheck binary). It now makes one relative symlink for a file or a directory, replaces a real directory or an older link at the target, and a failing symlink is a `SyncError` (exit 2, `cannot link <target> to <source>`) that leaves nothing behind.
+
 ### Fixed
 
 **Overlay slug and version are scanned too** (2026-10-03)

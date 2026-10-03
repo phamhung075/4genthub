@@ -37,6 +37,7 @@ func (r *ORMSeatRepository) Create(ctx context.Context, userID string, seat doma
 		"pinned_version", seat.PinnedVersion,
 		"runtime", seat.Runtime,
 		"model", seat.Model,
+		"permission_policy", seat.PermissionPolicy,
 	))
 	if err != nil {
 		return nil, err
@@ -86,6 +87,20 @@ func (r *ORMSeatRepository) UpdateOccupant(ctx context.Context, userID, seatID, 
 		_, err := s.ExecContext(ctx,
 			`UPDATE "seats" SET "runtime" = $1, "model" = $2, "updated_at" = $3 WHERE "user_id" = $4 AND "id" = $5`,
 			runtime, model, time.Now().UTC(), userID, id)
+		return err
+	})
+}
+
+// UpdatePermissionPolicy sets the permission policy of the seat.
+func (r *ORMSeatRepository) UpdatePermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`UPDATE "seats" SET "permission_policy" = $1, "updated_at" = $2 WHERE "user_id" = $3 AND "id" = $4`,
+			permissionPolicy, time.Now().UTC(), userID, id)
 		return err
 	})
 }

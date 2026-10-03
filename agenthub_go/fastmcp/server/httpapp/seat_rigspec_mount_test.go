@@ -247,34 +247,47 @@ func TestRoomRigSpecNeedsPublicURLAndAuth(t *testing.T) {
 	}
 }
 
-func TestRoomRigSpecPermissionPolicy(t *testing.T) {
+// Each member carries its own seat's policy; there is no request-level override.
+func TestRoomRigSpecRendersPermissionPolicyPerSeat(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
 	fake := &fakeSeatRigSpec{
-		rooms:    map[string]*repositories.Room{"dev": room},
-		seats:    []*repositories.Seat{{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code"}},
-		resolved: map[string]*repositories.ResolvedSeat{"lead": {SeatID: "seat-lead", Hash: "h-lead", Runtime: "claude-code"}},
+		rooms: map[string]*repositories.Room{"dev": room},
+		seats: []*repositories.Seat{
+			{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code", PermissionPolicy: "standard"},
+			{ID: "seat-dev", RoomID: "room-dev", SeatKey: "dev", Runtime: "codex", PermissionPolicy: "yolo"},
+			{ID: "seat-qa", RoomID: "room-dev", SeatKey: "qa", Runtime: "claude-code", PermissionPolicy: "none"},
+		},
+		resolved: map[string]*repositories.ResolvedSeat{
+			"lead": {SeatID: "seat-lead", Hash: "h-lead", Runtime: "claude-code"},
+			"dev":  {SeatID: "seat-dev", Hash: "h-dev", Runtime: "codex"},
+			"qa":   {SeatID: "seat-qa", Hash: "h-qa", Runtime: "claude-code"},
+		},
 	}
 	mux := seatRigSpecTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/rigspec"
 
 	rec := doAgentsRequest(t, mux, http.MethodGet, path, "")
-	if rec.Code != http.StatusOK || strings.Contains(decodeRigSpec(t, rec).RigSpec.YAML, "permission_policy") {
-		t.Errorf("absent query: %d %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
-	for query, line := range map[string]string{"yolo": "permission_policy: builtin:yolo\n", "none": "permission_policy: none\n"} {
-		rec = doAgentsRequest(t, mux, http.MethodGet, path+"?permission_policy="+query, "")
-		if rec.Code != http.StatusOK {
-			t.Fatalf("policy %s: status = %d: %s", query, rec.Code, rec.Body.String())
-		}
-		doc := decodeRigSpec(t, rec).RigSpec.YAML
-		if !strings.Contains(doc, "\nname: dev\n"+line+"pods:\n") {
-			t.Errorf("policy %s: line not between name and pods:\n%s", query, doc)
+	doc := decodeRigSpec(t, rec).RigSpec.YAML
+	for member, line := range map[string]string{
+		"dev":  "id: dev\n        agent_ref: local:agents/dev\n        profile: default\n        runtime: codex\n        cwd: .\n        permission_policy: builtin:yolo\n",
+		"lead": "id: lead\n        agent_ref: local:agents/lead\n        profile: default\n        runtime: claude-code\n        cwd: .\n        permission_policy: builtin:standard\n",
+		"qa":   "id: qa\n        agent_ref: local:agents/qa\n        profile: default\n        runtime: claude-code\n        cwd: .\n        permission_policy: none\n",
+	} {
+		if !strings.Contains(doc, line) {
+			t.Errorf("member %s does not carry its own policy:\n%s", member, doc)
 		}
 	}
-	for _, bad := range []string{"strict", "YOLO", "builtin:yolo"} {
-		if rec = doAgentsRequest(t, mux, http.MethodGet, path+"?permission_policy="+bad, ""); rec.Code != http.StatusBadRequest {
-			t.Errorf("policy %q: status = %d, want 400", bad, rec.Code)
-		}
+	if strings.Count(doc, "permission_policy") != 3 || strings.Contains(doc, "\nname: dev\npermission_policy") {
+		t.Errorf("want exactly one policy line per member and none on the rig:\n%s", doc)
+	}
+
+	// The old request-level override is gone: the query string changes nothing.
+	again := doAgentsRequest(t, mux, http.MethodGet, path+"?permission_policy=yolo", "")
+	if again.Code != http.StatusOK || decodeRigSpec(t, again).RigSpec.YAML != doc {
+		t.Errorf("a permission_policy query changed the render: %d", again.Code)
 	}
 }

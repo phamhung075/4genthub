@@ -42,7 +42,6 @@ Environment:
 Usage:
   openrig_seat_sync.py pull ROOM SEAT [--out DIR] [--update]
   openrig_seat_sync.py rig ROOM [--out DIR] [--update]
-                       [--permission-policy locked|standard|open|yolo|none]
   openrig_seat_sync.py bundle ROOM SEAT --rig-yaml PATH --rig-root DIR [--out-dir DIR]
   openrig_seat_sync.py install-checker [--out DIR]
   openrig_seat_sync.py switch ROOM SEAT [--runtime R] [--model M]
@@ -91,7 +90,6 @@ NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*")
 MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
 RUNTIMES = ("claude-code", "codex")
 APPLY_MODES = ("none", "set-model", "restart")
-PERMISSION_POLICIES = ("locked", "standard", "open", "yolo", "none")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
 
@@ -188,12 +186,8 @@ def fetch_seat(base_url: str, token: str, room: str, seat: str) -> dict:
     return resolved
 
 
-def fetch_rigspec(
-    base_url: str, token: str, room: str, permission_policy: str | None = None
-) -> dict:
+def fetch_rigspec(base_url: str, token: str, room: str) -> dict:
     path = f"{ROOMS_PATH}/{room}/rigspec"
-    if permission_policy is not None:
-        path += f"?permission_policy={permission_policy}"
     body = get_json(base_url, token, path)
     if body.get("success") is not True:
         raise SyncError(f"GET {path} returned an error response", EXIT_REMOTE)
@@ -398,20 +392,19 @@ def remove_path(path: Path) -> None:
 
 
 def place_agent(source: Path, target: Path) -> None:
-    """Point ``target`` at ``source``, copying if this OS has no symlinks."""
+    """Point ``target`` at ``source`` (a file or a directory) with a relative symlink."""
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.parent / f".{target.name}.{os.getpid()}.tmp"
     remove_path(temporary)
     try:
         os.symlink(os.path.relpath(source, target.parent), temporary)
-    except OSError:
-        remove_path(temporary)
-        shutil.copytree(source, temporary, symlinks=True)
-    try:
-        os.replace(temporary, target)
-    except OSError:
+    except OSError as err:
+        raise SyncError(
+            f"cannot link {target} to {source}: {err}", EXIT_USAGE
+        ) from err
+    if target.is_dir() and not target.is_symlink():
         remove_path(target)
-        os.replace(temporary, target)
+    os.replace(temporary, target)
 
 
 def swap_dir(staging: Path, target: Path) -> None:
@@ -440,7 +433,7 @@ def cmd_rig(args: argparse.Namespace) -> None:
     base_url = require_env("AGENTHUB_URL")
     token = require_env("AGENTHUB_TOKEN")
 
-    rigspec = fetch_rigspec(base_url, token, room, args.permission_policy)
+    rigspec = fetch_rigspec(base_url, token, room)
     if rigspec.get("name") != room:
         raise SyncError("server returned a rigspec for a different room", EXIT_REMOTE)
     yaml_text = rigspec.get("yaml")
@@ -722,12 +715,6 @@ def main(argv: list[str] | None = None) -> int:
         "--update",
         action="store_true",
         help="adopt fetched snapshots even if different pins exist",
-    )
-    rig.add_argument(
-        "--permission-policy",
-        choices=PERMISSION_POLICIES,
-        default=None,
-        help="ask the server to render the rigspec with this permission policy",
     )
     rig.set_defaults(func=cmd_rig)
 

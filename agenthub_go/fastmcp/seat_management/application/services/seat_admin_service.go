@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	ErrInvalidOccupant = errors.New("invalid occupant")
-	ErrRoomNotFound    = errors.New("room not found")
-	ErrSeatNotFound    = errors.New("seat not found")
+	ErrInvalidOccupant         = errors.New("invalid occupant")
+	ErrInvalidPermissionPolicy = errors.New("invalid permission policy")
+	ErrRoomNotFound            = errors.New("room not found")
+	ErrSeatNotFound            = errors.New("seat not found")
 
 	ErrSeatTypeNotFound       = errors.New("seat type not found")
 	ErrInvalidSeatTypeVersion = errors.New("invalid seat type version")
@@ -27,6 +28,7 @@ type SeatAdminStore interface {
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
+	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
 	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
 	AddSeatTypeVersion(ctx context.Context, userID, slug, version, defaultRuntime string, refs []resolver.ModuleRef) (*repositories.SeatTypeVersion, error)
@@ -105,6 +107,23 @@ func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, se
 		return nil, err
 	}
 	seat.Runtime, seat.Model = runtime, model
+	return s.view(ctx, userID, room, seat)
+}
+
+// SetPermissionPolicy changes the permission policy rendered on the seat's member. The next
+// rigspec render carries it; a seat already launched keeps the posture it was launched with.
+func (s *SeatAdminService) SetPermissionPolicy(ctx context.Context, userID, roomSlug, seatKey, permissionPolicy string) (*SeatView, error) {
+	if err := resolver.CheckPermissionPolicy(permissionPolicy); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidPermissionPolicy, err)
+	}
+	room, seat, err := s.seat(ctx, userID, roomSlug, seatKey)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.UpdateSeatPermissionPolicy(ctx, userID, seat.ID, permissionPolicy); err != nil {
+		return nil, err
+	}
+	seat.PermissionPolicy = permissionPolicy
 	return s.view(ctx, userID, room, seat)
 }
 
@@ -228,5 +247,6 @@ func SeatBody(seat *repositories.Seat, seatTypeSlug string) *entities.OrderedMap
 	}
 	body.Set("runtime", seat.Runtime)
 	body.Set("model", seat.Model)
+	body.Set("permission_policy", seat.PermissionPolicy)
 	return body
 }
