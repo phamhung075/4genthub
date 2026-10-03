@@ -91,7 +91,7 @@ EXIT_USAGE = 2
 
 NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*")
 MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
-RUNTIMES = ("claude-code", "codex")
+RUNTIMES = ("claude-code", "codex", "agy")
 APPLY_MODES = ("none", "set-model", "restart")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 
@@ -409,9 +409,7 @@ def place_agent(source: Path, target: Path) -> None:
     try:
         os.symlink(os.path.relpath(source, target.parent), temporary)
     except OSError as err:
-        raise SyncError(
-            f"cannot link {target} to {source}: {err}", EXIT_USAGE
-        ) from err
+        raise SyncError(f"cannot link {target} to {source}: {err}", EXIT_USAGE) from err
     if target.is_dir() and not target.is_symlink():
         remove_path(target)
     os.replace(temporary, target)

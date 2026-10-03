@@ -762,6 +762,19 @@ def test_switch_model_puts_body_keeps_runtime_and_sets_model(env, rig, capsys):
     assert "test-token" not in out + err
 
 
+def test_switch_accepts_the_agy_runtime(env, rig, capsys):
+    setup_switch(env)
+
+    code = run_cli(["switch", "room1", "seat1", "--runtime", "agy"])
+    out, _ = capsys.readouterr()
+
+    assert code == 0
+    assert env.puts[0][1] == {"runtime": "agy", "model": "old-model"}
+    assert (
+        out.strip() == "switched:room1/seat1 runtime=agy model=old-model applied=manual"
+    )
+
+
 def test_switch_runtime_only_keeps_current_model_and_prints_manual_steps(
     env, rig, capsys
 ):

@@ -24,6 +24,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`openrig_seat_sync.py switch` accepts the agy runtime** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: `RUNTIMES` now includes `agy`, so `switch ROOM SEAT --runtime agy --model <model>` is no longer rejected with exit 2 by the client before the server sees it. The Python lists in `openrig_bridge.py` and this script are still separate from Go's `resolver.CheckRuntime`; the single-source claim of the status-report entry above holds for Go only.
+
 **Seat status reports accept the agy runtime** (2026-10-03)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_status_mount.go`: `validSeatRuntime` replaces the hard-coded `seatRuntimes` map; it accepts every runtime `resolver.CheckRuntime` accepts (claude-code, codex, agy) plus `terminal` and `unknown`, so the runtime list has one source.

@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — switch accepts the agy runtime
+
+- Added: `test_switch_accepts_the_agy_runtime` (`test_openrig_seat_sync.py`): `switch room1 seat1 --runtime agy` keeps the seat's current model, exits 0, PUTs `{"runtime": "agy", "model": "old-model"}` and prints the `switched:` line. The first draft passed `--model ""`, which is pinned as invalid (exit 2) by `test_switch_usage_errors_exit_2`; another seat replaced it with this runtime-only form before commit.
+- Verified: the test fails (exit 2) with `RUNTIMES` reverted and passes with it; `test_openrig_seat_sync.py` 67 passed.
+
 ## 2026-10-04 — delegate-deepseek module 1.1.0
 
 - Added: `test_delegate_module_carries_the_chef_and_worker_wording` (`test_openrig_team_setup.py`): the module text has the chef wording and `team.json` carries version 1.1.0. Changed: the company overlay test expects `delegate-deepseek@1.1.0`; the word limit for the module is 100-230 (was 100-180).
@@ -10,7 +15,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-03 — seat status accepts the agy runtime
 
 - Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
-- Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed) pass after it.
+- Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed on the committed tests only; the working tree then also held a failing, uncommitted `test_switch_accepts_the_agy_runtime`, fixed in the entry below) pass after it.
 
 ## 2026-10-04 — remove tests for APIs the code does not have
 
