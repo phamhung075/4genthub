@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from './../test-utils';
+import { render as rtlRender } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
 import { vi } from 'vitest';
 import { Header } from '../../components/Header';
@@ -57,7 +59,13 @@ describe('Header', () => {
   });
 
   it('returns null when AuthContext is not available', () => {
-    const { container } = render(<Header />);
+    // test-utils `render` always wraps in AuthProvider, so use the base RTL render
+    // (Router only) to exercise Header's `if (!authContext) return null` guard.
+    const { container } = rtlRender(
+      <BrowserRouter>
+        <Header />
+      </BrowserRouter>
+    );
     expect(container.firstChild).toBeNull();
   });
 

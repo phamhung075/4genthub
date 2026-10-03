@@ -33,8 +33,8 @@ vi.mock('../../../components/ui/CopyableId', () => ({
 }));
 
 vi.mock('../../../components/ui/ParentTaskReference', () => ({
-  ParentTaskReference: ({ taskId }: any) => (
-    <div data-testid="parent-task-ref">Parent: {taskId}</div>
+  ParentTaskReference: ({ parentTaskId }: any) => (
+    <div data-testid="parent-task-ref">Parent: {parentTaskId}</div>
   )
 }));
 

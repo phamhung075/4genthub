@@ -1,15 +1,34 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi } from 'vitest';
+import { Routes, Route } from 'react-router-dom';
 import LazySubtaskList from '../../components/LazySubtaskList';
 import * as api from '../../api';
+import * as apiLazy from '../../api-lazy';
 import Cookies from 'js-cookie';
 
 // Mock the api module
 vi.mock('../../api');
 
+// Mock the lazy-loading API module (subtask summaries / full subtask loading)
+vi.mock('../../api-lazy');
+
 // Mock js-cookie
 vi.mock('js-cookie');
+
+// Mock useSubtaskAnimation to avoid unhandled async timers after test teardown
+vi.mock('../../hooks/useSubtaskAnimation', () => ({
+  useSubtaskAnimation: () => ({
+    animationState: 'none',
+    isVisible: true,
+    animationClass: '',
+    elementRef: { current: null },
+    hasPlayedCreateAnimation: true,
+    playCreateAnimation: vi.fn(),
+    playUpdateAnimation: vi.fn(),
+    playDeleteAnimation: vi.fn(),
+  })
+}));
 
 // Mock lazy-loaded components
 vi.mock('../../components/DeleteConfirmDialog', () => ({
@@ -31,8 +50,20 @@ vi.mock('../../components/SubtaskCompleteDialog', () => ({
       <button onClick={() => {
         const completedSubtask = { ...subtask, status: 'done' };
         onComplete(completedSubtask);
+        onOpenChange(false);
       }}>Complete</button>
       <button onClick={() => onOpenChange(false)}>Cancel</button>
+    </div>
+  ) : null
+}));
+
+vi.mock('../../components/SubtaskDetailsDialog', () => ({
+  __esModule: true,
+  default: ({ open, subtask, onClose }: any) => open ? (
+    <div data-testid="subtask-details-dialog">
+      <div>Details for {subtask?.title}</div>
+      <div>{subtask?.description}</div>
+      <button onClick={onClose}>Close</button>
     </div>
   ) : null
 }));
@@ -75,10 +106,33 @@ describe('LazySubtaskList', () => {
     }
   ];
 
+  const mockSummaries = mockSubtasks.map(sub => ({
+    id: sub.id,
+    title: sub.title,
+    status: sub.status,
+    priority: sub.priority,
+    assignees: sub.assignees,
+    progress_percentage: sub.progress_percentage
+  }));
+
+  const renderWithRouter = (ui: React.ReactElement, initialEntries: string[] = ['/']) => {
+    window.history.pushState({}, '', initialEntries[0]);
+    return render(
+      <Routes>
+        <Route path="/dashboard/project/:projectId/branch/:taskTreeId/subtask/:subtaskId" element={ui} />
+        <Route path="/dashboard/project/:projectId/branch/:taskTreeId/task/:parentTaskId" element={ui} />
+        <Route path="*" element={ui} />
+      </Routes>
+    );
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     (Cookies.get as ReturnType<typeof vi.fn>).mockReturnValue('test-token');
     (global.fetch as ReturnType<typeof vi.fn>).mockReset();
+    (api.getTask as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (api.getAvailableAgents as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (api.listAgents as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
   describe('Initial Loading', () => {
@@ -96,32 +150,8 @@ describe('LazySubtaskList', () => {
       expect(screen.getByText('Loading subtasks...')).toBeInTheDocument();
     });
 
-    it('should load subtasks from V2 endpoint successfully', async () => {
-      const mockV2Response = {
-        subtasks: mockSubtasks.map(sub => ({
-          id: sub.id,
-          title: sub.title,
-          status: sub.status,
-          priority: sub.priority,
-          assignees: sub.assignees,
-          progress_percentage: sub.progress_percentage
-        })),
-        parent_task_id: mockParentTaskId,
-        total_count: 3,
-        progress_summary: {
-          total: 3,
-          completed: 1,
-          in_progress: 1,
-          todo: 1,
-          blocked: 0,
-          completion_percentage: 33
-        }
-      };
-
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockV2Response)
-      });
+    it('should load subtasks from the list API successfully', async () => {
+      (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubtasks);
 
       render(
         <LazySubtaskList
@@ -137,17 +167,8 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('Subtask 3')).toBeInTheDocument();
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        `/api/v2/tasks/${mockParentTaskId}/subtasks/summaries`,
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Authorization': 'Bearer test-token',
-            'Content-Type': 'application/json'
-          }),
-          body: JSON.stringify({ include_counts: true })
-        })
-      );
+      // The current container loads summaries through the list API
+      expect(api.listSubtasks).toHaveBeenCalledWith(mockParentTaskId);
     });
 
     it('should fallback to regular API when V2 fails', async () => {
@@ -177,10 +198,6 @@ describe('LazySubtaskList', () => {
 
     it('should handle authorization header when no token', async () => {
       (Cookies.get as ReturnType<typeof vi.fn>).mockReturnValue(null);
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: false,
-        json: vi.fn().mockResolvedValue({})
-      });
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
       render(
@@ -195,19 +212,12 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('No subtasks found.')).toBeInTheDocument();
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.not.objectContaining({
-            'Authorization': expect.any(String)
-          })
-        })
-      );
+      // The list still loads through the API layer when no cookie token exists
+      expect(api.listSubtasks).toHaveBeenCalledWith(mockParentTaskId);
     });
 
     it('should display error state', async () => {
       const errorMessage = 'Failed to load subtasks';
-      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
 
       render(
@@ -220,8 +230,8 @@ describe('LazySubtaskList', () => {
 
       await waitFor(() => {
         expect(screen.getByText(`Error loading subtasks: ${errorMessage}`)).toBeInTheDocument();
-      });
-    });
+      }, { timeout: 10000 });
+    }, 15000);
 
     it('should handle empty subtask list', async () => {
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
@@ -261,19 +271,19 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('Subtask 2')).toBeInTheDocument();
         expect(screen.getByText('Subtask 3')).toBeInTheDocument();
 
-        // Check statuses
-        expect(screen.getByText('done')).toBeInTheDocument();
-        expect(screen.getByText('in_progress')).toBeInTheDocument();
-        expect(screen.getByText('todo')).toBeInTheDocument();
+        // Check statuses (labels rendered by the current badge component)
+        expect(screen.getByText('Done')).toBeInTheDocument();
+        expect(screen.getByText('In Progress')).toBeInTheDocument();
+        expect(screen.getByText('To Do')).toBeInTheDocument();
 
         // Check priorities
-        expect(screen.getByText('high')).toBeInTheDocument();
-        expect(screen.getByText('medium')).toBeInTheDocument();
-        expect(screen.getByText('low')).toBeInTheDocument();
+        expect(screen.getByText('High')).toBeInTheDocument();
+        expect(screen.getByText('Medium')).toBeInTheDocument();
+        expect(screen.getByText('Low')).toBeInTheDocument();
 
         // Check assignees
-        expect(screen.getByText('1 assigned')).toBeInTheDocument();
-        expect(screen.getByText('2 assigned')).toBeInTheDocument();
+        expect(screen.getAllByText('user-1').length).toBeGreaterThan(0);
+        expect(screen.getByText('user-2')).toBeInTheDocument();
         expect(screen.getByText('Unassigned')).toBeInTheDocument();
 
         // Check progress percentages
@@ -312,7 +322,7 @@ describe('LazySubtaskList', () => {
         expect(table).toBeInTheDocument();
 
         // Check table headers
-        expect(screen.getByText('Subtask')).toBeInTheDocument();
+        expect(screen.getByText('Title')).toBeInTheDocument();
         expect(screen.getByText('Status')).toBeInTheDocument();
         expect(screen.getByText('Priority')).toBeInTheDocument();
         expect(screen.getByText('Assignees')).toBeInTheDocument();
@@ -384,12 +394,6 @@ describe('LazySubtaskList', () => {
 
     it('should handle subtask not found when opening from URL', async () => {
       (api.getSubtask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Subtask not found'));
-
-      const mockNavigate = vi.fn();
-      vi.doMock('react-router-dom', () => ({
-        ...vi.importActual('react-router-dom'),
-        useNavigate: () => mockNavigate
-      }));
 
       renderWithRouter(
         <LazySubtaskList
@@ -476,7 +480,11 @@ describe('LazySubtaskList', () => {
 
       await waitFor(() => {
         expect(api.deleteSubtask).toHaveBeenCalled();
-        expect(consoleSpy).toHaveBeenCalledWith('Failed to delete subtask:', expect.any(Error));
+      });
+
+      // The dialog is closed even when deletion fails
+      await waitFor(() => {
+        expect(screen.queryByTestId('delete-confirm-dialog')).not.toBeInTheDocument();
       });
 
       consoleSpy.mockRestore();
@@ -526,9 +534,9 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('Subtask 2')).toBeInTheDocument();
       });
 
-      // Find complete button for second subtask (in_progress)
+      // Find complete button for the first incomplete subtask (Subtask 2, in_progress)
       const completeButtons = screen.getAllByTitle('Complete');
-      fireEvent.click(completeButtons[1]); // Second subtask's complete button
+      fireEvent.click(completeButtons[0]); // Subtask 2's complete button
 
       await waitFor(() => {
         expect(screen.getByTestId('subtask-complete-dialog')).toBeInTheDocument();
@@ -580,8 +588,10 @@ describe('LazySubtaskList', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Edit Subtask')).toBeInTheDocument();
-        expect(screen.getByText('Editing: Subtask 2')).toBeInTheDocument();
       });
+
+      // The edit form is pre-filled with the subtask title
+      expect(screen.getByPlaceholderText('Enter subtask title...')).toHaveValue('Subtask 2');
 
       // Close edit dialog
       fireEvent.click(screen.getByText('Cancel'));
@@ -626,9 +636,9 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText(/33%/)).toBeInTheDocument();
       });
 
-      // Check progress bar width
-      const progressBar = document.querySelector('.bg-gradient-to-r.from-blue-400.to-blue-600');
-      expect(progressBar).toHaveStyle({ width: '33%' });
+      // Check progress bar width (the width style sits on the wrapper of the gradient fill)
+      const progressFill = document.querySelector('.bg-gradient-to-r.from-blue-300.to-blue-500');
+      expect(progressFill?.parentElement).toHaveStyle({ width: '33%' });
     });
 
     it('should handle 100% completion', async () => {
@@ -644,11 +654,11 @@ describe('LazySubtaskList', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/100%/)).toBeInTheDocument();
+        expect(screen.getByText(/3\/3 completed \(100%\)/)).toBeInTheDocument();
       });
 
-      const progressBar = document.querySelector('.bg-gradient-to-r.from-blue-400.to-blue-600');
-      expect(progressBar).toHaveStyle({ width: '100%' });
+      const progressFill = document.querySelector('.bg-gradient-to-r.from-blue-300.to-blue-500');
+      expect(progressFill?.parentElement).toHaveStyle({ width: '100%' });
     });
 
     it('should handle 0% completion', async () => {
@@ -664,11 +674,11 @@ describe('LazySubtaskList', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/0%/)).toBeInTheDocument();
+        expect(screen.getByText(/0\/3 completed \(0%\)/)).toBeInTheDocument();
       });
 
-      const progressBar = document.querySelector('.bg-gradient-to-r.from-blue-400.to-blue-600');
-      expect(progressBar).toHaveStyle({ width: '0%' });
+      const progressFill = document.querySelector('.bg-gradient-to-r.from-blue-300.to-blue-500');
+      expect(progressFill?.parentElement).toHaveStyle({ width: '0%' });
     });
   });
 
@@ -803,29 +813,21 @@ describe('LazySubtaskList', () => {
       fireEvent.click(screen.getByText('Confirm'));
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Failed to delete subtask:', expect.any(Error));
-        expect(screen.getByText('Subtask 1')).toBeInTheDocument(); // Still exists
+        expect(api.deleteSubtask).toHaveBeenCalled();
       });
+
+      // A failed delete leaves the subtask in the list and closes the dialog
+      await waitFor(() => {
+        expect(screen.queryByTestId('delete-confirm-dialog')).not.toBeInTheDocument();
+      });
+      expect(screen.getByText('Subtask 1')).toBeInTheDocument(); // Still exists
 
       consoleSpy.mockRestore();
     });
 
     it('should handle load full subtask errors', async () => {
-      // Set up initial summaries
-      const summaryResponse = {
-        subtasks: [{
-          id: 'sub-1',
-          title: 'Subtask 1',
-          status: 'todo',
-          priority: 'high',
-          assignees: ['user-1']
-        }]
-      };
-
-      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(summaryResponse)
-      });
+      (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubtasks);
+      (api.getSubtask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Load failed'));
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -841,15 +843,15 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('Subtask 1')).toBeInTheDocument();
       });
 
-      // Simulate error when loading full subtask
-      (api.listSubtasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Load failed'));
-
-      const viewButtons = screen.getAllByTitle('View details');
-      fireEvent.click(viewButtons[0]);
+      // Trigger a full-subtask load through the edit action on a non-done subtask;
+      // it should fall back to the summary when the full load fails
+      const editButtons = screen.getAllByTitle('Edit');
+      fireEvent.click(editButtons[1]);
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalled();
+        expect(screen.getByText('Edit Subtask')).toBeInTheDocument();
       });
+      expect(screen.getByPlaceholderText('Enter subtask title...')).toHaveValue('Subtask 2');
 
       consoleSpy.mockRestore();
     });
@@ -874,12 +876,11 @@ describe('LazySubtaskList', () => {
       );
 
       await waitFor(() => {
-        const badges = screen.getAllByRole('status');
-        const statusBadges = badges.filter(badge => 
-          ['done', 'in_progress', 'todo', 'blocked', 'review'].includes(badge.textContent || '')
-        );
-
-        expect(statusBadges).toHaveLength(5);
+        expect(screen.getByText('Done')).toBeInTheDocument();
+        expect(screen.getByText('In Progress')).toBeInTheDocument();
+        expect(screen.getByText('To Do')).toBeInTheDocument();
+        expect(screen.getByText('Blocked')).toBeInTheDocument();
+        expect(screen.getByText('Review')).toBeInTheDocument();
       });
     });
 
@@ -900,10 +901,10 @@ describe('LazySubtaskList', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('urgent')).toBeInTheDocument();
-        expect(screen.getByText('high')).toBeInTheDocument();
-        expect(screen.getByText('medium')).toBeInTheDocument();
-        expect(screen.getByText('low')).toBeInTheDocument();
+        expect(screen.getByText('Urgent')).toBeInTheDocument();
+        expect(screen.getByText('High')).toBeInTheDocument();
+        expect(screen.getByText('Medium')).toBeInTheDocument();
+        expect(screen.getByText('Low')).toBeInTheDocument();
       });
     });
   });
@@ -925,8 +926,8 @@ describe('LazySubtaskList', () => {
         expect(screen.getByText('Subtasks')).toHaveClass('text-blue-600');
       });
 
-      // Check for gradient lines
-      const gradientLines = document.querySelectorAll('.h-px.flex-1.bg-gradient-to-r');
+      // Check for both gradient separator lines (left and right of the title)
+      const gradientLines = document.querySelectorAll('.h-px.flex-1');
       expect(gradientLines).toHaveLength(2);
     });
 

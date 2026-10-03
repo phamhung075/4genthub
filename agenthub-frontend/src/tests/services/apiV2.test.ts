@@ -3,9 +3,9 @@ import {
   taskApiV2,
   projectApiV2,
   agentApiV2,
+  agentManagementApiV2,
   isAuthenticated,
-  getCurrentUserId,
-  refreshTokenAndRetry
+  getCurrentUserId
 } from '../../services/apiV2';
 
 // Mock js-cookie with default export for Vitest compatibility
@@ -24,21 +24,28 @@ vi.mock('js-cookie', () => {
 // Mock fetch globally
 global.fetch = vi.fn();
 
-// Mock logger
-vi.mock('../../utils/logger', () => ({
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-}));
+// Mock logger - apiV2 imports the default instance, so expose both default and named exports
+vi.mock('../../utils/logger', () => {
+  const mockLogger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    critical: vi.fn(),
+  };
+  return {
+    default: mockLogger,
+    ...mockLogger,
+  };
+});
 
 // Mock request deduplication
 vi.mock('../../utils/requestDeduplication', () => ({
-  deduplicateRequest: vi.fn((fn) => fn()),
+  deduplicateRequest: vi.fn(
+    (_url: string, _method: string, _body?: unknown, requestFn?: () => unknown) =>
+      requestFn ? requestFn() : undefined
+  ),
 }));
-
-// Mock import.meta.env
-(import.meta as any).env = { VITE_API_URL: 'http://test-api.com' };
 
 describe('apiV2.ts', () => {
   const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsInVzZXJfaWQiOiJ1c2VyLTEyMyIsIm5hbWUiOiJUZXN0IFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
@@ -56,50 +63,78 @@ describe('apiV2.ts', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
   });
 
   describe('Token Refresh and Retry', () => {
-    describe('refreshTokenAndRetry', () => {
+    describe('401 handling on task requests', () => {
       it('should refresh token and update cookies', async () => {
         const newToken = 'new-access-token';
         const newRefreshToken = 'new-refresh-token';
-        
-        (Cookies.get as any).mockReturnValueOnce(mockRefreshToken);
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          json: vi.fn().mockResolvedValue({
-            access_token: newToken,
-            refresh_token: newRefreshToken
-          })
-        });
+        const mockTasks = [{ id: '1', title: 'Task 1' }];
 
-        await refreshTokenAndRetry();
+        (Cookies.get as any).mockImplementation((key: string) =>
+          key === 'access_token' ? mockToken : key === 'refresh_token' ? mockRefreshToken : undefined
+        );
+
+        (global.fetch as any)
+          .mockResolvedValueOnce({
+            ok: false,
+            status: 401,
+            json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+              access_token: newToken,
+              refresh_token: newRefreshToken
+            })
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: vi.fn().mockResolvedValue(mockTasks)
+          });
+
+        const result = await taskApiV2.getTasks();
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/auth/refresh',
+          'http://localhost:8000/api/auth/refresh',
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
             },
             body: JSON.stringify({ refresh_token: mockRefreshToken }),
             credentials: 'include'
           }
         );
-        
+
         expect(Cookies.set).toHaveBeenCalledWith('access_token', newToken, expect.any(Object));
         expect(Cookies.set).toHaveBeenCalledWith('refresh_token', newRefreshToken, expect.any(Object));
+        expect(result).toEqual(mockTasks);
       });
 
       it('should handle refresh failure', async () => {
-        (Cookies.get as any).mockReturnValueOnce(mockRefreshToken);
-        (global.fetch as any).mockResolvedValue({
-          ok: false,
-          status: 401,
-          json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' })
-        });
+        (Cookies.get as any).mockImplementation((key: string) =>
+          key === 'access_token' ? mockToken : key === 'refresh_token' ? mockRefreshToken : undefined
+        );
 
-        await expect(refreshTokenAndRetry()).rejects.toThrow('Token refresh failed');
+        (global.fetch as any)
+          .mockResolvedValueOnce({
+            ok: false,
+            status: 401,
+            json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
+          })
+          .mockResolvedValueOnce({
+            ok: false,
+            status: 401,
+            json: vi.fn().mockResolvedValue({ detail: 'Invalid refresh token' })
+          });
+
+        await expect(taskApiV2.getTasks()).rejects.toThrow('Authentication required. Please log in again.');
+        expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+        expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
       });
     });
   });
@@ -187,13 +222,14 @@ describe('apiV2.ts', () => {
         const result = await taskApiV2.getTasks();
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/tasks/',
+          'http://localhost:8000/api/v2/tasks/',
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTasks);
@@ -209,13 +245,14 @@ describe('apiV2.ts', () => {
         const result = await taskApiV2.getTasks({ git_branch_id: 'branch-123' });
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/tasks/?git_branch_id=branch-123',
+          'http://localhost:8000/api/v2/tasks/?git_branch_id=branch-123',
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTasks);
@@ -228,22 +265,11 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockResolvedValue({ detail: 'Token expired' })
         });
 
-        // Mock dynamic import of js-cookie
-        const mockCookiesDefault = {
-          remove: vi.fn()
-        };
-        vi.spyOn(global, 'import' as any).mockResolvedValue({
-          default: mockCookiesDefault
-        });
-
         await expect(taskApiV2.getTasks()).rejects.toThrow('Authentication required. Please log in again.');
-        
-        // Wait for the dynamic import to complete
-        await new Promise(resolve => setTimeout(resolve, 0));
-        
-        // Verify cookies were cleared
-        expect(mockCookiesDefault.remove).toHaveBeenCalledWith('access_token');
-        expect(mockCookiesDefault.remove).toHaveBeenCalledWith('refresh_token');
+
+        // The refresh flow uses the already-imported js-cookie client to clear tokens
+        expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+        expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
       });
 
       it('should handle generic errors', async () => {
@@ -263,7 +289,8 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockRejectedValue(new Error('Parse error'))
         });
 
-        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed with status 400');
+        // json() rejects, so the code falls back to the generic detail "Request failed"
+        await expect(taskApiV2.getTasks()).rejects.toThrow('Request failed');
       });
     });
 
@@ -280,13 +307,14 @@ describe('apiV2.ts', () => {
         const result = await taskApiV2.getTask(taskId);
 
         expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/tasks/${taskId}`,
+          `http://localhost:8000/api/v2/tasks/${taskId}`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockTask);
@@ -312,14 +340,15 @@ describe('apiV2.ts', () => {
         const result = await taskApiV2.createTask(taskData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/tasks/',
+          'http://localhost:8000/api/v2/tasks/',
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            body: JSON.stringify(taskData)
+            body: JSON.stringify(taskData),
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockCreatedTask);
@@ -359,15 +388,17 @@ describe('apiV2.ts', () => {
 
         const result = await taskApiV2.updateTask(taskId, updates);
 
+        // The code injects task_id into the request body
         expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/tasks/${taskId}`,
+          `http://localhost:8000/api/v2/tasks/${taskId}`,
           {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
-            body: JSON.stringify(updates)
+            body: JSON.stringify({ task_id: taskId, ...updates }),
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockUpdatedTask);
@@ -387,13 +418,14 @@ describe('apiV2.ts', () => {
         const result = await taskApiV2.deleteTask(taskId);
 
         expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/tasks/${taskId}`,
+          `http://localhost:8000/api/v2/tasks/${taskId}`,
           {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockResponse);
@@ -408,8 +440,8 @@ describe('apiV2.ts', () => {
       };
 
       it('should complete a task', async () => {
-        const mockCompletedTask = { 
-          id: taskId, 
+        const mockCompletedTask = {
+          id: taskId,
           status: 'done',
           ...completionData
         };
@@ -420,17 +452,18 @@ describe('apiV2.ts', () => {
 
         const result = await taskApiV2.completeTask(taskId, completionData);
 
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/tasks/${taskId}/complete`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${mockToken}`
-            },
-            body: JSON.stringify(completionData)
-          }
-        );
+        const fetchCall = (global.fetch as any).mock.calls[0];
+        expect(fetchCall[0]).toBe(`http://localhost:8000/api/v2/tasks/${taskId}/complete`);
+        expect(fetchCall[1].method).toBe('POST');
+        expect(fetchCall[1].headers).toEqual({
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${mockToken}`
+        });
+        expect(fetchCall[1].credentials).toBe('include');
+        const body = fetchCall[1].body as URLSearchParams;
+        expect(body).toBeInstanceOf(URLSearchParams);
+        expect(body.get('completion_summary')).toBe('Task completed successfully');
+        expect(body.get('testing_notes')).toBe('All tests passed');
         expect(result).toEqual(mockCompletedTask);
       });
 
@@ -442,11 +475,13 @@ describe('apiV2.ts', () => {
           json: vi.fn().mockResolvedValue(mockResponse)
         });
 
-        await taskApiV2.completeTask(taskId, minimalData);
+        const result = await taskApiV2.completeTask(taskId, minimalData);
 
         const fetchCall = (global.fetch as any).mock.calls[0];
-        const body = JSON.parse(fetchCall[1].body);
-        expect(body).toEqual(minimalData);
+        const body = fetchCall[1].body as URLSearchParams;
+        expect(body.get('completion_summary')).toBe('Done');
+        expect(body.has('testing_notes')).toBe(false);
+        expect(result).toEqual(mockResponse);
       });
     });
 
@@ -489,13 +524,14 @@ describe('apiV2.ts', () => {
         const result = await projectApiV2.getProjects();
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/projects/',
+          'http://localhost:8000/api/v2/projects/',
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockProjects);
@@ -517,17 +553,19 @@ describe('apiV2.ts', () => {
 
         const result = await projectApiV2.createProject(projectData);
 
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/projects/',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${mockToken}`
-            },
-            body: JSON.stringify(projectData)
-          }
-        );
+        // createProject sends URL-encoded form data, not JSON
+        const fetchCall = (global.fetch as any).mock.calls[0];
+        expect(fetchCall[0]).toBe('http://localhost:8000/api/v2/projects/');
+        expect(fetchCall[1].method).toBe('POST');
+        expect(fetchCall[1].headers).toEqual({
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${mockToken}`
+        });
+        expect(fetchCall[1].credentials).toBe('include');
+        const body = fetchCall[1].body as URLSearchParams;
+        expect(body).toBeInstanceOf(URLSearchParams);
+        expect(body.get('name')).toBe('New Project');
+        expect(body.get('description')).toBe('Project description');
         expect(result).toEqual(mockCreatedProject);
       });
     });
@@ -544,22 +582,26 @@ describe('apiV2.ts', () => {
         const mockUpdatedProject = { id: projectId, ...updates };
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          status: 200,
+          url: `http://localhost:8000/api/v2/projects/${projectId}`,
           json: vi.fn().mockResolvedValue(mockUpdatedProject)
         });
 
         const result = await projectApiV2.updateProject(projectId, updates);
 
-        expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/projects/${projectId}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${mockToken}`
-            },
-            body: JSON.stringify(updates)
-          }
-        );
+        // updateProject sends URL-encoded form data and only forwards name/description
+        const fetchCall = (global.fetch as any).mock.calls[0];
+        expect(fetchCall[0]).toBe(`http://localhost:8000/api/v2/projects/${projectId}`);
+        expect(fetchCall[1].method).toBe('PUT');
+        expect(fetchCall[1].headers).toEqual({
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${mockToken}`
+        });
+        expect(fetchCall[1].credentials).toBe('include');
+        const body = new URLSearchParams(fetchCall[1].body as string);
+        expect(body.get('name')).toBe('Updated Project');
+        expect(body.get('description')).toBe('Updated description');
+        expect(body.has('status')).toBe(false);
         expect(result).toEqual(mockUpdatedProject);
       });
     });
@@ -571,19 +613,22 @@ describe('apiV2.ts', () => {
         const mockResponse = { success: true };
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          status: 200,
+          url: `http://localhost:8000/api/v2/projects/${projectId}`,
           json: vi.fn().mockResolvedValue(mockResponse)
         });
 
         const result = await projectApiV2.deleteProject(projectId);
 
         expect(global.fetch).toHaveBeenCalledWith(
-          `http://test-api.com/api/v2/projects/${projectId}`,
+          `http://localhost:8000/api/v2/projects/${projectId}`,
           {
             method: 'DELETE',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockResponse);
@@ -596,7 +641,7 @@ describe('apiV2.ts', () => {
       (Cookies.get as any).mockReturnValue(mockToken);
     });
 
-    describe('getAgents', () => {
+    describe('getAgentsMetadata', () => {
       it('should fetch agents with authentication', async () => {
         const mockAgents = [
           { id: '1', name: '@test_agent' },
@@ -604,19 +649,22 @@ describe('apiV2.ts', () => {
         ];
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          status: 200,
+          url: 'http://localhost:8000/api/v2/agents/metadata',
           json: vi.fn().mockResolvedValue(mockAgents)
         });
 
-        const result = await agentApiV2.getAgents();
+        const result = await agentApiV2.getAgentsMetadata();
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/agents/',
+          'http://localhost:8000/api/v2/agents/metadata',
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
-            }
+            },
+            credentials: 'include'
           }
         );
         expect(result).toEqual(mockAgents);
@@ -625,28 +673,30 @@ describe('apiV2.ts', () => {
 
     describe('registerAgent', () => {
       const agentData = {
-        name: '@new_agent',
-        project_id: 'proj-123',
-        call_agent: 'agent_config'
+        template_slug: 'coding-agent',
+        agent_name: '@new_agent',
       };
 
       it('should register a new agent', async () => {
         const mockRegisteredAgent = { id: 'agent-123', ...agentData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          status: 201,
+          url: 'http://localhost:8000/api/v2/agent-management/instances',
           json: vi.fn().mockResolvedValue(mockRegisteredAgent)
         });
 
-        const result = await agentApiV2.registerAgent(agentData);
+        const result = await agentManagementApiV2.createInstance(agentData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/v2/agents/',
+          'http://localhost:8000/api/v2/agent-management/instances',
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${mockToken}`
             },
+            credentials: 'include',
             body: JSON.stringify(agentData)
           }
         );
@@ -655,16 +705,17 @@ describe('apiV2.ts', () => {
 
       it('should handle minimal agent data', async () => {
         const minimalData = {
-          name: '@minimal_agent',
-          project_id: 'proj-123'
+          template_slug: 'minimal-agent',
         };
         const mockResponse = { id: 'agent-456', ...minimalData };
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          status: 201,
+          url: 'http://localhost:8000/api/v2/agent-management/instances',
           json: vi.fn().mockResolvedValue(mockResponse)
         });
 
-        const result = await agentApiV2.registerAgent(minimalData);
+        const result = await agentManagementApiV2.createInstance(minimalData);
 
         const fetchCall = (global.fetch as any).mock.calls[0];
         const body = JSON.parse(fetchCall[1].body);
@@ -696,7 +747,7 @@ describe('apiV2.ts', () => {
 
     it('should handle missing authorization header when no token', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       const mockResponse = { tasks: [] };
       (global.fetch as any).mockResolvedValue({
         ok: true,
@@ -715,16 +766,13 @@ describe('apiV2.ts', () => {
 
   describe('Environment Configuration', () => {
     it('should use default API URL when env variable not set', async () => {
-      // Save original value
-      const originalEnv = (import.meta as any).env;
-      
-      // Clear the mocked env variable
-      (import.meta as any).env = {};
-      
-      // Re-import the module to test default value
-      jest.resetModules();
+      // Clear the build-time API URL so environment.ts falls back to its default
+      vi.stubEnv('VITE_API_URL', '');
+
+      // Re-import the module so environment.ts is re-evaluated
+      vi.resetModules();
       const { taskApiV2: freshTaskApiV2 } = await import('../../services/apiV2');
-      
+
       (Cookies.get as any).mockReturnValue(mockToken);
       (global.fetch as any).mockResolvedValue({
         ok: true,
@@ -737,9 +785,8 @@ describe('apiV2.ts', () => {
         'http://localhost:8000/api/v2/tasks/',
         expect.any(Object)
       );
-      
-      // Restore original env
-      (import.meta as any).env = originalEnv;
+
+      vi.unstubAllEnvs();
     });
   });
 });

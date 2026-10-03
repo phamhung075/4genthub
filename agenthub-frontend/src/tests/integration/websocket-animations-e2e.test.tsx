@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { webSocketAnimationService } from '../../services/WebSocketAnimationService';
 import { animationFactory } from '../../services/AnimationFactory';
 import type { WSMessage } from '../../types/websocketTypes';
-import type { AnimationType } from '../../services/AnimationFactory';
+import type { AnimationType, AnimatedEntityType } from '../../services/AnimationFactory';
 
 // Mock logger to reduce noise
 vi.mock('../../utils/logger', () => ({
@@ -37,12 +37,15 @@ describe('WebSocket Animations E2E Flow', () => {
     testElements = new Map();
     appliedAnimations = new Map();
 
+    // Install fake timers first: useFakeTimers() replaces the global
+    // requestAnimationFrame, so the synchronous stub must be applied AFTER it.
+    vi.useFakeTimers();
+
     // Mock requestAnimationFrame and setTimeout
     vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
       cb();
       return 1;
     });
-    vi.useFakeTimers();
 
     // Spy on AnimationFactory methods
     vi.spyOn(animationFactory, 'registerElement');
@@ -76,7 +79,7 @@ describe('WebSocket Animations E2E Flow', () => {
   /**
    * Helper: Create a mock DOM element and register it with AnimationFactory
    */
-  const createAndRegisterElement = (elementId: string, entityType: string): HTMLElement => {
+  const createAndRegisterElement = (elementId: string, entityType: AnimatedEntityType): HTMLElement => {
     const element = document.createElement('div');
     element.id = elementId;
     element.setAttribute('data-entity', entityType);
@@ -84,7 +87,7 @@ describe('WebSocket Animations E2E Flow', () => {
     testElements.set(elementId, element);
 
     // Register with AnimationFactory (simulating what the entity animation hooks do)
-    animationFactory.registerElement(elementId, element, 'task', {
+    animationFactory.registerElement(elementId, element, entityType, {
       onAnimationStart: vi.fn(),
       onAnimationEnd: vi.fn()
     });
@@ -206,15 +209,15 @@ describe('WebSocket Animations E2E Flow', () => {
   });
 
   describe('Complete E2E Flow - Branch', () => {
-    it('should complete full animation flow for branch create', () => {
+    it('should skip create animation for branch create (mount animation handles it)', () => {
       const branchId = 'branch-e2e-789';
       const branchElement = createAndRegisterElement(branchId, 'branch');
 
       simulateWebSocketMessage('branch', 'created', branchId);
       vi.advanceTimersByTime(150);
 
-      expect(animationFactory.animate).toHaveBeenCalledWith(branchId, 'create', 'websocket');
-      expect(branchElement.classList.contains('animate-create')).toBe(true);
+      expect(animationFactory.animate).not.toHaveBeenCalled();
+      expect(branchElement.classList.contains('animate-create')).toBe(false);
     });
 
     it('should complete full animation flow for branch update', () => {
@@ -241,16 +244,17 @@ describe('WebSocket Animations E2E Flow', () => {
   });
 
   describe('Complete E2E Flow - Project (NEW)', () => {
-    it('should complete full animation flow for project create', () => {
+    it('should skip create animation for project create (mount animation handles it)', () => {
       const projectId = 'project-e2e-101';
       const projectElement = createAndRegisterElement(projectId, 'project');
 
       simulateWebSocketMessage('project', 'created', projectId);
       vi.advanceTimersByTime(150);
 
-      // CRITICAL: Validates the gap we just closed
-      expect(animationFactory.animate).toHaveBeenCalledWith(projectId, 'create', 'websocket');
-      expect(projectElement.classList.contains('animate-create')).toBe(true);
+      // Project entities ARE routed through the service; created is skipped
+      // because the mount animation already handles newly rendered projects.
+      expect(animationFactory.animate).not.toHaveBeenCalled();
+      expect(projectElement.classList.contains('animate-create')).toBe(false);
     });
 
     it('should complete full animation flow for project update', () => {
@@ -379,6 +383,7 @@ describe('WebSocket Animations E2E Flow', () => {
       expect(animationFactory.registerElement).toHaveBeenCalledWith(
         taskId,
         taskElement,
+        'task',
         expect.objectContaining({
           onAnimationStart: expect.any(Function),
           onAnimationEnd: expect.any(Function)
@@ -411,22 +416,23 @@ describe('WebSocket Animations E2E Flow', () => {
   });
 
   describe('All CRUD Actions - Complete Coverage', () => {
-    const testCases = [
+    const testCases: Array<{ entity: AnimatedEntityType; action: string; expectedType: string; skipped?: boolean }> = [
       { entity: 'task', action: 'updated', expectedType: 'update' },
       { entity: 'task', action: 'completed', expectedType: 'complete' },
       { entity: 'task', action: 'deleted', expectedType: 'delete' },
       { entity: 'subtask', action: 'updated', expectedType: 'update' },
       { entity: 'subtask', action: 'completed', expectedType: 'complete' },
       { entity: 'subtask', action: 'deleted', expectedType: 'delete' },
-      { entity: 'branch', action: 'created', expectedType: 'create' },
+      // created is skipped for branch/project - the mount animation handles it
+      { entity: 'branch', action: 'created', expectedType: 'create', skipped: true },
       { entity: 'branch', action: 'updated', expectedType: 'update' },
       { entity: 'branch', action: 'deleted', expectedType: 'delete' },
-      { entity: 'project', action: 'created', expectedType: 'create' },
+      { entity: 'project', action: 'created', expectedType: 'create', skipped: true },
       { entity: 'project', action: 'updated', expectedType: 'update' },
       { entity: 'project', action: 'deleted', expectedType: 'delete' }
     ];
 
-    testCases.forEach(({ entity, action, expectedType }) => {
+    testCases.forEach(({ entity, action, expectedType, skipped }) => {
       it(`should complete E2E flow for ${entity}.${action}`, () => {
         const entityId = `${entity}-crud-test`;
         const element = createAndRegisterElement(entityId, entity);
@@ -434,12 +440,17 @@ describe('WebSocket Animations E2E Flow', () => {
         simulateWebSocketMessage(entity, action, entityId);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).toHaveBeenCalledWith(
-          entityId,
-          expectedType,
-          'websocket'
-        );
-        expect(element.classList.contains(`animate-${expectedType}`)).toBe(true);
+        if (skipped) {
+          expect(animationFactory.animate).not.toHaveBeenCalled();
+          expect(element.classList.contains(`animate-${expectedType}`)).toBe(false);
+        } else {
+          expect(animationFactory.animate).toHaveBeenCalledWith(
+            entityId,
+            expectedType,
+            'websocket'
+          );
+          expect(element.classList.contains(`animate-${expectedType}`)).toBe(true);
+        }
       });
     });
   });
