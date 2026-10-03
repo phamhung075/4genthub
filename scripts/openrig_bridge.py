@@ -13,7 +13,7 @@ fields and goes through ``openrig_scrub.scrub``.
 OpenRig source: ``rig ps --json --nodes -A`` (local daemon, all rigs) -> a bare
 list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
   rigName                       -> room
-  logicalId (minus "<podId>.")  -> seat
+  logicalId (minus "<pod>.")    -> seat
   runtime                       -> runtime  (claude-code|codex|terminal else unknown)
   state, first match wins:
     sessionStatus stopped|exited, or lifecycleState detached|recoverable -> stopped
@@ -127,10 +127,8 @@ def seat_state(node: dict) -> str:
 
 
 def seat_name(node: dict) -> str:
-    logical = _str(node.get("logicalId"))
-    pod = _str(node.get("podId"))
-    prefix = f"{pod}."
-    return logical[len(prefix):] if pod and logical.startswith(prefix) else logical
+    # OpenRig ids never contain a dot, so "<pod>.<member>" splits at the first one.
+    return _str(node.get("logicalId")).partition(".")[2] or _str(node.get("logicalId"))
 
 
 def pinned_hash(pins_dir: Path, room: str, seat: str) -> str:

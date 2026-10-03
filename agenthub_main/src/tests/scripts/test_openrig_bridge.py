@@ -30,7 +30,6 @@ def rig_output(*extra_nodes):
         {
             "rigName": "eng",
             "logicalId": "dev.coder",
-            "podId": "dev",
             "runtime": "claude-code",
             "sessionStatus": "running",
             "lifecycleState": "running",
@@ -42,7 +41,6 @@ def rig_output(*extra_nodes):
         {
             "rigName": "eng",
             "logicalId": "dev.reviewer",
-            "podId": "dev",
             "runtime": "weird-runtime",
             "sessionStatus": "running",
             "agentActivity": {"state": "needs_input"},
@@ -173,7 +171,7 @@ def test_bad_names_are_skipped(tmp_path):
     bad = [
         {"rigName": "bad room", "logicalId": "x"},
         {"rigName": "eng", "logicalId": "../etc"},
-        {"rigName": "eng", "logicalId": "dev.coder", "podId": "dev"},
+        {"rigName": "eng", "logicalId": "dev.coder"},
         {"rigName": "ok", "logicalId": 7},
     ]
     agents = [
@@ -235,9 +233,7 @@ def test_send_on_change_and_heartbeat(tmp_path):
     clock.now += 20
     bridge.cycle()
     assert len(sent) == 1
-    runner_state["rig"] = rig_output(
-        {"rigName": "eng", "logicalId": "dev.qa", "podId": "dev"}
-    )
+    runner_state["rig"] = rig_output({"rigName": "eng", "logicalId": "dev.qa"})
     clock.now += 20
     bridge.cycle()
     assert len(sent) == 2

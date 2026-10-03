@@ -6,6 +6,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+- `scripts/openrig_bridge.py`: seat name is the part of OpenRig `logicalId` after the first dot (`rig ps` has no `podId`); found by running the stack against a real `rig` daemon.
+
 ### Added
 
 **Bridge v1: OpenRig and herdr status to 4genthub** (2026-10-03)
