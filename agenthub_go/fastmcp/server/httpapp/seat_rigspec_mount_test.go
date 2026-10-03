@@ -112,16 +112,15 @@ func decodeRigSpec(t *testing.T, rec *httptest.ResponseRecorder) rigSpecHTTPResp
 	return body
 }
 
-func TestRoomRigSpecRendersActiveSeatsEdgesAndHashes(t *testing.T) {
+func TestRoomRigSpecRendersSeatsEdgesAndHashes(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
 	fake := &fakeSeatRigSpec{
 		rooms: map[string]*repositories.Room{"dev": room},
 		seats: []*repositories.Seat{
-			{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code", Status: "active"},
-			{ID: "seat-dev", RoomID: "room-dev", SeatKey: "dev", Runtime: "codex", Model: "gpt-5", Status: "active"},
-			{ID: "seat-qa", RoomID: "room-dev", SeatKey: "qa", Runtime: "claude-code", Status: "active"},
-			{ID: "seat-ghost", RoomID: "room-dev", SeatKey: "ghost", Runtime: "claude-code", Status: "removed"},
+			{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code"},
+			{ID: "seat-dev", RoomID: "room-dev", SeatKey: "dev", Runtime: "codex", Model: "gpt-5"},
+			{ID: "seat-qa", RoomID: "room-dev", SeatKey: "qa", Runtime: "claude-code"},
 		},
 		links: map[string][]*repositories.SeatLink{
 			"seat-lead": {
@@ -220,23 +219,14 @@ func TestRoomRigSpecAbsentRoomAndNoActiveSeats(t *testing.T) {
 	}
 
 	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
-	removed := &fakeSeatRigSpec{
-		rooms: map[string]*repositories.Room{"dev": room},
-		seats: []*repositories.Seat{{ID: "seat-ghost", RoomID: "room-dev", SeatKey: "ghost", Runtime: "claude-code", Status: "removed"}},
-	}
-	mux = seatRigSpecTestMux(t, removed)
-	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("no active seats: status = %d, want 409: %s", rec.Code, rec.Body.String())
-	}
-	if !strings.Contains(rec.Body.String(), "room has no active seats") {
-		t.Errorf("no active seats message = %s", rec.Body.String())
-	}
-
 	none := &fakeSeatRigSpec{rooms: map[string]*repositories.Room{"dev": room}}
 	mux = seatRigSpecTestMux(t, none)
-	if rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", ""); rec.Code != http.StatusConflict {
-		t.Errorf("empty room: status = %d, want 409: %s", rec.Code, rec.Body.String())
+	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("empty room: status = %d, want 409: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "room has no seats") {
+		t.Errorf("empty room message = %s", rec.Body.String())
 	}
 }
 
@@ -262,7 +252,7 @@ func TestRoomRigSpecPermissionPolicy(t *testing.T) {
 	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
 	fake := &fakeSeatRigSpec{
 		rooms:    map[string]*repositories.Room{"dev": room},
-		seats:    []*repositories.Seat{{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code", Status: "active"}},
+		seats:    []*repositories.Seat{{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code"}},
 		resolved: map[string]*repositories.ResolvedSeat{"lead": {SeatID: "seat-lead", Hash: "h-lead", Runtime: "claude-code"}},
 	}
 	mux := seatRigSpecTestMux(t, fake)

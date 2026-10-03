@@ -62,7 +62,6 @@ type seatAdminSource interface {
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	CreateSeat(ctx context.Context, userID string, seat repositories.Seat) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
-	MarkSeatRemoved(ctx context.Context, userID, seatID string) error
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
@@ -73,6 +72,7 @@ type seatAdminSource interface {
 	DeleteSeatOverlay(ctx context.Context, userID, seatID string) error
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
+	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
@@ -193,10 +193,6 @@ func (s *seatAdminRepos) ListSeats(ctx context.Context, userID, roomID string) (
 	return s.seats.ListByRoom(ctx, userID, roomID)
 }
 
-func (s *seatAdminRepos) MarkSeatRemoved(ctx context.Context, userID, seatID string) error {
-	return s.seats.MarkRemoved(ctx, userID, seatID)
-}
-
 func (s *seatAdminRepos) UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error {
 	return s.seats.UpdateOccupant(ctx, userID, seatID, runtime, model)
 }
@@ -231,6 +227,10 @@ func (s *seatAdminRepos) DeleteSeatOverlay(ctx context.Context, userID, seatID s
 
 func (s *seatAdminRepos) DeleteRoomOverlay(ctx context.Context, userID, roomID string) error {
 	return s.overlays.DeleteForRoom(ctx, userID, roomID)
+}
+
+func (s *seatAdminRepos) DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return s.machines.DeleteSeatStatusForSeat(ctx, userID, roomSlug, seatKey)
 }
 
 func (s *seatAdminRepos) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
@@ -416,7 +416,7 @@ func seatAdminSeat(w http.ResponseWriter, r *http.Request, source seatAdminSourc
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return nil, false
 	}
-	if seat == nil || seat.Status == "removed" {
+	if seat == nil {
 		writeDetail(w, http.StatusNotFound, "seat \""+seatKey+"\" not found")
 		return nil, false
 	}
@@ -754,7 +754,7 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	seat, err := source.CreateSeat(r.Context(), userID(u), repositories.Seat{
 		RoomID: room.ID, SeatKey: req.SeatKey, SeatTypeID: latest.SeatTypeID,
-		PinnedVersion: pinned, Runtime: req.Runtime, Model: req.Model, Status: "active",
+		PinnedVersion: pinned, Runtime: req.Runtime, Model: req.Model,
 	})
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
@@ -791,9 +791,6 @@ func handleListSeats(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	}
 	out := make([]any, 0, len(seats))
 	for i := range seats {
-		if seats[i].Status == "removed" {
-			continue
-		}
 		out = append(out, seatservices.SeatBody(&seats[i], slugByID[seats[i].SeatTypeID]))
 	}
 	body := entities.NewOrderedMap[any]()
@@ -821,16 +818,8 @@ func handleRemoveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	if !ok {
 		return
 	}
-	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
-	if !ok {
-		return
-	}
-	seat, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
-	if !ok {
-		return
-	}
-	if err := source.MarkSeatRemoved(r.Context(), userID(u), seat.ID); err != nil {
-		writeDetail(w, http.StatusInternalServerError, err.Error())
+	if err := seatservices.NewRoomDeletionService(source).RemoveSeat(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat")); err != nil {
+		writeSeatAdminServiceError(w, err)
 		return
 	}
 	body := entities.NewOrderedMap[any]()
@@ -864,7 +853,7 @@ func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, seatservices.ErrSeatRemoved), errors.Is(err, repositories.ErrSeatTypeVersionConflict):
+	case errors.Is(err, repositories.ErrSeatTypeVersionConflict):
 		writeDetail(w, http.StatusConflict, err.Error())
 	default:
 		writeDetail(w, http.StatusInternalServerError, err.Error())

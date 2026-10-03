@@ -35,6 +35,7 @@ type fakeSeatAdmin struct {
 	addVersionErr   error
 
 	deletedStatusRooms []string
+	deletedStatusSeats []string
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -170,9 +171,6 @@ func (f *fakeSeatAdmin) CreateSeat(_ context.Context, userID string, seat reposi
 	created := seat
 	created.ID = "seat-" + seat.RoomID + "-" + seat.SeatKey
 	created.UserID = userID
-	if created.Status == "" {
-		created.Status = "active"
-	}
 	f.seats = append(f.seats, &created)
 	return &created, nil
 }
@@ -185,15 +183,6 @@ func (f *fakeSeatAdmin) ListSeats(_ context.Context, _, roomID string) ([]reposi
 		}
 	}
 	return out, nil
-}
-
-func (f *fakeSeatAdmin) MarkSeatRemoved(_ context.Context, _, seatID string) error {
-	for _, s := range f.seats {
-		if s.ID == seatID {
-			s.Status = "removed"
-		}
-	}
-	return nil
 }
 
 func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
@@ -278,6 +267,11 @@ func (f *fakeSeatAdmin) DeleteRoomOverlay(_ context.Context, _, roomID string) e
 
 func (f *fakeSeatAdmin) DeleteSeatStatusForRoom(_ context.Context, _, roomSlug string) error {
 	f.deletedStatusRooms = append(f.deletedStatusRooms, roomSlug)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteSeatStatusForSeat(_ context.Context, _, roomSlug, seatKey string) error {
+	f.deletedStatusSeats = append(f.deletedStatusSeats, roomSlug+"/"+seatKey)
 	return nil
 }
 
@@ -384,7 +378,7 @@ func TestSeatAdminCreateSeatPinsByDefault(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create seat: status = %d: %s", rec.Code, rec.Body.String())
 	}
-	for _, want := range []string{`"seat_key":"alice"`, `"seat_type_id":"st-coder"`, `"seat_type":"coder"`, `"pinned_version":"1.0.0"`, `"status":"active"`} {
+	for _, want := range []string{`"seat_key":"alice"`, `"seat_type_id":"st-coder"`, `"seat_type":"coder"`, `"pinned_version":"1.0.0"`} {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Errorf("create seat body missing %s: %s", want, rec.Body.String())
 		}
@@ -630,7 +624,7 @@ func TestSeatAdminGetModuleVersion(t *testing.T) {
 func TestSeatAdminGetOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"})
 	mux := seatAdminTestMux(t, fake)
 
 	for _, path := range []string{
@@ -713,14 +707,13 @@ func TestSeatAdminCreateSeatHonorsSetting(t *testing.T) {
 	}
 }
 
-func TestSeatAdminListExcludesRemovedSeats(t *testing.T) {
+func TestSeatAdminListSeats(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	fake.seatTypeList = append(fake.seatTypeList, &repositories.SeatType{ID: "st-coder", Slug: "coder"})
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", Status: "active"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "removed"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats", "")
@@ -728,24 +721,73 @@ func TestSeatAdminListExcludesRemovedSeats(t *testing.T) {
 		t.Fatalf("list seats: status = %d: %s", rec.Code, rec.Body.String())
 	}
 	if !strings.Contains(rec.Body.String(), `"seat_key":"alice"`) || !strings.Contains(rec.Body.String(), `"seat_type":"coder"`) {
-		t.Errorf("active seat or its seat type slug missing: %s", rec.Body.String())
-	}
-	if strings.Contains(rec.Body.String(), `"seat_key":"bob"`) {
-		t.Errorf("removed seat listed: %s", rec.Body.String())
+		t.Errorf("seat or its seat type slug missing: %s", rec.Body.String())
 	}
 }
 
-func TestSeatAdminRemoveSeat(t *testing.T) {
+func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
 	fake := newFakeSeatAdmin()
-	fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: "room-dev", SeatKey: "alice", Status: "active"})
+	room := fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	fake.seats = append(fake.seats,
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+	)
+	fake.links = append(fake.links,
+		&repositories.SeatLink{FromSeatID: "seat-a", ToSeatID: "seat-b", Kind: "delegates_to", Allow: true},
+		&repositories.SeatLink{FromSeatID: "seat-b", ToSeatID: "seat-a", Kind: "can_observe", Allow: true},
+	)
+	if _, err := fake.UpsertOverlay(context.Background(), "u", repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: "seat-a", Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "m", Version: "1.0.0"}}}); err != nil {
+		t.Fatal(err)
+	}
 	mux := seatAdminTestMux(t, fake)
-	rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", "")
-	if rec.Code != http.StatusOK {
+	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
+	seatPath := "/api/v2/openrig/rooms/dev/seats/alice"
+
+	room.UserID = "another-user"
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusNotFound {
+		t.Fatalf("other user's seat: status = %d, want 404", rec.Code)
+	}
+	if len(fake.seats) != 2 || len(fake.links) != 2 {
+		t.Fatalf("another user's request deleted rows: %d seats, %d links", len(fake.seats), len(fake.links))
+	}
+	room.UserID = ""
+
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusOK {
 		t.Fatalf("remove seat: status = %d: %s", rec.Code, rec.Body.String())
 	}
-	if rec = doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", ""); rec.Code != http.StatusNotFound {
-		t.Errorf("remove removed seat: status = %d, want 404", rec.Code)
+	if len(fake.seats) != 1 || fake.seats[0].SeatKey != "bob" {
+		t.Errorf("seats left = %+v, want only bob", fake.seats)
+	}
+	if len(fake.links) != 0 {
+		t.Errorf("links of the removed seat left in either direction: %+v", fake.links)
+	}
+	if len(fake.overlays) != 0 {
+		t.Errorf("overlay of the removed seat left: %+v", fake.overlays)
+	}
+	if strings.Join(fake.deletedResolved, ",") != "seat-a" || strings.Join(fake.deletedStatusSeats, ",") != "dev/alice" {
+		t.Errorf("snapshots deleted = %v, statuses deleted = %v, want seat-a and dev/alice", fake.deletedResolved, fake.deletedStatusSeats)
+	}
+	if rec := doAgentsRequest(t, mux, http.MethodDelete, seatPath, ""); rec.Code != http.StatusNotFound {
+		t.Errorf("second delete: status = %d, want 404", rec.Code)
+	}
+	rec := doAgentsRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	doc := decodeRigSpec(t, rec)
+	if strings.Contains(doc.RigSpec.YAML, "alice") || strings.Contains(doc.RigSpec.YAML, "delegates_to") || strings.Contains(doc.RigSpec.YAML, "can_observe") {
+		t.Errorf("rigspec after delete still mentions the seat or its edges: %s", doc.RigSpec.YAML)
+	}
+
+	rec = doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("re-add the same seat key: status = %d: %s", rec.Code, rec.Body.String())
+	}
+	rec = doAgentsRequest(t, mux, http.MethodGet, seatPath+"/links", "")
+	if strings.Contains(rec.Body.String(), "delegates_to") || strings.Contains(rec.Body.String(), "can_observe") {
+		t.Errorf("re-added seat has the old links: %s", rec.Body.String())
+	}
+	if len(fake.overlays) != 0 {
+		t.Errorf("re-added seat has the old overlay: %+v", fake.overlays)
 	}
 }
 
@@ -779,8 +821,8 @@ func TestSeatAdminDeleteLink(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
@@ -840,9 +882,9 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	ops := repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: dev.ID, Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "m", Version: "1.0.0"}}}
 	other := fake.seedRoom("other")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: dev.ID, SeatKey: "alice", Status: "active"},
-		&repositories.Seat{ID: "seat-b", RoomID: dev.ID, SeatKey: "bob", Status: "removed"},
-		&repositories.Seat{ID: "seat-x", RoomID: other.ID, SeatKey: "xena", Status: "active"},
+		&repositories.Seat{ID: "seat-a", RoomID: dev.ID, SeatKey: "alice"},
+		&repositories.Seat{ID: "seat-b", RoomID: dev.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-x", RoomID: other.ID, SeatKey: "xena"},
 	)
 	fake.links = append(fake.links,
 		&repositories.SeatLink{FromSeatID: "seat-a", ToSeatID: "seat-b", Kind: "delegates_to", Allow: true},
@@ -875,7 +917,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 		t.Errorf("rooms left = %+v, want only other", fake.rooms)
 	}
 	if len(fake.seats) != 1 || fake.seats[0].SeatKey != "xena" {
-		t.Errorf("seats left = %+v, want only xena (removed seats go too)", fake.seats)
+		t.Errorf("seats left = %+v, want only xena", fake.seats)
 	}
 	if len(fake.links) != 0 {
 		t.Errorf("links left = %d, want 0", len(fake.links))
@@ -897,7 +939,7 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 func TestSeatAdminOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"})
 	mux := seatAdminTestMux(t, fake)
 	cases := []struct {
 		path string
@@ -937,8 +979,8 @@ func TestSeatAdminLinks(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`)
@@ -964,9 +1006,9 @@ func TestSeatAdminLinkKinds(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Status: "active"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "active"},
-		&repositories.Seat{ID: "seat-c", RoomID: room.ID, SeatKey: "carol", Status: "active"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-c", RoomID: room.ID, SeatKey: "carol"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	for _, kind := range []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"} {
@@ -1025,7 +1067,7 @@ func TestSeatAdminSetOccupant(t *testing.T) {
 	pinned := "1.0.0"
 	fake.seats = append(fake.seats, &repositories.Seat{
 		ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", PinnedVersion: &pinned,
-		Runtime: "claude-code", Model: "sonnet", Status: "active",
+		Runtime: "claude-code", Model: "sonnet",
 	})
 	mux := seatAdminTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
@@ -1052,7 +1094,7 @@ func TestSeatAdminSetOccupant(t *testing.T) {
 func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", Status: "active"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code"})
 	mux := seatAdminTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
 	for _, body := range []string{
@@ -1079,7 +1121,7 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", Status: "active"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code"})
 	mux := seatAdminTestMux(t, fake)
 	for _, runtime := range []string{"pi", "omp"} {
 		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"`+runtime+`"}`)
@@ -1089,16 +1131,15 @@ func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 	}
 }
 
-func TestSeatAdminSetOccupantNotFoundAndRemoved(t *testing.T) {
+func TestSeatAdminSetOccupantNotFound(t *testing.T) {
 	fake := newFakeSeatAdmin()
-	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", Status: "removed"})
+	fake.seedRoom("dev")
+	fake.seedRoom("dev")
 	mux := seatAdminTestMux(t, fake)
 	body := `{"runtime":"codex","model":""}`
 	for path, want := range map[string]int{
 		"/api/v2/openrig/rooms/ghost/seats/bob/occupant": http.StatusNotFound,
 		"/api/v2/openrig/rooms/dev/seats/ghost/occupant": http.StatusNotFound,
-		"/api/v2/openrig/rooms/dev/seats/bob/occupant":   http.StatusConflict,
 	} {
 		if rec := doAgentsRequest(t, mux, http.MethodPut, path, body); rec.Code != want {
 			t.Errorf("PUT %s: status = %d, want %d: %s", path, rec.Code, want, rec.Body.String())
@@ -1174,7 +1215,7 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 		fake := newFakeSeatAdmin()
 		room := fake.seedRoom("dev")
 		for _, key := range []string{"a", "b", "c"} {
-			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-" + key, RoomID: room.ID, SeatKey: key, Status: "active"})
+			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-" + key, RoomID: room.ID, SeatKey: key})
 		}
 		return fake, seatAdminTestMux(t, fake)
 	}
@@ -1235,13 +1276,15 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 			t.Fatalf("same link again: %d %s", rec.Code, rec.Body.String())
 		}
 	})
-	t.Run("removed seats do not count", func(t *testing.T) {
+	t.Run("a removed seat's links do not count", func(t *testing.T) {
 		fake, mux := setup()
 		put(mux, "a", "b", "delegates_to", "")
-		fake.seats[1].Status = "removed"
-		fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b2", RoomID: fake.seats[0].RoomID, SeatKey: "b2", Status: "active"})
+		if rec := doAgentsRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/b", ""); rec.Code != http.StatusOK {
+			t.Fatalf("remove seat b: %d %s", rec.Code, rec.Body.String())
+		}
+		fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-b2", RoomID: fake.seats[0].RoomID, SeatKey: "b2"})
 		if rec := put(mux, "b2", "a", "delegates_to", ""); rec.Code != http.StatusOK {
-			t.Fatalf("link next to a link of a removed seat: %d %s", rec.Code, rec.Body.String())
+			t.Fatalf("link next to the links of a removed seat: %d %s", rec.Code, rec.Body.String())
 		}
 	})
 }

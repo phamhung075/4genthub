@@ -116,11 +116,9 @@ CREATE TABLE IF NOT EXISTS seats (
     pinned_version TEXT,
     runtime TEXT NOT NULL,
     model TEXT NOT NULL,
-    status TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key),
-    CONSTRAINT ck_seats_status CHECK (status IN ('active', 'removed'))
+    CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key)
 );
 
 CREATE INDEX IF NOT EXISTS ix_seats_user_id ON seats (user_id);

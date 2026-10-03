@@ -129,7 +129,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	must(t, err)
 	pinned, err := seats.Create(ctx, user, repositories.Seat{
 		RoomID: room.ID, SeatKey: "pinned", SeatTypeID: latest.SeatTypeID, PinnedVersion: &latest.Version,
-		Runtime: "claude-code", Model: "sonnet", Status: "active",
+		Runtime: "claude-code", Model: "sonnet",
 	})
 	must(t, err)
 	beforeSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
@@ -141,10 +141,12 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 		t.Fatalf("runtime switch of a pinned seat: runtime %s, hash unchanged = %v", afterSwitch.Runtime, afterSwitch.Hash == beforeSwitch.Hash)
 	}
 
-	// A removed seat cannot be resolved.
-	must(t, seats.MarkRemoved(ctx, user, reviewer.ID))
+	// A deleted seat cannot be resolved.
+	must(t, links.DeleteBySeat(ctx, user, reviewer.ID))
+	must(t, resolved.DeleteBySeat(ctx, user, reviewer.ID))
+	must(t, seats.Delete(ctx, user, reviewer.ID))
 	if _, err := svc.ResolveSeat(ctx, user, "dev", "reviewer"); err == nil {
-		t.Error("removed seat resolved")
+		t.Error("deleted seat resolved")
 	}
 	// Tenant isolation: another user sees nothing.
 	if _, err := svc.ResolveSeat(ctx, user+"-other", "dev", "coder"); err == nil {
@@ -167,7 +169,7 @@ func mustSeat(t *testing.T, ctx context.Context, seats repositories.SeatReposito
 		t.Fatalf("seat type %s not seeded", typeSlug)
 	}
 	seat, err := seats.Create(ctx, user, repositories.Seat{
-		RoomID: roomID, SeatKey: key, SeatTypeID: version.SeatTypeID, Runtime: "claude-code", Model: "sonnet", Status: "active",
+		RoomID: roomID, SeatKey: key, SeatTypeID: version.SeatTypeID, Runtime: "claude-code", Model: "sonnet",
 	})
 	must(t, err)
 	return seat

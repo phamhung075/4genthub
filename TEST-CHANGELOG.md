@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — seat removal is a hard delete
+
+- Added: `TestSeatAdminRemoveSeatIsAHardDelete` (other user 404 and nothing deleted, links of both directions, overlay, snapshots and statuses gone, second delete 404, rigspec without the seat or its edges, re-adding the key starts clean), `TestRemoveSeatDeletesOnlyThatSeatsRows`, `TestRemoveSeatAbsentRoomOrSeat`, and a `DeleteSeatStatusForSeat` block in `TestSeatDeletesIntegration` (other tenant, other seat and other room delete nothing).
+- Changed: `TestSeatAdminListExcludesRemovedSeats` -> `TestSeatAdminListSeats`, `TestSeatAdminSetOccupantNotFoundAndRemoved` -> `...NotFound`, the launch-cycle subtest now removes the seat through the API, the rigspec tests lose the `Status` fixtures, `TestRoomRigSpecRendersActiveSeatsEdgesAndHashes` -> `...RendersSeatsEdgesAndHashes` (a link to a deleted seat is skipped). `TestSeatResolutionEndToEnd` deletes the seat's links and snapshots before the seat. The real-PG tests read `SEAT_TEST_DATABASE_URL`, not `AGENTHUB_TEST_PG_URL`, and need a database without tables from an older schema (`default_runtime` NOT NULL): ran on a fresh database, all pass.
+
 ## 2026-10-03 — member permission policy in the rigspec
 
 - Added: `TestCheckPermissionPolicy`, `TestDefaultPermissionPolicyIsConservative`, `TestRenderRoomMemberPermissionPolicy`, `TestRenderRoomMemberPolicyOverridesRigLevel`, `TestRenderRoomRejectsInvalidMemberPolicy`, `TestRenderRoomMemberPolicyIsDeterministic` (drafted by deepseek session db826417-5704-40f0-b565-c0a2193f7bbe, not compiled by the worker; reviewed, tightened and run by me) and two self-loop cases in `TestFindLaunchCycle`. resolver and rigspec ok.

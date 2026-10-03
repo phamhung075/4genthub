@@ -417,6 +417,20 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1 AND room = 'ops'`, userID); n != 1 {
 		t.Fatalf("seat_status of another room = %d, want 1", n)
 	}
+	for _, c := range []struct{ user, room, seat string }{{other, "ops", "carol"}, {userID, "ops", "alice"}, {userID, "dev", "carol"}} {
+		if err := machines.DeleteSeatStatusForSeat(ctx, c.user, c.room, c.seat); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1 AND room = 'ops'`, userID); n != 1 {
+		t.Fatalf("seat_status after deletes of another tenant, seat and room = %d, want 1", n)
+	}
+	if err := machines.DeleteSeatStatusForSeat(ctx, userID, "ops", "carol"); err != nil {
+		t.Fatal(err)
+	}
+	if n := count(`SELECT count(*) FROM seat_status WHERE user_id = $1 AND room = 'ops'`, userID); n != 0 {
+		t.Fatalf("seat_status of the deleted seat = %d, want 0", n)
+	}
 	if err := rooms.Delete(ctx, userID, room.ID); err != nil {
 		t.Fatal(err)
 	}

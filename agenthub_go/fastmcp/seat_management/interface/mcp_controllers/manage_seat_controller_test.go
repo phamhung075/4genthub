@@ -78,8 +78,7 @@ func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, mo
 
 func newController(auth AuthenticationService) (*ManageSeatController, *fakeStore) {
 	store := &fakeStore{seats: []*repositories.Seat{
-		{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1", Runtime: "claude-code", Model: "sonnet", Status: "active"},
-		{ID: "s2", RoomID: "r1", SeatKey: "bob", SeatTypeID: "st1", Runtime: "codex", Status: "removed"},
+		{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1", Runtime: "claude-code", Model: "sonnet"},
 	}}
 	return NewManageSeatController(auth, seatservices.NewSeatAdminService(store)), store
 }
@@ -95,7 +94,6 @@ func field(t *testing.T, m *tmentities.OrderedMap[any], key string) any {
 	return v
 }
 
-// TestManageSeatList also checks that the removed seat bob is not listed.
 func TestManageSeatList(t *testing.T) {
 	c, _ := newController(&fakeAuth{id: "u"})
 	resp := c.ManageSeat(context.Background(), "list", nil, nil, nil, nil, nil)
@@ -149,7 +147,6 @@ func TestManageSeatFailures(t *testing.T) {
 		{"bad model", "set_occupant", ptr("dev"), ptr("alice"), ptr("codex"), ptr("a b")},
 		{"unknown room", "get", ptr("ghost"), ptr("alice"), nil, nil},
 		{"unknown seat", "get", ptr("dev"), ptr("ghost"), nil, nil},
-		{"removed seat", "set_occupant", ptr("dev"), ptr("bob"), ptr("claude-code"), nil},
 	}
 	for _, tc := range cases {
 		resp := c.ManageSeat(ctx, tc.action, tc.room, tc.seat, tc.runtime, tc.model, nil)
@@ -157,8 +154,8 @@ func TestManageSeatFailures(t *testing.T) {
 			t.Errorf("%s: response = %v", tc.name, resp)
 		}
 	}
-	if store.seats[0].Runtime != "claude-code" || store.seats[1].Runtime != "codex" {
-		t.Errorf("a failed call changed a seat: %+v %+v", store.seats[0], store.seats[1])
+	if store.seats[0].Runtime != "claude-code" {
+		t.Errorf("a failed call changed a seat: %+v", store.seats[0])
 	}
 }
 

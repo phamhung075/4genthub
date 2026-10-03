@@ -29,6 +29,15 @@ func (f *fakeRoomDeletionStore) GetRoomBySlug(context.Context, string, string) (
 	return f.room, nil
 }
 
+func (f *fakeRoomDeletionStore) FindSeat(_ context.Context, _, _, seatKey string) (*repositories.Seat, error) {
+	for i := range f.seats {
+		if f.seats[i].SeatKey == seatKey {
+			return &f.seats[i], nil
+		}
+	}
+	return nil, nil
+}
+
 func (f *fakeRoomDeletionStore) ListSeats(context.Context, string, string) ([]repositories.Seat, error) {
 	return f.seats, nil
 }
@@ -57,6 +66,10 @@ func (f *fakeRoomDeletionStore) DeleteSeatStatusForRoom(_ context.Context, _, ro
 	return f.record("status:" + roomSlug)
 }
 
+func (f *fakeRoomDeletionStore) DeleteSeatStatusForSeat(_ context.Context, _, roomSlug, seatKey string) error {
+	return f.record("status:" + roomSlug + "/" + seatKey)
+}
+
 func (f *fakeRoomDeletionStore) DeleteRoom(_ context.Context, _, roomID string) error {
 	return f.record("room:" + roomID)
 }
@@ -68,7 +81,7 @@ func (f *fakeRoomDeletionStore) InTransaction(ctx context.Context, fn func(ctx c
 func TestDeleteRoomRemovesDependentsBeforeParents(t *testing.T) {
 	store := &fakeRoomDeletionStore{
 		room:  &repositories.Room{ID: "r1", Slug: "dev"},
-		seats: []repositories.Seat{{ID: "s1"}, {ID: "s2", Status: "removed"}},
+		seats: []repositories.Seat{{ID: "s1"}, {ID: "s2"}},
 	}
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
@@ -101,5 +114,30 @@ func TestDeleteRoomStopsAtFirstFailure(t *testing.T) {
 		if strings.HasPrefix(call, "room") {
 			t.Errorf("room rows deleted after a failure: %v", store.calls)
 		}
+	}
+}
+
+func TestRemoveSeatDeletesOnlyThatSeatsRows(t *testing.T) {
+	store := &fakeRoomDeletionStore{
+		room:  &repositories.Room{ID: "r1", Slug: "dev"},
+		seats: []repositories.Seat{{ID: "s1", SeatKey: "alice"}, {ID: "s2", SeatKey: "bob"}},
+	}
+	if err := NewRoomDeletionService(store).RemoveSeat(context.Background(), "u", "dev", "bob"); err != nil {
+		t.Fatalf("RemoveSeat: %v", err)
+	}
+	want := "links:s2,overlay:s2,resolved:s2,seat:s2,status:dev/bob"
+	if got := strings.Join(store.calls, ","); got != want {
+		t.Errorf("calls = %s\nwant    %s", got, want)
+	}
+}
+
+func TestRemoveSeatAbsentRoomOrSeat(t *testing.T) {
+	noRoom := &fakeRoomDeletionStore{}
+	if err := NewRoomDeletionService(noRoom).RemoveSeat(context.Background(), "u", "ghost", "alice"); !errors.Is(err, ErrRoomNotFound) || len(noRoom.calls) != 0 {
+		t.Errorf("absent room: err = %v, calls = %v", err, noRoom.calls)
+	}
+	noSeat := &fakeRoomDeletionStore{room: &repositories.Room{ID: "r1", Slug: "dev"}}
+	if err := NewRoomDeletionService(noSeat).RemoveSeat(context.Background(), "u", "dev", "ghost"); !errors.Is(err, ErrSeatNotFound) || len(noSeat.calls) != 0 {
+		t.Errorf("absent seat: err = %v, calls = %v", err, noSeat.calls)
 	}
 }

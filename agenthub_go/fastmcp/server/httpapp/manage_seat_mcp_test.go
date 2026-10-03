@@ -77,7 +77,7 @@ func TestMCPManageSeatSetOccupant(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "false")
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", Status: "active"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code"})
 	app := newManageSeatTestApp(t, fake)
 
 	payload := `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"manage_seat","arguments":{"action":"set_occupant","room":"dev","seat":"alice","runtime":"codex","model":"gpt-5.1"}}}`

@@ -124,6 +124,14 @@ func (r *ORMMachineStatusRepository) List(ctx context.Context, userID string) ([
 	return machines, err
 }
 
+// DeleteSeatStatusForSeat removes one seat's reported statuses, on every machine, for the user.
+func (r *ORMMachineStatusRepository) DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `DELETE FROM "seat_status" WHERE "user_id" = $1 AND "room" = $2 AND "seat" = $3`, userID, roomSlug, seatKey)
+		return err
+	})
+}
+
 // DeleteSeatStatusForRoom removes the room's reported seat statuses for the user.
 func (r *ORMMachineStatusRepository) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
 	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {

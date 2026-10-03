@@ -122,7 +122,6 @@ type Seat struct {
 	PinnedVersion *string
 	Runtime       string
 	Model         string
-	Status        string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -133,7 +132,6 @@ type SeatRepository interface {
 	GetByID(ctx context.Context, userID, seatID string) (*Seat, error)
 	FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*Seat, error)
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
-	MarkRemoved(ctx context.Context, userID, seatID string) error
 	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	Delete(ctx context.Context, userID, seatID string) error
 }
@@ -296,4 +294,6 @@ type MachineStatusRepository interface {
 	// DeleteSeatStatusForRoom removes the reported statuses of every seat of the room, on
 	// every machine; seat_status stores the room slug, not a foreign key.
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
+	// DeleteSeatStatusForSeat removes the reported statuses of one seat on every machine.
+	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
 }

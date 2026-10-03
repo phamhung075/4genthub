@@ -4,7 +4,7 @@ package httpapp
 //
 //	GET /api/v2/openrig/rooms/{room}/rigspec[?permission_policy=locked|standard|open|yolo|none]
 //
-// The room becomes a pod, its active seats become members resolved to their pinned
+// The room becomes a pod, its seats become members resolved to their pinned
 // snapshot hashes, and allowed seat links become pod-local edges. The route is authed
 // and tenant-scoped by the caller's user id.
 
@@ -149,25 +149,20 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	active := make([]repositories.Seat, 0, len(seats))
-	activeByID := make(map[string]repositories.Seat, len(seats))
+	seatsByID := make(map[string]repositories.Seat, len(seats))
 	for _, seat := range seats {
-		if seat.Status != "active" {
-			continue
-		}
-		active = append(active, seat)
-		activeByID[seat.ID] = seat
+		seatsByID[seat.ID] = seat
 	}
-	if len(active) == 0 {
-		writeDetail(w, http.StatusConflict, "room has no active seats")
+	if len(seats) == 0 {
+		writeDetail(w, http.StatusConflict, "room has no seats")
 		return
 	}
-	sort.Slice(active, func(i, j int) bool { return active[i].SeatKey < active[j].SeatKey })
+	sort.Slice(seats, func(i, j int) bool { return seats[i].SeatKey < seats[j].SeatKey })
 
-	specSeats := make([]rigspec.Seat, 0, len(active))
+	specSeats := make([]rigspec.Seat, 0, len(seats))
 	type resolvedSeat struct{ key, hash string }
-	hashes := make([]resolvedSeat, 0, len(active))
-	for _, seat := range active {
+	hashes := make([]resolvedSeat, 0, len(seats))
+	for _, seat := range seats {
 		resolved, err := source.ResolveSeat(r.Context(), uid, roomSlug, seat.SeatKey)
 		if err != nil {
 			writeDetail(w, http.StatusInternalServerError, err.Error())
@@ -185,7 +180,7 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		hashes = append(hashes, resolvedSeat{key: seat.SeatKey, hash: resolved.Hash})
 	}
 
-	edges, err := roomRigSpecEdges(r.Context(), source, uid, active, activeByID)
+	edges, err := roomRigSpecEdges(r.Context(), source, uid, seats, seatsByID)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -213,17 +208,17 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	writeJSON(w, http.StatusOK, body)
 }
 
-// roomRigSpecEdges keeps only allow=true links whose target is another active seat
+// roomRigSpecEdges keeps only allow=true links whose target is another seat of the room
 // in the same room; allow=false links are policy denies, not topology.
-func roomRigSpecEdges(ctx context.Context, source seatRigSpecSource, uid string, active []repositories.Seat, activeByID map[string]repositories.Seat) ([]rigspec.Edge, error) {
+func roomRigSpecEdges(ctx context.Context, source seatRigSpecSource, uid string, seats []repositories.Seat, seatsByID map[string]repositories.Seat) ([]rigspec.Edge, error) {
 	edges := make([]rigspec.Edge, 0)
-	for _, seat := range active {
+	for _, seat := range seats {
 		links, err := source.ListSeatLinksFrom(ctx, uid, seat.ID)
 		if err != nil {
 			return nil, err
 		}
 		for _, link := range links {
-			from, ok := activeByID[link.FromSeatID]
+			from, ok := seatsByID[link.FromSeatID]
 			if !ok || !link.Allow {
 				continue
 			}
@@ -231,7 +226,7 @@ func roomRigSpecEdges(ctx context.Context, source seatRigSpecSource, uid string,
 			if err != nil {
 				return nil, err
 			}
-			if target == nil || target.Status != "active" || target.RoomID != from.RoomID {
+			if target == nil || target.RoomID != from.RoomID {
 				continue
 			}
 			edges = append(edges, rigspec.Edge{Kind: link.Kind, From: from.SeatKey, To: target.SeatKey})

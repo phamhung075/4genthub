@@ -16,8 +16,6 @@ import (
 	"agenthub/fastmcp/seat_management/domain/seatrenderer"
 )
 
-const statusActive = "active"
-
 // CheckedCatalog is a resolver.Catalog whose lookups can fail; Err reports the first
 // database error, which the bool-only Catalog methods cannot carry.
 type CheckedCatalog interface {
@@ -52,7 +50,7 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 	if err != nil {
 		return nil, err
 	}
-	if seat == nil || seat.Status != statusActive {
+	if seat == nil {
 		return nil, fmt.Errorf("seat %q not found in room %q", seatKey, roomSlug)
 	}
 	seatType, err := s.SeatTypes.GetByID(ctx, userID, seat.SeatTypeID)
@@ -156,7 +154,7 @@ func (s *SeatResolutionService) policy(ctx context.Context, userID string, seat 
 		if err != nil {
 			return nil, "", err
 		}
-		if target == nil || target.Status != statusActive {
+		if target == nil {
 			continue
 		}
 		policy.Links = append(policy.Links, commpolicy.Link{

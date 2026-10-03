@@ -75,7 +75,6 @@ type SeatORM struct {
 	PinnedVersion *string   `db:"pinned_version"`
 	Runtime       string    `db:"runtime"`
 	Model         string    `db:"model"`
-	Status        string    `db:"status"`
 	CreatedAt     time.Time `db:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at"`
 }

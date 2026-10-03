@@ -27,12 +27,8 @@ func NewORMSeatRepository(sessions *database.SessionManager) (*ORMSeatRepository
 	return &ORMSeatRepository{ORMRepository: base}, nil
 }
 
-// Create inserts the seat; an empty status defaults to active.
+// Create inserts the seat.
 func (r *ORMSeatRepository) Create(ctx context.Context, userID string, seat domainrepo.Seat) (*domainrepo.Seat, error) {
-	status := seat.Status
-	if status == "" {
-		status = "active"
-	}
 	created, err := r.ORMRepository.Create(ctx, baserepo.NewKwargs(
 		"user_id", userID,
 		"room_id", seat.RoomID,
@@ -41,7 +37,6 @@ func (r *ORMSeatRepository) Create(ctx context.Context, userID string, seat doma
 		"pinned_version", seat.PinnedVersion,
 		"runtime", seat.Runtime,
 		"model", seat.Model,
-		"status", status,
 	))
 	if err != nil {
 		return nil, err
@@ -79,20 +74,6 @@ func (r *ORMSeatRepository) ListByRoom(ctx context.Context, userID, roomID strin
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].SeatKey < out[j].SeatKey })
 	return out, nil
-}
-
-// MarkRemoved sets the seat status to removed.
-func (r *ORMSeatRepository) MarkRemoved(ctx context.Context, userID, seatID string) error {
-	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
-	if err != nil {
-		return err
-	}
-	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx,
-			`UPDATE "seats" SET "status" = 'removed', "updated_at" = $1 WHERE "user_id" = $2 AND "id" = $3`,
-			time.Now().UTC(), userID, id)
-		return err
-	})
 }
 
 // UpdateOccupant sets the runtime and model of the seat.

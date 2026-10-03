@@ -14,7 +14,6 @@ var (
 	ErrInvalidOccupant = errors.New("invalid occupant")
 	ErrRoomNotFound    = errors.New("room not found")
 	ErrSeatNotFound    = errors.New("seat not found")
-	ErrSeatRemoved     = errors.New("seat removed")
 
 	ErrSeatTypeNotFound       = errors.New("seat type not found")
 	ErrInvalidSeatTypeVersion = errors.New("invalid seat type version")
@@ -77,9 +76,7 @@ func (s *SeatAdminService) ListSeats(ctx context.Context, userID, roomSlug strin
 			return nil, err
 		}
 		for _, seat := range seats {
-			if seat.Status != "removed" {
-				views = append(views, SeatView{Seat: seat, RoomSlug: room.Slug, SeatTypeSlug: slugs[seat.SeatTypeID]})
-			}
+			views = append(views, SeatView{Seat: seat, RoomSlug: room.Slug, SeatTypeSlug: slugs[seat.SeatTypeID]})
 		}
 	}
 	return views, nil
@@ -180,7 +177,7 @@ func (s *SeatAdminService) room(ctx context.Context, userID, slug string) (*repo
 	return room, nil
 }
 
-// seat finds an existing seat; a removed seat is ErrSeatRemoved, an absent one ErrSeatNotFound.
+// seat finds an existing seat; an absent one is ErrSeatNotFound.
 func (s *SeatAdminService) seat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.Room, *repositories.Seat, error) {
 	room, err := s.room(ctx, userID, roomSlug)
 	if err != nil {
@@ -192,9 +189,6 @@ func (s *SeatAdminService) seat(ctx context.Context, userID, roomSlug, seatKey s
 	}
 	if seat == nil {
 		return nil, nil, fmt.Errorf("%w: seat %q", ErrSeatNotFound, seatKey)
-	}
-	if seat.Status == "removed" {
-		return nil, nil, fmt.Errorf("%w: seat %q", ErrSeatRemoved, seatKey)
 	}
 	return room, seat, nil
 }
@@ -234,6 +228,5 @@ func SeatBody(seat *repositories.Seat, seatTypeSlug string) *entities.OrderedMap
 	}
 	body.Set("runtime", seat.Runtime)
 	body.Set("model", seat.Model)
-	body.Set("status", seat.Status)
 	return body
 }

@@ -50,23 +50,18 @@ func (s *SeatLinkService) checkLaunchCycle(ctx context.Context, userID, roomID s
 	}
 	keys := make(map[string]string, len(seats))
 	for _, seat := range seats {
-		if seat.Status != "removed" {
-			keys[seat.ID] = seat.SeatKey
-		}
+		keys[seat.ID] = seat.SeatKey
 	}
 	var edges []rigspec.Edge
 	for _, seat := range seats {
-		if _, active := keys[seat.ID]; !active {
-			continue
-		}
 		links, err := s.store.ListSeatLinks(ctx, userID, seat.ID)
 		if err != nil {
 			return err
 		}
 		for _, l := range links {
 			replaced := l.FromSeatID == link.FromSeatID && l.ToSeatID == link.ToSeatID && l.Kind == link.Kind
-			to, toActive := keys[l.ToSeatID]
-			if l.Allow && !replaced && toActive {
+			to, inRoom := keys[l.ToSeatID]
+			if l.Allow && !replaced && inRoom {
 				edges = append(edges, rigspec.Edge{Kind: l.Kind, From: keys[l.FromSeatID], To: to})
 			}
 		}

@@ -92,9 +92,9 @@ func TestResolveSeatRuntimeComesFromThePinnedVersion(t *testing.T) {
 		SeatTypes: seatTypes, Rooms: resolutionRooms{}, Overlays: resolutionOverlays{}, Links: resolutionLinks{},
 		Resolved: resolutionSnapshots{},
 		Seats: resolutionSeats{seats: []repositories.Seat{
-			{ID: "s-pinned", RoomID: "r1", SeatKey: "pinned", SeatTypeID: "st1", PinnedVersion: &pinned, Status: "active"},
-			{ID: "s-latest", RoomID: "r1", SeatKey: "latest", SeatTypeID: "st1", Status: "active"},
-			{ID: "s-own", RoomID: "r1", SeatKey: "own", SeatTypeID: "st1", PinnedVersion: &pinned, Runtime: "codex", Status: "active"},
+			{ID: "s-pinned", RoomID: "r1", SeatKey: "pinned", SeatTypeID: "st1", PinnedVersion: &pinned},
+			{ID: "s-latest", RoomID: "r1", SeatKey: "latest", SeatTypeID: "st1"},
+			{ID: "s-own", RoomID: "r1", SeatKey: "own", SeatTypeID: "st1", PinnedVersion: &pinned, Runtime: "codex"},
 		}},
 		NewCatalog: func(string) CheckedCatalog { return emptyCatalog{} },
 		MCPURL:     "https://api.example.test/mcp",

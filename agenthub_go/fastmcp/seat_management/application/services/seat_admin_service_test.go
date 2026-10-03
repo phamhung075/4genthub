@@ -98,9 +98,8 @@ func newSeatAdminFixture() (*SeatAdminService, *fakeSeatAdminStore) {
 		rooms:     []repositories.Room{{ID: "r1", Slug: "dev"}, {ID: "r2", Slug: "ops"}},
 		seatTypes: []repositories.SeatType{{ID: "st1", Slug: "coder"}},
 		seats: []*repositories.Seat{
-			{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1", PinnedVersion: &pinned, Runtime: "claude-code", Model: "sonnet", Status: "active"},
-			{ID: "s2", RoomID: "r1", SeatKey: "bob", SeatTypeID: "st1", Runtime: "codex", Status: "removed"},
-			{ID: "s3", RoomID: "r2", SeatKey: "carol", SeatTypeID: "st1", Runtime: "codex", Status: "active"},
+			{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1", PinnedVersion: &pinned, Runtime: "claude-code", Model: "sonnet"},
+			{ID: "s3", RoomID: "r2", SeatKey: "carol", SeatTypeID: "st1", Runtime: "codex"},
 		},
 	}
 	return NewSeatAdminService(store), store
@@ -127,11 +126,8 @@ func TestSeatAdminServiceGetSeat(t *testing.T) {
 	if err != nil || view.Seat.ID != "s1" || view.SeatTypeSlug != "coder" {
 		t.Fatalf("GetSeat = %+v, %v", view, err)
 	}
-	cases := map[string]error{"ghost": ErrSeatNotFound, "bob": ErrSeatRemoved}
-	for key, want := range cases {
-		if _, err := service.GetSeat(context.Background(), "u", "dev", key); !errors.Is(err, want) {
-			t.Errorf("GetSeat(%s) error = %v, want %v", key, err, want)
-		}
+	if _, err := service.GetSeat(context.Background(), "u", "dev", "ghost"); !errors.Is(err, ErrSeatNotFound) {
+		t.Errorf("GetSeat(ghost) error = %v, want ErrSeatNotFound", err)
 	}
 	if _, err := service.GetSeat(context.Background(), "u", "ghost", "alice"); !errors.Is(err, ErrRoomNotFound) {
 		t.Errorf("GetSeat(ghost room) error = %v, want ErrRoomNotFound", err)
@@ -164,9 +160,6 @@ func TestSeatAdminServiceSetOccupantErrors(t *testing.T) {
 	}
 	if _, err := service.SetOccupant(ctx, "u", "dev", "ghost", "codex", ""); !errors.Is(err, ErrSeatNotFound) {
 		t.Errorf("unknown seat error = %v", err)
-	}
-	if _, err := service.SetOccupant(ctx, "u", "dev", "bob", "claude-code", ""); !errors.Is(err, ErrSeatRemoved) {
-		t.Errorf("removed seat error = %v", err)
 	}
 	if store.seats[0].Runtime != "claude-code" || store.seats[1].Runtime != "codex" {
 		t.Errorf("a rejected call changed a seat: %+v %+v", store.seats[0], store.seats[1])
