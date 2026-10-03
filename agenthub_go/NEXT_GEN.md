@@ -209,7 +209,7 @@ Committed locally, reviewed or in review. None is claimed verified in production
 
 Open defects (from the debugger):
 - [x] The bridge dropped the pod from the seat key, so seats from different pods collided, and the "invalid names" message was wrong. Fixed locally in `9f8b1d0d`.
-- [x] An empty database without `AUTO_MIGRATE` returned 500 `relation machines does not exist`. Fixed locally in `1b7e7bdc` and `cf7908e4` (the server logs the tables the database lacks).
+- [x] An empty database without `AUTO_MIGRATE` returned 500 `relation machines does not exist`. Fixed locally in `1b7e7bdc` (the server logs the tables the database lacks).
 - [ ] `POST seat-types/seed` needs `AGENTHUB_PUBLIC_URL`. This is a real requirement; it is documented in the team-setup docstring.
 - [x] `POST` rooms was an upsert. Fixed locally in `c2f8a1e8` (a duplicate room slug is rejected).
 - [x] A runtime and model mismatch was accepted on seat switch. Fixed locally in `29391fe7` (a Claude model on the codex runtime is rejected).
@@ -249,6 +249,10 @@ Open items from this run:
 - [x] Overlay content was stored without `secretscan`. Fixed locally in `58246602` (the three PUT overlay routes scan it).
 - [ ] Codex seats have no deny (see G3).
 - [ ] Owner action: a production bearer token may be exposed in git-ignored local logs and `claude-hooks` transcripts. Check those files, rotate the token if it appears, and clear the files. No value is recorded here.
+
+## Process lessons
+
+- Shared-index sweeps put the `seatcheck` changelog blocks into `1b7e7bdc` and `3b07eebf` before their code landed in `951a4136`. The behavior is correct and `git blame` is misleading; history is not rewritten. Commit with an explicit pathspec.
 
 ## Environment facts useful to the next session
 - Working trees: `~/__projects__/4genthub` (branch checked on 2026-09-30: clean of my commits — I made none). Pre-existing unrelated changes not made by me: `.claude`, `CLAUDE.md`, `package-lock.json` (deleted), `testground/`.
