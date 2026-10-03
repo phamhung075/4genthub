@@ -47,23 +47,40 @@ var intents = map[string]commpolicy.Intent{
 }
 
 // defaultPinsDir is where scripts/openrig_seat_sync.py writes the pinned seat directories
-// (its DEFAULT_OUT), relative to the home directory.
+// (its DEFAULT_OUT), relative to the home directory. It is not a flag: the seat this guard
+// constrains must not choose where its policy and audit trail live.
 const defaultPinsDir = ".openrig/agenthub-seats"
+
+// Exit codes of send, besides 0 (delivered) and the usage/policy error 2.
+const (
+	exitAuditFailed    = 1
+	exitDenied         = 3
+	exitDeliveryFailed = 5
+)
 
 // Package-level seams, replaced by tests.
 var (
+	// pinsDir returns the pinned seats directory.
+	pinsDir = defaultPins
 	// identify returns who the calling seat is.
 	identify = rigWhoami
 	// deliver sends text to the session named target and returns the exit code.
 	deliver = rigSend
 )
 
+func defaultPins() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, defaultPinsDir), nil
+}
+
 func runSend(args []string, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("send", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	to := fs.String("to", "", "recipient seat")
 	intentName := fs.String("intent", "", "message intent")
-	pins := fs.String("pins", "", "pinned seats directory (default ~/"+defaultPinsDir+")")
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, "usage: seatcheck send --to <seat> --intent <task|escalation|report|question|notice> -- <message words...>")
 	}
@@ -80,20 +97,21 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "seatcheck send: unknown intent %q\n", *intentName)
 		return 2
 	}
-	if *pins == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Fprintf(stderr, "seatcheck send: home directory: %v\n", err)
-			return 2
-		}
-		*pins = filepath.Join(home, defaultPinsDir)
+	pins, err := pinsDir()
+	if err != nil {
+		fmt.Fprintf(stderr, "seatcheck send: pins directory: %v\n", err)
+		return 2
 	}
 	who, err := identify()
 	if err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: identity: %v\n", err)
 		return 2
 	}
-	seatDir := filepath.Join(*pins, who.Rig, who.Member)
+	if !safePathSegment(who.Rig) || !safePathSegment(who.Member) {
+		fmt.Fprintf(stderr, "seatcheck send: identity %q/%q is not a usable directory name\n", who.Rig, who.Member)
+		return 2
+	}
+	seatDir := filepath.Join(pins, who.Rig, who.Member)
 
 	data, err := os.ReadFile(filepath.Join(seatDir, "policy.json"))
 	if err != nil {
@@ -103,6 +121,10 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 	policy, err := commpolicy.ParsePolicy(data)
 	if err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: parse policy: %v\n", err)
+		return 2
+	}
+	if policy.Seat != who.Member {
+		fmt.Fprintf(stderr, "seatcheck send: the policy in %s belongs to seat %q, not %q\n", seatDir, policy.Seat, who.Member)
 		return 2
 	}
 
@@ -116,31 +138,65 @@ func runSend(args []string, stdout, stderr io.Writer) int {
 		Reason:     decision.Reason,
 		PolicyHash: commpolicy.PolicyHash(policy),
 	}
-	if err := appendAudit(filepath.Join(seatDir, "audit.jsonl"), record); err != nil {
+	auditPath := filepath.Join(seatDir, "audit.jsonl")
+	if err := appendAudit(auditPath, record); err != nil {
 		fmt.Fprintf(stderr, "seatcheck send: audit: %v\n", err)
-		return 1
+		return exitAuditFailed
 	}
 	if !decision.Allowed {
 		fmt.Fprintf(stderr, "denied: %s\n", decision.Reason)
-		return 3
+		return exitDenied
 	}
-	// The audit line above records the policy decision only; a recipient the roster does not
-	// list fails here, after an allowed decision.
+
 	// rig send resolves only full session names (<pod>-<member>@<rig>), which the roster of
-	// rig whoami carries.
-	session, ok := who.Peers[*to]
-	if !ok {
-		fmt.Fprintf(stderr, "seatcheck send: %q is not a seat of rig %q\n", *to, who.Rig)
-		return 1
+	// rig whoami carries. The decision line above is on disk; a delivery that cannot start or
+	// fails is recorded after it.
+	code := deliverTo(who, *to, strings.Join(words, " "), stdout, stderr)
+	record.Outcome = commpolicy.OutcomeDelivered
+	if code != 0 {
+		record.Outcome = commpolicy.OutcomeDeliveryFailed
 	}
-	return deliver(session, strings.Join(words, " "), stdout, stderr)
+	if err := appendAudit(auditPath, record); err != nil {
+		fmt.Fprintf(stderr, "seatcheck send: audit: %v\n", err)
+		return exitAuditFailed
+	}
+	if code != 0 {
+		return exitDeliveryFailed
+	}
+	return 0
 }
 
-// identity is the calling seat: its rig, its member name and the session name of every other
-// member of the rig, keyed by member name.
+// deliverTo resolves the recipient in the roster and delivers; any failure is a non-zero code
+// that runSend maps to exitDeliveryFailed, so it never reads as a policy result (2, 3, 4).
+func deliverTo(who identity, to, text string, stdout, stderr io.Writer) int {
+	sessions := who.Peers[to]
+	switch len(sessions) {
+	case 0:
+		fmt.Fprintf(stderr, "seatcheck send: %q is not a seat of rig %q\n", to, who.Rig)
+		return 1
+	case 1:
+	default:
+		fmt.Fprintf(stderr, "seatcheck send: %q is ambiguous in rig %q: %s\n", to, who.Rig, strings.Join(sessions, " and "))
+		return 1
+	}
+	if code := deliver(sessions[0], text, stdout, stderr); code != 0 {
+		fmt.Fprintf(stderr, "seatcheck send: delivery failed (rig send exit %d)\n", code)
+		return code
+	}
+	return 0
+}
+
+// safePathSegment reports whether name can be one directory name under the pins directory.
+func safePathSegment(name string) bool {
+	return name != "" && name != "." && name != ".." && !strings.ContainsAny(name, "/\\\x00")
+}
+
+// identity is the calling seat: its rig, its member name and the session names of the other
+// members of the rig, keyed by member name (more than one when a member name is repeated
+// across pods; sending to such a name is ambiguous, sending to any other peer is not).
 type identity struct {
 	Rig, Member string
-	Peers       map[string]string
+	Peers       map[string][]string
 }
 
 // rigWhoami reads the calling seat's identity from `rig whoami --json`.
@@ -170,41 +226,54 @@ func parseWhoami(data []byte) (identity, error) {
 	if rig == "" || member == "" {
 		return identity{}, errors.New("rig whoami returned no rig or member")
 	}
-	// A logical id is <pod>.<member>; the member is the part after the first dot (the pod is not
-	// always the rig name). A member name is unique in a rig, so a repeat is an error, not a
-	// silent last-one-wins.
-	peers := make(map[string]string, len(who.Peers))
+	// A logical id is <pod>.<member>; the member is the part after the first dot (the pod is
+	// not always the rig name).
+	peers := make(map[string][]string, len(who.Peers))
 	for _, p := range who.Peers {
 		_, name, ok := strings.Cut(p.LogicalID, ".")
 		if !ok || name == "" || p.SessionName == "" {
 			continue
 		}
-		if previous, dup := peers[name]; dup {
-			return identity{}, fmt.Errorf("member %q is in two pods of rig %q: %s and %s", name, rig, previous, p.SessionName)
-		}
-		peers[name] = p.SessionName
+		peers[name] = append(peers[name], p.SessionName)
 	}
 	return identity{Rig: rig, Member: member, Peers: peers}, nil
 }
 
-func appendAudit(path string, record commpolicy.AuditRecord) error {
+// appendAudit appends one JSON line and syncs it to disk, so a line written before delivery
+// survives a crash. The file must not be readable or writable by others.
+func appendAudit(path string, record commpolicy.AuditRecord) (err error) {
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if info.Mode().Perm()&0o077 != 0 {
+		return fmt.Errorf("%s has mode %v, want 0600", path, info.Mode().Perm())
+	}
 	line, err := json.Marshal(record)
 	if err != nil {
 		return err
 	}
-	_, err = f.Write(append(line, '\n'))
-	return err
+	if _, err = f.Write(append(line, '\n')); err != nil {
+		return err
+	}
+	return f.Sync()
 }
 
-// rigSend delivers text to target with `rig send`; its exit code is passed through.
+// rigSend delivers text to the session target with `rig send`. The `--` ends option parsing,
+// so a message such as "--rig=x" is text, never an option that widens the recipients, and
+// stdin is detached so rig cannot read the text from the seat's input. Its exit code is
+// returned unchanged; runSend maps any failure to its own code.
 func rigSend(target, text string, stdout, stderr io.Writer) int {
-	cmd := exec.Command("rig", "send", target, text)
-	cmd.Stdin = os.Stdin
+	cmd := exec.Command("rig", "send", "--", target, text)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	if err := cmd.Run(); err != nil {

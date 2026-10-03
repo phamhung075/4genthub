@@ -30,9 +30,9 @@ type delivery struct {
 
 // seatEnv installs identity and delivery stubs and returns the pins dir, the seat dir and the
 // recorded delivery. policy "" writes no policy file.
-func seatEnv(t *testing.T, policy string) (pins, seatDir string, got *delivery) {
+func seatEnv(t *testing.T, policy string) (seatDir string, got *delivery) {
 	t.Helper()
-	pins = t.TempDir()
+	pins := t.TempDir()
 	seatDir = filepath.Join(pins, testRig, testMember)
 	if err := os.MkdirAll(seatDir, 0700); err != nil {
 		t.Fatal(err)
@@ -43,22 +43,23 @@ func seatEnv(t *testing.T, policy string) (pins, seatDir string, got *delivery) 
 		}
 	}
 	got = &delivery{}
-	oldIdentify, oldDeliver := identify, deliver
+	oldPins, oldIdentify, oldDeliver := pinsDir, identify, deliver
+	pinsDir = func() (string, error) { return pins, nil }
 	identify = func() (identity, error) {
-		return identity{Rig: testRig, Member: testMember, Peers: map[string]string{"b": "pod-b@r"}}, nil
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{"b": {"pod-b@r"}}}, nil
 	}
 	deliver = func(target, text string, _, _ io.Writer) int {
 		got.calls++
 		got.target, got.text = target, text
 		return got.code
 	}
-	t.Cleanup(func() { identify, deliver = oldIdentify, oldDeliver })
-	return pins, seatDir, got
+	t.Cleanup(func() { pinsDir, identify, deliver = oldPins, oldIdentify, oldDeliver })
+	return seatDir, got
 }
 
-func send(pins string, args ...string) (code int, stdout, stderr string) {
+func send(args ...string) (code int, stdout, stderr string) {
 	var out, errb bytes.Buffer
-	code = run(append([]string{"send", "--pins", pins}, args...), &out, &errb)
+	code = run(append([]string{"send"}, args...), &out, &errb)
 	return code, out.String(), errb.String()
 }
 
@@ -83,8 +84,8 @@ func auditRecords(t *testing.T, seatDir string) []commpolicy.AuditRecord {
 }
 
 func TestSendAllowedDelivers(t *testing.T) {
-	pins, seatDir, got := seatEnv(t, allowPolicy)
-	code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hello", "world")
+	seatDir, got := seatEnv(t, allowPolicy)
+	code, _, stderr := send("--to", "b", "--intent", "task", "--", "hello", "world")
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr %q)", code, stderr)
 	}
@@ -92,8 +93,11 @@ func TestSendAllowedDelivers(t *testing.T) {
 		t.Fatalf("delivery = %+v, want one call to pod-b@r with %q", got, "hello world")
 	}
 	records := auditRecords(t, seatDir)
-	if len(records) != 1 || !records[0].Allowed || records[0].From != "a" || records[0].To != "b" || records[0].Intent != commpolicy.IntentTask {
+	if len(records) != 2 || !records[0].Allowed || records[0].From != "a" || records[0].To != "b" || records[0].Intent != commpolicy.IntentTask {
 		t.Fatalf("audit = %+v", records)
+	}
+	if records[0].Outcome != "" || records[1].Outcome != commpolicy.OutcomeDelivered {
+		t.Fatalf("outcomes = %q then %q, want none then delivered", records[0].Outcome, records[1].Outcome)
 	}
 	info, err := os.Stat(filepath.Join(seatDir, "audit.jsonl"))
 	if err != nil || info.Mode().Perm() != 0600 {
@@ -101,11 +105,20 @@ func TestSendAllowedDelivers(t *testing.T) {
 	}
 }
 
-func TestSendDeliveryExitCodePassesThrough(t *testing.T) {
-	pins, _, got := seatEnv(t, allowPolicy)
-	got.code = 7
-	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 7 {
-		t.Fatalf("exit = %d, want 7", code)
+// Whatever rig send exits with, a failed delivery is seatcheck's own code 5, never one of the
+// policy codes (2 usage/policy, 3 denied, 4 bypass) and never rig's code unchanged.
+func TestSendDeliveryFailureIsItsOwnExitCode(t *testing.T) {
+	for _, rigCode := range []int{1, 2, 3, 4, 7} {
+		seatDir, got := seatEnv(t, allowPolicy)
+		got.code = rigCode
+		code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
+		if code != exitDeliveryFailed || !strings.Contains(stderr, "delivery failed") {
+			t.Fatalf("rig send exit %d: exit = %d, stderr %q, want %d and a delivery failure message", rigCode, code, stderr, exitDeliveryFailed)
+		}
+		records := auditRecords(t, seatDir)
+		if len(records) != 2 || records[0].Outcome != "" || records[1].Outcome != commpolicy.OutcomeDeliveryFailed || !records[1].Allowed {
+			t.Fatalf("audit = %+v, want the decision line then delivery_failed", records)
+		}
 	}
 }
 
@@ -120,8 +133,8 @@ func TestSendDeniedWritesAuditAndSkipsDelivery(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			pins, seatDir, got := seatEnv(t, tc.policy)
-			code, stdout, stderr := send(pins, "--to", tc.to, "--intent", tc.intent, "--", "hi")
+			seatDir, got := seatEnv(t, tc.policy)
+			code, stdout, stderr := send("--to", tc.to, "--intent", tc.intent, "--", "hi")
 			if code != 3 {
 				t.Fatalf("exit = %d, want 3 (stderr %q)", code, stderr)
 			}
@@ -145,8 +158,8 @@ func TestSendDeniedWritesAuditAndSkipsDelivery(t *testing.T) {
 func TestSendPolicyMissingOrCorruptFailsClosed(t *testing.T) {
 	for name, policy := range map[string]string{"missing": "", "corrupt": `{"Seat":`} {
 		t.Run(name, func(t *testing.T) {
-			pins, seatDir, got := seatEnv(t, policy)
-			code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hi")
+			seatDir, got := seatEnv(t, policy)
+			code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
 			if code != 2 || stderr == "" {
 				t.Fatalf("exit = %d, stderr %q, want 2 with a message", code, stderr)
 			}
@@ -170,8 +183,8 @@ func TestSendUsageErrorsExit2(t *testing.T) {
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
-			pins, seatDir, got := seatEnv(t, allowPolicy)
-			if code, _, stderr := send(pins, args...); code != 2 || stderr == "" {
+			seatDir, got := seatEnv(t, allowPolicy)
+			if code, _, stderr := send(args...); code != 2 || stderr == "" {
 				t.Fatalf("exit = %d, stderr %q, want 2 with a message", code, stderr)
 			}
 			if got.calls != 0 || len(auditRecords(t, seatDir)) != 0 {
@@ -182,22 +195,22 @@ func TestSendUsageErrorsExit2(t *testing.T) {
 }
 
 func TestSendIdentityFailureExits2(t *testing.T) {
-	pins, _, got := seatEnv(t, allowPolicy)
+	_, got := seatEnv(t, allowPolicy)
 	identify = func() (identity, error) { return identity{}, io.ErrUnexpectedEOF }
-	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 {
+	if code, _, _ := send("--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 {
 		t.Fatalf("exit = %d, calls = %d, want 2 and no delivery", code, got.calls)
 	}
 }
 
 // The policy may allow a recipient that is not in the rig roster: nothing is delivered.
 func TestSendAllowedRecipientOutsideRosterFails(t *testing.T) {
-	pins, seatDir, got := seatEnv(t, `{"Seat":"a","Links":[{"From":"a","To":"ghost","Kind":"delegates_to","Allow":true}]}`)
-	code, _, stderr := send(pins, "--to", "ghost", "--intent", "task", "--", "hi")
-	if code != 1 || !strings.Contains(stderr, "not a seat of rig") || got.calls != 0 {
-		t.Fatalf("exit = %d, stderr %q, calls = %d, want 1, a roster message, no delivery", code, stderr, got.calls)
+	seatDir, got := seatEnv(t, `{"Seat":"a","Links":[{"From":"a","To":"ghost","Kind":"delegates_to","Allow":true}]}`)
+	code, _, stderr := send("--to", "ghost", "--intent", "task", "--", "hi")
+	if code != exitDeliveryFailed || !strings.Contains(stderr, "not a seat of rig") || got.calls != 0 {
+		t.Fatalf("exit = %d, stderr %q, calls = %d, want %d, a roster message, no delivery", code, stderr, got.calls, exitDeliveryFailed)
 	}
-	if records := auditRecords(t, seatDir); len(records) != 1 || !records[0].Allowed {
-		t.Fatalf("audit = %+v, want the allowed decision recorded", records)
+	if records := auditRecords(t, seatDir); len(records) != 2 || !records[0].Allowed || records[1].Outcome != commpolicy.OutcomeDeliveryFailed {
+		t.Fatalf("audit = %+v, want the allowed decision then delivery_failed", records)
 	}
 }
 
@@ -209,7 +222,7 @@ func TestParseWhoamiRoster(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if who.Rig != "scratchcomm" || who.Member != "alpha" || len(who.Peers) != 1 || who.Peers["beta"] != "scratchcomm-beta@scratchcomm" {
+	if who.Rig != "scratchcomm" || who.Member != "alpha" || len(who.Peers) != 1 || strings.Join(who.Peers["beta"], ",") != "scratchcomm-beta@scratchcomm" {
 		t.Fatalf("identity = %+v", who)
 	}
 	if _, err := parseWhoami([]byte(`{"identity":{}}`)); err == nil {
@@ -225,37 +238,122 @@ func TestParseWhoamiMultiPodRig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if who.Peers["reviewer"] != "dev-reviewer@4genthub-go" || who.Peers["check"] != "agy-check@4genthub-go" || len(who.Peers) != 2 {
+	if strings.Join(who.Peers["reviewer"], ",") != "dev-reviewer@4genthub-go" || strings.Join(who.Peers["check"], ",") != "agy-check@4genthub-go" || len(who.Peers) != 2 {
 		t.Fatalf("peers = %v", who.Peers)
 	}
 }
 
-func TestParseWhoamiDuplicateMemberIsAnError(t *testing.T) {
-	_, err := parseWhoami([]byte(`{"identity":{"rigName":"r","memberId":"a"},"peers":[` +
-		`{"logicalId":"agy.check","sessionName":"agy-check@r"},{"logicalId":"dev.check","sessionName":"dev-check@r"}]}`))
-	if err == nil || !strings.Contains(err.Error(), "check") || !strings.Contains(err.Error(), "agy-check@r") || !strings.Contains(err.Error(), "dev-check@r") {
-		t.Fatalf("err = %v, want the member and both sessions named", err)
+// A member name repeated across pods is ambiguous only for a send to that name.
+func TestParseWhoamiKeepsEverySessionOfARepeatedMember(t *testing.T) {
+	who, err := parseWhoami([]byte(`{"identity":{"rigName":"r","memberId":"a"},"peers":[` +
+		`{"logicalId":"agy.check","sessionName":"agy-check@r"},{"logicalId":"dev.check","sessionName":"dev-check@r"},{"logicalId":"dev.lead","sessionName":"dev-lead@r"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(who.Peers["check"]) != 2 || len(who.Peers["lead"]) != 1 {
+		t.Fatalf("peers = %v", who.Peers)
+	}
+}
+
+func TestSendToARepeatedMemberNameIsAmbiguousButOthersWork(t *testing.T) {
+	policy := `{"Seat":"a","Links":[{"From":"a","To":"check","Kind":"delegates_to","Allow":true},{"From":"a","To":"b","Kind":"delegates_to","Allow":true}]}`
+	_, got := seatEnv(t, policy)
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{
+			"b": {"pod-b@r"}, "check": {"agy-check@r", "dev-check@r"},
+		}}, nil
+	}
+	if code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi"); code != 0 || got.target != "pod-b@r" {
+		t.Fatalf("send to the unique peer: exit %d, stderr %q, target %q", code, stderr, got.target)
+	}
+	got.calls = 0
+	code, _, stderr := send("--to", "check", "--intent", "task", "--", "hi")
+	if code != exitDeliveryFailed || got.calls != 0 || !strings.Contains(stderr, "agy-check@r") || !strings.Contains(stderr, "dev-check@r") {
+		t.Fatalf("send to the repeated name: exit %d, calls %d, stderr %q, want %d and both sessions named", code, got.calls, stderr, exitDeliveryFailed)
+	}
+}
+
+// The seat this guard constrains cannot choose where the policy and audit live: there is no
+// --pins flag, and a policy that belongs to another seat is refused.
+func TestSendHasNoPinsFlag(t *testing.T) {
+	_, got := seatEnv(t, allowPolicy)
+	if code, _, stderr := send("--pins", t.TempDir(), "--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 || stderr == "" {
+		t.Fatalf("exit = %d, calls = %d, stderr %q, want usage error 2 and no delivery", code, got.calls, stderr)
+	}
+}
+
+func TestSendRefusesAPolicyOfAnotherSeat(t *testing.T) {
+	seatDir, got := seatEnv(t, `{"Seat":"mallory","Links":[{"From":"mallory","To":"b","Kind":"delegates_to","Allow":true}]}`)
+	code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
+	if code != 2 || !strings.Contains(stderr, "belongs to seat") || got.calls != 0 {
+		t.Fatalf("exit = %d, stderr %q, calls = %d, want 2, a mismatch message, no delivery", code, stderr, got.calls)
+	}
+	if records := auditRecords(t, seatDir); len(records) != 0 {
+		t.Fatalf("audit = %+v, want none", records)
+	}
+}
+
+func TestSendRefusesAnIdentityThatIsNotADirectoryName(t *testing.T) {
+	for _, bad := range []identity{
+		{Rig: "..", Member: "a"}, {Rig: "r", Member: "../x"}, {Rig: "r/x", Member: "a"}, {Rig: ".", Member: "a"},
+	} {
+		_, got := seatEnv(t, allowPolicy)
+		identify = func() (identity, error) { return bad, nil }
+		if code, _, _ := send("--to", "b", "--intent", "task", "--", "hi"); code != 2 || got.calls != 0 {
+			t.Errorf("identity %+v: exit = %d, calls = %d, want 2 and no delivery", bad, code, got.calls)
+		}
+	}
+}
+
+// The decision line is on disk before delivery starts.
+func TestSendAuditsBeforeDelivering(t *testing.T) {
+	seatDir, got := seatEnv(t, allowPolicy)
+	var seenAtDelivery []commpolicy.AuditRecord
+	deliver = func(target, text string, _, _ io.Writer) int {
+		got.calls++
+		seenAtDelivery = auditRecords(t, seatDir)
+		return 0
+	}
+	if code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi"); code != 0 {
+		t.Fatalf("exit = %d (stderr %q)", code, stderr)
+	}
+	if len(seenAtDelivery) != 1 || !seenAtDelivery[0].Allowed || seenAtDelivery[0].Outcome != "" {
+		t.Fatalf("audit at delivery time = %+v, want exactly the decision line", seenAtDelivery)
+	}
+}
+
+func TestSendAuditFileMustBePrivate(t *testing.T) {
+	seatDir, got := seatEnv(t, allowPolicy)
+	path := filepath.Join(seatDir, "audit.jsonl")
+	if err := os.WriteFile(path, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, _ := send("--to", "b", "--intent", "task", "--", "hi"); code != exitAuditFailed || got.calls != 0 {
+		t.Fatalf("exit = %d, calls = %d, want %d and no delivery", code, got.calls, exitAuditFailed)
 	}
 }
 
 func TestSendAuditAppendsAcrossRuns(t *testing.T) {
-	pins, seatDir, _ := seatEnv(t, allowPolicy)
+	seatDir, _ := seatEnv(t, allowPolicy)
 	for i := 0; i < 2; i++ {
-		if code, _, stderr := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 0 {
+		if code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi"); code != 0 {
 			t.Fatalf("run %d exit = %d (stderr %q)", i, code, stderr)
 		}
 	}
-	if got := auditRecords(t, seatDir); len(got) != 2 {
-		t.Fatalf("audit lines = %d, want 2", len(got))
+	if got := auditRecords(t, seatDir); len(got) != 4 {
+		t.Fatalf("audit lines = %d, want 4 (decision and outcome per run)", len(got))
 	}
 }
 
 func TestSendAuditFailureExits1WithoutDelivery(t *testing.T) {
-	pins, seatDir, got := seatEnv(t, allowPolicy)
+	seatDir, got := seatEnv(t, allowPolicy)
 	if err := os.Mkdir(filepath.Join(seatDir, "audit.jsonl"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	if code, _, _ := send(pins, "--to", "b", "--intent", "task", "--", "hi"); code != 1 || got.calls != 0 {
+	if code, _, _ := send("--to", "b", "--intent", "task", "--", "hi"); code != 1 || got.calls != 0 {
 		t.Fatalf("exit = %d, calls = %d, want 1 and no delivery", code, got.calls)
 	}
 }

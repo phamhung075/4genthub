@@ -76,7 +76,16 @@ type AuditRecord struct {
 	Allowed    bool
 	Reason     string
 	PolicyHash string
+	// Outcome is empty on the decision line, written before delivery, and "delivered" or
+	// "delivery_failed" on the line that follows an allowed one.
+	Outcome string `json:",omitempty"`
 }
+
+// Outcomes of an allowed send.
+const (
+	OutcomeDelivered      = "delivered"
+	OutcomeDeliveryFailed = "delivery_failed"
+)
 
 // allowedKinds maps a message intent to the link kinds that authorize it.
 // spawned_by and can_observe never authorize a send; can_observe grants reading
