@@ -75,7 +75,10 @@ func (f *fakeRoomDeletionStore) DeleteRoom(_ context.Context, _, roomID string) 
 }
 
 func (f *fakeRoomDeletionStore) InTransaction(ctx context.Context, fn func(ctx context.Context) error) error {
-	return fn(ctx)
+	f.calls = append(f.calls, "tx-begin")
+	err := fn(ctx)
+	f.calls = append(f.calls, "tx-end")
+	return err
 }
 
 func TestDeleteRoomRemovesDependentsBeforeParents(t *testing.T) {
@@ -86,7 +89,7 @@ func TestDeleteRoomRemovesDependentsBeforeParents(t *testing.T) {
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
 	}
-	want := "links:s1,overlay:s1,resolved:s1,seat:s1,links:s2,overlay:s2,resolved:s2,seat:s2,room-overlay:r1,status:dev,room:r1"
+	want := "tx-begin,links:s1,overlay:s1,resolved:s1,seat:s1,links:s2,overlay:s2,resolved:s2,seat:s2,room-overlay:r1,status:dev,room:r1,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}
@@ -125,7 +128,7 @@ func TestRemoveSeatDeletesOnlyThatSeatsRows(t *testing.T) {
 	if err := NewRoomDeletionService(store).RemoveSeat(context.Background(), "u", "dev", "bob"); err != nil {
 		t.Fatalf("RemoveSeat: %v", err)
 	}
-	want := "links:s2,overlay:s2,resolved:s2,seat:s2,status:dev/bob"
+	want := "tx-begin,links:s2,overlay:s2,resolved:s2,seat:s2,status:dev/bob,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}
@@ -139,5 +142,25 @@ func TestRemoveSeatAbsentRoomOrSeat(t *testing.T) {
 	noSeat := &fakeRoomDeletionStore{room: &repositories.Room{ID: "r1", Slug: "dev"}}
 	if err := NewRoomDeletionService(noSeat).RemoveSeat(context.Background(), "u", "dev", "ghost"); !errors.Is(err, ErrSeatNotFound) || len(noSeat.calls) != 0 {
 		t.Errorf("absent seat: err = %v, calls = %v", err, noSeat.calls)
+	}
+}
+
+// A failing delete inside RemoveSeat's transaction stops the remaining deletes and returns the
+// error, which is what makes InTransaction roll every earlier delete back.
+func TestRemoveSeatFailureInTheTransactionStopsAndPropagates(t *testing.T) {
+	boom := errors.New("boom")
+	for _, failOn := range []string{"links:s2", "overlay:s2", "resolved:s2", "seat:s2", "status:dev/bob"} {
+		store := &fakeRoomDeletionStore{
+			room:   &repositories.Room{ID: "r1", Slug: "dev"},
+			seats:  []repositories.Seat{{ID: "s2", SeatKey: "bob"}},
+			failOn: failOn, failErr: boom,
+		}
+		err := NewRoomDeletionService(store).RemoveSeat(context.Background(), "u", "dev", "bob")
+		if !errors.Is(err, boom) {
+			t.Fatalf("fail on %s: err = %v, want boom", failOn, err)
+		}
+		if store.calls[0] != "tx-begin" || store.calls[len(store.calls)-1] != "tx-end" || store.calls[len(store.calls)-2] != failOn {
+			t.Errorf("fail on %s: calls = %v, want every delete inside the transaction, ending at the failing one", failOn, store.calls)
+		}
 	}
 }

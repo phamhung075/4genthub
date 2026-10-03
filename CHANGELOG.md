@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Overlay slug and version are scanned too** (2026-10-03)
+
+- `seatAdminOverlayOps` (`server/httpapp/seat_admin_mount.go`) ran `secretscan.Contains` on op content only; slug and version are free strings echoed back by the overlay body, so they are scanned as well (422 `secret detected in content`, nothing stored).
+
+### Fixed
+
 **`seatcheck send` hardening (reviewer majors)** (2026-10-03)
 
 - `cmd/seatcheck/main.go`: removed `--pins`. The seat the guard constrains could point it at a forged `policy.json` and move the audit trail; the pins directory is now only `~/.openrig/agenthub-seats` (tests replace the `pinsDir` variable). The policy must belong to the caller: `policy.Seat` differing from the `rig whoami` member is refused (exit 2, nothing audited or delivered), and rig or member names that are not one directory name (`..`, `a/b`) are refused.

@@ -223,3 +223,12 @@ func TestCreateSeatTypeVersionErrors(t *testing.T) {
 		t.Errorf("rejected requests created versions: %+v", store.versions)
 	}
 }
+
+func TestSeatBodyHasNoStatusKey(t *testing.T) {
+	body := SeatBody(&repositories.Seat{ID: "s1", RoomID: "r1", SeatKey: "alice", Runtime: "codex"}, "coder")
+	for _, key := range body.Keys() {
+		if key == "status" {
+			t.Fatalf("seat body carries a status key: %v", body.Keys())
+		}
+	}
+}

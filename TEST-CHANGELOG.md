@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — reviewer-requested seat removal and overlay tests
+
+- Added: `TestRemoveSeatFailureInTheTransactionStopsAndPropagates` (a failing delete at each of the five steps ends the transaction body at that step and returns the error, so `InTransaction` rolls back; the fake now records `tx-begin`/`tx-end`), `TestSeatBodyHasNoStatusKey`, a check in `TestSeatDeletesIntegration` that deleting a seat's `seat_status` leaves another tenant's row of the same seat, and slug/version secret cases in `TestSeatAdminOverlayRoutesRejectSecretContent` (all three routes). Real PG (fresh database): ok.
+
 ## 2026-10-03 — seatcheck hardening tests
 
 - Added: `TestSendHasNoPinsFlag`, `TestSendRefusesAPolicyOfAnotherSeat`, `TestSendRefusesAnIdentityThatIsNotADirectoryName`, `TestSendAuditsBeforeDelivering` (the stub reads the audit file at delivery time), `TestSendAuditFileMustBePrivate`, `TestSendDeliveryFailureIsItsOwnExitCode` (rig exits 1,2,3,4,7 all become 5, audit shows the decision then delivery_failed), repeated-member tests; and `exec_test.go` running the real `rigSend` and `rigWhoami` against a fake `rig` on PATH (argv `send -- <session> --rig=x`, message with shell metacharacters is one argument and not evaluated, stdin detached with a pipe holding LEAK on os.Stdin, exit code and missing binary, whoami argv and failures). `exec_test.go` drafted by deepseek session e2c71135-50ac-4873-8cac-5ecdb0c55167 (the worker ran it with `go test -overlay`; I applied it, unescaped, and re-ran it). Mutations: dropping `--` fails `TestRigSendArgv` and the message test; dropping the seat check fails the mismatch test. cmd/seatcheck ok.
