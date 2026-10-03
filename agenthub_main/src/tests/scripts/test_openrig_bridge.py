@@ -3,7 +3,8 @@
 import importlib.util
 import json
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import pytest
@@ -344,6 +345,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.server.requests.append(
             (self.path, self.headers.get("Authorization"), self.rfile.read(length))
         )
+        time.sleep(self.server.delay)
         self.send_response(self.server.status)
         self.end_headers()
 
@@ -353,8 +355,8 @@ class _Handler(BaseHTTPRequestHandler):
 
 @pytest.fixture
 def server():
-    srv = HTTPServer(("127.0.0.1", 0), _Handler)
-    srv.requests, srv.status = [], 200
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+    srv.requests, srv.status, srv.delay = [], 200, 0.0
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()
     yield srv
@@ -424,3 +426,66 @@ def test_install_service_prints_unit(capsys):
     assert "Restart=on-failure" in out
     assert "EnvironmentFile=%h/.config/agenthub-bridge.env" in out
     assert str(MODULE_PATH) in out
+
+
+class _RecordingStop(threading.Event):
+    """Stop event that records every wait the run loop asks for and stops after `limit` waits."""
+
+    def __init__(self, limit):
+        super().__init__()
+        self.limit, self.waits = limit, []
+
+    def wait(self, timeout=None):
+        self.waits.append(timeout)
+        if len(self.waits) >= self.limit:
+            self.set()
+        return self.is_set()
+
+
+def _run_against(server, tmp_path, monkeypatch, steps):
+    """Run the loop over one real HTTP exchange per step; a step is (status, delay_seconds)."""
+    monkeypatch.setattr(bridge_mod, "SEND_TIMEOUT", 0.2)
+    send = bridge_mod.make_sender(f"http://127.0.0.1:{server.server_port}", FAKE_TOKEN)
+    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), send)
+    stop = _RecordingStop(len(steps))
+    original = server.RequestHandlerClass.do_POST
+
+    def stepped(handler):
+        server.status, server.delay = steps[len(server.requests)]
+        original(handler)
+
+    monkeypatch.setattr(server.RequestHandlerClass, "do_POST", stepped)
+    bridge.run(stop)
+    return bridge, stop.waits
+
+
+def test_run_loop_backs_off_on_401_500_and_timeout_then_resets(
+    server, tmp_path, monkeypatch
+):
+    steps = [(401, 0.0), (500, 0.0), (200, 0.5), (200, 0.0), (200, 0.0)]
+    bridge, waits = _run_against(server, tmp_path, monkeypatch, steps)
+    # 401 -> 20, 500 -> 40, timeout (slow 200) -> 80, success resets -> 20; the unchanged
+    # payload is not resent, so the last cycle just waits one interval.
+    assert waits == [20.0, 40.0, 80.0, 20.0, 20.0]
+    assert bridge.backoff == 0.0
+    assert all(
+        w >= bridge.interval for w in waits
+    ), "the loop must never wait less than one interval"
+    assert len(server.requests) == 4
+
+
+def test_run_loop_failures_never_leak_the_token(server, tmp_path, monkeypatch, capsys):
+    steps = [(401, 0.0), (500, 0.0), (200, 0.5)]
+    _run_against(server, tmp_path, monkeypatch, steps)
+    err = capsys.readouterr()
+    output = err.out + err.err
+    assert "HTTP 401" in output or "HTTP 500" in output
+    assert "timed out" in output
+    assert FAKE_TOKEN not in output
+
+
+def test_run_loop_backoff_stops_at_the_cap(tmp_path):
+    stop = _RecordingStop(8)
+    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: 500)
+    bridge.run(stop)
+    assert stop.waits == [20.0, 40.0, 80.0, 120.0, 120.0, 120.0, 120.0, 120.0]

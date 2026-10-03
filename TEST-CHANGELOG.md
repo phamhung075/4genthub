@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — bridge run loop error path
+
+- Added: `test_run_loop_backs_off_on_401_500_and_timeout_then_resets` (real HTTP exchanges: 401, 500, a response slower than `SEND_TIMEOUT`, then success; waits 20/40/80/20 s, never below one interval, backoff reset), `test_run_loop_failures_never_leak_the_token` (stdout/stderr of the failing loop contain the HTTP/timeout messages and not the bearer token), `test_run_loop_backoff_stops_at_the_cap` (20, 40, 80, then 120 s). The HTTP fixture is now a `ThreadingHTTPServer` with a per-request delay so a timed-out request does not block the next one. scripts suite: 152 passed.
+
 ## 2026-10-03 — overlay secret scan
 
 - Added: `TestSeatAdminOverlayRoutesRejectSecretContent` (company, room and seat route: 422, secret not echoed, nothing stored, clean content still 200). httpapp ok.
