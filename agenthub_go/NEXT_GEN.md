@@ -201,6 +201,11 @@ Bridge v1 (status up only, no commands down) built and verified:
 
 Rig note (2026-10-03): the rig `4genthub-dev` ran on `claude-code`, moved to `agy` (rig `4genthub-dev-gemini`) at about 21:15, and is back on `claude-code` since about 23:37, after the Antigravity quota ran out (verified with `rig whoami`). The cloud still records the 9 seats as runtime `agy` with Gemini models and permission_policy `yolo` until the owner switches them (not verified in this task). The bridge maps `rigName` to room by name equality by design (`scripts/openrig_bridge.py:15`, `:191`), so a rig rename needs no code change.
 
+## Request 17 — team culture: the session is the chef, deepseek workers do bounded jobs (owner, 2026-10-04)
+
+- Owner's rule: each seat's session is the chef. It takes the demands, decides, answers the owner and the lead, and is accountable for the result. `deepseek_agent` offload workers do only bounded jobs for the seat; delegable work goes to them first, and their output is never forwarded unreviewed.
+- Open: the lead has go-dev add the chef/worker wording to the `delegate-deepseek` module's next version (module text change, no code).
+
 ## Team progress and open work (2026-10-03, reported by the lead; not verified in production)
 
 Committed locally, reviewed or in review. None is claimed verified in production, and nothing is pushed:
@@ -242,7 +247,7 @@ Architect's recommendations for D1 to D3 and T5 to T9 (2026-10-03). These are re
 - D3, replace the "call master-orchestrator-agent" block in `CLAUDE.md` with "read your seat files; run `rig whoami`", and update the `session_start` hook messages and the 31 `.claude/agents` files. Owner approves, because it changes shared instructions.
 - Order for go-dev: T6 (after D1), then T7 (after T6 and D2) and T8 (after D1 and D3) in parallel, then T9 (writer). T7 changes the DDL and needs a manual production schema step like G1a. T6 changes the health payload (`agent_library_dir`).
 - Owner approval points: D1, D2 (export and drop), D3, the T7 production schema step, and every push.
-- Bridge naming: the rig name is the local OpenRig name and the room slug is the cloud grouping; they are different concepts. The Rig note above is stale: the rig is `4genthub-dev` on `claude-code` again (verified with `rig whoami`, 2026-10-03). The bridge should map rig to room by an explicit field, not by name equality. Not yet checked against `scripts/openrig_bridge.py` and `scripts/openrig_seat_sync.py`; go-dev confirms before building.
+- Bridge naming (checked 2026-10-03 against `scripts/openrig_bridge.py:15` and `:191`): the bridge maps `rigName` to room by name equality, by design, so a rig rename needs no code change; the room slug must equal the OpenRig rig name. The agy runtime gap in the bridge and the Go `seatRuntimes` list was fixed in `91862a24`.
 
 ## Verified live 2026-10-03 (tester, scratch rigs, throwaway Postgres)
 
