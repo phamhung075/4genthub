@@ -13,7 +13,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from './../../../test-utils';
-import { BrowserRouter } from 'react-router-dom';
 import { TaskRowMobile } from '../../../../components/TaskRow/components/TaskRowMobile';
 import type { TaskSummary } from '../../../../types/taskTypes';
 
@@ -89,10 +88,6 @@ vi.mock('lucide-react', () => ({
   ChevronRight: () => <span data-testid="chevron-right">Right</span>
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>{children}</BrowserRouter>
-);
-
 describe('TaskRowMobile - Phase 1 Count Calculations', () => {
   const mockSummary: TaskSummary = {
     id: 'task-123',
@@ -128,9 +123,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
   describe('Rendering Tests', () => {
     it('should render mobile view without errors', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} />
       );
 
       expect(screen.getByText('Test Task Mobile')).toBeInTheDocument();
@@ -141,9 +134,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
     it('should render with Phase 1 structure (no emoji/count fields)', () => {
       // Mock data matches new backend structure (no old fields)
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} />
       );
 
       // Component renders successfully with new structure
@@ -159,9 +150,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should show count from fullTask.subtasks.length = 3
@@ -176,9 +165,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should NOT render badge when count is 0
@@ -192,9 +179,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should NOT crash, should NOT show badge
@@ -208,9 +193,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should NOT crash, should NOT show badge
@@ -226,9 +209,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should show count from dependencies.length = 4
@@ -243,9 +224,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should use singular "dep" not "deps"
@@ -260,9 +239,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       };
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} summary={summaryNoDeps} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} summary={summaryNoDeps} />
       );
 
       // Should NOT render dependency badge
@@ -276,9 +253,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} fullTask={fullTask} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} fullTask={fullTask} />
       );
 
       // Should NOT crash
@@ -289,9 +264,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
   describe('Assignees Handling', () => {
     it('should render assignees from summary', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} />
       );
 
       expect(screen.getByTestId('assignees')).toBeInTheDocument();
@@ -305,9 +278,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       };
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} summary={summaryNoAssignees} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} summary={summaryNoAssignees} />
       );
 
       // Should NOT crash, assignees component not rendered
@@ -321,9 +292,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       };
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} summary={summaryNoAssignees} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} summary={summaryNoAssignees} />
       );
 
       // Should NOT crash
@@ -334,9 +303,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
   describe('Loading States', () => {
     it('should show loading spinner when isLoading is true', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} isLoading={true} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} isLoading={true} />
       );
 
       const button = screen.getByRole('button');
@@ -346,9 +313,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
 
     it('should show expand icon when not loading and not expanded', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} isLoading={false} isExpanded={false} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} isLoading={false} isExpanded={false} />
       );
 
       expect(screen.getByTestId('chevron-right')).toBeInTheDocument();
@@ -356,9 +321,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
 
     it('should show collapse icon when expanded', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} isExpanded={true} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} isExpanded={true} />
       );
 
       expect(screen.getByTestId('chevron-down')).toBeInTheDocument();
@@ -373,13 +336,11 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            fullTask={fullTask}
-            isExpanded={true}
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          fullTask={fullTask}
+          isExpanded={true}
+        />
       );
 
       expect(screen.getByTestId('subtask-list')).toBeInTheDocument();
@@ -392,13 +353,11 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       } as any;
 
       render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            fullTask={fullTask}
-            isExpanded={false}
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          fullTask={fullTask}
+          isExpanded={false}
+        />
       );
 
       expect(screen.queryByTestId('subtask-list')).not.toBeInTheDocument();
@@ -406,13 +365,11 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
 
     it('should NOT render LazySubtaskList when expanded but no fullTask', () => {
       render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            fullTask={null}
-            isExpanded={true}
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          fullTask={null}
+          isExpanded={true}
+        />
       );
 
       expect(screen.queryByTestId('subtask-list')).not.toBeInTheDocument();
@@ -435,9 +392,7 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
       };
 
       render(
-        <TestWrapper>
-          <TaskRowMobile {...defaultProps} summary={newBackendData} />
-        </TestWrapper>
+        <TaskRowMobile {...defaultProps} summary={newBackendData} />
       );
 
       // Should render successfully with new structure
@@ -448,12 +403,10 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
   describe('Animation Classes', () => {
     it('should apply animation class when provided', () => {
       const { container } = render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            animationClass="task-updating-animation"
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          animationClass="task-updating-animation"
+        />
       );
 
       const mobileCard = container.querySelector('.task-updating-animation');
@@ -462,12 +415,10 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
 
     it('should apply highlighted class', () => {
       const { container } = render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            isHighlighted={true}
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          isHighlighted={true}
+        />
       );
 
       const mobileCard = container.querySelector('.highlighted');
@@ -476,12 +427,10 @@ describe('TaskRowMobile - Phase 1 Count Calculations', () => {
 
     it('should apply hovered class', () => {
       const { container } = render(
-        <TestWrapper>
-          <TaskRowMobile
-            {...defaultProps}
-            isHovered={true}
-          />
-        </TestWrapper>
+        <TaskRowMobile
+          {...defaultProps}
+          isHovered={true}
+        />
       );
 
       const mobileCard = container.querySelector('.hovered');

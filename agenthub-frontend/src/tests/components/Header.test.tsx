@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from './../test-utils';
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { Header } from '../../components/Header';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -35,18 +34,16 @@ describe('Header', () => {
 
   const renderWithAuth = (user = mockUser) => {
     return render(
-      <BrowserRouter>
-        <AuthContext.Provider value={{
-          user,
-          isAuthenticated: !!user,
-          login: vi.fn(),
-          logout: mockLogout,
-          loading: false,
-          refreshUser: vi.fn(),
-        }}>
-          <Header />
-        </AuthContext.Provider>
-      </BrowserRouter>
+      <AuthContext.Provider value={{
+        user,
+        isAuthenticated: !!user,
+        login: vi.fn(),
+        logout: mockLogout,
+        loading: false,
+        refreshUser: vi.fn(),
+      }}>
+        <Header />
+      </AuthContext.Provider>
     );
   };
 
@@ -60,11 +57,7 @@ describe('Header', () => {
   });
 
   it('returns null when AuthContext is not available', () => {
-    const { container } = render(
-      <BrowserRouter>
-        <Header />
-      </BrowserRouter>
-    );
+    const { container } = render(<Header />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -223,11 +216,11 @@ describe('Header', () => {
 
   it('shows mobile dashboard link in dropdown on small screens', () => {
     renderWithAuth();
-    
+
     // Open dropdown
     const userButton = screen.getByRole('button', { name: /JD/i });
     fireEvent.click(userButton);
-    
+
     // Should have dashboard link in dropdown (for mobile)
     const dashboardLinks = screen.getAllByText('Dashboard');
     expect(dashboardLinks.length).toBeGreaterThan(0);
@@ -235,18 +228,16 @@ describe('Header', () => {
 
   it('does not render user section when user is null', () => {
     render(
-      <BrowserRouter>
-        <AuthContext.Provider value={{
-          user: null,
-          isAuthenticated: false,
-          login: vi.fn(),
-          logout: mockLogout,
-          loading: false,
-          refreshUser: vi.fn(),
-        }}>
-          <Header />
-        </AuthContext.Provider>
-      </BrowserRouter>
+      <AuthContext.Provider value={{
+        user: null,
+        isAuthenticated: false,
+        login: vi.fn(),
+        logout: mockLogout,
+        loading: false,
+        refreshUser: vi.fn(),
+      }}>
+        <Header />
+      </AuthContext.Provider>
     );
 
     // Should still show title but no user section
@@ -262,18 +253,16 @@ describe('Header', () => {
 
   it('renders theme toggle in menu for non-authenticated users', () => {
     render(
-      <BrowserRouter>
-        <AuthContext.Provider value={{
-          user: null,
-          isAuthenticated: false,
-          login: vi.fn(),
-          logout: mockLogout,
-          loading: false,
-          refreshUser: vi.fn(),
-        }}>
-          <Header />
-        </AuthContext.Provider>
-      </BrowserRouter>
+      <AuthContext.Provider value={{
+        user: null,
+        isAuthenticated: false,
+        login: vi.fn(),
+        logout: mockLogout,
+        loading: false,
+        refreshUser: vi.fn(),
+      }}>
+        <Header />
+      </AuthContext.Provider>
     );
 
     // Theme toggle should be present in the menu for non-auth users too

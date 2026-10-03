@@ -6,7 +6,6 @@
 import { render, screen } from './../../test-utils';
 import { SubtaskRowRefactored } from '../../../components/SubtaskRow/SubtaskRowRefactored';
 import { Subtask } from '../../../types/taskTypes';
-import { MemoryRouter } from 'react-router-dom';
 
 // Mock the status emoji util
 vi.mock('../../../utils/statusEmojis', () => ({
@@ -45,9 +44,7 @@ describe('SubtaskRowRefactored', () => {
 
   const renderComponent = (props = {}) => {
     return render(
-      <MemoryRouter>
-        <SubtaskRowRefactored {...defaultProps} {...props} />
-      </MemoryRouter>
+      <SubtaskRowRefactored {...defaultProps} {...props} />
     );
   };
 
@@ -174,9 +171,9 @@ describe('SubtaskRowRefactored', () => {
 
     it('should handle many assignees', () => {
       renderComponent({
-        subtask: { 
-          ...mockSubtask, 
-          assignees: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'] 
+        subtask: {
+          ...mockSubtask,
+          assignees: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5']
         }
       });
 
