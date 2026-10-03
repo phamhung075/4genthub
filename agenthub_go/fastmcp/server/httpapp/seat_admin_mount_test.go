@@ -1446,3 +1446,34 @@ func TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped(t *testing.T) {
 		t.Errorf("after the change the member renders yolo: %s", yaml)
 	}
 }
+
+// Creating a seat validates the occupant like switching it: a Claude model never lands on codex and
+// a model id with spaces or shell characters is rejected before anything is stored.
+func TestSeatAdminCreateSeatValidatesOccupant(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	const path = "/api/v2/openrig/rooms/dev/seats"
+	for _, body := range []string{
+		`{"seat_key":"a","seat_type":"coder","runtime":"codex","model":"claude-sonnet-5-5"}`,
+		`{"seat_key":"b","seat_type":"coder","runtime":"codex","model":"a b; rm -rf"}`,
+		`{"seat_key":"c","seat_type":"coder","runtime":"claude-code","model":"-bad"}`,
+	} {
+		if rec := doAgentsRequest(t, mux, http.MethodPost, path, body); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want 400: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+	if len(fake.seats) != 0 {
+		t.Fatalf("a rejected request stored seats: %+v", fake.seats)
+	}
+	for _, body := range []string{
+		`{"seat_key":"d","seat_type":"coder","runtime":"codex","model":"gpt-5.1"}`,
+		`{"seat_key":"e","seat_type":"coder","runtime":"claude-code","model":"claude-sonnet-5-5"}`,
+		`{"seat_key":"f","seat_type":"coder","runtime":"claude-code"}`,
+	} {
+		if rec := doAgentsRequest(t, mux, http.MethodPost, path, body); rec.Code != http.StatusOK {
+			t.Errorf("%s: status = %d, want 200: %s", body, rec.Code, rec.Body.String())
+		}
+	}
+}

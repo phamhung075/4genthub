@@ -715,7 +715,7 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := repositories.ValidateRuntime(req.Runtime); err != nil {
+	if err := repositories.ValidateOccupant(req.Runtime, req.Model); err != nil {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}

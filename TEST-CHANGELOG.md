@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — create-seat occupant validation
+
+- Added: `TestSeatAdminCreateSeatValidatesOccupant` (codex + Claude model, a model with spaces/shell characters and a leading dash are 400 and store nothing; a codex model, a Claude model on claude-code and an empty model are 200). Fails without the fix.
+
 ## 2026-10-03 — seatcheck full session names
 
 - Added: `TestSendAcceptsAFullSessionName`, `TestSendFullSessionNameOfAnUnlinkedSeatIsDenied`, `TestSendUnknownRecipientListsSeatKeys`, `TestSendFullSessionNameWithRepeatedMemberDeliversToThatSession`, `TestResolveRecipient`. Drafted by deepseek (session e8b7d68e-3d05-40e4-8805-d01ff0968026), verified by me with a mutation check.
