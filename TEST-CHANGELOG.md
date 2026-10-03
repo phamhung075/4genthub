@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — member permission policy in the rigspec
+
+- Added: `TestCheckPermissionPolicy`, `TestDefaultPermissionPolicyIsConservative`, `TestRenderRoomMemberPermissionPolicy`, `TestRenderRoomMemberPolicyOverridesRigLevel`, `TestRenderRoomRejectsInvalidMemberPolicy`, `TestRenderRoomMemberPolicyIsDeterministic` (drafted by deepseek session db826417-5704-40f0-b565-c0a2193f7bbe, not compiled by the worker; reviewed, tightened and run by me) and two self-loop cases in `TestFindLaunchCycle`. resolver and rigspec ok.
+
 ## 2026-10-03 — seatcheck roster in multi-pod rigs
 
 - Added: `TestParseWhoamiMultiPodRig` (pods `dev`/`agy` in rig `4genthub-go` resolve), `TestParseWhoamiDuplicateMemberIsAnError`. `TestParseWhoamiRoster` no longer carries a peer of another rig (a roster is the rig's own). cmd/seatcheck ok.

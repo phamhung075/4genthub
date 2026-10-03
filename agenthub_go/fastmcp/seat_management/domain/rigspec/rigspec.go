@@ -19,6 +19,8 @@ type Seat struct {
 	Key     string
 	Runtime string
 	Model   string
+	// PermissionPolicy is rendered on the member; empty renders no line (the OpenRig floor).
+	PermissionPolicy string
 }
 
 // Edge is one allowed seat link; From and To are seat keys in the same room.
@@ -41,8 +43,7 @@ var (
 		"collaborates_with": true,
 		"escalates_to":      true,
 	}
-	permissionPolicies = []string{"locked", "standard", "open", "yolo", "none"}
-	edgeKindList       = []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"}
+	edgeKindList = []string{"delegates_to", "spawned_by", "can_observe", "collaborates_with", "escalates_to"}
 )
 
 type quotedString string
@@ -73,6 +74,8 @@ type memberYAML struct {
 	Runtime  string `yaml:"runtime"`
 	Model    string `yaml:"model,omitempty"`
 	Cwd      string `yaml:"cwd"`
+	// PermissionPolicy is the member's own policy; it overrides the rig-level one.
+	PermissionPolicy string `yaml:"permission_policy,omitempty"`
 }
 
 type edgeYAML struct {
@@ -81,17 +84,15 @@ type edgeYAML struct {
 	To   string `yaml:"to"`
 }
 
-// ValidatePermissionPolicy accepts "" (no policy line) or one of locked, standard, open, yolo, none.
+// ValidatePermissionPolicy accepts "" (no policy line) or one of resolver.PermissionPolicies.
 func ValidatePermissionPolicy(policy string) error {
 	if policy == "" {
 		return nil
 	}
-	for _, valid := range permissionPolicies {
-		if policy == valid {
-			return nil
-		}
+	if err := resolver.CheckPermissionPolicy(policy); err != nil {
+		return fmt.Errorf("rigspec: %w", err)
 	}
-	return fmt.Errorf("rigspec: permission policy %q must be one of %v", policy, permissionPolicies)
+	return nil
 }
 
 // permissionPolicyValue is the rig-level value: builtin:<name>, or the literal none.
@@ -133,16 +134,22 @@ func RenderRoom(roomSlug, roomName, permissionPolicy string, seats []Seat, edges
 			return "", fmt.Errorf("rigspec: duplicate seat key %q", seat.Key)
 		}
 		keys[seat.Key] = true
+		if seat.PermissionPolicy != "" {
+			if err := resolver.CheckPermissionPolicy(seat.PermissionPolicy); err != nil {
+				return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)
+			}
+		}
 		if err := resolver.CheckRuntime(seat.Runtime); err != nil {
 			return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)
 		}
 		members = append(members, memberYAML{
-			ID:       seat.Key,
-			AgentRef: agentRefPrefix + seat.Key,
-			Profile:  "default",
-			Runtime:  seat.Runtime,
-			Model:    seat.Model,
-			Cwd:      ".",
+			ID:               seat.Key,
+			AgentRef:         agentRefPrefix + seat.Key,
+			Profile:          "default",
+			Runtime:          seat.Runtime,
+			Model:            seat.Model,
+			Cwd:              ".",
+			PermissionPolicy: permissionPolicyValue(seat.PermissionPolicy),
 		})
 	}
 

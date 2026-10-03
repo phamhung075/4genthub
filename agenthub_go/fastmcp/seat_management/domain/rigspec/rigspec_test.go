@@ -297,6 +297,8 @@ func TestFindLaunchCycle(t *testing.T) {
 		want  string
 	}{
 		{"none", nil, ""},
+		{"self loop", []Edge{edge("delegates_to", "a", "a")}, "a>a"},
+		{"self loop spawned_by", []Edge{edge("spawned_by", "a", "a")}, "a>a"},
 		{"chain", []Edge{edge("delegates_to", "a", "b"), edge("delegates_to", "b", "c")}, ""},
 		{"opposite delegates_to", []Edge{edge("delegates_to", "a", "b"), edge("delegates_to", "b", "a")}, "a>b>a"},
 		{"three seats", []Edge{edge("delegates_to", "a", "b"), edge("delegates_to", "b", "c"), edge("delegates_to", "c", "a")}, "a>b>c>a"},
@@ -310,5 +312,107 @@ func TestFindLaunchCycle(t *testing.T) {
 		if got := strings.Join(FindLaunchCycle(c.edges), ">"); got != c.want {
 			t.Errorf("%s: cycle = %q, want %q", c.name, got, c.want)
 		}
+	}
+}
+
+func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
+	out, err := RenderRoom("dev", "Development", "",
+		[]Seat{
+			{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
+			{Key: "bob", Runtime: "claude-code", PermissionPolicy: "standard"},
+			{Key: "carol", Runtime: "claude-code"},
+			{Key: "dave", Runtime: "claude-code", PermissionPolicy: "none"},
+		}, nil)
+	if err != nil {
+		t.Fatalf("RenderRoom: %v", err)
+	}
+
+	var doc map[string]any
+	if err := yaml.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("parse rendered rig.yaml: %v\n%s", err, out)
+	}
+	if _, present := doc["permission_policy"]; present {
+		t.Fatalf("rig-level permission_policy rendered for an empty rig policy:\n%s", out)
+	}
+	pods, ok := doc["pods"].([]any)
+	if !ok || len(pods) != 1 {
+		t.Fatalf("pods = %#v, want exactly one pod", doc["pods"])
+	}
+	members, ok := pods[0].(map[string]any)["members"].([]any)
+	if !ok || len(members) != 4 {
+		t.Fatalf("members = %#v, want four", pods[0])
+	}
+	byID := make(map[string]map[string]any, len(members))
+	for _, raw := range members {
+		member := raw.(map[string]any)
+		id, _ := member["id"].(string)
+		byID[id] = member
+	}
+	for id, want := range map[string]string{"alice": "builtin:yolo", "bob": "builtin:standard", "dave": "none"} {
+		if got, _ := byID[id]["permission_policy"].(string); got != want {
+			t.Errorf("%s permission_policy = %#v, want %q", id, byID[id]["permission_policy"], want)
+		}
+	}
+	if got, present := byID["carol"]["permission_policy"]; present {
+		t.Errorf("carol permission_policy = %#v, want no key", got)
+	}
+}
+
+func TestRenderRoomMemberPolicyOverridesRigLevel(t *testing.T) {
+	out, err := RenderRoom("dev", "Development", "standard",
+		[]Seat{
+			{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
+			{Key: "bob", Runtime: "codex"},
+		}, nil)
+	if err != nil {
+		t.Fatalf("RenderRoom: %v", err)
+	}
+	const (
+		rigLine    = "permission_policy: builtin:standard"
+		memberLine = "permission_policy: builtin:yolo"
+	)
+	if strings.Count(out, rigLine) != 1 || strings.Count(out, memberLine) != 1 {
+		t.Fatalf("want each policy line once:\n%s", out)
+	}
+	nameAt, rigAt, podsAt := strings.Index(out, "\nname: dev\n"), strings.Index(out, "\n"+rigLine+"\n"), strings.Index(out, "\npods:\n")
+	if nameAt < 0 || !(nameAt < rigAt && rigAt < podsAt) {
+		t.Fatalf("rig-level line is not between name and pods:\n%s", out)
+	}
+	aliceAt, memberAt, bobAt := strings.Index(out, "id: alice"), strings.Index(out, memberLine), strings.Index(out, "id: bob")
+	if aliceAt < 0 || !(aliceAt < memberAt && memberAt < bobAt) {
+		t.Fatalf("member line is not inside alice's member block:\n%s", out)
+	}
+}
+
+func TestRenderRoomRejectsInvalidMemberPolicy(t *testing.T) {
+	for _, bad := range []string{"bypass", "builtin:yolo", "Yolo"} {
+		out, err := RenderRoom("dev", "Development", "", []Seat{{Key: "alice", Runtime: "claude-code", PermissionPolicy: bad}}, nil)
+		if err == nil {
+			t.Fatalf("member policy %q rendered, want an error:\n%s", bad, out)
+		}
+		if !strings.Contains(err.Error(), `seat "alice"`) || !strings.Contains(err.Error(), "permission policy") {
+			t.Errorf("member policy %q error = %v, want the seat and the policy named", bad, err)
+		}
+	}
+}
+
+func TestRenderRoomMemberPolicyIsDeterministic(t *testing.T) {
+	seats := []Seat{
+		{Key: "bob", Runtime: "codex", PermissionPolicy: "standard"},
+		{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
+		{Key: "dave", Runtime: "claude-code", PermissionPolicy: "none"},
+		{Key: "carol", Runtime: "claude-code"},
+	}
+	first, err := RenderRoom("dev", "Development", "", seats, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reversed := []Seat{seats[3], seats[2], seats[1], seats[0]}
+	second, err := RenderRoom("dev", "Development", "", reversed, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != second {
+		t.Fatalf("input order changed the output:\n%s\n---\n%s", first, second)
 	}
 }
