@@ -14,7 +14,6 @@ interface SubtaskListContentProps {
   fullSubtasks: Map<string, Subtask>;
   loadingSubtasks: Set<string>;
   showDetails: string | null;
-  parentTaskId: string;
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void | Promise<void>;
   onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
@@ -31,7 +30,6 @@ export function SubtaskListContent({
   fullSubtasks,
   loadingSubtasks,
   showDetails,
-  parentTaskId,
   onSubtaskAction,
   onAgentInfoClick,
   onDeleteSubtask,
@@ -63,7 +61,6 @@ export function SubtaskListContent({
         fullSubtask={fullSubtask || null}
         isLoading={isLoadingFull}
         showDetails={isShowingDetails}
-        parentTaskId={parentTaskId}
         onSubtaskAction={onSubtaskAction}
         onAgentInfoClick={onAgentInfoClick}
         onDeleteSubtask={(subtaskId) => onDeleteSubtask(subtaskId)}

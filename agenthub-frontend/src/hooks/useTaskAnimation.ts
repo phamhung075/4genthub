@@ -95,7 +95,7 @@ export function useTaskAnimation(
         element: currentElement.tagName
       }, 'useTaskAnimation.ts');
 
-      animationFactory.registerElement(summary.id, currentElement, {
+      animationFactory.registerElement(summary.id, currentElement, 'task', {
         onAnimationStart: (type: AnimationType) => {
           logger.debug('🎬 Animation started', { taskId: summary.id, type }, 'useTaskAnimation.ts');
         },

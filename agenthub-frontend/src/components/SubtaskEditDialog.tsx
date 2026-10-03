@@ -55,7 +55,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   useEffect(() => {
     if (open) {
       Promise.all([
-        listAgents(parentTaskId).catch(() => []),
+        listAgents().catch(() => []),
         getAvailableAgents().catch(() => [])
       ]).then(([projAgents, availAgents]) => {
         setProjectAgents(projAgents);

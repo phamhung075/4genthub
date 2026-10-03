@@ -10,9 +10,9 @@ import type {
   AnimationSource,
   AnimationState,
   AnimationType,
-  ElementRegistration,
-  EntityType
+  ElementRegistration
 } from '../types/animationTypes';
+import type { EntityType } from '../types/serviceTypes';
 import logger from '../utils/logger';
 
 class AnimationFactory {
@@ -265,7 +265,7 @@ class AnimationFactory {
   getDebugInfo(): {
     registeredElements: string[];
     activeAnimations: Array<{elementId: string; state: AnimationState}>;
-    animationDefinitions: Record<AnimationType, AnimationDefinition>;
+    animationDefinitions: Record<AnimationType, Omit<AnimationDefinition, 'cssClass'>>;
   } {
     return {
       registeredElements: Array.from(this.elementRegistry.keys()),

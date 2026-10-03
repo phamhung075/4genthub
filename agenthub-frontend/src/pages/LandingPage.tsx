@@ -121,7 +121,7 @@ export const LandingPage: React.FC = () => {
       }
     };
 
-    let scriptTag = document.querySelector('script[type="application/ld+json"]');
+    let scriptTag = document.querySelector<HTMLScriptElement>('script[type="application/ld+json"]');
     if (scriptTag) {
       scriptTag.textContent = JSON.stringify(structuredData);
     } else {

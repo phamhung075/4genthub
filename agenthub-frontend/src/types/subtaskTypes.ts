@@ -140,11 +140,36 @@ export interface UseSubtaskDataReturn extends SubtaskDataState {
   refreshData: () => Promise<void>;
 }
 
+export type SubtaskSortField = 'title' | 'status' | 'priority' | 'progress_percentage';
+export type SubtaskSortDirection = 'asc' | 'desc';
+
+export interface SubtaskFilterStats {
+  totalCount: number;
+  filteredCount: number;
+  isFiltered: boolean;
+  hiddenCount: number;
+}
+
+export interface SubtaskFilterValues {
+  statuses: string[];
+  priorities: string[];
+  assignees: string[];
+}
+
 export interface UseSubtaskFiltersReturn {
   filteredSubtasks: SubtaskSummary[];
   filterOptions: SubtaskFilterOptions;
+  sortField: SubtaskSortField;
+  sortDirection: SubtaskSortDirection;
   setFilterOptions: (options: SubtaskFilterOptions) => void;
   clearFilters: () => void;
+  updateSort: (field: SubtaskSortField, direction?: SubtaskSortDirection) => void;
+  filterByStatus: (statuses: string[]) => void;
+  filterByPriority: (priorities: string[]) => void;
+  filterByAssignees: (assignees: string[]) => void;
+  searchByTerm: (searchTerm: string) => void;
+  filterStats: SubtaskFilterStats;
+  availableFilterValues: SubtaskFilterValues;
 }
 
 export interface UseSubtaskWebSocketReturn {
@@ -176,6 +201,7 @@ export interface UseSubtaskDialogsReturn extends DialogState {
   closeCreateSubtaskDialog: () => void;
   closeAllDialogs: () => void;
   handleDialogAction: (action: 'details' | 'edit' | 'complete', subtaskId: string, subtask?: any) => void;
+  setActiveDialog: React.Dispatch<React.SetStateAction<ActiveDialogState>>;
   hasOpenDialog: boolean;
   isClosingRef: React.MutableRefObject<boolean>; // Ref to prevent race condition on close
 }

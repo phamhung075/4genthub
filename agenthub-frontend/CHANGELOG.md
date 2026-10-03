@@ -3,6 +3,24 @@
 ## [Unreleased]
 
 ### Changed
+- **TypeScript: 23 pre-existing errors removed (`npx tsc --noEmit -p .` reports 0)** - 2026-10-03
+  - `LazySubtaskList`: `UseSubtaskDialogsReturn` gains `setActiveDialog`, `UseSubtaskFiltersReturn` lists every
+    member the hook returns (sort, filter helpers, stats, available values); removed the unused
+    `onDetailsDialogChange` and `parentTaskId` props that the child components never declared; the
+    `__mocks__` component destructures `onSubtaskCreate`.
+  - `glow-menu`: props derive from `motion.nav`; variants and transition typed with `Variants`/`Transition`.
+  - Animation: `useTaskAnimation` passes the `'task'` entity type to `registerElement`;
+    `getDebugInfo` return type matches the registry; `EntityType` is defined only in `serviceTypes`;
+    `useProjectAnimations` calls `logger.debug` with its 3-argument form.
+  - `TaskSummary.dependency_count?` and `WSMetadata.agent_name?` declare fields the Go backend already sends;
+    `SubtaskEditDialog` calls `listAgents()` without its ignored argument; `LandingPage` types the script tag.
+  - Files: `src/components/LazySubtaskList/LazySubtaskListRefactored.tsx`,
+    `src/components/LazySubtaskList/components/SubtaskListContent.tsx`,
+    `src/components/__mocks__/LazySubtaskListRefactored.tsx`, `src/components/ui/glow-menu.tsx`,
+    `src/components/ProjectList/hooks/useProjectAnimations.ts`, `src/components/SubtaskEditDialog.tsx`,
+    `src/hooks/useTaskAnimation.ts`, `src/pages/LandingPage.tsx`, `src/services/AnimationFactory.ts`,
+    `src/types/subtaskTypes.ts`, `src/types/animationTypes.ts`, `src/types/taskTypes.ts`,
+    `src/types/websocket-protocol.ts`
 - **Seat type `default_runtime` is typed** - 2026-10-03
   - `SeatType.default_runtime` is `SeatRuntime | null` (the API returns the latest version's runtime,
     null for a seat type with no version); the seat type version form falls back to the first runtime.

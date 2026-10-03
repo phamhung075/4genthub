@@ -310,7 +310,6 @@ export function LazySubtaskListRefactored({
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
           onActiveDialogChange={setActiveDialog}
-          onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
           onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
           onEditingSubtaskChange={setEditingSubtask}
@@ -340,7 +339,6 @@ export function LazySubtaskListRefactored({
         fullSubtasks={fullSubtasks}
         loadingSubtasks={loadingSubtasks}
         showDetails={showDetails}
-        parentTaskId={parentTaskId}
         onSubtaskAction={handleSubtaskAction}
         onAgentInfoClick={handleAgentInfoClick}
         onDeleteSubtask={openDeleteDialog}
@@ -365,7 +363,6 @@ export function LazySubtaskListRefactored({
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
         onActiveDialogChange={setActiveDialog}
-        onDetailsDialogChange={(open) => !open && handleSubtaskDialogClose()}
         onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}
         onEditingSubtaskChange={setEditingSubtask}

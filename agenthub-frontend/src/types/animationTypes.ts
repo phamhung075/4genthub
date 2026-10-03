@@ -3,13 +3,14 @@
  * Consolidated types for animation system and WebSocket animations
  */
 
+import type { EntityType } from './serviceTypes';
+
 // =============================================================================
 // Animation Factory Types
 // =============================================================================
 
 export type AnimationType = 'create' | 'delete' | 'update' | 'complete';
 export type AnimationSource = 'websocket' | 'callback' | 'mount';
-export type EntityType = 'task' | 'subtask' | 'branch' | 'project';
 
 export interface AnimationDefinition {
   cssClass: string;

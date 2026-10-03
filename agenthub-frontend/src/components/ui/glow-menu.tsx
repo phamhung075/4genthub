@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "framer-motion"
+import { motion, type Transition, type Variants } from "framer-motion"
 import { useTheme } from "@/hooks/useTheme"
 import { cn } from "@/lib/utils"
 import { LucideIcon } from "lucide-react"
@@ -14,53 +14,53 @@ interface MenuItem {
   iconColor: string
 }
 
-interface MenuBarProps extends React.HTMLAttributes<HTMLDivElement> {
+type MenuBarProps = React.ComponentPropsWithoutRef<typeof motion.nav> & {
   items: MenuItem[]
   activeItem?: string
   onItemClick?: (label: string) => void
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   initial: { rotateX: 0, opacity: 1 },
   hover: { rotateX: -90, opacity: 0 },
 }
 
-const backVariants = {
+const backVariants: Variants = {
   initial: { rotateX: 90, opacity: 0 },
   hover: { rotateX: 0, opacity: 1 },
 }
 
-const glowVariants = {
+const glowVariants: Variants = {
   initial: { opacity: 0, scale: 0.8 },
   hover: {
     opacity: 1,
     scale: 2,
     transition: {
-      opacity: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+      opacity: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
       scale: { duration: 0.5, type: "spring", stiffness: 300, damping: 25 },
     },
   },
 }
 
-const navGlowVariants = {
+const navGlowVariants: Variants = {
   initial: { opacity: 0 },
   hover: {
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: [0.4, 0, 0.2, 1],
+      ease: [0.4, 0, 0.2, 1] as const,
     },
   },
 }
 
-const sharedTransition = {
+const sharedTransition: Transition = {
   type: "spring",
   stiffness: 100,
   damping: 20,
   duration: 0.5,
 }
 
-export const MenuBar = React.forwardRef<HTMLDivElement, MenuBarProps>(
+export const MenuBar = React.forwardRef<React.ElementRef<typeof motion.nav>, MenuBarProps>(
   ({ className, items, activeItem, onItemClick, ...props }, ref) => {
     const { theme } = useTheme()
     const isDarkTheme = theme === "dark"
