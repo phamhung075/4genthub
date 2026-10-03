@@ -129,7 +129,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 	must(t, err)
 	pinned, err := seats.Create(ctx, user, repositories.Seat{
 		RoomID: room.ID, SeatKey: "pinned", SeatTypeID: latest.SeatTypeID, PinnedVersion: &latest.Version,
-		Runtime: "claude-code", Model: "sonnet",
+		Runtime: "claude-code", Model: "sonnet", PermissionPolicy: "standard",
 	})
 	must(t, err)
 	beforeSwitch, err := svc.ResolveSeat(ctx, user, "dev", "pinned")
@@ -169,7 +169,7 @@ func mustSeat(t *testing.T, ctx context.Context, seats repositories.SeatReposito
 		t.Fatalf("seat type %s not seeded", typeSlug)
 	}
 	seat, err := seats.Create(ctx, user, repositories.Seat{
-		RoomID: roomID, SeatKey: key, SeatTypeID: version.SeatTypeID, Runtime: "claude-code", Model: "sonnet",
+		RoomID: roomID, SeatKey: key, SeatTypeID: version.SeatTypeID, Runtime: "claude-code", Model: "sonnet", PermissionPolicy: "standard",
 	})
 	must(t, err)
 	return seat

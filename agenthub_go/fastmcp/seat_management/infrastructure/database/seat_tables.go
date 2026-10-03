@@ -142,7 +142,8 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +
-			"\tCONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key)\n" +
+			"\tCONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key),\n" +
+			"\tCONSTRAINT ck_seats_permission_policy CHECK (permission_policy IN ('locked', 'standard', 'open', 'yolo', 'none'))\n" +
 			")",
 		"CREATE INDEX ix_seats_user_id ON seats (user_id)",
 		"CREATE INDEX ix_seats_room_id ON seats (room_id)",

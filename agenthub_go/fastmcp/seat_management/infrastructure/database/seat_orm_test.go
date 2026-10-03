@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"agenthub/fastmcp/seat_management/domain/resolver"
 )
 
 // seatTableTypes maps each DDL table to the row struct that mirrors it.
@@ -162,4 +164,34 @@ func diff(a, b map[string]bool) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// The CHECK on seats.permission_policy lists the values of resolver.PermissionPolicies, in both
+// the SQL file and the DDL the server applies; the Go list stays the single source of truth.
+func TestSeatPermissionPolicyCheckMatchesResolver(t *testing.T) {
+	_, thisFile, _, _ := runtime.Caller(0)
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "..", "schema", "seat_management_postgresql.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	quoted := make([]string, len(resolver.PermissionPolicies))
+	for i, policy := range resolver.PermissionPolicies {
+		quoted[i] = "'" + policy + "'"
+	}
+	want := "CONSTRAINT ck_seats_permission_policy CHECK (permission_policy IN (" + strings.Join(quoted, ", ") + "))"
+	if !strings.Contains(string(raw), want) {
+		t.Errorf("schema SQL lacks %q", want)
+	}
+	found := false
+	for _, table := range seatManagementDatabaseTables {
+		if table.Name != "seats" {
+			continue
+		}
+		for _, stmt := range table.DDL {
+			found = found || strings.Contains(stmt, want)
+		}
+	}
+	if !found {
+		t.Errorf("seats DDL lacks %q", want)
+	}
 }

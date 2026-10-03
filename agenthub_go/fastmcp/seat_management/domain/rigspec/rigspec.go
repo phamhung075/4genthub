@@ -19,7 +19,7 @@ type Seat struct {
 	Key     string
 	Runtime string
 	Model   string
-	// PermissionPolicy is rendered on the member; empty renders no line (the OpenRig floor).
+	// PermissionPolicy is required: one of resolver.PermissionPolicies, rendered on the member.
 	PermissionPolicy string
 }
 
@@ -85,7 +85,7 @@ type edgeYAML struct {
 
 // permissionPolicyValue is the member value: builtin:<name>, or the literal none.
 func permissionPolicyValue(policy string) string {
-	if policy == "" || policy == "none" {
+	if policy == "none" {
 		return policy
 	}
 	return "builtin:" + policy
@@ -118,10 +118,8 @@ func RenderRoom(roomSlug, roomName string, seats []Seat, edges []Edge) (string, 
 			return "", fmt.Errorf("rigspec: duplicate seat key %q", seat.Key)
 		}
 		keys[seat.Key] = true
-		if seat.PermissionPolicy != "" {
-			if err := resolver.CheckPermissionPolicy(seat.PermissionPolicy); err != nil {
-				return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)
-			}
+		if err := resolver.CheckPermissionPolicy(seat.PermissionPolicy); err != nil {
+			return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)
 		}
 		if err := resolver.CheckRuntime(seat.Runtime); err != nil {
 			return "", fmt.Errorf("rigspec: seat %q: %w", seat.Key, err)

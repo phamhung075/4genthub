@@ -320,11 +320,11 @@ func TestSeatDeletesIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	a, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+	a, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code", PermissionPolicy: "standard"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "bob", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+	b, err := seats.Create(ctx, userID, domainrepo.Seat{RoomID: room.ID, SeatKey: "bob", SeatTypeID: seatType.ID, Runtime: "claude-code", PermissionPolicy: "standard"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -581,7 +581,7 @@ func TestMachineExpectedHashIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		seat, err := seats.Create(ctx, user, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code"})
+		seat, err := seats.Create(ctx, user, domainrepo.Seat{RoomID: room.ID, SeatKey: "alice", SeatTypeID: seatType.ID, Runtime: "claude-code", PermissionPolicy: "standard"})
 		if err != nil {
 			t.Fatal(err)
 		}

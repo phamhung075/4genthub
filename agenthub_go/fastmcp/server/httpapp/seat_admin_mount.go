@@ -33,6 +33,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -883,6 +884,7 @@ func handleSetSeatPermissionPolicy(w http.ResponseWriter, r *http.Request, u *au
 		writeSeatAdminServiceError(w, err)
 		return
 	}
+	log.Printf("[SEAT] user %s set permission policy of %s/%s to %s", userID(u), r.PathValue("room"), r.PathValue("seat"), req.PermissionPolicy)
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))

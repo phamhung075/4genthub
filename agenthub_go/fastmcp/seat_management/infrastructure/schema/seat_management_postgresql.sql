@@ -121,7 +121,8 @@ CREATE TABLE IF NOT EXISTS seats (
     permission_policy TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key)
+    CONSTRAINT uq_seats_room_seat_key UNIQUE (room_id, seat_key),
+    CONSTRAINT ck_seats_permission_policy CHECK (permission_policy IN ('locked', 'standard', 'open', 'yolo', 'none'))
 );
 
 CREATE INDEX IF NOT EXISTS ix_seats_user_id ON seats (user_id);

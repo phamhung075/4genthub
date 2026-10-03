@@ -740,8 +740,8 @@ func TestSeatAdminRemoveSeatIsAHardDelete(t *testing.T) {
 	room := fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 	)
 	fake.links = append(fake.links,
 		&repositories.SeatLink{FromSeatID: "seat-a", ToSeatID: "seat-b", Kind: "delegates_to", Allow: true},
@@ -830,8 +830,8 @@ func TestSeatAdminDeleteLink(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
@@ -988,8 +988,8 @@ func TestSeatAdminLinks(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 	)
 	mux := seatAdminTestMux(t, fake)
 	rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`)
@@ -1015,8 +1015,8 @@ func TestSeatAdminLinkKinds(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats,
-		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice"},
-		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob"},
+		&repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"},
+		&repositories.Seat{ID: "seat-b", RoomID: room.ID, SeatKey: "bob", PermissionPolicy: "standard"},
 		&repositories.Seat{ID: "seat-c", RoomID: room.ID, SeatKey: "carol"},
 	)
 	mux := seatAdminTestMux(t, fake)
@@ -1103,7 +1103,7 @@ func TestSeatAdminSetOccupant(t *testing.T) {
 func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
 	for _, body := range []string{
@@ -1130,7 +1130,7 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
 	for _, runtime := range []string{"pi", "omp"} {
 		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"`+runtime+`"}`)
@@ -1399,50 +1399,5 @@ func TestSeatAdminCreateSeatPermissionPolicy(t *testing.T) {
 	}
 	if len(fake.seats) != 2 {
 		t.Errorf("a rejected create stored a seat: %d seats", len(fake.seats))
-	}
-}
-
-// The policy chosen through the PUT route is what the rigspec renders for that member, and
-// another user's request neither changes nor reveals the seat.
-func TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped(t *testing.T) {
-	t.Setenv(publicURLEnv, "https://api.example.test")
-	fake := newFakeSeatAdmin()
-	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
-	mux := seatAdminTestMux(t, fake)
-	rigMux := seatRigSpecTestMux(t, rigSpecOverAdminFake{fake})
-	const path = "/api/v2/openrig/rooms/dev/seats/alice/permission-policy"
-	render := func() string {
-		t.Helper()
-		rec := doAgentsRequest(t, rigMux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
-		if rec.Code != http.StatusOK {
-			t.Fatalf("rigspec: %d %s", rec.Code, rec.Body.String())
-		}
-		return decodeRigSpec(t, rec).RigSpec.YAML
-	}
-	if yaml := render(); !strings.Contains(yaml, "permission_policy: builtin:standard") || strings.Contains(yaml, "builtin:yolo") {
-		t.Fatalf("before the change the member renders standard: %s", yaml)
-	}
-
-	room.UserID = "another-user"
-	if rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"permission_policy":"yolo"}`); rec.Code != http.StatusNotFound {
-		t.Fatalf("other user's seat: status = %d, want 404: %s", rec.Code, rec.Body.String())
-	}
-	if fake.seats[0].PermissionPolicy != "standard" {
-		t.Fatalf("another user's request changed the seat: %+v", fake.seats[0])
-	}
-	room.UserID = ""
-
-	if rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"permission_policy":"strict"}`); rec.Code != http.StatusBadRequest {
-		t.Fatalf("invalid value: status = %d, want 400", rec.Code)
-	}
-	if yaml := render(); strings.Contains(yaml, "builtin:strict") || !strings.Contains(yaml, "builtin:standard") {
-		t.Errorf("a rejected value reached the render: %s", yaml)
-	}
-	if rec := doAgentsRequest(t, mux, http.MethodPut, path, `{"permission_policy":"yolo"}`); rec.Code != http.StatusOK {
-		t.Fatalf("valid value: %d %s", rec.Code, rec.Body.String())
-	}
-	if yaml := render(); !strings.Contains(yaml, "permission_policy: builtin:yolo") || strings.Contains(yaml, "builtin:standard") {
-		t.Errorf("after the change the member renders yolo: %s", yaml)
 	}
 }

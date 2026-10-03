@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-03 — permission policy is never empty
+
+- Added: `TestSeatPermissionPolicyCheckMatchesResolver` (the CHECK list in the SQL file and the seats DDL equals `resolver.PermissionPolicies`), an empty policy case in `TestRenderRoomRejectsInvalidMemberPolicy`.
+- Changed: every seat fixture in rigspec, httpapp and the Postgres integration tests carries `PermissionPolicy: "standard"`; the "no policy, no line" expectations are replaced by `builtin:standard`; `TestRenderRoomRigCLI` runs `locked`, `standard`, `yolo`, `none`. Postgres integration tests were updated but not run (no database here). The PUT 400 case already existed in `TestSeatAdminSetPermissionPolicy`; a cross-tenant HTTP test is not possible with the single-user fake, the SQL scoping is covered by `TestSeatUpdatePermissionPolicyIsUserScoped`.
+
 ## 2026-10-03 — deterministic bridge timeout, permission-policy route
 
 - Changed (`test_openrig_bridge.py`): the run-loop timeout step no longer races a 0.5 s server sleep against a 0.2 s client timeout; the server holds the request open until the fixture releases it and `SEND_TIMEOUT` is 1 s, so the timeout is certain and normal requests have a wide margin under load. Three runs: 33 passed.

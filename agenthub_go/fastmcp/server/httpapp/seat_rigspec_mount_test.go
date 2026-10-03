@@ -118,9 +118,9 @@ func TestRoomRigSpecRendersSeatsEdgesAndHashes(t *testing.T) {
 	fake := &fakeSeatRigSpec{
 		rooms: map[string]*repositories.Room{"dev": room},
 		seats: []*repositories.Seat{
-			{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code"},
-			{ID: "seat-dev", RoomID: "room-dev", SeatKey: "dev", Runtime: "codex", Model: "gpt-5"},
-			{ID: "seat-qa", RoomID: "room-dev", SeatKey: "qa", Runtime: "claude-code"},
+			{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code", PermissionPolicy: "standard"},
+			{ID: "seat-dev", RoomID: "room-dev", SeatKey: "dev", Runtime: "codex", Model: "gpt-5", PermissionPolicy: "standard"},
+			{ID: "seat-qa", RoomID: "room-dev", SeatKey: "qa", Runtime: "claude-code", PermissionPolicy: "standard"},
 		},
 		links: map[string][]*repositories.SeatLink{
 			"seat-lead": {

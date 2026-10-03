@@ -50,9 +50,9 @@ func parseRig(t *testing.T, yamlText string) parsedRig {
 func TestRenderRoomRendersPodMembersAndEdges(t *testing.T) {
 	out, err := RenderRoom("dev", "Development",
 		[]Seat{
-			{Key: "lead", Runtime: "claude-code"},
-			{Key: "dev", Runtime: "codex", Model: "gpt-5"},
-			{Key: "qa", Runtime: "claude-code"},
+			{Key: "lead", Runtime: "claude-code", PermissionPolicy: "standard"},
+			{Key: "dev", Runtime: "codex", Model: "gpt-5", PermissionPolicy: "standard"},
+			{Key: "qa", Runtime: "claude-code", PermissionPolicy: "standard"},
 		},
 		[]Edge{
 			{Kind: "delegates_to", From: "lead", To: "dev"},
@@ -121,13 +121,13 @@ func TestRenderRoomRendersPodMembersAndEdges(t *testing.T) {
 
 func TestRenderRoomDeterministic(t *testing.T) {
 	first, err := RenderRoom("dev", "Development",
-		[]Seat{{Key: "lead", Runtime: "claude-code"}, {Key: "dev", Runtime: "codex"}, {Key: "qa", Runtime: "claude-code"}},
+		[]Seat{{Key: "lead", Runtime: "claude-code", PermissionPolicy: "standard"}, {Key: "dev", Runtime: "codex", PermissionPolicy: "standard"}, {Key: "qa", Runtime: "claude-code", PermissionPolicy: "standard"}},
 		[]Edge{{Kind: "delegates_to", From: "lead", To: "dev"}, {Kind: "can_observe", From: "lead", To: "qa"}})
 	if err != nil {
 		t.Fatalf("first RenderRoom: %v", err)
 	}
 	second, err := RenderRoom("dev", "Development",
-		[]Seat{{Key: "qa", Runtime: "claude-code"}, {Key: "dev", Runtime: "codex"}, {Key: "lead", Runtime: "claude-code"}},
+		[]Seat{{Key: "qa", Runtime: "claude-code", PermissionPolicy: "standard"}, {Key: "dev", Runtime: "codex", PermissionPolicy: "standard"}, {Key: "lead", Runtime: "claude-code", PermissionPolicy: "standard"}},
 		[]Edge{{Kind: "can_observe", From: "lead", To: "qa"}, {Kind: "delegates_to", From: "lead", To: "dev"}})
 	if err != nil {
 		t.Fatalf("second RenderRoom: %v", err)
@@ -138,7 +138,7 @@ func TestRenderRoomDeterministic(t *testing.T) {
 }
 
 func TestRenderRoomRejectsInvalidInput(t *testing.T) {
-	seats := []Seat{{Key: "lead", Runtime: "claude-code"}, {Key: "dev", Runtime: "codex"}}
+	seats := []Seat{{Key: "lead", Runtime: "claude-code", PermissionPolicy: "standard"}, {Key: "dev", Runtime: "codex", PermissionPolicy: "standard"}}
 	cases := []struct {
 		name     string
 		roomSlug string
@@ -150,9 +150,9 @@ func TestRenderRoomRejectsInvalidInput(t *testing.T) {
 		{"bad room slug", "bad.slug", "Dev", seats, nil, "room slug"},
 		{"empty room name", "dev", "", seats, nil, "room name is required"},
 		{"no seats", "dev", "Dev", nil, nil, "has no seats"},
-		{"bad seat key", "dev", "Dev", []Seat{{Key: "bad.key", Runtime: "claude-code"}}, nil, "seats[0] key"},
-		{"duplicate seat", "dev", "Dev", []Seat{{Key: "lead", Runtime: "codex"}, {Key: "lead", Runtime: "codex"}}, nil, "duplicate seat key"},
-		{"bad runtime", "dev", "Dev", []Seat{{Key: "lead", Runtime: "python"}}, nil, "runtime"},
+		{"bad seat key", "dev", "Dev", []Seat{{Key: "bad.key", Runtime: "claude-code", PermissionPolicy: "standard"}}, nil, "seats[0] key"},
+		{"duplicate seat", "dev", "Dev", []Seat{{Key: "lead", Runtime: "codex", PermissionPolicy: "standard"}, {Key: "lead", Runtime: "codex", PermissionPolicy: "standard"}}, nil, "duplicate seat key"},
+		{"bad runtime", "dev", "Dev", []Seat{{Key: "lead", Runtime: "python", PermissionPolicy: "standard"}}, nil, "runtime"},
 		{"bad edge kind", "dev", "Dev", seats, []Edge{{Kind: "reports_to", From: "lead", To: "dev"}}, "kind"},
 		{"unknown from", "dev", "Dev", seats, []Edge{{Kind: "delegates_to", From: "ghost", To: "dev"}}, "from"},
 		{"unknown to", "dev", "Dev", seats, []Edge{{Kind: "delegates_to", From: "lead", To: "ghost"}}, "to"},
@@ -191,7 +191,7 @@ func TestRenderRoomRigCLI(t *testing.T) {
 	if err != nil {
 		t.Skip("rig binary not on PATH")
 	}
-	for _, policy := range []string{"", "locked", "standard", "yolo", "none"} {
+	for _, policy := range []string{"locked", "standard", "yolo", "none"} {
 		t.Run("policy="+policy, func(t *testing.T) { validateRoomWithRig(t, rigPath, policy) })
 	}
 }
@@ -214,7 +214,7 @@ func validateRoomWithRig(t *testing.T, rigPath, policy string) {
 	if err != nil {
 		t.Fatalf("RenderRoom: %v", err)
 	}
-	if policy != "" && strings.Count(rendered, "permission_policy: "+permissionPolicyValue(policy)) != len(seats) {
+	if strings.Count(rendered, "permission_policy: "+permissionPolicyValue(policy)) != len(seats) {
 		t.Fatalf("rendered spec does not carry %s on every member:\n%s", policy, rendered)
 	}
 	rigFile := filepath.Join(dir, "rig.yaml")
@@ -281,7 +281,7 @@ func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
 		[]Seat{
 			{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
 			{Key: "bob", Runtime: "claude-code", PermissionPolicy: "standard"},
-			{Key: "carol", Runtime: "claude-code"},
+			{Key: "carol", Runtime: "claude-code", PermissionPolicy: "standard"},
 			{Key: "dave", Runtime: "claude-code", PermissionPolicy: "none"},
 		}, nil)
 	if err != nil {
@@ -293,7 +293,7 @@ func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
 		t.Fatalf("parse rendered rig.yaml: %v\n%s", err, out)
 	}
 	if _, present := doc["permission_policy"]; present {
-		t.Fatalf("rig-level permission_policy rendered for an empty rig policy:\n%s", out)
+		t.Fatalf("rig-level permission_policy rendered:\n%s", out)
 	}
 	pods, ok := doc["pods"].([]any)
 	if !ok || len(pods) != 1 {
@@ -314,13 +314,13 @@ func TestRenderRoomMemberPermissionPolicy(t *testing.T) {
 			t.Errorf("%s permission_policy = %#v, want %q", id, byID[id]["permission_policy"], want)
 		}
 	}
-	if got, present := byID["carol"]["permission_policy"]; present {
-		t.Errorf("carol permission_policy = %#v, want no key", got)
+	if got, _ := byID["carol"]["permission_policy"].(string); got != "builtin:standard" {
+		t.Errorf("carol permission_policy = %#v, want builtin:standard", byID["carol"]["permission_policy"])
 	}
 }
 
 func TestRenderRoomRejectsInvalidMemberPolicy(t *testing.T) {
-	for _, bad := range []string{"bypass", "builtin:yolo", "Yolo"} {
+	for _, bad := range []string{"", "bypass", "builtin:yolo", "Yolo"} {
 		out, err := RenderRoom("dev", "Development", []Seat{{Key: "alice", Runtime: "claude-code", PermissionPolicy: bad}}, nil)
 		if err == nil {
 			t.Fatalf("member policy %q rendered, want an error:\n%s", bad, out)
@@ -336,7 +336,7 @@ func TestRenderRoomMemberPolicyIsDeterministic(t *testing.T) {
 		{Key: "bob", Runtime: "codex", PermissionPolicy: "standard"},
 		{Key: "alice", Runtime: "claude-code", PermissionPolicy: "yolo"},
 		{Key: "dave", Runtime: "claude-code", PermissionPolicy: "none"},
-		{Key: "carol", Runtime: "claude-code"},
+		{Key: "carol", Runtime: "claude-code", PermissionPolicy: "standard"},
 	}
 	first, err := RenderRoom("dev", "Development", seats, nil)
 	if err != nil {
