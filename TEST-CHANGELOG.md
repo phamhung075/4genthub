@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — AuthContext tests call the provider's real handlers (`d532cc4d`)
+
+- Rewritten: `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`, 26 tests, 18 failing before, 26 pass after; no test added or removed, no source change.
+- What changed: the tests capture the value of the rendered provider through `useAuth()` and `await` its `login`, `signup` and `refreshToken` inside `act`; `vi` timers and `vi.stubEnv` replace `jest` and the `import.meta.env.MODE` assignment; `logger.error` is spied instead of `console.error`; the missing-provider test expects `useAuth must be used within an AuthProvider`.
+- Ran: `npx vitest run src/tests/pages/Profile.test.tsx src/tests/contexts/AuthContext.test.tsx` (in `agenthub-frontend`): 2 files, 44 tests passed (26 here, 18 in the Profile entry below).
+
+## 2026-10-04 — Profile tests render the page (`e6d7d1b9`)
+
+- Rewritten: `agenthub-frontend/src/tests/pages/Profile.test.tsx`, 18 tests, all 18 failing before, 18 pass after; no test added or removed, no source change.
+- What changed: `vi.mock('react-router-dom')` keeps the real exports and replaces only `useNavigate` (the automock removed the `BrowserRouter` that `test-utils` renders in); the auth provider value has the current `AuthContextType` keys; the theme mock is shared through `vi.hoisted`; the missing-context test renders without providers; two expectations follow the page (Preferences card text, one initial for a one-word name).
+- Known gap, not changed: `handleSave` in `src/pages/Profile.tsx` only shows an alert and never saves, so the `saves profile changes` test asserts only the alert and leaving edit mode.
+
 ## 2026-10-04 — frontend suite triage: 298 failing tests down to 140 (see agenthub-frontend/CHANGELOG.md)
 
 Full `npx vitest run` (3 forks, 2 GB heap): before 1720 tests, 1422 passed, 298 failed, 9 files that do not load;
