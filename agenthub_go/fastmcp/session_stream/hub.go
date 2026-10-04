@@ -107,6 +107,13 @@ func (h *SessionHub) Unsubscribe(sessionID string, q *Queue) {
 	}
 }
 
+// Subscribers reports how many viewers are subscribed to sessionID.
+func (h *SessionHub) Subscribers(sessionID string) int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.subs[sessionID])
+}
+
 // Publish is publish: non-blocking. A slow viewer that overflows is dropped, not
 // waited on; it gets the OVERFLOW marker so its handler can close the socket.
 func (h *SessionHub) Publish(sessionID string, events []any) {

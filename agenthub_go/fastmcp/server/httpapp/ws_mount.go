@@ -50,12 +50,13 @@ const (
 	wsMaxFrameBytes = 1 << 26
 )
 
-// mountWebSockets registers the realtime and connector WebSocket endpoints. sessions
+// mountWebSockets registers the realtime, connector and session viewer WebSocket endpoints. sessions
 // is the connector's persistence manager; the realtime loop only needs the shared
 // notification helpers in server/routes.
 func mountWebSockets(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("GET /ws/realtime", handleRealtime)
 	mux.HandleFunc("GET /ws/connector", handleConnector(sessions))
+	mux.HandleFunc("GET /ws/sessions/{id}", handleSessionViewer(sessionStreamStore{sessions}))
 }
 
 // handleRealtime ports realtime_updates: authenticate from ?token=, accept, send the

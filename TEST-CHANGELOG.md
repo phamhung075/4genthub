@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — session viewer handler tests (Task A5, Go)
+
+- Added `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go` (7 tests over a real socket and an in-memory `sessionViewerStore`, no Postgres): replay after `after_seq` then live (an already-replayed live seq is skipped); missing id and another user's id close identically with 4004; an event published while the replay is blocked is not lost; an overflowing viewer gets 1013 and no subscription is left; an idle client closing releases its subscription; a client message does not end the stream; replay pages of 500 over 1203 and 1000 events (3 reads each, limit 500).
+- Mutation checks (each reverted): ownership check disabled fails the 4004 test; subscribe moved after the replay fails the lost-event and overflow tests; no idle reader fails 5 tests including the idle-close test.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/server fastmcp/session_stream` empty; `go vet ./fastmcp/server/... ./fastmcp/session_stream/` clean; `go test -count=1 ./fastmcp/server/... ./fastmcp/session_stream/ ./fastmcp/websocket/` ok; `go test -count=3 -race -run TestSessionViewer ./fastmcp/server/httpapp/` ok. Not covered: the real database path (`sessionStreamStore`), which needs the PG task.
+
 ## 2026-10-04 — getAvailableAgents reads seats (Task D6, frontend)
 
 - Rewrote the `getAvailableAgents` block of `agenthub-frontend/src/tests/api.test.ts` (8 failing tests that asserted the old 32-name list) as 4 tests over a mocked `seatApi`: seat keys of every room as `@seat_key` sorted, a key in two rooms listed once, no rooms means no seat call, a failing seat API rejects.
