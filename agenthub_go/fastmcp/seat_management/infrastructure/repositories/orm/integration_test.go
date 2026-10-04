@@ -84,8 +84,8 @@ func TestSeatRepositoriesIntegration(t *testing.T) {
 	if got, err := modules.GetVersion(ctx, userID, "instr", "1.0.0"); err != nil || got == nil || got.Content != "hello" {
 		t.Fatalf("GetVersion = %+v, %v", got, err)
 	}
-	if latest, err := modules.LatestVersion(ctx, userID, "instr"); err != nil || latest == nil || latest.Version != "1.0.0" {
-		t.Fatalf("LatestVersion = %+v, %v", latest, err)
+	if latest, err := modules.ListLatest(ctx, userID); err != nil || len(latest) != 1 || latest[0].Version != "1.0.0" {
+		t.Fatalf("ListLatest = %+v, %v", latest, err)
 	}
 
 	// immutable module versions

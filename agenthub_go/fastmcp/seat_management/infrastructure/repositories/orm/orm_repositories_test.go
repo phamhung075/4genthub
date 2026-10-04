@@ -253,9 +253,6 @@ func TestTenantScoping(t *testing.T) {
 	if _, err := repo.GetVersion(ctx, testUser, "instr", "1.0.0"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repo.LatestVersion(ctx, testUser, "instr"); err != nil {
-		t.Fatal(err)
-	}
 
 	sawModule, sawJoin := false, false
 	for _, q := range f.recorded() {
@@ -322,8 +319,8 @@ func TestErrorsAreNotSwallowed(t *testing.T) {
 	if _, err := repo.SaveModule(ctx, testUser, "instr", resolver.KindInstruction); err == nil {
 		t.Fatal("SaveModule swallowed the database error")
 	}
-	if _, err := repo.LatestVersion(ctx, testUser, "instr"); err == nil {
-		t.Fatal("LatestVersion swallowed the database error")
+	if _, err := repo.GetVersion(ctx, testUser, "instr", "1.0.0"); err == nil {
+		t.Fatal("GetVersion swallowed the database error")
 	}
 
 	// A conversion error must surface, not be reported as not found.

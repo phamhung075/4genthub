@@ -13,6 +13,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Added: `TestResolveRejectsNonConcreteVersions` (seat type ref, overlay add, with `""` and `"latest"`) and `TestResolveIgnoresNewlyPublishedModuleVersions` in `resolver_test.go`; `add` bodies without a version or with `"latest"` in `TestSeatAdminOverlayValidation` (`seat_admin_mount_test.go`).
 - Verified red first: the resolver test failed with `error = <nil>` for all 4 cases, and the admin test returned 422 instead of 400 for the two `add` bodies.
 - Removed: `TestResolveFollowLatestBecomesConcrete`, the `base latest` and `add unknown latest` cases, the `Latest` fakes (`memCatalog`, `emptyCatalog`, `moduleCatalog`, which also removes the string version compare the reviewer flagged), and the ordered-latest assertion of the catalog test (`TestDBCatalogLatestOrderingAndGet` is now `TestDBCatalogGet`). Existing admin tests that sent `add` without a version now send one.
+- Removed: the `ModuleRepository.LatestVersion` calls in `orm_repositories_test.go` (the swallowed-error check now uses `GetVersion`) and `integration_test.go` (now asserts `ListLatest`; Postgres integration not run).
 - Ran: `go vet ./fastmcp/...` clean, `gofmt -l fastmcp cmd` clean, `go test ./fastmcp/seat_management/... ./fastmcp/server/httpapp/ ./cmd/...` pass. Not run: Postgres integration tests.
 
 ## 2026-10-04 — removed agent routes answer 404

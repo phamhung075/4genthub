@@ -103,15 +103,6 @@ func (r *ORMModuleRepository) GetVersion(ctx context.Context, userID, slug, vers
 	return r.moduleVersionQuery(ctx, query, userID, slug, version)
 }
 
-// LatestVersion returns the newest version by created_at then id, or nil when absent.
-func (r *ORMModuleRepository) LatestVersion(ctx context.Context, userID, slug string) (*domainrepo.ModuleVersion, error) {
-	query := `SELECT ` + moduleVersionJoinSelect + ` FROM module_versions AS mv ` +
-		`JOIN modules AS m ON m."id" = mv."module_id" ` +
-		`WHERE mv."user_id" = $1 AND m."slug" = $2 ` +
-		`ORDER BY mv."created_at" DESC, mv."id" DESC LIMIT 1`
-	return r.moduleVersionQuery(ctx, query, userID, slug)
-}
-
 // ListLatest returns the newest version of every module ordered by slug; Content is not loaded.
 func (r *ORMModuleRepository) ListLatest(ctx context.Context, userID string) ([]domainrepo.ModuleVersion, error) {
 	query := `SELECT DISTINCT ON (m."slug") mv."id"::text, mv."module_id"::text, mv."version", mv."checksum", ` +

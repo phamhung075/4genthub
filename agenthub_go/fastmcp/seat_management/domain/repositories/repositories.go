@@ -54,7 +54,6 @@ type ModuleRepository interface {
 	SaveModule(ctx context.Context, userID, slug string, kind resolver.ModuleKind) (*Module, error)
 	AddVersion(ctx context.Context, userID, slug, version, content string) (*ModuleVersion, error)
 	GetVersion(ctx context.Context, userID, slug, version string) (*ModuleVersion, error)
-	LatestVersion(ctx context.Context, userID, slug string) (*ModuleVersion, error)
 	// ListLatest returns the newest version of every module, ordered by slug.
 	ListLatest(ctx context.Context, userID string) ([]ModuleVersion, error)
 }
