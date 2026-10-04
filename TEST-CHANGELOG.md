@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — T4 machine-token integration tests run on real Postgres
+
+- `TestMachineTokensIntegration` and `TestMachineExpectedHashIntegration` (`fastmcp/seat_management/infrastructure/repositories/orm/integration_test.go`) were run against a fresh throwaway Postgres with `SEAT_TEST_DATABASE_URL`: `go test -count=1 -v -run 'TestMachineTokensIntegration|TestMachineExpectedHashIntegration' ./fastmcp/seat_management/infrastructure/repositories/orm/` -> both PASS, 0 skipped, 0 failed (1.06s and 4.69s). This closes T4's "Open: Postgres integration tests not run".
+- Bridge-status half: `machines.ReplaceSnapshot` is covered on real Postgres in `TestSeatRepositoriesIntegration` and `TestMachineExpectedHashIntegration`; the token repository by `TestMachineTokensIntegration`. No single test ties a token to its machine's status snapshot (noted on the T4 line).
+
 ## 2026-10-04 — Python /api/v2/agents metadata surface retired (T8 follow-up)
 
 - Deleted `agenthub_main/src/tests/server/test_agent_routes.py` with its subject (the `GET /api/v2/agents/metadata` route). Its four metadata cases and the "not served" parametrized case go with the module; those not-served paths are not routes anywhere (`grep` empty).
