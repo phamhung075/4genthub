@@ -1,4 +1,5 @@
 import React from 'react';
+import userEvent from '@testing-library/user-event';
 import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../../components/ui/dialog';
 import { cn } from '../../../lib/utils';
@@ -253,6 +254,114 @@ describe('Dialog components', () => {
 
       expect(screen.getByRole('dialog', { name: 'First' })).toBeInTheDocument();
       expect(screen.getByRole('dialog', { name: 'Second' })).toBeInTheDocument();
+    });
+  });
+
+  describe('focus management (aria-modal)', () => {
+    const Harness = () => {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open</button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogContent>
+              <DialogTitle>Settings</DialogTitle>
+              <input aria-label="first" />
+              <button>middle</button>
+              <button onClick={() => setOpen(false)}>last</button>
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    };
+
+    const openHarness = () => {
+      render(<Harness />);
+      const trigger = screen.getByRole('button', { name: 'Open' });
+      trigger.focus();
+      userEvent.click(trigger);
+      return trigger;
+    };
+
+    it('moves focus to the first focusable element on open', () => {
+      openHarness();
+
+      expect(screen.getByLabelText('first')).toHaveFocus();
+    });
+
+    it('focuses the dialog itself when it has nothing focusable', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>Only text</DialogContent>
+        </Dialog>
+      );
+
+      expect(screen.getByRole('dialog')).toHaveFocus();
+    });
+
+    it('keeps focus on an element that took it itself (autoFocus)', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>
+            <button>one</button>
+            <input aria-label="wanted" autoFocus />
+          </DialogContent>
+        </Dialog>
+      );
+
+      expect(screen.getByLabelText('wanted')).toHaveFocus();
+    });
+
+    it('wraps Tab from the last element to the first', () => {
+      openHarness();
+      screen.getByRole('button', { name: 'last' }).focus();
+
+      userEvent.tab();
+
+      expect(screen.getByLabelText('first')).toHaveFocus();
+    });
+
+    it('wraps Shift+Tab from the first element to the last', () => {
+      openHarness();
+      expect(screen.getByLabelText('first')).toHaveFocus();
+
+      userEvent.tab({ shift: true });
+
+      expect(screen.getByRole('button', { name: 'last' })).toHaveFocus();
+    });
+
+    it('moves Tab normally inside the dialog', () => {
+      openHarness();
+
+      userEvent.tab();
+
+      expect(screen.getByRole('button', { name: 'middle' })).toHaveFocus();
+    });
+
+    it('restores focus to the element that had it before the dialog opened', () => {
+      const trigger = openHarness();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      userEvent.click(screen.getByRole('button', { name: 'last' }));
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(trigger).toHaveFocus();
+    });
+
+    it('lets only the first of two titles label the dialog', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>
+            <DialogTitle>Primary</DialogTitle>
+            <DialogTitle>Secondary</DialogTitle>
+          </DialogContent>
+        </Dialog>
+      );
+
+      const [primary, secondary] = screen.getAllByRole('heading');
+      expect(primary.id).not.toBe(secondary.id);
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-labelledby', primary.id);
+      expect(screen.getByRole('dialog', { name: 'Primary' })).toBeInTheDocument();
     });
   });
 

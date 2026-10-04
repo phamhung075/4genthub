@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — dialog focus management (Task B7)
+
+- Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `focus management (aria-modal)` block (8 tests): focus to the first focusable on open, to the dialog when nothing is focusable, an `autoFocus` child keeps focus, Tab wraps last to first, Shift+Tab wraps first to last, Tab moves normally in between, focus returns to the trigger on close, only the first of two titles labels the dialog. Mutation: removing the Tab handler fails the two wrap tests and removing the restore fails the restore test (restored, tests pass 37 of 37).
+- Result (in `agenthub-frontend`): `npx vitest run` 27 failed / 1704 passed (1731) before, 27 failed / 1712 passed (1739) after; failing files identical (7: api.test.ts, BranchItem, ProjectListContent, AuthWrapper, dto-integration, taskTypes, testWebSocket), none newly failing; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
 ## 2026-10-04 — B5 review follow-ups (Task B5b)
 
 - `agenthub-frontend/src/tests/setupTests.test.tsx`: comment explaining the second `setupTests` copy and its duplicated hooks. `test_useRealtimeSync_project.test.tsx`: two stray blank lines removed. No assertion changed.
