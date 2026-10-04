@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **logger.config tests set the environment with `vi.stubEnv`** - 2026-10-04
+  - `src/tests/config/logger.config.test.ts` (31 tests, all failing) faked `global.import.meta`, which does not
+    exist (`import.meta` is per-module syntax), and replaced `process` and `window` with `{}`; 17 failed with
+    "Cannot read properties of undefined (reading 'env')". It also tested `environmentPresets`, `baseConfig`,
+    `developmentConfig`, `stagingConfig`, `productionConfig` and `testConfig`, which were removed from
+    `logger.config.ts` on purpose (no compatibility aliases). The file now stubs the variables, re-imports the module
+    per case, and covers the defaults, both environment sources, booleans, levels, integers, the remote endpoint,
+    `getLoggerConfig` and `debugLoggerConfig` (33 tests, all pass). No source change.
 - **Removed the unused `typeValidation` module and its test** - 2026-10-04
   - `src/utils/typeValidation.ts` had no importer anywhere in `agenthub-frontend` (static or dynamic); only a
     comment in `src/types/index.ts` pointed at it, and its test (22 of 24 tests failing) called `isTaskArray`,
