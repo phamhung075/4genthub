@@ -183,6 +183,13 @@ describe('TaskRowDesktop', () => {
       expect(badge).toHaveAttribute('title', 'This task depends on 1 other task.');
     });
 
+    it('trusts has_dependencies over the count and shows 0 dependencies', () => {
+      renderRow({ summary: { ...summary, has_dependencies: true, dependency_count: 0 } });
+
+      expect(screen.getByText('0 dependencies')).toBeInTheDocument();
+      expect(screen.queryByText('None')).not.toBeInTheDocument();
+    });
+
     it('falls back to the dependencies of the full task', () => {
       renderRow({
         summary: { ...summary, has_dependencies: true, dependency_count: undefined },
@@ -316,7 +323,8 @@ describe('TaskRowDesktop', () => {
       );
 
       expect(row()).toHaveClass('bg-violet-200');
-      expect(row()).not.toHaveClass('loading', 'bg-orange-100');
+      expect(row()).not.toHaveClass('loading');
+      expect(row()).not.toHaveClass('bg-orange-100');
     });
   });
 });

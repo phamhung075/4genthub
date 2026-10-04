@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — TaskRowDesktop test: split negated class assertion (Task B4b)
+
+- Changed: `agenthub-frontend/src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx`: `not.toHaveClass('loading', 'bg-orange-100')` (passes if only one is absent) is now two separate `not.toHaveClass` calls. Added a test that `has_dependencies: true` with `dependency_count: 0` renders '0 dependencies' (the component trusts the flag), now 24 tests.
+- Checked: `npx vitest run` on the file 24 passed; `npx tsc --noEmit -p .` 0 errors.
+
 ## 2026-10-04 — TaskRowDesktop test rewritten against the current component (Task B4)
 
 - Rewritten: `agenthub-frontend/src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx`, 17 failing tests of the removed API (default export, `task`/`isEditing`/`onSaveEdit`) replaced by 23 tests of the current component (named export, `summary`/`fullTask`, `useTaskRowState`): content, subtask and dependency counts with their fallbacks to the full task, assignees and the agent-info dialog, expansion (click does not reach the row, loading, the subtask list needs `isExpanded` and a full task), hover, `elementRef`, row classes. Child components are mocked.
