@@ -206,6 +206,13 @@ Rig note (2026-10-03): the rig `4genthub-dev` ran on `claude-code`, moved to `ag
 - Owner's rule: each seat's session is the chef. It takes the demands, decides, answers the owner and the lead, and is accountable for the result. `deepseek_agent` offload workers do only bounded jobs for the seat; delegable work goes to them first, and their output is never forwarded unreviewed.
 - Open: the lead has go-dev add the chef/worker wording to the `delegate-deepseek` module's next version (module text change, no code).
 
+## Request 18 — OpenRig `rig send` for agy seats (owner priority, 2026-10-04)
+
+- Defect: `rig send <agy seat>` was refused ("reports sh as the foreground command, but OpenRig could not verify its expected agy agent"), because OpenRig starts agy through a staged `/bin/sh` script and only had a process proof for codex.
+- Fix: OpenRig commit `19818f1b` ("fix(daemon): verify agy behind the staged launch script for rig send", branch `feat/support-agy-runtime` in `~/__projects__/openrig`). Built and live (reported by the lead; the writer did not build or run it).
+- Proof: after the fix `rig send` reached all 9 agy seats of the 4genthub-dev rig, and each seat wrote `handover/confirm3-<seat>.md` (all 9 files exist in `~/.openrig/agenthub-seats/4genthub-dev/handover/`; the writer listed them).
+- Finding: no seat sees the `agenthub_http` MCP server; they see only `deepseek`. Owner decides how to wire `agenthub_http` into the agy seats. Open.
+
 ## Team progress and open work (2026-10-03, reported by the lead; not verified in production)
 
 Committed locally, reviewed or in review. None is claimed verified in production, and nothing is pushed:
