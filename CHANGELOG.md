@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**F4 client bridge check recorded in NEXT_GEN.md** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (F4): records the tester's scratch-environment run. Verified: edge-order launch of a 3-seat rig, reported state `in_sync` with hash equal to `expected_hash` and the pin, a seat stopped with `rig seat stop` shown as `stopped`. Open: a seat killed outside OpenRig shows `blocked`, not `stopped`. Not run: claude-process-only kill, relaunch, herdr agents, `seatcheck` deny on a live seat, bundle launch, codex/agy rigs, production. F4 stays unticked. Documentation only; no behavior change, no tests.
+
 **G5 version policy tested through the resolution service** (2026-10-04)
 
 - `agenthub_go/fastmcp/seat_management/application/services/seat_resolution_service_test.go`: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion`. Test only, no behavior change: publishing a module version moves no seat, a new seat type version moves only follow-latest seats, a pinned seat keeps its snapshot hash. `agenthub_go/NEXT_GEN.md` (G5) records the evidence and the open lines; the box is not ticked.
