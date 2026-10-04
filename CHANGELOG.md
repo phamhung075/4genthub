@@ -11,7 +11,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 **Three orphaned Go branch routes deleted** (2026-10-04)
 
 - `POST /api/v2/branches/{id}/assign-agent`, `PUT /api/v2/branches/{id}` and `GET /api/v2/branches/` (`fastmcp/server/httpapp/branch_routes.go`) had no caller left after the dead frontend callers went in `c7e65486`: the live frontend calls only `GET /{id}`, `POST /` and `DELETE /{id}` plus the POST summaries routes, and nothing in the Go tests, `scripts` or `ai_docs` used them (`.swarm/` is gitignored, not part of the repo); they were not a documented contract. Their route handlers, the `BranchController` methods and the adapter methods went with them (`routes/branch_routes.go`, `httpapp/branch_wiring.go`).
-- Deleting `GET /api/v2/branches/` also removes the subtree fall-through it created: measured with a routing probe, `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` previously matched `GET /api/v2/branches/` (200 with all branches) and now have no match (404), while `GET /api/v2/branches/{id}` still serves a one-segment id. The same trailing-slash subtree behaviour remains for `POST /api/v2/branches/` — a POST to an unknown subpath still matches CreateBranch — which is named as a remaining defect rather than fixed here.
+- Deleting `GET /api/v2/branches/` also removes the subtree fall-through it created: measured with a routing probe, `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` previously matched `GET /api/v2/branches/` (200 with all branches) and now have no match (404), while `GET /api/v2/branches/{id}` still serves a one-segment id. The same trailing-slash subtree behaviour remained for `POST /api/v2/branches/`; it is fixed now (see "The branch collection POST is an exact match" under Fixed below).
+
+**Three unreferenced branch API controller methods removed** (2026-10-04)
+
+- `BranchAPIController.ListBranches`, `UpdateBranch` and `AssignAgent` (`fastmcp/task_management/interface/api_controllers/branch_api_controller.go`) had no caller left once the HTTP routes and their adapter went (`f33db13a`); the package's smoke test only exercises `GetBranchPerformanceMetrics`, and a repo-wide grep found no other reference. `task_management` is otherwise untouched, per the lead's instruction: the assign capability stays alive through MCP (`git_branch_mcp_controller/handlers/agent_handler.go:88` -> facade -> `AgentAssignAgent`), and the service and repository layers keep their unit tests.
 
 ### Fixed
 
