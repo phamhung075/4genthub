@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **badge tests assert the palette the Badge uses** - 2026-10-04
+  - `src/tests/components/ui/badge.test.tsx` (13 of 24 failing) expected shadcn tokens (`bg-primary`,
+    `text-secondary-foreground`, `border-input`), but `src/components/ui/badge.tsx` uses explicit palette classes
+    (green for default, gray for secondary, red for destructive, gray border for outline). The component is the
+    truth, so the expectations now name those classes. Three tests also used the wrong technique and are fixed:
+    `onMouseEnter` is fired with `fireEvent.mouseEnter` (React derives it from `mouseover`), the style prop is read
+    from `element.style`, and the empty-badge test selects the `span` instead of the ambiguous `generic` role.
+    No source change.
 - **api.test.ts matches the api module** - 2026-10-04
   - 17 of the 116 tests in `src/tests/api.test.ts` failed. Nine asserted behavior the code no longer has or never
     had: `getTask`, `listSubtasks` and `getSubtask` pass the `includeContext` option through (the mocks are now
