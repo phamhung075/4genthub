@@ -348,6 +348,54 @@ describe('Dialog components', () => {
       expect(trigger).toHaveFocus();
     });
 
+    it('skips hidden controls when focusing in and when wrapping Tab', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>
+            <button hidden>hidden attribute</button>
+            <div style={{ display: 'none' }}><button>inside display none</button></div>
+            <button style={{ visibility: 'hidden' }}>invisible</button>
+            <button>visible first</button>
+            <button>visible last</button>
+            <button hidden>hidden tail</button>
+          </DialogContent>
+        </Dialog>
+      );
+      expect(screen.getByRole('button', { name: 'visible first' })).toHaveFocus();
+
+      screen.getByRole('button', { name: 'visible last' }).focus();
+      userEvent.tab();
+
+      expect(screen.getByRole('button', { name: 'visible first' })).toHaveFocus();
+    });
+
+    it('restores focus to the opener when a child took focus with autoFocus', () => {
+      const AutoFocusHarness = () => {
+        const [open, setOpen] = React.useState(false);
+        return (
+          <>
+            <button onClick={() => setOpen(true)}>Open</button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogContent>
+                <input aria-label="name" autoFocus />
+                <button onClick={() => setOpen(false)}>Close</button>
+              </DialogContent>
+            </Dialog>
+          </>
+        );
+      };
+      render(<AutoFocusHarness />);
+      const trigger = screen.getByRole('button', { name: 'Open' });
+      trigger.focus();
+      userEvent.click(trigger);
+      expect(screen.getByLabelText('name')).toHaveFocus();
+
+      userEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(trigger).toHaveFocus();
+    });
+
     it('lets only the first of two titles label the dialog', () => {
       render(
         <Dialog open={true} onOpenChange={vi.fn()}>

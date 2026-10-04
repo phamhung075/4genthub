@@ -32,6 +32,10 @@
     library, and MUI would mean rewriting the component.
   - Only the first `DialogTitle` in a `DialogContent` labels the dialog; a second title keeps its own id (no
     duplicate ids).
+  - Follow-up to the review: the element to restore focus to is read while `DialogContent` first renders, before a
+    child's `autoFocus` moves focus into the dialog (7 dialogs have an `autoFocus` input; restoring from the mount
+    effect found the dialog's own detached input). Hidden controls (`hidden`, `display: none` on the control or an
+    ancestor inside the dialog, `visibility: hidden`) are skipped by the focus-in and the Tab trap.
 - **TaskRowDesktop tests cover the current component** - 2026-10-04
   - All 17 tests in `src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx` targeted a removed API and failed.
     Replaced by 23 tests of `TaskRowDesktop` (counts and their fallbacks, assignees dialog, expansion, hover, row

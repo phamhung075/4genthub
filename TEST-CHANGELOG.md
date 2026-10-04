@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — dialog focus follow-up (Task B7b)
+
+- Added to `agenthub-frontend/src/tests/components/ui/dialog.test.tsx`: focus returns to the opener when a child has `autoFocus` (fails on 40057b20, passes with the fix), and hidden controls are skipped by focus-in and by the Tab wrap. File 39 of 39.
+- Result (in `agenthub-frontend`): no file newly fails against the run before (the working tree already held unfinished B8 test edits, so the totals are not a clean B7b measurement: 27 failed / 1712 passed before, 20 failed / 1723 passed (1743) after, failing files 7 to 5, all five also failed before); `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
 ## 2026-10-04 — dialog focus management (Task B7)
 
 - Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `focus management (aria-modal)` block (8 tests): focus to the first focusable on open, to the dialog when nothing is focusable, an `autoFocus` child keeps focus, Tab wraps last to first, Shift+Tab wraps first to last, Tab moves normally in between, focus returns to the trigger on close, only the first of two titles labels the dialog. Mutation: removing the Tab handler fails the two wrap tests and removing the restore fails the restore test (restored, tests pass 37 of 37).
@@ -10,7 +15,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-04 — B5 review follow-ups (Task B5b)
 
 - `agenthub-frontend/src/tests/setupTests.test.tsx`: comment explaining the second `setupTests` copy and its duplicated hooks. `test_useRealtimeSync_project.test.tsx`: two stray blank lines removed. No assertion changed.
-- `agenthub_go/NEXT_GEN.md` G6 measurement now gives a range because `e2e/websocket-protocol-v2.test.tsx` fails one test only under full-suite load.
+- `agenthub_go/NEXT_GEN.md` G6 measurement now gives a range because `e2e/websocket-protocol-v2.test.tsx` fails one test intermittently, also in isolation.
 - Result (in `agenthub-frontend`): both files pass (7 and 19 tests), `npx tsc --noEmit -p .` 0 errors.
 
 ## 2026-10-04 — dialog ARIA (Task B6)

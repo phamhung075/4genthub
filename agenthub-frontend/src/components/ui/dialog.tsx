@@ -54,22 +54,34 @@ export function DialogContent({ children, className }: { children: React.ReactNo
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [titleId, setTitleId] = React.useState<string | undefined>(undefined);
   const titleContext = React.useMemo(() => ({ setTitleId }), []);
+  // Read while rendering, before any child's autoFocus has moved focus into the dialog.
+  const [opener] = React.useState(() => document.activeElement as HTMLElement | null);
+
+  // Controls that are hidden (the hidden attribute, display: none on the control or an ancestor
+  // inside the dialog, visibility: hidden) cannot take focus, so the trap must not land on them.
+  // Computed style rather than offsetParent or getClientRects: jsdom has no layout.
+  const isRendered = (el: HTMLElement) => {
+    if (getComputedStyle(el).visibility === "hidden") return false;
+    for (let node: HTMLElement | null = el; node && node !== contentRef.current; node = node.parentElement) {
+      if (node.hidden || getComputedStyle(node).display === "none") return false;
+    }
+    return true;
+  };
 
   const getFocusable = () =>
-    Array.from(contentRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []);
+    Array.from(contentRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []).filter(isRendered);
 
   // aria-modal: move focus in on open (unless a child already took it, e.g. autoFocus) and give it
-  // back to the previously focused element on close.
+  // back to the element that was focused before the dialog rendered on close.
   React.useEffect(() => {
     const content = contentRef.current;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
     if (content && !content.contains(document.activeElement)) {
       (getFocusable()[0] ?? content).focus();
     }
     return () => {
-      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+      if (opener?.isConnected) opener.focus();
     };
-  }, []);
+  }, [opener]);
 
   // aria-modal: Tab and Shift+Tab wrap inside the dialog.
   const trapTab = (e: React.KeyboardEvent<HTMLDivElement>) => {
