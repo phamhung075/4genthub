@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **statusEmojis tests cover the functions the module has** - 2026-10-04
+  - `src/tests/utils/statusEmojis.test.ts` (25 tests, 24 failing) called `getStatusLabel`, `getStatusColor` and
+    `isValidStatus`, which `src/utils/statusEmojis.ts` never exported (checked with `git log -S`; the only
+    `getStatusColor` in src is a private helper in `TaskSearch.tsx`), and expected `⏳` for `in_progress` where
+    the code returns `⚙️`. The code is the truth: the file now tests `getStatusEmoji`, `getPriorityEmoji` and
+    `getEntityEmoji` with their real values (18 tests, all pass).
 - **Failed seat mutations no longer raise an unhandled promise rejection** - 2026-10-04
   - The seat page handlers awaited `mutateAsync` with no catch, so a failed create/remove/delete rejected into the
     browser ("Uncaught (in promise)") and made `SeatsPage.test.tsx` exit 1 with an unhandled error although all
