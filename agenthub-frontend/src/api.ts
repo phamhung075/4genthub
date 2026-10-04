@@ -2,7 +2,6 @@
 // All operations use the V2 authenticated endpoints
 
 import {
-    agentApiV2,
     branchApiV2,
     contextApiV2,
     getCurrentUserId,
@@ -378,16 +377,6 @@ export const updateTaskContext = async (task_id: string, data: any): Promise<any
 };
 
 // --- Agent Operations ---
-export const listAgents = async (): Promise<any[]> => {
-    try {
-        const response = await agentApiV2.getAgentsMetadata() as AgentsResponse;
-        return response.agents || [];
-    } catch (error) {
-        logger.error('Error listing agents:', error);
-        return [];
-    }
-};
-
 // The names an assignee picker offers are the user's seat keys, collected over every room
 // the Seats page lists. A seat is assigned as "@<seat_key>": the backend keeps an assignee
 // that starts with "@" as given and rejects an unknown bare name.

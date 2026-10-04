@@ -228,9 +228,6 @@ export const LandingPage: React.FC = () => {
               <Link to="/help-setup" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                 Documentation
               </Link>
-              <Link to="/agents/marketplace" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                Marketplace
-              </Link>
               <a href="https://github.com/phamhung075/4genthub-hooks" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
                 GitHub
               </a>
@@ -870,7 +867,6 @@ export const LandingPage: React.FC = () => {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/help-setup" className="hover:text-white dark:hover:text-gray-100 transition-colors">Features</Link></li>
                 <li><Link to="/help-setup" className="hover:text-white dark:hover:text-gray-100 transition-colors">Documentation</Link></li>
-                <li><Link to="/agents/marketplace" className="hover:text-white dark:hover:text-gray-100 transition-colors">Agent Marketplace</Link></li>
               </ul>
             </div>
             <div>

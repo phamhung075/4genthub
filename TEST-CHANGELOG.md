@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Agent frontend removed; assignee pickers seat-only (T7, frontend half)
+
+- Deleted `src/tests/useAgentManagement.test.tsx` with its subject. Rewrote `src/tests/components/LazyTaskListAgentLoading.test.tsx` and `src/tests/components/SubtaskEditDialog.test.tsx` to the seat-only behavior (a failed seat load is flagged, a retry clears it, the seats are not reloaded once in). Removed the agent columns from `src/tests/services/apiV2.test.ts` (the whole Agent API describe plus the agent-management tests) and `src/tests/api.test.ts` (the listAgents describe); dropped the removed agent hooks from `src/tests/hooks/index.test.ts` and the `agents` prop from `AgentAssignmentDialog.test.tsx`, `LazySubtaskList.test.tsx` and `components/__tests__/LazySubtaskList.test.tsx`.
+- Result (agenthub-frontend): `npx tsc --noEmit -p .` 0 errors; `npx vite build` ok; `npx vitest run` 91 files / 1722 tests passed, 0 failed files (baseline had 8 to 9 failed files); the 8 touched files pass (191 tests).
+
 ## 2026-10-04 — Migrator scheme guard (DEFECT)
 
 - `fastmcp/database_migrations_test.go` (new, internal package fastmcp): `TestIsPostgresURL` pins `postgres://` and `postgresql://` as Postgres and `sqlite:///…`, `mysql://…` and an empty string as not.

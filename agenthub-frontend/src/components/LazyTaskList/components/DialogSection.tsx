@@ -13,7 +13,6 @@ interface DialogSectionProps {
   activeDialog: TaskActiveDialog;
   fullTasks: Map<string, any>;
   taskSummaries: TaskSummary[];
-  agents: any[];
   availableAgents: string[];
   availableAgentsError: boolean;
   saving: boolean;
@@ -28,7 +27,6 @@ export const DialogSection: React.FC<DialogSectionProps> = ({
   activeDialog,
   fullTasks,
   taskSummaries,
-  agents,
   availableAgents,
   availableAgentsError,
   saving,
@@ -82,7 +80,6 @@ export const DialogSection: React.FC<DialogSectionProps> = ({
           task={fullTasks.get(activeDialog.taskId) || null}
           onClose={onCloseDialog}
           onAssign={() => {}}
-          agents={agents}
           availableAgents={availableAgents}
           availableAgentsError={availableAgentsError}
           saving={false}

@@ -16,7 +16,6 @@ const renderDialog = (props: { availableAgents: string[]; availableAgentsError?:
       task={null}
       onClose={vi.fn()}
       onAssign={vi.fn()}
-      agents={[]}
       {...props}
     />
   );

@@ -2,8 +2,6 @@ import Cookies from 'js-cookie';
 import {
   taskApiV2,
   projectApiV2,
-  agentApiV2,
-  agentManagementApiV2,
   isAuthenticated,
   getCurrentUserId
 } from '../../services/apiV2';
@@ -631,95 +629,6 @@ describe('apiV2.ts', () => {
             credentials: 'include'
           }
         );
-        expect(result).toEqual(mockResponse);
-      });
-    });
-  });
-
-  describe('Agent API V2', () => {
-    beforeEach(() => {
-      (Cookies.get as any).mockReturnValue(mockToken);
-    });
-
-    describe('getAgentsMetadata', () => {
-      it('should fetch agents with authentication', async () => {
-        const mockAgents = [
-          { id: '1', name: '@test_agent' },
-          { id: '2', name: 'coding-agent' }
-        ];
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          status: 200,
-          url: 'http://localhost:8000/api/v2/agents/metadata',
-          json: vi.fn().mockResolvedValue(mockAgents)
-        });
-
-        const result = await agentApiV2.getAgentsMetadata();
-
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/api/v2/agents/metadata',
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${mockToken}`
-            },
-            credentials: 'include'
-          }
-        );
-        expect(result).toEqual(mockAgents);
-      });
-    });
-
-    describe('registerAgent', () => {
-      const agentData = {
-        template_slug: 'coding-agent',
-        agent_name: '@new_agent',
-      };
-
-      it('should register a new agent', async () => {
-        const mockRegisteredAgent = { id: 'agent-123', ...agentData };
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          status: 201,
-          url: 'http://localhost:8000/api/v2/agent-management/instances',
-          json: vi.fn().mockResolvedValue(mockRegisteredAgent)
-        });
-
-        const result = await agentManagementApiV2.createInstance(agentData);
-
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/api/v2/agent-management/instances',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${mockToken}`
-            },
-            credentials: 'include',
-            body: JSON.stringify(agentData)
-          }
-        );
-        expect(result).toEqual(mockRegisteredAgent);
-      });
-
-      it('should handle minimal agent data', async () => {
-        const minimalData = {
-          template_slug: 'minimal-agent',
-        };
-        const mockResponse = { id: 'agent-456', ...minimalData };
-        (global.fetch as any).mockResolvedValue({
-          ok: true,
-          status: 201,
-          url: 'http://localhost:8000/api/v2/agent-management/instances',
-          json: vi.fn().mockResolvedValue(mockResponse)
-        });
-
-        const result = await agentManagementApiV2.createInstance(minimalData);
-
-        const fetchCall = (global.fetch as any).mock.calls[0];
-        const body = JSON.parse(fetchCall[1].body);
-        expect(body).toEqual(minimalData);
         expect(result).toEqual(mockResponse);
       });
     });

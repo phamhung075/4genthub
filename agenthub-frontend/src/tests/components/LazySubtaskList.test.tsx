@@ -132,7 +132,6 @@ describe('LazySubtaskList', () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockReset();
     (api.getTask as ReturnType<typeof vi.fn>).mockResolvedValue(null);
     (api.getAvailableAgents as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (api.listAgents as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
   describe('Initial Loading', () => {

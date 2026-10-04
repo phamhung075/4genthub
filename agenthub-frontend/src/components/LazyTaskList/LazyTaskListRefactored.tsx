@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getAvailableAgents, listAgents } from "../../api";
+import { getAvailableAgents } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
@@ -76,29 +76,23 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [loadedAgents, setLoadedAgents] = useState(false);
   const [availableAgentsError, setAvailableAgentsError] = useState(false);
-  const [agents, setAgents] = useState<any[]>([]);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
 
-  // Load agents on demand
+  // Load seats on demand
   const loadAgentsOnDemand = useCallback(async () => {
     if (loadedAgents) return;
-    // The two lists load independently: a seat API failure must not drop the project agents.
-    // loadedAgents stays false after a failure, so the next dialog open retries.
-    const [projectAgents, seats] = await Promise.allSettled([listAgents(), getAvailableAgents()]);
-    if (projectAgents.status === 'fulfilled') {
-      setAgents(projectAgents.value);
-    } else {
-      logger.error('Error loading agents', { component: 'LazyTaskList', error: projectAgents.reason });
+    // A failed seat load leaves loadedAgents false, so the next dialog open retries.
+    try {
+      const seats = await getAvailableAgents();
+      setAvailableAgents(seats);
+      setAvailableAgentsError(false);
+      setLoadedAgents(true);
+    } catch (error) {
+      logger.error('Error loading seats', { component: 'LazyTaskList', error });
+      setAvailableAgentsError(true);
     }
-    if (seats.status === 'fulfilled') {
-      setAvailableAgents(seats.value);
-    } else {
-      logger.error('Error loading seats', { component: 'LazyTaskList', error: seats.reason });
-    }
-    setAvailableAgentsError(seats.status === 'rejected');
-    setLoadedAgents(projectAgents.status === 'fulfilled' && seats.status === 'fulfilled');
   }, [loadedAgents]);
 
   // Dialog management
@@ -295,7 +289,6 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         activeDialog={activeDialog as TaskActiveDialog}
         fullTasks={fullTasks}
         taskSummaries={displayTasks}
-        agents={agents}
         availableAgents={availableAgents}
         availableAgentsError={availableAgentsError}
         saving={saving}

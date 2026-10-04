@@ -33,8 +33,6 @@ const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Pro
 const RegistrationSuccess = lazy(() => import('./pages/RegistrationSuccess'));
 const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => ({ default: m.TokenManagement })));
 const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
-const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
-const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
 const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
 const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
 const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
@@ -341,30 +339,6 @@ function App() {
               <Suspense fallback={<LoadingFallback />}>
                 <ProtectedRoute>
                   <TokenManagement />
-                </ProtectedRoute>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/agents/marketplace"
-            element={
-              <Suspense fallback={<LoadingFallback />}>
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MarketplacePage />
-                  </AppLayout>
-                </ProtectedRoute>
-              </Suspense>
-            }
-          />
-          <Route
-            path="/agents/my-agents"
-            element={
-              <Suspense fallback={<LoadingFallback />}>
-                <ProtectedRoute>
-                  <AppLayout>
-                    <MyAgentsPage />
-                  </AppLayout>
                 </ProtectedRoute>
               </Suspense>
             }

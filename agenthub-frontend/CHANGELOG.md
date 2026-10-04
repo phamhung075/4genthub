@@ -20,6 +20,11 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Removed
+- **The agent-management UI is gone; assignee pickers are seat-only (T7)** - 2026-10-04
+  - Deleted the pages `src/pages/MyAgentsPage.tsx` and `src/pages/MarketplacePage.tsx`, the `src/components/agents/` directory (AgentConfigEditor, AgentList, AgentSharingDialog, SharedAgentPreview, index), `src/hooks/useAgentManagement.ts`, `src/types/agentTypes.ts` and `src/tests/useAgentManagement.test.tsx`, with their exports in `src/hooks/index.ts` and `src/types/index.ts` and the `/agents/marketplace` and `/agents/my-agents` routes in `src/App.tsx`.
+  - `src/services/apiV2.ts`: the `agentApiV2` and `agentManagementApiV2` clients are gone (they called the removed `/api/v2/agents/metadata` and `/api/v2/agent-management/*` routes). `src/api.ts`: `listAgents` (agent metadata) is gone; `getAvailableAgents` (seat keys) stays.
+  - Assignee pickers are seat-only: `SubtaskEditDialog` and `LazyTaskListRefactored` no longer fetch or pass a project-agents list, and `AgentAssignmentDialog` drops its `agents` prop and the "Project Registered Agents" section; `DialogSection` loses the `agents` prop.
+  - Dead links to the removed routes are gone from `Header.tsx` (nav and tablet), `LandingPage.tsx` (nav and footer) and `components/help/sections/Troubleshooting.tsx`.
 - **`window.testWebSocket` debug helper** - 2026-10-04
   - Deleted `src/utils/testWebSocket.ts` and its import in `src/App.tsx`. The helper took a user id and a token and
     attached itself to `window` in every build, production included. Nothing else referenced it (no help page, doc or

@@ -1,18 +1,17 @@
 /**
- * @fileoverview LazyTaskListRefactored loads the project agents and the user's seats
- * independently: a seat API failure keeps the project agents, flags an error for the
- * assignment dialog and is retried the next time the dialog asks for the agents.
+ * @fileoverview LazyTaskListRefactored loads the user's seats on demand: a failed
+ * load flags an error for the assignment dialog and is retried the next time the
+ * dialog asks for the agents.
  */
 
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import LazyTaskListRefactored from '../../components/LazyTaskList/LazyTaskListRefactored';
-import { getAvailableAgents, listAgents } from '../../api';
+import { getAvailableAgents } from '../../api';
 
 vi.mock('../../api', () => ({
   getAvailableAgents: vi.fn(),
-  listAgents: vi.fn(),
   getTask: vi.fn(),
 }));
 vi.mock('@tanstack/react-query', () => ({ useQueryClient: () => ({ fetchQuery: vi.fn() }) }));
@@ -43,10 +42,12 @@ vi.mock('../../components/LazyTaskList/components', () => ({
   TaskListHeader: () => null,
   TaskListContent: () => null,
   TaskSearchSection: () => null,
-  DialogSection: ({ agents, availableAgents, availableAgentsError }: any) => (
+  DialogSection: ({ availableAgents, availableAgentsError }: {
+    availableAgents: string[];
+    availableAgentsError: boolean;
+  }) => (
     <div
       data-testid="sections"
-      data-project-agents={agents.length}
       data-seats={availableAgents.join(',')}
       data-error={String(availableAgentsError)}
     />
@@ -55,40 +56,28 @@ vi.mock('../../components/LazyTaskList/components', () => ({
 
 const sections = () => screen.getByTestId('sections');
 
-describe('LazyTaskListRefactored agent loading', () => {
+describe('LazyTaskListRefactored seat loading', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.mocked(listAgents).mockResolvedValue([{ id: 'a1' }, { id: 'a2' }]);
     vi.mocked(getAvailableAgents).mockResolvedValue(['@lead']);
     render(<LazyTaskListRefactored projectId="p1" taskTreeId="b1" />);
   });
 
-  it('hands both lists over without an error', async () => {
+  it('hands the seats over without an error', async () => {
     await act(async () => loadAgentsOnDemand());
 
-    expect(sections()).toHaveAttribute('data-project-agents', '2');
     expect(sections()).toHaveAttribute('data-seats', '@lead');
     expect(sections()).toHaveAttribute('data-error', 'false');
   });
 
-  it('keeps the project agents and flags an error when the seat API fails', async () => {
+  it('flags an error when the seat API fails', async () => {
     vi.mocked(getAvailableAgents).mockRejectedValue(new Error('seat API down'));
 
     await act(async () => loadAgentsOnDemand());
 
-    expect(sections()).toHaveAttribute('data-project-agents', '2');
     expect(sections()).toHaveAttribute('data-seats', '');
     expect(sections()).toHaveAttribute('data-error', 'true');
-  });
-
-  it('keeps the seats when the project agents fail to load', async () => {
-    vi.mocked(listAgents).mockRejectedValue(new Error('agents down'));
-
-    await act(async () => loadAgentsOnDemand());
-
-    expect(sections()).toHaveAttribute('data-seats', '@lead');
-    expect(sections()).toHaveAttribute('data-error', 'false');
   });
 
   it('retries after a failure and clears the error', async () => {
@@ -103,11 +92,10 @@ describe('LazyTaskListRefactored agent loading', () => {
     expect(sections()).toHaveAttribute('data-error', 'false');
   });
 
-  it('does not load again once both lists are in', async () => {
+  it('does not load again once the seats are in', async () => {
     await act(async () => loadAgentsOnDemand());
     await act(async () => loadAgentsOnDemand());
 
     expect(getAvailableAgents).toHaveBeenCalledTimes(1);
-    expect(listAgents).toHaveBeenCalledTimes(1);
   });
 });

@@ -61,7 +61,6 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
               <p><strong>Problem:</strong> AI agents don't respond or give errors</p>
               <p><strong>Solutions:</strong></p>
               <ul className="list-disc list-inside ml-4 space-y-1">
-                <li><strong>Create Missing Agents:</strong> Go to <strong>My Agents</strong> page (http://localhost:3800/agents/my-agents) and create agents that are missing. You can either use default agent templates or create all 32 specialized agents.</li>
                 <li>Check MCP server is running: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">curl http://localhost:8000/health</code></li>
                 <li>Check agent tools are available (Dynamic Tool Enforcement v2.0)</li>
                 <li>Restart Claude Code application</li>
@@ -326,7 +325,6 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
             <p><strong>Problem:</strong> AI agents don't respond or give timeout errors</p>
             <p><strong>Solutions:</strong></p>
             <ul className="list-disc list-inside ml-4 space-y-1">
-              <li><strong>Create Missing Agents:</strong> Go to <strong>My Agents</strong> page at <a href="https://www.4genthub.com/agents/my-agents" target="_blank" rel="noopener noreferrer" className="underline font-medium">www.4genthub.com/agents/my-agents</a> and create agents that are missing. You can either use default agent templates or create all 32 specialized agents.</li>
               <li>Check your internet connection stability</li>
               <li>Verify account has active subscription (if required)</li>
               <li>Check for rate limiting (too many requests)</li>

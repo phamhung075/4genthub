@@ -7,7 +7,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import LazySubtaskList from '../LazySubtaskList';
-import { deleteSubtask, getAvailableAgents, getSubtask, getTask, listAgents, listSubtasks, Subtask } from '../../api';
+import { deleteSubtask, getAvailableAgents, getSubtask, getTask, listSubtasks, Subtask } from '../../api';
 import Cookies from 'js-cookie';
 
 // Mock API functions
@@ -17,7 +17,6 @@ vi.mock('../../api', () => ({
   getSubtask: vi.fn(),
   getTask: vi.fn(),
   getAvailableAgents: vi.fn(),
-  listAgents: vi.fn(),
   createSubtask: vi.fn(),
   updateSubtask: vi.fn(),
   completeSubtask: vi.fn()
@@ -132,7 +131,6 @@ describe('LazySubtaskList', () => {
     vi.mocked(Cookies.get).mockReturnValue('test-token');
     vi.mocked(getTask).mockResolvedValue(null);
     vi.mocked(getAvailableAgents).mockResolvedValue([]);
-    vi.mocked(listAgents).mockResolvedValue([]);
   });
 
   test('should load and display subtask summaries from v2 endpoint', async () => {

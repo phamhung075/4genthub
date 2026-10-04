@@ -20,7 +20,6 @@ import {
     getTaskContext,
     getTasks,
     isAuthenticated,
-    listAgents,
     listBranches,
     listProjects,
     listSubtasks,
@@ -80,9 +79,6 @@ vi.mock('../services/apiV2', () => ({
     deleteContext: vi.fn(),
     resolveContext: vi.fn(),
   },
-  agentApiV2: {
-    getAgentsMetadata: vi.fn(),
-  },
   connectionApiV2: {
     healthCheck: vi.fn(),
     systemStatus: vi.fn(),
@@ -99,7 +95,6 @@ const {
   projectApiV2,
   branchApiV2,
   contextApiV2,
-  agentApiV2,
   connectionApiV2,
 } = vi.mocked(await import('../services/apiV2'));
 
@@ -961,26 +956,6 @@ describe('API V2 Module', () => {
   });
 
   describe('Agent Operations', () => {
-    describe('listAgents', () => {
-      it('should return agents metadata', async () => {
-        const mockAgents = [
-          { name: 'coding-agent', description: 'Coding specialist' },
-          { name: 'debugger-agent', description: 'Bug fixing specialist' },
-        ];
-        agentApiV2.getAgentsMetadata.mockResolvedValue({ agents: mockAgents });
-
-        const result = await listAgents();
-        expect(result).toEqual(mockAgents);
-      });
-
-      it('should handle agent API errors', async () => {
-        agentApiV2.getAgentsMetadata.mockRejectedValue(new Error('Agent service unavailable'));
-
-        const result = await listAgents();
-        expect(result).toEqual([]);
-      });
-    });
-
     describe('getAvailableAgents', () => {
       const room = (slug: string) => ({ slug });
       const seat = (seat_key: string) => ({ seat_key });

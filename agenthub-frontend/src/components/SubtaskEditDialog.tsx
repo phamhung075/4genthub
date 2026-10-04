@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Save, FileText, Users } from "lucide-react";
-import { Subtask, getAvailableAgents, listAgents } from "../api";
+import { Subtask, getAvailableAgents } from "../api";
 import { useSubtaskMutations } from "../hooks/useSubtasks";
 import AgentAssignmentDialog from "./AgentAssignmentDialog";
 import logger from "../utils/logger";
@@ -35,7 +35,6 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   const [agentDialogOpen, setAgentDialogOpen] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
   const [availableAgentsError, setAvailableAgentsError] = useState(false);
-  const [projectAgents, setProjectAgents] = useState<any[]>([]);
 
   // Use React Query mutation hook
   const { updateSubtaskAsync, isUpdating, updateError } = useSubtaskMutations();
@@ -54,7 +53,6 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   // Load available agents when dialog opens
   useEffect(() => {
     if (open) {
-      listAgents().then(setProjectAgents);
       getAvailableAgents().then(
         seats => {
           setAvailableAgents(seats);
@@ -249,7 +247,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Click to select agents from your project or your seats
+              Click to select agents from your seats
             </p>
           </div>
 
@@ -309,7 +307,6 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
       task={{ ...subtask, assignees } as any}
       onClose={() => setAgentDialogOpen(false)}
       onAssign={handleAssignAgents}
-      agents={projectAgents}
       availableAgents={availableAgents}
       availableAgentsError={availableAgentsError}
       saving={false}

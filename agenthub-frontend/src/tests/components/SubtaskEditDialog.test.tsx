@@ -1,18 +1,17 @@
 /**
  * @fileoverview SubtaskEditDialog effects depend on `open` and `subtask` only:
- * the form is pre-filled and the agent lists are loaded when the dialog opens.
+ * the form is pre-filled and the seat list is loaded when the dialog opens.
  */
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import SubtaskEditDialog from '../../components/SubtaskEditDialog';
-import { getAvailableAgents, listAgents } from '../../api';
+import { getAvailableAgents } from '../../api';
 import type { Subtask } from '../../api';
 
 vi.mock('../../api', () => ({
   getAvailableAgents: vi.fn(),
-  listAgents: vi.fn(),
 }));
 
 vi.mock('../../hooks/useSubtasks', () => ({
@@ -24,10 +23,12 @@ vi.mock('../../hooks/useSubtasks', () => ({
 }));
 
 vi.mock('../../components/AgentAssignmentDialog', () => ({
-  default: ({ agents, availableAgents, availableAgentsError }: any) => (
+  default: ({ availableAgents, availableAgentsError }: {
+    availableAgents: string[];
+    availableAgentsError: boolean;
+  }) => (
     <div
       data-testid="assignment"
-      data-project-agents={agents.length}
       data-seats={availableAgents.join(',')}
       data-error={String(availableAgentsError)}
     />
@@ -54,28 +55,24 @@ const titleInput = () => screen.getByPlaceholderText('Enter subtask title...') a
 describe('SubtaskEditDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(listAgents).mockResolvedValue([]);
     vi.mocked(getAvailableAgents).mockResolvedValue([]);
   });
 
-  it('loads both agent lists when it opens and not while it is closed', async () => {
+  it('loads the seat list when it opens and not while it is closed', async () => {
     const { rerender } = render(renderDialog(false, subtask()));
-    expect(listAgents).not.toHaveBeenCalled();
     expect(getAvailableAgents).not.toHaveBeenCalled();
 
     rerender(renderDialog(true, subtask()));
 
-    await waitFor(() => expect(listAgents).toHaveBeenCalledTimes(1));
-    expect(getAvailableAgents).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(getAvailableAgents).toHaveBeenCalledTimes(1));
   });
 
-  it('does not reload the agent lists when the subtask changes while open', async () => {
+  it('does not reload the seat list when the subtask changes while open', async () => {
     const { rerender } = render(renderDialog(true, subtask()));
-    await waitFor(() => expect(listAgents).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(getAvailableAgents).toHaveBeenCalledTimes(1));
 
     rerender(renderDialog(true, subtask({ id: 'sub-2', title: 'Other' })));
 
-    expect(listAgents).toHaveBeenCalledTimes(1);
     expect(getAvailableAgents).toHaveBeenCalledTimes(1);
   });
 
@@ -85,7 +82,7 @@ describe('SubtaskEditDialog', () => {
     rerender(renderDialog(true, subtask({ title: 'Opened title' })));
 
     expect(titleInput().value).toBe('Opened title');
-    await waitFor(() => expect(listAgents).toHaveBeenCalled());
+    await waitFor(() => expect(getAvailableAgents).toHaveBeenCalled());
   });
 
   it('pre-fills again when the subtask changes while open', async () => {
@@ -95,7 +92,7 @@ describe('SubtaskEditDialog', () => {
     rerender(renderDialog(true, subtask({ id: 'sub-2', title: 'Other subtask' })));
 
     expect(titleInput().value).toBe('Other subtask');
-    await waitFor(() => expect(listAgents).toHaveBeenCalled());
+    await waitFor(() => expect(getAvailableAgents).toHaveBeenCalled());
   });
 
   it('discards unsaved edits when it is closed and opened again', async () => {
@@ -108,7 +105,7 @@ describe('SubtaskEditDialog', () => {
     rerender(renderDialog(true, current));
 
     expect(titleInput().value).toBe('Write tests');
-    await waitFor(() => expect(listAgents).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(getAvailableAgents).toHaveBeenCalledTimes(2));
   });
 
   describe('seat load', () => {
@@ -121,15 +118,13 @@ describe('SubtaskEditDialog', () => {
       expect(screen.getByTestId('assignment')).toHaveAttribute('data-error', 'false');
     });
 
-    it('flags a failed seat load and still hands over the project agents', async () => {
+    it('flags a failed seat load', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.mocked(listAgents).mockResolvedValue([{ id: 'a1' }]);
       vi.mocked(getAvailableAgents).mockRejectedValue(new Error('seat API down'));
 
       render(renderDialog(true, subtask()));
 
       await waitFor(() => expect(screen.getByTestId('assignment')).toHaveAttribute('data-error', 'true'));
-      expect(screen.getByTestId('assignment')).toHaveAttribute('data-project-agents', '1');
       expect(screen.getByTestId('assignment')).toHaveAttribute('data-seats', '');
     });
   });
