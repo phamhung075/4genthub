@@ -461,3 +461,30 @@ func TestSubtaskRepositorySaveWithoutUserRaisesValueErrorInsideSaveOnce(t *testi
 		t.Fatalf("expected ValueError, got %T %v", err, err)
 	}
 }
+
+// A row stored under an older assignee rule (a bare name that is no role) must still
+// load, alone and in a list: one such row must not fail every list that contains it.
+func TestSubtaskRepositoryLoadsAStoredBareAssigneeName(t *testing.T) {
+	fx := newSubtaskRepoFixture(t)
+	ctx := context.Background()
+	repo := subtaskRepoNewRepo(t, fx, fx.userID)
+
+	legacy, err := entities.RestoreSubtask(entities.Subtask{Title: "legacy", ParentTaskID: &fx.parent, Assignees: []string{"go-dev"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	subtaskRepoMustSave(t, repo, legacy)
+	subtaskRepoMustSave(t, repo, subtaskRepoNewEntity(t, fx.parent, "current", "todo", 0, []string{"@lead"}))
+
+	got, err := repo.FindByID(ctx, legacy.ID.Value)
+	if err != nil || got == nil {
+		t.Fatalf("find legacy row: %v %v", err, got)
+	}
+	if !reflect.DeepEqual(got.Assignees, []string{"go-dev"}) {
+		t.Fatalf("assignees = %v, want the stored [go-dev] untouched", got.Assignees)
+	}
+	rows, err := repo.FindByParentTaskID(ctx, fx.parent)
+	if err != nil || len(rows) != 2 {
+		t.Fatalf("list with a legacy row: %v, %d rows, want 2", err, len(rows))
+	}
+}

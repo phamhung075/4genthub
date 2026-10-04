@@ -74,7 +74,7 @@ func (r *ORMSubtaskRepository) subtaskRepoModelToEntity(model *database.Subtask)
 	}
 	st.CreatedAt = &createdAt
 	st.UpdatedAt = &updatedAt
-	return entities.NewSubtask(st)
+	return entities.RestoreSubtask(st)
 }
 
 // subtaskRepoEntityToModelDict is _entity_to_model_dict; it raises ValueError when the

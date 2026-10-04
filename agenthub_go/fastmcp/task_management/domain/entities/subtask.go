@@ -33,6 +33,21 @@ type Subtask struct {
 // NewSubtask applies the defaults, normalizes assignees (NormalizeAssignees, so an
 // unknown bare name is an error), initializes timestamps and validates.
 func NewSubtask(st Subtask) (*Subtask, error) {
+	if len(st.Assignees) > 0 {
+		normalized, err := NormalizeAssignees(st.Assignees)
+		if err != nil {
+			return nil, err
+		}
+		st.Assignees = normalized
+	}
+	return RestoreSubtask(st)
+}
+
+// RestoreSubtask rebuilds a subtask from stored data: it applies the defaults and
+// validates the entity but does not judge the stored assignees. A row written under an
+// older assignee rule must still load, or one such row would fail every list that
+// contains it; the rule applies to what is written (NewSubtask, UpdateAssignees).
+func RestoreSubtask(st Subtask) (*Subtask, error) {
 	s := st
 	if s.Status == nil {
 		todo := mustTaskStatus("todo")
@@ -47,13 +62,6 @@ func NewSubtask(st Subtask) (*Subtask, error) {
 	}
 	if s.ProgressHistory == nil {
 		s.ProgressHistory = map[string]any{}
-	}
-	if len(s.Assignees) > 0 {
-		normalized, err := NormalizeAssignees(s.Assignees)
-		if err != nil {
-			return nil, err
-		}
-		s.Assignees = normalized
 	}
 	if err := s.Init(&s); err != nil {
 		return nil, err

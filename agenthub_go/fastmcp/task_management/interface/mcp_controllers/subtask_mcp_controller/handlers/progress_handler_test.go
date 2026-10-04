@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -186,5 +187,22 @@ func TestUpdateSubtaskRequiresProgressNotes(t *testing.T) {
 	}
 	if f.errMsg != "Missing required field: progress_notes (minimum 10 characters). Updates must include progress description." {
 		t.Errorf("msg=%q", f.errMsg)
+	}
+}
+
+// Subtask creation refuses a bare name that is no role, before it reaches the facade.
+func TestCreateSubtaskRefusesABareUnknownAssignee(t *testing.T) {
+	f := &fakeFormatter{}
+	h := NewSubtaskCRUDHandler(f, nil, nil, nil)
+
+	h.CreateSubtask(context.Background(), nil, "t1", "title", nil, nil, nil, []string{"go-dev"}, nil, nil, nil)
+	if f.operation != "create_subtask" || f.errorCode != ErrorCodeValidation {
+		t.Fatalf("op=%q code=%q msg=%q", f.operation, f.errorCode, f.errMsg)
+	}
+	if !strings.Contains(f.errMsg, "Invalid assignees: ['go-dev']") {
+		t.Errorf("msg=%q", f.errMsg)
+	}
+	if v, _ := f.metadata.Get("hint"); v != "Provide '@<seat_key>' or a known agent role" {
+		t.Errorf("hint=%v", v)
 	}
 }

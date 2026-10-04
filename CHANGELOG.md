@@ -12,9 +12,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `agenthub_go/fastmcp/task_management/domain/entities/task.go`: new `entities.NormalizeAssignees` (replaces `Task.ValidateAssigneeList`). `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, blanks are dropped, any other bare name is rejected with `Invalid assignees: [...]. An assignee is '@<seat_key>' or a known agent role.` It is now called by `NewCreateTaskRequest` (REST create), `Task.UpdateAssignees`/`AddAssignee`, `Subtask.NewSubtask`/`UpdateAssignees`/`AddAssignee`, MCP `manage_task` create, MCP subtask create and `AgentInheritanceService.ValidateAgentAssignments`. A rejected update leaves the assignees unchanged.
 - Behaviour changes: REST create no longer maps `coding-agent` to `@senior_developer` (`ResolveLegacyRole` call removed from the DTO) and no longer keeps a bare `custom` as `@custom`; `Task.UpdateAssignees` and `Subtask.UpdateAssignees` no longer keep bare unknown names.
-- Operator note (nothing run on production): assignee forms that can exist in data are `@senior_developer` (old REST mapping), bare names, `@<role>` and `@<seat_key>`. Count them with `SELECT assignee_id, count(*) FROM task_assignees GROUP BY 1;` and, for subtasks, a count over the `assignees` JSON column. A subtask row holding a bare unknown name now fails to load, because hydration goes through `NewSubtask` (`subtask_repository.go:77`). No data migration (dev phase, clean break).
+- Operator note (nothing run on production): assignee forms that can exist in data are `@senior_developer` (old REST mapping), bare names, `@<role>` and `@<seat_key>`. Count them with `SELECT assignee_id, count(*) FROM task_assignees GROUP BY 1;` and, for subtasks, a count over the `assignees` JSON column. Stored subtask rows with a bare unknown name still load (D6e below). No data migration (dev phase, clean break).
 
 ### Fixed
+
+**Stored subtasks with an old-style assignee load again (D6e)** (2026-10-04)
+
+- `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written.
 
 **Session events route answers 404 for an unknown or foreign session (A6)** (2026-10-04)
 

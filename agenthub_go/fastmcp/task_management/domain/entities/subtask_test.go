@@ -39,3 +39,46 @@ func TestSubtaskBehaviour(t *testing.T) {
 		t.Fatalf("parent: %v", err)
 	}
 }
+
+// NewSubtask judges the assignees it is given; RestoreSubtask, used for stored rows,
+// does not.
+func TestRestoreSubtaskKeepsAStoredBareNameThatNewSubtaskRefuses(t *testing.T) {
+	parent := value_objects.GenerateNewTaskId()
+	in := Subtask{Title: "s", Description: "d", ParentTaskID: &parent, Assignees: []string{"go-dev"}}
+	if _, err := NewSubtask(in); err == nil {
+		t.Fatal("NewSubtask must refuse a bare name that is no role")
+	}
+	got, err := RestoreSubtask(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(got.Assignees, ",") != "go-dev" {
+		t.Fatalf("assignees = %v", got.Assignees)
+	}
+}
+
+func TestSubtaskAddAssigneeUsesTheOneRule(t *testing.T) {
+	parent := value_objects.GenerateNewTaskId()
+	st, err := NewSubtask(Subtask{Title: "s", Description: "d", ParentTaskID: &parent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AddAssignee("coding-agent"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AddAssignee("@go-dev"); err != nil {
+		t.Fatal(err)
+	}
+	if err := st.AddAssignee("@go-dev"); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Join(st.Assignees, ",") != "@coding-agent,@go-dev" {
+		t.Fatalf("assignees = %v", st.Assignees)
+	}
+	if err := st.AddAssignee("go-dev"); err == nil {
+		t.Fatal("a bare name that is no role must be refused")
+	}
+	if strings.Join(st.Assignees, ",") != "@coding-agent,@go-dev" {
+		t.Fatalf("a refused add must change nothing: %v", st.Assignees)
+	}
+}

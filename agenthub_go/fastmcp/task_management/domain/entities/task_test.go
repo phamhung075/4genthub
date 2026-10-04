@@ -130,3 +130,21 @@ func TestNormalizeAssigneesAcceptsSeatKeysAndRejectsBareUnknownNames(t *testing.
 		t.Fatal("a bare name that is no role must be rejected")
 	}
 }
+
+func TestTaskAddAssigneeUsesTheOneRule(t *testing.T) {
+	task := newTestTask(t)
+	for _, a := range []string{"coding-agent", "@go-dev", "@go-dev"} {
+		if err := task.AddAssignee(a); err != nil {
+			t.Fatalf("AddAssignee(%q): %v", a, err)
+		}
+	}
+	if strings.Join(task.Assignees, ",") != "@coding-agent,@go-dev" {
+		t.Fatalf("assignees = %v", task.Assignees)
+	}
+	if err := task.AddAssignee("go-dev"); err == nil {
+		t.Fatal("a bare name that is no role must be refused")
+	}
+	if strings.Join(task.Assignees, ",") != "@coding-agent,@go-dev" {
+		t.Fatalf("a refused add must change nothing: %v", task.Assignees)
+	}
+}
