@@ -21,6 +21,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `agenthub_go/NEXT_GEN.md` (D4): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
 
+**Open owner decision D4 recorded: source of the assignee names** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (D4): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
+
 **F4 client bridge check recorded in NEXT_GEN.md** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (F4): records the tester's scratch-environment run. Verified: edge-order launch of a 3-seat rig, reported state `in_sync` with hash equal to `expected_hash` and the pin, a seat stopped with `rig seat stop` shown as `stopped`. Open: a seat killed outside OpenRig shows `blocked`, not `stopped`. Not run: claude-process-only kill, relaunch, herdr agents, `seatcheck` deny on a live seat, bundle launch, codex/agy rigs, production. F4 stays unticked. Documentation only; no behavior change, no tests.
