@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — A4/A6/A7 tests are mutation-proved; list order tiebreaker (review item, Go)
+
+- Reviewer required mutation checks on the three new tests. Each mutation was applied, the named test failed, and the mutation was reverted exactly (verified by `git diff` showing only the intended change afterwards). From `agenthub_go` (`GOCACHE`/`TMPDIR` set, `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable`):
+  - `wsReleaseConnector` (`ws_mount.go:444`) reverted to always return true (every socket close marks the connector offline) -> `TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline` FAILS: `status after the newer socket closed = "offline", want active`.
+  - The unregistered-key branch (`ws_mount.go:276`) changed to answer `events_ack` -> `TestConnectorRefusesEventsForAnUnregisteredSessionKey` FAILS: `events for an unregistered key answered map[last_seq:0 session_id: type:events_ack]`.
+  - `ORDER BY last_seen DESC` dropped from `ListSessions` (`repository.go:289`) -> `TestSessionListIsNewestLastSeenFirst` FAILS: `list order = [...want [<s2> <s1>] (newest last_seen first)` — the old single-phase test passed this mutation, so the test now asserts the newer-first order before it re-touches the older session.
+- `TestSessionListIsNewestLastSeenFirst` rewritten to two phases: s2 (created after s1) must come first (fails if the ORDER BY is missing, because insertion order is s1 then s2), then re-registering s1 must put it first (the `last_seen` update). The list query gained the deterministic tiebreaker `id` (`ListSessions` -> `ORDER BY last_seen DESC, id`), so a `last_seen` tie no longer leaves the order undefined; the test no longer depends on three round trips landing in distinct microseconds.
+- Result: `gofmt -l` empty; `go vet ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` clean; `AGENTHUB_TEST_PG_URL=... go test -count=1 ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` ok (0 skipped).
+
 ## 2026-10-04 — G2 validate check is env-gated (OF1, Go)
 
 - `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` now requires `OPENRIG_TEST_AGENT_VALIDATE=1` and fails (does not skip) when `rig` is absent, the daemon is unreachable or a rendered spec is invalid; without the variable it skips with the reason. There is no in-process substitute: only rig's own validator is the G2 check.
@@ -16,7 +25,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - `TestSessionTimestampsRenderAsNaiveUTC` (`session_stream/repository_test.go`): `created_at`/`last_seen` render with no zone designator (the port of Python's `test_model_timestamps_are_naive_utc`; Go's `time.Time` always carries a location).
 - A6 REST session tests are Postgres-gated: they skip without `AGENTHUB_TEST_PG_URL`. The reviewer ran them at 54329 and they PASS.
 - Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` inside the repo): `gofmt -l fastmcp/server/httpapp/ws_connector_test.go fastmcp/session_stream/repository_test.go` empty; `go vet ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` clean; `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` ok (0 skipped).
-- The 16-test mapping is in `agenthub_go/MIGRATION.md` group A. Not run: mutation checks on the new tests (each is a new scenario for existing behaviour, not a fix).
+- The 16-test mapping is in `agenthub_go/MIGRATION.md` group A. Mutation checks are recorded in the entry above (2026-10-04, review item): three of the new tests fail when the behaviour they assert is broken.
 
 ## 2026-10-04 — D6e hydration of old-style assignees (Go)
 

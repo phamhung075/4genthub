@@ -467,10 +467,17 @@ func TestSessionListIsNewestLastSeenFirst(t *testing.T) {
 	c := env.connector(t, "user-1")
 	first := c.ingest("s1")
 	second := c.register("s2")
-	c.register("s1")
+	// s2 is newer than s1, which is the opposite of the insertion order, so this
+	// assertion fails if the query stops ordering by last_seen.
 	rows := env.sessionList(t, "user-1")
+	if len(rows) != 2 || rows[0]["id"] != second || rows[1]["id"] != first {
+		t.Fatalf("list order = %v, want [%s %s] (newest last_seen first)", rows, second, first)
+	}
+	// Touching the older session makes it newest again.
+	c.register("s1")
+	rows = env.sessionList(t, "user-1")
 	if len(rows) != 2 || rows[0]["id"] != first || rows[1]["id"] != second {
-		t.Fatalf("list order = %v, want [%s %s]", rows, first, second)
+		t.Fatalf("list order after touching s1 = %v, want [%s %s]", rows, first, second)
 	}
 }
 

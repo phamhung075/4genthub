@@ -286,7 +286,7 @@ func ListSessions(ctx context.Context, sessions *database.SessionManager, userID
 	out := []*entities.OrderedMap[any]{}
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		rows, err := s.QueryContext(ctx,
-			"SELECT "+sessionCols+" FROM agent_sessions WHERE user_id = $1 ORDER BY last_seen DESC", userID)
+			"SELECT "+sessionCols+" FROM agent_sessions WHERE user_id = $1 ORDER BY last_seen DESC, id", userID)
 		if err != nil {
 			return err
 		}

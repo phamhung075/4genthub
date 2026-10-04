@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Rig runtime-switch playbook as a reusable skill** (2026-10-04)
+
+- `.claude/skills/rig-runtime-switch/SKILL.md`: the verified playbook for keeping an OpenRig team working through a usage cap by swapping its runtime variant — authoring `rig-omp.yaml` (`runtime: omp`, `model: deepseek/deepseek-flash`, `builtin:yolo`), `.env` placement for the omp launch dir, `rig up --plan` dry-run, the owner-named teardown, down/up + verification, the kickoff requirements (state-at-cutoff, rules, the omp runtime note), companion-rig revival (`rig up 4genthub-deepseek --existing --yes`), the herdr watch wall (`rig terminal open <rig>`), and the switch-back path. Derived from the 2026-10-04 `4genthub-min` claude-code → omp/DeepSeek switch executed while the Claude weekly cap was active.
+
 ### Changed
 
 **G2 runtime validation is env-gated; the G6 measurement is corrected (OF1)** (2026-10-04)
@@ -20,6 +26,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Operator note (nothing run on production): assignee forms that can exist in data are `@senior_developer` (old REST mapping), bare names, `@<role>` and `@<seat_key>`. Count them with `SELECT assignee_id, count(*) FROM task_assignees GROUP BY 1;` and, for subtasks, a count over the `assignees` JSON column. Stored subtask rows with a bare unknown name still load (D6e below). No data migration (dev phase, clean break).
 
 ### Fixed
+
+**Session list order is deterministic on a `last_seen` tie (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/session_stream/repository.go`: `ListSessions` orders `last_seen DESC, id` so a tie in `last_seen` no longer leaves the order undefined; the uuid5 `id` is a stable tiebreaker and the output is unchanged when timestamps differ. Found by the reviewer as a flake risk in the new ordering test.
 
 **Stored subtasks with an old-style assignee load again (D6e)** (2026-10-04)
 
