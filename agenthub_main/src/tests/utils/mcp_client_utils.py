@@ -180,11 +180,6 @@ class MCPTestClient:
                         "manage_agent", {"action": "list", "project_id": "test_project"}
                     )
 
-                elif tool_name == "call_agent":
-                    result = await self.call_tool(
-                        "call_agent", {"name_agent": "test_agent"}
-                    )
-
                 else:
                     # Generic test for unknown tools
                     result = await self.call_tool(tool_name, {})

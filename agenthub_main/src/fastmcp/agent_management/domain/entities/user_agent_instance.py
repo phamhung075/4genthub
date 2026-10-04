@@ -30,10 +30,10 @@ class UserAgentInstance(BaseTimestampEntity):
     Business Rules:
         - UNIQUE(user_id, template_id): Each user can have only one instance per template
         - is_customized=True when configuration differs from template default
-        - is_enabled=True by default; controls visibility in call_agent tools
+        - is_enabled=True by default; controls whether the instance is enabled for use
         - share_token is 64-char random string when visibility='public'
         - original_creator_id is set when instance is imported from another user
-        - usage_count increments on each call_agent invocation
+        - usage_count increments on each invocation
 
     Attributes:
         id: Unique identifier for this instance (UUID)
@@ -41,7 +41,7 @@ class UserAgentInstance(BaseTimestampEntity):
         template_id: ID of the template this instance is based on
         agent_name: Custom name for this instance (defaults to template name)
         is_customized: True if user has modified the configuration
-        is_enabled: True if agent is enabled for use in call_agent tools
+        is_enabled: True if the agent is enabled
         configuration: Agent configuration (can be customized)
         visibility: 'private' or 'public' (public allows sharing)
         share_token: Secure token for sharing (None if private)
@@ -170,7 +170,7 @@ class UserAgentInstance(BaseTimestampEntity):
         """Track usage of this agent instance.
 
         Increments the usage count and updates the last_used_at timestamp.
-        Called each time the agent is invoked via call_agent.
+        Called each time the agent is invoked.
         """
         # Increment usage count
         object.__setattr__(self, "usage_count", self.usage_count + 1)

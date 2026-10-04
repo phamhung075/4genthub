@@ -73,7 +73,7 @@ class UserAgentInstanceRepository(ABC):
     def find_enabled_by_user(self, user_id: UserId) -> list[UserAgentInstance]:
         """Find all enabled instances for a user.
 
-        Used when populating call_agent tool options - only shows enabled agents.
+        Used when listing usable agents - only shows enabled agents.
 
         Args:
             user_id: The user ID

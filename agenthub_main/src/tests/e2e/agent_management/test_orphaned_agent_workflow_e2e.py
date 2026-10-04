@@ -192,22 +192,6 @@ class TestOrphanedAgentE2EWorkflow:
         assert user_b_instance is not None, "User B's import should still exist"
         print("  ✓ User B's import still exists and usable")
 
-        # STEP 6: User B sees warning when calling agent
-        print("\n🔹 Step 6: User B sees orphaned warning")
-
-        agent_response = facade.get_agent_for_call(user_b, template.slug)
-        assert agent_response["is_orphaned"] is True, "Should flag as orphaned"
-        assert (
-            agent_response["metadata"]["orphaned_warning"] is not None
-        ), "Should include warning message"
-        assert (
-            "not supported by owner anymore"
-            in agent_response["metadata"]["orphaned_warning"]
-        ), "Warning should mention lack of support"
-        print(
-            f"  ✓ Warning displayed: '{agent_response['metadata']['orphaned_warning']}'"
-        )
-
         # Cleanup
         instance_repo.delete(imported_instance.id)
         template_repo.delete(template.id)

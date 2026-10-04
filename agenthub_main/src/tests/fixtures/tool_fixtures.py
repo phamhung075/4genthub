@@ -320,15 +320,6 @@ def mock_agent_facade():
 
 
 @pytest.fixture
-def mock_call_agent_facade():
-    """Mock call agent application facade"""
-    facade = Mock()
-    facade.call_agent.return_value = {"success": False, "error": "Not implemented"}
-    facade.validate_agent_exists.return_value = False
-    return facade
-
-
-@pytest.fixture
 def mock_template_facade():
     """Mock template application facade"""
     facade = Mock()

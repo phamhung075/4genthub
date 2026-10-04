@@ -317,7 +317,7 @@ class ORMUserAgentInstanceRepository(
         """
         Find all enabled instances for a user
 
-        Used when populating call_agent tool options - only shows enabled agents.
+        Used when listing usable agents - only shows enabled agents.
 
         Args:
             user_id: User identifier

@@ -13,7 +13,7 @@ Test Coverage:
 - User agent instance customization persistence
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 
@@ -150,120 +150,6 @@ class TestAgentInstantiationFlow:
         assert db_instance.user_id == str(new_user_id.value)
         assert db_instance.template_id == str(sample_agent_template.id.value)
         assert db_instance.is_customized is False
-
-    def test_usage_tracking_persists_to_database(
-        self, db_session, sample_agent_template, sample_user_instance, sample_user_id
-    ):
-        """
-        Test that usage tracking (last_used_at) is correctly persisted to database.
-
-        Verifies:
-        - track_usage() updates last_used_at
-        - Updated timestamp is saved to database
-        - Subsequent retrieval shows updated timestamp
-        """
-        # Arrange
-        template_repo = ORMAgentTemplateRepository()
-        instance_repo = ORMUserAgentInstanceRepository()
-
-        template_repo._session = db_session
-        instance_repo._session = db_session
-
-        instantiation_service = AgentInstantiationService(
-            template_repository=template_repo, instance_repository=instance_repo
-        )
-        facade = AgentManagementFacade(
-            template_repository=template_repo,
-            instance_repository=instance_repo,
-            instantiation_service=instantiation_service,
-        )
-
-        # Record initial last_used_at (should be None)
-        initial_last_used = sample_user_instance.last_used_at
-        assert initial_last_used is None
-
-        # Act - Call get_agent_for_call which tracks usage
-        result = facade.get_agent_for_call(
-            user_id=sample_user_id, agent_slug="coding-agent"
-        )
-
-        # Assert - Usage was tracked
-        assert "last_used" in result["metadata"]
-        assert result["metadata"]["last_used"] is not None
-
-        # Verify database was updated
-        db_instance = (
-            db_session.query(UserAgentInstanceORM)
-            .filter(UserAgentInstanceORM.id == str(sample_user_instance.id.value))
-            .first()
-        )
-        assert db_instance is not None
-        assert db_instance.last_used_at is not None
-        assert isinstance(db_instance.last_used_at, datetime)
-
-        # Verify timestamp is recent (within last 5 seconds)
-        # Ensure both datetimes are timezone-aware for comparison
-        now_utc = datetime.now(UTC)
-        last_used_utc = db_instance.last_used_at
-        if last_used_utc.tzinfo is None:
-            # If database returned timezone-naive datetime, assume UTC
-            last_used_utc = last_used_utc.replace(tzinfo=UTC)
-        time_diff = now_utc - last_used_utc
-        assert time_diff < timedelta(seconds=5)
-
-    def test_get_agent_for_call_returns_correct_format_from_database(
-        self, db_session, sample_agent_template, sample_user_instance, sample_user_id
-    ):
-        """
-        Test that get_agent_for_call returns correctly formatted data from database.
-
-        Verifies:
-        - All required fields are present
-        - Data types are correct (lists not tuples for JSON)
-        - Customized configuration is correctly retrieved
-        """
-        # Arrange
-        template_repo = ORMAgentTemplateRepository()
-        instance_repo = ORMUserAgentInstanceRepository()
-
-        template_repo._session = db_session
-        instance_repo._session = db_session
-
-        instantiation_service = AgentInstantiationService(
-            template_repository=template_repo, instance_repository=instance_repo
-        )
-        facade = AgentManagementFacade(
-            template_repository=template_repo,
-            instance_repository=instance_repo,
-            instantiation_service=instantiation_service,
-        )
-
-        # Act
-        result = facade.get_agent_for_call(
-            user_id=sample_user_id, agent_slug="coding-agent"
-        )
-
-        # Assert - Response structure
-        assert isinstance(result, dict)
-        assert "name" in result
-        assert "slug" in result
-        assert "system_prompt" in result
-        assert "tools" in result
-        assert "capabilities" in result
-        assert "is_customized" in result
-        assert "instance_id" in result
-        assert "template_id" in result
-
-        # Assert - Data types for JSON serialization
-        assert isinstance(result["tools"], list)  # Not tuple
-        assert isinstance(result["rules"], list)  # Not tuple
-        assert isinstance(result["capabilities"], dict)
-
-        # Assert - Customized data from database
-        assert result["name"] == "My Custom Coding Agent"
-        assert result["is_customized"] is True
-        assert "Glob" in result["tools"]  # Custom tool
-        assert "Go" in result["capabilities"]["languages"]  # Custom capability
 
     def test_multiple_users_can_have_different_instances_of_same_template(
         self, db_session, sample_agent_template

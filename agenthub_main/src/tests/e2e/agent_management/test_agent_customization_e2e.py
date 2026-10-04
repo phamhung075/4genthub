@@ -161,14 +161,14 @@ class TestAgentCustomizationE2EWorkflow:
         logger.info("✅ User authenticated successfully")
 
         # ========================================================================
-        # STEP 2: AUTO-INSTANTIATE AGENT (via call_agent pattern)
+        # STEP 2: AUTO-INSTANTIATE AGENT (get-or-create instance)
         # ========================================================================
 
         logger.info("=" * 80)
         logger.info("STEP 2: Auto-instantiate Agent Instance")
         logger.info("=" * 80)
 
-        # Simulate calling call_agent which auto-creates instance
+        # Auto-create the user's instance from the template
         user_id = UserId(test_user_id)
         instance = await asyncio.to_thread(
             agent_management_facade.get_or_create_instance,

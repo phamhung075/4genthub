@@ -20,8 +20,8 @@ User requests: "Add a user profile editing feature to our e-commerce app"
 
 #### Phase 1: Initial Setup ✓
 ```python
-# 1. MANDATORY: Switch to orchestrator first
-call_agent(name_agent="master-orchestrator-agent")
+# 1. MANDATORY: establish your seat first (rig whoami --json)
+call_seat(room="<room>", seat="<orchestrator-seat>")
 
 # 2. System health check
 health = manage_connection(action="health_check")
@@ -37,11 +37,11 @@ branches = manage_git_branch(action="list", project_id=ecommerce_project_id)
 
 #### Phase 2: Planning ✓
 ```python
-# 5. Switch to planning specialist
-call_agent(name_agent="@task_planning_agent")
+# 5. Resolve the planning seat
+call_seat(room="<room>", seat="<planning-seat>")
 
 # 6. Get full context
-context = manage_context(action="resolve", level="project", 
+context = manage_context(action="resolve", level="project",
                                      context_id=ecommerce_project_id)
 
 # 7. Create main task
@@ -52,7 +52,7 @@ task = manage_task(action="create", git_branch_id=user_features_branch_id,
 
 # 8. Break into subtasks
 subtasks = [
-    manage_subtask(action="create", task_id=task_id, 
+    manage_subtask(action="create", task_id=task_id,
                   title="Design profile editing UI"),
     manage_subtask(action="create", task_id=task_id,
                   title="Implement backend profile update API"),
@@ -67,21 +67,21 @@ subtasks = [
 ```python
 # 9. For each subtask, switch to appropriate specialist
 # UI Design:
-call_agent(name_agent="@ui_designer_agent")
+call_seat(room="<room>", seat="<ui-seat>")
 manage_subtask(action="update", subtask_id=ui_subtask_id, status="in_progress")
 # ... design work ...
 manage_subtask(action="complete", subtask_id=ui_subtask_id,
               completion_summary="Created responsive profile editing form with modern UI")
 
 # Backend API:
-call_agent(name_agent="@coding_agent") 
+call_seat(room="<room>", seat="<dev-seat>")
 manage_subtask(action="update", subtask_id=api_subtask_id, status="in_progress")
 # ... implementation work ...
 manage_subtask(action="complete", subtask_id=api_subtask_id,
               completion_summary="Implemented PUT /api/user/profile endpoint with validation")
 
 # Testing:
-call_agent(name_agent="@test_orchestrator_agent")
+call_seat(room="<room>", seat="<test-seat>")
 # ... testing work ...
 ```
 
@@ -127,8 +127,8 @@ AI agent has tasks in 3 projects:
 
 #### Phase 1: Assessment ✓
 ```python
-# 1. Start with orchestrator
-call_agent(name_agent="master-orchestrator-agent")
+# 1. Start from your seat (rig whoami --json)
+call_seat(room="<room>", seat="<orchestrator-seat>")
 
 # 2. Get overview of all projects
 projects = manage_project(action="list")
@@ -151,11 +151,11 @@ for project in projects:
 ```python
 # 4. Apply priority rules:
 # - CRITICAL/URGENT: E-commerce bug (affects customers)
-# - HIGH: Marketing feature (business impact)  
+# - HIGH: Marketing feature (business impact)
 # - MEDIUM: Internal tools (operational efficiency)
 
 # 5. Start with highest impact
-call_agent(name_agent="@debugger_agent")  # For the critical bug
+call_seat(room="<room>", seat="<debugger-seat>")  # For the critical bug
 # Work on e-commerce bug...
 
 # 6. After critical work, assess remaining priorities
@@ -170,7 +170,7 @@ current_project_context = manage_context(
 )
 
 # 8. Save progress state
-manage_task(action="update", task_id=current_task_id, 
+manage_task(action="update", task_id=current_task_id,
            details="Switching to critical issue. Current progress: 60% complete, will resume after.")
 
 # 9. Switch to new project with fresh context
@@ -197,7 +197,7 @@ Production system has a critical bug affecting user authentication across multip
 #### Phase 1: Emergency Response ✓
 ```python
 # 1. IMMEDIATE: Switch to debugger
-call_agent(name_agent="@debugger_agent")
+call_seat(room="<room>", seat="<debugger-seat>")
 
 # 2. Update task status
 manage_task(action="update", task_id=auth_bug_task_id, status="blocked",
@@ -222,7 +222,7 @@ manage_context(action="add_progress", task_id=auth_bug_task_id,
 debug_subtasks = [
     manage_subtask(action="create", task_id=auth_bug_task_id,
                   title="Check auth service health and logs"),
-    manage_subtask(action="create", task_id=auth_bug_task_id, 
+    manage_subtask(action="create", task_id=auth_bug_task_id,
                   title="Verify JWT secret configuration"),
     manage_subtask(action="create", task_id=auth_bug_task_id,
                   title="Test token generation and validation")
@@ -237,26 +237,26 @@ manage_context(action="add_insight", task_id=auth_bug_task_id,
               category="root_cause", importance="critical")
 
 # 8. Fix and verify
-call_agent(name_agent="@coding_agent")  # For implementing the fix
+call_seat(room="<room>", seat="<dev-seat>")  # For implementing the fix
 # ... fix implementation ...
 
 # 9. Test thoroughly
-call_agent(name_agent="@test_orchestrator_agent")
+call_seat(room="<room>", seat="<test-seat>")
 # ... testing ...
 
 # 10. Complete with detailed post-mortem
 manage_task(action="complete", task_id=auth_bug_task_id,
            completion_summary="""
            CRITICAL BUG RESOLVED: Authentication service restored
-           
+
            Root Cause: JWT secret rotation completed in auth service but validation
            service still using old secret, causing all token validations to fail.
-           
+
            Fix Applied:
            - Updated JWT_SECRET environment variable in validation service
            - Implemented secret rotation coordination mechanism
            - Added monitoring alerts for JWT validation failures
-           
+
            Prevention Measures:
            - Created deployment checklist for secret rotations
            - Added automated secret sync verification
@@ -265,7 +265,7 @@ manage_task(action="complete", task_id=auth_bug_task_id,
            testing_notes="""
            Verification completed:
            - Manual login test: PASS
-           - Automated auth flow test: PASS  
+           - Automated auth flow test: PASS
            - Load test with 1000 concurrent logins: PASS
            - Verified across all dependent services: PASS
            """)
@@ -353,7 +353,7 @@ manage_context(action="delegate", level="task", context_id=auth_bug_task_id,
 
 **Correct Mental Model:**
 ```
-I am an autonomous AI agent operating within a sophisticated multi-project 
+I am an autonomous AI agent operating within a sophisticated multi-project
 orchestration platform. I must:
 - Always work through specialized agent roles
 - Maintain hierarchical context awareness

@@ -52,7 +52,6 @@ TOKEN_COSTS: dict[str, int] = {
     "list_subtasks": 1,  # List all subtasks
     "get_subtask": 1,  # Get single subtask details
     # Agent operations
-    "call_agent": 20,  # Call agent (most expensive - AI operation)
     "register_agent": 5,  # Register new agent
     "assign_agent": 3,  # Assign agent to task tree
     "unassign_agent": 2,  # Unassign agent

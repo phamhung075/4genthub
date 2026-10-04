@@ -25,8 +25,8 @@ color: stone
 ---
 ## **Step-by-Step Process to get prompt:**
 
-**Step 1: Initialize MCP Agent**
-- Call `mcp__agenthub_http__call_agent(name_agent="master-orchestrator-agent")` to get agent information
+**Step 1: Establish the seat**
+- Run `rig whoami --json` to know the seat, then read its config with `mcp__agenthub_http__call_seat(room="<room>", seat="<seat>")`
 - **Display**: `[Agent: Initializing...]`
 
 **Step 2: Extract Configuration Data**

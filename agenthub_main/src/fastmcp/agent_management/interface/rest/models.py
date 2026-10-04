@@ -76,9 +76,7 @@ class UpdateInstanceRequest(BaseModel):
     """Request to update agent instance"""
 
     agent_name: str | None = Field(None, description="Updated name")
-    is_enabled: bool | None = Field(
-        None, description="Whether agent is enabled for use in call_agent tools"
-    )
+    is_enabled: bool | None = Field(None, description="Whether the agent is enabled")
     system_prompt: str | None = Field(None, description="Updated system prompt")
     tools: list[str] | None = Field(None, description="Updated tool list")
     capabilities: dict[str, Any] | None = Field(
@@ -97,9 +95,7 @@ class UserAgentInstanceResponse(BaseModel):
     template_id: str = Field(..., description="Source template UUID")
     agent_name: str = Field(..., description="Instance name")
     is_customized: bool = Field(..., description="Whether instance is customized")
-    is_enabled: bool = Field(
-        default=True, description="Whether agent is enabled for use in call_agent tools"
-    )
+    is_enabled: bool = Field(default=True, description="Whether the agent is enabled")
     visibility: str = Field(..., description="'private' or 'public'")
     usage_count: int = Field(default=0, description="Number of times used")
     last_used_at: datetime | None = Field(None, description="Last usage timestamp")

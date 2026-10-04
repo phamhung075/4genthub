@@ -172,95 +172,6 @@ class AgentManagementFacade:
         )
         return created_instances
 
-    def get_agent_for_call(self, user_id: UserId, agent_slug: str) -> dict[str, Any]:
-        """
-        Get agent configuration for MCP call_agent tool.
-
-        This method:
-        1. Gets or creates user's agent instance
-        2. Extracts configuration for execution
-        3. Tracks usage (last_used timestamp)
-        4. Returns formatted data for MCP response
-
-        Args:
-            user_id: User identifier
-            agent_slug: Agent template slug
-
-        Returns:
-            Dictionary with agent configuration:
-            {
-                "name": str,
-                "slug": str,
-                "description": str,
-                "system_prompt": str,
-                "tools": list[str],
-                "capabilities": dict[str, Any],
-                "rules": list[str | None],
-                "output_format": str | None,
-                "category": str,
-                "version": str,
-                "is_customized": bool,
-                "is_orphaned": bool,  # True if imported and original creator deleted their agent
-                "instance_id": str,
-                "template_id": str,
-                "metadata": dict[str, Any]  # includes "orphaned_warning" if applicable
-            }
-
-        Raises:
-            ValueError: If agent template not found
-        """
-        logger.info(
-            f"Getting agent configuration for call: user={user_id.value}, agent={agent_slug}"
-        )
-
-        # Get or create user instance
-        instance = self.get_or_create_instance(user_id, agent_slug)
-
-        # Update last_used timestamp
-        instance.track_usage()
-        self._instance_repo.save(instance)
-
-        # Get template for metadata
-        template = self._template_repo.find_by_slug(agent_slug)
-        if not template:
-            raise ValueError(f"Agent template not found: {agent_slug}")
-
-        # Build response using instance's configuration
-        config = instance.configuration
-
-        # Check if this is an orphaned import (original creator deleted their agent)
-        is_orphaned = self._instance_repo.is_orphaned(instance.id)
-
-        return {
-            "name": instance.agent_name or template.name,
-            "slug": template.slug,
-            "description": template.description,
-            "system_prompt": config.system_prompt,
-            "tools": list(config.tools),  # Convert tuple to list for JSON serialization
-            "capabilities": config.capabilities or {},
-            "rules": list(config.rules)
-            if config.rules
-            else [],  # Convert tuple to list
-            "output_format": config.output_format,
-            "category": template.category,
-            "version": template.version,
-            "is_customized": instance.is_customized,
-            "is_orphaned": is_orphaned,  # Flag for imported agents where original was deleted
-            "instance_id": instance.id.value,
-            "template_id": template.id.value,
-            "metadata": {
-                **template.metadata,
-                "created_at": instance.created_at.isoformat(),
-                "last_used": instance.last_used_at.isoformat()
-                if instance.last_used_at
-                else None,
-                "customizations": instance.metadata.get("customizations", {}),
-                "orphaned_warning": "Agent not supported by owner anymore, you are in last version"
-                if is_orphaned
-                else None,
-            },
-        }
-
     def get_user_instances(self, user_id: UserId) -> list[UserAgentInstance]:
         """
         Get all agent instances for a user.
@@ -332,7 +243,7 @@ class AgentManagementFacade:
             user_id: User identifier (must match instance owner)
             instance_id: Instance identifier to update
             agent_name: New custom name for instance (optional)
-            is_enabled: Whether agent is enabled for use in call_agent tools (optional)
+            is_enabled: Whether the agent is enabled (optional)
             system_prompt: New system prompt (optional)
             tools: New tools list (optional)
             capabilities: New capabilities dict (optional)

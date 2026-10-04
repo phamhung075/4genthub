@@ -189,7 +189,7 @@ class MCPKeycloakAuth:
                     "project": ["manage_project", "manage_git_branch"],
                     "task": ["manage_task", "manage_subtask"],
                     "context": ["manage_context"],
-                    "agent": ["call_agent", "manage_agent"],
+                    "agent": ["manage_agent"],
                     "development": ["*"],
                 },
             )
@@ -200,7 +200,6 @@ class MCPKeycloakAuth:
                 {
                     "task": ["manage_task", "search_task"],
                     "context": ["manage_context"],
-                    "agent": ["call_agent"],
                 },
             )
 

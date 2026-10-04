@@ -14,7 +14,6 @@ from .unified_context_controller.unified_context_controller import (
 from .project_mcp_controller.project_mcp_controller import ProjectMCPController
 from .git_branch_mcp_controller.git_branch_mcp_controller import GitBranchMCPController
 
-# CallAgentMCPController moved to fastmcp.agent_management.interface.mcp_controllers
 from .agent_mcp_controller import AgentMCPController, UnifiedAgentMCPController
 
 # Note: Internal subpackages (task_mcp_controller, auth_helper, etc.) are exposed

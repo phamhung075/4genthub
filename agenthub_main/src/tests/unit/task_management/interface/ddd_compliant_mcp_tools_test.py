@@ -88,11 +88,6 @@ class TestDDDCompliantMCPTools:
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
                 )
             )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
-                )
-            )
             # Claude agent controller removed
             stack.enter_context(
                 patch(
@@ -174,11 +169,6 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(
                 patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
-                )
-            )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
                 )
             )
             # Claude agent controller removed
@@ -263,11 +253,6 @@ class TestDDDCompliantMCPTools:
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
                 )
             )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
-                )
-            )
             # Claude agent controller removed
             stack.enter_context(
                 patch(
@@ -289,7 +274,6 @@ class TestDDDCompliantMCPTools:
             tools._project_controller = Mock()
             tools._git_branch_controller = Mock()
             tools._agent_controller = Mock()
-            tools._call_agent_controller = Mock()
 
             # Test registration
             tools.register_tools(mock_mcp)
@@ -362,11 +346,6 @@ class TestDDDCompliantMCPTools:
             stack.enter_context(
                 patch(
                     "fastmcp.task_management.interface.ddd_compliant_mcp_tools.AgentMCPController"
-                )
-            )
-            stack.enter_context(
-                patch(
-                    "fastmcp.task_management.interface.ddd_compliant_mcp_tools.CallAgentMCPController"
                 )
             )
             # Claude agent controller removed

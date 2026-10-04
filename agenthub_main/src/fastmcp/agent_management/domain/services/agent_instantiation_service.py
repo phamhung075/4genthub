@@ -44,7 +44,7 @@ class AgentInstantiationService:
     ) -> UserAgentInstance | None:
         """Get existing instance or create new one for user and template.
 
-        This is the primary method called by call_agent MCP tool.
+        This is the primary method used to materialize a user's instance for a template.
         It implements the auto-instantiation logic:
         1. Find template by slug
         2. Check if user already has an instance

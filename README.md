@@ -167,7 +167,7 @@ graph TD
 <td width="33%">
 
 ### 🔍 **Analysis & Planning** (7 agents)
-- `@task_planning_agent` - Project planning  
+- `@task_planning_agent` - Project planning
 - `@deep_research_agent` - Investigation
 - `@root_cause_analysis_agent` - Problem solving
 - `master-orchestrator-agent` - Coordination
@@ -293,7 +293,7 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 🚀 Quick Start Options
 ────────────────────────────────────────────────────────
   1) 🐘 PostgreSQL Local (Recommended for beginners)
-  2) ☁️  Supabase Cloud (Best for teams)  
+  2) ☁️  Supabase Cloud (Best for teams)
   3) ☁️🔴 Supabase + Redis (Enterprise mode)
   P) ⚡ Performance Mode (Low-resource PCs)
 
@@ -308,9 +308,9 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 
 ### ⚡ **2-Minute Setup Guide**
 
-1️⃣ **Launch the menu**: `./docker-system/docker-menu.sh`  
-2️⃣ **Pick your setup**: Choose option `1` for local development  
-3️⃣ **Access your dashboard**: Open http://localhost:3800  
+1️⃣ **Launch the menu**: `./docker-system/docker-menu.sh`
+2️⃣ **Pick your setup**: Choose option `1` for local development
+3️⃣ **Access your dashboard**: Open http://localhost:3800
 4️⃣ **Start collaborating**: Your AI agents are ready to work!
 
 ---
@@ -335,7 +335,7 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 
 #### 🤖 **What AI Agents Do** (Behind the Scenes)
 1. `@task_planning_agent` → Breaks down requirements
-2. `@system_architect_agent` → Designs architecture  
+2. `@system_architect_agent` → Designs architecture
 3. `@coding_agent` → Implements code
 4. `@test_orchestrator_agent` → Creates tests
 5. `@documentation_agent` → Writes ai_docs
@@ -349,10 +349,10 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 Transform any AI tool into a collaborative agent with our MCP protocol:
 
 ```python
-# 🎭 1. Load agent configuration from your personal instance
-agent = mcp__agenthub_http__call_agent(name_agent="coding-agent")
+# 🎭 1. Resolve your seat (the durable role) from the seat model
+seat = mcp__agenthub_http__call_seat(room="my-room", seat="coding-agent")
 
-# 📋 2. Create collaborative workspace  
+# 📋 2. Create collaborative workspace
 project = mcp__agenthub_http__manage_project(
     action="create",
     name="user-authentication-system",
@@ -402,9 +402,9 @@ mcp__agenthub_http__manage_context(
 
 ### 🌟 **The Context Magic**
 
-**🧠 Context Inheritance**: Every agent automatically knows what previous agents discovered  
-**📈 Progress Tracking**: Watch tasks evolve from idea to completion  
-**🔄 Session Continuity**: Stop and resume work - agents remember everything  
+**🧠 Context Inheritance**: Every agent automatically knows what previous agents discovered
+**📈 Progress Tracking**: Watch tasks evolve from idea to completion
+**🔄 Session Continuity**: Stop and resume work - agents remember everything
 **👥 Team Collaboration**: Multiple humans can collaborate with the same agent team
 
 ---
@@ -435,7 +435,7 @@ mcp__agenthub_http__manage_context(
 Human: Define requirements
   ↓
 @task_planning_agent: Break down tasks
-  ↓  
+  ↓
 @system_architect_agent: Design system
   ↓
 @coding_agent: Implement code
@@ -469,9 +469,9 @@ Human: Validate solution
 
 ### 🧠 **Context Intelligence**
 
-**🌐 Global Context** → Organization-wide patterns and standards  
-**📋 Project Context** → Project-specific decisions and architecture  
-**🌿 Branch Context** → Feature-specific implementation details  
+**🌐 Global Context** → Organization-wide patterns and standards
+**📋 Project Context** → Project-specific decisions and architecture
+**🌿 Branch Context** → Feature-specific implementation details
 **🎯 Task Context** → Granular work progress and discoveries
 
 **The Magic**: Every AI agent automatically inherits relevant context, ensuring consistency and eliminating repetitive explanations.
@@ -492,7 +492,7 @@ Human: Validate solution
 
 #### 🎯 **Task & Project Management**
 - Task lifecycle orchestration
-- Subtask creation & tracking  
+- Subtask creation & tracking
 - Project hierarchy management
 - Git branch coordination
 - Dependency management
@@ -515,7 +515,7 @@ Human: Validate solution
 
 #### 🧠 **Context Intelligence**
 - 4-tier context hierarchy
-- Automatic inheritance  
+- Automatic inheritance
 - Cross-session persistence
 - Real-time synchronization
 - Context validation
@@ -537,7 +537,7 @@ Human: Validate solution
 
 #### 📊 **Analytics & Monitoring**
 - Performance metrics
-- Health monitoring  
+- Health monitoring
 - Usage analytics
 - Progress tracking
 - System diagnostics
@@ -566,7 +566,7 @@ Human: Validate solution
 
 ### ⚡ **Current Performance**
 - **Response Time**: <200ms average
-- **Concurrent Users**: 10-50 users  
+- **Concurrent Users**: 10-50 users
 - **Agent Coordination**: Real-time
 - **Context Sync**: <5ms overhead
 - **Database**: PostgreSQL + Redis
@@ -662,7 +662,7 @@ Our release process follows industry best practices:
 
 #### 😫 **Before agenthub**
 - Switching between multiple AI tools
-- Losing context between sessions  
+- Losing context between sessions
 - Repeating the same explanations
 - Managing complex prompts manually
 - No visibility into AI work progress

@@ -601,7 +601,6 @@ class TestConfigurationValidationEdgeCases:
             assert enabled_tools["manage_task"] is True
             assert enabled_tools["manage_subtask"] is True
             assert enabled_tools["manage_agent"] is True
-            assert enabled_tools["call_agent"] is True
 
             # Cursor tools should be disabled
             assert enabled_tools["update_auto_rule"] is False

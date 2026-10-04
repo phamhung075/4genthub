@@ -22,7 +22,6 @@ class ToolConfig:
             "manage_task": self._get_bool_env("TOOL_MANAGE_TASK", True),
             "manage_subtask": self._get_bool_env("TOOL_MANAGE_SUBTASK", True),
             "manage_agent": self._get_bool_env("TOOL_MANAGE_AGENT", True),
-            "call_agent": self._get_bool_env("TOOL_CALL_AGENT", True),
             "manage_document": self._get_bool_env("TOOL_MANAGE_DOCUMENT", True),
             "update_auto_rule": self._get_bool_env("TOOL_UPDATE_AUTO_RULE", True),
             "validate_rules": self._get_bool_env("TOOL_VALIDATE_RULES", True),

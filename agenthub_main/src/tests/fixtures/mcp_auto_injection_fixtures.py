@@ -777,7 +777,7 @@ def validation_helpers():
             """Validate session context structure."""
             validations = {
                 "has_initialization": "🚀 INITIALIZATION REQUIRED" in context,
-                "has_call_agent": "call_agent('master-orchestrator-agent')" in context,
+                "has_clock_in": "rig whoami" in context,
                 "has_session_source": "Session source:" in context,
                 "has_mcp_context": "=== MCP LIVE CONTEXT ===" in context
                 or "⚠️ **MCP Status:**" in context,
@@ -800,7 +800,7 @@ def validation_helpers():
 
             if response.get("success") and "data" in response:
                 data = response["data"]
-                validations["data_is_dict_or_list"] = isinstance(data, (dict, list))
+                validations["data_is_dict_or_list"] = isinstance(data, dict | list)
 
                 if isinstance(data, dict) and "tasks" in data:
                     validations["tasks_is_list"] = isinstance(data["tasks"], list)
