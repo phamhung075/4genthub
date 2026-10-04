@@ -3,6 +3,17 @@
 ## [Unreleased]
 
 ### Fixed
+- **logger tests: one misplaced duplicate removed, five tests fixed against the real behavior** - 2026-10-04
+  - `src/utils/logger.test.ts` (29 tests, 22 failing) duplicated `src/tests/utils/logger.test.ts` outside the
+    `src/tests` folder and built configs `LoggerConfig` does not have (`outputs: ['console']`, `localStorageMaxSize`),
+    so it could not test the class. Every area it named is covered by the canonical file (levels, conditional
+    logging, groups, timers, localStorage, remote, formatting, edge cases, destroy, metadata; the canonical file
+    gained a `queueSize` assertion). The duplicate is removed.
+  - `src/tests/utils/logger.test.ts` (5 of 45 failing) now matches `logger.ts`: debug entries are written with
+    `console.log` (deliberate, browsers hide `console.debug`), the timestamp tests turn colorize off so the `%c`
+    prefix does not hide the format, and the download test gives jsdom the object-URL API and clicks a real anchor
+    (the old mock returned a plain object that `document.body.appendChild` rejects, so the error was swallowed).
+  - No source change.
 - **environment tests set variables with `vi.stubEnv`** - 2026-10-04
   - `src/tests/config/environment.test.ts` used `vi.mock('import.meta.env', ...)`, which mocks nothing
     (`import.meta.env` is not a module), and replaced `window` with a bare object, so 11 of 25 tests failed. It now
