@@ -514,4 +514,44 @@ describe('SeatsPage', () => {
       expect(screen.getAllByText('in sync')).toHaveLength(1);
     });
   });
+
+  describe('failed mutations', () => {
+    it('shows the server error when creating a room fails', async () => {
+      mockApi.createRoom.mockRejectedValue(new Error('room "eng" already exists'));
+      renderPage();
+      await screen.findByText('Development');
+
+      fireEvent.change(screen.getByLabelText('Room slug'), { target: { value: 'eng' } });
+      fireEvent.change(screen.getByLabelText('Room name'), { target: { value: 'Engineering' } });
+      fireEvent.click(screen.getByRole('button', { name: /create room/i }));
+
+      expect(await screen.findByText('room "eng" already exists')).toBeInTheDocument();
+      expect(screen.getByLabelText('Room slug')).toHaveValue('eng');
+    });
+
+    it('shows the server error and keeps the dialog open when adding a seat fails', async () => {
+      mockApi.createSeat.mockRejectedValue(new Error('seat "bob" already exists'));
+      await openAddSeatDialog();
+
+      submitSeat();
+
+      expect(await screen.findByText('seat "bob" already exists')).toBeInTheDocument();
+      expect(screen.getByLabelText('Seat key')).toHaveValue('bob');
+    });
+
+    it('shows the server error and keeps the dialog open when removing a seat fails', async () => {
+      mockApi.removeSeat.mockRejectedValue(new Error('seat "alice" not found'));
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+      fireEvent.click(screen.getByRole('button', { name: 'Remove seat alice' }));
+      const title = await screen.findByText('Remove seat?');
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Remove seat' }));
+
+      expect(await within(dialog).findByText('seat "alice" not found')).toBeInTheDocument();
+      expect(screen.getByText('Remove seat?')).toBeInTheDocument();
+    });
+  });
 });

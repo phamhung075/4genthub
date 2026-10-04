@@ -9,7 +9,11 @@
     23 tests passed. They now call `mutate(vars, { onSuccess })`; the error stays in the mutation state, which the
     pages already render through `isError`/`error.message`. Seven call sites: create room, add seat, remove seat,
     delete room (`SeatsPage.tsx`), add/delete overlay op and add link (`SeatDetailPage.tsx`).
-  - Files: `src/pages/SeatsPage.tsx`, `src/pages/SeatDetailPage.tsx`; the existing delete-room failure test is the regression check
+  - The remove-seat dialog rendered no error at all, so a failed remove would have been silent; it now shows
+    `removeSeat.error.message` like the delete-room dialog.
+  - Failure tests: create room, add seat, remove seat (`SeatsPage.test.tsx`), add overlay op and add link
+    (`SeatDetailPage.test.tsx`); delete room already had one. The remove-seat test fails with the error render removed.
+  - Files: `src/pages/SeatsPage.tsx`, `src/pages/SeatDetailPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`, `src/tests/pages/SeatDetailPage.test.tsx`
 - **Removed two test files for APIs the code does not have** - 2026-10-04
   - `src/tests/utils/contextHelpers.test.ts` (33 tests) called `parseContextData`, `stringifyContextData`,
     `mergeContextData`, `extractContextValue`, `isValidContextData` and `sanitizeContextData`;

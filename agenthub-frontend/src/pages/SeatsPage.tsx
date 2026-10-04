@@ -555,6 +555,12 @@ export const SeatsPage: React.FC = () => {
               cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {removeSeat.isError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{removeSeat.error.message}</AlertDescription>
+            </Alert>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSeatToRemove(null)}>
               Cancel

@@ -397,4 +397,33 @@ describe('SeatDetailPage', () => {
       expect(await screen.findByText('seat is removed')).toBeInTheDocument();
     });
   });
+
+  describe('failed mutations', () => {
+    it('shows the server error and keeps the form when adding an overlay op fails', async () => {
+      mockApi.putOverlay.mockRejectedValue(new Error('module "extra" not found'));
+      await openModules();
+
+      fireEvent.change(screen.getByLabelText('Op kind'), { target: { value: 'add' } });
+      fireEvent.change(screen.getByLabelText('Module slug'), { target: { value: 'extra' } });
+      fireEvent.change(screen.getByLabelText('Version'), { target: { value: '2.0.0' } });
+      fireEvent.click(screen.getByRole('button', { name: /add op/i }));
+
+      expect(await screen.findByText('module "extra" not found')).toBeInTheDocument();
+      expect(screen.getByLabelText('Module slug')).toHaveValue('extra');
+    });
+
+    it('shows the server error and keeps the target when adding a link fails', async () => {
+      mockApi.putLink.mockRejectedValue(new Error('seat "carol" not found'));
+      renderDetail();
+      await screen.findByText('rules');
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+      await screen.findByLabelText('Allow bob (delegates_to)');
+
+      fireEvent.change(screen.getByLabelText('Link target'), { target: { value: 'bob' } });
+      fireEvent.click(screen.getByRole('button', { name: /add link/i }));
+
+      expect(await screen.findByText('seat "carol" not found')).toBeInTheDocument();
+      expect(screen.getByLabelText('Link target')).toHaveValue('bob');
+    });
+  });
 });
