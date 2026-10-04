@@ -23,6 +23,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**G5 ticked; its check wording corrected** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G5): ticked after `fab45cee` (service test) and `c92121cf` (overlay `add` needs a concrete version). The check text is corrected, not just met: it said a module publish changes a follow-latest seat, but the owner's policy is that nothing moves until a new resolved version is published, so a follow-latest seat moves with a new seat type version. Open lines kept: fakes only, no Postgres run, client lock (`--update`) not re-tested.
+
 **G2 check re-run and ticked** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (G2): the three clauses of the check (same modules for `claude-code` and `codex` pass `rig agent validate`, resolving twice gives the same hash, a `remove` overlay removes a base module) were re-run and pass; ticked with the evidence and two open lines. The follow-latest sentence is reworded: only the seat type follows latest, module and overlay refs are concrete since `c92121cf`. Documentation only, no code.
