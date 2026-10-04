@@ -422,13 +422,20 @@ func writeSpecFiles(t *testing.T, dir string, spec *services.OpenRigSpec) {
 	}
 }
 
-// TestRenderSeatRigValidate writes the rendered spec to disk and validates it
-// with the real rig CLI. OpenRig's validate endpoint needs a running daemon,
-// so a missing daemon skips rather than fails.
+// TestRenderSeatRigValidate writes the rendered spec to disk and validates it with
+// the real rig CLI, whose validate path needs a running OpenRig daemon. Set
+// OPENRIG_TEST_AGENT_VALIDATE=1 to run it. With the variable set, a missing `rig`,
+// an unreachable daemon or an invalid spec all FAIL the test, so the G2 runtime
+// validation cannot pass silently on a host without a daemon; without the variable
+// the test skips (there is no in-process substitute that would mean the same thing:
+// only rig's own validator is the check).
 func TestRenderSeatRigValidate(t *testing.T) {
+	if os.Getenv("OPENRIG_TEST_AGENT_VALIDATE") != "1" {
+		t.Skip("set OPENRIG_TEST_AGENT_VALIDATE=1 to run the rig agent validate check (needs OpenRig and its daemon)")
+	}
 	rigPath, err := exec.LookPath("rig")
 	if err != nil {
-		t.Skip("rig binary not on PATH")
+		t.Fatalf("OPENRIG_TEST_AGENT_VALIDATE=1 but the rig binary is not on PATH: %v", err)
 	}
 	for _, runtime := range []string{"claude-code", "codex", "omp"} {
 		t.Run(runtime, func(t *testing.T) {
@@ -439,11 +446,8 @@ func TestRenderSeatRigValidate(t *testing.T) {
 			dir := t.TempDir()
 			writeSpecFiles(t, dir, spec)
 			out, err := exec.Command(rigPath, "agent", "validate", filepath.Join(dir, "agent.yaml")).CombinedOutput()
-			if err != nil && strings.Contains(string(out), "Daemon not running") {
-				t.Skipf("rig validation needs a running OpenRig daemon: %s", strings.TrimSpace(string(out)))
-			}
 			if err != nil {
-				t.Fatalf("rig agent validate failed: %v\n%s", err, out)
+				t.Fatalf("rig agent validate failed (OPENRIG_TEST_AGENT_VALIDATE=1 requires rig and a running daemon): %v\n%s", err, out)
 			}
 			if !strings.Contains(string(out), "Agent spec valid") {
 				t.Fatalf("unexpected rig output:\n%s", out)

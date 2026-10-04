@@ -8,6 +8,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+**G2 runtime validation is env-gated; the G6 measurement is corrected (OF1)** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` (the G2 "renders pass OpenRig validation" check) now runs only with `OPENRIG_TEST_AGENT_VALIDATE=1` and FAILS loudly when `rig` is missing, the daemon is unreachable or a spec is invalid, instead of skipping on a missing daemon. Proved: unset skips; set with the daemon up passes for `claude-code`, `codex` and `omp`; set with `OPENRIG_URL=http://127.0.0.1:1` fails; set with `rig` off `PATH` fails.
+- `agenthub_go/NEXT_GEN.md`: the G6 line's unreproducible "710 failing tests and 23 `tsc` errors before this work" claim is withdrawn (the 2026-10-04 measurement is kept); the G2 line now records the env gate. No frontend test file was left uncommitted — `git status --short --untracked-files=all` lists only `.claude`, `CLAUDE.md`, `agenthub_go/NEXT_GEN.md` and `ai_docs/index.json`, none of them a test file.
+
 **One assignee rule on every path (D6d)** (2026-10-04)
 
 - `agenthub_go/fastmcp/task_management/domain/entities/task.go`: new `entities.NormalizeAssignees` (replaces `Task.ValidateAssigneeList`). `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, blanks are dropped, any other bare name is rejected with `Invalid assignees: [...]. An assignee is '@<seat_key>' or a known agent role.` It is now called by `NewCreateTaskRequest` (REST create), `Task.UpdateAssignees`/`AddAssignee`, `Subtask.NewSubtask`/`UpdateAssignees`/`AddAssignee`, MCP `manage_task` create, MCP subtask create and `AgentInheritanceService.ValidateAgentAssignments`. A rejected update leaves the assignees unchanged.

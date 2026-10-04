@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — G2 validate check is env-gated (OF1, Go)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` now requires `OPENRIG_TEST_AGENT_VALIDATE=1` and fails (does not skip) when `rig` is absent, the daemon is unreachable or a rendered spec is invalid; without the variable it skips with the reason. There is no in-process substitute: only rig's own validator is the G2 check.
+- Behaviour proved in four runs from `agenthub_go` (`GOCACHE`/`TMPDIR` set): unset -> SKIP; set -> PASS for `claude-code`, `codex`, `omp` (daemon on 7433); set + `OPENRIG_URL=http://127.0.0.1:1` -> FAIL ("Daemon did not respond"); set + PATH without `rig` -> FAIL ("rig binary is not on PATH").
+- No frontend test file was uncommitted: `git status --short --untracked-files=all` lists only `.claude`, `CLAUDE.md`, `agenthub_go/NEXT_GEN.md`, `ai_docs/index.json` — none a test file.
+
 ## 2026-10-04 — Session stream: the remaining Python tests ported (Task A4/A6/A7, Go)
 
 - Six connector-ingest tests ported from `agenthub_main/src/tests/session_stream/session_stream_test.py` into `server/httpapp/ws_connector_test.go`: `TestConnectorRejectsABadToken` (HTTP 403 before the upgrade; Python closes before `accept`, so a real client also sees no close code), `TestConnectorRefusesEventsForAnUnregisteredSessionKey` (`{"type":"error","error":"unknown session"}`), `TestConnectorHelloCannotSwitchTheConnectorID` (`connector_id already set`), `TestConnectorSurvivesNonObjectEventsAndAnOddProject` (non-object events give `each event must be an object`, the socket still answers `events_ack`, a non-string `project` is accepted), `TestConnectorDisconnectMarksItsSessionsOffline`, `TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline`.
