@@ -3,6 +3,7 @@ package mcp_controllers
 
 import (
 	"context"
+	"strings"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	tmentities "agenthub/fastmcp/task_management/domain/entities"
@@ -16,10 +17,11 @@ import (
 const CallSeatToolName = "call_seat"
 
 // CallSeatToolDescription is read by LLM seats.
-const CallSeatToolDescription = "Resolve one exact seat by room and seat key. Returns the seat's runtime, model, permission policy, resolved snapshot hash and its rendered context files. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain is the occupant."
+const CallSeatToolDescription = "Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a resolved_seats row for it. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain is the occupant."
 
 // SeatResolver resolves a seat and renders it to its immutable snapshot.
-// SeatResolutionService is the production implementation.
+// SeatResolutionService is the production implementation. ResolveSeat returns a
+// non-nil ResolvedSeat whenever the error is nil.
 type SeatResolver interface {
 	ResolveSeat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.ResolvedSeat, error)
 }
@@ -41,17 +43,18 @@ func (c *CallSeatController) CallSeat(ctx context.Context, room, seat *string, u
 	if err != nil {
 		return seatFailure(err.Error())
 	}
-	if deref(room) == "" || deref(seat) == "" {
+	roomSlug, seatKey := strings.TrimSpace(deref(room)), strings.TrimSpace(deref(seat))
+	if roomSlug == "" || seatKey == "" {
 		return seatFailure("room and seat are required")
 	}
-	resolved, err := c.resolver.ResolveSeat(ctx, uid, deref(room), deref(seat))
+	resolved, err := c.resolver.ResolveSeat(ctx, uid, roomSlug, seatKey)
 	if err != nil {
 		return seatFailure(err.Error())
 	}
 
 	resp := seatSuccess()
-	resp.Set("room", deref(room))
-	resp.Set("seat", deref(seat))
+	resp.Set("room", roomSlug)
+	resp.Set("seat", seatKey)
 	resp.Set("hash", resolved.Hash)
 	resp.Set("runtime", resolved.Runtime)
 	resp.Set("policy", resolved.Policy)

@@ -47,6 +47,9 @@ func TestCallSeatResolvesTheSeat(t *testing.T) {
 	if field(t, resp, "hash") != "abc123" || field(t, resp, "runtime") != "omp" {
 		t.Errorf("resolved seat = %v", resp)
 	}
+	if policy, _ := field(t, resp, "policy").(map[string]any); policy["permission_policy"] != "yolo" {
+		t.Errorf("policy = %v, want permission_policy yolo", field(t, resp, "policy"))
+	}
 	files, _ := field(t, resp, "files").([]any)
 	if len(files) != 1 {
 		t.Fatalf("files = %v", field(t, resp, "files"))
@@ -69,6 +72,7 @@ func TestCallSeatFailures(t *testing.T) {
 	}{
 		{"no room", nil, ptr("lead"), nil, "room and seat are required"},
 		{"no seat", ptr("4genthub-dev"), nil, nil, "room and seat are required"},
+		{"whitespace-only room", ptr("   "), ptr("lead"), nil, "room and seat are required"},
 		{"unknown seat", ptr("4genthub-dev"), ptr("ghost"), errors.New("seat not found"), "seat not found"},
 	}
 	for _, tc := range cases {

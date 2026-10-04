@@ -8,6 +8,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**call_seat: description matches the response, input is trimmed** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`: `CallSeatToolDescription` no longer promises a `model` (`CallSeat` never returned one and the snapshot has no model column) and says that a new hash writes a `resolved_seats` row; `SeatResolver` states that `ResolveSeat` returns a non-nil seat whenever the error is nil; `room` and `seat` are trimmed, so a whitespace-only value is the same `room and seat are required` failure as a missing one.
+- Tests: `call_seat_controller_test.go` asserts the `policy` field and a whitespace-only room. `go vet` and `go test` for `fastmcp/seat_management/...` and `fastmcp/server/httpapp/...` pass.
+
 **omp seat gets no runtime fragment: the assertion added** (2026-10-04)
 
 - `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: the "no `runtime/` file" loop covered `codex` and `agy` only, so the narrowed `receivesClaudeFragments` for `omp` was unasserted — flagged by the DeepSeek supervisor seat, not by reading. `omp` added to the loop. Proven by mutation rather than by the test passing: restoring the old predicate makes it fail with `omp seat has a runtime file "runtime/claude-mcp.fragment.json"`, and the correct implementation was restored exactly (`git diff` on `renderer.go` is empty). Coverage only, no behavior change. `go vet ./...` and `go test ./...` green.

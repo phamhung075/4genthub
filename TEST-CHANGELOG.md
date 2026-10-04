@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — call_seat tests (Go)
+
+- Added with `2740697e`: `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller_test.go` (resolve, input failures, tenant failure, tool registration, input schema) and `agenthub_go/fastmcp/server/httpapp/call_seat_mcp_test.go` (tools/list publishes `call_seat` with its schema, tools/call resolves a seat end to end, a resolver failure is a tool result).
+- Review follow-up: the success test asserts `policy`; the failure table has a whitespace-only room case. `go test ./fastmcp/seat_management/... ./fastmcp/server/httpapp/...` passes.
+
 ## 2026-10-04 — SignupForm and EmailVerification tests follow the components (Task B3)
 
 - Changed (tests only, plus `agenthub-frontend/vite.config.ts`): `SignupForm.test.tsx` (21 failing -> 23 pass): labels are queried with anchored regexes (MUI appends ` *` to required labels), the `Sign Up` heading by role, `Medium123` is `Good`, a successful signup navigates to `/registration-success`, the loading check uses `waitFor` and `within(button)`, the API URL test uses `API_BASE_URL`; the 'too weak' assertion is removed (see below). `EmailVerification.test.tsx` (7 failing -> 15 pass): the hash is parsed in an effect during render, so `waitFor` under fake timers hung (removed, timers advance in `act`), the 'processing' state is never observable, `rerender` does not re-read the hash (fresh render per state), the resend button is queried by role, the API URL test uses `API_BASE_URL`.
