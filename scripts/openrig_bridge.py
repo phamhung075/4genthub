@@ -17,11 +17,14 @@ list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
   runtime                       -> runtime  (claude-code|codex|agy|terminal else unknown)
   state, first match wins:
     sessionStatus stopped|exited, or lifecycleState detached|recoverable -> stopped
-    agentActivity.state needs_input, lifecycleState attention_required,
-      or startupStatus attention_required|failed                         -> blocked
+    agentActivity.state needs_input, or startupStatus
+      attention_required|failed                                         -> blocked
     agentActivity.state running                                          -> running
     agentActivity.state idle                                             -> idle
     anything else                                                        -> unknown
+  lifecycleState attention_required is not a blocked signal: OpenRig keeps it after the agent
+  process dies (agentActivity.state unknown, reason no_runtime_hook), so a dead agent reads
+  unknown, not blocked (see seat_state).
   The seat key is the member name only, so two pods of one rig with the same member name
   collide: the first node is sent, the others are skipped and named on stderr.
   detail  <- latestError, heldReason, agentActivity.reason (scrubbed, <=200)
@@ -122,9 +125,12 @@ def seat_state(node: dict) -> str:
     activity = _str(_dict(node.get("agentActivity")).get("state"))
     if session in ("stopped", "exited") or life in ("detached", "recoverable"):
         return "stopped"
+    # `lifecycleState: attention_required` is deliberately NOT a "blocked" signal. OpenRig keeps it
+    # after the agent process dies (agentActivity.state "unknown", reason "no_runtime_hook"), so it
+    # cannot tell a seat waiting on a human from one that is gone; the agent's own activity is the
+    # truth source and a node with no live activity falls through to "unknown".
     if (
         activity == "needs_input"
-        or life == "attention_required"
         or startup
         in (
             "attention_required",

@@ -124,7 +124,27 @@ def test_payload_shape_state_and_runtime_mapping(tmp_path):
             "stopped",
         ),
         ({"lifecycleState": "recoverable"}, "stopped"),
-        ({"lifecycleState": "attention_required"}, "blocked"),
+        # A dead agent, captured from the F4 reproduction (2026-10-04): the tmux session is still
+        # running and OpenRig keeps lifecycleState attention_required, but the runtime hook is gone.
+        # It must not read as blocked (blocked means a human is needed; this seat is gone).
+        (
+            {
+                "sessionStatus": "running",
+                "startupStatus": "ready",
+                "lifecycleState": "attention_required",
+                "agentActivity": {"state": "unknown", "reason": "no_runtime_hook"},
+            },
+            "unknown",
+        ),
+        # attention_required alone is not a blocked signal; the agent's own activity decides.
+        ({"lifecycleState": "attention_required"}, "unknown"),
+        (
+            {
+                "lifecycleState": "attention_required",
+                "agentActivity": {"state": "needs_input"},
+            },
+            "blocked",
+        ),
         ({"startupStatus": "failed"}, "blocked"),
         ({"agentActivity": {"state": "idle"}}, "idle"),
         ({"agentActivity": {"state": "bogus"}}, "unknown"),

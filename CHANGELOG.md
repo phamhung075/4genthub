@@ -6,6 +6,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**A dead OpenRig seat no longer reads as `blocked`** (2026-10-04)
+
+- `scripts/openrig_bridge.py`: in `seat_state`, `lifecycleState: attention_required` alone is no longer mapped to `blocked`. OpenRig keeps that lifecycle after the agent process dies (`agentActivity.state: unknown`, reason `no_runtime_hook`, while the tmux session is still running), so the old clause reported a seat that is gone as one that needs a human. `blocked` now comes from the agent's own signal (`agentActivity.state == needs_input`) or `startupStatus attention_required|failed`; an agent death outside `rig seat stop` reads `unknown` (with `detail: no_runtime_hook`), and `rig seat stop` still reads `stopped`. Reproduced end to end on a scratch rig (kill the agent process only; tmux session alive): the bridge reported `blocked` before the fix and `unknown` after it, with the healthy seats unchanged.
+
 ### Added
 
 **Project skills are now generic — `.agents/skills` is the single source** (2026-10-04)

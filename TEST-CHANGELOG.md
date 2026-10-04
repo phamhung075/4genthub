@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — F4: dead-agent state mapping (Python scripts)
+
+- `src/tests/scripts/test_openrig_bridge.py`: three `seat_state` cases added/updated — the captured death node (session running, `lifecycleState: attention_required`, `agentActivity.state: unknown` + `no_runtime_hook`) maps to `unknown`; `attention_required` alone maps to `unknown`; `attention_required` with `needs_input` maps to `blocked`. The payload-shape test is unchanged (its `needs_input` node still blocks).
+- `scripts/openrig_bridge.py` (not a test): `attention_required` alone is no longer a blocked signal; reproduced live on a scratch rig before/after (bridge `blocked` -> `unknown`), `rig seat stop` still `stopped`.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 40 passed; `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 172 passed.
+
 ## 2026-10-04 — B2: document `--noconftest` for the session_stream test (Python)
 
 - `src/tests/session_stream/session_stream_test.py`: header now states the exact command and why the repo conftest cannot be used (its autouse DB fixture retries a Postgres connect in a sleep loop before the first test, and it mocks `fastapi`/`fastapi.testclient`).
