@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Migrator scheme guard (DEFECT)
+
+- `fastmcp/database_migrations_test.go` (new, internal package fastmcp): `TestIsPostgresURL` pins `postgres://` and `postgresql://` as Postgres and `sqlite:///…`, `mysql://…` and an empty string as not.
+- `TestDatabaseMigratorRunMigrations` goes red -> green: it builds a fresh database with a `tasks(id,status,details,…)` table, runs the migrator over a `postgres://` DSN, and asserts `details` is dropped and `progress_history` added and populated. Before the fix the guard returned early (`postgres://` has no `postgresql` substring), so the tree showed `details=true progress_history=false`.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 -run 'TestIsPostgresURL|TestDatabaseMigratorRunMigrations' ./fastmcp/` -> ok.
+
 ## 2026-10-04 — Old agent system removed from Go (T7, Go half)
 
 - Deleted with their subjects: the `agent_management` package tests (entities, services, ORM repositories, REST routes) and `server/httpapp/agent_mgmt_mount_test.go`.

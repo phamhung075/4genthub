@@ -25,9 +25,17 @@ func NewDatabaseMigrator(databaseURL string) *DatabaseMigrator {
 	return &DatabaseMigrator{DatabaseURL: buildDatabaseURLFromEnv()}
 }
 
+// isPostgresURL reports whether the DSN targets PostgreSQL. pgx accepts both the
+// postgres:// and postgresql:// schemes; the Python builder emits postgresql://, so the
+// port originally matched that substring only and silently skipped the migrations for a
+// valid postgres:// DSN (which is what the throwaway-Postgres tests pass).
+func isPostgresURL(databaseURL string) bool {
+	return strings.HasPrefix(databaseURL, "postgres://") || strings.HasPrefix(databaseURL, "postgresql://")
+}
+
 // RunMigrations applies the tasks progress migration; any error returns false.
 func (m *DatabaseMigrator) RunMigrations() bool {
-	if !strings.Contains(m.DatabaseURL, "postgresql") {
+	if !isPostgresURL(m.DatabaseURL) {
 		return true
 	}
 	db, err := database.PgxOpener(m.DatabaseURL, database.EngineOptions{})
@@ -133,7 +141,7 @@ func (m *DatabaseMigrator) RunMigrations() bool {
 
 // InitializeDatabase creates the uuid-ossp extension.
 func (m *DatabaseMigrator) InitializeDatabase() bool {
-	if !strings.Contains(m.DatabaseURL, "postgresql") {
+	if !isPostgresURL(m.DatabaseURL) {
 		return true
 	}
 	db, err := database.PgxOpener(m.DatabaseURL, database.EngineOptions{})

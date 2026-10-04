@@ -31,6 +31,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Database migrator recognises both PostgreSQL schemes (defect)** (2026-10-04)
+
+- `agenthub_go/fastmcp/database_migrations.go`: `RunMigrations` and `InitializeDatabase` gated on `strings.Contains(url, "postgresql")`, so a valid `postgres://` DSN (what pgx and the throwaway-Postgres tests use) was treated as non-PostgreSQL and the progress-history migration silently skipped; `TestDatabaseMigratorRunMigrations` was red. Both now use `isPostgresURL`, which accepts `postgres://` and `postgresql://`. The app's own URL builder emits `postgresql://`, so production behaviour is unchanged; the guard no longer depends on which valid scheme a caller passes.
+
 **Session list order is deterministic on a `last_seen` tie (A6)** (2026-10-04)
 
 - `agenthub_go/fastmcp/session_stream/repository.go`: `ListSessions` orders `last_seen DESC, id` so a tie in `last_seen` no longer leaves the order undefined; the uuid5 `id` is a stable tiebreaker and the output is unchanged when timestamps differ. Found by the reviewer as a flake risk in the new ordering test.
