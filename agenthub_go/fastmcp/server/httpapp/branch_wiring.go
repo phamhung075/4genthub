@@ -189,32 +189,13 @@ func (a branchControllerAdapter) CreateBranch(ctx context.Context, projectID, na
 	return branchResult{r.Success, r.Message, r.Error, r}
 }
 
-func (a branchControllerAdapter) ListBranches(ctx context.Context, projectID *string, userID string) routes.BranchResult {
-	pid := ""
-	if projectID != nil {
-		pid = *projectID
-	}
-	r := a.c.ListBranches(ctx, pid, userID, nil)
-	return branchResult{r.Success, r.Message, r.Error, r}
-}
-
 func (a branchControllerAdapter) GetBranch(ctx context.Context, branchID, userID string) routes.BranchResult {
 	r := a.c.GetBranch(ctx, branchID, userID, nil)
 	return branchResult{r.Success, r.Message, r.Error, r}
 }
 
-func (a branchControllerAdapter) UpdateBranch(ctx context.Context, branchID string, name, description, status *string, userID string) routes.BranchResult {
-	r := a.c.UpdateBranch(ctx, branchID, name, description, userID, nil)
-	return branchResult{r.Success, r.Message, r.Error, r}
-}
-
 func (a branchControllerAdapter) DeleteBranch(ctx context.Context, branchID, userID string) routes.BranchResult {
 	r := a.c.DeleteBranch(ctx, branchID, userID, nil)
-	return branchResult{r.Success, r.Message, r.Error, r}
-}
-
-func (a branchControllerAdapter) AssignAgent(ctx context.Context, branchID, agentID, userID string) routes.BranchResult {
-	r := a.c.AssignAgent(ctx, branchID, agentID, userID, nil)
 	return branchResult{r.Success, r.Message, r.Error, r}
 }
 

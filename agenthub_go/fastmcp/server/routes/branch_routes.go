@@ -26,11 +26,8 @@ type BranchResult interface {
 // BranchController is the minimal BranchAPIController surface used by the routes.
 type BranchController interface {
 	CreateBranch(ctx context.Context, projectID, name, description, userID string) BranchResult
-	ListBranches(ctx context.Context, projectID *string, userID string) BranchResult
 	GetBranch(ctx context.Context, branchID, userID string) BranchResult
-	UpdateBranch(ctx context.Context, branchID string, name, description, status *string, userID string) BranchResult
 	DeleteBranch(ctx context.Context, branchID, userID string) BranchResult
-	AssignAgent(ctx context.Context, branchID, agentID, userID string) BranchResult
 	GetBranchTaskCounts(ctx context.Context, branchID, userID string) BranchResult
 	GetBranchesWithTaskCounts(ctx context.Context, projectID, userID string) BranchResult
 	GetBulkSummaries(ctx context.Context, projectIDs []string, userID string, includeArchived bool) BranchResult
@@ -66,33 +63,11 @@ func CreateBranch(ctx context.Context, projectID, gitBranchName, description, us
 	return result.ModelDump(), nil
 }
 
-// ListBranches mirrors GET /. Note the Python handler has no `except HTTPException:
-// raise`, so a failed result is re-wrapped as the generic 500 message (kept quirk).
-func ListBranches(ctx context.Context, projectID *string, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
-	result := controller.ListBranches(ctx, projectID, userID)
-	if !result.Success() {
-		return nil, routesHTTPErr(500, "Failed to list branches")
-	}
-	return result.ModelDump(), nil
-}
-
 // GetBranch mirrors GET /{branch_id}.
 func GetBranch(ctx context.Context, branchID, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
 	result := controller.GetBranch(ctx, branchID, userID)
 	if !result.Success() {
 		return nil, routesHTTPErr(404, "Branch not found or access denied")
-	}
-	return result.ModelDump(), nil
-}
-
-// UpdateBranch mirrors PUT /{branch_id}.
-func UpdateBranch(ctx context.Context, branchID string, name, description, status *string, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
-	result := controller.UpdateBranch(ctx, branchID, name, description, status, userID)
-	if !result.Success() {
-		if branchNotFound(result) {
-			return nil, routesHTTPErr(404, "Branch not found or access denied")
-		}
-		return nil, routesHTTPErr(500, branchMessage(result, "Failed to update branch"))
 	}
 	return result.ModelDump(), nil
 }
@@ -105,18 +80,6 @@ func DeleteBranch(ctx context.Context, branchID, userID string, controller Branc
 			return nil, routesHTTPErr(404, "Branch not found or access denied")
 		}
 		return nil, routesHTTPErr(500, branchMessage(result, "Failed to delete branch"))
-	}
-	return result.ModelDump(), nil
-}
-
-// AssignAgentToBranch mirrors POST /{branch_id}/assign-agent.
-func AssignAgentToBranch(ctx context.Context, branchID, agentID, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
-	result := controller.AssignAgent(ctx, branchID, agentID, userID)
-	if !result.Success() {
-		if branchNotFound(result) {
-			return nil, routesHTTPErr(404, "Branch not found or access denied")
-		}
-		return nil, routesHTTPErr(500, branchMessage(result, "Failed to assign agent"))
 	}
 	return result.ModelDump(), nil
 }

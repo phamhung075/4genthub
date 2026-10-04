@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — orphaned Go branch routes removed (audit follow-up)
+
+- `fastmcp/server/httpapp/routes_mount_test.go`: the mount inventory no longer lists the deleted patterns `GET /api/v2/branches/`, `PUT /api/v2/branches/{id}`, `POST /api/v2/branches/{id}/assign-agent`. The test only detects pattern collisions, so it passed either way; the list is kept accurate so it does not claim routes that no longer exist.
+- Route deletions: `httpapp/branch_routes.go` (three mounts), `routes/branch_routes.go` (three handlers + three `BranchController` methods), `httpapp/branch_wiring.go` (three adapter methods).
+- Evidence: `gofmt -l` empty; `go vet ./fastmcp/server/...` clean; `go test ./fastmcp/server/...` -> server, auth, httpapp, metrics, routes all ok. A throwaway routing probe (deleted before handoff) showed the ListBranches fall-through is gone: `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` matched `GET /api/v2/branches/` before and have no match (404) after; `POST /api/v2/branches/` still matches unknown subpaths.
+
 ## 2026-10-04 — F4: dead-agent state mapping (Python scripts)
 
 - `src/tests/scripts/test_openrig_bridge.py`: three `seat_state` cases added/updated — the captured death node (session running, `lifecycleState: attention_required`, `agentActivity.state: unknown` + `no_runtime_hook`) maps to `unknown`; `attention_required` alone maps to `unknown`; `attention_required` with `needs_input` maps to `blocked`. The payload-shape test is unchanged (its `needs_input` node still blocks).

@@ -6,6 +6,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Removed
+
+**Three orphaned Go branch routes deleted** (2026-10-04)
+
+- `POST /api/v2/branches/{id}/assign-agent`, `PUT /api/v2/branches/{id}` and `GET /api/v2/branches/` (`fastmcp/server/httpapp/branch_routes.go`) had no caller left after the dead frontend callers went in `c7e65486`: the live frontend calls only `GET /{id}`, `POST /` and `DELETE /{id}` plus the POST summaries routes, and nothing in the Go tests, `scripts` or `ai_docs` used them (`.swarm/` is gitignored, not part of the repo); they were not a documented contract. Their route handlers, the `BranchController` methods and the adapter methods went with them (`routes/branch_routes.go`, `httpapp/branch_wiring.go`).
+- Deleting `GET /api/v2/branches/` also removes the subtree fall-through it created: measured with a routing probe, `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` previously matched `GET /api/v2/branches/` (200 with all branches) and now have no match (404), while `GET /api/v2/branches/{id}` still serves a one-segment id. The same trailing-slash subtree behaviour remains for `POST /api/v2/branches/` — a POST to an unknown subpath still matches CreateBranch — which is named as a remaining defect rather than fixed here.
+
 ### Fixed
 
 **A dead OpenRig seat no longer reads as `blocked`** (2026-10-04)

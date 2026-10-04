@@ -67,28 +67,12 @@ func (a *App) registerBranchRoutes(mux *http.ServeMux) {
 		body, err := routes.CreateBranch(r.Context(), r.PostForm.Get("project_id"), r.PostForm.Get("git_branch_name"), r.PostForm.Get("description"), userID(u), c)
 		writeResult(w, body, err)
 	}))
-	mux.HandleFunc("GET "+base+"/", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.ListBranches(r.Context(), queryOpt(r, "project_id"), userID(u), c)
-		writeResult(w, body, err)
-	}))
 	mux.HandleFunc("GET "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		body, err := routes.GetBranch(r.Context(), r.PathValue("id"), userID(u), c)
 		writeResult(w, body, err)
 	}))
-	mux.HandleFunc("PUT "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.UpdateBranch(r.Context(), r.PathValue("id"), queryOpt(r, "name"), queryOpt(r, "description"), queryOpt(r, "status"), userID(u), c)
-		writeResult(w, body, err)
-	}))
 	mux.HandleFunc("DELETE "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		body, err := routes.DeleteBranch(r.Context(), r.PathValue("id"), userID(u), c)
-		writeResult(w, body, err)
-	}))
-	mux.HandleFunc("POST "+base+"/{id}/assign-agent", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		agentID, ok := queryReq(w, r, "agent_id")
-		if !ok {
-			return
-		}
-		body, err := routes.AssignAgentToBranch(r.Context(), r.PathValue("id"), agentID, userID(u), c)
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("GET "+base+"/{id}/task-counts", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
