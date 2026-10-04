@@ -23,6 +23,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**G2 check re-run and ticked** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G2): the three clauses of the check (same modules for `claude-code` and `codex` pass `rig agent validate`, resolving twice gives the same hash, a `remove` overlay removes a base module) were re-run and pass; ticked with the evidence and two open lines. The follow-latest sentence is reworded: only the seat type follows latest, module and overlay refs are concrete since `c92121cf`. Documentation only, no code.
+
 **Open owner decision D6 recorded: source of the assignee names** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (D6): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
