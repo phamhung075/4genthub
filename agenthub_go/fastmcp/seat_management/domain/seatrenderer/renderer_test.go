@@ -367,8 +367,8 @@ func TestRenderSeatToolModuleInvalidJSONError(t *testing.T) {
 }
 
 // A seat can switch runtime while its pinned seat type version keeps the seeded modules, so
-// the same modules must render on both runtimes: claude-code applies the tool module, codex
-// skips it (a tool module is a Claude settings fragment) and keeps the skill.
+// the same modules must render on every runtime: claude-code applies the tool module, codex
+// and agy skip it (a tool module is a Claude settings fragment) and keep the skill.
 func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 	seeds, err := seedlibrary.Load()
 	if err != nil {
@@ -387,17 +387,19 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		t.Fatalf("claude-code settings fragment should carry the 5 denies and the 2 allows:\n%s", settings)
 	}
 
-	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
-	if err != nil {
-		t.Fatalf("codex: %v", err)
-	}
-	for _, path := range filePaths(codex) {
-		if strings.HasPrefix(path, "runtime/") {
-			t.Errorf("codex seat has a runtime file %q", path)
+	for _, runtime := range []string{"codex", "agy"} {
+		spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
+		if err != nil {
+			t.Fatalf("%s: %v", runtime, err)
 		}
-	}
-	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-		t.Fatalf("codex skill does not name seatcheck send:\n%s", skill)
+		for _, path := range filePaths(spec) {
+			if strings.HasPrefix(path, "runtime/") {
+				t.Errorf("%s seat has a runtime file %q", runtime, path)
+			}
+		}
+		if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+			t.Fatalf("%s skill does not name seatcheck send:\n%s", runtime, skill)
+		}
 	}
 }
 

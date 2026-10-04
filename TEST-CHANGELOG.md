@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — renderer test covers agy with comm-guard
+
+- Changed: `TestRenderSeatSameModulesOnBothRuntimes` (`seatrenderer/renderer_test.go`) loops `codex` and `agy`: no `runtime/` file, skill still names `seatcheck send`. Coverage only, so there was no red step.
+- Verified: with `receivesClaudeFragments` mutated to treat agy as Claude the test fails for agy (two runtime files), and passes with the source restored; `go vet` and `go test ./fastmcp/seat_management/domain/seatrenderer/` ok.
+
 ## 2026-10-04 — TestMachineExpectedHashIntegration reruns on a used database
 
 - Changed: `TestMachineExpectedHashIntegration` (`seat_management/infrastructure/repositories/orm/integration_test.go`): the second tenant is `userID + "-other"` (was the constant `seat-sync-other-user`). With the constant, a rerun against the same Postgres failed with `duplicate key value violates unique constraint "uq_seats_room_seat_key"` because the previous run's room and seat for that tenant still existed.

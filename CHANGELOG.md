@@ -8,6 +8,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Renderer: stale codex defect record corrected, agy covered by the runtime test** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G3): the "open defect" that a seat switched to codex fails to render while `comm-guard` is present is recorded as fixed in `297ef2ed`, with the 2026-10-04 evidence (all 9 seat types render on claude-code, codex and agy). Documentation only.
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatSameModulesOnBothRuntimes` now loops codex and agy. Coverage only: no behavior changed, and the test passed before the edit.
+
 **T1 open line updated with the tester run** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (T1): cites the tester's scratch-rig run (real Claude seats under `yolo`, which passes `--dangerously-skip-permissions`: `rig send` and tmux `send-keys` denied, `seatcheck` deny exits 3, delivery works) and keeps the open lines: deny under the default policy not tested, nothing verified on production, Codex and agy seats have no deny. Documentation only; no behavior change, no tests.
