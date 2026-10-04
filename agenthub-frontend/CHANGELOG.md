@@ -3,6 +3,17 @@
 ## [Unreleased]
 
 ### Fixed
+- **Profile tests render the page** - 2026-10-04
+  - All 18 tests in `src/tests/pages/Profile.test.tsx` failed because `vi.mock('react-router-dom')` automocked the
+    module, including the `BrowserRouter` that `test-utils` wraps every render in, so nothing was rendered. The mock
+    now keeps the real exports and replaces only `useNavigate`; the provider value has the current `AuthContextType`
+    keys; the theme mock is shared (`vi.hoisted`) instead of a `require` that vitest cannot resolve; the
+    missing-context test renders without providers; two expectations follow the page (the Preferences card text,
+    and one initial for a one-word name, `Profile.tsx:57-64`). No source change. Drafted by a deepseek worker,
+    diff reviewed and the file rerun here (18 pass).
+  - Open defect, not changed: `handleSave` (`src/pages/Profile.tsx:47-55`) is a TODO that only shows an
+    "updated successfully" alert and never persists the profile; the `saves profile changes` test passes because
+    it asserts only the alert and leaving edit mode.
 - **Overlay add and pin ops need a concrete version** - 2026-10-04
   - The backend now rejects an overlay `add` with an empty or `latest` version (400 'add requires a concrete
     version'), but the module form enabled "Add op" for `add` without one. `canAdd` now requires a version for `add`
@@ -46,8 +57,10 @@
     `toHaveLength(32)` plus category lists (development, testing/QA, architecture/design, project planning,
     security/compliance, marketing/growth, research/analysis) with `@`-prefixed names such as
     `@master-orchestrator-agent` and `@brainjs-ml-agent`, a third list that matches neither the code nor the library.
-  - Open gap: `getAvailableAgents` returns a hard-coded list of 42 names (its comment says 32). 15 are not in the
-    agent library (for example `swarm-scaler-agent`, `seo-sem-agent`) and 4 library agents are missing
+  - Open gap: `getAvailableAgents` returns a hard-coded list of 42 names (its comment says 32). Against
+    `agenthub_main/agent-library/agents` (32 agents, including `master-orchestrator-agent`) 14 of them are not in
+    the library (for example `swarm-scaler-agent`, `seo-sem-agent`; the count is 15 against `.claude/agents`, which
+    lacks `master-orchestrator-agent`) and 4 library agents are missing
     (`creative-ideation-agent`, `llm-ai-agents-research`, `ml-specialist-agent`, `ui-specialist-agent`), and
     `TaskEditDialog`, `SubtaskEditDialog` and `LazyTaskListRefactored` offer it as the assignee list.
 - **logger tests: one misplaced duplicate removed, five tests fixed against the real behavior** - 2026-10-04
