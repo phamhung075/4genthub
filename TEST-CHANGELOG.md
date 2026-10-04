@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — dto-integration and testWebSocket (Task B9)
+
+- `agenthub-frontend/src/tests/integration/dto-integration.test.ts` (3 to 0): wrong side was the test. The subtask API calls (`listSubtasksForTask`, `getSubtask`, `createSubtask`) pass no endpoint to `handleResponse`, which then reads `response.url` for response validation (dev mode); the `fetch` mocks had no `url`, a real `Response` always has one. The three mocks now carry the endpoint URL. No source change.
+- `agenthub-frontend/src/tests/utils/testWebSocket.test.ts` (3 to 0): `Object.defineProperty(import.meta, 'env')` does not affect the module under test, so `VITE_BACKEND_URL` was ignored; the file uses `vi.stubEnv` / `vi.unstubAllEnvs`. The "load" log is written once at import and `beforeEach` clears the mocks, so a test re-evaluates the module (`vi.resetModules`) and asserts on the fresh logger. The undefined-token test expected a logged `'...'`; the helper logs `'undefined...'` (`token?.substring(0, 20) + '...'`), so the test now only requires that it does not throw.
+- `src/utils/testWebSocket.ts` is NOT dead code: `src/App.tsx:18` imports it for its side effect, which sets `window.testWebSocket` in every build, production included. Left in place; reported to lead (a dev-only debug helper with a token argument on `window` in the production bundle, and the `'undefined...'` log quirk).
+- Result (in `agenthub-frontend`): `npx vitest run` 14 failed / 1729 passed before, 8 failed / 1736 passed (1744) after, failing files 3 to 1 (only api.test.ts, D6); no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
 ## 2026-10-04 — BranchItem, ProjectListContent, AuthWrapper, taskTypes (Task B8)
 
 - `agenthub-frontend/src/tests/types/taskTypes.test.ts` (1 to 0): wrong side was the test. `SubtaskSummary.assignees` is optional, and the "undefined optional properties" test set `assignees: []` and then expected `undefined`; the literal now omits it.
