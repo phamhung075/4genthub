@@ -12,7 +12,7 @@ import (
 const ManageSeatToolName = "manage_seat"
 
 // ManageSeatToolDescription is read by LLM seats.
-const ManageSeatToolDescription = "Manage seats: list, get, set_occupant (switch the LLM of a seat: runtime claude-code|codex and model id)"
+const ManageSeatToolDescription = "Manage seats: list, get, set_occupant (switch the LLM of a seat: runtime claude-code|codex|agy|omp and model id)"
 
 // FastMCPServer is the minimal FastMCP server interface for tool registration.
 type FastMCPServer interface {
@@ -87,7 +87,7 @@ func ManageSeatInputSchema() *tmentities.OrderedMap[any] {
 	properties.Set("action", seatParam("Action", "list | get | set_occupant", false))
 	properties.Set("room", seatParam("Room", "[OPTIONAL for list, REQUIRED for get and set_occupant] Room slug", true))
 	properties.Set("seat", seatParam("Seat", "[REQUIRED for get and set_occupant] Seat key", true))
-	properties.Set("runtime", seatParam("Runtime", "[REQUIRED for set_occupant] claude-code or codex", true))
+	properties.Set("runtime", seatParam("Runtime", "[REQUIRED for set_occupant] claude-code, codex, agy or omp", true))
 	properties.Set("model", seatParam("Model", "[OPTIONAL for set_occupant] Model id; empty uses the runtime default", true))
 	properties.Set("user_id", seatParam("User Id", "[OPTIONAL] ", true))
 

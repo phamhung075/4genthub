@@ -430,7 +430,7 @@ func TestRenderSeatRigValidate(t *testing.T) {
 	if err != nil {
 		t.Skip("rig binary not on PATH")
 	}
-	for _, runtime := range []string{"claude-code", "codex"} {
+	for _, runtime := range []string{"claude-code", "codex", "omp"} {
 		t.Run(runtime, func(t *testing.T) {
 			spec, err := RenderSeat(seatFixture(runtime), testMCPURL)
 			if err != nil {

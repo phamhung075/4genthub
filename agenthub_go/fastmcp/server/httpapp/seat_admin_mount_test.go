@@ -1168,11 +1168,18 @@ func TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes(t *testing.T) {
 	room := fake.seedRoom("dev")
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
-	for _, runtime := range []string{"pi", "omp"} {
-		rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"`+runtime+`"}`)
-		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `claude-code, codex, agy`) {
-			t.Errorf("runtime %s: status = %d, body %s, want 400 naming the supported runtimes", runtime, rec.Code, rec.Body.String())
-		}
+
+	// omp is supported: it is the runtime that carries a non-Anthropic provider (DeepSeek via
+	// "provider/id" model ids), so an occupant switch to it is accepted.
+	rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp"}`)
+	if rec.Code != http.StatusOK {
+		t.Errorf("runtime omp: status = %d, body %s, want 200", rec.Code, rec.Body.String())
+	}
+
+	// pi is still not renderable, so it stays a 400 that names every supported runtime.
+	rec = doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"pi"}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), `claude-code, codex, agy, omp`) {
+		t.Errorf("runtime pi: status = %d, body %s, want 400 naming the supported runtimes", rec.Code, rec.Body.String())
 	}
 }
 

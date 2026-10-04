@@ -55,7 +55,7 @@ func TestValidateModuleSlugAndVersion(t *testing.T) {
 }
 
 func TestValidateRuntime(t *testing.T) {
-	for _, runtime := range []string{"claude-code", "codex", "agy"} {
+	for _, runtime := range []string{"claude-code", "codex", "agy", "omp"} {
 		if err := ValidateRuntime(runtime); err != nil {
 			t.Errorf("ValidateRuntime(%q) = %v, want nil", runtime, err)
 		}

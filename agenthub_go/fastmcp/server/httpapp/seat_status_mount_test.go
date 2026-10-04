@@ -163,7 +163,7 @@ func TestSeatStatusGetMarksStaleMachineOffline(t *testing.T) {
 
 // Every runtime the renderer supports can be reported, plus the two the bridge adds itself.
 func TestSeatStatusPostAcceptsEverySeatRuntime(t *testing.T) {
-	for _, runtime := range []string{resolver.RuntimeClaudeCode, resolver.RuntimeCodex, resolver.RuntimeAgy, "terminal", "unknown"} {
+	for _, runtime := range []string{resolver.RuntimeClaudeCode, resolver.RuntimeCodex, resolver.RuntimeAgy, resolver.RuntimeOmp, "terminal", "unknown"} {
 		body := strings.Replace(validSeatStatusBody, `"claude-code"`, `"`+runtime+`"`, 1)
 		rec := postSeatStatus(seatStatusTestMux(t, &fakeSeatStatus{}), body)
 		if rec.Code != http.StatusOK {
