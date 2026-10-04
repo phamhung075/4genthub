@@ -3,6 +3,15 @@
 ## [Unreleased]
 
 ### Fixed
+- **AuthContext tests call the provider's real handlers** - 2026-10-04
+  - 18 of 26 tests in `src/tests/contexts/AuthContext.test.tsx` failed: the file used `jest` (4, not defined under
+    vitest), clicked buttons whose returned promise is dropped, so `rejects.toThrow` saw a resolved promise (7), read
+    `AuthProvider.Consumer._currentValue` (3), set `import.meta.env.MODE` on its own module (1), spied on `console.error`
+    although the provider logs through `logger` (4), and expected a missing-provider message the provider does not
+    produce. The tests now capture the value of the rendered provider through `useAuth()` and `await` its `login`,
+    `signup` and `refreshToken` inside `act`, use `vi` timers and `vi.stubEnv`, spy on `logger.error`, and expect
+    `useAuth must be used within an AuthProvider` (`AuthContext.tsx:394-398`). All 26 pass; the auto-refresh test fails
+    when the timer advance is cut to 1 s (checked). No source change. Drafted by a deepseek worker, diff reviewed.
 - **Profile tests render the page** - 2026-10-04
   - All 18 tests in `src/tests/pages/Profile.test.tsx` failed because `vi.mock('react-router-dom')` automocked the
     module, including the `BrowserRouter` that `test-utils` wraps every render in, so nothing was rendered. The mock
