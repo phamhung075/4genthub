@@ -1,265 +1,322 @@
-import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
-import TaskRowDesktop from "../../../../components/TaskRow/components/TaskRowDesktop";
-import { Task } from "../../../../types/taskTypes";
-import { useAuth } from "../../../../hooks/useAuth";
-import { formatDistanceToNow } from "date-fns";
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { vi } from 'vitest';
+import { TaskRowDesktop } from '../../../../components/TaskRow/components/TaskRowDesktop';
+import type { TaskRowDesktopProps, TaskSummary } from '../../../../types/taskTypes';
 
-// Mock dependencies
-vi.mock("../../../../hooks/useAuth", () => ({
-  useAuth: vi.fn()
-}));
-
-vi.mock("date-fns", () => ({
-  formatDistanceToNow: vi.fn()
-}));
-
-vi.mock("../../../../components/ui/badge", () => ({
-  Badge: ({ children, variant, className }: any) => (
-    <span data-testid="badge" data-variant={variant} className={className}>
-      {children}
-    </span>
+// Child components are mocked so the tests cover only what TaskRowDesktop decides:
+// which data reaches each child, what the row shows and which callbacks it fires.
+vi.mock('../../../../components/TaskRow/components/TaskCopyButtons', () => ({
+  TaskCopyButtons: ({ taskId, taskName }: any) => (
+    <span data-testid="copy-buttons" data-task-id={taskId} data-task-name={taskName} />
   )
 }));
 
-vi.mock("../../../../components/ui/button", () => ({
-  Button: ({ children, onClick, disabled, variant, size }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
+vi.mock('../../../../components/TaskRow/components/TaskRowActions', () => ({
+  TaskRowActions: ({ taskId, projectId, taskTreeId, variant }: any) => (
+    <span
+      data-testid="row-actions"
+      data-task-id={taskId}
+      data-project-id={projectId}
+      data-tree-id={taskTreeId}
       data-variant={variant}
-      data-size={size}
-    >
-      {children}
+    />
+  )
+}));
+
+vi.mock('../../../../components/ui/ProgressDisplay', () => ({
+  ProgressDisplayEnhanced: ({ status, progressPercentage }: any) => (
+    <span data-testid="progress" data-status={status} data-percentage={progressPercentage} />
+  )
+}));
+
+vi.mock('../../../../components/ui/holographic-badges', () => ({
+  HolographicStatusBadge: ({ status }: any) => <span data-testid="status-badge">{status}</span>,
+  HolographicPriorityBadge: ({ priority }: any) => <span data-testid="priority-badge">{priority}</span>
+}));
+
+vi.mock('../../../../components/ClickableAssignees', () => ({
+  default: ({ assignees, onAgentClick, task }: any) => (
+    <button data-testid="assignees" onClick={() => onAgentClick(assignees[0], task)}>
+      {assignees.join(',')}
     </button>
   )
 }));
 
-vi.mock("lucide-react", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("lucide-react")>()),
-  Calendar: () => <span data-testid="calendar-icon">Calendar</span>,
-  CheckCircle2: () => <span data-testid="check-icon">Check</span>,
-  Clock: () => <span data-testid="clock-icon">Clock</span>,
-  AlertCircle: () => <span data-testid="alert-icon">Alert</span>,
-  Circle: () => <span data-testid="circle-icon">Circle</span>,
-  Loader2: () => <span data-testid="loader-icon">Loader</span>,
-  ChevronRight: () => <span data-testid="chevron-icon">Chevron</span>,
-  ChevronDown: () => <span data-testid="chevron-down-icon">ChevronDown</span>,
-  MoreVertical: () => <span data-testid="more-icon">More</span>
+vi.mock('../../../../components/LazySubtaskList', () => ({
+  default: ({ projectId, taskTreeId, parentTaskId }: any) => (
+    <div
+      data-testid="subtask-list"
+      data-project-id={projectId}
+      data-tree-id={taskTreeId}
+      data-parent-id={parentTaskId}
+    />
+  )
 }));
 
-describe("TaskRowDesktop", () => {
-  const mockTask: Task = {
-    id: "task-1",
-    title: "Test Task",
-    description: "Test Description",
-    status: "todo",
-    priority: "medium",
-    details: null,
-    assignees: ["user1", "user2"],
-    labels: ["frontend", "bug"],
-    estimated_effort: "2 hours",
-    due_date: "2024-12-31T00:00:00Z",
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    git_branch_id: "branch-1",
-    project_id: "project-1",
-    parent_task_id: null,
-    dependencies: [],
-    blocking_tasks: [],
-    subtask_ids: ["sub1", "sub2"],
-    subtasks: ["sub1", "sub2"], // Array of subtask IDs
-    context_id: null,
-    completion_summary: null
-  };
+const summary: TaskSummary = {
+  id: 'task-1',
+  title: 'Test Task',
+  status: 'todo',
+  priority: 'medium',
+  assignees: ['coding-agent', 'debugger-agent'],
+  has_dependencies: false,
+  has_context: false,
+  subtask_count: 2,
+  dependency_count: 0
+};
 
-  const defaultProps = {
-    task: mockTask,
-    isExpanded: false,
-    isEditing: false,
-    editTitle: "",
-    isSaving: false,
-    onToggleExpand: vi.fn(),
-    onStartEdit: vi.fn(),
-    onCancelEdit: vi.fn(),
-    onSaveEdit: vi.fn(),
-    onEditTitleChange: vi.fn(),
-    onKeyPress: vi.fn(),
-    onStatusChange: vi.fn(),
-    onDelete: vi.fn(),
-    onOpenDetails: vi.fn(),
-    getStatusIcon: vi.fn().mockReturnValue(<span data-testid="status-icon">Status</span>),
-    getStatusColor: vi.fn().mockReturnValue("text-gray-500"),
-    getPriorityColor: vi.fn().mockReturnValue("text-blue-500"),
-    getPriorityBadgeVariant: vi.fn().mockReturnValue("default" as const),
-    getDueDateColor: vi.fn().mockReturnValue("text-gray-500")
-  };
+const buildProps = (overrides: Partial<TaskRowDesktopProps> = {}): TaskRowDesktopProps => ({
+  summary,
+  fullTask: null,
+  isHighlighted: false,
+  isHovered: false,
+  isExpanded: false,
+  isLoading: false,
+  projectId: 'project-1',
+  taskTreeId: 'branch-1',
+  onToggleExpansion: vi.fn(),
+  onOpenDialog: vi.fn(),
+  onHover: vi.fn(),
+  elementRef: React.createRef<HTMLTableRowElement>(),
+  ...overrides
+});
 
+const renderRow = (overrides: Partial<TaskRowDesktopProps> = {}) => {
+  const props = buildProps(overrides);
+  const view = render(
+    <table>
+      <tbody>
+        <TaskRowDesktop {...props} />
+      </tbody>
+    </table>
+  );
+  return { props, ...view };
+};
+
+describe('TaskRowDesktop', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (useAuth as any).mockReturnValue({
-      user: { id: "user1", email: "user@example.com" }
+    // The expand handler logs; keep the test output quiet.
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('content', () => {
+    it('shows the title, status and priority of the summary', () => {
+      renderRow();
+
+      expect(screen.getByText('Test Task')).toBeInTheDocument();
+      expect(screen.getByTestId('status-badge')).toHaveTextContent('todo');
+      expect(screen.getByTestId('priority-badge')).toHaveTextContent('medium');
     });
-    (formatDistanceToNow as any).mockReturnValue("2 days ago");
+
+    it('passes the task identity to the copy buttons and the project ids to the actions', () => {
+      renderRow();
+
+      expect(screen.getByTestId('copy-buttons')).toHaveAttribute('data-task-id', 'task-1');
+      expect(screen.getByTestId('copy-buttons')).toHaveAttribute('data-task-name', 'Test Task');
+      const actions = screen.getByTestId('row-actions');
+      expect(actions).toHaveAttribute('data-task-id', 'task-1');
+      expect(actions).toHaveAttribute('data-project-id', 'project-1');
+      expect(actions).toHaveAttribute('data-tree-id', 'branch-1');
+      expect(actions).toHaveAttribute('data-variant', 'desktop');
+    });
+
+    it('prefers the full task status for the progress display', () => {
+      renderRow({ fullTask: { status: 'in_progress', progress_percentage: 40 } });
+
+      const progress = screen.getByTestId('progress');
+      expect(progress).toHaveAttribute('data-status', 'in_progress');
+      expect(progress).toHaveAttribute('data-percentage', '40');
+    });
+
+    it('uses the summary status for the progress display without a full task', () => {
+      renderRow();
+
+      expect(screen.getByTestId('progress')).toHaveAttribute('data-status', 'todo');
+    });
   });
 
-  it("should render task row with all elements", () => {
-    render(<TaskRowDesktop {...defaultProps} />);
+  describe('subtask count badge', () => {
+    it('shows subtask_count from the summary', () => {
+      renderRow();
 
-    expect(screen.getByText("Test Task")).toBeInTheDocument();
-    expect(screen.getByText("medium")).toBeInTheDocument();
-    expect(screen.getByText("todo")).toBeInTheDocument();
-    expect(screen.getByText("user1, user2")).toBeInTheDocument();
-    expect(screen.getByText("2")).toBeInTheDocument(); // subtask count
-    expect(screen.getByTestId("status-icon")).toBeInTheDocument();
+      expect(screen.getByText('2')).toBeInTheDocument();
+    });
+
+    it('falls back to the subtasks of the full task', () => {
+      renderRow({
+        summary: { ...summary, subtask_count: undefined },
+        fullTask: { subtasks: ['a', 'b', 'c'] }
+      });
+
+      expect(screen.getByText('3')).toBeInTheDocument();
+    });
+
+    it('shows no badge when there are no subtasks', () => {
+      renderRow({ summary: { ...summary, subtask_count: 0 } });
+
+      expect(screen.queryByText('0')).not.toBeInTheDocument();
+    });
   });
 
-  it("should render edit mode when isEditing is true", () => {
-    const props = { ...defaultProps, isEditing: true, editTitle: "Edited Title" };
-    render(<TaskRowDesktop {...props} />);
+  describe('dependencies', () => {
+    it('shows None when the task has no dependencies', () => {
+      renderRow();
 
-    const input = screen.getByDisplayValue("Edited Title");
-    expect(input).toBeInTheDocument();
-    expect(screen.getByText("Save")).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+      expect(screen.getByText('None')).toBeInTheDocument();
+    });
+
+    it('pluralizes the dependency count', () => {
+      renderRow({ summary: { ...summary, has_dependencies: true, dependency_count: 3 } });
+
+      expect(screen.getByText('3 dependencies')).toBeInTheDocument();
+    });
+
+    it('uses the singular for one dependency', () => {
+      renderRow({ summary: { ...summary, has_dependencies: true, dependency_count: 1 } });
+
+      const badge = screen.getByText('1 dependency');
+      expect(badge).toHaveAttribute('title', 'This task depends on 1 other task.');
+    });
+
+    it('falls back to the dependencies of the full task', () => {
+      renderRow({
+        summary: { ...summary, has_dependencies: true, dependency_count: undefined },
+        fullTask: { dependencies: ['d1', 'd2'] }
+      });
+
+      expect(screen.getByText('2 dependencies')).toBeInTheDocument();
+    });
   });
 
-  it("should call onEditTitleChange when input changes", () => {
-    const props = { ...defaultProps, isEditing: true, editTitle: "Test" };
-    render(<TaskRowDesktop {...props} />);
+  describe('assignees', () => {
+    it('shows Unassigned without assignees', () => {
+      renderRow({ summary: { ...summary, assignees: [] } });
 
-    const input = screen.getByDisplayValue("Test");
-    fireEvent.change(input, { target: { value: "New Title" } });
+      expect(screen.getByText('Unassigned')).toBeInTheDocument();
+      expect(screen.queryByTestId('assignees')).not.toBeInTheDocument();
+    });
 
-    expect(defaultProps.onEditTitleChange).toHaveBeenCalled();
+    it('opens the agent-info dialog with the agent name and the task title', () => {
+      const { props } = renderRow();
+
+      fireEvent.click(screen.getByTestId('assignees'));
+
+      expect(props.onOpenDialog).toHaveBeenCalledWith('agent-info', undefined, {
+        agentName: 'coding-agent',
+        taskTitle: 'Test Task'
+      });
+    });
+
+    it('passes the full task to the assignees when it is loaded', () => {
+      const { props } = renderRow({ fullTask: { title: 'Full Task Title' } });
+
+      fireEvent.click(screen.getByTestId('assignees'));
+
+      expect(props.onOpenDialog).toHaveBeenCalledWith('agent-info', undefined, {
+        agentName: 'coding-agent',
+        taskTitle: 'Full Task Title'
+      });
+    });
   });
 
-  it("should call onKeyPress when key is pressed in input", () => {
-    const props = { ...defaultProps, isEditing: true };
-    render(<TaskRowDesktop {...props} />);
+  describe('expansion', () => {
+    it('calls onToggleExpansion when the expand button is clicked', () => {
+      const { props } = renderRow();
 
-    const input = screen.getByRole("textbox");
-    fireEvent.keyPress(input, { key: "Enter" });
+      fireEvent.click(screen.getAllByRole('button')[0]);
 
-    expect(defaultProps.onKeyPress).toHaveBeenCalled();
+      expect(props.onToggleExpansion).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not let the click reach the row', () => {
+      const rowClick = vi.fn();
+      const props = buildProps();
+      render(
+        <table>
+          <tbody onClick={rowClick}>
+            <TaskRowDesktop {...props} />
+          </tbody>
+        </table>
+      );
+
+      fireEvent.click(screen.getAllByRole('button')[0]);
+
+      expect(props.onToggleExpansion).toHaveBeenCalledTimes(1);
+      expect(rowClick).not.toHaveBeenCalled();
+    });
+
+    it('disables the expand button and shows a spinner while loading', () => {
+      const { container } = renderRow({ isLoading: true });
+
+      expect(screen.getAllByRole('button')[0]).toBeDisabled();
+      expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+    });
+
+    it('does not show the subtask list while collapsed', () => {
+      renderRow({ fullTask: { id: 'task-1' } });
+
+      expect(screen.queryByTestId('subtask-list')).not.toBeInTheDocument();
+    });
+
+    it('shows the subtask list for the task when expanded with a full task', () => {
+      renderRow({ isExpanded: true, fullTask: { id: 'task-1' } });
+
+      const list = screen.getByTestId('subtask-list');
+      expect(list).toHaveAttribute('data-project-id', 'project-1');
+      expect(list).toHaveAttribute('data-tree-id', 'branch-1');
+      expect(list).toHaveAttribute('data-parent-id', 'task-1');
+    });
+
+    it('waits for the full task before showing the subtask list', () => {
+      renderRow({ isExpanded: true, fullTask: null });
+
+      expect(screen.queryByTestId('subtask-list')).not.toBeInTheDocument();
+    });
   });
 
-  it("should call onSaveEdit when save button is clicked", () => {
-    const props = { ...defaultProps, isEditing: true };
-    render(<TaskRowDesktop {...props} />);
+  describe('row', () => {
+    it('reports hover enter with the task id and leave with null', () => {
+      const { props, container } = renderRow();
+      const row = container.querySelector('tr') as HTMLTableRowElement;
 
-    fireEvent.click(screen.getByText("Save"));
+      fireEvent.mouseEnter(row);
+      fireEvent.mouseLeave(row);
 
-    expect(defaultProps.onSaveEdit).toHaveBeenCalled();
-  });
+      expect(props.onHover).toHaveBeenNthCalledWith(1, 'task-1');
+      expect(props.onHover).toHaveBeenNthCalledWith(2, null);
+    });
 
-  it("should call onCancelEdit when cancel button is clicked", () => {
-    const props = { ...defaultProps, isEditing: true };
-    render(<TaskRowDesktop {...props} />);
+    it('attaches elementRef to the row', () => {
+      const { props, container } = renderRow();
 
-    fireEvent.click(screen.getByText("Cancel"));
+      expect(props.elementRef.current).toBe(container.querySelector('tr'));
+    });
 
-    expect(defaultProps.onCancelEdit).toHaveBeenCalled();
-  });
+    it('applies highlight, hover, animation and loading classes', () => {
+      const { container, rerender, props } = renderRow({
+        isHighlighted: true,
+        animationClass: 'fade-in',
+        isLoading: true
+      });
+      const row = () => container.querySelector('tr') as HTMLTableRowElement;
 
-  it("should show loading state when isSaving is true", () => {
-    const props = { ...defaultProps, isEditing: true, isSaving: true };
-    render(<TaskRowDesktop {...props} />);
+      expect(row()).toHaveClass('cursor-pointer', 'bg-orange-100', 'fade-in', 'loading');
 
-    expect(screen.getByTestId("loader-icon")).toBeInTheDocument();
-    expect(screen.getByText("Save").closest("button")).toBeDisabled();
-  });
+      rerender(
+        <table>
+          <tbody>
+            <TaskRowDesktop {...props} isHighlighted={false} isHovered={true} isLoading={false} animationClass="" />
+          </tbody>
+        </table>
+      );
 
-  it("should call onToggleExpand when expand button is clicked", () => {
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    const expandButton = screen.getByTestId("chevron-icon").closest("button");
-    fireEvent.click(expandButton!);
-
-    expect(defaultProps.onToggleExpand).toHaveBeenCalled();
-  });
-
-  it("should show chevron down icon when expanded", () => {
-    const props = { ...defaultProps, isExpanded: true };
-    render(<TaskRowDesktop {...props} />);
-
-    expect(screen.getByTestId("chevron-down-icon")).toBeInTheDocument();
-  });
-
-  it("should render labels as badges", () => {
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    const badges = screen.getAllByTestId("badge");
-    expect(badges).toHaveLength(2);
-    expect(badges[0]).toHaveTextContent("frontend");
-    expect(badges[1]).toHaveTextContent("bug");
-  });
-
-  it("should render due date", () => {
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    expect(screen.getByTestId("calendar-icon")).toBeInTheDocument();
-    expect(screen.getByText("2 days ago")).toBeInTheDocument();
-  });
-
-  it("should render estimated effort when present", () => {
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    expect(screen.getByTestId("clock-icon")).toBeInTheDocument();
-    expect(screen.getByText("2 hours")).toBeInTheDocument();
-  });
-
-  it("should not render subtask count when zero", () => {
-    const props = {
-      ...defaultProps,
-      task: { ...mockTask, subtasks: [] }
-    };
-    render(<TaskRowDesktop {...props} />);
-
-    // The badge with "0" should not be present
-    const badges = screen.getAllByTestId("badge");
-    const subtaskBadge = badges.find(badge => badge.textContent === "0");
-    expect(subtaskBadge).toBeUndefined();
-  });
-
-  it("should handle missing assignees", () => {
-    const props = {
-      ...defaultProps,
-      task: { ...mockTask, assignees: [] }
-    };
-    render(<TaskRowDesktop {...props} />);
-
-    expect(screen.getByText("-")).toBeInTheDocument();
-  });
-
-  it("should handle missing due date", () => {
-    const props = {
-      ...defaultProps,
-      task: { ...mockTask, due_date: null }
-    };
-    render(<TaskRowDesktop {...props} />);
-
-    expect(screen.queryByTestId("calendar-icon")).not.toBeInTheDocument();
-  });
-
-  it("should apply correct status color", () => {
-    defaultProps.getStatusColor.mockReturnValue("text-green-500");
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    expect(defaultProps.getStatusColor).toHaveBeenCalledWith("todo");
-    expect(screen.getByText("todo")).toHaveClass("text-green-500");
-  });
-
-  it("should apply correct priority color and variant", () => {
-    defaultProps.getPriorityColor.mockReturnValue("text-red-500");
-    defaultProps.getPriorityBadgeVariant.mockReturnValue("destructive" as const);
-    render(<TaskRowDesktop {...defaultProps} />);
-
-    expect(defaultProps.getPriorityColor).toHaveBeenCalledWith("medium");
-    expect(defaultProps.getPriorityBadgeVariant).toHaveBeenCalledWith("medium");
-
-    const priorityBadge = screen.getByText("medium");
-    expect(priorityBadge).toHaveAttribute("data-variant", "destructive");
+      expect(row()).toHaveClass('bg-violet-200');
+      expect(row()).not.toHaveClass('loading', 'bg-orange-100');
+    });
   });
 });

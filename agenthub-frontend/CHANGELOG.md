@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Fixed
+- **TaskRowDesktop tests cover the current component** - 2026-10-04
+  - All 17 tests in `src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx` targeted a removed API and failed.
+    Replaced by 23 tests of `TaskRowDesktop` (counts and their fallbacks, assignees dialog, expansion, hover, row
+    classes). No source change.
 - **AuthContext tests call the provider's real handlers** - 2026-10-04
   - 18 of 26 tests in `src/tests/contexts/AuthContext.test.tsx` failed: the file used `jest` (4, not defined under
     vitest), clicked buttons whose returned promise is dropped, so `rejects.toThrow` saw a resolved promise (7), read
