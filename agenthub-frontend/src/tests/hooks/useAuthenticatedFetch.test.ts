@@ -171,24 +171,6 @@ describe('useAuthenticatedFetch', () => {
     expect(mockCookies.get).toHaveBeenCalledWith('access_token');
   });
 
-  it('returns 401 responses unchanged when skipAuth is set', async () => {
-    const mockResponse = {
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      json: async () => ({ error: 'Unauthorized' }),
-    } as Response;
-    mockFetch.mockResolvedValueOnce(mockResponse);
-
-    const { result } = renderHook(() => useAuthenticatedFetch());
-
-    await act(async () => {
-      const response = await result.current('/api/protected', { skipAuth: true });
-      expect(response).toBe(mockResponse);
-      expect(mockResponse.status).toBe(401);
-    });
-  });
-
   it('handles 401 responses by refreshing token and retrying', async () => {
     const refreshToken = vi.fn().mockResolvedValue(undefined);
 

@@ -200,7 +200,7 @@ describe('Button', () => {
 
     expect(cn).toHaveBeenCalledWith(
       expect.stringContaining('inline-flex'),
-      expect.stringContaining('bg-gray-50'),
+      expect.stringMatching(/(^|\s)bg-gray-50(\s|$)/),
       'h-9 px-3',
       customClass
     );

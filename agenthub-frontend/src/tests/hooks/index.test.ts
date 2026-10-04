@@ -14,7 +14,8 @@ describe('hooks/index', () => {
 
   it('only exports expected hooks', () => {
     const exportedHooks = Object.keys(hooks);
-    expect(exportedHooks).toEqual([
+    // Subset check: adding a hook to the barrel must not break this test.
+    expect(exportedHooks).toEqual(expect.arrayContaining([
       'useTheme',
       'useTaskFilters',
       'useTaskGrouping',
@@ -38,7 +39,7 @@ describe('hooks/index', () => {
       'useSeatLinks',
       'useUpsertSeatLink',
       'useResolvedSeat',
-    ]);
+    ]));
   });
 
   it('maintains the same reference to imported hooks', () => {

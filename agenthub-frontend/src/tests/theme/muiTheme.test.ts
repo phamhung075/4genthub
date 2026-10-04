@@ -2,8 +2,15 @@ import { lightTheme, darkTheme, getTheme } from '../../theme/muiTheme';
 import { themeConfig } from '../../theme/themeConfig';
 
 // Mock dependencies
+// The module calls createTheme at import time, before beforeEach clears the spy,
+// so the options it was called with are recorded separately.
+const createThemeOptions = vi.hoisted(() => [] as any[]);
+
 vi.mock('@mui/material/styles', () => ({
-  createTheme: vi.fn((options) => ({ ...options, isTheme: true })),
+  createTheme: vi.fn((options) => {
+    createThemeOptions.push(options);
+    return { ...options, isTheme: true };
+  }),
 }));
 
 vi.mock('../../theme/themeConfig', () => ({
@@ -254,17 +261,16 @@ describe('muiTheme', () => {
   });
 
   describe('createTheme calls', () => {
-    // beforeEach clears the createTheme spy after the module has been imported,
-    // so the themes themselves (createTheme's mocked output) are what is asserted.
-    it('creates both themes with createTheme', () => {
+    it('calls createTheme once for each theme', () => {
+      expect(createThemeOptions).toHaveLength(2);
       expect(lightTheme).toMatchObject({ isTheme: true });
       expect(darkTheme).toMatchObject({ isTheme: true });
       expect(lightTheme).not.toBe(darkTheme);
     });
 
     it('passes ThemeOptions type to createTheme', () => {
-      for (const theme of [lightTheme, darkTheme]) {
-        expect(theme).toEqual(
+      for (const options of createThemeOptions) {
+        expect(options).toEqual(
           expect.objectContaining({
             palette: expect.any(Object),
             components: expect.any(Object),
