@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+- **Assignee pickers take their names from the user's seats (D6)** - 2026-10-04
+  - `getAvailableAgents` (`src/api.ts`) no longer returns a fixed list of 32 library agents. It reads the rooms and the
+    seats of each room through `seatApi.listRooms`/`listSeats` (the calls behind the Seats page) and returns the seat
+    keys as `@<seat_key>`, de-duplicated and sorted. It rejects when the seat API fails; there is no fallback list.
+  - Format sent: the backend keeps an assignee that starts with `@` as given and the subtask handler rejects an unknown
+    bare name, so a seat is assigned as `@seat_key`.
+  - `AgentAssignmentDialog` says Seats / Seat key instead of "Agents from Library"; `TaskEditDialog` logs a failed seat
+    load instead of leaving an unhandled rejection.
+
 ### Removed
 - **`window.testWebSocket` debug helper** - 2026-10-04
   - Deleted `src/utils/testWebSocket.ts` and its import in `src/App.tsx`. The helper took a user id and a token and

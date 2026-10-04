@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — getAvailableAgents reads seats (Task D6, frontend)
+
+- Rewrote the `getAvailableAgents` block of `agenthub-frontend/src/tests/api.test.ts` (8 failing tests that asserted the old 32-name list) as 4 tests over a mocked `seatApi`: seat keys of every room as `@seat_key` sorted, a key in two rooms listed once, no rooms means no seat call, a failing seat API rejects.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit` 0 errors; `npx vite build` ok; `npx vitest run` 89 files passed / 1722 tests passed on the final run (before: 8 failed / 1718 passed, 89 files, only `api.test.ts` failing). One earlier run of the same tree had 1 failed test; I did not record which and it did not repeat. The 38 "Errors" (`Cookies.remove is not a function` in `TaskDetailsDialog*.test.tsx`) are unhandled rejections that also occur with these changes stashed.
+
 ## 2026-10-04 — rigspec: agreement with `rig spec validate` (Task F1v, Go)
 
 - Added to `agenthub_go/fastmcp/seat_management/domain/rigspec/rigspec_test.go`: `TestRenderRoomRejectsWhatRigValidateRejects` (bad edge kind, unknown member, duplicate member id: `rig spec validate` answers `Rig spec invalid` with that cause and `RenderRoom` rejects the same input) and `TestLaunchCycleIsNotCaughtByRigValidate` (`rig spec validate` accepts a `delegates_to` cycle, `FindLaunchCycle` finds `a>b>a`). Both skip without the `rig` binary or its daemon, like `TestRenderRoomRigCLI`.

@@ -243,7 +243,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Click to select agents from your project or the agent library
+              Click to select agents from your project or your seats
             </p>
           </div>
 

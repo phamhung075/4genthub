@@ -35,6 +35,11 @@ import {
     updateTask,
     updateTaskContext,
 } from '../api';
+import { seatApi } from '../services/seatApi';
+
+vi.mock('../services/seatApi', () => ({
+  seatApi: { listRooms: vi.fn(), listSeats: vi.fn() },
+}));
 
 // Mock the apiV2 services
 vi.mock('../services/apiV2', () => ({
@@ -977,108 +982,41 @@ describe('API V2 Module', () => {
     });
 
     describe('getAvailableAgents', () => {
-      it('should return all 32 available agents from agent library', async () => {
+      const room = (slug: string) => ({ slug });
+      const seat = (seat_key: string) => ({ seat_key });
+
+      it('offers the seat keys of every room as @-prefixed assignees', async () => {
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('dev'), room('ops')] } as any);
+        vi.mocked(seatApi.listSeats).mockImplementation(async (slug: string) => ({
+          success: true,
+          seats: slug === 'dev' ? [seat('lead'), seat('go-dev')] : [seat('reviewer')],
+        }) as any);
+
         const result = await getAvailableAgents();
-        expect(result).toHaveLength(32);
-        expect(result).toContain('coding-agent');
-        expect(result).toContain('@master-orchestrator-agent');
-        expect(result).toContain('debugger-agent');
-        expect(result).toContain('system-architect-agent');
-        expect(result).toContain('@test-orchestrator-agent');
-        expect(result).toContain('@ui-designer-expert-shadcn-agent');
-        expect(result).toContain('@security-auditor-agent');
-        expect(result).toContain('devops-agent');
-        expect(result).toContain('documentation-agent');
-        expect(result).toContain('@brainjs-ml-agent');
+
+        expect(seatApi.listSeats).toHaveBeenCalledWith('dev');
+        expect(seatApi.listSeats).toHaveBeenCalledWith('ops');
+        expect(result).toEqual(['@go-dev', '@lead', '@reviewer']);
       });
 
-      it('should include development category agents', async () => {
-        const result = await getAvailableAgents();
-        const developmentAgents = [
-          'coding-agent',
-          'debugger-agent',
-          'code-reviewer-agent',
-          '@prototyping-agent'
-        ];
-        developmentAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
+      it('lists a seat key used in several rooms once', async () => {
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [room('a'), room('b')] } as any);
+        vi.mocked(seatApi.listSeats).mockResolvedValue({ success: true, seats: [seat('lead')] } as any);
+
+        expect(await getAvailableAgents()).toEqual(['@lead']);
       });
 
-      it('should include testing and QA category agents', async () => {
-        const result = await getAvailableAgents();
-        const testingAgents = [
-          '@test-orchestrator-agent',
-          '@uat-coordinator-agent',
-          '@performance-load-tester-agent'
-        ];
-        testingAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
+      it('returns nothing for a user without rooms', async () => {
+        vi.mocked(seatApi.listRooms).mockResolvedValue({ success: true, rooms: [] } as any);
+
+        expect(await getAvailableAgents()).toEqual([]);
+        expect(seatApi.listSeats).not.toHaveBeenCalled();
       });
 
-      it('should include architecture and design category agents', async () => {
-        const result = await getAvailableAgents();
-        const architectureAgents = [
-          'system-architect-agent',
-          '@design-system-agent',
-          '@ui-designer-expert-shadcn-agent',
-          '@core-concept-agent'
-        ];
-        architectureAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
-      });
+      it('rejects when the seat API fails instead of offering a fixed list', async () => {
+        vi.mocked(seatApi.listRooms).mockRejectedValue(new Error('down'));
 
-      it('should include project planning category agents', async () => {
-        const result = await getAvailableAgents();
-        const planningAgents = [
-          '@project-initiator-agent',
-          '@task-planning-agent',
-          '@master-orchestrator-agent',
-          '@elicitation-agent'
-        ];
-        planningAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
-      });
-
-      it('should include security and compliance category agents', async () => {
-        const result = await getAvailableAgents();
-        const securityAgents = [
-          '@security-auditor-agent',
-          '@compliance-scope-agent',
-          '@ethical-review-agent'
-        ];
-        securityAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
-      });
-
-      it('should include marketing and growth agents', async () => {
-        const result = await getAvailableAgents();
-        const marketingAgents = [
-          '@marketing-strategy-orchestrator-agent',
-          '@seo-sem-agent',
-          '@growth-hacking-idea-agent',
-          '@content-strategy-agent'
-        ];
-        marketingAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
-      });
-
-      it('should include research and analysis agents', async () => {
-        const result = await getAvailableAgents();
-        const researchAgents = [
-          'deep-research-agent',
-          '@mcp-researcher-agent',
-          '@root-cause-analysis-agent',
-          '@technology-advisor-agent'
-        ];
-        researchAgents.forEach(agent => {
-          expect(result).toContain(agent);
-        });
+        await expect(getAvailableAgents()).rejects.toThrow('down');
       });
     });
   });

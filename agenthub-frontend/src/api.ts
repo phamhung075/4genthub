@@ -11,6 +11,7 @@ import {
     subtaskApiV2,
     taskApiV2
 } from './services/apiV2';
+import { seatApi } from './services/seatApi';
 import type {
     AgentsResponse,
     ApiResponse,
@@ -387,52 +388,14 @@ export const listAgents = async (): Promise<any[]> => {
     }
 };
 
+// The names an assignee picker offers are the user's seat keys, collected over every room
+// the Seats page lists. A seat is assigned as "@<seat_key>": the backend keeps an assignee
+// that starts with "@" as given and rejects an unknown bare name.
 export const getAvailableAgents = async (): Promise<string[]> => {
-    // Return all 32 available agents from the agent library
-    return [
-        'coding-agent',
-        'debugger-agent',
-        'code-reviewer-agent',
-        'prototyping-agent',
-        'test-orchestrator-agent',
-        'uat-coordinator-agent',
-        'performance-load-tester-agent',
-        'system-architect-agent',
-        'design-system-agent',
-        'ui-designer-expert-shadcn-agent',
-        'core-concept-agent',
-        'devops-agent',
-        'adaptive-deployment-strategist-agent',
-        'swarm-scaler-agent',
-        'documentation-agent',
-        'tech-spec-agent',
-        'prd-architect-agent',
-        'project-initiator-agent',
-        'task-planning-agent',
-        'master-orchestrator-agent',
-        'elicitation-agent',
-        'security-auditor-agent',
-        'compliance-scope-agent',
-        'ethical-review-agent',
-        'analytics-setup-agent',
-        'efficiency-optimization-agent',
-        'health-monitor-agent',
-        'marketing-strategy-orchestrator-agent',
-        'seo-sem-agent',
-        'growth-hacking-idea-agent',
-        'content-strategy-agent',
-        'community-strategy-agent',
-        'branding-agent',
-        'deep-research-agent',
-        'mcp-researcher-agent',
-        'root-cause-analysis-agent',
-        'technology-advisor-agent',
-        'brainjs-ml-agent',
-        'mcp-configuration-agent',
-        'idea-generation-agent',
-        'idea-refinement-agent',
-        'remediation-agent'
-    ];
+    const { rooms } = await seatApi.listRooms();
+    const perRoom = await Promise.all(rooms.map(room => seatApi.listSeats(room.slug)));
+    const assignees = perRoom.flatMap(({ seats }) => seats.map(seat => `@${seat.seat_key}`));
+    return [...new Set(assignees)].sort();
 };
 
 // --- Connection Operations ---

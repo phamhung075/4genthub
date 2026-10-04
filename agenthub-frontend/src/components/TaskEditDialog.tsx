@@ -6,6 +6,7 @@ import { Textarea } from "./ui/textarea";
 import Select from "./ui/select-simple";
 import { Task, getAvailableAgents } from "../api";
 import { X } from "lucide-react";
+import logger from "../utils/logger";
 
 interface TaskEditDialogProps {
   open: boolean;
@@ -42,9 +43,9 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
   // Load available agents on mount
   React.useEffect(() => {
-    getAvailableAgents().then(agents => {
-      setAvailableAgents(agents);
-    });
+    getAvailableAgents()
+      .then(setAvailableAgents)
+      .catch(error => logger.error('Error loading seats for the assignee picker:', error));
   }, []);
 
   // Handle click outside to close dropdown
