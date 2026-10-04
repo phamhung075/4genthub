@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — testWebSocket helper and its test removed (Task B10)
+
+- Removed: `agenthub-frontend/src/tests/utils/testWebSocket.test.ts` (18 tests, fixed in B9) with the helper it tested, `src/utils/testWebSocket.ts`, and its import in `src/App.tsx` (decision: a debug function that takes a token on `window` does not belong in the production bundle). Grep of the repo (frontend src, ai_docs, scripts, help pages, e2e) found no other reference apart from changelog history.
+- Result (in `agenthub-frontend`): `npx vitest run` 8 failed / 1736 passed (1744) before, 8 failed / 1718 passed (1726) after, files 90 to 89; the only failing file is still `api.test.ts` (D6), no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes and `grep -rl testWebSocket build` finds nothing.
+
 ## 2026-10-04 — dto-integration and testWebSocket (Task B9)
 
 - `agenthub-frontend/src/tests/integration/dto-integration.test.ts` (3 to 0): wrong side was the test. The subtask API calls (`listSubtasksForTask`, `getSubtask`, `createSubtask`) pass no endpoint to `handleResponse`, which then reads `response.url` for response validation (dev mode); the `fetch` mocks had no `url`, a real `Response` always has one. The three mocks now carry the endpoint URL. No source change.

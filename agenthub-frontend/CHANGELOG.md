@@ -3,6 +3,10 @@
 ## [Unreleased]
 
 ### Removed
+- **`window.testWebSocket` debug helper** - 2026-10-04
+  - Deleted `src/utils/testWebSocket.ts` and its import in `src/App.tsx`. The helper took a user id and a token and
+    attached itself to `window` in every build, production included. Nothing else referenced it (no help page, doc or
+    e2e spec); it is absent from the built bundle.
 - **`callAgent` and the Agent API Response panel** - 2026-10-04
   - The backend `call_agent` tool and `POST /api/v2/agents/call` were removed (T6), so `agentApiV2.callAgent`
     (`src/services/apiV2.ts`) and `callAgent` (`src/api.ts`) are gone, with the `agentManagement.callAgent` sample in

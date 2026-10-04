@@ -14,9 +14,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // WebSocket is now handled in AuthContext, no need to import here
 import { useAuth } from './contexts/AuthContext';
 
-// Import WebSocket test utility for debugging
-import './utils/testWebSocket';
-
 // Lazy load heavy components for better code splitting
 const AppLayout = lazy(() => import('./components/AppLayout').then(m => ({ default: m.AppLayout })));
 const AuthWrapper = lazy(() => import('./components/auth').then(m => ({ default: m.AuthWrapper })));
