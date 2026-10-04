@@ -20,6 +20,15 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **Flaky `websocket-protocol-v2` task CRUD test** - 2026-10-04
+  - `src/tests/e2e/websocket-protocol-v2.test.tsx` and `src/tests/test-utils.tsx` created their QueryClient with
+    `gcTime: 0` (test-utils labelled it "Disable garbage collection"). In React Query v5 `gcTime: 0` does the opposite:
+    it collects an unobserved entry immediately. `useRealtimeSync` writes `['task', id, false]` from a 150 ms-delayed
+    handler while the test has no observer on that key, so the entry could be collected before the write landed and the
+    assertion read `undefined` ("expected undefined to be 'Updated Task'"). `gcTime: Infinity` actually disables
+    collection; a fresh QueryClient per test still isolates the cache between tests.
+  - Production is unaffected: the app's QueryClient (`src/index.tsx`) and the query hooks use `gcTime` 10 minutes and
+    their entries are observed while mounted, so no delayed WebSocket write races collection there.
 - **Branch creation posts to the mounted collection route (trailing slash)** - 2026-10-04
   - `src/services/apiV2.ts` `createBranch` posted to `POST /api/v2/branches` while the Go server mounts
     `POST /api/v2/branches/` (`branch_routes.go`); `http.ServeMux` answered 301 and `fetch` downgraded the POST to a

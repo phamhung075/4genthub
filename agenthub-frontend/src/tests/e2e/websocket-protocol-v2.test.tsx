@@ -57,7 +57,12 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   const createWrapper = () => {
     queryClient = new QueryClient({
       defaultOptions: {
-        queries: { retry: false, gcTime: 0 },
+        // gcTime: in React Query v5 gcTime: 0 collects an unobserved entry immediately, which
+        // made this file flaky: the hook writes ['task', id, false] from a delayed handler
+        // (150ms) while the test has no observer on that key, so the entry could be collected
+        // before the write landed and the assertion read undefined. Infinity disables
+        // collection, so the cache survives the assertion window.
+        queries: { retry: false, gcTime: Infinity },
         mutations: { retry: false },
       },
     });
