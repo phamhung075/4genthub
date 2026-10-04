@@ -9,6 +9,7 @@ package httpapp
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"io"
 	"net"
@@ -23,6 +24,7 @@ import (
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/session_stream/testdb"
+	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -222,5 +224,49 @@ func TestSessionEventsLimitIsClampedTo1000(t *testing.T) {
 	}
 	if got := count("?limit=7"); got != 7 {
 		t.Fatalf("limit=7 returned %d events", got)
+	}
+}
+
+func TestUserBCannotListReadReplayOrAppendToUserAsSession(t *testing.T) {
+	env := newPGStreamEnv(t)
+	a := env.connector(t, "user-a")
+	sidA := a.ingest("s1")
+	a.appendEvents("s1", event(map[string]any{"text": "secret"}))
+
+	// list
+	if rows := env.sessionList(t, "user-b"); len(rows) != 0 {
+		t.Fatalf("user B lists %v", rows)
+	}
+	// read (REST events)
+	if status, body := env.restGet(t, "user-b", "/api/v2/sessions/"+sidA+"/events"); status != http.StatusNotFound {
+		t.Fatalf("user B reads user A's events: %d %v, want 404", status, body)
+	}
+	// replay (viewer socket)
+	if code, _ := env.viewer(t, "user-b", sidA).recvClose(); code != routes.SessionStreamNotFoundCode {
+		t.Fatalf("user B's viewer closed %d, want 4004", code)
+	}
+	// append: B reuses A's connector id and session key and gets its own session
+	b := env.connector(t, "user-b")
+	sidB := b.ingest("s1")
+	if sidB == sidA {
+		t.Fatal("user B resolved to user A's session id")
+	}
+	b.appendEvents("s1", event(map[string]any{"text": "from b"}))
+	status, body := env.restGet(t, "user-a", "/api/v2/sessions/"+sidA+"/events")
+	events := body.([]any)
+	if status != 200 || len(events) != 1 || events[0].(map[string]any)["payload"].(map[string]any)["text"] != "secret" {
+		t.Fatalf("user A's events changed: %d %v", status, body)
+	}
+	// and the repository itself refuses B an append to A's session
+	if _, err := session_stream.AppendEvents(context.Background(), env.sessions, "user-b", sidA, []any{entities.NewOrderedMap[any]()}); err == nil ||
+		err.Error() != "unknown session" {
+		t.Fatalf("repository append for another user: %v", err)
+	}
+}
+
+func TestSessionEventsOfAnUnknownSessionIs404(t *testing.T) {
+	env := newPGStreamEnv(t)
+	if status, body := env.restGet(t, "user-1", "/api/v2/sessions/does-not-exist/events"); status != http.StatusNotFound {
+		t.Fatalf("status = %d %v, want 404", status, body)
 	}
 }

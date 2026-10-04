@@ -16,6 +16,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Session events route answers 404 for an unknown or foreign session (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` checks `GetSessionForUser` first, as the Python route does: a session that does not exist and one that belongs to another user both give 404 "Session not found". It returned 200 `[]`, and mapped every database error to 404; a database error is now a 500.
+
 **`GET /api/v2/sessions/{id}/events` returned no events (A6)** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` passed `(sessionID, userID)` to `session_stream.ListEvents`, whose parameters are `(userID, sessionID)`, so the query never matched a row and the route always answered `[]`. Live in 0.0.14. Found by the new real-Postgres handler tests.
