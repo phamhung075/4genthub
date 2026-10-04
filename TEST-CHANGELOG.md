@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — branch collection POST exact match (Go)
+
+- New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` asserts the unchanged collection POST (422 missing-field shape for `project_id`/`git_branch_name`) and that an unknown subpath with a complete body is refused by routing, not by validation: `POST /api/v2/branches/x/y` -> 404, `POST /api/v2/branches/abc` -> 405 (path matches the GET-only `/{id}` pattern). Before the change both matched the collection POST's subtree and reached CreateBranch.
+- `routes_mount_test.go`: the inventory now lists `POST /api/v2/branches/{$}`.
+- Commands: `go test -count=1 -run 'TestBranchCollectionPostMatchesOnlyTheCollectionPath|TestMountRoutesDoesNotDuplicateHandlerPatterns' ./fastmcp/server/httpapp/` -> both PASS; `gofmt -l` empty.
+
 ## 2026-10-04 — orphaned Go branch routes removed (audit follow-up)
 
 - `fastmcp/server/httpapp/routes_mount_test.go`: the mount inventory no longer lists the deleted patterns `GET /api/v2/branches/`, `PUT /api/v2/branches/{id}`, `POST /api/v2/branches/{id}/assign-agent`. The test only detects pattern collisions, so it passed either way; the list is kept accurate so it does not claim routes that no longer exist.

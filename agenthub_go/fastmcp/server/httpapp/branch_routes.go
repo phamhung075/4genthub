@@ -58,7 +58,7 @@ func queryReq(w http.ResponseWriter, r *http.Request, key string) (string, bool)
 func (a *App) registerBranchRoutes(mux *http.ServeMux) {
 	const base = "/api/v2/branches"
 	c := a.branches
-	mux.HandleFunc("POST "+base+"/", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("POST "+base+"/{$}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		_ = r.ParseForm()
 		if miss := missingForm(r, "project_id", "git_branch_name"); len(miss) > 0 {
 			writeMissing(w, "body", miss...)

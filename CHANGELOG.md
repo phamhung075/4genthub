@@ -15,6 +15,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The branch collection POST is an exact match** (2026-10-04)
+
+- `POST /api/v2/branches/` was a trailing-slash subtree pattern, so a POST to an unknown subpath (`/api/v2/branches/x/y`) matched CreateBranch and only the missing form fields stopped it; a caller posting a complete body to a wrong path would have created a branch at a path that does not exist. It is now `POST /api/v2/branches/{$}` (Go 1.22 exact match). The collection POST itself is unchanged (same 422 missing-field shape for an empty body); `POST /api/v2/branches/x/y` is 404 and `POST /api/v2/branches/abc` is 405 (the path matches the GET-only `/{id}` pattern). Covered by `TestBranchCollectionPostMatchesOnlyTheCollectionPath` (`fastmcp/server/httpapp/branch_routes_test.go`).
+
 **A dead OpenRig seat no longer reads as `blocked`** (2026-10-04)
 
 - `scripts/openrig_bridge.py`: in `seat_state`, `lifecycleState: attention_required` alone is no longer mapped to `blocked`. OpenRig keeps that lifecycle after the agent process dies (`agentActivity.state: unknown`, reason `no_runtime_hook`, while the tmux session is still running), so the old clause reported a seat that is gone as one that needs a human. `blocked` now comes from the agent's own signal (`agentActivity.state == needs_input`) or `startupStatus attention_required|failed`; an agent death outside `rig seat stop` reads `unknown` (with `detail: no_runtime_hook`), and `rig seat stop` still reads `stopped`. Reproduced end to end on a scratch rig (kill the agent process only; tmux session alive): the bridge reported `blocked` before the fix and `unknown` after it, with the healthy seats unchanged.
