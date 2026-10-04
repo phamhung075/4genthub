@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Consumerless /api/v2/agents metadata retired (T7 follow-up)
+
+- `routes_mount_test.go`: dropped the two `/api/v2/agents/metadata` and `/api/v2/agents/coding-agent` route rows and the now-unused `fakeAgentController` (with its import).
+- `src/tests/api.test.ts`: deleted the `Real-time Agent Coordination` describe — 14 placeholder tests, each `expect(true).toBe(true)`, carrying the last commented-out `agentApiV2.*` references.
+- Result: `go test -count=1 ./fastmcp/server/httpapp/` ok; `npx tsc --noEmit -p .` 0 errors; `npx vitest run src/tests/api.test.ts` 82 passed.
+
 ## 2026-10-04 — PGALL: PG-gated suites and the assignee filter (Go)
 
 - Real-Postgres run of every `AGENTHUB_TEST_PG_URL`/`SEAT_TEST_DATABASE_URL`-gated package against the throwaway Postgres at 54329, one package at a time with `-count=1 -v` (pass/fail/skip): `fastmcp` 11/0/0; `auth/infrastructure/repositories` 9/0/0; `server/httpapp` 132/0/0; `session_stream` 11/0/0; `task_management/application/services` 394/0/0; `task_management/infrastructure/database` 41/0/1 (pre-existing skip); `task_management/infrastructure/repositories` 114/0/0. No failures.

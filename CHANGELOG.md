@@ -113,6 +113,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - `healthVersion` 0.0.14 to 0.0.15.
 - Left for T8 (Python backend): `agenthub_main` agent management, `scripts/compare_schema.py`'s import of it, and `agenthub_main/.../init_schema_postgresql.sql`, which still declare the two tables.
 - Operator step (principal/owner; NOT run here): the tables still exist on production. Drop them there in this order: `DROP TABLE IF EXISTS user_agent_instances;` then `DROP TABLE IF EXISTS agent_templates;`.
+- Follow-up (same day): the consumerless `/api/v2/agents` metadata surface was retired too — `mountAgentRoutes`, its `routeDeps.agents` wiring, the `agentMetadataController` interface and `writeAgentResult` are gone from `server/httpapp/routes_mount.go` (the only caller, the frontend `agentApiV2.getAgentsMetadata`, went in the T7 frontend half), and the dead `agentApiV2` placeholder block was deleted from `src/tests/api.test.ts`.
 - Verification: `gofmt -l` and `go vet ./...` clean; `go test ./...` green apart from the pre-existing `fastmcp.TestDatabaseMigratorRunMigrations` failure (`details=true progress_history=false`), reproduced identically at HEAD in a clean `git archive` export.
 
 **Dead `SubtaskFromDict` removed (review follow-up)** (2026-10-04)

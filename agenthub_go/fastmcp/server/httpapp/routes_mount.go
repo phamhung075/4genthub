@@ -32,15 +32,7 @@ type routeDeps struct {
 	userSubtasks  routes.UserSubtaskController
 	contexts      routes.ContextController
 	tokens        routes.TokenRouteController
-	agents        agentMetadataController
 	broadcast     routes.BroadcastFunc
-}
-
-// agentMetadataController is the agent metadata surface routes_mount exposes.
-// *api_controllers.AgentAPIController implements it.
-type agentMetadataController interface {
-	GetAgentMetadata(ctx context.Context, userID string, session *database.SessionManager) *entities.OrderedMap[any]
-	GetAgentByID(ctx context.Context, agentID, userID string, session *database.SessionManager) *entities.OrderedMap[any]
 }
 
 // newRouteDeps adapts the App composition root to the controllers mountRoutes
@@ -61,7 +53,6 @@ func newRouteDeps(a *App) routeDeps {
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(context.Background(), a.Sessions)
 	deps.contexts = contextRoutesAdapter{c: api_controllers.NewContextAPIController(contextFacadeProvider{factory: ctxFactory})}
 	deps.tokens = tokenRoutesAdapter{c: api_controllers.NewTokenAPIController(facadeServiceTokenProvider{})}
-	deps.agents = api_controllers.NewAgentAPIController(nil)
 	deps.broadcast = broadcastAdapter
 	return deps
 }
@@ -82,7 +73,6 @@ func mountRoutes(mux *http.ServeMux, deps routeDeps) {
 	mountAlertRoutes(mux)
 	mountPerformanceRoutes(mux)
 	mountBroadcastRoutes(mux, deps)
-	mountAgentRoutes(mux, deps)
 	mountContextRoutes(mux, deps)
 	mountTokenRoutes(mux, deps)
 	mountTaskSummaryRoutes(mux, deps)
@@ -209,50 +199,6 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 		body, err := routes.TriggerBroadcast(r.Context(), req, deps.broadcast)
 		writeResult(w, body, err)
 	})
-}
-
-// --- agent_routes.py (/api/v2/agents, metadata endpoints only) ---
-//
-// The Go port of agent_routes.go models a register/list/update/delete surface
-// that the Python module does not have, and the assign/call/capabilities
-// endpoints have no Go controller methods, so only the two metadata endpoints
-// that AgentAPIController implements are mounted here.
-
-func mountAgentRoutes(mux *http.ServeMux, deps routeDeps) {
-	if deps.agents == nil {
-		return
-	}
-	const base = "/api/v2/agents"
-	mux.HandleFunc("GET "+base+"/metadata", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		writeAgentResult(w, deps.agents.GetAgentMetadata(r.Context(), userID(u), deps.sessions))
-	}))
-	mux.HandleFunc("GET "+base+"/{agent_name}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		writeAgentResult(w, deps.agents.GetAgentByID(r.Context(), r.PathValue("agent_name"), userID(u), deps.sessions))
-	}))
-}
-
-func writeAgentResult(w http.ResponseWriter, body *entities.OrderedMap[any]) {
-	if body == nil {
-		writeDetail(w, http.StatusInternalServerError, "Failed to fetch agent metadata")
-		return
-	}
-	if success, _ := body.Get("success"); success != true {
-		message := "Failed to fetch agent metadata"
-		if m, ok := body.Get("message"); ok {
-			if s, ok := m.(string); ok && s != "" {
-				message = s
-			}
-		}
-		if e, ok := body.Get("error"); ok {
-			if s, ok := e.(string); ok && strings.Contains(strings.ToLower(s), "not found") {
-				writeDetail(w, http.StatusNotFound, message)
-				return
-			}
-		}
-		writeDetail(w, http.StatusInternalServerError, message)
-		return
-	}
-	writeJSON(w, http.StatusOK, body)
 }
 
 // --- context_routes.py (/api/v2/contexts) ---

@@ -9,7 +9,6 @@ import (
 
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
-	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // --- fakes for the routes-level controller interfaces ---
@@ -90,23 +89,6 @@ func (fakeUserSubtasks) ListSubtasks(context.Context, string, string) (routes.Us
 	return routes.UserSubtaskResult{Success: true}, nil
 }
 
-type fakeAgentController struct{}
-
-func (fakeAgentController) GetAgentMetadata(context.Context, string, *database.SessionManager) *entities.OrderedMap[any] {
-	out := entities.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("agents", []any{})
-	out.Set("total", 0)
-	return out
-}
-
-func (fakeAgentController) GetAgentByID(context.Context, string, string, *database.SessionManager) *entities.OrderedMap[any] {
-	out := entities.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("agent", entities.NewOrderedMap[any]())
-	return out
-}
-
 func testRouteDeps() routeDeps {
 	return routeDeps{
 		taskRoutes:    fakeTaskRoutes{},
@@ -114,7 +96,6 @@ func testRouteDeps() routeDeps {
 		userSubtasks:  fakeUserSubtasks{},
 		contexts:      fakeContextController{},
 		tokens:        fakeTokenController{},
-		agents:        fakeAgentController{},
 		broadcast: func(context.Context, string, string, string, string, *entities.OrderedMap[any], *entities.OrderedMap[any]) error {
 			return nil
 		},
@@ -147,8 +128,6 @@ func expectedProbes() []routeProbe {
 		{http.MethodGet, "/api/v1/performance/metrics/alerts", ""},
 		{http.MethodPost, "/api/v1/performance/metrics/clear-cache", ""},
 		{http.MethodPost, "/api/v2/broadcast/notify", `{"event_type":"e","entity_type":"t","entity_id":"i","user_id":"u"}`},
-		{http.MethodGet, "/api/v2/agents/metadata", ""},
-		{http.MethodGet, "/api/v2/agents/coding-agent", ""},
 		{http.MethodPost, "/api/v2/contexts/global", `{"context_id":"me"}`},
 		{http.MethodGet, "/api/v2/contexts/global/me", ""},
 		{http.MethodPut, "/api/v2/contexts/global/me", `{"data":{}}`},
