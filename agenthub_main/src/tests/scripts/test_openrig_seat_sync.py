@@ -201,8 +201,10 @@ def checker_present(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def no_tmux_server(monkeypatch):
-    """Tests do not talk to a real tmux server: the checker falls back to the shell PATH."""
+    """Tests do not talk to a real tmux server or the real rig daemon: the checker falls
+    back to the shell PATH (a test that wants the cold-start daemon PATH stubs these)."""
     monkeypatch.setattr(seat_sync, "tmux_global_path", lambda: None, raising=False)
+    monkeypatch.setattr(seat_sync, "openrig_daemon_pid", lambda: None, raising=False)
 
 
 @pytest.fixture
@@ -219,6 +221,24 @@ def checker_home(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("PATH", str(link_dir))
     return link_dir
+
+
+def test_seat_path_reads_the_daemon_path_at_cold_start(monkeypatch):
+    """At cold start the first seat inherits the rig daemon's PATH (read from the daemon's
+    process), not the operator's shell; with no daemon it falls back to the shell and says so."""
+    monkeypatch.setenv("PATH", "/operator/shell/bin")
+    monkeypatch.setattr(
+        seat_sync,
+        "proc_env_path",
+        lambda pid: "/daemon/bin" if pid == 4242 else None,
+        raising=False,
+    )
+
+    monkeypatch.setattr(seat_sync, "openrig_daemon_pid", lambda: 4242, raising=False)
+    assert seat_sync.seat_path() == ("/daemon/bin", seat_sync.DAEMON_PATH_SOURCE)
+
+    monkeypatch.setattr(seat_sync, "openrig_daemon_pid", lambda: None, raising=False)
+    assert seat_sync.seat_path() == ("/operator/shell/bin", seat_sync.SHELL_PATH_SOURCE)
 
 
 def make_binary(out):
@@ -1093,7 +1113,7 @@ def test_install_checker_fails_loudly_when_the_link_dir_is_not_on_path(
     assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 2
     err = capsys.readouterr().err
     assert f"add {checker_home} to PATH" in err
-    assert "rig daemon stop" in err and "does not expose" in err
+    assert "rig daemon stop" in err and "restart the daemon" in err
     assert (checker_home / "seatcheck").is_symlink()
 
 
@@ -1189,7 +1209,7 @@ def test_shell_path_fallback_is_said_in_the_output(
     pins = tmp_path / "pins"
     (checker_home / "seatcheck").symlink_to(make_binary(pins))
     assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 0
-    assert "no tmux server is running" in capsys.readouterr().err
+    assert "no readable rig daemon PATH" in capsys.readouterr().err
 
 
 def test_path_limit_says_only_the_default_tmux_socket_is_queried():

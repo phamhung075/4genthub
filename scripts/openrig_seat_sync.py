@@ -50,10 +50,12 @@ Usage:
 ``install-checker`` builds ``agenthub_go/cmd/seatcheck`` to ``<DIR>/bin/seatcheck`` (DIR is the
 seat store) and links ``~/.local/bin/seatcheck`` to it. Seats run the bare name
 ``seatcheck send ...``, so it must resolve on the PATH the seats inherit; ``pull`` and ``rig``
-fail until it resolves to the store's binary. The check reads the PATH of the shell that runs
-this script. Seats inherit the PATH the OpenRig daemon had when it started, and ``rig`` does not
-expose that PATH, so the check cannot see it: after changing PATH, restart the daemon from a
-shell where ``seatcheck`` resolves (``rig daemon stop``, ``rig daemon start``).
+fail until it resolves to the store's binary. The check reads the PATH the seats inherit: while
+a tmux server runs that is its global PATH, and at cold start it reads the running rig daemon's
+PATH from ``/proc/<pid>/environ`` (the daemon starts the first tmux server, so the first seat
+inherits the daemon's environment). Only when neither is available does it fall back to the
+operator's shell PATH and say so. If the daemon's PATH does not resolve ``seatcheck``, restart
+the daemon from a shell where it resolves (``rig daemon stop``, ``rig daemon start``).
 
 ``switch`` changes the LLM of one seat: 4genthub records the occupant, then
 OpenRig applies it. Fields not given keep their current cloud value. A model
@@ -339,14 +341,74 @@ def tmux_global_path() -> str | None:
     return result.stdout.strip()[len("PATH=") :]
 
 
-SHELL_PATH_SOURCE = "shell PATH (no tmux server is running, so no seat exists yet)"
+def openrig_daemon_port() -> str | None:
+    """The rig daemon port from OPENRIG_PORT, else the port in OPENRIG_URL."""
+    port = os.environ.get("OPENRIG_PORT", "").strip()
+    if port.isdigit():
+        return port
+    match = re.search(r":(\d+)(?:/|$)", os.environ.get("OPENRIG_URL", ""))
+    return match.group(1) if match else None
+
+
+def openrig_daemon_pid() -> int | None:
+    """The rig daemon pid listening on the OpenRig port, or None when it cannot be found.
+
+    The daemon starts the first tmux server, so at cold start the first seat inherits the
+    daemon's environment; its PATH is readable from /proc while the daemon runs.
+    """
+    port = openrig_daemon_port()
+    if port is None:
+        return None
+    try:
+        result = subprocess.run(
+            ["ss", "-ltnp"],
+            capture_output=True,
+            text=True,
+            timeout=TMUX_TIMEOUT_SECONDS,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    for line in result.stdout.splitlines():
+        if f":{port} " in line or f":{port}\t" in line:
+            match = re.search(r"pid=(\d+)", line)
+            if match:
+                return int(match.group(1))
+    return None
+
+
+def proc_env_path(pid: int) -> str | None:
+    """The PATH of process pid from /proc/<pid>/environ, or None when unreadable."""
+    try:
+        raw = Path(f"/proc/{pid}/environ").read_bytes()
+    except OSError:
+        return None
+    for entry in raw.split(b"\0"):
+        if entry.startswith(b"PATH="):
+            return entry[len(b"PATH=") :].decode("utf-8", "surrogateescape")
+    return None
+
+
+SHELL_PATH_SOURCE = (
+    "shell PATH (no tmux server and no readable rig daemon PATH were found, so no seat "
+    "exists yet)"
+)
+DAEMON_PATH_SOURCE = "rig daemon PATH (the daemon starts the first tmux server, so the first seat inherits it)"
 
 
 def seat_path() -> tuple[str, str]:
-    """The PATH to check and its source: the tmux global PATH, else this shell's."""
+    """The PATH to check and its source: tmux global, else the daemon's, else this shell's.
+
+    At cold start (no tmux server) the first seat inherits the rig daemon's environment, so
+    the daemon's PATH is read from its /proc entry instead of assuming the operator's shell.
+    """
     tmux_path = tmux_global_path()
     if tmux_path is not None:
         return tmux_path, "tmux global PATH"
+    pid = openrig_daemon_pid()
+    if pid is not None:
+        daemon_path = proc_env_path(pid)
+        if daemon_path:
+            return daemon_path, DAEMON_PATH_SOURCE
     return os.environ.get("PATH", ""), SHELL_PATH_SOURCE
 
 
@@ -363,10 +425,11 @@ def resolve_checker(out: Path) -> bool:
 
 PATH_LIMIT = (
     "seats inherit the tmux global PATH, which is what this checks while a tmux server "
-    "runs (only the default tmux socket is queried); at cold start the first seat "
-    "inherits the PATH the OpenRig daemon started "
-    "with, which `rig` does not expose: restart it from a shell where "
-    f"{CHECKER_NAME} resolves (`rig daemon stop`, `rig daemon start`)"
+    "runs (only the default tmux socket is queried); at cold start it reads the PATH of "
+    "the running rig daemon (the daemon starts the first tmux server, so the first seat "
+    "inherits the daemon's environment). If the daemon's PATH does not resolve "
+    f"{CHECKER_NAME}, restart the daemon from a shell where it resolves "
+    "(`rig daemon stop`, `rig daemon start`)"
 )
 
 

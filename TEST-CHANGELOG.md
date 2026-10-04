@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — seatcheck PATH cold start (Go/scripts)
+
+- Added `test_seat_path_reads_the_daemon_path_at_cold_start`: at cold start `seat_path` returns the rig daemon's PATH (stubbed) with source `DAEMON_PATH_SOURCE`, and falls back to the shell PATH with `SHELL_PATH_SOURCE` only when no daemon is found. The autouse `no_tmux_server` fixture now also stubs `openrig_daemon_pid` to None so tests never touch the live daemon.
+- Updated `test_shell_path_fallback_is_said_in_the_output` for the new fallback message.
+- Before/after: at HEAD `scripts/openrig_seat_sync.py` has no `DAEMON_PATH_SOURCE` and `seat_path()` at cold start returns the operator's shell PATH (`/operator/shell/bin`); at the tip it returns the daemon PATH.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q -k cold_start` -> 1 passed; the whole scripts suite -> 167 passed, 4 warnings.
+
 ## 2026-10-04 — Subtask assignee filter fixed (N2)
 
 - Replaced `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` (which pinned the error) with `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment`: a subtask with `["@go-dev"]` is found by `FindByAssignee` for its owner, not for another user and not for a bare `go-dev`; `GetSubtasksByAssignee` (no user filter, Python parity) finds it for any user; `@nobody` matches nothing.

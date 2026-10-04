@@ -38,6 +38,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The seatcheck PATH check reads the daemon's PATH at cold start** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: at cold start (no tmux server) `resolve_checker` checked the operator's shell PATH, but the first seat inherits the PATH of the rig daemon that starts the first tmux server. It now reads that PATH from the daemon process: `openrig_daemon_port` takes `OPENRIG_PORT` (else the port in `OPENRIG_URL`), `openrig_daemon_pid` finds the listening pid with `ss -ltnp`, and `proc_env_path` reads `/proc/<pid>/environ`. `seat_path` returns the daemon PATH with the source `rig daemon PATH`, falling back to the shell PATH only when neither a tmux server nor a readable daemon PATH exists (and saying so). The module docstring and `PATH_LIMIT` are updated. No OpenRig or `cmd/seatcheck` change.
+
 **Subtask assignee filter works on PostgreSQL (N2)** (2026-10-04)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/repositories/subtask_repository.go`: `FindByAssignee` and `GetSubtasksByAssignee` filtered with `"assignees" LIKE '%' || $1::json || '%'`, which PostgreSQL rejects for a json/jsonb column, so both raised for any plain name — the filter was unusable. They now use jsonb array containment (`"assignees"::jsonb @> $1::jsonb`), so an `@seat_key` (or any exact element) is found; the `user_id` cross-tenant filter is unchanged and `GetSubtasksByAssignee` keeps no user filter (Python parity). Intentional deviation, recorded as N2 in `MIGRATION.md`.
