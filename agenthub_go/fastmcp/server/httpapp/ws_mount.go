@@ -24,6 +24,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"agenthub/fastmcp/auth"
 	"agenthub/fastmcp/server/routes"
@@ -45,9 +46,11 @@ const (
 
 	// wsGUID is the RFC 6455 handshake magic string.
 	wsGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-	// wsMaxFrameBytes bounds a single frame so a bad client cannot force an
-	// unbounded allocation; the connector's own 1 MiB limit is checked after.
-	wsMaxFrameBytes = 1 << 26
+	// wsMaxMessageBytes bounds one message (all its fragments together) so a bad client
+	// cannot force an unbounded allocation. It is the most bytes the connector's limit of
+	// SessionStreamMaxMsgChars characters can take (4 bytes per character in UTF-8); the
+	// character limit itself is checked after the read.
+	wsMaxMessageBytes = 4 * routes.SessionStreamMaxMsgChars
 )
 
 // mountWebSockets registers the realtime, connector and session viewer WebSocket endpoints. sessions
@@ -198,7 +201,7 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 			if err != nil {
 				return
 			}
-			if len(raw) > routes.SessionStreamMaxMsgChars {
+			if utf8.RuneCountInString(raw) > routes.SessionStreamMaxMsgChars {
 				_ = wsSend(ctx, conn, wsConnectorError("message too large"))
 				continue
 			}
@@ -523,6 +526,9 @@ func (c *wsConn) ReceiveText(context.Context) (string, error) {
 			if !fragmented {
 				return "", &wslib.WebSocketDisconnect{Code: 1002, Reason: "unexpected continuation"}
 			}
+			if len(text)+len(payload) > wsMaxMessageBytes {
+				return "", fmt.Errorf("websocket message too large")
+			}
 			text = append(text, payload...)
 			if fin {
 				return string(text), nil
@@ -562,7 +568,7 @@ func (c *wsConn) readFrame() (bool, byte, []byte, error) {
 		}
 		length = int64(binary.BigEndian.Uint64(ext))
 	}
-	if length > wsMaxFrameBytes {
+	if length > wsMaxMessageBytes {
 		return false, 0, nil, fmt.Errorf("websocket frame too large: %d", length)
 	}
 	var mask [4]byte

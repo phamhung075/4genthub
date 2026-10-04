@@ -20,6 +20,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written. A stored known role or `@` name is shown in its `@` form; any other stored name stays as stored. The subtask-create error is now the entity's one message ('An assignee is `@<seat_key>` or a known agent role.').
 
+**Connector message cap counts characters; websocket reads are bounded at 4 MiB (A4)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_mount.go`: the 1 MiB connector limit (`MAX_MESSAGE_CHARS`) counts characters (`utf8.RuneCountInString`), as Python's `len(str)` does; it counted bytes, so a multibyte message of up to 1 MiB characters was refused. The read itself is bounded at `wsMaxMessageBytes` = 4 MiB (4 bytes per character, the most 1 MiB characters can take) per message: the bound was 64 MiB per frame and fragments of one message were not bounded at all; now the fragments of a message count together and an over-bound message ends the connection. The bound also applies to `/ws/realtime` and the session viewer, which share the reader.
+
 **Session REST routes answer `{"sessions": [...]}` and `{"events": [...]}` (A6)** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go` and `http.go` (`writeKeyedSliceResult`): `GET /api/v2/sessions` and `GET /api/v2/sessions/{id}/events` return the object the Python routes return (also when empty) instead of a bare array. No caller of these routes exists in `agenthub-frontend`, in the Go code or in the connector.

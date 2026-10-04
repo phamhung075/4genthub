@@ -11,12 +11,14 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -314,4 +316,68 @@ func TestSessionRoutesAnswerAnObjectEvenWhenEmpty(t *testing.T) {
 	if _, body := env.restGet(t, "user-1", "/api/v2/sessions/"+sid+"/events"); fmt.Sprint(wrapped(t, body, "events")) != "[]" {
 		t.Fatalf("empty events = %v", body)
 	}
+}
+
+// ---- the 1 MiB message cap counts characters, the read is bounded in bytes ----
+
+// helloOfChars is a valid hello message of exactly chars characters; every pad character
+// is the two-byte 'é' inside a string field.
+func helloOfChars(chars int) string {
+	const head, tail = `{"type":"hello","connector_id":"c1","pad":"`, `"}`
+	return head + strings.Repeat("é", chars-len([]rune(head))-len(tail)) + tail
+}
+
+func TestConnectorCapCountsCharactersNotBytes(t *testing.T) {
+	c := newStreamEnv(t, nil).connector(t, "user-1")
+
+	atCap := helloOfChars(routes.SessionStreamMaxMsgChars)
+	if len(atCap) <= routes.SessionStreamMaxMsgChars {
+		t.Fatal("the probe must be larger in bytes than the cap")
+	}
+	c.sendRaw(atCap)
+	if got := c.recv(); got["type"] != "ready" {
+		t.Fatalf("a message of exactly 1 MiB characters (%d bytes) must be served, got %v", len(atCap), got)
+	}
+	c.sendRaw(helloOfChars(routes.SessionStreamMaxMsgChars + 1))
+	if got := c.recv(); got["type"] != "error" || got["error"] != "message too large" {
+		t.Fatalf("a message of 1 MiB + 1 characters must be refused, got %v", got)
+	}
+	c.hello("c1") // the socket is still usable
+}
+
+// connectionEnds reports whether the server closed the connection (a read ends in an error).
+func (c *streamConn) connectionEnds() bool {
+	_ = c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, err := io.Copy(io.Discard, c.br)
+	var ne net.Error
+	return err == nil || !(errors.As(err, &ne) && ne.Timeout())
+}
+
+func TestConnectorReadIsBoundedInBytes(t *testing.T) {
+	over := make([]byte, wsMaxMessageBytes+1)
+	for i := range over {
+		over[i] = ' '
+	}
+
+	t.Run("one frame", func(t *testing.T) {
+		c := newStreamEnv(t, nil).connector(t, "user-1")
+		_ = wsTestTryWriteFrame(c.conn, true, wsOpText, over) // the server may close before the last byte
+		if !c.connectionEnds() {
+			t.Fatal("a frame over the byte bound must end the connection")
+		}
+	})
+	t.Run("fragments add up", func(t *testing.T) {
+		c := newStreamEnv(t, nil).connector(t, "user-1")
+		const piece = 1 << 20
+		_ = wsTestTryWriteFrame(c.conn, false, wsOpText, over[:piece])
+		for sent := piece; sent < len(over); sent += piece {
+			end := min(sent+piece, len(over))
+			if wsTestTryWriteFrame(c.conn, end == len(over), wsOpContinuation, over[sent:end]) != nil {
+				break // closed by the server
+			}
+		}
+		if !c.connectionEnds() {
+			t.Fatal("fragments over the byte bound must end the connection")
+		}
+	})
 }

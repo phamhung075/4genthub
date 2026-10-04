@@ -135,8 +135,25 @@ func wsTestReadFrame(t *testing.T, br *bufio.Reader) (byte, []byte) {
 // wsTestWriteText writes one masked client text frame.
 func wsTestWriteText(t *testing.T, conn net.Conn, payload []byte) {
 	t.Helper()
+	wsTestWriteFrame(t, conn, true, wsOpText, payload)
+}
+
+// wsTestWriteFrame writes one masked client frame; fin false starts or continues a fragmented message.
+func wsTestWriteFrame(t *testing.T, conn net.Conn, fin bool, opcode byte, payload []byte) {
+	t.Helper()
+	if err := wsTestTryWriteFrame(conn, fin, opcode, payload); err != nil {
+		t.Fatalf("write frame: %v", err)
+	}
+}
+
+// wsTestTryWriteFrame is wsTestWriteFrame for a server that may close the connection mid-write.
+func wsTestTryWriteFrame(conn net.Conn, fin bool, opcode byte, payload []byte) error {
 	mask := [4]byte{0x11, 0x22, 0x33, 0x44}
-	header := []byte{0x80 | wsOpText}
+	first := opcode
+	if fin {
+		first |= 0x80
+	}
+	header := []byte{first}
 	switch n := len(payload); {
 	case n < 126:
 		header = append(header, 0x80|byte(n))
@@ -151,9 +168,8 @@ func wsTestWriteText(t *testing.T, conn net.Conn, payload []byte) {
 	for i := range payload {
 		masked[i] = payload[i] ^ mask[i%4]
 	}
-	if _, err := conn.Write(append(header, masked...)); err != nil {
-		t.Fatalf("write frame: %v", err)
-	}
+	_, err := conn.Write(append(header, masked...))
+	return err
 }
 
 func wsTestJSON(t *testing.T, payload []byte) map[string]any {
