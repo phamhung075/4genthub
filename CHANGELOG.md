@@ -38,6 +38,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Subtask assignee filter works on PostgreSQL (N2)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/subtask_repository.go`: `FindByAssignee` and `GetSubtasksByAssignee` filtered with `"assignees" LIKE '%' || $1::json || '%'`, which PostgreSQL rejects for a json/jsonb column, so both raised for any plain name — the filter was unusable. They now use jsonb array containment (`"assignees"::jsonb @> $1::jsonb`), so an `@seat_key` (or any exact element) is found; the `user_id` cross-tenant filter is unchanged and `GetSubtasksByAssignee` keeps no user filter (Python parity). Intentional deviation, recorded as N2 in `MIGRATION.md`.
+- Tests: `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment` replaces the defect-pinning test (owner found; another user not found; a bare name and an absent name match nothing).
+
 **Database migrator recognises both PostgreSQL schemes (defect)** (2026-10-04)
 
 - `agenthub_go/fastmcp/database_migrations.go`: `RunMigrations` and `InitializeDatabase` gated on `strings.Contains(url, "postgresql")`, so a valid `postgres://` DSN (what pgx and the throwaway-Postgres tests use) was treated as non-PostgreSQL and the progress-history migration silently skipped; `TestDatabaseMigratorRunMigrations` was red. Both now use `isPostgresURL`, which accepts `postgres://` and `postgresql://`. The app's own URL builder emits `postgresql://`, so production behaviour is unchanged; the guard no longer depends on which valid scheme a caller passes.

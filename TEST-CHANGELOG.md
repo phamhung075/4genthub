@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Subtask assignee filter fixed (N2)
+
+- Replaced `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` (which pinned the error) with `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment`: a subtask with `["@go-dev"]` is found by `FindByAssignee` for its owner, not for another user and not for a bare `go-dev`; `GetSubtasksByAssignee` (no user filter, Python parity) finds it for any user; `@nobody` matches nothing.
+- Before/after against the throwaway Postgres (temporary probe, deleted before commit): OLD `SELECT 1 FROM subtasks WHERE "assignees" LIKE '%' || '["@go-dev"]'::json || '%'` -> `ERROR: operator does not exist: json ~~ text (SQLSTATE 42883)`; NEW `... WHERE "assignees"::jsonb @> '["@go-dev"]'::jsonb` -> no error.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 ./fastmcp/task_management/infrastructure/repositories/` -> ok.
+
 ## 2026-10-04 — Consumerless /api/v2/agents metadata retired (T7 follow-up)
 
 - `routes_mount_test.go`: dropped the two `/api/v2/agents/metadata` and `/api/v2/agents/coding-agent` route rows and the now-unused `fakeAgentController` (with its import).
@@ -12,7 +18,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - Real-Postgres run of every `AGENTHUB_TEST_PG_URL`/`SEAT_TEST_DATABASE_URL`-gated package against the throwaway Postgres at 54329, one package at a time with `-count=1 -v` (pass/fail/skip): `fastmcp` 11/0/0; `auth/infrastructure/repositories` 9/0/0; `server/httpapp` 132/0/0; `session_stream` 11/0/0; `task_management/application/services` 394/0/0; `task_management/infrastructure/database` 41/0/1 (pre-existing skip); `task_management/infrastructure/repositories` 114/0/0. No failures.
 - Added `TestTaskRepoFindBySeatKeyAssigneeIsTenantScoped` (`task_repository_test.go`): two users each own a task assigned `@go-dev`; `FindByAssignee` and `FindByCriteria` return only the caller's task, and a bare `go-dev` matches nothing. PASS.
-- The subtask assignee filter is NOT fixed: `subtask_repository.go:302` filters with `WHERE "assignees" LIKE '%' || $1::json || '%'`, so a plain assignee string is invalid JSON and PostgreSQL raises. `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` pins this for both `FindByAssignee` and `GetSubtasksByAssignee`; no working `@seat_key` subtask filter can be tested until the query is decided (Python parity vs Go correctness). Reported to the lead.
+- The subtask assignee filter is NOT fixed: `subtask_repository.go:302` filters with `WHERE "assignees" LIKE '%' || $1::json || '%'`, so a plain assignee string is invalid JSON and PostgreSQL raises. `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` pins this for both `FindByAssignee` and `GetSubtasksByAssignee`; no working `@seat_key` subtask filter can be tested until the query is decided (Python parity vs Go correctness). Reported to the lead; FIXED later the same day — see the N2 entry above.
 
 ## 2026-10-04 — Retired agent system removed (T8)
 

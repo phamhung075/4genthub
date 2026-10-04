@@ -931,6 +931,7 @@ Python glues everything with FastAPI/Starlette/FastMCP. The Go ports so far are 
 6. `auth/interface/auth_endpoints.py` (login etc.).
 
 - N1 (dev-check, task_repository batch_update_status): Python's get_db_session yields the held session and never commits, so the UPDATE is not persisted; Go commits. Intentional deviation (persisting is the sane behaviour); user may veto.
+- N2 (2026-10-04, subtask_repository find_by_assignee / get_subtasks_by_assignee): Python compares the JSON `assignees` column with `LIKE '%' || <json> || '%'`, which PostgreSQL rejects for a json/jsonb column, so both methods raise for any plain name — the filter is unusable. Go uses jsonb array containment (`"assignees"::jsonb @> $1::jsonb`) instead: an `@seat_key` or any exact element is found, and a bare name does not match a stored `@`-name. The `user_id` cross-tenant filter is unchanged and `get_subtasks_by_assignee` still has no user filter (Python parity). Intentional deviation (a filter that always errors is not behaviour worth preserving); user may veto. Tests: `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment` (owner found, other user not found, bare name and absent name match nothing), replacing the defect-pinning test.
 - L1 fixed: optional assignee/label inserts in ORMTaskRepository.CreateTask run in savepoints (Python per-step rollback).
 
 ### Composition status

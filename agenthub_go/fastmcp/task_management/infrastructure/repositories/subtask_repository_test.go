@@ -305,18 +305,41 @@ func TestSubtaskRepositoryCountsHaveNoUserFilter(t *testing.T) {
 	}
 }
 
-func TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect(t *testing.T) {
+// Python's find_by_assignee compared the JSON column with LIKE and raised on PostgreSQL; the
+// port uses jsonb containment instead (MIGRATION deviation), so an @seat_key is found by exact
+// array membership. FindByAssignee is user-scoped; GetSubtasksByAssignee is not (Python parity).
+func TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment(t *testing.T) {
 	fx := newSubtaskRepoFixture(t)
 	ctx := context.Background()
 	repo := subtaskRepoNewRepo(t, fx, fx.userID)
-	subtaskRepoMustSave(t, repo, subtaskRepoNewEntity(t, fx.parent, "assigned", "todo", 0, []string{"coding-agent"}))
+	subtaskRepoMustSave(t, repo, subtaskRepoNewEntity(t, fx.parent, "assigned", "todo", 0, []string{"@go-dev"}))
+	subtaskRepoMustSave(t, repo, subtaskRepoNewEntity(t, fx.parent, "unassigned", "todo", 0, nil))
 
-	if _, err := repo.FindByAssignee(ctx, "coding-agent"); err == nil {
-		t.Fatal("expected the PostgreSQL json LIKE error that Python also raises")
+	got, err := repo.FindByAssignee(ctx, "@go-dev")
+	if err != nil || len(got) != 1 || got[0].Title != "assigned" {
+		t.Fatalf("FindByAssignee(@go-dev) = %v %#v, want the assigned subtask", err, got)
 	}
+	// A bare seat key must not match the stored "@go-dev".
+	none, err := repo.FindByAssignee(ctx, "go-dev")
+	if err != nil || len(none) != 0 {
+		t.Fatalf("FindByAssignee(go-dev) = %v %#v, want none", err, none)
+	}
+	// Another user's repository does not see this user's subtask.
+	other := subtaskRepoNewRepo(t, fx, value_objects.NewUUIDv4())
+	otherGot, err := other.FindByAssignee(ctx, "@go-dev")
+	if err != nil || len(otherGot) != 0 {
+		t.Fatalf("other user FindByAssignee(@go-dev) = %v %#v, want none", err, otherGot)
+	}
+	// GetSubtasksByAssignee has no user filter (Python behavior) and finds it for any user.
 	limit := 5
-	if _, err := repo.GetSubtasksByAssignee(ctx, "coding-agent", &limit); err == nil {
-		t.Fatal("expected the PostgreSQL json LIKE error that Python also raises")
+	byAssignee, err := other.GetSubtasksByAssignee(ctx, "@go-dev", &limit)
+	if err != nil || len(byAssignee) != 1 || byAssignee[0].Title != "assigned" {
+		t.Fatalf("GetSubtasksByAssignee(@go-dev) = %v %#v, want the assigned subtask", err, byAssignee)
+	}
+	// A name in no stored row is found by nobody.
+	absent, err := repo.FindByAssignee(ctx, "@nobody")
+	if err != nil || len(absent) != 0 {
+		t.Fatalf("FindByAssignee(@nobody) = %v %#v, want none", err, absent)
 	}
 }
 

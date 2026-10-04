@@ -284,8 +284,9 @@ func (r *ORMSubtaskRepository) FindByParentTaskID(ctx context.Context, parentTas
 	return out, err
 }
 
-// FindByAssignee is find_by_assignee. As in Python this compares the JSON column with LIKE,
-// which PostgreSQL rejects for json/jsonb; the resulting database error is returned.
+// FindByAssignee is find_by_assignee. Python compares the JSON column with LIKE, which
+// PostgreSQL rejects for json/jsonb; this port uses jsonb containment instead (deviation
+// recorded in MIGRATION.md), so a plain name or an @seat_key matches by array membership.
 func (r *ORMSubtaskRepository) FindByAssignee(ctx context.Context, assignee string) ([]*entities.Subtask, error) {
 	pattern, err := value_objects.PyJSONDumps([]any{assignee}, -1)
 	if err != nil {
@@ -294,12 +295,12 @@ func (r *ORMSubtaskRepository) FindByAssignee(ctx context.Context, assignee stri
 	return r.subtaskRepoFindByAssigneeQuery(ctx, pattern, "created_at", true)
 }
 
-// subtaskRepoFindByAssigneeQuery runs the shared assignee LIKE query (user filter optional).
+// subtaskRepoFindByAssigneeQuery runs the shared assignee containment query (user filter optional).
 func (r *ORMSubtaskRepository) subtaskRepoFindByAssigneeQuery(ctx context.Context, pattern, orderColumn string, userScoped bool) ([]*entities.Subtask, error) {
 	out := []*entities.Subtask{}
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		args := []any{pattern}
-		suffix := ` WHERE "assignees" LIKE '%' || $1::json || '%'`
+		suffix := ` WHERE "assignees"::jsonb @> $1::jsonb`
 		if userScoped && r.UserID != nil && *r.UserID != "" {
 			args = append(args, *r.UserID)
 			suffix += fmt.Sprintf(` AND "user_id" = $%d`, len(args))
@@ -620,7 +621,8 @@ func (r *ORMSubtaskRepository) CompleteSubtask(ctx context.Context, subtaskID, c
 	return completed, err
 }
 
-// GetSubtasksByAssignee is get_subtasks_by_assignee (no user filter, updated_at descending).
+// GetSubtasksByAssignee is get_subtasks_by_assignee (no user filter, updated_at descending);
+// it uses the same jsonb containment as FindByAssignee (deviation recorded in MIGRATION.md).
 func (r *ORMSubtaskRepository) GetSubtasksByAssignee(ctx context.Context, assignee string, limit *int) ([]*entities.Subtask, error) {
 	pattern, err := value_objects.PyJSONDumps([]any{assignee}, -1)
 	if err != nil {
@@ -628,7 +630,7 @@ func (r *ORMSubtaskRepository) GetSubtasksByAssignee(ctx context.Context, assign
 	}
 	out := []*entities.Subtask{}
 	err = r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		suffix := ` WHERE "assignees" LIKE '%' || $1::json || '%' ORDER BY "updated_at" DESC`
+		suffix := ` WHERE "assignees"::jsonb @> $1::jsonb ORDER BY "updated_at" DESC`
 		if limit != nil && *limit != 0 {
 			suffix += fmt.Sprintf(" LIMIT %d", *limit)
 		}
