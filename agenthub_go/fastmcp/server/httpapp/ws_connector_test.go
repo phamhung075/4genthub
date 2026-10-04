@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -167,6 +168,20 @@ func (e *streamEnv) restGet(t *testing.T, user, path string) (int, any) {
 	return resp.StatusCode, out
 }
 
+// wrapped is the list under key of a Python-shaped body {key: [...]}.
+func wrapped(t *testing.T, body any, key string) []any {
+	t.Helper()
+	obj, ok := body.(map[string]any)
+	if !ok || len(obj) != 1 {
+		t.Fatalf("body is a %T, want an object with only %q", body, key)
+	}
+	list, ok := obj[key].([]any)
+	if !ok {
+		t.Fatalf("body %v has no list under %q", obj, key)
+	}
+	return list
+}
+
 func (e *streamEnv) sessionList(t *testing.T, user string) []map[string]any {
 	t.Helper()
 	status, body := e.restGet(t, user, "/api/v2/sessions")
@@ -174,7 +189,7 @@ func (e *streamEnv) sessionList(t *testing.T, user string) []map[string]any {
 		t.Fatalf("list sessions = %d %v", status, body)
 	}
 	var out []map[string]any
-	for _, row := range body.([]any) {
+	for _, row := range wrapped(t, body, "sessions") {
 		out = append(out, row.(map[string]any))
 	}
 	return out
@@ -214,7 +229,7 @@ func TestSessionEventsLimitIsClampedTo1000(t *testing.T) {
 		if status != 200 {
 			t.Fatalf("events%s = %d %v", query, status, body)
 		}
-		return len(body.([]any))
+		return len(wrapped(t, body, "events"))
 	}
 	if got := count("?limit=5000"); got != 1000 {
 		t.Fatalf("limit=5000 returned %d events, want 1000", got)
@@ -253,7 +268,7 @@ func TestUserBCannotListReadReplayOrAppendToUserAsSession(t *testing.T) {
 	}
 	b.appendEvents("s1", event(map[string]any{"text": "from b"}))
 	status, body := env.restGet(t, "user-a", "/api/v2/sessions/"+sidA+"/events")
-	events := body.([]any)
+	events := wrapped(t, body, "events")
 	if status != 200 || len(events) != 1 || events[0].(map[string]any)["payload"].(map[string]any)["text"] != "secret" {
 		t.Fatalf("user A's events changed: %d %v", status, body)
 	}
@@ -284,7 +299,19 @@ func TestSessionEventsDefaultLimitIs500(t *testing.T) {
 		c.appendEvents("s1", batch...)
 	}
 	_, body := env.restGet(t, "user-1", "/api/v2/sessions/"+sid+"/events")
-	if got := len(body.([]any)); got != 500 {
+	if got := len(wrapped(t, body, "events")); got != 500 {
 		t.Fatalf("no limit returned %d events, want 500", got)
+	}
+}
+
+// Python answers {"sessions": [...]} and {"events": [...]}, also when empty.
+func TestSessionRoutesAnswerAnObjectEvenWhenEmpty(t *testing.T) {
+	env := newPGStreamEnv(t)
+	if _, body := env.restGet(t, "user-1", "/api/v2/sessions"); fmt.Sprint(wrapped(t, body, "sessions")) != "[]" {
+		t.Fatalf("empty list = %v", body)
+	}
+	sid := env.connector(t, "user-1").ingest("s1")
+	if _, body := env.restGet(t, "user-1", "/api/v2/sessions/"+sid+"/events"); fmt.Sprint(wrapped(t, body, "events")) != "[]" {
+		t.Fatalf("empty events = %v", body)
 	}
 }

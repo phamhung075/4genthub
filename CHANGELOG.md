@@ -20,6 +20,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written. A stored known role or `@` name is shown in its `@` form; any other stored name stays as stored. The subtask-create error is now the entity's one message ('An assignee is `@<seat_key>` or a known agent role.').
 
+**Session REST routes answer `{"sessions": [...]}` and `{"events": [...]}` (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go` and `http.go` (`writeKeyedSliceResult`): `GET /api/v2/sessions` and `GET /api/v2/sessions/{id}/events` return the object the Python routes return (also when empty) instead of a bare array. No caller of these routes exists in `agenthub-frontend`, in the Go code or in the connector.
+
 **Session events route default page is 500 events (A6)** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go`: `limit` defaults to 500 as in the Python route (it was 100). The page is still clamped to 1000.

@@ -13,7 +13,7 @@ func (a *App) registerSessionStreamRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET "+base, authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		res, err := routes.ListSessions(r.Context(), u, a.Sessions)
-		writeSliceResult(w, res, err)
+		writeKeyedSliceResult(w, "sessions", res, err)
 	}))
 
 	mux.HandleFunc("GET "+base+"/{id}/events", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
@@ -31,6 +31,6 @@ func (a *App) registerSessionStreamRoutes(mux *http.ServeMux) {
 			}
 		}
 		res, err := routes.GetSessionEvents(r.Context(), sessionID, afterSeq, limit, u, a.Sessions)
-		writeSliceResult(w, res, err)
+		writeKeyedSliceResult(w, "events", res, err)
 	}))
 }

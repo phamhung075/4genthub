@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,6 +55,17 @@ func writeResult(w http.ResponseWriter, body *entities.OrderedMap[any], err erro
 
 // writeSliceResult writes a list result or HTTPException status.
 func writeSliceResult(w http.ResponseWriter, list []*entities.OrderedMap[any], err error) {
+	writeSliceBody(w, "", list, err)
+}
+
+// writeKeyedSliceResult answers {key: [...]}, the shape of the Python routes that return
+// {"sessions": rows} or {"events": rows}.
+func writeKeyedSliceResult(w http.ResponseWriter, key string, list []*entities.OrderedMap[any], err error) {
+	writeSliceBody(w, key, list, err)
+}
+
+// writeSliceBody writes list as a JSON array, wrapped as {key: array} when key is not empty.
+func writeSliceBody(w http.ResponseWriter, key string, list []*entities.OrderedMap[any], err error) {
 	if err != nil {
 		if he, ok := err.(*auth.HTTPException); ok {
 			writeDetail(w, he.StatusCode, he.Detail)
@@ -69,7 +81,11 @@ func writeSliceResult(w http.ResponseWriter, list []*entities.OrderedMap[any], e
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("[" + strings.Join(out, ",") + "]"))
+	body := "[" + strings.Join(out, ",") + "]"
+	if key != "" {
+		body = "{" + strconv.Quote(key) + ":" + body + "}"
+	}
+	_, _ = w.Write([]byte(body))
 }
 
 // currentUser is Depends(get_current_user): HTTPBearer rejects a missing bearer header
