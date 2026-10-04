@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — TestMachineExpectedHashIntegration reruns on a used database
+
+- Changed: `TestMachineExpectedHashIntegration` (`seat_management/infrastructure/repositories/orm/integration_test.go`): the second tenant is `userID + "-other"` (was the constant `seat-sync-other-user`). With the constant, a rerun against the same Postgres failed with `duplicate key value violates unique constraint "uq_seats_room_seat_key"` because the previous run's room and seat for that tenant still existed.
+- Verified: on a throwaway Postgres 16 (`127.0.0.1:55433`, own cluster) the test failed on 3 of 3 reruns before the change and passed on 3 of 3 reruns after it; the other seat-management Postgres tests passed in the same runs. No assertion was changed.
+
 ## 2026-10-04 — switch accepts the agy runtime
 
 - Added: `test_switch_accepts_the_agy_runtime` (`test_openrig_seat_sync.py`): `switch room1 seat1 --runtime agy` keeps the seat's current model, exits 0, PUTs `{"runtime": "agy", "model": "old-model"}` and prints the `switched:` line. The first draft passed `--model ""`, which is pinned as invalid (exit 2) by `test_switch_usage_errors_exit_2`; another seat replaced it with this runtime-only form before commit.

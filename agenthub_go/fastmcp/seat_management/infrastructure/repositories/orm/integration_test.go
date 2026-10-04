@@ -562,7 +562,7 @@ func TestMachineExpectedHashIntegration(t *testing.T) {
 	}
 	sessions := database.NewSessionManager(&database.DatabaseConfig{Engine: &database.Engine{DB: db}})
 	userID := fmt.Sprintf("seat-sync-%d", time.Now().UnixNano())
-	const other = "seat-sync-other-user"
+	other := userID + "-other" // per run: rows from an earlier run would collide on uq_seats_room_seat_key
 
 	seatTypes, _ := NewORMSeatTypeRepository(sessions)
 	rooms, _ := NewORMRoomRepository(sessions)
