@@ -1,4 +1,25 @@
-"""Tenant isolation and ingest/view flow for streamed sessions."""
+"""Tenant isolation and ingest/view flow for streamed sessions.
+
+Run this file with ``--noconftest``:
+
+    python3 -m pytest --noconftest -p no:cacheprovider src/tests/session_stream/session_stream_test.py -q
+
+The repo's ``src/tests/conftest.py`` cannot be used for this file, for two reasons:
+
+1. Its autouse ``set_mcp_db_path_for_tests`` fixture calls ``initialize_database(None)``,
+   which retries a Postgres connection (it expects a database ``agenthub_test``) inside a
+   sleep loop; with no such server the run never reaches the first test. Observed here:
+   no output in 120s, with the stack parked in
+   ``task_management/infrastructure/database/connection_retry.py`` beneath
+   ``conftest.py:1675``.
+2. It replaces ``sys.modules["fastapi"]`` and ``fastapi.testclient`` with mocks, so the
+   real ``FastAPI``/``TestClient`` this file needs (its websocket tests) are not what the
+   imports return.
+
+This file needs neither: it builds an in-memory SQLite engine in the ``db`` fixture.
+Without the flag the run hangs before the first test; with the flag it passes
+(16 passed in ~2.4s).
+"""
 
 import pytest
 from fastapi import FastAPI

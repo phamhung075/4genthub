@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — B2: document `--noconftest` for the session_stream test (Python)
+
+- `src/tests/session_stream/session_stream_test.py`: header now states the exact command and why the repo conftest cannot be used (its autouse DB fixture retries a Postgres connect in a sleep loop before the first test, and it mocks `fastapi`/`fastapi.testclient`).
+- Measured: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/session_stream/session_stream_test.py -q` -> 16 passed in 2.43s. Without `--noconftest`: no output in 120s (parked in `connection_retry.py` under `conftest.py:1675`).
+- `src/tests/scripts` needs no flag: `python3 -m pytest -p no:cacheprovider src/tests/scripts -q` -> 170 passed in 43.50s with the normal conftest, 170 in 41.95s with `--noconftest`.
+- No test semantics changed; the only edit is the module docstring.
+
 ## 2026-10-04 — C4 two-user connector isolation end to end (Go)
 
 - Added `TestTwoUsersEachSeeOnlyTheirOwnSessions` (`server/httpapp/ws_connector_test.go`): two users each connect a connector, ingest their own session and append an event; each user's `GET /api/v2/sessions` holds exactly its own session id; the owner's `GET /api/v2/sessions/{id}/events` returns its event and the other user asking for that id gets 404; the owner's viewer replays the event and the other user's viewer on that session closes with 4004. It complements `TestUserBCannotListReadReplayOrAppendToUserAsSession`.
