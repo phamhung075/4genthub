@@ -2,6 +2,7 @@ import Cookies from 'js-cookie';
 import {
   taskApiV2,
   projectApiV2,
+  branchApiV2,
   isAuthenticated,
   getCurrentUserId
 } from '../../services/apiV2';
@@ -630,6 +631,30 @@ describe('apiV2.ts', () => {
           }
         );
         expect(result).toEqual(mockResponse);
+      });
+    });
+  });
+
+  describe('Branch API V2', () => {
+    describe('createBranch', () => {
+      it('posts to the trailing-slash collection route', async () => {
+        vi.mocked(global.fetch).mockResolvedValue(
+          new Response(JSON.stringify({ id: 'branch-1' }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+
+        await branchApiV2.createBranch('proj-1', { git_branch_name: 'feat/trailing-slash' });
+
+        const [url, init] = vi.mocked(global.fetch).mock.calls[0];
+        // The Go server mounts POST /api/v2/branches/. Dropping the trailing slash
+        // makes ServeMux answer 301 and fetch downgrades the POST to a GET, so the
+        // create silently becomes a list-branches call.
+        expect(url).toBe('http://localhost:8000/api/v2/branches/');
+        expect(init?.method).toBe('POST');
+        expect(String(init?.body)).toContain('project_id=proj-1');
+        expect(String(init?.body)).toContain('git_branch_name=feat%2Ftrailing-slash');
       });
     });
   });

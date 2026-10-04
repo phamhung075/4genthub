@@ -738,7 +738,10 @@ export const branchApiV2 = {
       formData.append('description', branchData.description);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches`, {
+    // The collection route is mounted with a trailing slash (POST /api/v2/branches/).
+    // Without it Go's ServeMux answers 301 and fetch downgrades POST to GET, so the
+    // request silently becomes a list-branches call.
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/`, {
       method: 'POST',
       headers: {
         ...getAuthHeaders(),

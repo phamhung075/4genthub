@@ -19,6 +19,18 @@
     created on the Seats page." for a user without seats, and "No seats found" for a search without a match.
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
+### Fixed
+- **Branch creation posts to the mounted collection route (trailing slash)** - 2026-10-04
+  - `src/services/apiV2.ts` `createBranch` posted to `POST /api/v2/branches` while the Go server mounts
+    `POST /api/v2/branches/` (`branch_routes.go`); `http.ServeMux` answered 301 and `fetch` downgraded the POST to a
+    GET, so creating a branch silently called the list route and the UI reported a success that never happened. The
+    URL keeps the trailing slash now.
+  - `src/tests/services/apiV2.test.ts` pins the exact URL (`Branch API V2`); it fails on the old URL and passes on the
+    new one.
+  - Audit: no other frontend POST/PUT/DELETE URL differs from its Go mount only by a trailing slash. Collections
+    mounted with one are `/api/v2/projects/`, `/api/v2/branches/`, `/api/v2/tasks/` and `/api/v2/tokens/`; their
+    callers already match, `createBranch` was the only offender.
+
 ### Removed
 - **The agent-management UI is gone; assignee pickers are seat-only (T7)** - 2026-10-04
   - Deleted the pages `src/pages/MyAgentsPage.tsx` and `src/pages/MarketplacePage.tsx`, the `src/components/agents/` directory (AgentConfigEditor, AgentList, AgentSharingDialog, SharedAgentPreview, index), `src/hooks/useAgentManagement.ts`, `src/types/agentTypes.ts` and `src/tests/useAgentManagement.test.tsx`, with their exports in `src/hooks/index.ts` and `src/types/index.ts` and the `/agents/marketplace` and `/agents/my-agents` routes in `src/App.tsx`.
