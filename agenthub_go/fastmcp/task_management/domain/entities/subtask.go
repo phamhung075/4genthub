@@ -44,11 +44,20 @@ func NewSubtask(st Subtask) (*Subtask, error) {
 }
 
 // RestoreSubtask rebuilds a subtask from stored data: it applies the defaults and
-// validates the entity but does not judge the stored assignees. A row written under an
+// validates the entity but does not reject stored assignees. A known role or '@' name is
+// shown in its '@' form, any other stored name stays as stored. A row written under an
 // older assignee rule must still load, or one such row would fail every list that
 // contains it; the rule applies to what is written (NewSubtask, UpdateAssignees).
 func RestoreSubtask(st Subtask) (*Subtask, error) {
 	s := st
+	if s.Assignees != nil {
+		s.Assignees = append([]string{}, s.Assignees...)
+		for i, a := range s.Assignees {
+			if v, known := normalizeAssignee(value_objects.PyStrip(a)); known {
+				s.Assignees[i] = v
+			}
+		}
+	}
 	if s.Status == nil {
 		todo := mustTaskStatus("todo")
 		s.Status = &todo

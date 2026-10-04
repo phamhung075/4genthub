@@ -82,3 +82,26 @@ func TestSubtaskAddAssigneeUsesTheOneRule(t *testing.T) {
 		t.Fatalf("a refused add must change nothing: %v", st.Assignees)
 	}
 }
+
+// What a stored row shows: a known role or '@' name in its '@' form, any other stored
+// name as stored, and no assignees as none.
+func TestRestoreSubtaskAssigneeForms(t *testing.T) {
+	parent := value_objects.GenerateNewTaskId()
+	cases := []struct{ in, want []string }{
+		{[]string{"go-dev"}, []string{"go-dev"}},
+		{[]string{"custom", "@lead"}, []string{"custom", "@lead"}},
+		{[]string{"@go-dev"}, []string{"@go-dev"}},
+		{[]string{"coding-agent"}, []string{"@coding-agent"}},
+		{nil, []string{}},
+		{[]string{}, []string{}},
+	}
+	for _, c := range cases {
+		got, err := RestoreSubtask(Subtask{Title: "s", Description: "d", ParentTaskID: &parent, Assignees: c.in})
+		if err != nil {
+			t.Fatalf("%v: %v", c.in, err)
+		}
+		if strings.Join(got.Assignees, ",") != strings.Join(c.want, ",") || len(got.Assignees) != len(c.want) {
+			t.Errorf("%v restored as %v, want %v", c.in, got.Assignees, c.want)
+		}
+	}
+}

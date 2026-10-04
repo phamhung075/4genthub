@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -199,7 +198,7 @@ func TestCreateSubtaskRefusesABareUnknownAssignee(t *testing.T) {
 	if f.operation != "create_subtask" || f.errorCode != ErrorCodeValidation {
 		t.Fatalf("op=%q code=%q msg=%q", f.operation, f.errorCode, f.errMsg)
 	}
-	if !strings.Contains(f.errMsg, "Invalid assignees: ['go-dev']") {
+	if f.errMsg != "Invalid assignees: ['go-dev']. An assignee is '@<seat_key>' or a known agent role." {
 		t.Errorf("msg=%q", f.errMsg)
 	}
 	if v, _ := f.metadata.Get("hint"); v != "Provide '@<seat_key>' or a known agent role" {

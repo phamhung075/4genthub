@@ -5,6 +5,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-04 — D6e hydration of old-style assignees (Go)
 
 - `TestSubtaskRepositoryLoadsAStoredBareAssigneeName` (real Postgres): a stored `["go-dev"]` row loads by id and in `FindByParentTaskID` next to a normal row. Mutation: hydration back to `NewSubtask` fails it (`Invalid assignees: ['go-dev']` on find); without `AGENTHUB_TEST_PG_URL` it skips.
+- `TestRestoreSubtaskAssigneeForms`: `[go-dev]`, `[custom @lead]`, `[@go-dev]` stay; `[coding-agent]` shows `[@coding-agent]`; none gives `[]` (mutation: no `@` normalisation fails it).
 - `TestRestoreSubtaskKeepsAStoredBareNameThatNewSubtaskRefuses`, `TestSubtaskAddAssigneeUsesTheOneRule`, `TestTaskAddAssigneeUsesTheOneRule` (a refused add changes nothing) and `TestCreateSubtaskRefusesABareUnknownAssignee` (MCP subtask create). Mutations (each bypass of the rule at that call site, restored): `Task.AddAssignee`, `Subtask.AddAssignee`, `NewSubtask`, MCP subtask create all fail their test.
 
 ## 2026-10-04 — Session stream handler tests on a real Postgres (Task A4/A6/A7, Go)

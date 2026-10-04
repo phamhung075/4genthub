@@ -18,7 +18,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 **Stored subtasks with an old-style assignee load again (D6e)** (2026-10-04)
 
-- `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written.
+- `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written. A stored known role or `@` name is shown in its `@` form; any other stored name stays as stored. The subtask-create error is now the entity's one message ('An assignee is `@<seat_key>` or a known agent role.').
 
 **Session events route answers 404 for an unknown or foreign session (A6)** (2026-10-04)
 
