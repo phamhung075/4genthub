@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **Removed six unused `agentApiV2` functions** - 2026-10-04
+  - `getAgentMetadata`, `assignAgentToBranch`, `unassignAgentFromBranch`, `getBranchAgentAssignment`,
+    `getProjectAgentAssignments` and `getAgentCapabilities` in `src/services/apiV2.ts` had no caller in `src`, and
+    their mock entries in `src/tests/api.test.ts` were the only reference. `getAgentsMetadata` and `callAgent` stay.
+  - `getAvailableAgents` (`src/api.ts`) is deliberately left as is: the metadata endpoint serves only 4 static agents
+    and the agent library is being retired, so no registry is a valid assignee source yet.
 - **badge tests assert the palette the Badge uses** - 2026-10-04
   - `src/tests/components/ui/badge.test.tsx` (13 of 24 failing) expected shadcn tokens (`bg-primary`,
     `text-secondary-foreground`, `border-input`), but `src/components/ui/badge.tsx` uses explicit palette classes
@@ -18,7 +24,10 @@
     value otherwise). Eight tested `listRules`, `createRule`, `updateRule`, `deleteRule`, `validateRule`
     (5) and `checkHealth` (3); none is in `src/api.ts` (removed in `4f836134`, no caller in `src`; the only
     `checkHealth` is a local function in `HealthCheck.tsx`), so those two blocks are removed.
-  - Not fixed here: the 8 `getAvailableAgents` tests still fail, correctly. See the open gap below.
+  - Not fixed here: the 8 `getAvailableAgents` tests still fail, on purpose (see the open gap below). They assert
+    `toHaveLength(32)` plus category lists (development, testing/QA, architecture/design, project planning,
+    security/compliance, marketing/growth, research/analysis) with `@`-prefixed names such as
+    `@master-orchestrator-agent` and `@brainjs-ml-agent`, a third list that matches neither the code nor the library.
   - Open gap: `getAvailableAgents` returns a hard-coded list of 42 names (its comment says 32). 15 are not in the
     agent library (for example `swarm-scaler-agent`, `seo-sem-agent`) and 4 library agents are missing
     (`creative-ideation-agent`, `llm-ai-agents-research`, `ml-specialist-agent`, `ui-specialist-agent`), and

@@ -78,12 +78,6 @@ vi.mock('../services/apiV2', () => ({
   },
   agentApiV2: {
     getAgentsMetadata: vi.fn(),
-    getAgentMetadata: vi.fn(),
-    assignAgentToBranch: vi.fn(),
-    unassignAgentFromBranch: vi.fn(),
-    getBranchAgentAssignment: vi.fn(),
-    getProjectAgentAssignments: vi.fn(),
-    getAgentCapabilities: vi.fn(),
     callAgent: vi.fn(),
   },
   connectionApiV2: {
