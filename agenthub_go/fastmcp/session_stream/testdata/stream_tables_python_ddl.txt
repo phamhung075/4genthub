@@ -1,0 +1,30 @@
+== table agent_sessions
+col id | character varying | 36 | NO | None | 1
+col user_id | character varying | 64 | NO | None | 2
+col connector_id | character varying | 64 | NO | None | 3
+col session_key | character varying | 255 | NO | None | 4
+col name | character varying | 255 | NO | None | 5
+col project | character varying | 255 | YES | None | 6
+col status | character varying | 20 | NO | None | 7
+col last_seq | integer | None | NO | None | 8
+col created_at | timestamp without time zone | None | NO | None | 9
+col last_seen | timestamp without time zone | None | NO | None | 10
+con agent_sessions_pkey | PRIMARY KEY (id)
+con uq_agent_sessions_key | UNIQUE (user_id, connector_id, session_key)
+idx agent_sessions_pkey | CREATE UNIQUE INDEX agent_sessions_pkey ON public.agent_sessions USING btree (id)
+idx ix_agent_sessions_user_id | CREATE INDEX ix_agent_sessions_user_id ON public.agent_sessions USING btree (user_id)
+idx uq_agent_sessions_key | CREATE UNIQUE INDEX uq_agent_sessions_key ON public.agent_sessions USING btree (user_id, connector_id, session_key)
+== table agent_session_events
+col id | integer | None | NO | nextval('agent_session_events_id_seq'::regclass) | 1
+col session_id | character varying | 36 | NO | None | 2
+col user_id | character varying | 64 | NO | None | 3
+col seq | integer | None | NO | None | 4
+col type | character varying | 32 | NO | None | 5
+col payload | json | None | NO | None | 6
+col ts | timestamp without time zone | None | NO | None | 7
+con agent_session_events_pkey | PRIMARY KEY (id)
+con agent_session_events_session_id_fkey | FOREIGN KEY (session_id) REFERENCES agent_sessions(id) ON DELETE CASCADE
+con uq_agent_session_events_seq | UNIQUE (session_id, seq)
+idx agent_session_events_pkey | CREATE UNIQUE INDEX agent_session_events_pkey ON public.agent_session_events USING btree (id)
+idx idx_agent_session_events_user_session | CREATE INDEX idx_agent_session_events_user_session ON public.agent_session_events USING btree (user_id, session_id, seq)
+idx uq_agent_session_events_seq | CREATE UNIQUE INDEX uq_agent_session_events_seq ON public.agent_session_events USING btree (session_id, seq)

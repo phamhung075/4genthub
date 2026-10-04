@@ -68,6 +68,19 @@ func TestMarkOfflineWithoutSessions(t *testing.T) {
 	}
 }
 
+// newTestSessions creates an empty database on the Postgres named by AGENTHUB_TEST_PG_URL
+// (an admin URL such as postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable),
+// creates the schema in it and drops it when the test ends; without the variable the
+// test skips. A throwaway server needs no install: with the binaries in
+// ~/.cache/agenthub-testpg/bin (PostgreSQL 16.4),
+//
+//	initdb -D $DIR -U postgres --auth=trust -E UTF8 --locale=C
+//	printf "listen_addresses='127.0.0.1'\nport=54329\nunix_socket_directories=''\nfsync=off\n" >> $DIR/postgresql.conf
+//	pg_ctl -D $DIR -l $DIR/pg.log -w start
+//	cd agenthub_go && AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' \
+//	  go test -count=1 ./fastmcp/session_stream/
+//
+// and `pg_ctl -D $DIR stop` afterwards.
 func newTestSessions(t *testing.T) *database.SessionManager {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")

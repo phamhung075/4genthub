@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — session_stream on a real Postgres (Task PG, Go)
+
+- A throwaway Postgres 16.4 runs from the binaries already on this box (`~/.cache/agenthub-testpg/bin`: `initdb`, `pg_ctl`, `postgres`; no install, no existing database touched). Recipe, also in the comment above `newTestSessions` in `agenthub_go/fastmcp/session_stream/repository_test.go`: `initdb -D $DIR -U postgres --auth=trust -E UTF8 --locale=C`, add `listen_addresses='127.0.0.1'`, `port=54329`, `unix_socket_directories=''`, `fsync=off` to `$DIR/postgresql.conf`, `pg_ctl -D $DIR -l $DIR/pg.log -w start`, then from `agenthub_go`: `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 -v ./fastmcp/session_stream/`.
+- Result: `TestRepositoryPostgres` PASS (it skipped before; the audit's A1/A2 gaps: server-assigned seq, 200-event batch, 64K payload truncation, cross-user get/list, MarkOffline, upsert id). 10 tests in the package, 0 skipped.
+- Added `session_stream/schema_test.go` (`TestStreamTablesMatchThePythonSchema`) with the golden file `testdata/stream_tables_python_ddl.txt`: the columns (type, length, nullability, default), constraints and indexes of `agent_sessions` and `agent_session_events` as Python's `Base.metadata.create_all` creates them (sqlalchemy 2.0.44, `agenthub_main/venv`, same Postgres), printed with `information_schema.columns`, `pg_get_constraintdef` and `pg_indexes`. The Go schema (`CreateTables`) produces the identical text: no diff (30 lines each; dumps `ddl_go.txt` and `ddl_python.txt` were `diff`ed before the golden file was made). `init_schema_postgresql.sql` (generated 2025-11-08) does not contain the two tables, so Python's ORM was the reference. Not checked: SQLite.
+- Mutation checks (golden file restored): dropping `ON DELETE CASCADE` from the golden file, and changing `name` from 255 to 254, each fail the test.
+- Also unlocked by the same server (not run for this task): the other `AGENTHUB_TEST_PG_URL` tests in `fastmcp/`, `task_management/infrastructure/{database,repositories}`, `application/services` and `auth/infrastructure/repositories`.
+
 ## 2026-10-04 — MCP create assignee rule (Task D6c, Go)
 
 - Added `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_assignees_test.go` (5 tests: a seat key with `@` is kept, a bare known role gets the prefix, a bare name that is no role is rejected with the name in the hint, whitespace is stripped, blank assignees are rejected) and `TestValidateAssigneeListAcceptsSeatKeysAndRejectsBareUnknownNames` in `domain/entities/task_test.go`.
