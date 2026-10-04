@@ -124,7 +124,3 @@ func (f *ServiceAdapterFactory) GetDocumentValidator() interfaces.IDocumentValid
 func (f *ServiceAdapterFactory) GetPathResolver() interfaces.IPathResolver {
 	return &PlaceholderPathResolver{}
 }
-
-func (f *ServiceAdapterFactory) GetAgentDocGenerator() interfaces.IAgentDocGenerator {
-	return &PlaceholderAgentDocGenerator{}
-}

@@ -12,15 +12,6 @@ type IPathResolver interface {
 	JoinPaths(paths ...string) string
 }
 
-// IAgentDocGenerator generates agent documentation.
-type IAgentDocGenerator interface {
-	GenerateDocumentation(agentID string, agentConfig map[string]any) (string, error)
-	GenerateAPIDocs(agentID string) (map[string]any, error)
-	ValidateAgentConfig(config map[string]any) bool
-	GetAgentCapabilities(agentID string) []string
-	FormatAgentResponse(response map[string]any) string
-}
-
 // IUtilityService offers general-purpose helpers.
 type IUtilityService interface {
 	GenerateUUID() string

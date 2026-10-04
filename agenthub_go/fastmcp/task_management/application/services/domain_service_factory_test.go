@@ -37,7 +37,6 @@ type zpDomFakeValidationService struct {
 }
 type zpDomFakeDocumentValidator struct{ interfaces.IDocumentValidator }
 type zpDomFakePathResolver struct{ interfaces.IPathResolver }
-type zpDomFakeAgentDocGenerator struct{ interfaces.IAgentDocGenerator }
 type zpDomFakeHintManager struct{}
 
 // zpDomResetServices restores the process-wide state between tests (the Python class
@@ -58,7 +57,6 @@ func zpDomResetServices() {
 	zpDomValidationService = nil
 	zpDomDocumentValidator = nil
 	zpDomPathResolver = nil
-	zpDomAgentDocGenerator = nil
 	zpDomHintManager = nil
 }
 
@@ -188,7 +186,6 @@ func TestDomainServiceFactory_InjectAndGetAll(t *testing.T) {
 	validationService := &zpDomFakeValidationService{}
 	documentValidator := &zpDomFakeDocumentValidator{}
 	pathResolver := &zpDomFakePathResolver{}
-	agentDocGenerator := &zpDomFakeAgentDocGenerator{}
 	hintManager := &zpDomFakeHintManager{}
 
 	f.InjectServices(map[string]any{
@@ -207,7 +204,6 @@ func TestDomainServiceFactory_InjectAndGetAll(t *testing.T) {
 		"validation_service":            validationService,
 		"document_validator":            documentValidator,
 		"path_resolver":                 pathResolver,
-		"agent_doc_generator":           agentDocGenerator,
 		"hint_manager":                  hintManager,
 	})
 
@@ -255,9 +251,6 @@ func TestDomainServiceFactory_InjectAndGetAll(t *testing.T) {
 	}
 	if got := f.GetPathResolver(); got != interfaces.IPathResolver(pathResolver) {
 		t.Errorf("GetPathResolver mismatch: %v", got)
-	}
-	if got := f.GetAgentDocGenerator(); got != interfaces.IAgentDocGenerator(agentDocGenerator) {
-		t.Errorf("GetAgentDocGenerator mismatch: %v", got)
 	}
 	if got := f.GetHintManager(); got != any(hintManager) {
 		t.Errorf("GetHintManager mismatch: %v", got)

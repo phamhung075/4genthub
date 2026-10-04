@@ -38,7 +38,6 @@ var (
 	zpDomValidationService          interfaces.IValidationService
 	zpDomDocumentValidator          interfaces.IDocumentValidator
 	zpDomPathResolver               interfaces.IPathResolver
-	zpDomAgentDocGenerator          interfaces.IAgentDocGenerator
 	// Python's HintManager (from .hint_manager) is not ported; the value is held as
 	// any and the lazy fallback installs a minimal marker (see lazyInitHintManager).
 	zpDomHintManager any
@@ -64,7 +63,6 @@ func (DomainServiceFactory) InjectServices(services map[string]any) {
 	zpDomInject(services, "validation_service", &zpDomValidationService)
 	zpDomInject(services, "document_validator", &zpDomDocumentValidator)
 	zpDomInject(services, "path_resolver", &zpDomPathResolver)
-	zpDomInject(services, "agent_doc_generator", &zpDomAgentDocGenerator)
 	zpDomInject(services, "hint_manager", &zpDomHintManager)
 }
 
@@ -206,14 +204,6 @@ func (DomainServiceFactory) GetPathResolver() interfaces.IPathResolver {
 	return zpDomPathResolver
 }
 
-// GetAgentDocGenerator gets the agent doc generator.
-func (DomainServiceFactory) GetAgentDocGenerator() interfaces.IAgentDocGenerator {
-	if zpDomAgentDocGenerator == nil {
-		DomainServiceFactory{}.lazyInitServices()
-	}
-	return zpDomAgentDocGenerator
-}
-
 // GetHintManager gets the hint manager. HintManager is not part of the Go port yet,
 // so the result is the minimal fallback marker (claiming otherwise would be a lie).
 func (DomainServiceFactory) GetHintManager() any {
@@ -247,7 +237,6 @@ func (DomainServiceFactory) lazyInitServices() {
 	zpDomValidationService = f.GetValidationService()
 	zpDomDocumentValidator = f.GetDocumentValidator()
 	zpDomPathResolver = f.GetPathResolver()
-	zpDomAgentDocGenerator = f.GetAgentDocGenerator()
 }
 
 // lazyInitHintManager ports _lazy_init_hint_manager. Python imports

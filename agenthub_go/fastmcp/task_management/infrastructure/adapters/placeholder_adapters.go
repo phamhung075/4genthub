@@ -355,24 +355,3 @@ func (r *PlaceholderPathResolver) IsFile(path string) bool {
 func (r *PlaceholderPathResolver) GetParentDirectory(path string) string { return filepath.Dir(path) }
 
 func (r *PlaceholderPathResolver) JoinPaths(paths ...string) string { return filepath.Join(paths...) }
-
-// PlaceholderAgentDocGenerator is PlaceholderAgentDocGenerator.
-type PlaceholderAgentDocGenerator struct{}
-
-func (g *PlaceholderAgentDocGenerator) GenerateDocumentation(agentID string, agentConfig map[string]any) (string, error) {
-	return "Documentation for agent " + agentID, nil
-}
-
-func (g *PlaceholderAgentDocGenerator) GenerateAPIDocs(agentID string) (map[string]any, error) {
-	return map[string]any{"agent_id": agentID, "api_version": "1.0", "endpoints": []any{}}, nil
-}
-
-func (g *PlaceholderAgentDocGenerator) ValidateAgentConfig(config map[string]any) bool { return true }
-
-func (g *PlaceholderAgentDocGenerator) GetAgentCapabilities(agentID string) []string {
-	return []string{"basic_capability"}
-}
-
-func (g *PlaceholderAgentDocGenerator) FormatAgentResponse(response map[string]any) string {
-	return value_objects.PyStr(response)
-}

@@ -9,7 +9,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/exceptions"
 	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
-	"agenthub/fastmcp/task_management/infrastructure/services"
 )
 
 // GetTaskContextService is the sync UnifiedContextFacade surface used by
@@ -37,7 +36,7 @@ func NewGetTaskUseCase(taskRepository repositories.TaskRepository,
 	}
 }
 
-// Execute retrieves a task, generating agent docs and optionally context data.
+// Execute retrieves a task and optionally context data.
 func (uc *GetTaskUseCase) Execute(ctx context.Context, taskID string, generateRules bool,
 	forceFullGeneration bool, includeContext bool) (*dtostask.TaskResponse, error) {
 
@@ -51,10 +50,6 @@ func (uc *GetTaskUseCase) Execute(ctx context.Context, taskID string, generateRu
 	}
 	if task == nil {
 		return nil, exceptions.NewTaskNotFoundError(fmt.Sprintf("Task with ID %s not found", taskID))
-	}
-
-	if generateRules {
-		services.GenerateDocsForAssignees(task.Assignees, forceFullGeneration)
 	}
 
 	var contextData *entities.OrderedMap[any]

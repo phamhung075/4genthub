@@ -9,7 +9,6 @@ import (
 
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
-	infraservices "agenthub/fastmcp/task_management/infrastructure/services"
 )
 
 // NextTaskResponse is the response containing the next item to work on. Its
@@ -156,10 +155,6 @@ func (uc *NextTaskUseCase) Execute(ctx context.Context, assignee *string, projec
 		taskID := nextTaskIDString(task)
 
 		if nextSubtask != nil {
-			infraservices.GenerateDocsForAssignees(task.Assignees, false)
-			if assignees, ok := nextSubtask["assignees"]; ok && value_objects.PyTruthy(assignees) {
-				infraservices.GenerateDocsForAssignees(useCasePyStringList(assignees), false)
-			}
 			nextItem := entities.NewOrderedMap[any]()
 			nextItem.Set("type", "subtask")
 			taskDict, err := uc.taskToDict(ctx, task, includeContext)
@@ -173,8 +168,6 @@ func (uc *NextTaskUseCase) Execute(ctx context.Context, assignee *string, projec
 			return &NextTaskResponse{HasNext: true, NextItem: nextItem,
 				Message: fmt.Sprintf("Next action: Work on subtask '%s' in task '%s'", title, task.Title)}, nil
 		}
-
-		infraservices.GenerateDocsForAssignees(task.Assignees, false)
 
 		var contextInfo *entities.OrderedMap[any]
 		if shouldGenerateContextInfo(task) {

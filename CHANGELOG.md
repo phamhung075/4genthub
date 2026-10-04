@@ -97,6 +97,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**The retired agent system is gone from the Python backend and the Go doc generator (T8)** (2026-10-04)
+
+- Go: deleted `fastmcp/task_management/infrastructure/services/agent_doc_generator.go` (+ test) and the `IAgentDocGenerator` interface, `PlaceholderAgentDocGenerator` and both `GetAgentDocGenerator` accessors with their factory wiring; removed the `GenerateDocsForAssignees` calls in `get_task.go` and `next_task.go`; the `stringList` helper moved to `performance_cache_manager.go` (its only remaining caller is `decodeTags`).
+- Python (`agenthub_main`): deleted `agent-library/**`, the `fastmcp/agent_management` package, the Python `agent_doc_generator.py`, the agent scripts (`populate_agent_templates.py`, `verify_agents.py`, `create_agent_tables.py`, `recreate_agent_tables.py`, `update_agent_metadata.py`) and the agent-management test trees; removed the router mounts, the `call_agent` tool toggle, the YAML readers in `agent_roles.py`, `get_cursor_agent_dir` and the `AGENT_LIBRARY_DIR_PATH` references; `init_schema_postgresql.sql` no longer declares the agent tables.
+- The `call_agent` trace itself landed in `9a657d92`, committed by another actor during this work; it is T8 scope and is adopted here, not authored here.
+- Verification: Go `gofmt` empty, `go vet ./...` and `go build ./...` clean, and the touched packages' tests pass; `agenthub_main` `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 166 passed.
+
 **The old agent system is gone from Go; the two tables leave the ORM (T7, Go half)** (2026-10-04)
 
 - Deleted the `/api/v2/openrig/agents` route (`server/httpapp/openrig_mount.go`) and the `/api/v2/agent-management/*` router (`server/httpapp/agent_mgmt_mount.go`) with its mount calls in `app.go`; deleted the whole `fastmcp/agent_management` package (agent-template and user-agent-instance entities, value objects, repositories, ORM, services, facade, REST routes/DTOs and their tests) and `scripts/openrig_sync.py`.

@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Retired agent system removed (T8)
+
+- Go: deleted `agent_doc_generator_test.go`; updated `service_adapter_factory_test.go` and `domain_service_factory_test.go` for the removed generator. `go test -count=1` for adapters / infrastructure-services / application-services / use-cases -> ok; `gofmt -l` empty; `go vet ./...` and `go build ./...` clean.
+- Python: deleted the agent-management test trees (`src/tests/agent_management`, `src/tests/e2e/agent_management`, `src/tests/security/agent_management`, `src/tests/unit/.../agent_doc_generator_test.py`) and pruned the `generate_docs_for_assignees` patches/assertions in `next_task_test.py` and `test_get_task.py`.
+- Command: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 166 passed, 4 warnings.
+
 ## 2026-10-04 — Python call_agent removal (principal session)
 
 - Removed with the subject: `agent_management/interface/test_call_agent_mcp_tool.py`; the whole `tests/performance/agent_management/` package (k6 + locust `call_agent` load tests and their README); `agent_management/application/test_orphaned_agent_facade.py` (its entire subject was the `get_agent_for_call` response); the `TestGetAgentForCall` class in `test_agent_management_facade.py`; the two call-specific tests in `agent_management/integration/test_agent_instantiation_flow.py`. `test_orphaned_agent_workflow_e2e.py` lost STEP 6 (the call-response orphan flag) and keeps the marketplace/import flow; `test_agent_customization_e2e.py` exercises `get_or_create_instance` directly (the mechanism it already used).

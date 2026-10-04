@@ -711,6 +711,24 @@ func cacheEntryFromOrderedMap(d *entities.OrderedMap[any]) *CacheEntry {
 	return entry
 }
 
+// stringList converts a Python list value into []string. It was previously defined in
+// the removed agent_doc_generator.go; decodeTags is now its only consumer.
+func stringList(v any) []string {
+	switch x := v.(type) {
+	case []any:
+		out := make([]string, 0, len(x))
+		for _, item := range x {
+			out = append(out, value_objects.PyStr(item))
+		}
+		return out
+	case []string:
+		return x
+	case *entities.OrderedMap[any]:
+		return x.Keys()
+	}
+	return nil
+}
+
 func decodeTags(v any) []string {
 	out := stringList(v)
 	if out == nil {

@@ -56,9 +56,6 @@ func TestServiceAdapterFactoryGetters(t *testing.T) {
 	if factory.GetPathResolver() == nil {
 		t.Fatal("expected non-nil path resolver")
 	}
-	if factory.GetAgentDocGenerator() == nil {
-		t.Fatal("expected non-nil agent doc generator")
-	}
 }
 
 func TestRepositoryFactoryAdapter(t *testing.T) {
