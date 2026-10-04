@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — session viewer auth gate and after_seq (Task A5b, Go)
+
+- Added to `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerRefusesAConnectionWithoutAValidToken` (no token and bad token: HTTP 403, no upgrade, the store is never read, no hub subscription) and `TestSessionViewerAfterSeqThatIsNotAnIntegerReplaysFromTheStart` (after_seq `2` skips, `abc`, empty and `%205` count as 0; Python's `int(' 5')` reads 5, Go keeps `strconv.Atoi`).
+- Mutation check (reverted): the token check replaced by `if false` fails both auth cases (the 7 earlier tests stayed green, as the reviewer found).
+- Result (from `agenthub_go`): `gofmt -l fastmcp/server` empty; `go vet ./fastmcp/server/httpapp/` clean; `go test -count=1 ./fastmcp/server/... ./fastmcp/session_stream/` ok; `go test -count=2 -race -run TestSessionViewer ./fastmcp/server/httpapp/` ok.
+
 ## 2026-10-04 — assignee picker failure and empty states (Task D6b, frontend)
 
 - Added `src/tests/components/{AgentAssignmentDialog,TaskEditDialog,LazyTaskListAgentLoading}.test.tsx` (4 + 4 + 5 tests) and 2 tests in `SubtaskEditDialog.test.tsx`: seats listed, user without seats gets the Seats-page hint, a failed load shows an alert and not the empty text, search without a match, a seat failure keeps the project agents, the next load retries, and a loaded state is not fetched again.

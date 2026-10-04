@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -81,14 +82,21 @@ func (s *viewerStore) ListEvents(_ context.Context, userID, sessionID string, af
 
 func (s *viewerStore) openGate() { s.gateOnce.Do(func() { close(s.gate) }) }
 
-// dialViewer starts the viewer handler on a test server and connects to sessionID.
-// Reads on the returned connection fail after 5s instead of hanging.
-func dialViewer(t *testing.T, store sessionViewerStore, sessionID, query string) (net.Conn, *bufio.Reader) {
+// viewerServer serves the viewer handler over store.
+func viewerServer(t *testing.T, store sessionViewerStore) *httptest.Server {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /ws/sessions/{id}", handleSessionViewer(store))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
+	return server
+}
+
+// dialViewer starts the viewer handler on a test server and connects to sessionID
+// with a valid token. Reads on the returned connection fail after 5s instead of hanging.
+func dialViewer(t *testing.T, store sessionViewerStore, sessionID, query string) (net.Conn, *bufio.Reader) {
+	t.Helper()
+	server := viewerServer(t, store)
 	token := wsTestToken(t, nil)
 	conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+sessionID+"?token="+url.QueryEscape(token)+query)
 	t.Cleanup(func() { _ = conn.Close() })
@@ -251,6 +259,68 @@ func TestSessionViewerReplaysInPagesOf500(t *testing.T) {
 				if l != 500 {
 					t.Fatalf("page limit %d, want 500", l)
 				}
+			}
+		})
+	}
+}
+
+func TestSessionViewerRefusesAConnectionWithoutAValidToken(t *testing.T) {
+	// Configure the token validator, as for the other tests; the callers below send no valid token.
+	_ = wsTestToken(t, nil)
+	for name, query := range map[string]string{
+		"no token":  "",
+		"bad token": "?token=not-a-token",
+	} {
+		t.Run(name, func(t *testing.T) {
+			store := &countingStore{viewerStore: newViewerStore(1)}
+			server := viewerServer(t, store)
+
+			status := wsTestDialStatus(t, server.URL, "/ws/sessions/"+viewerSID+query)
+
+			if status != http.StatusForbidden {
+				t.Fatalf("status = %d, want 403 and no upgrade", status)
+			}
+			if store.reads() != 0 {
+				t.Fatalf("the store was read %d times for an unauthenticated caller", store.reads())
+			}
+			if n := session_stream.Hub.Subscribers(viewerSID); n != 0 {
+				t.Fatalf("%d hub subscriptions for an unauthenticated caller", n)
+			}
+		})
+	}
+}
+
+// countingStore counts the reads that reach the store.
+type countingStore struct {
+	*viewerStore
+	n int32
+}
+
+func (c *countingStore) GetSessionForUser(ctx context.Context, userID, sessionID string) (*entities.OrderedMap[any], error) {
+	atomic.AddInt32(&c.n, 1)
+	return c.viewerStore.GetSessionForUser(ctx, userID, sessionID)
+}
+
+func (c *countingStore) reads() int { return int(atomic.LoadInt32(&c.n)) }
+
+// An after_seq that is not a plain integer counts as 0, so the whole session is
+// replayed. Python's int() also accepts ' 5'; Go keeps strconv.Atoi, which does not.
+func TestSessionViewerAfterSeqThatIsNotAnIntegerReplaysFromTheStart(t *testing.T) {
+	for _, tc := range []struct {
+		query    string
+		firstSeq int
+		whatItIs string
+	}{
+		{"&after_seq=2", 3, "an integer skips what the client has"},
+		{"&after_seq=abc", 1, "text counts as 0"},
+		{"&after_seq=%205", 1, "a number with a space counts as 0 (Python reads 5)"},
+		{"&after_seq=", 1, "an empty value counts as 0"},
+	} {
+		t.Run(tc.whatItIs, func(t *testing.T) {
+			_, br := dialViewer(t, newViewerStore(3), viewerSID, tc.query)
+
+			if got := readEventSeq(t, br); got != tc.firstSeq {
+				t.Fatalf("first replayed seq = %d, want %d", got, tc.firstSeq)
 			}
 		})
 	}
