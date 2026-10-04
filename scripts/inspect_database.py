@@ -140,10 +140,6 @@ def compare_with_orm():
     print(f"{'=' * 80}\n")
 
     try:
-        from fastmcp.agent_management.domain.entities import (
-            SharedAgentInstance,
-            UserAgentInstance,
-        )
         from fastmcp.task_management.domain.entities import (
             Context,
             GitBranch,
@@ -158,8 +154,6 @@ def compare_with_orm():
             GitBranch,
             Subtask,
             Context,
-            UserAgentInstance,
-            SharedAgentInstance,
         ]
 
         for model in orm_models:

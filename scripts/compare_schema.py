@@ -107,24 +107,6 @@ def get_orm_tables():
         print(f"Warning loading task management models: {str(e)}")
 
     try:
-        # Import from agent management models
-        from fastmcp.agent_management.infrastructure.database.models import (
-            AgentImportHistoryORM,
-            AgentTemplateORM,
-            UserAgentInstanceORM,
-        )
-
-        orm_tables.update(
-            {
-                "user_agent_instances": UserAgentInstanceORM.__table__,
-                "agent_templates": AgentTemplateORM.__table__,
-                "agent_import_history": AgentImportHistoryORM.__table__,
-            }
-        )
-    except Exception as e:
-        print(f"Warning loading agent management models: {str(e)}")
-
-    try:
         # Import from auth models
         from fastmcp.auth.infrastructure.database.models import User
 
