@@ -29,15 +29,15 @@
     collection; a fresh QueryClient per test still isolates the cache between tests.
   - Production is unaffected: the app's QueryClient (`src/index.tsx`) and the query hooks use `gcTime` 10 minutes and
     their entries are observed while mounted, so no delayed WebSocket write races collection there.
-- **Third test QueryClient helper: `gcTime: 0` kept, with the reason recorded** - 2026-10-05
-  - `src/tests/query-utils.tsx` (consumers: `useBranchSummaries.test.tsx`, `useTaskData.test.tsx`) keeps `gcTime: 0`.
-    Switching it to `Infinity` (correct for the other two wrappers) breaks `useTaskData.test.tsx` "should load full task
-    on demand": the task-list `queryFn` seeds `['task', id]` with a summary, and `loadFullTask`'s `fetchQuery` honours
-    `staleTime` and returns that seed instead of fetching the full task. With `gcTime: 0` the unobserved seed is
-    collected first, which is why the test passed. `useTaskData` has no product consumer, so this is inert today; it
-    is reported for a separate decision rather than fixed inside this cleanup.
-  - Each call of `createTestQueryClient` already returns a fresh QueryClient, so cross-test isolation comes from
-    construction, not from `gcTime`.
+- **Dead `useTaskData` hook removed; query-utils `gcTime` now `Infinity`** - 2026-10-05
+  - Deleted `src/hooks/useTaskData.ts` and `src/tests/useTaskData.test.tsx`, with the `UseTaskDataOptions` /
+    `UseTaskDataReturn` types in `src/types/hookTypes.ts`. A repo-wide check found no consumer: only its own test, those
+    type docs and a comment referenced it, and `LazyTaskListRefactored.tsx` has its own `loadFullTask`.
+  - That hook was the only reason `src/tests/query-utils.tsx` kept `gcTime: 0`: its task-list `queryFn` seeded
+    `['task', id]` with a summary that `loadFullTask`'s `fetchQuery` then returned (within `staleTime`) instead of
+    fetching the full task, and immediate collection was what hid it. With the consumer gone, `query-utils.tsx` uses
+    `gcTime: Infinity`, matching `test-utils.tsx` and `websocket-protocol-v2.test.tsx`. Its remaining consumer,
+    `useBranchSummaries.test.tsx`, passes.
 - **Branch creation posts to the mounted collection route (trailing slash)** - 2026-10-04
   - `src/services/apiV2.ts` `createBranch` posted to `POST /api/v2/branches` while the Go server mounts
     `POST /api/v2/branches/` (`branch_routes.go`); `http.ServeMux` answered 301 and `fetch` downgraded the POST to a
