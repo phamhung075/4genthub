@@ -315,10 +315,17 @@ export const SeatsPage: React.FC = () => {
               <Users className="h-5 w-5 text-primary" /> Seats in {selectedRoom}
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="destructive" onClick={() => setDeleteRoomOpen(true)}>
+              <Button variant="destructive" onClick={() => {
+                  deleteRoom.reset();
+                  setDeleteRoomOpen(true);
+                }}>
                 <Trash2 className="h-4 w-4" /> Delete room
               </Button>
-              <Button onClick={() => setAddSeatOpen(true)} disabled={seatTypesLoading}>
+              <Button onClick={() => {
+                  createSeat.reset();
+                  setAddSeatOpen(true);
+                }}
+                disabled={seatTypesLoading}>
                 <Plus className="h-4 w-4" /> Add seat
               </Button>
             </div>
@@ -401,7 +408,10 @@ export const SeatsPage: React.FC = () => {
                       variant="destructive"
                       size="sm"
                       aria-label={`Remove seat ${seat.seat_key}`}
-                      onClick={() => setSeatToRemove(seat)}
+                      onClick={() => {
+                        removeSeat.reset();
+                        setSeatToRemove(seat);
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

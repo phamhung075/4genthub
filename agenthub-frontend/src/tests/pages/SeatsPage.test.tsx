@@ -516,6 +516,24 @@ describe('SeatsPage', () => {
   });
 
   describe('failed mutations', () => {
+    it('does not show a stale remove error when the dialog is opened again', async () => {
+      mockApi.removeSeat.mockRejectedValue(new Error('seat "alice" not found'));
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+      fireEvent.click(screen.getByRole('button', { name: 'Remove seat alice' }));
+      const dialog = (await screen.findByText('Remove seat?')).closest('.theme-modal') as HTMLElement;
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Remove seat' }));
+      await within(dialog).findByText('seat "alice" not found');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => expect(screen.queryByText('Remove seat?')).not.toBeInTheDocument());
+
+      fireEvent.click(screen.getByRole('button', { name: 'Remove seat alice' }));
+
+      await screen.findByText('Remove seat?');
+      expect(screen.queryByText('seat "alice" not found')).not.toBeInTheDocument();
+    });
+
     it('shows the server error when creating a room fails', async () => {
       mockApi.createRoom.mockRejectedValue(new Error('room "eng" already exists'));
       renderPage();

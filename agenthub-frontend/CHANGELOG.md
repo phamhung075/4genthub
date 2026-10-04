@@ -40,6 +40,8 @@
     delete room (`SeatsPage.tsx`), add/delete overlay op and add link (`SeatDetailPage.tsx`).
   - The remove-seat dialog rendered no error at all, so a failed remove would have been silent; it now shows
     `removeSeat.error.message` like the delete-room dialog.
+  - Opening the delete-room, add-seat or remove-seat dialog resets its mutation, so an error from an earlier
+    attempt is not shown again (`removeSeat.reset()` etc.; test fails without the reset).
   - Failure tests: create room, add seat, remove seat (`SeatsPage.test.tsx`), add overlay op and add link
     (`SeatDetailPage.test.tsx`); delete room already had one. The remove-seat test fails with the error render removed.
   - Files: `src/pages/SeatsPage.tsx`, `src/pages/SeatDetailPage.tsx`, `src/tests/pages/SeatsPage.test.tsx`, `src/tests/pages/SeatDetailPage.test.tsx`
