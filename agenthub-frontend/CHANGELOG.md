@@ -29,6 +29,15 @@
     collection; a fresh QueryClient per test still isolates the cache between tests.
   - Production is unaffected: the app's QueryClient (`src/index.tsx`) and the query hooks use `gcTime` 10 minutes and
     their entries are observed while mounted, so no delayed WebSocket write races collection there.
+- **Third test QueryClient helper: `gcTime: 0` kept, with the reason recorded** - 2026-10-05
+  - `src/tests/query-utils.tsx` (consumers: `useBranchSummaries.test.tsx`, `useTaskData.test.tsx`) keeps `gcTime: 0`.
+    Switching it to `Infinity` (correct for the other two wrappers) breaks `useTaskData.test.tsx` "should load full task
+    on demand": the task-list `queryFn` seeds `['task', id]` with a summary, and `loadFullTask`'s `fetchQuery` honours
+    `staleTime` and returns that seed instead of fetching the full task. With `gcTime: 0` the unobserved seed is
+    collected first, which is why the test passed. `useTaskData` has no product consumer, so this is inert today; it
+    is reported for a separate decision rather than fixed inside this cleanup.
+  - Each call of `createTestQueryClient` already returns a fresh QueryClient, so cross-test isolation comes from
+    construction, not from `gcTime`.
 - **Branch creation posts to the mounted collection route (trailing slash)** - 2026-10-04
   - `src/services/apiV2.ts` `createBranch` posted to `POST /api/v2/branches` while the Go server mounts
     `POST /api/v2/branches/` (`branch_routes.go`); `http.ServeMux` answered 301 and `fetch` downgraded the POST to a
