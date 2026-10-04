@@ -25,8 +25,8 @@ vi.mock("../../../../components/ui/badge", () => ({
 
 vi.mock("../../../../components/ui/button", () => ({
   Button: ({ children, onClick, disabled, variant, size }: any) => (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       disabled={disabled}
       data-variant={variant}
       data-size={size}
@@ -36,7 +36,8 @@ vi.mock("../../../../components/ui/button", () => ({
   )
 }));
 
-vi.mock("lucide-react", () => ({
+vi.mock("lucide-react", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("lucide-react")>()),
   Calendar: () => <span data-testid="calendar-icon">Calendar</span>,
   CheckCircle2: () => <span data-testid="check-icon">Check</span>,
   Clock: () => <span data-testid="clock-icon">Clock</span>,
@@ -257,7 +258,7 @@ describe("TaskRowDesktop", () => {
 
     expect(defaultProps.getPriorityColor).toHaveBeenCalledWith("medium");
     expect(defaultProps.getPriorityBadgeVariant).toHaveBeenCalledWith("medium");
-    
+
     const priorityBadge = screen.getByText("medium");
     expect(priorityBadge).toHaveAttribute("data-variant", "destructive");
   });

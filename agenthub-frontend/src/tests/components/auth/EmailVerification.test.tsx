@@ -1,14 +1,17 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from './../../test-utils';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { EmailVerification } from '../../../components/auth/EmailVerification';
 import { useAuth } from '../../../hooks/useAuth';
 
 // Mock dependencies
-vi.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: vi.fn(),
-}));
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 vi.mock('../../../hooks/useAuth', () => ({
   useAuth: vi.fn(),
@@ -25,30 +28,28 @@ describe('EmailVerification', () => {
     vi.clearAllMocks();
     (useNavigate as any).mockReturnValue(mockNavigate);
     (useAuth as any).mockReturnValue({ setTokens: mockSetTokens });
-    
+
     // Reset fetch mock
     (global.fetch as any).mockReset();
-    
+
     // Clear window.location.hash
     window.location.hash = '';
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   const renderComponent = () => {
     return render(
-      <BrowserRouter>
-        <EmailVerification />
-      </BrowserRouter>
+      <EmailVerification />
     );
   };
 
   describe('Initial Rendering', () => {
     it('renders processing state initially', () => {
       renderComponent();
-      
+
       expect(screen.getByText('Email Verification')).toBeInTheDocument();
       expect(screen.getByText('Processing your verification...')).toBeInTheDocument();
       expect(screen.getByText('Verifying your email...')).toBeInTheDocument();
@@ -57,12 +58,12 @@ describe('EmailVerification', () => {
 
   describe('Successful Verification', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     it('handles successful email verification for signup', async () => {
       window.location.hash = '#access_token=test-access&refresh_token=test-refresh&type=signup';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -76,13 +77,13 @@ describe('EmailVerification', () => {
       expect(screen.getByText('Email verified successfully! Welcome to agenthub.')).toBeInTheDocument();
 
       // Check navigation after timeout
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
 
     it('handles successful email verification for password recovery', async () => {
       window.location.hash = '#access_token=test-access&refresh_token=test-refresh&type=recovery';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -95,13 +96,13 @@ describe('EmailVerification', () => {
       expect(screen.getByText('Password reset verified. You can now set a new password.')).toBeInTheDocument();
 
       // Check navigation to reset password page
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       expect(mockNavigate).toHaveBeenCalledWith('/reset-password');
     });
 
     it('handles successful email verification without type', async () => {
       window.location.hash = '#access_token=test-access&refresh_token=test-refresh';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -113,7 +114,7 @@ describe('EmailVerification', () => {
 
       expect(screen.getByText('Email verified successfully!')).toBeInTheDocument();
 
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
   });
@@ -121,7 +122,7 @@ describe('EmailVerification', () => {
   describe('Error Handling', () => {
     it('handles error from URL parameters', async () => {
       window.location.hash = '#error=invalid_request&error_description=Custom error message';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -134,7 +135,7 @@ describe('EmailVerification', () => {
 
     it('handles error without description', async () => {
       window.location.hash = '#error=invalid_request';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -145,7 +146,7 @@ describe('EmailVerification', () => {
     it('handles invalid or expired link', async () => {
       // No tokens in hash
       window.location.hash = '';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -301,7 +302,7 @@ describe('EmailVerification', () => {
   describe('Navigation Buttons', () => {
     it('shows navigation buttons on error without resend form', async () => {
       window.location.hash = '#error=invalid_request';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -318,7 +319,7 @@ describe('EmailVerification', () => {
 
     it('shows navigation buttons on error with resend form', async () => {
       window.location.hash = '';
-      
+
       renderComponent();
 
       await waitFor(() => {
@@ -343,13 +344,11 @@ describe('EmailVerification', () => {
 
       // Processing state - uses Loader2 icon
       expect(screen.getByText('Email Verification')).toBeInTheDocument();
-      
+
       // Success state
       window.location.hash = '#access_token=test&refresh_token=test';
       rerender(
-        <BrowserRouter>
-          <EmailVerification />
-        </BrowserRouter>
+        <EmailVerification />
       );
 
       await waitFor(() => {
@@ -359,9 +358,7 @@ describe('EmailVerification', () => {
       // Error state
       window.location.hash = '#error=invalid';
       rerender(
-        <BrowserRouter>
-          <EmailVerification />
-        </BrowserRouter>
+        <EmailVerification />
       );
 
       await waitFor(() => {

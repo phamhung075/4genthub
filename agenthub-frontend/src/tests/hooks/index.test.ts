@@ -12,7 +12,7 @@ describe('hooks/index', () => {
     expect(hooks.useTheme).toBe(useTheme);
   });
 
-  it('only exports expected hooks', () => {
+  it('exports the expected hooks', () => {
     const exportedHooks = Object.keys(hooks);
     // Subset check: adding a hook to the barrel must not break this test.
     expect(exportedHooks).toEqual(expect.arrayContaining([

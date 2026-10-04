@@ -1,16 +1,21 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from './../../test-utils';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { SignupForm } from '../../../components/auth/SignupForm';
 import { useAuth } from '../../../hooks/useAuth';
 
 // Mock dependencies
-vi.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useNavigate: vi.fn(),
-  Link: ({ to, children }: any) => <a href={to}>{children}</a>,
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
+
+vi.mock('../../../components/ThemeToggle', () => ({
+  ThemeToggle: () => <div data-testid="theme-toggle">Theme Toggle</div>,
 }));
 
 vi.mock('../../../hooks/useAuth', () => ({
@@ -45,14 +50,13 @@ describe('SignupForm', () => {
     (useNavigate as any).mockReturnValue(mockNavigate);
     (useAuth as any).mockReturnValue({ signup: mockSignup });
     (global.fetch as any).mockReset();
-    user = userEvent.setup();
+    // user-event v13 exposes the API directly (no setup()).
+    user = userEvent;
   });
 
   const renderComponent = () => {
     return render(
-      <BrowserRouter>
-        <SignupForm />
-      </BrowserRouter>
+      <SignupForm />
     );
   };
 
@@ -223,7 +227,7 @@ describe('SignupForm', () => {
       renderComponent();
 
       const passwordInput = screen.getByLabelText('Password');
-      
+
       await user.type(passwordInput, 'p');
 
       expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
