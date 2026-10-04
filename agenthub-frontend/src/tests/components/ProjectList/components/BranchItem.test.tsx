@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, screen, fireEvent } from './../../../test-utils';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, act } from './../../../test-utils';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BranchItem } from '../../../../components/ProjectList/components/BranchItem';
 import { animationFactory } from '../../../../services/AnimationFactory';
+import { branchDeletionTracker } from '../../../../services/branchDeletionTracker';
 import type { BranchSummary } from '../../../../types';
 
 // Mock the animation factory
@@ -58,9 +59,6 @@ describe('BranchItem', () => {
     branch: mockBranch,
     projectId: 'project-1',
     selected: null,
-    isNew: false,
-    isFadingOut: false,
-    isDeleting: false,
     taskCount: 5,
     isAnimatingCount: null as 'up' | 'down' | null,
     onSelect: vi.fn(),
@@ -123,31 +121,78 @@ describe('BranchItem', () => {
     expect(screen.queryByRole('button', { name: 'Delete Branch' })).not.toBeInTheDocument();
   });
 
-  it('shows loading spinner when deleting', () => {
-    render(<BranchItem {...defaultProps} isDeleting={true} />);
-    expect(screen.queryByRole('button', { name: 'Delete Branch' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Deleting Branch...' })).toBeInTheDocument();
-  });
+  describe('animations (useBranchAnimation)', () => {
+    const container = () => screen.getByRole('button', { name: /feature\/test-branch/ }).closest('div') as HTMLElement;
 
-  it('applies fade-in animation for new branches', () => {
-    render(<BranchItem {...defaultProps} isNew={true} />);
-    const container = screen.getByRole('button', { name: /feature\/test-branch/ }).closest('div');
-    expect(container).toHaveClass('opacity-0', '-translate-x-2.5');
-  });
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
 
-  it('applies fade-out animation when branch is being removed', () => {
-    render(<BranchItem {...defaultProps} isFadingOut={true} />);
-    const container = screen.getByRole('button', { name: /feature\/test-branch/ }).closest('div');
-    expect(container).toHaveClass('opacity-0', '-translate-x-2.5', 'pointer-events-none');
+    afterEach(() => {
+      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReset();
+      vi.useRealTimers();
+      vi.mocked(animationFactory.animate).mockReturnValue(true);
+    });
+
+    it('plays the create animation for a branch created within the last 2 seconds', () => {
+      render(<BranchItem {...defaultProps} branch={{ ...mockBranch, created_at: new Date().toISOString() } as BranchSummary} />);
+      expect(animationFactory.animate).not.toHaveBeenCalled();
+
+      act(() => { vi.advanceTimersByTime(50); });
+
+      expect(animationFactory.animate).toHaveBeenCalledWith('branch-1', 'create', 'mount');
+    });
+
+    it('does not animate a branch that was created earlier', () => {
+      const old = new Date(Date.now() - 60_000).toISOString();
+      render(<BranchItem {...defaultProps} branch={{ ...mockBranch, created_at: old } as BranchSummary} />);
+
+      act(() => { vi.advanceTimersByTime(100); });
+
+      expect(animationFactory.animate).not.toHaveBeenCalled();
+    });
+
+    it('applies the CSS create class when the factory cannot animate', () => {
+      vi.mocked(animationFactory.animate).mockReturnValue(false);
+      render(<BranchItem {...defaultProps} branch={{ ...mockBranch, created_at: new Date().toISOString() } as BranchSummary} />);
+
+      act(() => { vi.advanceTimersByTime(50); });
+
+      expect(container()).toHaveClass('branchRowCreateAnimation');
+    });
+
+    it('plays the delete animation for a branch marked for deletion and then removes it', () => {
+      render(<BranchItem {...defaultProps} />);
+      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
+      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
+
+      act(() => { vi.advanceTimersByTime(50); });
+      expect(animationFactory.animate).toHaveBeenCalledWith('branch-1', 'delete', 'websocket');
+      expect(container()).toBeInTheDocument();
+
+      act(() => { vi.advanceTimersByTime(800); });
+      expect(screen.queryByRole('button', { name: /feature\/test-branch/ })).not.toBeInTheDocument();
+    });
+
+    it('applies the CSS delete class while a branch is being removed without the factory', () => {
+      vi.mocked(animationFactory.animate).mockReturnValue(false);
+      render(<BranchItem {...defaultProps} />);
+      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
+      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
+
+      act(() => { vi.advanceTimersByTime(50); });
+
+      expect(container()).toHaveClass('branchRowDeleteAnimation');
+    });
   });
 
   it('applies count animation classes', () => {
     const { rerender } = render(<BranchItem {...defaultProps} />);
-    
+
     // Test up animation
     rerender(<BranchItem {...defaultProps} isAnimatingCount="up" />);
     expect(screen.getByText('5')).toHaveClass('count-change-up', 'count-pulse');
-    
+
     // Test down animation
     rerender(<BranchItem {...defaultProps} isAnimatingCount="down" />);
     expect(screen.getByText('5')).toHaveClass('count-change-down', 'count-pulse');
@@ -155,17 +200,18 @@ describe('BranchItem', () => {
 
   it('registers and unregisters element with AnimationFactory', () => {
     const { unmount } = render(<BranchItem {...defaultProps} />);
-    
+
     // Check registration
     expect(animationFactory.registerElement).toHaveBeenCalledWith(
       'branch-1',
       expect.any(HTMLElement),
+      'branch',
       expect.objectContaining({
         onAnimationStart: expect.any(Function),
         onAnimationEnd: expect.any(Function),
       })
     );
-    
+
     // Check unregistration on unmount
     unmount();
     expect(animationFactory.unregisterElement).toHaveBeenCalledWith('branch-1');
@@ -193,10 +239,10 @@ describe('BranchItem', () => {
 
   it('displays correct aria labels and titles', () => {
     render(<BranchItem {...defaultProps} />);
-    
+
     const viewButton = screen.getByRole('button', { name: 'View Branch Details' });
     expect(viewButton).toHaveAttribute('title', 'View Branch Details');
-    
+
     const deleteButton = screen.getByRole('button', { name: 'Delete Branch' });
     expect(deleteButton).toHaveAttribute('aria-label', 'Delete Branch');
   });
