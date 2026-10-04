@@ -8,6 +8,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Updated `test_shell_path_fallback_is_said_in_the_output` for the new fallback message.
 - Before/after: at HEAD `scripts/openrig_seat_sync.py` has no `DAEMON_PATH_SOURCE` and `seat_path()` at cold start returns the operator's shell PATH (`/operator/shell/bin`); at the tip it returns the daemon PATH.
 - Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q -k cold_start` -> 1 passed; the whole scripts suite -> 167 passed, 4 warnings.
+- Review follow-up (parsing coverage): added `test_openrig_daemon_port_prefers_openrig_port_then_url` (`OPENRIG_PORT` wins, else the `OPENRIG_URL` port, else None), `test_openrig_daemon_pid_parses_ss_output` (a canned `ss -ltnp` via a monkeypatched `subprocess.run`: the `pid=` line returns the pid, a matching line with no `pid=` returns None) and `test_proc_env_path_reads_the_path_of_this_process` (`/proc/<self pid>/environ`, skipped without `/proc`). Whole scripts suite now 170 passed.
 
 ## 2026-10-04 — Subtask assignee filter fixed (N2)
 

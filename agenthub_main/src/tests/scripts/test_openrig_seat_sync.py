@@ -6,6 +6,7 @@ seats and rigspecs, so no real 4genthub server or `rig` binary is needed.
 
 import importlib.util
 import json
+import os
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -191,6 +192,7 @@ def env(monkeypatch, server):
 
 REAL_REQUIRE_CHECKER = getattr(seat_sync, "require_checker", None)
 REAL_TMUX_GLOBAL_PATH = getattr(seat_sync, "tmux_global_path", None)
+REAL_OPENRIG_DAEMON_PID = getattr(seat_sync, "openrig_daemon_pid", None)
 
 
 @pytest.fixture(autouse=True)
@@ -239,6 +241,59 @@ def test_seat_path_reads_the_daemon_path_at_cold_start(monkeypatch):
 
     monkeypatch.setattr(seat_sync, "openrig_daemon_pid", lambda: None, raising=False)
     assert seat_sync.seat_path() == ("/operator/shell/bin", seat_sync.SHELL_PATH_SOURCE)
+
+
+def test_openrig_daemon_port_prefers_openrig_port_then_url(monkeypatch):
+    """OPENRIG_PORT wins; otherwise the port is parsed from OPENRIG_URL; neither is None."""
+    monkeypatch.setenv("OPENRIG_PORT", "7433")
+    monkeypatch.setenv("OPENRIG_URL", "http://127.0.0.1:1")
+    assert seat_sync.openrig_daemon_port() == "7433"
+
+    monkeypatch.setenv("OPENRIG_PORT", "")
+    monkeypatch.setenv("OPENRIG_URL", "http://127.0.0.1:7433")
+    assert seat_sync.openrig_daemon_port() == "7433"
+
+    monkeypatch.setenv("OPENRIG_URL", "not-a-url")
+    assert seat_sync.openrig_daemon_port() is None
+
+
+def test_openrig_daemon_pid_parses_ss_output(monkeypatch):
+    """The listening pid is parsed from ss -ltnp; a matching line with no pid= is None."""
+
+    class _Proc:
+        def __init__(self, stdout):
+            self.stdout = stdout
+            self.returncode = 0
+
+    # the autouse fixture stubs openrig_daemon_pid; this test exercises the real parser
+    monkeypatch.setattr(
+        seat_sync, "openrig_daemon_pid", REAL_OPENRIG_DAEMON_PID, raising=False
+    )
+    monkeypatch.setenv("OPENRIG_PORT", "7433")
+    ss_with_pid = (
+        "State Recv-Q Send-Q Local Address:Port Peer Address:Port Process\n"
+        'LISTEN 0 511 127.0.0.1:7433 0.0.0.0:* users:(("MainThread",pid=17485,fd=32))\n'
+        'LISTEN 0 511 127.0.0.1:17433 0.0.0.0:* users:(("MainThread",pid=14914,fd=32))\n'
+    )
+    monkeypatch.setattr(
+        seat_sync.subprocess, "run", lambda argv, **kw: _Proc(ss_with_pid)
+    )
+    assert seat_sync.openrig_daemon_pid() == 17485
+
+    monkeypatch.setenv("OPENRIG_PORT", "9999")
+    monkeypatch.setattr(
+        seat_sync.subprocess,
+        "run",
+        lambda argv, **kw: _Proc("LISTEN 0 511 127.0.0.1:9999 0.0.0.0:*\n"),
+    )
+    assert seat_sync.openrig_daemon_pid() is None
+
+
+def test_proc_env_path_reads_the_path_of_this_process():
+    """proc_env_path parses /proc/<pid>/environ; this process is the only safe live pid."""
+    if not Path("/proc/self/environ").exists():
+        pytest.skip("no /proc on this host")
+    assert seat_sync.proc_env_path(os.getpid()) == os.environ.get("PATH")
 
 
 def make_binary(out):
