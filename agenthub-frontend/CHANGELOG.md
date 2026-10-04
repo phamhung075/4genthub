@@ -21,7 +21,7 @@
     The 25 tests keep their intent and expectations; no source change. First rewrite delegated to a deepseek worker,
     reviewed line by line and rerun here (25 pass, tsc 0 errors).
 - **logger.config tests set the environment with `vi.stubEnv`** - 2026-10-04
-  - `src/tests/config/logger.config.test.ts` (31 tests, all failing) faked `global.import.meta`, which does not
+  - `src/tests/config/logger.config.test.ts` (40 tests, 31 failing) faked `global.import.meta`, which does not
     exist (`import.meta` is per-module syntax), and replaced `process` and `window` with `{}`; 17 failed with
     "Cannot read properties of undefined (reading 'env')". It also tested `environmentPresets`, `baseConfig`,
     `developmentConfig`, `stagingConfig`, `productionConfig` and `testConfig`, which were removed from
@@ -30,7 +30,7 @@
     `getLoggerConfig` and `debugLoggerConfig` (33 tests, all pass). No source change.
 - **Removed the unused `typeValidation` module and its test** - 2026-10-04
   - `src/utils/typeValidation.ts` had no importer anywhere in `agenthub-frontend` (static or dynamic); only a
-    comment in `src/types/index.ts` pointed at it, and its test (22 of 24 tests failing) called `isTaskArray`,
+    comment in `src/types/index.ts` pointed at it, and its test (22 of 34 tests failing) called `isTaskArray`,
     `isSubtaskArray` and `ensure*`, which it never had. Its guards also disagreed with the types: the full-`Task`
     guard required summary-only fields (`assignees_count`, `has_context`), so it would have rejected a real task.
     The module, `src/tests/utils/typeValidation.test.ts` and the comment are removed.
