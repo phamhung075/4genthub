@@ -163,6 +163,21 @@ describe('SignupForm', () => {
       });
     });
 
+    it('rejects a password whose characters match no strength class', async () => {
+      renderComponent();
+
+      // '________' is 8 characters but matches none of the five classes, so it scores 20.
+      // 'password' (length + lowercase) scores 40 and passes.
+      await user.type(screen.getByLabelText(/^password/i), '________');
+      await user.click(screen.getByRole('button', { name: 'Sign Up' }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Password is too weak. Use a mix of uppercase, lowercase, numbers, and special characters')
+        ).toBeInTheDocument();
+      });
+    });
+
     it('validates password confirmation', async () => {
       renderComponent();
 
