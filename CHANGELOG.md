@@ -41,6 +41,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Six agent routes that always answered 500 are removed** (2026-10-04)
+
+- `agenthub_main/src/fastmcp/server/routes/agent_routes.py`: deleted `GET /api/v2/agents/{agent_name}`, `POST /assign`, `DELETE /unassign/{branch_id}`, `GET /branch/{branch_id}/assignment`, `GET /project/{project_id}/assignments` and `GET /capabilities`. Each called an `AgentAPIController` method that does not exist (`get_single_agent_metadata`, `assign_agent`, `unassign_agent`, `get_branch_assignment`, `get_project_assignments`, `get_all_capabilities`), so it answered 500 on every request; `GET /capabilities` was also unreachable behind `GET /{agent_name}`. The frontend `agentApiV2` functions for them had no importer outside test mocks, and no Python, MCP or script caller exists. `GET /metadata` and `POST /call` stay. The Go mirrors (`agents_mount.go`) and the frontend functions are removed by their owners.
+
 **`GET /api/v2/agents/metadata` no longer returns 500** (2026-10-04)
 
 - `agenthub_main/src/fastmcp/server/routes/agent_routes.py` (`get_all_agents_metadata`): `AgentAPIController.get_agent_metadata` returns a plain dict, but the route read `result.success` and called `result.model_dump`, so every request raised `'dict' object has no attribute 'success'` and answered 500. The route now reads `result.get("success")` and returns the dict; a failed result still answers 500 with the controller `message`.

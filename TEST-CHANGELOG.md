@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — removed agent routes answer 404
+
+- Added: `test_routes_without_a_controller_method_are_not_served` (6 parametrized cases in `agenthub_main/src/tests/server/test_agent_routes.py`): the six removed paths answer 404.
+- Verified red first: before the deletion all 6 cases failed (500); after it all 10 tests in the file pass. `ruff format --check` and `ruff check` clean.
+
 ## 2026-10-04 — agent metadata route returns the controller dict
 
 - Added: `agenthub_main/src/tests/server/test_agent_routes.py` (4 tests, FastAPI `TestClient` on the agent router with stubbed auth and database): the controller dict is returned unchanged (200), a failed result answers 500 with its `message` or the default text, and the real `AgentAPIController` with a stubbed facade serves `source: facade` and the total.

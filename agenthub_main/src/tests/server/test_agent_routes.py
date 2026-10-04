@@ -93,3 +93,20 @@ def test_metadata_serves_the_real_controller_dict(client, monkeypatch):
         "total": 2,
         "source": "facade",
     }
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("GET", "/api/v2/agents/coding-agent"),
+        ("POST", "/api/v2/agents/assign"),
+        ("DELETE", "/api/v2/agents/unassign/branch-1"),
+        ("GET", "/api/v2/agents/branch/branch-1/assignment"),
+        ("GET", "/api/v2/agents/project/project-1/assignments"),
+        ("GET", "/api/v2/agents/capabilities"),
+    ],
+)
+def test_routes_without_a_controller_method_are_not_served(client, method, path):
+    response = client.request(method, path)
+
+    assert response.status_code == 404
