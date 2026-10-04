@@ -649,7 +649,7 @@ func TestSeatAdminGetOverlays(t *testing.T) {
 	}
 
 	if rec := doAgentsRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay",
-		`{"ops":[{"kind":"add","slug":"instr"}]}`); rec.Code != http.StatusOK {
+		`{"ops":[{"kind":"add","slug":"instr","version":"1"}]}`); rec.Code != http.StatusOK {
 		t.Fatalf("PUT company overlay: %d %s", rec.Code, rec.Body.String())
 	}
 	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/overlay", "")
@@ -957,7 +957,7 @@ func TestSeatAdminOverlays(t *testing.T) {
 		body string
 		want string
 	}{
-		{"/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m"}]}`, `"scope":"room"`},
+		{"/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m","version":"2"}]}`, `"scope":"room"`},
 		{"/api/v2/openrig/overlay", `{"ops":[{"kind":"pin","slug":"m","version":"2"}]}`, `"scope":"company"`},
 		{"/api/v2/openrig/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"override","slug":"m","content":"x"}]}`, `"scope":"seat"`},
 	}
@@ -975,10 +975,9 @@ func TestSeatAdminOverlayRejectsUnknownModules(t *testing.T) {
 		body string
 		code int
 	}{
-		{"add unknown latest", `{"ops":[{"kind":"add","slug":"ghost"}]}`, http.StatusUnprocessableEntity},
 		{"add unknown version", `{"ops":[{"kind":"add","slug":"m","version":"9"}]}`, http.StatusUnprocessableEntity},
 		{"pin unknown module", `{"ops":[{"kind":"pin","slug":"ghost","version":"1"}]}`, http.StatusUnprocessableEntity},
-		{"add known latest", `{"ops":[{"kind":"add","slug":"m"}]}`, http.StatusOK},
+		{"add known version", `{"ops":[{"kind":"add","slug":"m","version":"2"}]}`, http.StatusOK},
 		{"remove a type-supplied module", `{"ops":[{"kind":"remove","slug":"ghost"}]}`, http.StatusOK},
 	}
 	for _, c := range cases {
@@ -1007,6 +1006,8 @@ func TestSeatAdminOverlayValidation(t *testing.T) {
 	cases := []string{
 		`{"ops":[{"kind":"explode","slug":"m"}]}`,
 		`{"ops":[{"kind":"add"}]}`,
+		`{"ops":[{"kind":"add","slug":"m"}]}`,
+		`{"ops":[{"kind":"add","slug":"m","version":"latest"}]}`,
 		`{"ops":[{"kind":"override","slug":"m"}]}`,
 		`{"ops":[{"kind":"pin","slug":"m","version":"latest"}]}`,
 		`{"ops":[{"kind":"add","slug":"m","bogus":true}]}`,
@@ -1200,8 +1201,8 @@ func TestSeatAdminNotFound(t *testing.T) {
 		{http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"a","seat_type":"ghost","runtime":"claude-code"}`},
 		{http.MethodGet, "/api/v2/openrig/rooms/ghost/seats", ""},
 		{http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/ghost", ""},
-		{http.MethodPut, "/api/v2/openrig/rooms/ghost/overlay", `{"ops":[{"kind":"add","slug":"m"}]}`},
-		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", `{"ops":[{"kind":"add","slug":"m"}]}`},
+		{http.MethodPut, "/api/v2/openrig/rooms/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
+		{http.MethodPut, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`},
 		{http.MethodGet, "/api/v2/openrig/rooms/ghost/overlay", ""},
 		{http.MethodGet, "/api/v2/openrig/rooms/dev/seats/ghost/overlay", ""},
 		{http.MethodGet, "/api/v2/openrig/modules/ghost/versions/1.0.0", ""},
@@ -1353,7 +1354,7 @@ func TestSeatAdminOverlayRoutesRejectSecretContent(t *testing.T) {
 	const secret = "AKIAABCDEFGHIJKLMNOP"
 	bodies := []string{
 		`{"ops":[{"kind":"override","slug":"m","content":"key ` + secret + `"}]}`,
-		`{"ops":[{"kind":"add","slug":"` + secret + `"}]}`,
+		`{"ops":[{"kind":"add","slug":"` + secret + `","version":"1"}]}`,
 		`{"ops":[{"kind":"pin","slug":"m","version":"` + secret + `"}]}`,
 	}
 	for _, path := range []string{

@@ -8,17 +8,11 @@ import (
 
 type memCatalog struct {
 	versions map[string]ModuleVersion
-	latest   map[string]string
 }
 
 func (c *memCatalog) Get(slug, version string) (ModuleVersion, bool) {
 	mv, ok := c.versions[slug+"@"+version]
 	return mv, ok
-}
-
-func (c *memCatalog) Latest(slug string) (string, bool) {
-	v, ok := c.latest[slug]
-	return v, ok
 }
 
 func testCatalog() *memCatalog {
@@ -34,14 +28,6 @@ func testCatalog() *memCatalog {
 			"tool.new@1.0.0":    {Slug: "tool.new", Version: "1.0.0", Kind: KindTool, Content: "new tool"},
 			"tool.new@2.0.0":    {Slug: "tool.new", Version: "2.0.0", Kind: KindTool, Content: "new tool v2"},
 		},
-		latest: map[string]string{
-			"instr.base":  "1.1.0",
-			"doc.guide":   "2.0.0",
-			"skill.alpha": "1.1.0",
-			"tool.beta":   "3.0.0",
-			"mem.gamma":   "1.0.0",
-			"tool.new":    "2.0.0",
-		},
 	}
 }
 
@@ -52,7 +38,7 @@ func baseSeatType() SeatTypeVersion {
 		Runtime: "go1.23",
 		Modules: []ModuleRef{
 			{Slug: "mem.gamma", Version: "1.0.0"},
-			{Slug: "skill.alpha", Version: "latest"},
+			{Slug: "skill.alpha", Version: "1.1.0"},
 			{Slug: "tool.beta", Version: "3.0.0"},
 			{Slug: "instr.base", Version: "1.0.0"},
 			{Slug: "doc.guide", Version: "2.0.0"},
@@ -100,25 +86,38 @@ func TestResolveBase(t *testing.T) {
 	}
 }
 
-func TestResolveFollowLatestBecomesConcrete(t *testing.T) {
+func TestResolveRejectsNonConcreteVersions(t *testing.T) {
 	for _, version := range []string{"", "latest"} {
-		seatType := baseSeatType()
-		for i := range seatType.Modules {
-			if seatType.Modules[i].Slug == "skill.alpha" {
-				seatType.Modules[i].Version = version
+		t.Run("seat type ref "+version, func(t *testing.T) {
+			seatType := baseSeatType()
+			seatType.Modules[1].Version = version
+			if _, err := Resolve(testCatalog(), seatType, nil); err == nil || !strings.Contains(err.Error(), "concrete") {
+				t.Fatalf("error = %v, want a concrete-version error", err)
 			}
-		}
-		seat, err := Resolve(testCatalog(), seatType, nil)
-		if err != nil {
-			t.Fatalf("Resolve(%q): %v", version, err)
-		}
-		alpha := moduleBySlug(t, seat, "skill.alpha")
-		if alpha.Version != "1.1.0" {
-			t.Fatalf("version %q: skill.alpha resolved to %q, want 1.1.0", version, alpha.Version)
-		}
-		if alpha.Content != "alpha skill v1.1" {
-			t.Fatalf("version %q: skill.alpha content = %q", version, alpha.Content)
-		}
+		})
+		t.Run("overlay add "+version, func(t *testing.T) {
+			overlay := Overlay{Scope: scopeCompany, Ops: []Op{{Kind: OpAdd, Slug: "tool.new", Version: version}}}
+			if _, err := Resolve(testCatalog(), baseSeatType(), []Overlay{overlay}); err == nil || !strings.Contains(err.Error(), "concrete") {
+				t.Fatalf("error = %v, want a concrete-version error", err)
+			}
+		})
+	}
+}
+
+func TestResolveIgnoresNewlyPublishedModuleVersions(t *testing.T) {
+	overlay := Overlay{Scope: scopeCompany, Ops: []Op{{Kind: OpAdd, Slug: "tool.new", Version: "1.0.0"}}}
+	before, err := Resolve(testCatalog(), baseSeatType(), []Overlay{overlay})
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	published := testCatalog()
+	published.versions["tool.new@3.0.0"] = ModuleVersion{Slug: "tool.new", Version: "3.0.0", Kind: KindTool, Content: "new tool v3"}
+	after, err := Resolve(published, baseSeatType(), []Overlay{overlay})
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if before.Hash != after.Hash {
+		t.Fatal("publishing a module version changed a seat whose refs are all concrete")
 	}
 }
 
@@ -325,10 +324,6 @@ func TestResolveMissingCatalogModuleErrors(t *testing.T) {
 		"base concrete": {
 			seatType: SeatTypeVersion{Slug: "s", Version: "1", Modules: []ModuleRef{{Slug: "ghost", Version: "1.0.0"}}},
 			want:     "ghost@1.0.0",
-		},
-		"base latest": {
-			seatType: SeatTypeVersion{Slug: "s", Version: "1", Modules: []ModuleRef{{Slug: "ghost", Version: "latest"}}},
-			want:     "ghost@latest",
 		},
 		"added": {
 			seatType: SeatTypeVersion{Slug: "s", Version: "1"},

@@ -44,7 +44,6 @@ type ModuleRef struct {
 
 type Catalog interface {
 	Get(slug, version string) (ModuleVersion, bool)
-	Latest(slug string) (string, bool)
 }
 
 type SeatTypeVersion struct {
@@ -99,9 +98,13 @@ const (
 
 var scopeOrder = []string{scopeCompany, scopeRoom, scopeSeat}
 
-// followLatest reports whether a ref version defers to the catalog's latest.
-func followLatest(version string) bool {
-	return version == "" || version == "latest"
+// requireConcrete rejects the empty version and the "latest" alias: a resolved seat only moves when
+// a new resolved version is published, so no ref may defer to the catalog's newest module.
+func requireConcrete(slug, version string) error {
+	if version == "" || version == "latest" {
+		return fmt.Errorf("module %q: version must be concrete, got %q", slug, version)
+	}
+	return nil
 }
 
 type moduleState struct {
@@ -126,6 +129,9 @@ func Resolve(catalog Catalog, seatType SeatTypeVersion, overlays []Overlay) (Res
 
 	state := make(map[string]*moduleState, len(seatType.Modules))
 	for _, ref := range seatType.Modules {
+		if err := requireConcrete(ref.Slug, ref.Version); err != nil {
+			return ResolvedSeat{}, err
+		}
 		state[ref.Slug] = &moduleState{version: ref.Version}
 	}
 
@@ -163,6 +169,9 @@ func applyOp(state map[string]*moduleState, op Op) error {
 		if _, ok := state[op.Slug]; ok {
 			return fmt.Errorf("add %q: module already present", op.Slug)
 		}
+		if err := requireConcrete(op.Slug, op.Version); err != nil {
+			return err
+		}
 		state[op.Slug] = &moduleState{version: op.Version}
 	case OpRemove:
 		if _, ok := state[op.Slug]; !ok {
@@ -184,8 +193,8 @@ func applyOp(state map[string]*moduleState, op Op) error {
 		if !ok {
 			return fmt.Errorf("pin %q: module not present", op.Slug)
 		}
-		if followLatest(op.Version) {
-			return fmt.Errorf("pin %q: version must be concrete", op.Slug)
+		if err := requireConcrete(op.Slug, op.Version); err != nil {
+			return err
 		}
 		st.version = op.Version
 	default:
@@ -198,13 +207,6 @@ func resolveModules(catalog Catalog, state map[string]*moduleState) ([]ResolvedM
 	modules := make([]ResolvedModule, 0, len(state))
 	for slug, st := range state {
 		version := st.version
-		if followLatest(version) {
-			latest, ok := catalog.Latest(slug)
-			if !ok {
-				return nil, fmt.Errorf("module %s@latest not found in catalog", slug)
-			}
-			version = latest
-		}
 		mv, ok := catalog.Get(slug, version)
 		if !ok {
 			return nil, fmt.Errorf("module %s@%s not found in catalog", slug, version)

@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — concrete versions only on overlay add and in the resolver
+
+- Added: `TestResolveRejectsNonConcreteVersions` (seat type ref, overlay add, with `""` and `"latest"`) and `TestResolveIgnoresNewlyPublishedModuleVersions` in `resolver_test.go`; `add` bodies without a version or with `"latest"` in `TestSeatAdminOverlayValidation` (`seat_admin_mount_test.go`).
+- Verified red first: the resolver test failed with `error = <nil>` for all 4 cases, and the admin test returned 422 instead of 400 for the two `add` bodies.
+- Removed: `TestResolveFollowLatestBecomesConcrete`, the `base latest` and `add unknown latest` cases, the `Latest` fakes (`memCatalog`, `emptyCatalog`, `moduleCatalog`, which also removes the string version compare the reviewer flagged), and the ordered-latest assertion of the catalog test (`TestDBCatalogLatestOrderingAndGet` is now `TestDBCatalogGet`). Existing admin tests that sent `add` without a version now send one.
+- Ran: `go vet ./fastmcp/...` clean, `gofmt -l fastmcp cmd` clean, `go test ./fastmcp/seat_management/... ./fastmcp/server/httpapp/ ./cmd/...` pass. Not run: Postgres integration tests.
+
 ## 2026-10-04 — removed agent routes answer 404
 
 - Added: `test_routes_without_a_controller_method_are_not_served` (6 parametrized cases in `agenthub_main/src/tests/server/test_agent_routes.py`): the six removed paths answer 404.

@@ -39,20 +39,6 @@ func (c *DBCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
 	return resolver.ModuleVersion{Slug: mv.Slug, Version: mv.Version, Kind: mv.Kind, Content: mv.Content}, true
 }
 
-// Latest returns the newest concrete version of a module, or false when it is absent or the
-// lookup failed.
-func (c *DBCatalog) Latest(slug string) (string, bool) {
-	mv, err := c.modules.LatestVersion(context.Background(), c.userID, slug)
-	if err != nil {
-		c.record(err)
-		return "", false
-	}
-	if mv == nil {
-		return "", false
-	}
-	return mv.Version, true
-}
-
 // Err returns the first database error observed, or nil.
 func (c *DBCatalog) Err() error {
 	c.mu.Lock()

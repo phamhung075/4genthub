@@ -78,8 +78,7 @@ type emptyCatalog struct{}
 func (emptyCatalog) Get(string, string) (resolver.ModuleVersion, bool) {
 	return resolver.ModuleVersion{}, false
 }
-func (emptyCatalog) Latest(string) (string, bool) { return "", false }
-func (emptyCatalog) Err() error                   { return nil }
+func (emptyCatalog) Err() error { return nil }
 
 // A pinned seat that sets no runtime takes the default runtime of its pinned version, so
 // publishing a newer version with another runtime must not change it; a follow-latest seat
@@ -140,16 +139,6 @@ func (c moduleCatalog) publish(slug, version, content string) {
 func (c moduleCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
 	m, ok := c[slug][version]
 	return m, ok
-}
-
-func (c moduleCatalog) Latest(slug string) (string, bool) {
-	latest := ""
-	for version := range c[slug] {
-		if version > latest {
-			latest = version
-		}
-	}
-	return latest, latest != ""
 }
 
 func (moduleCatalog) Err() error { return nil }

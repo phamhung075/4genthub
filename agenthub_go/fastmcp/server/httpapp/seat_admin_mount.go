@@ -1052,6 +1052,8 @@ func seatAdminOverlayOps(w http.ResponseWriter, r *http.Request) ([]resolver.Op,
 		case resolver.OpAdd:
 			if op.Slug == "" {
 				invalid = "add requires slug"
+			} else if op.Version == "" || op.Version == "latest" {
+				invalid = "add requires a concrete version"
 			}
 		case resolver.OpRemove:
 			if op.Slug == "" {
@@ -1093,30 +1095,13 @@ func seatAdminOverlayModulesExist(w http.ResponseWriter, r *http.Request, source
 		if op.Kind != resolver.OpAdd && op.Kind != resolver.OpPin {
 			continue
 		}
-		var found bool
-		if op.Version == "" || op.Version == "latest" {
-			latest, err := source.ListLatestModuleVersions(r.Context(), uid)
-			if err != nil {
-				writeDetail(w, http.StatusInternalServerError, err.Error())
-				return false
-			}
-			for _, mv := range latest {
-				found = found || mv.Slug == op.Slug
-			}
-		} else {
-			mv, err := source.GetModuleVersion(r.Context(), uid, op.Slug, op.Version)
-			if err != nil {
-				writeDetail(w, http.StatusInternalServerError, err.Error())
-				return false
-			}
-			found = mv != nil
+		mv, err := source.GetModuleVersion(r.Context(), uid, op.Slug, op.Version)
+		if err != nil {
+			writeDetail(w, http.StatusInternalServerError, err.Error())
+			return false
 		}
-		if !found {
-			version := op.Version
-			if version == "" {
-				version = "latest"
-			}
-			writeDetail(w, http.StatusUnprocessableEntity, "module "+op.Slug+"@"+version+" not found in catalog")
+		if mv == nil {
+			writeDetail(w, http.StatusUnprocessableEntity, "module "+op.Slug+"@"+op.Version+" not found in catalog")
 			return false
 		}
 	}

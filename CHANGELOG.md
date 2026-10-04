@@ -6,7 +6,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**Pinned seats no longer move when a module is published: overlay `add` requires a concrete version** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: an overlay `add` op with a missing version or `"latest"` is rejected with 400 `add requires a concrete version`, like `pin`. `seatAdminOverlayModulesExist` now only looks up concrete versions (the latest-version branch is deleted).
+- `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`: `Resolve` rejects an empty or `"latest"` version on seat type refs, `add` and `pin` ops (`requireConcrete`). The follow-latest path and `Catalog.Latest` are removed (`catalog.go` `DBCatalog.Latest` too). Found by the reviewer: a pinned seat's hash changed when only a module version was published, because an overlay `add rules latest` followed the catalog. No compatibility path: a stored overlay holding `""` or `"latest"` on an `add` now fails to resolve with an explicit error until it is edited (dev phase).
+- `agenthub_go/NEXT_GEN.md` (G5): the verified sentence is corrected (overlay `add` was the exception to "references are concrete"). G5 stays unticked; the check wording will be corrected when it is ticked.
+- Frontend not changed here: `agenthub-frontend/src/pages/SeatDetailPage.tsx:177-178` `canAdd` requires a version only for `pin`; it must also require one for `add`.
+
 ### Added
+
+**Open owner decision D4 recorded: source of the assignee names** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (D4): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
 
 **F4 client bridge check recorded in NEXT_GEN.md** (2026-10-04)
 

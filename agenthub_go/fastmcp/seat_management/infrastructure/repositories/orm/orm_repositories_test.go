@@ -277,7 +277,7 @@ func TestTenantScoping(t *testing.T) {
 	}
 }
 
-func TestDBCatalogLatestOrderingAndGet(t *testing.T) {
+func TestDBCatalogGet(t *testing.T) {
 	now := time.Now().UTC()
 	f := &fakeDriver{}
 	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
@@ -295,28 +295,12 @@ func TestDBCatalogLatestOrderingAndGet(t *testing.T) {
 	}
 
 	catalog := NewDBCatalog(repo, testUser)
-	version, ok := catalog.Latest("instr")
-	if !ok || version != "2.0.0" {
-		t.Fatalf("Latest = %q, %v", version, ok)
-	}
 	mv, ok := catalog.Get("instr", "2.0.0")
 	if !ok || mv.Version != "2.0.0" || mv.Kind != resolver.KindInstruction || mv.Content != "newest" {
 		t.Fatalf("Get = %+v, %v", mv, ok)
 	}
 	if err := catalog.Err(); err != nil {
 		t.Fatalf("Err = %v", err)
-	}
-	sawOrdered := false
-	for _, q := range f.recorded() {
-		if strings.Contains(q, "FROM module_versions AS mv") && strings.Contains(q, "ORDER BY") {
-			sawOrdered = true
-			if !strings.Contains(q, `ORDER BY mv."created_at" DESC, mv."id" DESC`) {
-				t.Errorf("latest query not ordered by created_at then id: %s", q)
-			}
-		}
-	}
-	if !sawOrdered {
-		t.Fatalf("no ordered latest query recorded: %v", f.recorded())
 	}
 }
 
