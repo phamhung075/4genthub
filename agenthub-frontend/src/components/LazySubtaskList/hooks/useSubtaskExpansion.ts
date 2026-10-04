@@ -39,7 +39,9 @@ export function useSubtaskExpansion(
 
   // Pending timers, cancelled on unmount so none fires after teardown
   const pendingTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const unmounted = useRef(false);
   const schedule = useCallback((callback: () => void, delay: number) => {
+    if (unmounted.current) return;
     const timer = setTimeout(() => {
       pendingTimers.current.delete(timer);
       callback();
@@ -211,7 +213,9 @@ export function useSubtaskExpansion(
   // Cleanup on unmount
   useEffect(() => {
     const timers = pendingTimers.current;
+    unmounted.current = false;
     return () => {
+      unmounted.current = true;
       timers.forEach(clearTimeout);
       timers.clear();
       rowAnimationCallbacks.current.clear();
