@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Session stream handler tests on a real Postgres (Task A4/A6/A7, Go)
+
+- New `fastmcp/session_stream/testdb` (`NewSessions`): the throwaway-Postgres helper moved out of `repository_test.go` so `session_stream` and `server/httpapp` tests share it (recipe in its doc comment).
+- New `server/httpapp/ws_connector_test.go`: websocket and REST tests through a real client against the mounted routes. First test: `TestSessionEventsLimitIsClampedTo1000` (1200 events stored through the connector, `limit=5000` returns 1000). It failed before the argument-order fix (`returned 0 events, want 1000`) and passes after.
+- `ws_mount_test.go`: `wsTestTokenFor(user, scopes)`, and `wsTestWriteText` writes 64-bit frame lengths.
+
 ## 2026-10-04 — One assignee rule (Task D6d, Go)
 
 - Added `TestAssigneeRuleIsIdenticalOnEveryPath` (`application/dtos/task/task_test.go`): 6 inputs through `NewCreateTaskRequest`, `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and `NewSubtask` must equal `entities.NormalizeAssignees` (result or error text). Mutation checks (each call site bypassing the rule, restored after): DTO, `Task.UpdateAssignees`, `Subtask.UpdateAssignees`, `NewSubtask` all fail the test.

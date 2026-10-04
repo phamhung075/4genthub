@@ -16,6 +16,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`GET /api/v2/sessions/{id}/events` returned no events (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` passed `(sessionID, userID)` to `session_stream.ListEvents`, whose parameters are `(userID, sessionID)`, so the query never matched a row and the route always answered `[]`. Live in 0.0.14. Found by the new real-Postgres handler tests.
+
 **MCP `manage_task` create accepts `@<seat_key>` assignees (D6c)** (2026-10-04)
 
 - `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.go`: the inline role allow-list (`@name` only if `IsValidRole(name)`) is replaced by `Task.ValidateAssigneeList`, the validator subtask creation already uses. One rule for MCP create and subtask create: `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, any other bare name is rejected. Whitespace around an assignee is stripped first.

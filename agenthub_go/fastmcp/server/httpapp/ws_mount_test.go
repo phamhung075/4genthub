@@ -19,6 +19,12 @@ import (
 // wsTestToken mints a local JWT the unified validator accepts, with the given scopes.
 func wsTestToken(t *testing.T, scopes []string) string {
 	t.Helper()
+	return wsTestTokenFor(t, "user-1", scopes)
+}
+
+// wsTestTokenFor is wsTestToken for a chosen user id.
+func wsTestTokenFor(t *testing.T, user string, scopes []string) string {
+	t.Helper()
 	secret := "ws-mount-test-secret-000000000000"
 	t.Setenv("JWT_SECRET_KEY", secret)
 	t.Setenv("AUTH_PROVIDER", "keycloak")
@@ -27,7 +33,7 @@ func wsTestToken(t *testing.T, scopes []string) string {
 	if err != nil {
 		t.Fatalf("NewJWTService: %v", err)
 	}
-	token, err := svc.GenerateToken("user-1", scopes, 1, "tid-1", services.DefaultAudience)
+	token, err := svc.GenerateToken(user, scopes, 1, "tid-1", services.DefaultAudience)
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -134,8 +140,11 @@ func wsTestWriteText(t *testing.T, conn net.Conn, payload []byte) {
 	switch n := len(payload); {
 	case n < 126:
 		header = append(header, 0x80|byte(n))
-	default:
+	case n < 1<<16:
 		header = append(header, 0x80|126, byte(n>>8), byte(n))
+	default:
+		header = append(header, 0x80|127)
+		header = binary.BigEndian.AppendUint64(header, uint64(n))
 	}
 	header = append(header, mask[:]...)
 	masked := make([]byte, len(payload))

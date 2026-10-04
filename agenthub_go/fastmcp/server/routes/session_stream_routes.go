@@ -45,7 +45,7 @@ func GetSessionEvents(ctx context.Context, sessionID string, afterSeq, limit int
 	if uid == "" {
 		return nil, httpErr(401, "Authentication required")
 	}
-	res, err := session_stream.ListEvents(ctx, sessions, sessionID, uid, int64(afterSeq), int64(limit))
+	res, err := session_stream.ListEvents(ctx, sessions, uid, sessionID, int64(afterSeq), int64(limit))
 	if err != nil {
 		return nil, httpErr(404, "Session not found")
 	}

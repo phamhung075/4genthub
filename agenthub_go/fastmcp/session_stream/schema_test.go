@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
@@ -26,7 +27,7 @@ import (
 //	e = sqlalchemy.create_engine('postgresql+psycopg2://postgres@127.0.0.1:54329/<empty db>')
 //	AgentSession.metadata.create_all(e, tables=[AgentSession.__table__, AgentSessionEvent.__table__])"
 func TestStreamTablesMatchThePythonSchema(t *testing.T) {
-	sessions := newTestSessions(t)
+	sessions := testdb.NewSessions(t)
 	want, err := os.ReadFile("testdata/stream_tables_python_ddl.txt")
 	if err != nil {
 		t.Fatal(err)
