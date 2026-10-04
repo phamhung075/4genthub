@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Removed
+- **`callAgent` and the Agent API Response panel** - 2026-10-04
+  - The backend `call_agent` tool and `POST /api/v2/agents/call` were removed (T6), so `agentApiV2.callAgent`
+    (`src/services/apiV2.ts`) and `callAgent` (`src/api.ts`) are gone, with the `agentManagement.callAgent` sample in
+    `src/components/help/sections/UsingMCPTools.tsx`.
+  - `src/components/AgentInfoDialog.tsx` no longer fetches on open: the loading, error, response, Refresh and copy UI
+    and state are deleted. The dialog keeps its title, task context and the static Agent Description section.
+    `getAvailableAgents` and the assignee picker are untouched.
+
 ### Fixed
 - **TaskRowDesktop tests cover the current component** - 2026-10-04
   - All 17 tests in `src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx` targeted a removed API and failed.

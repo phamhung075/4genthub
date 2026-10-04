@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — frontend callAgent tests removed (T6b)
+
+- Removed: the `callAgent` describe block (6 tests) and the `callAgent` import and mock entry in `agenthub-frontend/src/tests/api.test.ts`; no `AgentInfoDialog` or `apiV2` test covered it.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes; `npx vitest run` 45 failed / 1688 passed (1733) before, 44 failed / 1683 passed (1727) after, files failing 12 before, 11 after (the per-file list of the first run was not kept, so which file turned green is unverified). Remaining failures: api.test.ts 8 (`getAvailableAgents`, D6), BranchItem 4, ProjectListContent 4, TaskDetailsDialog 5, AuthWrapper 4, test_useRealtimeSync_project 2, dto-integration 3, setupTests 3, taskTypes 1, useAgentManagement 7, testWebSocket 3.
+
 ## 2026-10-04 — call_agent removal: tests removed and re-homed (T6, Go)
 
 - Removed with their code: `agents_mount_test.go`, `call_agent_test.go`, `call_agent_port_test.go`, `agent_invocation_handler_test.go`, `yaml_agent_template_loader_test.go`, the seeder tests (in `openrig_spec_renderer_test.go`) and `TestPathResolverGetCursorAgentDir`.

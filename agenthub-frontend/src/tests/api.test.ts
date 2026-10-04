@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    callAgent,
     completeSubtask,
     completeTask,
     createBranch,
@@ -78,7 +77,6 @@ vi.mock('../services/apiV2', () => ({
   },
   agentApiV2: {
     getAgentsMetadata: vi.fn(),
-    callAgent: vi.fn(),
   },
   connectionApiV2: {
     healthCheck: vi.fn(),
@@ -1080,91 +1078,6 @@ describe('API V2 Module', () => {
         ];
         researchAgents.forEach(agent => {
           expect(result).toContain(agent);
-        });
-      });
-    });
-
-    describe('callAgent', () => {
-      it('should call agent successfully', async () => {
-        const mockResponse = { success: true, result: 'Agent executed' };
-        agentApiV2.callAgent.mockResolvedValue(mockResponse);
-
-        const result = await callAgent('coding-agent', { task: 'implement feature' });
-        expect(result).toEqual(mockResponse);
-        expect(agentApiV2.callAgent).toHaveBeenCalledWith('coding-agent', { task: 'implement feature' });
-      });
-
-      it('should handle agent call errors', async () => {
-        const error = new Error('Agent not found');
-        error.message = 'Agent not found';
-        agentApiV2.callAgent.mockRejectedValue(error);
-
-        const result = await callAgent('invalid-agent');
-        expect(result).toEqual({
-          success: false,
-          message: 'Agent not found',
-          error: 'Error: Agent not found'
-        });
-      });
-
-      it('should call master orchestrator agent with complex task', async () => {
-        const complexTask = {
-          task_id: 'task-123',
-          title: 'Build Agent Intelligence System',
-          description: 'Create intelligent agent selection and coordination system',
-          requirements: ['multi-agent coordination', 'workload balancing']
-        };
-        const mockResponse = {
-          success: true,
-          agent: 'master-orchestrator-agent',
-          result: 'Task analyzed and delegated to appropriate agents'
-        };
-        agentApiV2.callAgent.mockResolvedValue(mockResponse);
-
-        const result = await callAgent('master-orchestrator-agent', complexTask);
-        expect(result).toEqual(mockResponse);
-        expect(agentApiV2.callAgent).toHaveBeenCalledWith('master-orchestrator-agent', complexTask);
-      });
-
-      it('should call system architect for architecture planning', async () => {
-        const architectureTask = {
-          task: 'design microservices architecture',
-          requirements: ['scalability', 'fault tolerance', 'observability']
-        };
-        const mockResponse = {
-          success: true,
-          result: 'Architecture blueprint created with service dependencies'
-        };
-        agentApiV2.callAgent.mockResolvedValue(mockResponse);
-
-        const result = await callAgent('system-architect-agent', architectureTask);
-        expect(result).toEqual(mockResponse);
-        expect(agentApiV2.callAgent).toHaveBeenCalledWith('system-architect-agent', architectureTask);
-      });
-
-      it('should handle timeout errors gracefully', async () => {
-        const timeoutError = new Error('Request timeout');
-        timeoutError.name = 'TimeoutError';
-        agentApiV2.callAgent.mockRejectedValue(timeoutError);
-
-        const result = await callAgent('coding-agent', { task: 'long running task' });
-        expect(result).toEqual({
-          success: false,
-          message: 'Request timeout',
-          error: 'TimeoutError: Request timeout'
-        });
-      });
-
-      it('should handle network errors gracefully', async () => {
-        const networkError = new Error('Network unreachable');
-        networkError.name = 'NetworkError';
-        agentApiV2.callAgent.mockRejectedValue(networkError);
-
-        const result = await callAgent('debugger-agent', { bug: 'memory leak' });
-        expect(result).toEqual({
-          success: false,
-          message: 'Network unreachable',
-          error: 'NetworkError: Network unreachable'
         });
       });
     });

@@ -136,7 +136,7 @@ export const searchTasks = async (query: string, params?: { git_branch_id?: stri
     // Search functionality can be implemented on frontend by filtering list results
     const tasks = await listTasks(params);
     const searchLower = query.toLowerCase();
-    return tasks.filter(task => 
+    return tasks.filter(task =>
         task.title.toLowerCase().includes(searchLower) ||
         task.description?.toLowerCase().includes(searchLower)
     );
@@ -433,21 +433,6 @@ export const getAvailableAgents = async (): Promise<string[]> => {
         'idea-refinement-agent',
         'remediation-agent'
     ];
-};
-
-export const callAgent = async (agent_name: string, params?: any): Promise<any> => {
-    try {
-        const response = await agentApiV2.callAgent(agent_name, params);
-        return response;
-    } catch (error: any) {
-        logger.error('Error calling agent:', error);
-        const errorMessage = error?.message || error?.detail || 'Failed to call agent';
-        return { 
-            success: false, 
-            message: errorMessage,
-            error: error?.toString() || 'Unknown error'
-        };
-    }
 };
 
 // --- Connection Operations ---

@@ -900,26 +900,6 @@ export const agentApiV2 = {
     });
     return handleResponse(response);
   },
-
-  // Call an agent
-  callAgent: async (agentName: string, params?: any) => {
-    // Normalize agent name: remove @ prefix and ensure kebab-case
-    let normalizedName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
-    normalizedName = normalizedName.replace(/_/g, '-').toLowerCase();
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        agent_name: normalizedName,
-        params: params || {}
-      }),
-    });
-    return handleResponse(response);
-  },
 };
 
 // ============================================

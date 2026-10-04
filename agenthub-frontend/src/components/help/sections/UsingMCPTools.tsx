@@ -39,11 +39,6 @@ const UsingMCPTools= ({ expandedSections, toggleSection, deploymentMode }: Using
         details: "Completed login UI, working on JWT integration"
       }
     },
-    agentManagement: {
-      callAgent: {
-        name_agent: "coding-agent"
-      }
-    },
     contextManagement: {
       create: {
         action: "create",
