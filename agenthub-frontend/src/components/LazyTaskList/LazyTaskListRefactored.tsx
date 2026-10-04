@@ -75,6 +75,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // UI state
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [loadedAgents, setLoadedAgents] = useState(false);
+  const [availableAgentsError, setAvailableAgentsError] = useState(false);
   const [agents, setAgents] = useState<any[]>([]);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
@@ -83,17 +84,21 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // Load agents on demand
   const loadAgentsOnDemand = useCallback(async () => {
     if (loadedAgents) return;
-    try {
-      const [projectAgents, availableAgentsList] = await Promise.all([
-        listAgents(),
-        getAvailableAgents()
-      ]);
-      setAgents(projectAgents);
-      setAvailableAgents(availableAgentsList);
-      setLoadedAgents(true);
-    } catch (e) {
-      logger.error('Error loading agents', { component: 'LazyTaskList', error: e });
+    // The two lists load independently: a seat API failure must not drop the project agents.
+    // loadedAgents stays false after a failure, so the next dialog open retries.
+    const [projectAgents, seats] = await Promise.allSettled([listAgents(), getAvailableAgents()]);
+    if (projectAgents.status === 'fulfilled') {
+      setAgents(projectAgents.value);
+    } else {
+      logger.error('Error loading agents', { component: 'LazyTaskList', error: projectAgents.reason });
     }
+    if (seats.status === 'fulfilled') {
+      setAvailableAgents(seats.value);
+    } else {
+      logger.error('Error loading seats', { component: 'LazyTaskList', error: seats.reason });
+    }
+    setAvailableAgentsError(seats.status === 'rejected');
+    setLoadedAgents(projectAgents.status === 'fulfilled' && seats.status === 'fulfilled');
   }, [loadedAgents]);
 
   // Dialog management
@@ -292,6 +297,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         taskSummaries={displayTasks}
         agents={agents}
         availableAgents={availableAgents}
+        availableAgentsError={availableAgentsError}
         saving={saving}
         onCloseDialog={closeDialog}
         onOpenDialog={openDialog}

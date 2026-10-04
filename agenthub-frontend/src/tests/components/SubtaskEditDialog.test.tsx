@@ -23,7 +23,16 @@ vi.mock('../../hooks/useSubtasks', () => ({
   }),
 }));
 
-vi.mock('../../components/AgentAssignmentDialog', () => ({ default: () => null }));
+vi.mock('../../components/AgentAssignmentDialog', () => ({
+  default: ({ agents, availableAgents, availableAgentsError }: any) => (
+    <div
+      data-testid="assignment"
+      data-project-agents={agents.length}
+      data-seats={availableAgents.join(',')}
+      data-error={String(availableAgentsError)}
+    />
+  ),
+}));
 
 const subtask = (overrides: Partial<Subtask> = {}): Subtask =>
   ({
@@ -100,5 +109,28 @@ describe('SubtaskEditDialog', () => {
 
     expect(titleInput().value).toBe('Write tests');
     await waitFor(() => expect(listAgents).toHaveBeenCalledTimes(2));
+  });
+
+  describe('seat load', () => {
+    it('hands the seats to the assignment dialog without an error', async () => {
+      vi.mocked(getAvailableAgents).mockResolvedValue(['@lead']);
+
+      render(renderDialog(true, subtask()));
+
+      await waitFor(() => expect(screen.getByTestId('assignment')).toHaveAttribute('data-seats', '@lead'));
+      expect(screen.getByTestId('assignment')).toHaveAttribute('data-error', 'false');
+    });
+
+    it('flags a failed seat load and still hands over the project agents', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(listAgents).mockResolvedValue([{ id: 'a1' }]);
+      vi.mocked(getAvailableAgents).mockRejectedValue(new Error('seat API down'));
+
+      render(renderDialog(true, subtask()));
+
+      await waitFor(() => expect(screen.getByTestId('assignment')).toHaveAttribute('data-error', 'true'));
+      expect(screen.getByTestId('assignment')).toHaveAttribute('data-project-agents', '1');
+      expect(screen.getByTestId('assignment')).toHaveAttribute('data-seats', '');
+    });
   });
 });

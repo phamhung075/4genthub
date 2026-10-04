@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — assignee picker failure and empty states (Task D6b, frontend)
+
+- Added `src/tests/components/{AgentAssignmentDialog,TaskEditDialog,LazyTaskListAgentLoading}.test.tsx` (4 + 4 + 5 tests) and 2 tests in `SubtaskEditDialog.test.tsx`: seats listed, user without seats gets the Seats-page hint, a failed load shows an alert and not the empty text, search without a match, a seat failure keeps the project agents, the next load retries, and a loaded state is not fetched again.
+- Fixed the `js-cookie` mocks of `TaskDetailsDialog.test.tsx` and `TaskDetailsDialog.websocket.test.tsx` (added `remove`; `AuthContext` logout calls it): the 38 unhandled `Cookies.remove is not a function` errors are gone (`vitest` prints no Errors line).
+- Mutation checks (each reverted): `loadedAgents` always true fails the retry test; `setAgents` only when the seats also loaded fails the project-agents test; the error branch of `AgentAssignmentDialog` forced off fails the alert test.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit` 0 errors; `npx vite build` ok; `npx vitest run` 92 files / 1737 tests passed (before: 89 / 1722), no failing file.
+
 ## 2026-10-04 — session viewer handler tests (Task A5, Go)
 
 - Added `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go` (7 tests over a real socket and an in-memory `sessionViewerStore`, no Postgres): replay after `after_seq` then live (an already-replayed live seq is skipped); missing id and another user's id close identically with 4004; an event published while the replay is blocked is not lost; an overflowing viewer gets 1013 and no subscription is left; an idle client closing releases its subscription; a client message does not end the stream; replay pages of 500 over 1203 and 1000 events (3 reads each, limit 500).

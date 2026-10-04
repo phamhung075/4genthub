@@ -11,6 +11,13 @@
     bare name, so a seat is assigned as `@seat_key`.
   - `AgentAssignmentDialog` says Seats / Seat key instead of "Agents from Library"; `TaskEditDialog` logs a failed seat
     load instead of leaving an unhandled rejection.
+- **Assignee pickers tell a failed seat load from an empty list (D6b)** - 2026-10-04
+  - `LazyTaskListRefactored` loads the project agents and the seats independently (`Promise.allSettled`): a seat API
+    failure no longer drops the project agents, and `loadedAgents` stays false so the next dialog open retries.
+  - `AgentAssignmentDialog` (new prop `availableAgentsError`, passed through `DialogSection` and `SubtaskEditDialog`) and
+    `TaskEditDialog` show "Could not load your seats..." as an alert on a failed load, "You have no seats yet. Seats are
+    created on the Seats page." for a user without seats, and "No seats found" for a search without a match.
+    `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Removed
 - **`window.testWebSocket` debug helper** - 2026-10-04

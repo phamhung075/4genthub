@@ -16,6 +16,7 @@ interface AgentAssignmentDialogProps {
   onAssign: (agents: string[]) => void;
   agents: any[]; // Project registered agents
   availableAgents: string[]; // Seat keys as assignees (@seat_key)
+  availableAgentsError?: boolean; // The seats could not be loaded
   saving?: boolean;
 }
 
@@ -27,6 +28,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   onAssign,
   agents,
   availableAgents,
+  availableAgentsError = false,
   saving = false
 }) => {
   const [selectedAgents, setSelectedAgents] = React.useState<string[]>([]);
@@ -42,8 +44,8 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   }, [task]);
 
   const toggleAgentSelection = (agentId: string) => {
-    setSelectedAgents(prev =>
-      prev.includes(agentId)
+    setSelectedAgents(prev => 
+      prev.includes(agentId) 
         ? prev.filter(id => id !== agentId)
         : [...prev, agentId]
     );
@@ -70,7 +72,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
       return availableAgents;
     }
     const query = agentSearchQuery.toLowerCase();
-    return availableAgents.filter(agentName =>
+    return availableAgents.filter(agentName => 
       agentName.toLowerCase().includes(query)
     );
   }, [availableAgents, agentSearchQuery]);
@@ -83,7 +85,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
           <DialogHeader>
             <DialogTitle className="text-xl text-left">Assign Agents to Task</DialogTitle>
           </DialogHeader>
-
+        
         <div className="space-y-4">
           {/* Task Information */}
           <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
@@ -94,9 +96,9 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
               </p>
             )}
           </div>
-
+          
           <Separator />
-
+          
           {/* Project Registered Agents */}
           <div>
             <h4 className="font-medium text-sm mb-3">Project Registered Agents</h4>
@@ -139,9 +141,9 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
               </div>
             )}
           </div>
-
+          
           <Separator />
-
+          
           {/* Available Agents from Library */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -159,8 +161,15 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
             </div>
             <div className="space-y-2 max-h-[300px] overflow-y-auto border dark:border-gray-700 rounded p-2">
               {filteredAvailableAgents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {agentSearchQuery ? `No seats found matching "${agentSearchQuery}"` : "No seats available"}
+                <p
+                  className={`text-sm text-center py-4 ${availableAgentsError ? "text-destructive" : "text-muted-foreground"}`}
+                  role={availableAgentsError ? "alert" : undefined}
+                >
+                  {availableAgentsError
+                    ? "Could not load your seats. Close this dialog and open it again to retry."
+                    : agentSearchQuery
+                      ? `No seats found matching "${agentSearchQuery}"`
+                      : "You have no seats yet. Seats are created on the Seats page."}
                 </p>
               ) : (
                 filteredAvailableAgents.map((agentName) => (
@@ -200,7 +209,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
               }
             </div>
           </div>
-
+          
           {/* Selected Agents Summary */}
           {selectedAgents.length > 0 && (
             <>
@@ -209,8 +218,8 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                 <h4 className="font-medium text-sm mb-2">Selected Agents ({selectedAgents.length}):</h4>
                 <div className="flex flex-wrap gap-1">
                   {selectedAgents.map((agent, index) => (
-                    <span
-                      key={index}
+                    <span 
+                      key={index} 
                       className="text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded"
                     >
                       {agent}
@@ -221,13 +230,13 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
             </>
           )}
         </div>
-
+        
         <DialogFooter>
           <Button variant="outline" onClick={handleCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button
-            variant="default"
+          <Button 
+            variant="default" 
             onClick={handleAssign}
             disabled={saving}
           >

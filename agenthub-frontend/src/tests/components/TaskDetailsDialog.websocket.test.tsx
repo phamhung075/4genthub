@@ -28,7 +28,8 @@ vi.mock('../../utils/contextHelpers', () => ({
 // Mock js-cookie
 vi.mock('js-cookie', () => ({
   default: {
-    get: vi.fn(() => 'mock-token')
+    get: vi.fn(() => 'mock-token'),
+    remove: vi.fn()
   }
 }));
 

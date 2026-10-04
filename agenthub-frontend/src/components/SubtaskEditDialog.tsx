@@ -7,6 +7,7 @@ import { Save, FileText, Users } from "lucide-react";
 import { Subtask, getAvailableAgents, listAgents } from "../api";
 import { useSubtaskMutations } from "../hooks/useSubtasks";
 import AgentAssignmentDialog from "./AgentAssignmentDialog";
+import logger from "../utils/logger";
 
 interface SubtaskEditDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   // Agent assignment dialog state
   const [agentDialogOpen, setAgentDialogOpen] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
+  const [availableAgentsError, setAvailableAgentsError] = useState(false);
   const [projectAgents, setProjectAgents] = useState<any[]>([]);
 
   // Use React Query mutation hook
@@ -52,13 +54,17 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   // Load available agents when dialog opens
   useEffect(() => {
     if (open) {
-      Promise.all([
-        listAgents().catch(() => []),
-        getAvailableAgents().catch(() => [])
-      ]).then(([projAgents, availAgents]) => {
-        setProjectAgents(projAgents);
-        setAvailableAgents(availAgents);
-      });
+      listAgents().then(setProjectAgents);
+      getAvailableAgents().then(
+        seats => {
+          setAvailableAgents(seats);
+          setAvailableAgentsError(false);
+        },
+        error => {
+          logger.error('Error loading seats for the assignee picker:', error);
+          setAvailableAgentsError(true);
+        }
+      );
     }
   }, [open]);
 
@@ -305,6 +311,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
       onAssign={handleAssignAgents}
       agents={projectAgents}
       availableAgents={availableAgents}
+      availableAgentsError={availableAgentsError}
       saving={false}
     />
     </>
