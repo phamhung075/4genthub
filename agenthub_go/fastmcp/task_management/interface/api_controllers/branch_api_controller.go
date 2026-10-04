@@ -466,66 +466,6 @@ func (c *BranchAPIController) DeleteBranch(ctx context.Context, branchID, userID
 	}
 }
 
-// GetBranchTaskCounts mirrors get_branch_task_counts.
-func (c *BranchAPIController) GetBranchTaskCounts(ctx context.Context, branchID, userID string, session any) (resp *types.ApiResponse) {
-	resp = &types.ApiResponse{Success: false, Timestamp: brACNow()}
-	defer func() {
-		if r := recover(); r != nil {
-			resp.Success = false
-			resp.Error = brACPtr(value_objects.PyStr(r))
-			resp.Message = brACPtr("Failed to get branch task counts")
-			resp.Data = brACTaskCountsErrorData(brACPtr(value_objects.PyStr(r)))
-			resp.Timestamp = brACNow()
-		}
-	}()
-	repo, err := c.repoProvider.GetGitBranchRepository(session, &userID)
-	if err != nil {
-		return brACAPIError(err, "Failed to get branch task counts", brACTaskCountsEmptyData())
-	}
-	gitBranch, err := repo.FindByID(ctx, branchID, nil)
-	if err != nil {
-		return brACAPIError(err, "Failed to get branch task counts", brACTaskCountsEmptyData())
-	}
-	if gitBranch == nil {
-		return &types.ApiResponse{
-			Success:   false,
-			Error:     brACPtr("Branch " + branchID + " not found"),
-			Message:   brACPtr("Branch not found"),
-			Timestamp: brACNow(),
-		}
-	}
-	facade, err := c.facadeService.GetBranchFacade(&gitBranch.ProjectID, &userID)
-	if err != nil {
-		return brACAPIError(err, "Failed to get branch task counts", brACTaskCountsEmptyData())
-	}
-	result := facade.GetBranchSummary(ctx, branchID)
-	if !brACTruthy(result, "success") {
-		errMsg := value_objects.PyStr(brACGetDefault(result, "error", "Failed to get branch summary"))
-		return &types.ApiResponse{
-			Success:   false,
-			Error:     &errMsg,
-			Message:   brACPtr("Failed to get branch summary"),
-			Timestamp: brACNow(),
-		}
-	}
-	branch := brACAsMap(brACGetDefault(result, "branch", entities.NewOrderedMap[any]()))
-	taskCounts := entities.NewOrderedMap[any]()
-	taskCounts.Set("total", brACIntDefault(branch, "total_tasks", 0))
-	taskCounts.Set("todo", brACIntDefault(branch, "todo_tasks", 0))
-	taskCounts.Set("in_progress", brACIntDefault(branch, "in_progress_tasks", 0))
-	taskCounts.Set("done", brACIntDefault(branch, "completed_tasks", 0))
-	taskCounts.Set("blocked", brACIntDefault(branch, "blocked_tasks", 0))
-	taskCounts.Set("progress_percentage", brACFloatDefault(branch, "progress_percentage", 0.0))
-	data := entities.NewOrderedMap[any]()
-	data.Set("task_counts", taskCounts)
-	data.Set("branch_id", branchID)
-	return &types.ApiResponse{
-		Success:   true,
-		Data:      data,
-		Timestamp: brACNow(),
-	}
-}
-
 func brACIntDefault(m *entities.OrderedMap[any], key string, def int) int {
 	if f, ok := value_objects.PyFloat(brACGet(m, key)); ok {
 		return int(f)

@@ -28,7 +28,6 @@ type BranchController interface {
 	CreateBranch(ctx context.Context, projectID, name, description, userID string) BranchResult
 	GetBranch(ctx context.Context, branchID, userID string) BranchResult
 	DeleteBranch(ctx context.Context, branchID, userID string) BranchResult
-	GetBranchTaskCounts(ctx context.Context, branchID, userID string) BranchResult
 	GetBranchesWithTaskCounts(ctx context.Context, projectID, userID string) BranchResult
 	GetBulkSummaries(ctx context.Context, projectIDs []string, userID string, includeArchived bool) BranchResult
 }
@@ -84,19 +83,7 @@ func DeleteBranch(ctx context.Context, branchID, userID string, controller Branc
 	return result.ModelDump(), nil
 }
 
-// GetBranchTaskCounts mirrors GET /{branch_id}/task-counts.
-func GetBranchTaskCounts(ctx context.Context, branchID, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
-	result := controller.GetBranchTaskCounts(ctx, branchID, userID)
-	if !result.Success() {
-		if branchNotFound(result) {
-			return nil, routesHTTPErr(404, "Branch not found or access denied")
-		}
-		return nil, routesHTTPErr(500, branchMessage(result, "Failed to get task counts"))
-	}
-	return result.ModelDump(), nil
-}
-
-// GetProjectBranchesWithTaskCounts mirrors POST /project/{project_id}/summaries.
+// GetProjectBranchesWithTaskCounts mirrors GET /project/{project_id}/summaries.
 func GetProjectBranchesWithTaskCounts(ctx context.Context, projectID, userID string, controller BranchController) (*entities.OrderedMap[any], error) {
 	result := controller.GetBranchesWithTaskCounts(ctx, projectID, userID)
 	if !result.Success() {

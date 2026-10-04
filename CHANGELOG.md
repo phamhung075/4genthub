@@ -17,6 +17,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `BranchAPIController.ListBranches`, `UpdateBranch` and `AssignAgent` (`fastmcp/task_management/interface/api_controllers/branch_api_controller.go`) had no caller left once the HTTP routes and their adapter went (`f33db13a`); the package's smoke test only exercises `GetBranchPerformanceMetrics`, and a repo-wide grep found no other reference. `task_management` is otherwise untouched, per the lead's instruction: the assign capability stays alive through MCP (`git_branch_mcp_controller/handlers/agent_handler.go:88` -> facade -> `AgentAssignAgent`), and the service and repository layers keep their unit tests.
 
+**The orphaned branch task-counts route removed** (2026-10-04)
+
+- `GET /api/v2/branches/{id}/task-counts` had no consumer outside `agenthub_go` (the only external reference is the Python mirror, `agenthub_main/src/fastmcp/server/routes/branch_routes.py:314`; no frontend, script or doc caller), the same criterion that removed its siblings. Deleted: the mount, `routes.GetBranchTaskCounts`, the `BranchController` method, the adapter method, `BranchAPIController.GetBranchTaskCounts` and the mount-inventory row. `GET /api/v2/branches/b1/task-counts` now 404s, pinned by `TestDeletedBranchTaskCountsRouteIsNotServed`.
+
 ### Fixed
 
 **The branch collection POST is an exact match** (2026-10-04)

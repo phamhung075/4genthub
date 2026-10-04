@@ -195,7 +195,6 @@ func TestMountRoutesDoesNotDuplicateHandlerPatterns(t *testing.T) {
 		"POST /api/v2/branches/{$}",
 		"GET /api/v2/branches/{id}",
 		"DELETE /api/v2/branches/{id}",
-		"GET /api/v2/branches/{id}/task-counts",
 		"POST /api/v2/branches/project/{project_id}/summaries",
 		"POST /api/v2/branches/summaries/bulk",
 		"POST /api/v2/tasks/",

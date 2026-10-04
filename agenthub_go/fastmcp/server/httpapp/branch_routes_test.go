@@ -42,12 +42,18 @@ func (s *stubBranchController) DeleteBranch(context.Context, string, string) rou
 	return stubBranchResult{}
 }
 
-func (s *stubBranchController) GetBranchTaskCounts(context.Context, string, string) routes.BranchResult {
+func (s *stubBranchController) GetBranchesWithTaskCounts(context.Context, string, string) routes.BranchResult {
 	return stubBranchResult{}
 }
 
-func (s *stubBranchController) GetBranchesWithTaskCounts(context.Context, string, string) routes.BranchResult {
-	return stubBranchResult{}
+// GET /{id}/task-counts was deleted with the other orphaned branch routes (no consumer
+// anywhere: only the Python mirror defined it), so the path must no longer be served.
+func TestDeletedBranchTaskCountsRouteIsNotServed(t *testing.T) {
+	authenticateTestUser(t)
+	rec := doTestRequest(t, branchMux(), http.MethodGet, "/api/v2/branches/b1/task-counts", "")
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("GET /api/v2/branches/b1/task-counts = %d, want 404 (%s)", rec.Code, rec.Body.String())
+	}
 }
 
 func (s *stubBranchController) GetBulkSummaries(context.Context, []string, string, bool) routes.BranchResult {

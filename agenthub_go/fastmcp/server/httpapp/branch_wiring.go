@@ -199,11 +199,6 @@ func (a branchControllerAdapter) DeleteBranch(ctx context.Context, branchID, use
 	return branchResult{r.Success, r.Message, r.Error, r}
 }
 
-func (a branchControllerAdapter) GetBranchTaskCounts(ctx context.Context, branchID, userID string) routes.BranchResult {
-	r := a.c.GetBranchTaskCounts(ctx, branchID, userID, nil)
-	return branchResult{r.Success, r.Message, r.Error, r}
-}
-
 func (a branchControllerAdapter) GetBranchesWithTaskCounts(ctx context.Context, projectID, userID string) routes.BranchResult {
 	r := a.c.GetBranchesWithTaskCounts(ctx, projectID, userID, nil)
 	return branchResult{r.Success, r.Message, r.Error, r}
