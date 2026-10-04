@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — four "needs a look" frontend test files (Task B5)
+
+- `agenthub-frontend/src/tests/setupTests.test.tsx` (3 failing to 0): the suppression tests replaced `console.error` and then called it, so they never reached the filter in `src/setupTests.ts` (the "not suppressed" tests re-implemented the filter inline). A second copy of `setupTests` is loaded at the top of the file with a spy as its sink, and the tests call the real filter (`it.each` for the three suppressed messages, one for forwarded errors with arguments, one for non-string arguments). Mutation: dropping the `useLayoutEffect` check in `setupTests.ts` fails the matching test (restored, `git diff` empty).
+- `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_project.test.tsx` (2 to 0): the hook reports invalid project payloads through `logger.warn` (`Project update missing ID`, `Project delete payload validation failed`), not `console.error`; the tests assert the logger calls and the unused console spies are gone.
+- `agenthub-frontend/src/tests/useAgentManagement.test.tsx` (7 to 0): `useUserAgentInstances` returns `isLoading`, not `loading` (all 7); and the mutations write the cache and then invalidate it, which refetches the list, so the list mock now comes from a small fake server that the mutation mocks update. The cache test asserts exactly one refetch after a create instead of none.
+- `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx` (5 to 1): two `(Loading...)` markers exist by design (Details and Context tab), Created and Last Updated both show the date, the context fixture put loose keys where the dialog renders `task_data`, and `fireEvent.keyDown` does not press a button, so the keyboard test uses `userEvent.keyboard('{enter}')`. NOT fixed: `should have proper ARIA attributes` expects `role="dialog"`, which the shared `src/components/ui/dialog.tsx` does not render (no `role`, `aria-modal` or label). That is a source accessibility defect, reported to lead, test left failing.
+- Result (in `agenthub-frontend`): `npx vitest run` 44 failed / 1683 passed before, 28 failed / 1699 passed after (1727 tests), failing files 11 to 8; `npx tsc --noEmit -p .` 0 errors.
+
 ## 2026-10-04 — frontend callAgent tests removed (T6b)
 
 - Removed: the `callAgent` describe block (6 tests) and the `callAgent` import and mock entry in `agenthub-frontend/src/tests/api.test.ts`; no `AgentInfoDialog` or `apiV2` test covered it.

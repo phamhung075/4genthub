@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from './../test-utils';
 import React from 'react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import * as api from '../../api';
 import { Task } from '../../api';
@@ -221,7 +222,11 @@ describe('TaskDetailsDialog', () => {
       );
 
       expect(screen.getByText('Details')).toBeInTheDocument();
-      expect(screen.getByText('(Loading...)')).toBeInTheDocument();
+      // One marker on the Details tab (task) and one on the Context tab (context)
+      const markers = screen.getAllByText('(Loading...)');
+      expect(markers).toHaveLength(2);
+      expect(screen.getByText('Details')).toContainElement(markers[0]);
+      expect(screen.getByText('Context')).toContainElement(markers[1]);
     });
   });
 
@@ -285,7 +290,9 @@ describe('TaskDetailsDialog', () => {
       await waitFor(() => {
         expect(screen.getByText('Time Information')).toBeInTheDocument();
         expect(screen.getByText('2 days')).toBeInTheDocument();
-        expect(screen.getByText(/8\/27\/2025/)).toBeInTheDocument(); // Created date
+        // Created and Last Updated each show the date and the time
+        expect(screen.getByText('Created:').nextElementSibling).toHaveTextContent(/8\/27\/2025 at /);
+        expect(screen.getByText('Last Updated:').nextElementSibling).toHaveTextContent(/8\/27\/2025 at /);
       });
     });
 
@@ -386,10 +393,10 @@ describe('TaskDetailsDialog', () => {
       await waitFor(() => {
         const details = screen.getByText('View Complete Raw Task Data (JSON)');
         expect(details).toBeInTheDocument();
-        
+
         // Click to expand
         fireEvent.click(details);
-        
+
         // Check for JSON content via RawJSONDisplay mock
         const rawJsonDisplay = screen.getByTestId('raw-json-display');
         expect(rawJsonDisplay).toBeInTheDocument();
@@ -528,9 +535,9 @@ describe('TaskDetailsDialog', () => {
       await waitFor(() => {
         const copyButton = screen.getByText('Copy JSON');
         expect(copyButton).toBeInTheDocument();
-        
+
         fireEvent.click(copyButton);
-        
+
         expect(mockWriteText).toHaveBeenCalled();
       });
 
@@ -560,7 +567,7 @@ describe('TaskDetailsDialog', () => {
 
       // Test expand all
       fireEvent.click(screen.getByText('Expand All'));
-      
+
       // Test collapse all
       fireEvent.click(screen.getByText('Collapse All'));
     });
@@ -626,7 +633,7 @@ describe('TaskDetailsDialog', () => {
       await waitFor(() => {
         const closeButton = screen.getByText('Close');
         fireEvent.click(closeButton);
-        
+
         expect(mockOnClose).toHaveBeenCalled();
       });
     });
@@ -773,7 +780,7 @@ describe('TaskDetailsDialog', () => {
       await waitFor(() => {
         const copyButton = screen.getByText('Copy JSON');
         fireEvent.click(copyButton);
-        
+
         expect(mockWriteText).toHaveBeenCalled();
         // Should not show "Copied!" on failure
         expect(screen.queryByText('Copied!')).not.toBeInTheDocument();
@@ -804,7 +811,7 @@ describe('TaskDetailsDialog', () => {
         // Check for expandable sections
         const taskDataSection = screen.getByText('Task Data');
         fireEvent.click(taskDataSection);
-        
+
         // Should show nested content
         expect(screen.getByText('implementation_notes')).toBeInTheDocument();
         expect(screen.getByText('technical_decisions')).toBeInTheDocument();
@@ -812,19 +819,16 @@ describe('TaskDetailsDialog', () => {
     });
 
     it('should handle different data types in nested JSON', async () => {
+      // The dialog renders the sections of resolved_context (task_data, metadata, ...), not loose keys
       const contextWithDifferentTypes = {
         data: {
           resolved_context: {
-            string_value: 'test string',
-            number_value: 42,
-            boolean_value: true,
-            null_value: null,
-            array_value: ['item1', 'item2'],
-            date_value: '2025-08-27T10:00:00Z',
-            uuid_value: '550e8400-e29b-41d4-a716-446655440000',
-            metadata: {
-              created_at: '2025-08-27T09:00:00Z',
-              updated_at: '2025-08-27T12:00:00Z'
+            task_data: {
+              string_value: 'test string',
+              number_value: 42,
+              boolean_value: true,
+              null_value: null,
+              array_value: ['item1', 'item2']
             }
           }
         }
@@ -849,10 +853,11 @@ describe('TaskDetailsDialog', () => {
         // Check for different data types via EnhancedJSONViewer mock
         const jsonViewer = screen.getByTestId('enhanced-json-viewer');
         expect(jsonViewer).toBeInTheDocument();
-        expect(jsonViewer).toHaveTextContent('test string');
-        expect(jsonViewer).toHaveTextContent('42');
-        expect(jsonViewer).toHaveTextContent('true');
-        expect(jsonViewer).toHaveTextContent('null');
+        expect(jsonViewer).toHaveTextContent('string_value: test string');
+        expect(jsonViewer).toHaveTextContent('number_value: 42');
+        expect(jsonViewer).toHaveTextContent('boolean_value: true');
+        expect(jsonViewer).toHaveTextContent('null_value: null');
+        expect(jsonViewer).toHaveTextContent('array_value: item1,item2');
       });
     });
   });
@@ -878,7 +883,7 @@ describe('TaskDetailsDialog', () => {
         // Dialog should have role="dialog"
         const dialog = screen.getByRole('dialog');
         expect(dialog).toBeInTheDocument();
-        
+
         // Check for tab buttons by text (they may not have button role)
         expect(screen.getByText('Details')).toBeInTheDocument();
         expect(screen.getByText('Context')).toBeInTheDocument();
@@ -896,15 +901,14 @@ describe('TaskDetailsDialog', () => {
         />
       );
 
-      await waitFor(() => {
-        const contextTab = screen.getByText('Context');
-        
-        // Simulate keyboard navigation
-        contextTab.focus();
-        fireEvent.keyDown(contextTab, { key: 'Enter' });
-        
-        expect(screen.getByText('Task Context Data')).toBeInTheDocument();
-      });
+      const contextTab = (await screen.findByText('Context')).closest('button') as HTMLButtonElement;
+      contextTab.focus();
+      expect(contextTab).toHaveFocus();
+
+      // Enter on a focused button activates it
+      userEvent.keyboard('{enter}');
+
+      expect(await screen.findByText('Task Context Data')).toBeInTheDocument();
     });
   });
 });

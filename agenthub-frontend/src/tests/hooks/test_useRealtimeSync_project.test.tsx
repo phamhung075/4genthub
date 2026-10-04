@@ -13,6 +13,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
+import logger from '../../utils/logger';
 import * as websocketProtocol from '../../types/websocket-protocol';
 import type { WSMessage } from '../../types/websocketTypes';
 import type { Project } from '../../types/api.types';
@@ -136,8 +137,6 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
     });
 
     it('should reject payload missing required id field', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
       const { result } = renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
@@ -185,15 +184,12 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
       const finalProjects = queryClient.getQueryData<Project[]>(['projects']);
       expect(finalProjects?.length).toBe(initialCount);
 
-      // Verify error was logged
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      // The handler stops at the missing id and logs a warning
+      expect(logger.warn).toHaveBeenCalledWith('[useRealtimeSync] Project update missing ID');
 
-      consoleErrorSpy.mockRestore();
     });
 
     it('should reject payload missing required name field', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
       const { result } = renderHook(
         () => useRealtimeSync(mockWebSocketClient, true),
         { wrapper: createWrapper() }
@@ -241,10 +237,12 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
       const finalProjects = queryClient.getQueryData<Project[]>(['projects']);
       expect(finalProjects?.length).toBe(initialCount);
 
-      // Verify error was logged
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      // The type guard rejects the payload and the handler logs a warning with the payload
+      expect(logger.warn).toHaveBeenCalledWith(
+        '[useRealtimeSync] Project delete payload validation failed',
+        expect.objectContaining({ requiredFields: ['id', 'name'] })
+      );
 
-      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -105,6 +105,18 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
     },
   ];
 
+  // The mutations write the cache and then invalidate it, which refetches the list. A fake
+  // server keeps the list endpoint consistent with what the mutations did.
+  let serverInstances: typeof mockInstances;
+
+  const serveInstances = () => {
+    serverInstances = [...mockInstances];
+    vi.mocked(agentManagementApiV2.listUserInstances).mockImplementation(async () => ({
+      success: true,
+      instances: [...serverInstances],
+    }));
+  };
+
   it('should load user agent instances', async () => {
     vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
       success: true,
@@ -114,7 +126,7 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     expect(result.current.instances).toEqual(mockInstances);
@@ -122,10 +134,7 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
   });
 
   it('should create new agent instance using mutation', async () => {
-    vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
-      success: true,
-      instances: mockInstances,
-    });
+    serveInstances();
 
     const newInstance = {
       id: 'instance-3',
@@ -134,12 +143,15 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
       is_enabled: true,
     };
 
-    vi.mocked(agentManagementApiV2.createInstance).mockResolvedValue(newInstance);
+    vi.mocked(agentManagementApiV2.createInstance).mockImplementation(async () => {
+      serverInstances.push(newInstance);
+      return newInstance;
+    });
 
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     expect(result.current.instances).toHaveLength(2);
@@ -157,22 +169,22 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
   });
 
   it('should update agent instance using mutation', async () => {
-    vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
-      success: true,
-      instances: mockInstances,
-    });
+    serveInstances();
 
     const updatedInstance = {
       ...mockInstances[0],
       agent_name: 'Updated Agent Name',
     };
 
-    vi.mocked(agentManagementApiV2.updateInstance).mockResolvedValue(updatedInstance);
+    vi.mocked(agentManagementApiV2.updateInstance).mockImplementation(async () => {
+      serverInstances[0] = updatedInstance;
+      return updatedInstance;
+    });
 
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     // Update instance
@@ -187,19 +199,17 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
   });
 
   it('should delete agent instance using mutation', async () => {
-    vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
-      success: true,
-      instances: mockInstances,
-    });
+    serveInstances();
 
-    vi.mocked(agentManagementApiV2.deleteInstance).mockResolvedValue({
-      success: true,
+    vi.mocked(agentManagementApiV2.deleteInstance).mockImplementation(async () => {
+      serverInstances = serverInstances.filter(i => i.id !== 'instance-1');
+      return { success: true };
     });
 
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     expect(result.current.instances).toHaveLength(2);
@@ -216,22 +226,22 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
   });
 
   it('should toggle agent enabled status', async () => {
-    vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
-      success: true,
-      instances: mockInstances,
-    });
+    serveInstances();
 
     const toggledInstance = {
       ...mockInstances[1],
       is_enabled: true,
     };
 
-    vi.mocked(agentManagementApiV2.updateInstance).mockResolvedValue(toggledInstance);
+    vi.mocked(agentManagementApiV2.updateInstance).mockImplementation(async () => {
+      serverInstances[1] = toggledInstance;
+      return toggledInstance;
+    });
 
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     expect(result.current.instances[1].is_enabled).toBe(false);
@@ -268,7 +278,7 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
     // Start mutation
@@ -279,7 +289,7 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
 
     // Should show loading
     await waitFor(() => {
-      expect(result.current.loading).toBe(true);
+      expect(result.current.isLoading).toBe(true);
     });
 
     // Resolve mutation
@@ -287,15 +297,12 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
 
     // Loading should complete
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
   });
 
-  it('should verify cache invalidation after mutations', async () => {
-    vi.mocked(agentManagementApiV2.listUserInstances).mockResolvedValue({
-      success: true,
-      instances: mockInstances,
-    });
+  it('should refetch the list after a mutation (cache invalidation)', async () => {
+    serveInstances();
 
     const newInstance = {
       id: 'instance-3',
@@ -304,15 +311,18 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
       is_enabled: true,
     };
 
-    vi.mocked(agentManagementApiV2.createInstance).mockResolvedValue(newInstance);
+    vi.mocked(agentManagementApiV2.createInstance).mockImplementation(async () => {
+      serverInstances.push(newInstance);
+      return newInstance;
+    });
 
     const { result } = renderHook(() => useUserAgentInstances(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.loading).toBe(false);
+      expect(result.current.isLoading).toBe(false);
     });
 
-    const initialCount = agentManagementApiV2.listUserInstances.mock.calls.length;
+    const initialCount = vi.mocked(agentManagementApiV2.listUserInstances).mock.calls.length;
 
     // Create mutation
     await result.current.createInstance({
@@ -324,7 +334,9 @@ describe('useUserAgentInstances (React Query with Mutations)', () => {
       expect(result.current.instances).toHaveLength(3);
     });
 
-    // Cache should be updated via setQueryData, not refetch
-    expect(agentManagementApiV2.listUserInstances).toHaveBeenCalledTimes(initialCount);
+    // onSuccess writes the cache and invalidates the query, which refetches the list
+    await waitFor(() => {
+      expect(agentManagementApiV2.listUserInstances).toHaveBeenCalledTimes(initialCount + 1);
+    });
   });
 });
