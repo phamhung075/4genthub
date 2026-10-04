@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"agenthub/fastmcp/agent_management/interface/mcp_controllers"
 	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
 	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -39,7 +38,6 @@ type DDDCompliantMCPTools struct {
 	ProjectController    *projectctl.ProjectMCPController
 	GitBranchController  *branchctl.GitBranchMCPController
 	AgentController      *agent_mcp_controller.AgentMCPController
-	CallAgentController  *mcp_controllers.CallAgentMCPController
 	ManageSeatController *seatcontrollers.ManageSeatController
 	CallSeatController   *seatcontrollers.CallSeatController
 	ContextController    *contextctl.UnifiedContextMCPController // nil when the database is unavailable
@@ -47,12 +45,11 @@ type DDDCompliantMCPTools struct {
 }
 
 // Dependencies are the pieces Python obtains from module-level singletons
-// (FacadeService.get_instance(), get_db_config(), CallAgentMCPController()).
+// (FacadeService.get_instance(), get_db_config()).
 type Dependencies struct {
 	FacadeService *services.FacadeService
 	// DatabaseAvailable mirrors `get_db_config().SessionLocal` succeeding.
 	DatabaseAvailable bool
-	CallAgent         *mcp_controllers.CallAgentMCPController
 	ManageSeat        *seatcontrollers.ManageSeatController
 	CallSeat          *seatcontrollers.CallSeatController
 }
@@ -79,7 +76,7 @@ func NewDDDCompliantMCPTools(deps Dependencies, configOverrides map[string]any) 
 	}
 	wireAuthHooks()
 	wireWorkflowGuidance()
-	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, CallAgentController: deps.CallAgent, ManageSeatController: deps.ManageSeat, CallSeatController: deps.CallSeat}
+	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, ManageSeatController: deps.ManageSeat, CallSeatController: deps.CallSeat}
 	formatter := utils.NewMCPResponseFormatter()
 	if err := t.initControllers(deps, formatter); err != nil {
 		return nil, err
@@ -216,8 +213,8 @@ func asOrdered(v any) *entities.OrderedMap[any] {
 	return toOrderedData(v)
 }
 
-// ToolDefinitions lists the tools Python's register_tools registers (the
-// call_agent tool is registered by its own controller).
+// ToolDefinitions lists the tools Python's register_tools registers (manage_seat and
+// call_seat are registered by their own controllers).
 func (t *DDDCompliantMCPTools) ToolDefinitions() []ToolDefinition {
 	defs := []ToolDefinition{
 		{Name: "manage_task", Description: taskctl.GetManageTaskDescription(), Parameters: taskctl.GetManageTaskParameters(),
@@ -259,7 +256,7 @@ func (t *DDDCompliantMCPTools) ToolDefinitions() []ToolDefinition {
 }
 
 // RegisterTools ports register_tools(mcp): task, subtask, context, project, git
-// branch and agent tools, then call_agent and manage_seat through their own controllers.
+// branch and agent tools, then manage_seat and call_seat through their own controllers.
 func (t *DDDCompliantMCPTools) RegisterTools(mcp MCPServer) {
 	schemaServer, withSchema := mcp.(SchemaMCPServer)
 	for _, def := range t.ToolDefinitions() {
@@ -268,9 +265,6 @@ func (t *DDDCompliantMCPTools) RegisterTools(mcp MCPServer) {
 		} else {
 			mcp.Tool(def.Name, def.Description, def.Handler)
 		}
-	}
-	if t.CallAgentController != nil {
-		t.CallAgentController.RegisterTools(mcp)
 	}
 	if t.ManageSeatController != nil {
 		t.ManageSeatController.RegisterTools(mcp)
@@ -311,9 +305,4 @@ func (t *DDDCompliantMCPTools) ManageContext(ctx context.Context, kwargs map[str
 // ManageAgent delegates to the agent controller.
 func (t *DDDCompliantMCPTools) ManageAgent(ctx context.Context, action string, projectID, agentID, name, callAgent, gitBranchID, userID *string) *entities.OrderedMap[any] {
 	return t.AgentController.ManageAgent(ctx, action, projectID, agentID, name, callAgent, gitBranchID, userID)
-}
-
-// CallAgent delegates to the call_agent controller.
-func (t *DDDCompliantMCPTools) CallAgent(ctx context.Context, nameAgent string, userID *string) *entities.OrderedMap[any] {
-	return t.CallAgentController.CallAgent(ctx, nameAgent, userID)
 }

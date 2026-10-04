@@ -6,8 +6,8 @@ import (
 )
 
 func TestTokenCostsContentAndOrder(t *testing.T) {
-	if got := TokenCosts.Len(); got != 68 {
-		t.Fatalf("TOKEN_COSTS length = %d, want 68", got)
+	if got := TokenCosts.Len(); got != 67 {
+		t.Fatalf("TOKEN_COSTS length = %d, want 67", got)
 	}
 	wantFirst := []string{"create_project", "update_project", "delete_project", "list_projects", "get_project"}
 	if got := TokenCosts.Keys()[:5]; !reflect.DeepEqual(got, wantFirst) {
@@ -15,7 +15,6 @@ func TestTokenCostsContentAndOrder(t *testing.T) {
 	}
 	cases := map[string]int{
 		"create_project": 10,
-		"call_agent":     20,
 		"ai_plan":        15,
 		"login":          0,
 		"update_quota":   0,
@@ -28,8 +27,8 @@ func TestTokenCostsContentAndOrder(t *testing.T) {
 }
 
 func TestGetOperationCost(t *testing.T) {
-	if got := GetOperationCost("call_agent", 1); got != 20 {
-		t.Errorf("call_agent = %d, want 20", got)
+	if got := GetOperationCost("ai_plan", 1); got != 15 {
+		t.Errorf("ai_plan = %d, want 15", got)
 	}
 	if got := GetOperationCost("missing", 1); got != 1 {
 		t.Errorf("missing default = %d, want 1", got)
@@ -41,8 +40,8 @@ func TestGetOperationCost(t *testing.T) {
 
 func TestGetAllCostsIsCopy(t *testing.T) {
 	all := GetAllCosts()
-	if all.Len() != 68 {
-		t.Fatalf("copy length = %d, want 68", all.Len())
+	if all.Len() != 67 {
+		t.Fatalf("copy length = %d, want 67", all.Len())
 	}
 	all.Set("new_op", 99)
 	if _, ok := TokenCosts.Get("new_op"); ok {
@@ -58,12 +57,12 @@ func TestGetFreeOperations(t *testing.T) {
 }
 
 func TestGetExpensiveOperations(t *testing.T) {
-	want := map[string]int{"create_project": 10, "ai_plan": 15, "ai_create": 10, "call_agent": 20}
+	want := map[string]int{"create_project": 10, "ai_plan": 15, "ai_create": 10}
 	got := GetExpensiveOperations(10)
 	if got.Len() != len(want) {
 		t.Fatalf("expensive len = %d, want %d", got.Len(), len(want))
 	}
-	wantOrder := []string{"create_project", "ai_plan", "ai_create", "call_agent"}
+	wantOrder := []string{"create_project", "ai_plan", "ai_create"}
 	if !reflect.DeepEqual(got.Keys(), wantOrder) {
 		t.Fatalf("expensive order = %v, want %v", got.Keys(), wantOrder)
 	}

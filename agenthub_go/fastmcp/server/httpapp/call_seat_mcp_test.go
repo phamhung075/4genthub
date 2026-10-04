@@ -58,6 +58,11 @@ func TestMCPToolsListPublishesCallSeat(t *testing.T) {
 		t.Fatalf("decode tools/list: %v", err)
 	}
 	for _, tool := range wire.Result.Tools {
+		if tool.Name == "call_agent" {
+			t.Fatal("tools/list still publishes the removed call_agent tool")
+		}
+	}
+	for _, tool := range wire.Result.Tools {
 		if tool.Name != "call_seat" {
 			continue
 		}

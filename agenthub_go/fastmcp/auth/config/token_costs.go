@@ -54,7 +54,6 @@ var tokenCostPairs = []struct {
 	{"list_subtasks", 1},
 	{"get_subtask", 1},
 	// Agent operations
-	{"call_agent", 20},
 	{"register_agent", 5},
 	{"assign_agent", 3},
 	{"unassign_agent", 2},

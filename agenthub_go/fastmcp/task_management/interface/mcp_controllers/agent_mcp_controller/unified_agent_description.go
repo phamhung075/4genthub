@@ -11,7 +11,7 @@ const UnifiedAgentDescription = `
 ⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 32 specialized agents from development to deployment.
 📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management.
 🎯 CRITICAL FOR: Multi-agent orchestration and dynamic agent assignment.
-📝 NOTE: For agent invocation, use separate 'call_agent' tool.
+📝 NOTE: To resolve a seat, use the separate 'call_seat' tool.
 
 🚀 AVAILABLE AGENTS (32 Total):
 
@@ -48,7 +48,7 @@ const UnifiedAgentDescription = `
 • Optional parameters: omit unless updating values
 • Returns detailed error messages for validation failures
 • Business logic delegated to AgentApplicationFacade
-• For agent invocation: use 'call_agent' tool separately
+• To resolve a seat: use the 'call_seat' tool separately
 
 **Pattern**: {register → assign → work → unassign → unregister}
 **Example**: Register coding-agent → Assign to feature branch → Complete work → Unassign → Cleanup

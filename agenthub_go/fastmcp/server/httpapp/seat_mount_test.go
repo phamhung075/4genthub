@@ -8,9 +8,35 @@ import (
 	"strings"
 	"testing"
 
+	authdomain "agenthub/fastmcp/auth/domain/entities"
+	authinterface "agenthub/fastmcp/auth/interface"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
+
+// authenticateTestUser makes currentUser resolve to a valid UUID user so the authed
+// handlers run instead of returning 403.
+func authenticateTestUser(t *testing.T) {
+	t.Helper()
+	previous := authinterface.GetCurrentUserUniversal
+	authinterface.GetCurrentUserUniversal = func(context.Context, string) (*authdomain.User, error) {
+		id := "11111111-1111-4111-8111-111111111111"
+		return &authdomain.User{ID: &id, Email: "dev@example.com", Username: "dev"}, nil
+	}
+	t.Cleanup(func() { authinterface.GetCurrentUserUniversal = previous })
+}
+
+func doTestRequest(t *testing.T, mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	return rec
+}
 
 type fakeSeatSource struct {
 	resolved *repositories.ResolvedSeat
@@ -31,7 +57,7 @@ func seatTestMux(t *testing.T, source seatSource) *http.ServeMux {
 	previous := newSeatSource
 	newSeatSource = func(*database.SessionManager, string) (seatSource, error) { return source, nil }
 	t.Cleanup(func() { newSeatSource = previous })
-	authenticateAgentsTestUser(t)
+	authenticateTestUser(t)
 	mux := http.NewServeMux()
 	mountSeatRoutes(mux, nil)
 	return mux
@@ -44,7 +70,7 @@ func TestResolveSeatReturnsSnapshot(t *testing.T) {
 		Files:  []repositories.ResolvedFile{{Path: "agent.yaml", Content: "name: x"}},
 		Policy: map[string]any{"Seat": "coder"},
 	}})
-	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/coder", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/coder", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -66,7 +92,7 @@ func TestResolveSeatStatusMapping(t *testing.T) {
 	}
 	for _, c := range cases {
 		mux := seatTestMux(t, &fakeSeatSource{err: c.err})
-		if rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != c.want {
+		if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != c.want {
 			t.Errorf("%v: status = %d, want %d", c.err, rec.Code, c.want)
 		}
 	}
@@ -75,7 +101,7 @@ func TestResolveSeatStatusMapping(t *testing.T) {
 func TestSeatRoutesNeedPublicURLAndAuth(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{})
-	if rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != http.StatusInternalServerError {
+	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != http.StatusInternalServerError {
 		t.Errorf("without %s: status = %d", publicURLEnv, rec.Code)
 	}
 	bare := httptest.NewRecorder()
@@ -88,7 +114,7 @@ func TestSeatRoutesNeedPublicURLAndAuth(t *testing.T) {
 func TestSeedSeatTypesReportsCount(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
-	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
 		t.Errorf("seed: %d %s", rec.Code, rec.Body.String())
 	}
@@ -97,7 +123,7 @@ func TestSeedSeatTypesReportsCount(t *testing.T) {
 func TestSeedSeatTypesWorksWithoutPublicURL(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{seeded: 9})
-	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"seat_types":9`) {
 		t.Errorf("seed without %s: status = %d %s", publicURLEnv, rec.Code, rec.Body.String())
 	}
@@ -106,7 +132,7 @@ func TestSeedSeatTypesWorksWithoutPublicURL(t *testing.T) {
 func TestSeedSeatTypesErrorMapping(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatTestMux(t, &fakeSeatSource{err: errors.New("database down")})
-	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/seed", "")
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("seed error: status = %d, want 500", rec.Code)
 	}

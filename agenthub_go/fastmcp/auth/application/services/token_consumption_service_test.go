@@ -133,8 +133,8 @@ func TestCheckSufficientBalance(t *testing.T) {
 	if !ok || cost != 5 || available != 10 {
 		t.Fatalf("got (%v,%d,%d)", ok, cost, available)
 	}
-	ok, cost, available = svc.CheckSufficientBalance(context.Background(), "u", "call_agent", nil)
-	if ok || cost != 20 || available != 10 {
+	ok, cost, available = svc.CheckSufficientBalance(context.Background(), "u", "ai_plan", nil)
+	if ok || cost != 15 || available != 10 {
 		t.Fatalf("got (%v,%d,%d)", ok, cost, available)
 	}
 }

@@ -229,8 +229,8 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 }
 
 // getMCPToolsList builds the MCP tools/list result from ToolDefinitions(), the
-// Python tool registry. call_agent is registered by its own controller rather
-// than by ToolDefinitions, so its schema is appended here; every schema is
+// Python tool registry. manage_seat, call_seat and the connection tool are registered by
+// their own controllers rather than by ToolDefinitions, so their schemas are appended here; every schema is
 // converted with the Python-faithful serializer before encoding/json writes it.
 func (a *App) getMCPToolsList() ([]map[string]any, error) {
 	if a.mcpTools == nil {
@@ -249,15 +249,6 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 			"inputSchema": schema,
 		})
 	}
-	callSchema, err := plainJSON(callAgentInputSchema())
-	if err != nil {
-		return nil, err
-	}
-	tools = append(tools, map[string]any{
-		"name":        "call_agent",
-		"description": callAgentToolDescription,
-		"inputSchema": callSchema,
-	})
 	seatSchema, err := plainJSON(seatcontrollers.ManageSeatInputSchema())
 	if err != nil {
 		return nil, err
@@ -297,35 +288,6 @@ func plainJSON(v any) (any, error) {
 		return nil, err
 	}
 	return plain, nil
-}
-
-// callAgentToolDescription is the description CallAgentMCPController.register_tools
-// registers for the call_agent tool (call_agent_controller.py).
-const callAgentToolDescription = "Load and invoke a specialized agent by name using the database-backed " +
-	"user agent instance system. Returns agent configuration including " +
-	"system_prompt, tools, and capabilities."
-
-// callAgentInputSchema is the inputSchema FastMCP derives from the Python
-// call_agent(name_agent: str, user_id: str = None) signature.
-func callAgentInputSchema() *entities.OrderedMap[any] {
-	nameAgent := entities.NewOrderedMap[any]()
-	nameAgent.Set("type", "string")
-	nameAgent.Set("title", "Name Agent")
-
-	userID := entities.NewOrderedMap[any]()
-	userID.Set("default", nil)
-	userID.Set("type", "string")
-	userID.Set("title", "User Id")
-
-	properties := entities.NewOrderedMap[any]()
-	properties.Set("name_agent", nameAgent)
-	properties.Set("user_id", userID)
-
-	schema := entities.NewOrderedMap[any]()
-	schema.Set("properties", properties)
-	schema.Set("required", []any{"name_agent"})
-	schema.Set("type", "object")
-	return schema
 }
 
 func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string, args map[string]any) (any, bool) {
@@ -444,14 +406,6 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			return res, false
 		}
 		return map[string]any{"error": "AgentController not initialized"}, true
-
-	case "call_agent":
-		if a.mcpTools != nil && a.mcpTools.CallAgentController != nil {
-			agentName := fmt.Sprintf("%v", args["name_agent"])
-			res := a.mcpTools.CallAgentController.CallAgent(ctx, agentName, userID)
-			return res, false
-		}
-		return map[string]any{"error": "CallAgentController not initialized"}, true
 
 	case seatcontrollers.ManageSeatToolName:
 		if a.mcpTools != nil && a.mcpTools.ManageSeatController != nil {

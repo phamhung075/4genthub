@@ -39,7 +39,7 @@ type openRigAgentSource interface {
 }
 
 // newOpenRigAgentSource is a package variable so tests can substitute a fake without
-// a database, like newCallAgentProvider.
+// a database.
 var newOpenRigAgentSource = func(sessions *database.SessionManager) (openRigAgentSource, error) {
 	templateRepo, err := agentorm.NewORMAgentTemplateRepository(sessions)
 	if err != nil {

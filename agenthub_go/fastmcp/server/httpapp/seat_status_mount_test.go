@@ -68,7 +68,7 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 		seatStatusNow = previousNow
 		newMachineTokenRepo = previousTokens
 	})
-	authenticateAgentsTestUser(t)
+	authenticateTestUser(t)
 	mux := http.NewServeMux()
 	mountSeatStatusRoutes(mux, nil)
 	return mux

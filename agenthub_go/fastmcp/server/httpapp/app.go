@@ -52,10 +52,6 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	a.subtasks = subtaskControllerAdapter{c: api_controllers.NewSubtaskAPIController(facadeService).WithSubtaskRepositories(func(userID *string) (repositories.SubtaskRepository, error) {
 		return infrarepos.NewORMSubtaskRepository(sessions, userID)
 	})}
-	callAgent, err := newCallAgentController(sessions)
-	if err != nil {
-		return nil, err
-	}
 	manageSeat, err := newManageSeatController(sessions)
 	if err != nil {
 		return nil, err
@@ -64,7 +60,6 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	mcpTools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     facadeService,
 		DatabaseAvailable: true,
-		CallAgent:         callAgent,
 		ManageSeat:        manageSeat,
 		CallSeat:          callSeat,
 	}, nil)
@@ -123,7 +118,6 @@ func (a *App) Handler() http.Handler {
 	mountRoutes(mux, newRouteDeps(a))
 	mountWebSockets(mux, a.Sessions)
 	mountAgentManagementRoutes(mux, a.Sessions)
-	mountAgentsRoutes(mux, a.Sessions)
 	mountOpenRigRoutes(mux, a.Sessions)
 	mountSeatRoutes(mux, a.Sessions)
 	mountSeatAdminRoutes(mux, a.Sessions)

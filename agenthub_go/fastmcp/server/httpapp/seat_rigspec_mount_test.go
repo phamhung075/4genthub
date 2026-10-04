@@ -70,7 +70,7 @@ func seatRigSpecTestMux(t *testing.T, source seatRigSpecSource) *http.ServeMux {
 	previous := newSeatRigSpecSource
 	newSeatRigSpecSource = func(*database.SessionManager, string) (seatRigSpecSource, error) { return source, nil }
 	t.Cleanup(func() { newSeatRigSpecSource = previous })
-	authenticateAgentsTestUser(t)
+	authenticateTestUser(t)
 	mux := http.NewServeMux()
 	mountSeatRigSpecRoutes(mux, nil)
 	return mux
@@ -143,7 +143,7 @@ func TestRoomRigSpecRendersSeatsEdgesAndHashes(t *testing.T) {
 	}
 	mux := seatRigSpecTestMux(t, fake)
 
-	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -214,14 +214,14 @@ func TestRoomRigSpecAbsentRoomAndNoActiveSeats(t *testing.T) {
 
 	empty := &fakeSeatRigSpec{rooms: map[string]*repositories.Room{}}
 	mux := seatRigSpecTestMux(t, empty)
-	if rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/ghost/rigspec", ""); rec.Code != http.StatusNotFound {
+	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/ghost/rigspec", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("absent room: status = %d, want 404: %s", rec.Code, rec.Body.String())
 	}
 
 	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
 	none := &fakeSeatRigSpec{rooms: map[string]*repositories.Room{"dev": room}}
 	mux = seatRigSpecTestMux(t, none)
-	rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", "")
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("empty room: status = %d, want 409: %s", rec.Code, rec.Body.String())
 	}
@@ -233,7 +233,7 @@ func TestRoomRigSpecAbsentRoomAndNoActiveSeats(t *testing.T) {
 func TestRoomRigSpecNeedsPublicURLAndAuth(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
 	mux := seatRigSpecTestMux(t, &fakeSeatRigSpec{})
-	if rec := doAgentsRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", ""); rec.Code != http.StatusInternalServerError {
+	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", ""); rec.Code != http.StatusInternalServerError {
 		t.Errorf("without %s: status = %d", publicURLEnv, rec.Code)
 	}
 
@@ -267,7 +267,7 @@ func TestRoomRigSpecRendersPermissionPolicyPerSeat(t *testing.T) {
 	mux := seatRigSpecTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/rigspec"
 
-	rec := doAgentsRequest(t, mux, http.MethodGet, path, "")
+	rec := doTestRequest(t, mux, http.MethodGet, path, "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -286,7 +286,7 @@ func TestRoomRigSpecRendersPermissionPolicyPerSeat(t *testing.T) {
 	}
 
 	// The old request-level override is gone: the query string changes nothing.
-	again := doAgentsRequest(t, mux, http.MethodGet, path+"?permission_policy=yolo", "")
+	again := doTestRequest(t, mux, http.MethodGet, path+"?permission_policy=yolo", "")
 	if again.Code != http.StatusOK || decodeRigSpec(t, again).RigSpec.YAML != doc {
 		t.Errorf("a permission_policy query changed the render: %d", again.Code)
 	}

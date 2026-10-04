@@ -9,11 +9,8 @@ import (
 	tmentities "agenthub/fastmcp/task_management/domain/entities"
 )
 
-// CallSeatToolName is the MCP tool name of CallSeatController.
-//
-// It is call_seat and not call_agent on purpose: the seat is the durable position
-// 4genthub stores, the occupant is the brain that sits in it, and the name should
-// say which layer this reaches.
+// CallSeatToolName is the MCP tool name of CallSeatController. The seat is the
+// durable position 4genthub stores and the occupant is the brain that sits in it.
 const CallSeatToolName = "call_seat"
 
 // CallSeatToolDescription is read by LLM seats.

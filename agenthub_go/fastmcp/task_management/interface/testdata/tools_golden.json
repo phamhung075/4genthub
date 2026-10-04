@@ -689,25 +689,5 @@
    ],
    "type": "object"
   }
- },
- "call_agent": {
-  "description": "Load and invoke a specialized agent by name using the database-backed user agent instance system. Returns agent configuration including system_prompt, tools, and capabilities.",
-  "parameters": {
-   "properties": {
-    "name_agent": {
-     "title": "Name Agent",
-     "type": "string"
-    },
-    "user_id": {
-     "default": null,
-     "title": "User Id",
-     "type": "string"
-    }
-   },
-   "required": [
-    "name_agent"
-   ],
-   "type": "object"
-  }
  }
 }
