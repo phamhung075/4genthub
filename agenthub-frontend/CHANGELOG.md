@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **environment tests set variables with `vi.stubEnv`** - 2026-10-04
+  - `src/tests/config/environment.test.ts` used `vi.mock('import.meta.env', ...)`, which mocks nothing
+    (`import.meta.env` is not a module), and replaced `window` with a bare object, so 11 of 25 tests failed. It now
+    stubs the `VITE_*` variables and `window`, re-imports the module per case and restores everything afterwards.
+    The 25 tests keep their intent and expectations; no source change. First rewrite delegated to a deepseek worker,
+    reviewed line by line and rerun here (25 pass, tsc 0 errors).
 - **logger.config tests set the environment with `vi.stubEnv`** - 2026-10-04
   - `src/tests/config/logger.config.test.ts` (31 tests, all failing) faked `global.import.meta`, which does not
     exist (`import.meta` is per-module syntax), and replaced `process` and `window` with `{}`; 17 failed with
