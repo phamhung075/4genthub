@@ -117,7 +117,7 @@ describe('index.tsx', () => {
     expect(loggerState.imported).toBe(true);
   });
 
-  it('handles logger export module initialization failure silently', async () => {
+  it('renders the app when the logger export default is a rejected promise', async () => {
     const error = new Error('Logger initialization failed');
     loggerState.reject(error);
     await loggerState.promise.catch(() => {});
