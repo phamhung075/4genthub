@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Fixed
+- **api.test.ts matches the api module** - 2026-10-04
+  - 17 of the 116 tests in `src/tests/api.test.ts` failed. Nine asserted behavior the code no longer has or never
+    had: `getTask`, `listSubtasks` and `getSubtask` pass the `includeContext` option through (the mocks are now
+    called with `undefined` as second argument), and `createTask` sends `assignees` (`[]` by default, the caller's
+    value otherwise). Eight tested `listRules`, `createRule`, `updateRule`, `deleteRule`, `validateRule`
+    (5) and `checkHealth` (3); none is in `src/api.ts` (removed in `4f836134`, no caller in `src`; the only
+    `checkHealth` is a local function in `HealthCheck.tsx`), so those two blocks are removed.
+  - Not fixed here: the 8 `getAvailableAgents` tests still fail, correctly. See the open gap below.
+  - Open gap: `getAvailableAgents` returns a hard-coded list of 42 names (its comment says 32). 15 are not in the
+    agent library (for example `swarm-scaler-agent`, `seo-sem-agent`) and 4 library agents are missing
+    (`creative-ideation-agent`, `llm-ai-agents-research`, `ml-specialist-agent`, `ui-specialist-agent`), and
+    `TaskEditDialog`, `SubtaskEditDialog` and `LazyTaskListRefactored` offer it as the assignee list.
 - **logger tests: one misplaced duplicate removed, five tests fixed against the real behavior** - 2026-10-04
   - `src/utils/logger.test.ts` (29 tests, 22 failing) duplicated `src/tests/utils/logger.test.ts` outside the
     `src/tests` folder and built configs `LoggerConfig` does not have (`outputs: ['console']`, `localStorageMaxSize`),

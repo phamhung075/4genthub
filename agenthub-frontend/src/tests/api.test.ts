@@ -1,17 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     callAgent,
-    checkHealth,
     completeSubtask,
     completeTask,
     createBranch,
     createProject,
-    createRule,
     createSubtask,
     createTask,
     deleteBranch,
     deleteProject,
-    deleteRule,
     deleteSubtask,
     deleteTask,
     getAvailableAgents,
@@ -27,7 +24,6 @@ import {
     listAgents,
     listBranches,
     listProjects,
-    listRules,
     listSubtasks,
     listTasks,
     searchTasks,
@@ -36,11 +32,9 @@ import {
     updateGlobalContext,
     updateProject,
     updateProjectContext,
-    updateRule,
     updateSubtask,
     updateTask,
     updateTaskContext,
-    validateRule
 } from '../api';
 
 // Mock the apiV2 services
@@ -128,7 +122,7 @@ describe('API V2 Module', () => {
           { id: '1', title: 'Task 1', status: 'todo' },
           { id: '2', title: 'Task 2', status: 'in_progress' },
         ];
-        
+
         taskApiV2.getTasks.mockResolvedValue({ tasks: mockTasks });
 
         const result = await listTasks();
@@ -159,7 +153,7 @@ describe('API V2 Module', () => {
 
         const result = await getTask('1');
         expect(result).toEqual(mockTask);
-        expect(taskApiV2.getTask).toHaveBeenCalledWith('1');
+        expect(taskApiV2.getTask).toHaveBeenCalledWith('1', undefined);
       });
 
       it('should handle direct response format', async () => {
@@ -190,7 +184,8 @@ describe('API V2 Module', () => {
           description: newTask.description,
           status: newTask.status,
           priority: newTask.priority,
-          git_branch_id: newTask.git_branch_id
+          git_branch_id: newTask.git_branch_id,
+          assignees: []
         });
       });
 
@@ -204,7 +199,8 @@ describe('API V2 Module', () => {
           description: newTask.description,
           status: undefined,
           priority: undefined,
-          git_branch_id: undefined
+          git_branch_id: undefined,
+          assignees: []
         });
       });
 
@@ -226,7 +222,8 @@ describe('API V2 Module', () => {
           description: intelligenceTask.description,
           status: intelligenceTask.status,
           priority: intelligenceTask.priority,
-          git_branch_id: intelligenceTask.git_branch_id
+          git_branch_id: intelligenceTask.git_branch_id,
+          assignees: []
         });
       });
 
@@ -237,7 +234,7 @@ describe('API V2 Module', () => {
           priority: 'high',
           git_branch_id: 'branch-coordination'
         };
-        const createdTask = { 
+        const createdTask = {
           id: 'task-coord-456',
           ...urgentTask,
           status: 'todo'
@@ -251,7 +248,8 @@ describe('API V2 Module', () => {
           description: urgentTask.description,
           status: undefined,
           priority: urgentTask.priority,
-          git_branch_id: urgentTask.git_branch_id
+          git_branch_id: urgentTask.git_branch_id,
+          assignees: []
         });
       });
 
@@ -272,7 +270,8 @@ describe('API V2 Module', () => {
           description: securityTask.description,
           status: undefined,
           priority: securityTask.priority,
-          git_branch_id: securityTask.git_branch_id
+          git_branch_id: securityTask.git_branch_id,
+          assignees: []
         });
       });
     });
@@ -372,23 +371,23 @@ describe('API V2 Module', () => {
 
       it('should search for agent-specific tasks', async () => {
         const mockTasks = [
-          { 
-            id: '1', 
-            title: 'Build Agent Intelligence System', 
+          {
+            id: '1',
+            title: 'Build Agent Intelligence System',
             description: 'Create intelligent agent coordination',
             assignees: ['system-architect-agent', 'coding-agent'],
             labels: ['agent-system', 'intelligence', 'coordination']
           },
-          { 
-            id: '2', 
-            title: 'Security Audit', 
+          {
+            id: '2',
+            title: 'Security Audit',
             description: 'Review system security',
             assignees: ['security-auditor-agent'],
             labels: ['security', 'audit']
           },
-          { 
-            id: '3', 
-            title: 'Agent Coordination Testing', 
+          {
+            id: '3',
+            title: 'Agent Coordination Testing',
             description: 'Test multi-agent workflows',
             assignees: ['test-orchestrator-agent'],
             labels: ['testing', 'agent-coordination']
@@ -404,21 +403,21 @@ describe('API V2 Module', () => {
 
       it('should search by text in title and description only', async () => {
         const mockTasks = [
-          { 
-            id: '1', 
-            title: 'Code Implementation for Agent System', 
+          {
+            id: '1',
+            title: 'Code Implementation for Agent System',
             assignees: ['coding-agent'],
             description: 'Implement core features'
           },
-          { 
-            id: '2', 
-            title: 'System Architecture', 
+          {
+            id: '2',
+            title: 'System Architecture',
             assignees: ['system-architect-agent'],
             description: 'Design system architecture for agents'
           },
-          { 
-            id: '3', 
-            title: 'Bug Investigation', 
+          {
+            id: '3',
+            title: 'Bug Investigation',
             assignees: ['debugger-agent'],
             description: 'Debug memory issues'
           }
@@ -458,7 +457,7 @@ describe('API V2 Module', () => {
 
         const result = await listSubtasks('task-123');
         expect(result).toEqual(mockSubtasks);
-        expect(subtaskApiV2.listSubtasksForTask).toHaveBeenCalledWith('task-123');
+        expect(subtaskApiV2.listSubtasksForTask).toHaveBeenCalledWith('task-123', undefined);
       });
 
       it('should handle empty subtasks response', async () => {
@@ -477,7 +476,7 @@ describe('API V2 Module', () => {
 
         const result = await getSubtask('task-123', 'sub-1');
         expect(result).toEqual(mockSubtask);
-        expect(subtaskApiV2.getSubtask).toHaveBeenCalledWith('sub-1');
+        expect(subtaskApiV2.getSubtask).toHaveBeenCalledWith('sub-1', undefined);
       });
 
       it('should handle direct response format', async () => {
@@ -513,10 +512,10 @@ describe('API V2 Module', () => {
           title: 'Design Agent Selection Algorithm',
           description: 'Create algorithm to automatically select best agents for tasks based on task requirements and agent capabilities'
         };
-        const createdSubtask = { 
-          id: 'sub-coord-456', 
-          ...coordinationSubtask, 
-          parent_task_id: 'task-ai-intelligence' 
+        const createdSubtask = {
+          id: 'sub-coord-456',
+          ...coordinationSubtask,
+          parent_task_id: 'task-ai-intelligence'
         };
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
@@ -533,10 +532,10 @@ describe('API V2 Module', () => {
           title: 'Implement Workload Balancing Engine',
           description: 'Build engine to distribute tasks across available agents with proper load balancing'
         };
-        const createdSubtask = { 
-          id: 'sub-impl-789', 
-          ...implementationSubtask, 
-          parent_task_id: 'task-ai-intelligence' 
+        const createdSubtask = {
+          id: 'sub-impl-789',
+          ...implementationSubtask,
+          parent_task_id: 'task-ai-intelligence'
         };
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
@@ -553,10 +552,10 @@ describe('API V2 Module', () => {
           title: 'Create Agent Coordination Tests',
           description: 'Develop comprehensive test suite for multi-agent coordination system'
         };
-        const createdSubtask = { 
-          id: 'sub-test-321', 
-          ...testingSubtask, 
-          parent_task_id: 'task-ai-intelligence' 
+        const createdSubtask = {
+          id: 'sub-test-321',
+          ...testingSubtask,
+          parent_task_id: 'task-ai-intelligence'
         };
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
@@ -577,9 +576,9 @@ describe('API V2 Module', () => {
           description: 'Algorithm implementation nearly complete',
           status: 'in_progress'
         };
-        const updatedSubtask = { 
-          id: 'sub-coord-456', 
-          ...progressUpdate 
+        const updatedSubtask = {
+          id: 'sub-coord-456',
+          ...progressUpdate
         };
         subtaskApiV2.updateSubtask.mockResolvedValue({ subtask: updatedSubtask });
 
@@ -598,9 +597,9 @@ describe('API V2 Module', () => {
           status: 'blocked',
           description: 'Blocked pending infrastructure updates'
         };
-        const updatedSubtask = { 
-          id: 'sub-impl-789', 
-          ...statusUpdate 
+        const updatedSubtask = {
+          id: 'sub-impl-789',
+          ...statusUpdate
         };
         subtaskApiV2.updateSubtask.mockResolvedValue({ subtask: updatedSubtask });
 
@@ -627,8 +626,8 @@ describe('API V2 Module', () => {
     describe('completeSubtask', () => {
       it('should complete subtask with completion notes', async () => {
         const completionNotes = 'Agent selection algorithm completed with 95% accuracy in benchmarks. Tested with 1000+ task samples, performance meets requirements.';
-        const completedSubtask = { 
-          id: 'sub-coord-456', 
+        const completedSubtask = {
+          id: 'sub-coord-456',
           status: 'done',
           completion_percentage: 100
         };
@@ -640,8 +639,8 @@ describe('API V2 Module', () => {
       });
 
       it('should complete subtask without completion notes', async () => {
-        const completedSubtask = { 
-          id: 'sub-impl-789', 
+        const completedSubtask = {
+          id: 'sub-impl-789',
           status: 'done',
           completion_percentage: 100
         };
@@ -1005,7 +1004,7 @@ describe('API V2 Module', () => {
         const result = await getAvailableAgents();
         const developmentAgents = [
           'coding-agent',
-          'debugger-agent', 
+          'debugger-agent',
           'code-reviewer-agent',
           '@prototyping-agent'
         ];
@@ -1121,8 +1120,8 @@ describe('API V2 Module', () => {
           description: 'Create intelligent agent selection and coordination system',
           requirements: ['multi-agent coordination', 'workload balancing']
         };
-        const mockResponse = { 
-          success: true, 
+        const mockResponse = {
+          success: true,
           agent: 'master-orchestrator-agent',
           result: 'Task analyzed and delegated to appropriate agents'
         };
@@ -1177,90 +1176,6 @@ describe('API V2 Module', () => {
     });
   });
 
-  describe('Rule Operations', () => {
-    describe('listRules', () => {
-      it('should warn and return empty array', async () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
-        const result = await listRules();
-        expect(result).toEqual([]);
-        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
-        
-        consoleSpy.mockRestore();
-      });
-    });
-
-    describe('createRule', () => {
-      it('should throw error for unimplemented operation', async () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
-        await expect(createRule({})).rejects.toThrow('Rule operations not available');
-        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
-        
-        consoleSpy.mockRestore();
-      });
-    });
-
-    describe('updateRule', () => {
-      it('should throw error for unimplemented operation', async () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
-        await expect(updateRule('rule-123', {})).rejects.toThrow('Rule operations not available');
-        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
-        
-        consoleSpy.mockRestore();
-      });
-    });
-
-    describe('deleteRule', () => {
-      it('should throw error for unimplemented operation', async () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
-        await expect(deleteRule('rule-123')).rejects.toThrow('Rule operations not available');
-        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
-        
-        consoleSpy.mockRestore();
-      });
-    });
-
-    describe('validateRule', () => {
-      it('should return invalid result for unimplemented operation', async () => {
-        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-        
-        const result = await validateRule({});
-        expect(result).toEqual({ valid: false, errors: ['Rule operations not available'] });
-        expect(consoleSpy).toHaveBeenCalledWith('Rule operations not yet implemented in V2 API');
-        
-        consoleSpy.mockRestore();
-      });
-    });
-  });
-
-  describe('Connection Operations', () => {
-    describe('checkHealth', () => {
-      it('should return true for healthy status', async () => {
-        connectionApiV2.healthCheck.mockResolvedValue({ status: 'healthy' });
-
-        const result = await checkHealth();
-        expect(result).toBe(true);
-      });
-
-      it('should return false for unhealthy status', async () => {
-        connectionApiV2.healthCheck.mockResolvedValue({ status: 'degraded' });
-
-        const result = await checkHealth();
-        expect(result).toBe(false);
-      });
-
-      it('should return false on health check error', async () => {
-        connectionApiV2.healthCheck.mockRejectedValue(new Error('Service unavailable'));
-
-        const result = await checkHealth();
-        expect(result).toBe(false);
-      });
-    });
-  });
-
   describe('Authentication Utilities', () => {
     describe('getCurrentUserId', () => {
       it('should call the imported utility function', async () => {
@@ -1294,14 +1209,14 @@ describe('API V2 Module', () => {
           project_id: 'proj-456',
           max_concurrent_tasks: 5
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.registerSession.mockResolvedValue({ session: sessionData });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should track agent resource usage in real-time', async () => {
         const resourceUpdate = {
           agent_id: 'coding-agent',
@@ -1310,10 +1225,10 @@ describe('API V2 Module', () => {
           allocated: 1024,
           usage_percentage: 50
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.updateResourceUsage.mockResolvedValue({ success: true });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1326,15 +1241,15 @@ describe('API V2 Module', () => {
           session_id: 'session-123',
           channels: ['global', 'status', 'coordination']
         };
-        
+
         // WebSocket tests would use mock WebSocket when API is ready
         // const ws = new MockWebSocket();
         // agentApiV2.connectWebSocket.mockResolvedValue(ws);
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should send coordination messages between agents', async () => {
         const message = {
           type: 'coordination_request',
@@ -1346,10 +1261,10 @@ describe('API V2 Module', () => {
             reason: 'Task completed, ready for testing'
           }
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.sendCoordinationMessage.mockResolvedValue({ sent: true });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1364,14 +1279,14 @@ describe('API V2 Module', () => {
           activity: 'Implementing authentication',
           health_score: 95
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.broadcastStatus.mockResolvedValue({ broadcast: true });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should handle agent workload rebalancing', async () => {
         const rebalanceRequest = {
           project_id: 'proj-123',
@@ -1379,12 +1294,12 @@ describe('API V2 Module', () => {
           available_agents: ['debugger-agent', 'code-reviewer-agent'],
           tasks_to_reassign: ['task-456', 'task-789']
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.rebalanceWorkload.mockResolvedValue({
         //   reassigned: { 'task-456': 'debugger-agent' }
         // });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1397,17 +1312,17 @@ describe('API V2 Module', () => {
           { task_id: 'task-backend', agent: 'coding-agent' },
           { task_id: 'task-tests', agent: 'test-orchestrator-agent' }
         ];
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.coordinateParallelExecution.mockResolvedValue({
         //   execution_plan: parallelTasks,
         //   estimated_completion: '2 hours'
         // });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should handle inter-agent dependencies', async () => {
         const dependency = {
           waiting_agent: 'test-orchestrator-agent',
@@ -1416,10 +1331,10 @@ describe('API V2 Module', () => {
           blocking_task: 'task-impl-456',
           notification_sent: false
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.trackDependency.mockResolvedValue({ tracked: true });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1436,14 +1351,14 @@ describe('API V2 Module', () => {
           completed_items: ['JWT setup', 'Login endpoint', 'Refresh tokens'],
           remaining_items: ['Session management', 'Logout endpoint']
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.initiateHandoff.mockResolvedValue({ handoff_id: 'handoff-123' });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should resolve conflicts between agents', async () => {
         const conflict = {
           conflict_id: 'conflict-123',
@@ -1452,13 +1367,13 @@ describe('API V2 Module', () => {
           resource: 'database_connection',
           resolution_strategy: 'priority_based'
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.resolveConflict.mockResolvedValue({
         //   resolved: true,
         //   winner: 'debugger-agent'
         // });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1474,14 +1389,14 @@ describe('API V2 Module', () => {
           milestones_remaining: ['Testing', 'Documentation'],
           estimated_completion: '1 hour'
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.syncProgress.mockResolvedValue({ synced: true });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should notify dependent agents of completion', async () => {
         const completion = {
           completed_task: 'task-impl-123',
@@ -1489,12 +1404,12 @@ describe('API V2 Module', () => {
           dependent_tasks: ['task-test-456', 'task-doc-789'],
           notifications_sent: ['test-orchestrator-agent', 'documentation-agent']
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.notifyCompletion.mockResolvedValue({
         //   notified: completion.notifications_sent
         // });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1509,17 +1424,17 @@ describe('API V2 Module', () => {
           recovery_action: 'restart_session',
           tasks_affected: ['task-123', 'task-456']
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.handleAgentFailure.mockResolvedValue({
         //   recovered: true,
         //   new_session_id: 'session-456'
         // });
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
-      
+
       it('should monitor agent health scores', async () => {
         const healthMetrics = {
           agent_id: 'coding-agent',
@@ -1532,10 +1447,10 @@ describe('API V2 Module', () => {
           },
           recommendations: ['Consider reducing concurrent tasks']
         };
-        
+
         // Mock would be implemented when API is ready
         // agentApiV2.getAgentHealth.mockResolvedValue(healthMetrics);
-        
+
         // Placeholder test for now
         expect(true).toBe(true);
       });
@@ -1554,8 +1469,8 @@ describe('API V2 Module', () => {
           assignees: 'security-auditor-agent,compliance-scope-agent',
           estimated_effort: '3 days'
         };
-        const createdTask = { 
-          id: 'task-security-123', 
+        const createdTask = {
+          id: 'task-security-123',
           ...securityAuditTask,
           assignees: ['security-auditor-agent', 'compliance-scope-agent']
         };
@@ -1568,7 +1483,8 @@ describe('API V2 Module', () => {
           description: securityAuditTask.description,
           status: securityAuditTask.status,
           priority: securityAuditTask.priority,
-          git_branch_id: securityAuditTask.git_branch_id
+          git_branch_id: securityAuditTask.git_branch_id,
+          assignees: securityAuditTask.assignees
         });
       });
 
@@ -1580,7 +1496,7 @@ describe('API V2 Module', () => {
           priority: 'critical',
           git_branch_id: 'branch-multi-security'
         };
-        const createdTask = { 
+        const createdTask = {
           id: 'task-multi-sec-456',
           ...multiAgentSecurityTask,
           assignees: ['security-auditor-agent', 'compliance-scope-agent', 'ethical-review-agent'],
@@ -1600,10 +1516,10 @@ describe('API V2 Module', () => {
           title: 'GDPR Compliance Validation',
           description: 'Validate GDPR compliance for data protection regulations including data minimization, purpose limitation, and right to be forgotten'
         };
-        const createdSubtask = { 
-          id: 'sub-gdpr-123', 
+        const createdSubtask = {
+          id: 'sub-gdpr-123',
           ...gdprSubtask,
-          parent_task_id: 'task-security-123' 
+          parent_task_id: 'task-security-123'
         };
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
@@ -1620,10 +1536,10 @@ describe('API V2 Module', () => {
           title: 'Security Vulnerability Assessment',
           description: 'Complete vulnerability assessment with risk ratings for authentication, authorization, data protection, and input validation'
         };
-        const createdSubtask = { 
-          id: 'sub-vuln-456', 
+        const createdSubtask = {
+          id: 'sub-vuln-456',
           ...vulnSubtask,
-          parent_task_id: 'task-security-123' 
+          parent_task_id: 'task-security-123'
         };
         subtaskApiV2.createSubtask.mockResolvedValue({ subtask: createdSubtask });
 
@@ -1641,7 +1557,7 @@ describe('API V2 Module', () => {
           git_branch_id: 'branch-deployment',
           dependencies: '2761d924-e542-49b4-8235-b1547010bbc7' // Security audit task ID
         };
-        const createdTask = { 
+        const createdTask = {
           id: 'task-deploy-789',
           ...deploymentTask,
           dependencies: ['2761d924-e542-49b4-8235-b1547010bbc7'],
@@ -1684,7 +1600,7 @@ describe('API V2 Module', () => {
           details: 'Completed authentication and authorization audit. Found 3 critical issues with JWT token validation.',
           insights_found: 'JWT tokens not expiring properly, missing rate limiting on auth endpoints'
         };
-        const updatedTask = { 
+        const updatedTask = {
           id: 'task-security-123',
           ...progressUpdate
         };
@@ -1701,7 +1617,7 @@ describe('API V2 Module', () => {
           testing_notes: 'Performed penetration testing, static code analysis, and dependency scanning. All critical issues resolved.',
           insights_found: 'Need to implement automated security scanning in CI/CD pipeline for continuous monitoring'
         };
-        const completedTask = { 
+        const completedTask = {
           id: 'task-security-123',
           status: 'done',
           progress_percentage: 100,
@@ -1718,19 +1634,19 @@ describe('API V2 Module', () => {
     describe('Agent-Specific Task Search', () => {
       it('should search for security-related tasks', async () => {
         const mockSecurityTasks = [
-          { 
+          {
             id: '1',
             title: 'Security Audit and Compliance Review',
             assignees: ['security-auditor-agent', 'compliance-scope-agent'],
             priority: 'critical'
           },
-          { 
+          {
             id: '2',
             title: 'Authentication Security Hardening',
             assignees: ['security-auditor-agent'],
             priority: 'high'
           },
-          { 
+          {
             id: '3',
             title: 'OWASP Security Standards Implementation',
             assignees: ['security-auditor-agent', 'coding-agent'],
@@ -1747,13 +1663,13 @@ describe('API V2 Module', () => {
 
       it('should filter tasks by compliance requirements', async () => {
         const mockComplianceTasks = [
-          { 
+          {
             id: '1',
             title: 'GDPR Compliance Implementation',
             description: 'Implement GDPR data protection requirements',
             labels: ['compliance', 'gdpr', 'data-protection']
           },
-          { 
+          {
             id: '2',
             title: 'SOC2 Compliance Readiness',
             description: 'Prepare for SOC2 compliance certification',
@@ -1764,8 +1680,8 @@ describe('API V2 Module', () => {
 
         const result = await searchTasks('compliance');
         expect(result).toHaveLength(2);
-        expect(result.every(task => 
-          task.title.toLowerCase().includes('compliance') || 
+        expect(result.every(task =>
+          task.title.toLowerCase().includes('compliance') ||
           task.description.toLowerCase().includes('compliance')
         )).toBe(true);
       });
@@ -1787,7 +1703,7 @@ describe('API V2 Module', () => {
             recommendations: ['Enable security monitoring', 'Implement WAF']
           }
         };
-        
+
         // This would be implemented when real-time coordination is available
         expect(coordinationMessage.clearance_level).toBe('production-ready');
         expect(coordinationMessage.security_report.compliance_status).toBe('passed');
@@ -1802,7 +1718,7 @@ describe('API V2 Module', () => {
           blocking_agent: 'security-auditor-agent',
           requires_resolution_before: ['production deployment', 'user acceptance testing']
         };
-        
+
         // Mock blocker creation when API is ready
         expect(securityBlocker.severity).toBe('critical');
         expect(securityBlocker.blocking_agent).toBe('security-auditor-agent');
@@ -1824,7 +1740,7 @@ describe('API V2 Module', () => {
           },
           overall_compliance: 85
         };
-        
+
         expect(gdprRequirements.overall_compliance).toBe(85);
         expect(Object.values(gdprRequirements.requirements).filter(r => r.status === 'implemented')).toHaveLength(4);
       });
@@ -1843,7 +1759,7 @@ describe('API V2 Module', () => {
           },
           certification_ready: true
         };
-        
+
         expect(auditReport.certification_ready).toBe(true);
         expect(auditReport.findings.critical_issues).toBe(0);
       });
@@ -1869,7 +1785,7 @@ describe('API V2 Module', () => {
             low: 0
           }
         };
-        
+
         expect(securityScan.findings.total_issues).toBe(4);
         expect(securityScan.severity_distribution.critical).toBe(0);
       });
@@ -1898,7 +1814,7 @@ describe('API V2 Module', () => {
             incident_response: 'documented'
           }
         };
-        
+
         expect(securityControls.authentication.mfa_enabled).toBe(true);
         expect(securityControls.data_protection.encryption_at_rest).toBe('AES-256');
         expect(securityControls.monitoring.security_logging).toBe('enabled');
