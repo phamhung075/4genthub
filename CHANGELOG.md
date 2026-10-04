@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**MCP `manage_task` create accepts `@<seat_key>` assignees (D6c)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.go`: the inline role allow-list (`@name` only if `IsValidRole(name)`) is replaced by `Task.ValidateAssigneeList`, the validator subtask creation already uses. One rule for MCP create and subtask create: `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, any other bare name is rejected. Whitespace around an assignee is stripped first.
+- Tool description of `manage_task` (`manage_task_description.go`) and `interface/testdata/tools_golden.json` now describe `@seat-key` assignees instead of the 42-agent library.
+- Not changed, on purpose: `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and REST create keep any bare name (a Python-parity test pins `custom` kept), so they never reject a seat key; REST create's own `ResolveLegacyRole` maps `coding-agent` to `@senior_developer` while MCP create gives `@coding-agent`.
+
 ### Added
 
 **`WS /ws/sessions/{id}`, the session viewer (A5)** (2026-10-04)

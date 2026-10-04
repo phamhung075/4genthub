@@ -88,38 +88,22 @@ func (h *CRUDHandler) CreateTask(ctx context.Context, facade TaskFacade,
 			"Include 'assignees' with at least one valid agent (e.g., ['coding-agent'] or ['@test-orchestrator-agent'])")
 	}
 
-	validatedAssignees := []string{}
-	invalidAssignees := []string{}
+	// One rule for every create path (see Task.ValidateAssigneeList): '@<name>' (a seat key or
+	// a role) is kept, a bare known role or legacy name becomes '@<role>', anything else is rejected.
+	stripped := make([]string, 0, len(assignees))
 	for _, assignee := range assignees {
-		if assignee != "" && value_objects.PyStrip(assignee) != "" {
-			clean := value_objects.PyStrip(assignee)
-			if resolved, ok := value_objects.ResolveLegacyRole(clean); ok {
-				if !strings.HasPrefix(resolved, "@") {
-					resolved = "@" + resolved
-				}
-				validatedAssignees = append(validatedAssignees, resolved)
-			} else if value_objects.IsValidRole(strings.TrimLeft(clean, "@")) {
-				if !strings.HasPrefix(clean, "@") {
-					clean = "@" + clean
-				}
-				validatedAssignees = append(validatedAssignees, clean)
-			} else if strings.HasPrefix(clean, "@") && value_objects.IsValidRole(clean[1:]) {
-				validatedAssignees = append(validatedAssignees, clean)
-			} else {
-				invalidAssignees = append(invalidAssignees, assignee)
-			}
-		}
+		stripped = append(stripped, value_objects.PyStrip(assignee))
 	}
-
-	if len(invalidAssignees) > 0 {
+	validatedAssignees, err := (&entities.Task{}).ValidateAssigneeList(stripped)
+	if err != nil {
 		return h.createStandardizedError("create_task", "assignees",
-			"Valid agent roles from AgentRole enum",
-			"Invalid assignees: "+pyListRepr(invalidAssignees)+". Use valid agent roles like 'coding-agent', 'test-orchestrator-agent'")
+			"'@<seat_key>' (for example '@lead') or a known agent role",
+			err.Error()+" Use '@<seat_key>', or a known agent role like 'coding-agent'")
 	}
 	if len(validatedAssignees) == 0 {
 		return h.createStandardizedError("create_task", "assignees",
 			"At least one valid agent must be assigned",
-			"Provide at least one valid agent role like 'coding-agent' or 'test-orchestrator-agent'")
+			"Provide at least one '@<seat_key>' or known agent role like 'coding-agent'")
 	}
 	assignees = validatedAssignees
 

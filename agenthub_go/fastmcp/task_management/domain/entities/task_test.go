@@ -112,3 +112,20 @@ func TestTaskEventsSerializeTaskIDLikeAsdict(t *testing.T) {
 		t.Fatalf("updated event = %v", last)
 	}
 }
+
+// A seat key is an '@'-prefixed assignee: ValidateAssigneeList keeps it as given, a bare
+// known role gets the prefix and a bare name that is no role is rejected.
+func TestValidateAssigneeListAcceptsSeatKeysAndRejectsBareUnknownNames(t *testing.T) {
+	task := &Task{}
+
+	got, err := task.ValidateAssigneeList([]string{"@go-dev", "@lead", "coding-agent"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Join(got, ",") != "@go-dev,@lead,@coding-agent" {
+		t.Fatalf("validated = %v", got)
+	}
+	if _, err := task.ValidateAssigneeList([]string{"go-dev"}); err == nil {
+		t.Fatal("a bare name that is no role must be rejected")
+	}
+}

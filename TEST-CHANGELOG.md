@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — MCP create assignee rule (Task D6c, Go)
+
+- Added `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_assignees_test.go` (5 tests: a seat key with `@` is kept, a bare known role gets the prefix, a bare name that is no role is rejected with the name in the hint, whitespace is stripped, blank assignees are rejected) and `TestValidateAssigneeListAcceptsSeatKeysAndRejectsBareUnknownNames` in `domain/entities/task_test.go`.
+- Mutation check (reverted): the old `crud_handler.go` against the new tests fails the seat-key, bare-unknown and whitespace tests.
+- Checked by reading, not by a test: `agent_doc_generator.go` `GenerateDocsForAssignees` turns `@go-dev` into the directory `go-dev_agent`, returns a ValueError "not found" (`TestGenerateDocsForAssignees` already covers a missing assignee), and the package-level wrapper called by `get_task.go:57` and `next_task.go` discards the error, so a seat key cannot fail a task read.
+- Not tested: filtering by `@<seat_key>`. Tasks filter with `task_assignees.assignee_id = $n` / `IN (...)` (`task_repository.go:735,1567`), an exact match on the stored `@seat_key`; subtasks use `"assignees" LIKE '%' || $1::json || '%'` (`subtask_repository.go:302`). Both need Postgres (`::json`, `::uuid`); that run belongs to the PG task.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/task_management` empty; `go vet` clean on the touched packages; `go test -count=1 ./fastmcp/task_management/domain/entities/ ./fastmcp/task_management/interface/... ./fastmcp/task_management/infrastructure/services/ ./fastmcp/task_management/application/... ./fastmcp/server/...` ok (golden test `TestToolDefinitionsMatchPythonToolRegistry` included).
+
 ## 2026-10-04 — session viewer auth gate and after_seq (Task A5b, Go)
 
 - Added to `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerRefusesAConnectionWithoutAValidToken` (no token and bad token: HTTP 403, no upgrade, the store is never read, no hub subscription) and `TestSessionViewerAfterSeqThatIsNotAnIntegerReplaysFromTheStart` (after_seq `2` skips, `abc`, empty and `%205` count as 0; Python's `int(' 5')` reads 5, Go keeps `strconv.Atoi`).

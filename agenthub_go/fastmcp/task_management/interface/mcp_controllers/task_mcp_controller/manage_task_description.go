@@ -151,7 +151,7 @@ func GetManageTaskParameters() *entities.OrderedMap[any] {
 	properties.Set("estimated_effort", stringProp("estimated_effort"))
 	properties.Set("progress_percentage", intProp("progress_percentage"))
 	properties.Set("assignees", paramProp("string",
-		"**REQUIRED for create action** - Agent identifiers (minimum 1 required). Use @agent-name format (e.g., 'coding-agent'). For multiple agents use comma-separated: 'coding-agent,@test-orchestrator-agent'. Available agents: coding-agent, test-orchestrator-agent, debugger-agent, security-auditor-agent, code-reviewer-agent, and 37+ more specialized agents (42 total available)."))
+		"**REQUIRED for create action** - Assignee identifiers (minimum 1 required). Use @seat-key format (e.g., '@lead', '@go-dev'); a known agent role such as 'coding-agent' is accepted and becomes '@coding-agent'. A bare name that is not a known role is rejected. For multiple assignees use comma-separated: '@lead,@go-dev'."))
 	properties.Set("labels", stringProp("labels"))
 	properties.Set("due_date", stringProp("due_date"))
 	properties.Set("dependencies", stringProp("dependencies"))
