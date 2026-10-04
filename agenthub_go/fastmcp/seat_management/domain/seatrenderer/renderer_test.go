@@ -387,7 +387,7 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		t.Fatalf("claude-code settings fragment should carry the 5 denies and the 2 allows:\n%s", settings)
 	}
 
-	for _, runtime := range []string{"codex", "agy"} {
+	for _, runtime := range []string{"codex", "agy", "omp"} {
 		spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
 		if err != nil {
 			t.Fatalf("%s: %v", runtime, err)

@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**omp seat gets no runtime fragment: the assertion added** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: the "no `runtime/` file" loop covered `codex` and `agy` only, so the narrowed `receivesClaudeFragments` for `omp` was unasserted — flagged by the DeepSeek supervisor seat, not by reading. `omp` added to the loop. Proven by mutation rather than by the test passing: restoring the old predicate makes it fail with `omp seat has a runtime file "runtime/claude-mcp.fragment.json"`, and the correct implementation was restored exactly (`git diff` on `renderer.go` is empty). Coverage only, no behavior change. `go vet ./...` and `go test ./...` green.
+
 **omp accepted by the API but rejected by the UI, the sync CLI and the bridge** (2026-10-04)
 
 Found by a headless DeepSeek review of `2c8d05f3` and confirmed by reading every file it named: the server was taught to accept `omp`, but each client-side enumeration of runtimes was left behind, so "a seat can run DeepSeek" held only through the raw API or MCP.
