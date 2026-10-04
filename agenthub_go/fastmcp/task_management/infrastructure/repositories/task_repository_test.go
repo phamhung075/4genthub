@@ -207,6 +207,44 @@ func TestTaskRepoFindByStatusPriorityAssignee(t *testing.T) {
 	}
 }
 
+// Filtering tasks by an @seat_key assignee is an exact match on
+// task_assignees.assignee_id (task_repository.go:735/1575) and stays inside the tenant.
+func TestTaskRepoFindBySeatKeyAssigneeIsTenantScoped(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	ctx := context.Background()
+
+	branchA := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
+	repoA := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchA, false)
+	if _, err := repoA.CreateTask(ctx, "A", "D", "high", []string{"@go-dev"}, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	branchB := taskRepoTestBranch(t, sessions, taskRepoTestUserB)
+	repoB := taskRepoTestNewRepo(t, sessions, taskRepoTestUserB, branchB, false)
+	if _, err := repoB.CreateTask(ctx, "B", "D", "high", []string{"@go-dev"}, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	gotA, err := repoA.FindByAssignee(ctx, "@go-dev")
+	if err != nil || len(gotA) != 1 || gotA[0].Title != "A" {
+		t.Fatalf("FindByAssignee(A, @go-dev) = %v %#v, want only A's task", err, gotA)
+	}
+	gotB, err := repoB.FindByAssignee(ctx, "@go-dev")
+	if err != nil || len(gotB) != 1 || gotB[0].Title != "B" {
+		t.Fatalf("FindByAssignee(B, @go-dev) = %v %#v, want only B's task", err, gotB)
+	}
+
+	limit := 10
+	critA, err := repoA.FindByCriteria(ctx, map[string]any{"assignees": []string{"@go-dev"}}, &limit)
+	if err != nil || len(critA) != 1 || critA[0].Title != "A" {
+		t.Fatalf("FindByCriteria(A, @go-dev) = %v %#v", err, critA)
+	}
+	// A bare seat key (no '@') must not match the stored '@go-dev'.
+	none, err := repoA.FindByAssignee(ctx, "go-dev")
+	if err != nil || len(none) != 0 {
+		t.Fatalf("FindByAssignee(A, go-dev) = %v %#v, want none", err, none)
+	}
+}
+
 func TestTaskRepoSearch(t *testing.T) {
 	sessions := newTestRepoEnv(t)
 	ctx := context.Background()

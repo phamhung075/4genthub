@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — PGALL: PG-gated suites and the assignee filter (Go)
+
+- Real-Postgres run of every `AGENTHUB_TEST_PG_URL`/`SEAT_TEST_DATABASE_URL`-gated package against the throwaway Postgres at 54329, one package at a time with `-count=1 -v` (pass/fail/skip): `fastmcp` 11/0/0; `auth/infrastructure/repositories` 9/0/0; `server/httpapp` 132/0/0; `session_stream` 11/0/0; `task_management/application/services` 394/0/0; `task_management/infrastructure/database` 41/0/1 (pre-existing skip); `task_management/infrastructure/repositories` 114/0/0. No failures.
+- Added `TestTaskRepoFindBySeatKeyAssigneeIsTenantScoped` (`task_repository_test.go`): two users each own a task assigned `@go-dev`; `FindByAssignee` and `FindByCriteria` return only the caller's task, and a bare `go-dev` matches nothing. PASS.
+- The subtask assignee filter is NOT fixed: `subtask_repository.go:302` filters with `WHERE "assignees" LIKE '%' || $1::json || '%'`, so a plain assignee string is invalid JSON and PostgreSQL raises. `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` pins this for both `FindByAssignee` and `GetSubtasksByAssignee`; no working `@seat_key` subtask filter can be tested until the query is decided (Python parity vs Go correctness). Reported to the lead.
+
 ## 2026-10-04 — Retired agent system removed (T8)
 
 - Go: deleted `agent_doc_generator_test.go`; updated `service_adapter_factory_test.go` and `domain_service_factory_test.go` for the removed generator. `go test -count=1` for adapters / infrastructure-services / application-services / use-cases -> ok; `gofmt -l` empty; `go vet ./...` and `go build ./...` clean.
