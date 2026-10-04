@@ -505,6 +505,65 @@ func TestSeatTypeAddVersionOnlyReReadsAfterUniqueViolation(t *testing.T) {
 	}
 }
 
+func TestResolvedSeatSaveLostRace(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	resolvedCols := []string{"id", "user_id", "seat_id", "hash", "runtime", "files", "policy", "created_at"}
+	seat := domainrepo.ResolvedSeat{SeatID: testSeatID, Hash: "h1", Runtime: "omp"}
+	winnerRow := fakeRow("66666666-6666-4666-8666-666666666666", testUser, testSeatID, "h1", "omp", []byte("[]"), []byte("{}"), now)
+
+	newRepo := func(insertErr error, reads *int, rereadErr error) *ORMResolvedSeatRepository {
+		f := &fakeDriver{}
+		f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+			switch {
+			case strings.Contains(q, `INSERT INTO "resolved_seats"`):
+				return nil, nil, insertErr
+			case strings.Contains(q, `FROM "resolved_seats"`):
+				*reads++
+				if *reads == 1 {
+					return resolvedCols, nil, nil
+				}
+				if rereadErr != nil {
+					return nil, nil, rereadErr
+				}
+				return resolvedCols, [][]driver.Value{winnerRow}, nil
+			}
+			return nil, nil, nil
+		}
+		repo, err := NewORMResolvedSeatRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return repo
+	}
+
+	// The concurrent writer won the insert: its row is returned, with one re-read.
+	reads := 0
+	got, err := newRepo(&pgconn.PgError{Code: "23505", Message: "duplicate key value violates unique constraint"}, &reads, nil).Save(ctx, testUser, seat)
+	if err != nil || got == nil || got.Hash != "h1" || got.ID != "66666666-6666-4666-8666-666666666666" {
+		t.Fatalf("lost race = %+v, %v, want the winner's row", got, err)
+	}
+	if reads != 2 {
+		t.Errorf("reads = %d, want the first read and one re-read", reads)
+	}
+
+	// Any other insert error is returned and nothing is re-read.
+	reads = 0
+	if _, err := newRepo(&pgconn.PgError{Code: "23503", Message: "foreign key violation"}, &reads, nil).Save(ctx, testUser, seat); err == nil {
+		t.Fatal("a non-unique insert error was swallowed")
+	}
+	if reads != 1 {
+		t.Errorf("reads = %d, want only the first read after a non-unique error", reads)
+	}
+
+	// A failing re-read is reported, not hidden behind the unique violation.
+	reads = 0
+	_, err = newRepo(&pgconn.PgError{Code: "23505", Message: "duplicate key value violates unique constraint"}, &reads, errors.New("reread boom")).Save(ctx, testUser, seat)
+	if err == nil || !strings.Contains(err.Error(), "reread boom") {
+		t.Fatalf("failing re-read = %v, want it reported", err)
+	}
+}
+
 func TestOverlayUpsertScoped(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()

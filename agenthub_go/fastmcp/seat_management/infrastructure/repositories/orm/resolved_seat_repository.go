@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
@@ -28,9 +29,10 @@ func NewORMResolvedSeatRepository(sessions *database.SessionManager) (*ORMResolv
 	return &ORMResolvedSeatRepository{ORMRepository: base}, nil
 }
 
-// Save appends the snapshot. Re-saving the same (seat_id, hash) is a no-op.
+// Save appends the snapshot. Re-saving the same (seat_id, hash), including losing a race to a
+// concurrent first save of it, returns the stored row.
 func (r *ORMResolvedSeatRepository) Save(ctx context.Context, userID string, seat domainrepo.ResolvedSeat) (*domainrepo.ResolvedSeat, error) {
-	existing, err := r.FindOneBy(ctx, baserepo.NewKwargs("user_id", userID, "seat_id", seat.SeatID, "hash", seat.Hash))
+	existing, err := r.findSnapshot(ctx, userID, seat)
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +56,25 @@ func (r *ORMResolvedSeatRepository) Save(ctx context.Context, userID string, sea
 		"policy", policy,
 	))
 	if err != nil {
-		return nil, err
+		// A concurrent first resolve of the same seat and hash may have inserted the row between
+		// the read and the insert (unique violation); that row is the snapshot, so return it.
+		if !isUniqueViolation(err) {
+			return nil, err
+		}
+		winner, rereadErr := r.findSnapshot(ctx, userID, seat)
+		if rereadErr != nil {
+			return nil, fmt.Errorf("re-read resolved seat %q hash %q after a unique violation: %w", seat.SeatID, seat.Hash, rereadErr)
+		}
+		if winner == nil {
+			return nil, err
+		}
+		return resolvedSeatToDomain(winner)
 	}
 	return resolvedSeatToDomain(created)
+}
+
+func (r *ORMResolvedSeatRepository) findSnapshot(ctx context.Context, userID string, seat domainrepo.ResolvedSeat) (*seatdb.ResolvedSeatORM, error) {
+	return r.FindOneBy(ctx, baserepo.NewKwargs("user_id", userID, "seat_id", seat.SeatID, "hash", seat.Hash))
 }
 
 // GetLatest returns the newest snapshot of a seat by created_at then id, or nil when absent.

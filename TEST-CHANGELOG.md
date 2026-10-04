@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — resolved seat Save lost-race test (Go)
+
+- Added `TestResolvedSeatSaveLostRace` to `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go` (scripted driver, SQLSTATE 23505 on insert). Fails without the `Save` change, passes with it.
+
 ## 2026-10-04 — call_seat tests (Go)
 
 - Added with `2740697e`: `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller_test.go` (resolve, input failures, tenant failure, tool registration, input schema) and `agenthub_go/fastmcp/server/httpapp/call_seat_mcp_test.go` (tools/list publishes `call_seat` with its schema, tools/call resolves a seat end to end, a resolver failure is a tool result).

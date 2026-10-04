@@ -8,6 +8,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Resolved seat snapshot: losing the first-save race is not a failure** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/resolved_seat_repository.go`: `Save` read the snapshot and then inserted it without a lock, so two concurrent first resolves of the same seat hit `uq_resolved_seats_seat_hash` and one surfaced as a failure (`call_seat` and the resolved-seat route). A unique violation now re-reads and returns the row the other writer stored, like `AddVersion` of a seat type; any other insert error is returned as before, and a failing re-read is reported.
+- Test: `TestResolvedSeatSaveLostRace` (lost race returns the winner after one re-read, other errors are not re-read, a failing re-read is reported); it fails without the change. `go vet` and `go test` for `fastmcp/seat_management/...` and `fastmcp/server/httpapp/...` pass.
+
 **call_seat: description matches the response, input is trimmed** (2026-10-04)
 
 - `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`: `CallSeatToolDescription` no longer promises a `model` (`CallSeat` never returned one and the snapshot has no model column) and says that a new hash writes a `resolved_seats` row; `SeatResolver` states that `ResolveSeat` returns a non-nil seat whenever the error is nil; `room` and `seat` are trimmed, so a whitespace-only value is the same `room and seat are required` failure as a missing one.
