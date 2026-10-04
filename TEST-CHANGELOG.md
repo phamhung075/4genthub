@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Default-wildcard CORS simple-request branches pinned (OF4 review)
+
+- Reviewer finding: `cors_test.go` covered the wildcard preflight and an explicit-origin simple request, but not the default-wildcard simple request — the exact path the OF4 browser run broke on. Added `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (no Cookie -> `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) and `TestWithCORSSimpleRequestDefaultWildcardWithCookie` (`Cookie: access_token=x` -> the request origin echoed). Both run with `CORS_ORIGINS=""` (the documented default).
+- The OF4 G6 note was corrected to scope the CORS observation to a token-less (no-cookie) stack: a real logged-in session sends the cookie and gets the origin echo, so the default works for it.
+
 ## 2026-10-04 — Cross-tenant coverage for every seat table (OF2, Go)
 
 - The reviewer/lead finding: `module_versions`, `seat_type_versions`, `rooms`, `seat_links` and `resolved_seats` had no test asserting the `user_id` filter; the other four (`modules`, `seat_types`, `seats`, `overlays`) did. Added five tests to `fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`, each exercising the repository's real statements over the scripted driver and asserting every statement that touches the table carries `user_id` (`assertTenantScoped`; an INSERT must write the `user_id` column, a SELECT/UPDATE/DELETE must filter on it). All nine seat tables now have one.

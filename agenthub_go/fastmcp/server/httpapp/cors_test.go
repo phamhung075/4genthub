@@ -109,3 +109,48 @@ func TestWithCORSSimpleRequestAllowedOrigin(t *testing.T) {
 		t.Errorf("Access-Control-Expose-Headers = %q, want *", got)
 	}
 }
+
+// With the default wildcard and no Cookie, a simple request gets a bare "*" (Starlette's
+// allow_all_origins without the cookie exception). A credentials:'include' fetch is rejected
+// by the browser on this path, so it is pinned here.
+func TestWithCORSSimpleRequestDefaultWildcardWithoutCookie(t *testing.T) {
+	t.Setenv("CORS_ORIGINS", "")
+	h := withCORS(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/projects/", nil)
+	req.Header.Set("Origin", "https://anything.example")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Errorf("Access-Control-Allow-Origin = %q, want * (no Cookie, wildcard default)", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Errorf("Access-Control-Allow-Credentials = %q, want true", got)
+	}
+}
+
+// The same default wildcard WITH a Cookie echoes the request origin (Starlette's
+// allow_all_origins + has_cookie exception), which is what a real logged-in dashboard
+// session sends, so the dashboard works on the default.
+func TestWithCORSSimpleRequestDefaultWildcardWithCookie(t *testing.T) {
+	t.Setenv("CORS_ORIGINS", "")
+	h := withCORS(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/projects/", nil)
+	req.Header.Set("Origin", "https://www.4genthub.com")
+	req.Header.Set("Cookie", "access_token=x")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "https://www.4genthub.com" {
+		t.Errorf("Access-Control-Allow-Origin = %q, want the origin echoed (Cookie present)", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Errorf("Access-Control-Allow-Credentials = %q, want true", got)
+	}
+}
