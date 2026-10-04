@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **GlobalContextDialog tests match the redesigned dialog** - 2026-10-04
+  - `src/tests/components/GlobalContextDialog.test.tsx` (12 of 15 failing; 7 on the `lucide-react` mock lacking
+    `Package`) looked for texts the dialog no longer renders. They now expect what `GlobalContextDialog.tsx`
+    shows: the no-context state ("No Global Context Available" with an Initialize button) when the API returns null,
+    the data in the JSON viewer, "Advanced JSON Editor", "JSON Syntax Error" and "Raw JSON (Copy/Export)". The API
+    error test spies on the app `logger` (the component logs through it) and checks the no-context fallback. The
+    `RawJSONDisplay` mock is removed so the copy-to-clipboard test uses the real component. No source change.
+    First rewrite delegated to a deepseek worker; its diff was reviewed line by line and the file rerun here.
 - **Removed six unused `agentApiV2` functions** - 2026-10-04
   - `getAgentMetadata`, `assignAgentToBranch`, `unassignAgentFromBranch`, `getBranchAgentAssignment`,
     `getProjectAgentAssignments` and `getAgentCapabilities` in `src/services/apiV2.ts` had no caller in `src`, and

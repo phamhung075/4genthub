@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from './../test-utils';
 import { vi } from 'vitest';
 import { GlobalContextDialog } from '../../components/GlobalContextDialog';
 import * as api from '../../api';
+import logger from '../../utils/logger';
 
 // Mock the API module
 vi.mock('../../api', () => ({
@@ -43,10 +44,6 @@ vi.mock('../../components/ui/EnhancedJSONViewer', () => ({
   EnhancedJSONViewer: ({ data }: any) => <div data-testid="json-viewer">{JSON.stringify(data)}</div>,
 }));
 
-vi.mock('../../components/ui/RawJSONDisplay', () => ({
-  default: ({ jsonData }: any) => <pre>{JSON.stringify(jsonData, null, 2)}</pre>,
-}));
-
 vi.mock('../../components/ui/badge', () => ({
   Badge: ({ children, variant }: any) => <span data-variant={variant}>{children}</span>,
 }));
@@ -58,6 +55,7 @@ vi.mock('lucide-react', () => ({
   Edit: () => <span>Edit Icon</span>,
   X: () => <span>X Icon</span>,
   Copy: () => <span>Copy Icon</span>,
+  CheckCircle: () => <span>CheckCircle Icon</span>,
   Check: () => <span>Check Icon</span>,
   Settings: () => <span>Settings Icon</span>,
   Layers: () => <span>Layers Icon</span>,
@@ -69,6 +67,7 @@ vi.mock('lucide-react', () => ({
   Code: () => <span>Code Icon</span>,
   Shield: () => <span>Shield Icon</span>,
   FileText: () => <span>FileText Icon</span>,
+  Package: () => <span>Package Icon</span>,
   AlertCircle: () => <span>AlertCircle Icon</span>,
 }));
 
@@ -130,11 +129,11 @@ describe('GlobalContextDialog', () => {
       />
     );
 
-    // Component initializes with default empty structure rather than showing "no context" message
+    // Component now shows the explicit no-context state when the API returns null
     await waitFor(() => {
-      expect(screen.getByText('User Preferences')).toBeInTheDocument();
-      expect(screen.getByText('AI Agent Settings')).toBeInTheDocument();
+      expect(screen.getByText('No Global Context Available')).toBeInTheDocument();
     });
+    expect(screen.getByRole('button', { name: /Initialize Global Context/i })).toBeInTheDocument();
   });
 
   it('displays global context data in sections', async () => {
@@ -156,13 +155,14 @@ describe('GlobalContextDialog', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('User Preferences')).toBeInTheDocument();
+      expect(screen.getByTestId('json-viewer')).toHaveTextContent('user_preferences');
     });
 
-    // Check sections are rendered
-    expect(screen.getByText('AI Agent Settings')).toBeInTheDocument();
-    expect(screen.getByText('Security Settings')).toBeInTheDocument();
-    expect(screen.getByText('Metadata')).toBeInTheDocument();
+    // Data is rendered in the interactive JSON viewer plus the context header
+    expect(screen.getByTestId('json-viewer')).toHaveTextContent('ai_agent_settings');
+    expect(screen.getByTestId('json-viewer')).toHaveTextContent('security_settings');
+    expect(screen.getByTestId('json-viewer')).toHaveTextContent('version');
+    expect(screen.getAllByText('Global Context Data').length).toBeGreaterThan(0);
   });
 
   it('switches between view and edit tabs', async () => {
@@ -192,7 +192,7 @@ describe('GlobalContextDialog', () => {
 
     // Should see Edit tab with raw JSON editor
     await waitFor(() => {
-      expect(screen.getByText('Raw JSON Editor')).toBeInTheDocument();
+      expect(screen.getByText('Advanced JSON Editor')).toBeInTheDocument();
     });
   });
 
@@ -221,7 +221,7 @@ describe('GlobalContextDialog', () => {
 
     // Should see edit mode elements
     await waitFor(() => {
-      expect(screen.getByText('Raw JSON Editor')).toBeInTheDocument();
+      expect(screen.getByText('Advanced JSON Editor')).toBeInTheDocument();
       expect(screen.getByText('Save All')).toBeInTheDocument();
       expect(screen.getByText('Cancel')).toBeInTheDocument();
     });
@@ -252,7 +252,7 @@ describe('GlobalContextDialog', () => {
 
     // Should see raw JSON editor
     await waitFor(() => {
-      expect(screen.getByText(/Raw JSON Editor/)).toBeInTheDocument();
+      expect(screen.getByText(/Advanced JSON Editor/)).toBeInTheDocument();
       expect(screen.getByTestId('textarea')).toBeInTheDocument();
       expect(screen.getByText('Format JSON')).toBeInTheDocument();
     });
@@ -341,7 +341,7 @@ describe('GlobalContextDialog', () => {
 
     // Should show validation error
     await waitFor(() => {
-      expect(screen.getByText('JSON Validation Error')).toBeInTheDocument();
+      expect(screen.getByText('JSON Syntax Error')).toBeInTheDocument();
     });
   });
 
@@ -407,7 +407,7 @@ describe('GlobalContextDialog', () => {
 
     // Should exit edit mode
     await waitFor(() => {
-      expect(screen.queryByText('Raw JSON Editor')).not.toBeInTheDocument();
+      expect(screen.queryByText('Advanced JSON Editor')).not.toBeInTheDocument();
       expect(screen.getByText('View')).toBeInTheDocument();
     });
   });
@@ -452,9 +452,11 @@ describe('GlobalContextDialog', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (api.getGlobalContext as any).mockRejectedValue(new Error('Network error'));
+    const networkError = new Error('Network error');
+    (api.getGlobalContext as any).mockRejectedValue(networkError);
 
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // The component logs fetch failures through the app logger (which formats console output)
+    const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     render(
       <GlobalContextDialog
@@ -468,9 +470,11 @@ describe('GlobalContextDialog', () => {
       expect(screen.queryByText('Loading global context...')).not.toBeInTheDocument();
     });
 
-    expect(consoleError).toHaveBeenCalledWith('Error fetching global context:', expect.any(Error));
+    expect(loggerError).toHaveBeenCalledWith('Error fetching global context:', networkError);
+    // And it falls back to the no-context state instead of crashing
+    expect(screen.getByText('No Global Context Available')).toBeInTheDocument();
 
-    consoleError.mockRestore();
+    loggerError.mockRestore();
   });
 
   // Removed: Edit functionality is not yet implemented
@@ -497,7 +501,7 @@ describe('GlobalContextDialog', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Complete Raw Context')).toBeInTheDocument();
+      expect(screen.getByText('Raw JSON (Copy/Export)')).toBeInTheDocument();
     });
   });
 
