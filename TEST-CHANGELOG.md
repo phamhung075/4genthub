@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — rigspec: agreement with `rig spec validate` (Task F1v, Go)
+
+- Added to `agenthub_go/fastmcp/seat_management/domain/rigspec/rigspec_test.go`: `TestRenderRoomRejectsWhatRigValidateRejects` (bad edge kind, unknown member, duplicate member id: `rig spec validate` answers `Rig spec invalid` with that cause and `RenderRoom` rejects the same input) and `TestLaunchCycleIsNotCaughtByRigValidate` (`rig spec validate` accepts a `delegates_to` cycle, `FindLaunchCycle` finds `a>b>a`). Both skip without the `rig` binary or its daemon, like `TestRenderRoomRigCLI`.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/seat_management` empty; `go vet ./fastmcp/seat_management/...` clean; `go test ./fastmcp/seat_management/...` all packages ok; `go test -v -run TestRenderRoomRigCLI ./fastmcp/seat_management/domain/rigspec/` passes for locked, standard, yolo and none (`Rig spec valid: dev`, `Preflight ready`).
+
 ## 2026-10-04 — testWebSocket helper and its test removed (Task B10)
 
 - Removed: `agenthub-frontend/src/tests/utils/testWebSocket.test.ts` (18 tests, fixed in B9) with the helper it tested, `src/utils/testWebSocket.ts`, and its import in `src/App.tsx` (decision: a debug function that takes a token on `window` does not belong in the production bundle). Grep of the repo (frontend src, ai_docs, scripts, help pages, e2e) found no other reference apart from changelog history.

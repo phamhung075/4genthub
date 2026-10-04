@@ -1,6 +1,7 @@
 package rigspec
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -373,5 +374,86 @@ func TestRenderRoomPermissionPolicyPerSeat(t *testing.T) {
 		if nameAt, polAt := strings.Index(out, "\nname: dev\n"), strings.Index(out, line); polAt < nameAt || strings.Index(out, "\npods:\n") > polAt {
 			t.Errorf("policy %s: the line must sit inside the member, after pods:\n%s", policy, out)
 		}
+	}
+}
+
+// rigValidate runs `rig spec validate` on a rig.yaml with two agent dirs (a, b) beside it and
+// returns its output and whether it exited 0. A missing binary or daemon skips the test.
+func rigValidate(t *testing.T, rigYAML string) (string, bool) {
+	t.Helper()
+	rigPath, err := exec.LookPath("rig")
+	if err != nil {
+		t.Skip("rig binary not on PATH")
+	}
+	dir := t.TempDir()
+	writeAgentDir(t, dir, "a", "claude-code")
+	writeAgentDir(t, dir, "b", "claude-code")
+	file := filepath.Join(dir, "rig.yaml")
+	if err := os.WriteFile(file, []byte(rigYAML), 0o644); err != nil {
+		t.Fatalf("write rig.yaml: %v", err)
+	}
+	out, err := exec.Command(rigPath, "spec", "validate", file).CombinedOutput()
+	if err != nil && strings.Contains(string(out), "Daemon not running") {
+		t.Skipf("rig validate needs a running OpenRig daemon: %s", strings.TrimSpace(string(out)))
+	}
+	return string(out), err == nil
+}
+
+const twoMemberRig = `version: "0.2"
+name: t
+pods:
+  - id: t
+    label: T
+    members:
+      - {id: a, agent_ref: "local:agents/a", profile: default, runtime: claude-code, cwd: .}
+      - {id: %s, agent_ref: "local:agents/b", profile: default, runtime: claude-code, cwd: .}
+    edges:
+      - {kind: %s, from: a, to: %s}
+edges: []
+`
+
+// The invalid specs OpenRig's validator rejects (bad edge kind, unknown member, duplicate member
+// id) are rejected by RenderRoom for the same cause; the OpenRig repo ships no invalid rig
+// fixtures (packages/test-system/scenarios holds only valid stubs), so these are written here.
+func TestRenderRoomRejectsWhatRigValidateRejects(t *testing.T) {
+	seats := []Seat{{Key: "a", Runtime: "claude-code", PermissionPolicy: "standard"}, {Key: "b", Runtime: "claude-code", PermissionPolicy: "standard"}}
+	cases := []struct {
+		name      string
+		rigYAML   string
+		rigWant   string
+		seats     []Seat
+		edges     []Edge
+		renderErr string
+	}{
+		{"edge kind", fmt.Sprintf(twoMemberRig, "b", "reports_to", "b"), "must be one of delegates_to", seats, []Edge{{Kind: "reports_to", From: "a", To: "b"}}, "kind"},
+		{"unknown member", fmt.Sprintf(twoMemberRig, "b", "delegates_to", "ghost"), `member "ghost" not found`, seats, []Edge{{Kind: "delegates_to", From: "a", To: "ghost"}}, "to"},
+		{"duplicate member id", fmt.Sprintf(twoMemberRig, "a", "delegates_to", "a"), `duplicate member id "a"`, []Seat{seats[0], seats[0]}, nil, "duplicate seat key"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			out, ok := rigValidate(t, c.rigYAML)
+			if ok || !strings.Contains(out, "Rig spec invalid") || !strings.Contains(out, c.rigWant) {
+				t.Fatalf("rig spec validate did not reject for %q (ok=%v):\n%s", c.rigWant, ok, out)
+			}
+			if _, err := RenderRoom("t", "T", c.seats, c.edges); err == nil || !strings.Contains(err.Error(), c.renderErr) {
+				t.Fatalf("RenderRoom error = %v, want it to contain %q", err, c.renderErr)
+			}
+		})
+	}
+}
+
+// `rig spec validate` accepts a delegates_to cycle (OpenRig only rejects it when the rig is
+// brought up), so the cycle rule lives in FindLaunchCycle and is applied when a link is saved.
+func TestLaunchCycleIsNotCaughtByRigValidate(t *testing.T) {
+	cycle := fmt.Sprintf(twoMemberRig, "b", "delegates_to", "b")
+	cycle = strings.Replace(cycle, "      - {kind: delegates_to, from: a, to: b}\n", "      - {kind: delegates_to, from: a, to: b}\n      - {kind: delegates_to, from: b, to: a}\n", 1)
+
+	out, ok := rigValidate(t, cycle)
+	if !ok || !strings.Contains(out, "Rig spec valid") {
+		t.Fatalf("rig spec validate rejected a cycle (the premise of this test changed):\n%s", out)
+	}
+	got := FindLaunchCycle([]Edge{{Kind: "delegates_to", From: "a", To: "b"}, {Kind: "delegates_to", From: "b", To: "a"}})
+	if strings.Join(got, ">") != "a>b>a" {
+		t.Fatalf("FindLaunchCycle = %v, want a>b>a", got)
 	}
 }
