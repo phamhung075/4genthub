@@ -22,9 +22,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
-**Open owner decision D4 recorded: source of the assignee names** (2026-10-04)
+**Open owner decision D6 recorded: source of the assignee names** (2026-10-04)
 
-- `agenthub_go/NEXT_GEN.md` (D4): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
+- `agenthub_go/NEXT_GEN.md` (D6): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
 
 **F4 client bridge check recorded in NEXT_GEN.md** (2026-10-04)
 
