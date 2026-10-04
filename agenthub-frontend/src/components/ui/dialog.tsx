@@ -15,7 +15,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     if (open) document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onOpenChange]);
-  
+
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -26,7 +26,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
       document.body.style.overflow = 'unset';
     };
   }, [open]);
-  
+
   if (!open) return null;
   return (
     <div className="theme-modal-overlay flex items-center justify-center" onClick={() => onOpenChange(false)}>
@@ -37,17 +37,29 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   );
 }
 
+// DialogContent names itself after the DialogTitle rendered inside it.
+const DialogTitleContext = React.createContext<{ titleId: string; setHasTitle: (hasTitle: boolean) => void } | null>(null);
+
 export function DialogContent({ children, className }: { children: React.ReactNode; className?: string }) {
+  const titleId = React.useId();
+  const [hasTitle, setHasTitle] = React.useState(false);
+  const titleContext = React.useMemo(() => ({ titleId, setHasTitle }), [titleId]);
+
   return (
-    <div 
-      className={cn(
-        "theme-modal w-full relative",
-        className
-      )}
-      onClick={e => e.stopPropagation()}
-    >
-      {children}
-    </div>
+    <DialogTitleContext.Provider value={titleContext}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={hasTitle ? titleId : undefined}
+        className={cn(
+          "theme-modal w-full relative",
+          className
+        )}
+        onClick={e => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </DialogTitleContext.Provider>
   );
 }
 
@@ -56,7 +68,15 @@ export function DialogHeader({ children, className }: { children: React.ReactNod
 }
 
 export function DialogTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h2 className={cn("theme-modal-header text-left", className)}>{children}</h2>;
+  const titleContext = React.useContext(DialogTitleContext);
+  const setHasTitle = titleContext?.setHasTitle;
+
+  React.useEffect(() => {
+    setHasTitle?.(true);
+    return () => setHasTitle?.(false);
+  }, [setHasTitle]);
+
+  return <h2 id={titleContext?.titleId} className={cn("theme-modal-header text-left", className)}>{children}</h2>;
 }
 
 export function DialogFooter({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -69,4 +89,4 @@ export function DialogDescription({ children, className }: { children: React.Rea
 
 export function DialogTrigger({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) {
   return <>{children}</>;
-} 
+}

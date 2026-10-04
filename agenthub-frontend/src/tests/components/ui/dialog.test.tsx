@@ -199,6 +199,63 @@ describe('Dialog components', () => {
     });
   });
 
+  describe('accessibility', () => {
+    it('gives the content role dialog and aria-modal', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>Body</DialogContent>
+        </Dialog>
+      );
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(dialog).toHaveTextContent('Body');
+    });
+
+    it('labels the dialog with its title', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit task</DialogTitle>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      );
+
+      const title = screen.getByRole('heading', { name: 'Edit task' });
+      expect(title.id).not.toBe('');
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-labelledby', title.id);
+      expect(screen.getByRole('dialog', { name: 'Edit task' })).toBeInTheDocument();
+    });
+
+    it('sets no aria-labelledby without a title', () => {
+      render(
+        <Dialog open={true} onOpenChange={vi.fn()}>
+          <DialogContent>No title</DialogContent>
+        </Dialog>
+      );
+
+      expect(screen.getByRole('dialog')).not.toHaveAttribute('aria-labelledby');
+    });
+
+    it('gives two open dialogs different title ids', () => {
+      render(
+        <>
+          <Dialog open={true} onOpenChange={vi.fn()}>
+            <DialogContent><DialogTitle>First</DialogTitle></DialogContent>
+          </Dialog>
+          <Dialog open={true} onOpenChange={vi.fn()}>
+            <DialogContent><DialogTitle>Second</DialogTitle></DialogContent>
+          </Dialog>
+        </>
+      );
+
+      expect(screen.getByRole('dialog', { name: 'First' })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Second' })).toBeInTheDocument();
+    });
+  });
+
   describe('DialogHeader', () => {
     it('renders children correctly', () => {
       render(

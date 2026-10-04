@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — dialog ARIA (Task B6)
+
+- Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `accessibility` block (4 tests): `role="dialog"` with `aria-modal="true"`, `aria-labelledby` equal to the title id (and the accessible name), no `aria-labelledby` without a title, two open dialogs resolve to their own titles. `TaskDetailsDialog` 'should have proper ARIA attributes' now passes (30 of 30).
+- Result (in `agenthub-frontend`): `npx vitest run` 29 failed / 1698 passed before, 27 failed / 1704 passed (1731) after, files failing 9 to 7. Per file, TaskDetailsDialog left the list (1 to 0) and no file newly fails. `e2e/websocket-protocol-v2.test.tsx` failed 1 test in the before run only (it also fails or passes by load in other full runs; the reviewer saw it pass alone 3 of 3), so it is not caused by this change. `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
 ## 2026-10-04 — four "needs a look" frontend test files (Task B5)
 
 - `agenthub-frontend/src/tests/setupTests.test.tsx` (3 failing to 0): the suppression tests replaced `console.error` and then called it, so they never reached the filter in `src/setupTests.ts` (the "not suppressed" tests re-implemented the filter inline). A second copy of `setupTests` is loaded at the top of the file with a spy as its sink, and the tests call the real filter (`it.each` for the three suppressed messages, one for forwarded errors with arguments, one for non-string arguments). Mutation: dropping the `useLayoutEffect` check in `setupTests.ts` fails the matching test (restored, `git diff` empty).

@@ -12,6 +12,11 @@
     `getAvailableAgents` and the assignee picker are untouched.
 
 ### Fixed
+- **Dialogs are announced as dialogs** - 2026-10-04
+  - `src/components/ui/dialog.tsx`: `DialogContent` now renders `role="dialog"` and `aria-modal="true"`, and
+    `aria-labelledby` points at the `DialogTitle` rendered inside it (no attribute when there is no title; one
+    `useId` per dialog). The component wraps no library, so the attributes were simply missing. Applies to all 27
+    files that import it; no opt-out prop.
 - **TaskRowDesktop tests cover the current component** - 2026-10-04
   - All 17 tests in `src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx` targeted a removed API and failed.
     Replaced by 23 tests of `TaskRowDesktop` (counts and their fallbacks, assignees dialog, expansion, hover, row
