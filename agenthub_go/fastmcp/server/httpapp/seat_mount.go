@@ -23,6 +23,10 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
+// publicURLEnv names the externally reachable base URL of this server. Rendered specs and
+// resolved-seat snapshots rewrite the MCP server URL to it.
+const publicURLEnv = "AGENTHUB_PUBLIC_URL"
+
 // seatSource is what the seat routes need from the seat_management use cases.
 type seatSource interface {
 	ResolveSeat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.ResolvedSeat, error)

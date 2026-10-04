@@ -38,11 +38,9 @@ var (
 // prodModelTypes resolves a TableDef.Model to its row struct type.
 var prodModelTypes = map[string]reflect.Type{
 	"AgentImportHistory":       reflect.TypeOf(AgentImportHistory{}),
-	"AgentTemplate":            reflect.TypeOf(AgentTemplate{}),
 	"AppliedMigration":         reflect.TypeOf(AppliedMigration{}),
 	"TokenTransaction":         reflect.TypeOf(TokenTransaction{}),
 	"UserAgentConfigurationMd": reflect.TypeOf(UserAgentConfigurationMd{}),
-	"UserAgentInstance":        reflect.TypeOf(UserAgentInstance{}),
 	"UserAPIToken":             reflect.TypeOf(UserAPIToken{}),
 	"UserSession":              reflect.TypeOf(UserSession{}),
 }
@@ -53,12 +51,6 @@ var prodExpectedColumns = map[string][]string{
 	"agent_import_history": {
 		"id:UUID", "importer_user_id:UUID", "source_instance_id:UUID", "imported_instance_id:UUID",
 		"imported_at:TIMESTAMP WITHOUT TIME ZONE", "share_token:VARCHAR",
-	},
-	"agent_templates": {
-		"id:UUID", "slug:VARCHAR", "name:VARCHAR", "description:TEXT", "category:VARCHAR",
-		"version:VARCHAR", "system_prompt:TEXT", "tools:TEXT", "capabilities:TEXT", "rules:TEXT",
-		"output_format:TEXT", "metadata:TEXT", "created_at:TIMESTAMP WITHOUT TIME ZONE",
-		"updated_at:TIMESTAMP WITHOUT TIME ZONE",
 	},
 	"applied_migrations": {
 		"id:INTEGER", "migration_name:VARCHAR", "applied_at:TIMESTAMP WITH TIME ZONE",
@@ -72,15 +64,6 @@ var prodExpectedColumns = map[string][]string{
 	"user_agent_configurations_md": {
 		"id:UUID", "instance_id:UUID", "configuration_type:VARCHAR", "content_markdown:TEXT",
 		"created_at:TIMESTAMP WITHOUT TIME ZONE", "updated_at:TIMESTAMP WITHOUT TIME ZONE",
-	},
-	"user_agent_instances": {
-		"id:UUID", "user_id:UUID", "template_id:UUID", "agent_name:VARCHAR", "is_customized:BOOLEAN",
-		"customization_notes:TEXT", "system_prompt:TEXT", "tools:TEXT", "capabilities:TEXT",
-		"rules:TEXT", "output_format:TEXT", "metadata:TEXT", "visibility:VARCHAR",
-		"share_token:VARCHAR", "share_created_at:TIMESTAMP WITHOUT TIME ZONE",
-		"original_creator_id:UUID", "imported_at:TIMESTAMP WITHOUT TIME ZONE",
-		"created_at:TIMESTAMP WITHOUT TIME ZONE", "updated_at:TIMESTAMP WITHOUT TIME ZONE",
-		"usage_count:INTEGER", "last_used_at:TIMESTAMP WITHOUT TIME ZONE", "is_enabled:BOOLEAN",
 	},
 	"user_api_tokens": {
 		"id:UUID", "user_id:UUID", "token_hash:VARCHAR", "token_cost:INTEGER", "name:VARCHAR",
@@ -98,8 +81,8 @@ var prodExpectedColumns = map[string][]string{
 }
 
 func TestProductionModelsMetadata(t *testing.T) {
-	if len(ProductionTables) != 8 {
-		t.Fatalf("ProductionTables has %d entries, want 8", len(ProductionTables))
+	if len(ProductionTables) != 6 {
+		t.Fatalf("ProductionTables has %d entries, want 6", len(ProductionTables))
 	}
 	seen := map[string]bool{}
 	for _, table := range ProductionTables {

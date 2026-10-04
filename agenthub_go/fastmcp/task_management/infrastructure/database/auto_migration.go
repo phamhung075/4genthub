@@ -46,9 +46,6 @@ func (a *AutoMigration) RunAllMigrations() bool {
 	if err := a.addSubtaskCountColumn(); err != nil {
 		return false
 	}
-	if err := a.addUsageTrackingColumns(); err != nil {
-		return false
-	}
 	return true
 }
 
@@ -121,38 +118,6 @@ func (a *AutoMigration) addSubtaskCountColumn() error {
 	_, err = a.db.ExecContext(a.ctx, "ALTER TABLE tasks ADD COLUMN subtask_count INTEGER DEFAULT 0")
 	if err != nil && !isDuplicateColumnErr(err) {
 		return err
-	}
-	return nil
-}
-
-// addUsageTrackingColumns adds usage_count and last_used_at to user_agent_instances.
-func (a *AutoMigration) addUsageTrackingColumns() error {
-	tables, err := tableNames(a.ctx, a.db)
-	if err != nil {
-		return err
-	}
-	if !contains(tables, "user_agent_instances") {
-		return nil
-	}
-	columns, err := columnNames(a.ctx, a.db, "user_agent_instances")
-	if err != nil {
-		return nil
-	}
-	if !contains(columns, "usage_count") {
-		_, err = a.db.ExecContext(a.ctx, "ALTER TABLE user_agent_instances ADD COLUMN usage_count INTEGER DEFAULT 0 NOT NULL")
-		if err != nil && !isDuplicateColumnErr(err) {
-			return err
-		}
-	}
-	columns, err = columnNames(a.ctx, a.db, "user_agent_instances")
-	if err != nil {
-		return nil
-	}
-	if !contains(columns, "last_used_at") {
-		_, err = a.db.ExecContext(a.ctx, "ALTER TABLE user_agent_instances ADD COLUMN last_used_at TIMESTAMP WITH TIME ZONE")
-		if err != nil && !isDuplicateColumnErr(err) {
-			return err
-		}
 	}
 	return nil
 }

@@ -86,6 +86,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**The old agent system is gone from Go; the two tables leave the ORM (T7, Go half)** (2026-10-04)
+
+- Deleted the `/api/v2/openrig/agents` route (`server/httpapp/openrig_mount.go`) and the `/api/v2/agent-management/*` router (`server/httpapp/agent_mgmt_mount.go`) with its mount calls in `app.go`; deleted the whole `fastmcp/agent_management` package (agent-template and user-agent-instance entities, value objects, repositories, ORM, services, facade, REST routes/DTOs and their tests) and `scripts/openrig_sync.py`.
+- `fastmcp/task_management/infrastructure/database/models_prod.go`: removed the `AgentTemplate` and `UserAgentInstance` structs and their `ProductionTables` entries (8 to 6 tables); `auto_migration.go`: removed `addUsageTrackingColumns`, the only migration against `user_agent_instances`. `models_prod_test.go` updated to 6 tables.
+- `fastmcp/seat_management/domain/seatrenderer/spec.go`: the AgentSpec DTOs (`OpenRigSpec`, `OpenRigSpecFile`, `OpenRigTokenEnvVar`) moved here from the retired renderer; `renderer.go`, `renderer_test.go` and `seat_management/application/services/seat_resolution_service.go` now use them. `seat_mount.go` keeps `publicURLEnv`, which lived in the deleted file.
+- `healthVersion` 0.0.14 to 0.0.15.
+- Left for T8 (Python backend): `agenthub_main` agent management, `scripts/compare_schema.py`'s import of it, and `agenthub_main/.../init_schema_postgresql.sql`, which still declare the two tables.
+- Operator step (principal/owner; NOT run here): the tables still exist on production. Drop them there in this order: `DROP TABLE IF EXISTS user_agent_instances;` then `DROP TABLE IF EXISTS agent_templates;`.
+- Verification: `gofmt -l` and `go vet ./...` clean; `go test ./...` green apart from the pre-existing `fastmcp.TestDatabaseMigratorRunMigrations` failure (`details=true progress_history=false`), reproduced identically at HEAD in a clean `git archive` export.
+
 **Dead `SubtaskFromDict` removed (review follow-up)** (2026-10-04)
 
 - `agenthub_go/fastmcp/task_management/domain/entities/subtask.go`: `SubtaskFromDict` had no caller outside its own definition and called the validating `NewSubtask`, so any future use that loaded a stored row would have reintroduced the D6d hydration blocker. Stored rows load through `RestoreSubtask` (`subtask_repository.go:77`). No test referenced it; `gofmt`, `go vet` and `go test ./fastmcp/task_management/domain/entities/` are green.

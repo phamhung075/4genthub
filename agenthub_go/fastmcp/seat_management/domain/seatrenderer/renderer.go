@@ -9,7 +9,6 @@ import (
 	"slices"
 	"strings"
 
-	"agenthub/fastmcp/agent_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 
 	"gopkg.in/yaml.v3"
@@ -98,7 +97,7 @@ type startupFileYAML struct {
 // RenderSeat renders a resolved seat as an OpenRig AgentSpec: agent.yaml, the
 // seat guidance, one SKILL.md per skill module, and the runtime fragments the
 // seat's runtime supports.
-func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpec, error) {
+func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error) {
 	if err := resolver.CheckRuntime(seat.Runtime); err != nil {
 		return nil, err
 	}
@@ -139,24 +138,24 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*services.OpenRigSpe
 		return nil, err
 	}
 
-	files := []services.OpenRigSpecFile{
+	files := []OpenRigSpecFile{
 		{Path: agentYAMLPath, Content: agentYAML},
 		{Path: guidancePath, Content: renderGuidance(seat)},
 	}
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindSkill) {
-		files = append(files, services.OpenRigSpecFile{
+		files = append(files, OpenRigSpecFile{
 			Path:    "skills/" + m.Slug + "/" + skillFileName,
 			Content: m.Content,
 		})
 	}
 	if receivesClaudeFragments(seat.Runtime) {
-		files = append(files, services.OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
+		files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
 		if settingsFragment != "" {
-			files = append(files, services.OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
+			files = append(files, OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
 		}
 	}
 
-	return &services.OpenRigSpec{
+	return &OpenRigSpec{
 		Slug:    seat.SeatType,
 		Name:    seat.SeatType,
 		Version: seat.SeatTypeVersion,
@@ -335,7 +334,7 @@ func renderMCPFragment(mcpURL string) (string, error) {
 				"url":  mcpURL,
 				"headers": map[string]string{
 					"Accept":        "application/json, text/event-stream",
-					"Authorization": "Bearer ${" + services.OpenRigTokenEnvVar + "}",
+					"Authorization": "Bearer ${" + OpenRigTokenEnvVar + "}",
 				},
 			},
 		},

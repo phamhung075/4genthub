@@ -117,8 +117,6 @@ func (a *App) Handler() http.Handler {
 	authapi.NewSupabaseAuthController().RegisterRoutes(mux)
 	mountRoutes(mux, newRouteDeps(a))
 	mountWebSockets(mux, a.Sessions)
-	mountAgentManagementRoutes(mux, a.Sessions)
-	mountOpenRigRoutes(mux, a.Sessions)
 	mountSeatRoutes(mux, a.Sessions)
 	mountSeatAdminRoutes(mux, a.Sessions)
 	mountSeatRigSpecRoutes(mux, a.Sessions)

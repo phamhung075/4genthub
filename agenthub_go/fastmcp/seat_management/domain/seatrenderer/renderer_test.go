@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"agenthub/fastmcp/agent_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedlibrary"
 
@@ -38,7 +37,7 @@ func withModules(seat resolver.ResolvedSeat, modules []resolver.ResolvedModule) 
 	return seat
 }
 
-func filePaths(spec *services.OpenRigSpec) []string {
+func filePaths(spec *OpenRigSpec) []string {
 	out := make([]string, len(spec.Files))
 	for i, f := range spec.Files {
 		out[i] = f.Path
@@ -46,7 +45,7 @@ func filePaths(spec *services.OpenRigSpec) []string {
 	return out
 }
 
-func fileContent(t *testing.T, spec *services.OpenRigSpec, path string) string {
+func fileContent(t *testing.T, spec *OpenRigSpec, path string) string {
 	t.Helper()
 	for _, f := range spec.Files {
 		if f.Path == path {
@@ -90,7 +89,7 @@ type parsedAgentYAML struct {
 	} `yaml:"startup"`
 }
 
-func parseAgentYAML(t *testing.T, spec *services.OpenRigSpec) parsedAgentYAML {
+func parseAgentYAML(t *testing.T, spec *OpenRigSpec) parsedAgentYAML {
 	t.Helper()
 	var parsed parsedAgentYAML
 	if err := yaml.Unmarshal([]byte(fileContent(t, spec, agentYAMLPath)), &parsed); err != nil {
@@ -101,15 +100,15 @@ func parseAgentYAML(t *testing.T, spec *services.OpenRigSpec) parsedAgentYAML {
 
 // assertNoSecret fails if any rendered file carries a literal bearer credential;
 // the spec may only reference the token through its environment variable.
-func assertNoSecret(t *testing.T, spec *services.OpenRigSpec) {
+func assertNoSecret(t *testing.T, spec *OpenRigSpec) {
 	t.Helper()
-	token := os.Getenv(services.OpenRigTokenEnvVar)
+	token := os.Getenv(OpenRigTokenEnvVar)
 	for _, f := range spec.Files {
 		if i := strings.Index(f.Content, "Bearer "); i >= 0 && !strings.HasPrefix(f.Content[i+len("Bearer "):], "${") {
 			t.Fatalf("file %q carries a literal bearer credential", f.Path)
 		}
 		if token != "" && strings.Contains(f.Content, token) {
-			t.Fatalf("file %q embeds the live %s value", f.Path, services.OpenRigTokenEnvVar)
+			t.Fatalf("file %q embeds the live %s value", f.Path, OpenRigTokenEnvVar)
 		}
 	}
 }
@@ -151,7 +150,7 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 	}
 
 	mcp := fileContent(t, spec, mcpFragmentPath)
-	if !strings.Contains(mcp, "Bearer ${"+services.OpenRigTokenEnvVar+"}") {
+	if !strings.Contains(mcp, "Bearer ${"+OpenRigTokenEnvVar+"}") {
 		t.Fatalf("mcp fragment missing token indirection:\n%s", mcp)
 	}
 	var mcpDoc map[string]any
@@ -409,7 +408,7 @@ func TestRenderSeatUnsupportedMCPURL(t *testing.T) {
 	}
 }
 
-func writeSpecFiles(t *testing.T, dir string, spec *services.OpenRigSpec) {
+func writeSpecFiles(t *testing.T, dir string, spec *OpenRigSpec) {
 	t.Helper()
 	for _, f := range spec.Files {
 		path := filepath.Join(dir, filepath.FromSlash(f.Path))

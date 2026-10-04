@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Old agent system removed from Go (T7, Go half)
+
+- Deleted with their subjects: the `agent_management` package tests (entities, services, ORM repositories, REST routes) and `server/httpapp/agent_mgmt_mount_test.go`.
+- `fastmcp/task_management/infrastructure/database/models_prod_test.go`: `prodModelTypes` and `prodExpectedColumns` drop `AgentTemplate`/`UserAgentInstance` and `agent_templates`/`user_agent_instances`; `ProductionTables` count 8 to 6.
+- `seatrenderer/renderer_test.go`: uses the moved DTOs (`OpenRigSpec`, `OpenRigTokenEnvVar`) from its own package now.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set, `AGENTHUB_TEST_PG_URL` and `SEAT_TEST_DATABASE_URL` at 54329): `gofmt -l` empty; `go vet ./...` clean; `go test ./...` green except `fastmcp.TestDatabaseMigratorRunMigrations` (`details=true progress_history=false`), which fails identically at HEAD in a clean `git archive` export, so it is pre-existing and unrelated.
+
 ## 2026-10-04 — Default-wildcard CORS simple-request branches pinned (OF4 review)
 
 - Reviewer finding: `cors_test.go` covered the wildcard preflight and an explicit-origin simple request, but not the default-wildcard simple request — the exact path the OF4 browser run broke on. Added `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (no Cookie -> `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) and `TestWithCORSSimpleRequestDefaultWildcardWithCookie` (`Cookie: access_token=x` -> the request origin echoed). Both run with `CORS_ORIGINS=""` (the documented default).

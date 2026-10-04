@@ -5,9 +5,7 @@
 // / ColumnDef conventions of models.go: json.RawMessage for JSONB, string for UUID, time.Time
 // for timestamps and pointers for nullable columns.
 //
-// These tables are intentionally not appended to Tables here. agent_templates and
-// user_agent_instances are already registered by
-// fastmcp/agent_management/infrastructure/database/models_agent_management.go, and the three
+// These tables are intentionally not appended to Tables here. The three
 // user_id foreign keys (token_transactions, user_api_tokens, user_sessions) reference the users
 // table, which the auth package registers. Registering these definitions from the base package
 // would duplicate table metadata and mis-order CREATE TABLE against its dependencies.
@@ -26,24 +24,6 @@ type AgentImportHistory struct {
 	ImportedInstanceID string    `db:"imported_instance_id"`
 	ImportedAt         time.Time `db:"imported_at"`
 	ShareToken         *string   `db:"share_token"`
-}
-
-// AgentTemplate is a row of agent_templates.
-type AgentTemplate struct {
-	ID           string    `db:"id"`
-	Slug         string    `db:"slug"`
-	Name         string    `db:"name"`
-	Description  string    `db:"description"`
-	Category     string    `db:"category"`
-	Version      string    `db:"version"`
-	SystemPrompt string    `db:"system_prompt"`
-	Tools        string    `db:"tools"`
-	Capabilities string    `db:"capabilities"`
-	Rules        *string   `db:"rules"`
-	OutputFormat *string   `db:"output_format"`
-	MetadataJSON *string   `db:"metadata"`
-	CreatedAt    time.Time `db:"created_at"`
-	UpdatedAt    time.Time `db:"updated_at"`
 }
 
 // AppliedMigration is a row of applied_migrations (the Python migration runner's tracking table).
@@ -109,33 +89,7 @@ type UserSession struct {
 	IsActive     bool            `db:"is_active"`
 }
 
-// UserAgentInstance is a row of user_agent_instances.
-type UserAgentInstance struct {
-	ID                 string     `db:"id"`
-	UserID             string     `db:"user_id"`
-	TemplateID         string     `db:"template_id"`
-	AgentName          string     `db:"agent_name"`
-	IsCustomized       bool       `db:"is_customized"`
-	CustomizationNotes *string    `db:"customization_notes"`
-	SystemPrompt       string     `db:"system_prompt"`
-	Tools              string     `db:"tools"`
-	Capabilities       string     `db:"capabilities"`
-	Rules              *string    `db:"rules"`
-	OutputFormat       *string    `db:"output_format"`
-	MetadataJSON       *string    `db:"metadata"`
-	Visibility         string     `db:"visibility"`
-	ShareToken         *string    `db:"share_token"`
-	ShareCreatedAt     *time.Time `db:"share_created_at"`
-	OriginalCreatorID  *string    `db:"original_creator_id"`
-	ImportedAt         *time.Time `db:"imported_at"`
-	CreatedAt          time.Time  `db:"created_at"`
-	UpdatedAt          time.Time  `db:"updated_at"`
-	UsageCount         int64      `db:"usage_count"`
-	LastUsedAt         *time.Time `db:"last_used_at"`
-	IsEnabled          bool       `db:"is_enabled"`
-}
-
-// ProductionTables lists the eight production tables that the generated models.go does not
+// ProductionTables lists the six production tables that the generated models.go does not
 // cover, in production column order. The DB column types match init_schema_postgresql.sql;
 // SQLType is the column-type token the repositories package dispatches on, so JSONB is
 // reported as JSON (the same convention as models.go) even though the DDL declares JSONB.
@@ -160,44 +114,6 @@ var ProductionTables = []TableDef{
 		"CREATE INDEX idx_import_history_date ON agent_import_history (imported_at)",
 		"CREATE INDEX idx_import_history_importer ON agent_import_history (importer_user_id)",
 		"CREATE INDEX idx_import_history_source ON agent_import_history (source_instance_id)",
-	}},
-	{Name: "agent_templates", Model: "AgentTemplate", Columns: []ColumnDef{
-		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: DefaultUUIDv4},
-		{Name: "slug", Attr: "slug", GoField: "Slug", SQLType: "VARCHAR", Nullable: false},
-		{Name: "name", Attr: "name", GoField: "Name", SQLType: "VARCHAR", Nullable: false},
-		{Name: "description", Attr: "description", GoField: "Description", SQLType: "TEXT", Nullable: false},
-		{Name: "category", Attr: "category", GoField: "Category", SQLType: "VARCHAR", Nullable: false},
-		{Name: "version", Attr: "version", GoField: "Version", SQLType: "VARCHAR", Nullable: false},
-		{Name: "system_prompt", Attr: "system_prompt", GoField: "SystemPrompt", SQLType: "TEXT", Nullable: false},
-		{Name: "tools", Attr: "tools", GoField: "Tools", SQLType: "TEXT", Nullable: false},
-		{Name: "capabilities", Attr: "capabilities", GoField: "Capabilities", SQLType: "TEXT", Nullable: false},
-		{Name: "rules", Attr: "rules", GoField: "Rules", SQLType: "TEXT", Nullable: true},
-		{Name: "output_format", Attr: "output_format", GoField: "OutputFormat", SQLType: "TEXT", Nullable: true},
-		{Name: "metadata", Attr: "metadata_json", GoField: "MetadataJSON", SQLType: "TEXT", Nullable: true},
-		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false},
-		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false},
-	}, DDL: []string{
-		"CREATE TABLE agent_templates (\n" +
-			"\tid UUID NOT NULL,\n" +
-			"\tslug VARCHAR(100) NOT NULL,\n" +
-			"\tname VARCHAR(200) NOT NULL,\n" +
-			"\tdescription TEXT NOT NULL,\n" +
-			"\tcategory VARCHAR(100) NOT NULL,\n" +
-			"\tversion VARCHAR(50) NOT NULL,\n" +
-			"\tsystem_prompt TEXT NOT NULL,\n" +
-			"\ttools TEXT NOT NULL,\n" +
-			"\tcapabilities TEXT NOT NULL,\n" +
-			"\trules TEXT,\n" +
-			"\toutput_format TEXT,\n" +
-			"\tmetadata TEXT,\n" +
-			"\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n" +
-			"\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n" +
-			"\tPRIMARY KEY (id)\n" +
-			")",
-		"CREATE UNIQUE INDEX ix_agent_templates_slug ON agent_templates (slug)",
-		"CREATE INDEX ix_agent_templates_category ON agent_templates (category)",
-		"CREATE INDEX ix_agent_templates_version ON agent_templates (version)",
-		"CREATE INDEX ix_agent_templates_category_version ON agent_templates (category, version)",
 	}},
 	{Name: "applied_migrations", Model: "AppliedMigration", Columns: []ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "INTEGER", Nullable: false, PrimaryKey: true},
@@ -262,64 +178,6 @@ var ProductionTables = []TableDef{
 			"\tCONSTRAINT user_agent_configurations_md_instance_type_key UNIQUE (instance_id, configuration_type)\n" +
 			")",
 		"CREATE INDEX idx_configurations_md_instance ON user_agent_configurations_md (instance_id, configuration_type)",
-	}},
-	{Name: "user_agent_instances", Model: "UserAgentInstance", Columns: []ColumnDef{
-		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: DefaultUUIDv4},
-		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "UUID", Nullable: false},
-		{Name: "template_id", Attr: "template_id", GoField: "TemplateID", SQLType: "UUID", Nullable: false},
-		{Name: "agent_name", Attr: "agent_name", GoField: "AgentName", SQLType: "VARCHAR", Nullable: false},
-		{Name: "is_customized", Attr: "is_customized", GoField: "IsCustomized", SQLType: "BOOLEAN", Nullable: false},
-		{Name: "customization_notes", Attr: "customization_notes", GoField: "CustomizationNotes", SQLType: "TEXT", Nullable: true},
-		{Name: "system_prompt", Attr: "system_prompt", GoField: "SystemPrompt", SQLType: "TEXT", Nullable: false},
-		{Name: "tools", Attr: "tools", GoField: "Tools", SQLType: "TEXT", Nullable: false},
-		{Name: "capabilities", Attr: "capabilities", GoField: "Capabilities", SQLType: "TEXT", Nullable: false},
-		{Name: "rules", Attr: "rules", GoField: "Rules", SQLType: "TEXT", Nullable: true},
-		{Name: "output_format", Attr: "output_format", GoField: "OutputFormat", SQLType: "TEXT", Nullable: true},
-		{Name: "metadata", Attr: "metadata_json", GoField: "MetadataJSON", SQLType: "TEXT", Nullable: true},
-		{Name: "visibility", Attr: "visibility", GoField: "Visibility", SQLType: "VARCHAR", Nullable: false},
-		{Name: "share_token", Attr: "share_token", GoField: "ShareToken", SQLType: "VARCHAR", Nullable: true},
-		{Name: "share_created_at", Attr: "share_created_at", GoField: "ShareCreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true},
-		{Name: "original_creator_id", Attr: "original_creator_id", GoField: "OriginalCreatorID", SQLType: "UUID", Nullable: true},
-		{Name: "imported_at", Attr: "imported_at", GoField: "ImportedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true},
-		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false},
-		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false},
-		{Name: "usage_count", Attr: "usage_count", GoField: "UsageCount", SQLType: "INTEGER", Nullable: false, Default: DefaultInt, DefaultValue: "0", ServerDefault: "0"},
-		{Name: "last_used_at", Attr: "last_used_at", GoField: "LastUsedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true},
-		{Name: "is_enabled", Attr: "is_enabled", GoField: "IsEnabled", SQLType: "BOOLEAN", Nullable: false, Default: DefaultBool, DefaultValue: "true", ServerDefault: "true"},
-	}, DDL: []string{
-		"CREATE TABLE user_agent_instances (\n" +
-			"\tid UUID NOT NULL,\n" +
-			"\tuser_id UUID NOT NULL,\n" +
-			"\ttemplate_id UUID NOT NULL,\n" +
-			"\tagent_name VARCHAR(200) NOT NULL,\n" +
-			"\tis_customized BOOLEAN NOT NULL,\n" +
-			"\tcustomization_notes TEXT,\n" +
-			"\tsystem_prompt TEXT NOT NULL,\n" +
-			"\ttools TEXT NOT NULL,\n" +
-			"\tcapabilities TEXT NOT NULL,\n" +
-			"\trules TEXT,\n" +
-			"\toutput_format TEXT,\n" +
-			"\tmetadata TEXT,\n" +
-			"\tvisibility VARCHAR(50) NOT NULL,\n" +
-			"\tshare_token VARCHAR(64),\n" +
-			"\tshare_created_at TIMESTAMP WITHOUT TIME ZONE,\n" +
-			"\toriginal_creator_id UUID,\n" +
-			"\timported_at TIMESTAMP WITHOUT TIME ZONE,\n" +
-			"\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n" +
-			"\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n" +
-			"\tusage_count INTEGER NOT NULL,\n" +
-			"\tlast_used_at TIMESTAMP WITHOUT TIME ZONE,\n" +
-			"\tis_enabled BOOLEAN NOT NULL,\n" +
-			"\tPRIMARY KEY (id),\n" +
-			"\tCONSTRAINT uq_user_agent_instances_user_template UNIQUE (user_id, template_id)\n" +
-			")",
-		"CREATE UNIQUE INDEX ix_user_agent_instances_share_token ON user_agent_instances (share_token)",
-		"CREATE INDEX ix_user_agent_instances_template_id ON user_agent_instances (template_id)",
-		"CREATE INDEX ix_user_agent_instances_user_enabled ON user_agent_instances (user_id, is_enabled)",
-		"CREATE INDEX ix_user_agent_instances_user_id ON user_agent_instances (user_id)",
-		"CREATE INDEX ix_user_agent_instances_user_visibility ON user_agent_instances (user_id, visibility)",
-		"CREATE INDEX ix_user_agent_instances_visibility ON user_agent_instances (visibility)",
-		"CREATE INDEX ix_user_agent_instances_visibility_created ON user_agent_instances (visibility, created_at)",
 	}},
 	{Name: "user_api_tokens", Model: "UserAPIToken", Columns: []ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: DefaultUUIDv4},

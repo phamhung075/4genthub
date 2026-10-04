@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	agentservices "agenthub/fastmcp/agent_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
@@ -174,7 +173,7 @@ func (s *SeatResolutionService) policy(ctx context.Context, userID string, seat 
 
 // snapshotHash identifies a resolved seat: the module hash alone would not change when
 // only the policy or the rendered files change, and a stale snapshot would be reused.
-func snapshotHash(moduleHash, policyHash string, files []agentservices.OpenRigSpecFile) string {
+func snapshotHash(moduleHash, policyHash string, files []seatrenderer.OpenRigSpecFile) string {
 	h := sha256.New()
 	write := func(s string) {
 		var n [8]byte
