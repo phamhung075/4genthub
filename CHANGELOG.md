@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**G5 version policy tested through the resolution service** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/application/services/seat_resolution_service_test.go`: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion`. Test only, no behavior change: publishing a module version moves no seat, a new seat type version moves only follow-latest seats, a pinned seat keeps its snapshot hash. `agenthub_go/NEXT_GEN.md` (G5) records the evidence and the open lines; the box is not ticked.
+
 **Renderer: stale codex defect record corrected, agy covered by the runtime test** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (G3): the "open defect" that a seat switched to codex fails to render while `comm-guard` is present is recorded as fixed (`297ef2ed` for codex, `3caf088f` for agy), with the 2026-10-04 evidence (all 9 seat types render on claude-code, codex and agy). Documentation only.

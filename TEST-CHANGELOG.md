@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — G5 pin and follow-latest through SeatResolutionService
+
+- Added: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion` (`seat_resolution_service_test.go`, fakes only): a module version published alone changes neither a pinned nor a follow-latest seat; a new seat type version referencing it changes only the follow-latest seat; the pinned seat keeps hash and content. It passed on first run (the behavior already held, so there was no red step).
+- Verified: with the pin check bypassed in `seatTypeVersion` the test fails on the pinned seat; source restored. `go vet` and `go test ./fastmcp/seat_management/...` ok.
+
 ## 2026-10-04 — renderer test covers agy with comm-guard
 
 - Changed: `TestRenderSeatSameModulesOnBothRuntimes` (`seatrenderer/renderer_test.go`) loops `codex` and `agy`: no `runtime/` file, skill still names `seatcheck send`. Coverage only, so there was no red step.
