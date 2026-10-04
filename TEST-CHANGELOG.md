@@ -13,6 +13,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - The four named ORM tests PASS: `TestTenantScoping`, `TestSeatUpdateOccupantTenantScoped`, `TestOverlayUpsertScoped`, `TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped`.
 - Real Postgres: `TestSeatRepositoriesIntegration` and `TestSeatDeletesIntegration` (gated on `SEAT_TEST_DATABASE_URL`; they skip without it) add behavioural cross-tenant checks (modules, seat types/versions, seats, rooms, links, overlays, resolved seats, machines, seat_status, machine tokens) and PASS against the throwaway Postgres at 54329.
 - Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` set): `gofmt -l` empty; `go vet ./fastmcp/seat_management/infrastructure/repositories/orm/` clean; `go test -count=1` for that package ok (0 skipped with `SEAT_TEST_DATABASE_URL` set, 2 skipped without).
+- Follow-up (reviewer nit): `assertTenantScoped` now requires `"user_id"` inside an INSERT's column list (the text between its first `(` and `)`), not anywhere in the statement, so a statement that only reads `user_id` in a sub-select cannot pass.
 
 ## 2026-10-04 — A4/A6/A7 tests are mutation-proved; list order tiebreaker (review item, Go)
 

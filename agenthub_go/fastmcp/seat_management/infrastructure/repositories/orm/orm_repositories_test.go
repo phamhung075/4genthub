@@ -980,8 +980,10 @@ func assertTenantScoped(t *testing.T, f *fakeDriver, table string) {
 		}
 		saw = true
 		if strings.Contains(q, "INSERT INTO") {
-			if !strings.Contains(q, `"user_id"`) {
-				t.Errorf("%s insert does not write user_id: %s", table, q)
+			open := strings.Index(q, "(")
+			closeIdx := strings.Index(q, ")")
+			if open < 0 || closeIdx < open || !strings.Contains(q[open:closeIdx], `"user_id"`) {
+				t.Errorf("%s insert does not write user_id in its column list: %s", table, q)
 			}
 			continue
 		}
