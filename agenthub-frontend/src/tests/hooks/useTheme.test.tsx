@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { useTheme } from '../../hooks/useTheme';
 import { ThemeContext } from '../../contexts/ThemeContext';
@@ -7,13 +7,11 @@ describe('useTheme', () => {
   it('throws error when used outside ThemeProvider', () => {
     // Suppress console.error for this test
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    const { result } = renderHook(() => useTheme());
-    
-    expect(result.error).toEqual(
-      new Error('useTheme must be used within a ThemeProvider')
+
+    expect(() => renderHook(() => useTheme())).toThrow(
+      'useTheme must be used within a ThemeProvider'
     );
-    
+
     consoleSpy.mockRestore();
   });
 
@@ -67,7 +65,7 @@ describe('useTheme', () => {
 
     const Wrapper = ({ children }: { children: React.ReactNode }) => {
       const [currentTheme, setCurrentTheme] = React.useState<'light' | 'dark'>(theme);
-      
+
       React.useEffect(() => {
         setCurrentTheme(theme);
       }, []);
@@ -75,8 +73,9 @@ describe('useTheme', () => {
       const contextValue = {
         theme: currentTheme,
         toggleTheme: () => {
+          const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
           toggleTheme();
-          setCurrentTheme(theme === 'light' ? 'dark' : 'light');
+          setCurrentTheme(nextTheme);
         },
         setTheme: (newTheme: 'light' | 'dark') => {
           setTheme(newTheme);
@@ -91,16 +90,18 @@ describe('useTheme', () => {
       );
     };
 
-    const { result, rerender } = renderHook(() => useTheme(), { 
+    const { result, rerender } = renderHook(() => useTheme(), {
       wrapper: Wrapper,
     });
 
     expect(result.current.theme).toBe('light');
 
     // Toggle theme
-    result.current.toggleTheme();
+    act(() => {
+      result.current.toggleTheme();
+    });
     rerender();
-    
+
     expect(result.current.theme).toBe('dark');
     expect(toggleTheme).toHaveBeenCalled();
   });

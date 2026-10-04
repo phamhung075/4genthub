@@ -98,6 +98,15 @@ describe('WebSocketAnimationService', () => {
       // Verify animation was triggered
       expect(animationFactory.animate).toHaveBeenCalledWith('task-123', 'create', 'websocket');
     });
+
+    it('should not register a second listener on duplicate init', () => {
+      webSocketAnimationService.init(mockWebSocketClient);
+      const otherClient = { on: vi.fn() };
+
+      webSocketAnimationService.init(otherClient);
+
+      expect(otherClient.on).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleWebSocketMessage', () => {
@@ -521,6 +530,26 @@ describe('WebSocketAnimationService', () => {
       // Advance to exactly 150ms
       vi.advanceTimersByTime(50);
       expect(animationFactory.animate).toHaveBeenCalledWith('task-timing-test', 'create', 'websocket');
+    });
+  });
+
+  describe('message bursts', () => {
+    it('should animate every message of a rapid burst', () => {
+      for (let i = 0; i < 100; i++) {
+        webSocketAnimationService.handleWebSocketMessage({
+          id: `burst-${i}`,
+          type: 'update',
+          source: 'backend',
+          timestamp: new Date().toISOString(),
+          priority: 'normal',
+          payload: { entity: 'task', action: 'updated', data: { id: `task-${i}` } },
+          metadata: { entity_id: `task-${i}` },
+          aiProcessed: false
+        } as WSMessage);
+      }
+      vi.advanceTimersByTime(200);
+
+      expect(animationFactory.animate).toHaveBeenCalledTimes(100);
     });
   });
 

@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — jest leftovers ported to vitest in five test files
+
+- Changed: `src/tests/components/auth/LoginForm.test.tsx` (partial `react-router-dom` mock, `^password` label, loading-state check in `waitFor`), `src/tests/index.test.tsx`, `src/tests/services/WebSocketClient.test.ts`, `src/tests/hooks/useTheme.test.tsx` (replaces `useTheme.test.ts`); no source change.
+- Merged: `src/services/WebSocketAnimationService.test.ts` (outside the test directories) removed; its valid coverage added to `src/tests/services/WebSocketAnimationService.test.ts` (duplicate-init guard, 100-message burst; 23 -> 25 tests). Its null-client, missing-payload and null-data tests were dropped: the types do not allow those inputs.
+- Ran (in `agenthub-frontend`): the five files + the merged file pass; `npx tsc --noEmit -p .` 0 errors; full `npx vitest run`: 1671 tests, 1609 passed, 62 failed in 23 files, none of them in these files.
+
 ## 2026-10-04 — AuthContext tests call the provider's real handlers (`d532cc4d`)
 
 - Rewritten: `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`, 26 tests, 18 failing before, 26 pass after; no test added or removed, no source change.

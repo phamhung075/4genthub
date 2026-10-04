@@ -2,91 +2,75 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { vi } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import App from '../App';
 import reportWebVitals from '../reportWebVitals';
 
+// Shared state created with vi.hoisted so the hoisted vi.mock factories below
+// never reference a variable that has not been initialized yet.
+const mocks = vi.hoisted(() => ({
+  initializeExtensionErrorFilter: vi.fn(),
+  debugLoggerConfig: vi.fn(),
+}));
+
+const loggerState = vi.hoisted(() => ({
+  imported: false,
+  promise: Promise.resolve({}) as Promise<unknown>,
+  reject: (_error: Error) => {},
+}));
+
 // Mock dependencies
-vi.mock('react-dom/client');
+vi.mock('react-dom/client', () => ({
+  __esModule: true,
+  default: { createRoot: vi.fn() },
+}));
 vi.mock('../App', () => ({
   __esModule: true,
   default: () => <div>Mocked App</div>,
 }));
 vi.mock('../reportWebVitals');
 vi.mock('react-router-dom', () => ({
-  ...vi.importActual('react-router-dom'),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <div data-testid="browser-router">{children}</div>,
+  BrowserRouter: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="browser-router">{children}</div>
+  ),
 }));
 
 // Mock CSS imports
 vi.mock('../index.css', () => ({}));
-vi.mock('../theme/global.scss', () => ({}));
+vi.mock('../theme/global.css', () => ({}));
 vi.mock('../styles/notifications.css', () => ({}));
 
 // Mock extension error filter
-const mockInitializeExtensionErrorFilter = vi.fn();
 vi.mock('../utils/extensionErrorFilter', () => ({
-  initializeExtensionErrorFilter: mockInitializeExtensionErrorFilter,
-}));
-
-// Mock logger
-vi.mock('../utils/logger', () => ({
-  __esModule: true,
-  default: {
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
+  initializeExtensionErrorFilter: mocks.initializeExtensionErrorFilter,
 }));
 
 // Mock logger config
-const mockDebugLoggerConfig = vi.fn();
 vi.mock('../config/logger.config', () => ({
-  debugLoggerConfig: mockDebugLoggerConfig,
-}));
-
-// Mock loggerExport
-const mockLoggerExportModule = {
-  logger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  },
-};
-
-// Create a mock promise that we can control
-let loggerExportResolve: (value: any) => void;
-let loggerExportReject: (error: Error) => void;
-const mockLoggerExportPromise = new Promise((resolve, reject) => {
-  loggerExportResolve = resolve;
-  loggerExportReject = reject;
-});
-
-vi.mock('../utils/loggerExport', () => ({
-  __esModule: true,
-  default: mockLoggerExportPromise,
+  debugLoggerConfig: mocks.debugLoggerConfig,
 }));
 
 describe('index.tsx', () => {
   let mockRoot: any;
   let mockRender: ReturnType<typeof vi.fn>;
   let container: HTMLElement;
-  let originalImport: typeof import;
+  let originalGetElementById: typeof document.getElementById;
+
+  const loadIndex = () => import('../index');
 
   beforeEach(() => {
     // Clear all mocks
     vi.clearAllMocks();
 
-    // Store original import
-    originalImport = (global as any).import;
-    
-    // Mock dynamic import
-    (global as any).import = vi.fn((path: string) => {
-      if (path === './utils/loggerExport') {
-        return mockLoggerExportPromise;
-      }
-      return originalImport(path);
+    // Fresh logger-export mock for every test. vi.doMock is not hoisted and is
+    // picked up by the dynamic import('../index') below.
+    loggerState.imported = false;
+    loggerState.promise = new Promise<unknown>((_resolve, reject) => {
+      loggerState.reject = reject;
+    });
+    vi.doMock('../utils/loggerExport', () => {
+      loggerState.imported = true;
+      return { __esModule: true, default: loggerState.promise };
     });
 
     // Create a mock container
@@ -99,7 +83,7 @@ describe('index.tsx', () => {
     mockRoot = {
       render: mockRender,
     };
-    (ReactDOM.createRoot as ReturnType<typeof vi.fn>).mockReturnValue(mockRoot);
+    (ReactDOM.createRoot as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockRoot);
   });
 
   afterEach(() => {
@@ -107,178 +91,163 @@ describe('index.tsx', () => {
     if (document.body.contains(container)) {
       document.body.removeChild(container);
     }
-    
-    // Restore original import
-    (global as any).import = originalImport;
-    
+
     // Clear module cache to ensure fresh imports
     vi.resetModules();
   });
 
-  it('initializes extension error filter before any other code', () => {
-    // Import index to trigger execution
-    require('../index');
+  it('initializes extension error filter before any other code', async () => {
+    await loadIndex();
 
-    expect(mockInitializeExtensionErrorFilter).toHaveBeenCalledTimes(1);
-    expect(mockInitializeExtensionErrorFilter).toHaveBeenCalledBefore(mockDebugLoggerConfig);
+    expect(mocks.initializeExtensionErrorFilter).toHaveBeenCalledTimes(1);
+    expect(mocks.initializeExtensionErrorFilter).toHaveBeenCalledBefore(mocks.debugLoggerConfig);
   });
 
-  it('calls debugLoggerConfig after extension error filter', () => {
-    require('../index');
+  it('calls debugLoggerConfig after extension error filter', async () => {
+    await loadIndex();
 
-    expect(mockDebugLoggerConfig).toHaveBeenCalledTimes(1);
-    expect(mockDebugLoggerConfig).toHaveBeenCalledAfter(mockInitializeExtensionErrorFilter);
+    expect(mocks.debugLoggerConfig).toHaveBeenCalledTimes(1);
+    expect(mocks.debugLoggerConfig).toHaveBeenCalledAfter(mocks.initializeExtensionErrorFilter);
   });
 
   it('initializes logger export module asynchronously', async () => {
-    require('../index');
+    await loadIndex();
+    await Promise.resolve();
 
-    expect((global as any).import).toHaveBeenCalledWith('./utils/loggerExport');
-    
-    // Resolve the promise to test success case
-    loggerExportResolve(mockLoggerExportModule);
-    await mockLoggerExportPromise;
-
-    // Verify the promise was handled
-    expect((global as any).import).toHaveBeenCalledTimes(1);
+    expect(loggerState.imported).toBe(true);
   });
 
   it('handles logger export module initialization failure silently', async () => {
-    require('../index');
-
-    // Reject the promise to test error case
     const error = new Error('Logger initialization failed');
-    loggerExportReject(error);
-    
-    try {
-      await mockLoggerExportPromise;
-    } catch (e) {
-      // Expected to catch the error
-    }
+    loggerState.reject(error);
+    await loggerState.promise.catch(() => {});
 
-    // Should not throw and should continue execution
+    await expect(loadIndex()).resolves.toBeDefined();
     expect(mockRender).toHaveBeenCalledTimes(1);
   });
 
-  it('creates root with correct element', () => {
-    require('../index');
+  it('creates root with correct element', async () => {
+    await loadIndex();
 
     expect(ReactDOM.createRoot).toHaveBeenCalledWith(container);
   });
 
-  it('renders App component wrapped in providers', () => {
-    require('../index');
+  it('renders App component wrapped in providers', async () => {
+    await loadIndex();
 
     expect(mockRender).toHaveBeenCalledTimes(1);
-    
+
     // Get the rendered component
     const renderedComponent = mockRender.mock.calls[0][0];
-    
-    // Check structure
+
+    // Check structure: StrictMode > QueryClientProvider > BrowserRouter > App
     expect(renderedComponent.type).toBe(React.StrictMode);
-    expect(renderedComponent.props.children.type.name).toBe('BrowserRouter');
-    expect(renderedComponent.props.children.props.children.type.name).toBe('default');
+    const provider = renderedComponent.props.children;
+    expect(provider.type).toBe(QueryClientProvider);
+    const browserRouter = provider.props.children[0];
+    expect(browserRouter.type).toBe(BrowserRouter);
+    expect(browserRouter.props.children.type).toBe(App);
   });
 
-  it('calls reportWebVitals', () => {
-    require('../index');
+  it('calls reportWebVitals', async () => {
+    await loadIndex();
 
     expect(reportWebVitals).toHaveBeenCalledTimes(1);
     expect(reportWebVitals).toHaveBeenCalledWith();
   });
 
-  it('handles missing root element gracefully', () => {
+  it('throws when the root element is missing', async () => {
     // Remove root element
     document.body.removeChild(container);
 
     // Mock getElementById to return null
-    const originalGetElementById = document.getElementById;
+    originalGetElementById = document.getElementById;
     document.getElementById = vi.fn().mockReturnValue(null);
 
-    // Should throw when trying to create root with null
-    expect(() => {
-      require('../index');
-    }).toThrow();
+    // Real react-dom raises when handed a null container; emulate it here so the
+    // entry's forwarding of the missing element is observable.
+    (ReactDOM.createRoot as unknown as ReturnType<typeof vi.fn>).mockImplementation((element: any) => {
+      if (!element) {
+        throw new Error('Target container is not a DOM element');
+      }
+      return mockRoot;
+    });
+
+    await expect(loadIndex()).rejects.toThrow('Target container is not a DOM element');
 
     // Restore original function
     document.getElementById = originalGetElementById;
   });
 
-  it('imports all required CSS files', () => {
+  it('imports all required CSS files', async () => {
     // This test verifies that CSS imports don't throw errors
-    expect(() => {
-      require('../index');
-    }).not.toThrow();
+    await expect(loadIndex()).resolves.toBeDefined();
   });
 
-  it('wraps App in React.StrictMode', () => {
-    require('../index');
+  it('wraps App in React.StrictMode', async () => {
+    await loadIndex();
 
     const renderedComponent = mockRender.mock.calls[0][0];
     expect(renderedComponent.type).toBe(React.StrictMode);
   });
 
-  it('wraps App in BrowserRouter', () => {
-    require('../index');
+  it('wraps App in BrowserRouter', async () => {
+    await loadIndex();
 
     const renderedComponent = mockRender.mock.calls[0][0];
-    const browserRouter = renderedComponent.props.children;
-    
-    expect(browserRouter.type).toBeDefined();
-    expect(browserRouter.props.children.type.name).toBe('default'); // App component
+    const browserRouter = renderedComponent.props.children.props.children[0];
+
+    expect(browserRouter.type).toBe(BrowserRouter);
+    expect(browserRouter.props.children.type).toBe(App); // App component
   });
 
-  it('renders only once', () => {
-    require('../index');
+  it('renders only once', async () => {
+    await loadIndex();
 
     expect(ReactDOM.createRoot).toHaveBeenCalledTimes(1);
     expect(mockRender).toHaveBeenCalledTimes(1);
   });
 
-  it('maintains correct component hierarchy', () => {
-    require('../index');
+  it('maintains correct component hierarchy', async () => {
+    await loadIndex();
 
     const renderedComponent = mockRender.mock.calls[0][0];
-    
+
     // Verify the complete hierarchy
-    // StrictMode > BrowserRouter > App
-    const strictMode = renderedComponent;
-    const browserRouter = strictMode.props.children;
+    // StrictMode > QueryClientProvider > BrowserRouter > App
+    const provider = renderedComponent.props.children;
+    const browserRouter = provider.props.children[0];
     const app = browserRouter.props.children;
 
-    expect(strictMode.type).toBe(React.StrictMode);
-    expect(browserRouter.type.name).toBe('BrowserRouter');
-    expect(app.type.name).toBe('default'); // Default export from App
+    expect(renderedComponent.type).toBe(React.StrictMode);
+    expect(provider.type).toBe(QueryClientProvider);
+    expect(browserRouter.type).toBe(BrowserRouter);
+    expect(app.type).toBe(App); // Default export from App
   });
 
-  it('handles synchronous import errors gracefully', () => {
-    // Test the try-catch block for synchronous errors
-    const originalImport = (global as any).import;
-    (global as any).import = vi.fn(() => {
+  it('handles synchronous import errors gracefully', async () => {
+    // Make the logger export module itself fail to load.
+    vi.doMock('../utils/loggerExport', () => {
       throw new Error('Synchronous import error');
     });
 
     // Should not throw when importing index
-    expect(() => {
-      require('../index');
-    }).not.toThrow();
+    await expect(loadIndex()).resolves.toBeDefined();
 
     // Should still render the app
     expect(mockRender).toHaveBeenCalledTimes(1);
-
-    (global as any).import = originalImport;
   });
 
-  it('executes initialization in correct order', () => {
-    require('../index');
+  it('executes initialization in correct order', async () => {
+    await loadIndex();
 
     // Verify order of operations
     const callOrder = [
-      mockInitializeExtensionErrorFilter,
-      mockDebugLoggerConfig,
-      ReactDOM.createRoot,
+      mocks.initializeExtensionErrorFilter,
+      mocks.debugLoggerConfig,
+      ReactDOM.createRoot as unknown as ReturnType<typeof vi.fn>,
       mockRender,
-      reportWebVitals,
+      reportWebVitals as unknown as ReturnType<typeof vi.fn>,
     ];
 
     // Check each function was called in order
