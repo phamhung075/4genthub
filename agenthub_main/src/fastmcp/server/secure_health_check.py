@@ -210,7 +210,6 @@ class SecureHealthChecker:
             "pythonpath": os.environ.get("PYTHONPATH", "not set"),
             "tasks_json_path": os.environ.get("TASKS_JSON_PATH", "not set"),
             "projects_file_path": os.environ.get("PROJECTS_FILE_PATH", "not set"),
-            "agent_library_dir": os.environ.get("AGENT_LIBRARY_DIR_PATH", "not set"),
             "auth_enabled": os.environ.get("AUTH_ENABLED", "true"),
             "cursor_tools_disabled": os.environ.get(
                 "AGENTHUB_DISABLE_CURSOR_TOOLS", "false"

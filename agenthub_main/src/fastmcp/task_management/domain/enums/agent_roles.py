@@ -1,21 +1,11 @@
-"""
-Agent Roles Enum - Updated to match agent-library
-Updated on: 2025-09-11
-Total agents: 32
+"""Agent Roles Enum"""
 
-This file contains all available agent roles from agenthub_main/agent-library/agents.
-Manually updated to match actual agent directories.
-"""
-
-import os
 from enum import Enum
 from typing import Optional
 
-import yaml
-
 
 class AgentRole(Enum):
-    """Enumeration of all available agent roles - matches agenthub_main/agent-library/agents"""
+    """Enumeration of all available agent roles"""
 
     # Development & Coding (4)
     ANALYTICS_SETUP = "analytics-setup-agent"
@@ -101,29 +91,22 @@ class AgentRole(Enum):
     @property
     def display_name(self) -> str:
         """Get the display name for this role"""
-        metadata = get_role_metadata_from_yaml(self)
-        return metadata.get("name", "") if metadata else ""
+        return self.value.replace("-", " ").title()
 
     @property
     def description(self) -> str:
         """Get the role definition"""
-        metadata = get_role_metadata_from_yaml(self)
-        return metadata.get("role_definition", "") if metadata else ""
+        return ""
 
     @property
     def when_to_use(self) -> str:
         """Get usage guidelines"""
-        metadata = get_role_metadata_from_yaml(self)
-        return metadata.get("when_to_use", "") if metadata else ""
+        return ""
 
     @property
     def groups(self) -> list[str]:
         """Get role groups"""
-        metadata = get_role_metadata_from_yaml(self)
-        return metadata.get("groups", []) if metadata else []
-
-
-# Metadata for each role - now loaded dynamically from YAML files
+        return []
 
 
 # Convenience functions for backward compatibility
@@ -132,82 +115,11 @@ def get_supported_roles() -> list[str]:
     return AgentRole.get_all_roles()
 
 
-def get_role_metadata(role_slug: str) -> dict[str, any] | None:
-    """Get metadata for a specific role"""
-    return get_role_metadata_from_yaml(role_slug)
-
-
 def get_role_folder_name(role_slug: str) -> str | None:
     """Get folder name for a role slug"""
     role = AgentRole.get_role_by_slug(role_slug)
     if role:
         return role.folder_name
-    return None
-
-
-def get_yaml_lib_path(role_input) -> str | None:
-    """Get relative path to agent-library directory for a role
-
-    Args:
-        role_input: Either a role slug (string) or AgentRole enum
-
-    Returns:
-        Relative path to agent-library directory (e.g., "agent-library/coding-agent")
-        or None if role is invalid
-    """
-    if isinstance(role_input, str):
-        role = AgentRole.get_role_by_slug(role_input)
-    elif isinstance(role_input, AgentRole):
-        role = role_input
-    else:
-        return None
-
-    if role:
-        return f"cursor_agent/agent-library/{role.folder_name}"
-    return None
-
-
-def get_role_metadata_from_yaml(role_input) -> dict[str, any] | None:
-    """Get role metadata by reading from YAML files
-
-    Args:
-        role_input: Either a role slug (string) or AgentRole enum
-
-    Returns:
-        Dictionary containing role metadata or None if role is invalid or file not found
-    """
-    if isinstance(role_input, str):
-        role = AgentRole.get_role_by_slug(role_input)
-    elif isinstance(role_input, AgentRole):
-        role = role_input
-    else:
-        return None
-
-    if not role:
-        return None
-
-    # Calculate folder name from role slug
-    folder_name = role.value.replace("-", "_")
-
-    # Build path to job_desc.yaml file
-    yaml_path = os.path.join(
-        "cursor_agent", "agent-library", folder_name, "job_desc.yaml"
-    )
-
-    try:
-        with open(yaml_path, encoding="utf-8") as file:
-            yaml_data = yaml.safe_load(file)
-
-        if yaml_data:
-            # Add folder_name and slug to the metadata
-            yaml_data["folder_name"] = folder_name
-            yaml_data["slug"] = role.value
-            return yaml_data
-
-    except (OSError, FileNotFoundError, yaml.YAMLError):
-        # Return None if file doesn't exist or can't be parsed
-        pass
-
     return None
 
 

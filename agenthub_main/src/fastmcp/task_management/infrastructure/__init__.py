@@ -30,9 +30,9 @@ from .di_container import (
     initialize_infrastructure,
 )
 
-# Note: AgentConverter and AgentDocGenerator have external dependencies
-# and are not essential for core task management functionality
-# They can be imported directly when needed
+# Note: AgentConverter has external dependencies
+# and is not essential for core task management functionality
+# It can be imported directly when needed
 
 __all__ = [
     # Event Bus

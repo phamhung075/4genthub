@@ -11,13 +11,10 @@ export PYTHONPATH="agenthub_main/src"
 export TASKS_JSON_PATH=".cursor/rules/tasks/tasks.json"
 export TASK_JSON_BACKUP_PATH=".cursor/rules/tasks/backup"
 export MCP_TOOL_CONFIG=".cursor/tool_config.json"
-export AGENTS_OUTPUT_DIR=".cursor/rules/agents"
 export AUTO_RULE_PATH=".cursor/rules/auto_rule.mdc"
 export BRAIN_DIR_PATH=".cursor/rules/brain"
 export PROJECTS_FILE_PATH=".cursor/rules/brain/projects.json"
 export PROJECT_ROOT_PATH="."
-export AGENT_LIBRARY_DIR_PATH="agenthub_main/agent-library"
-export AGENT_LIBRARY_DIR_PATH="agenthub_main/agent-library"
 
 # Run the MCP server
-exec agenthub_main/.venv/bin/python -m fastmcp.server.mcp_entry_point 
+exec agenthub_main/.venv/bin/python -m fastmcp.server.mcp_entry_point

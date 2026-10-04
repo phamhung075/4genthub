@@ -294,24 +294,18 @@ class TestGetTaskUseCase:
         mock_task_repository.find_by_id.return_value = sample_task
 
         with patch(
-            "fastmcp.task_management.application.use_cases.get_task.generate_docs_for_assignees"
-        ) as mock_generate:
-            with patch(
-                "fastmcp.task_management.application.use_cases.get_task.TaskResponse"
-            ) as mock_response:
-                mock_task_response = Mock()
-                mock_response.from_domain.return_value = mock_task_response
+            "fastmcp.task_management.application.use_cases.get_task.TaskResponse"
+        ) as mock_response:
+            mock_task_response = Mock()
+            mock_response.from_domain.return_value = mock_task_response
 
-                # Act
-                result = await use_case_without_context.execute(
-                    task_id, generate_rules=True, force_full_generation=True
-                )
+            # Act
+            result = await use_case_without_context.execute(
+                task_id, generate_rules=True, force_full_generation=True
+            )
 
-                # Assert
-                assert result == mock_task_response
-                mock_generate.assert_called_once_with(
-                    sample_task.assignees, clear_all=True
-                )
+            # Assert
+            assert result == mock_task_response
 
     @pytest.mark.asyncio
     async def test_execute_without_generate_rules_flag(
@@ -323,22 +317,18 @@ class TestGetTaskUseCase:
         mock_task_repository.find_by_id.return_value = sample_task
 
         with patch(
-            "fastmcp.task_management.application.use_cases.get_task.generate_docs_for_assignees"
-        ) as mock_generate:
-            with patch(
-                "fastmcp.task_management.application.use_cases.get_task.TaskResponse"
-            ) as mock_response:
-                mock_task_response = Mock()
-                mock_response.from_domain.return_value = mock_task_response
+            "fastmcp.task_management.application.use_cases.get_task.TaskResponse"
+        ) as mock_response:
+            mock_task_response = Mock()
+            mock_response.from_domain.return_value = mock_task_response
 
-                # Act
-                result = await use_case_without_context.execute(
-                    task_id, generate_rules=False
-                )
+            # Act
+            result = await use_case_without_context.execute(
+                task_id, generate_rules=False
+            )
 
-                # Assert
-                assert result == mock_task_response
-                mock_generate.assert_not_called()
+            # Assert
+            assert result == mock_task_response
 
     @pytest.mark.asyncio
     async def test_execute_context_service_exception(

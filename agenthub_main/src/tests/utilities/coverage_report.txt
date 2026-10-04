@@ -1114,9 +1114,6 @@ STANDARD FILES WITHOUT TESTS (419 files):
   Source: fastmcp/task_management/infrastructure/services/agent_converter.py
   Test:   unit/task_management/infrastructure/services/agent_converter_test.py
 
-  Source: fastmcp/task_management/infrastructure/services/agent_doc_generator.py
-  Test:   unit/task_management/infrastructure/services/agent_doc_generator_test.py
-
   Source: fastmcp/task_management/infrastructure/services/context_schema.py
   Test:   unit/task_management/infrastructure/services/context_schema_test.py
 
@@ -1371,9 +1368,6 @@ STANDARD FILES WITHOUT TESTS (419 files):
 
   Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/handlers/agent_invocation_handler.py
   Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/handlers/agent_invocation_handler_test.py
-
-  Source: fastmcp/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service.py
-  Test:   unit/task_management/interface/mcp_controllers/call_agent_mcp_controller/services/agent_discovery_service_test.py
 
   Source: fastmcp/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller.py
   Test:   unit/task_management/interface/mcp_controllers/compliance_mcp_controller/compliance_mcp_controller_test.py

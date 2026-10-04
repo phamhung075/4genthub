@@ -422,7 +422,6 @@ class FastMCP(Generic[LifespanResultT]):
                         "manage_task": True,
                         "manage_subtask": True,
                         "manage_agent": True,
-                        "call_agent": True,
                         "update_auto_rule": False,
                         "validate_rules": False,
                         "regenerate_auto_rule": False,

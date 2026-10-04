@@ -24,7 +24,6 @@ from ..value_objects import (
     EstimatedEffort,
     LabelValidator,
     ProgressState,
-    get_role_metadata_from_yaml,
     resolve_legacy_role,
 )
 from ..value_objects.priority import Priority
@@ -540,13 +539,12 @@ class Task(BaseTimestampEntity):
                 # Try to get role from AgentRole enum
                 role = AgentRole.get_role_by_slug(assignee)
                 if role:
-                    metadata = get_role_metadata_from_yaml(role)
                     assignees_info.append(
                         {
                             "role": role.value,
                             "display_name": role.display_name,
                             "folder_name": role.folder_name,
-                            "metadata": metadata,
+                            "metadata": None,
                         }
                     )
                 else:
@@ -1228,21 +1226,12 @@ class Task(BaseTimestampEntity):
             # Try to get role from AgentRole enum
             role = AgentRole.get_role_by_slug(primary_assignee)
             if role:
-                metadata = get_role_metadata_from_yaml(role)
-                if metadata:
-                    return {
-                        "role": role.value,
-                        "display_name": role.display_name,
-                        "folder_name": role.folder_name,
-                        "metadata": metadata,
-                    }
-                else:
-                    return {
-                        "role": role.value,
-                        "display_name": role.display_name,
-                        "folder_name": role.folder_name,
-                        "metadata": None,
-                    }
+                return {
+                    "role": role.value,
+                    "display_name": role.display_name,
+                    "folder_name": role.folder_name,
+                    "metadata": None,
+                }
             else:
                 # Return basic info for non-enum assignees
                 return {

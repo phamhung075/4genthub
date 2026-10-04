@@ -22,13 +22,11 @@ fi
 export PYTHONPATH="agenthub_main/src"
 export TASKS_JSON_PATH=".cursor/rules/tasks/tasks.json"
 export PROJECTS_FILE_PATH=".cursor/rules/brain/projects.json"
-export AGENT_LIBRARY_DIR_PATH="agenthub_main/agent-library"
 
 echo "✅ Environment variables set:"
 echo "   PYTHONPATH: $PYTHONPATH"
 echo "   TASKS_JSON_PATH: $TASKS_JSON_PATH"
 echo "   PROJECTS_FILE_PATH: $PROJECTS_FILE_PATH"
-echo "   AGENT_LIBRARY_DIR_PATH: $AGENT_LIBRARY_DIR_PATH"
 
 echo ""
 echo "🔧 Starting MCP Inspector..."
@@ -53,4 +51,4 @@ echo "Press Ctrl+C to stop the inspector"
 echo "=========================================="
 
 # Start the MCP inspector with the correct command
-npx @modelcontextprotocol/inspector "$(pwd)/.venv/bin/python" -m fastmcp.server.mcp_entry_point 
+npx @modelcontextprotocol/inspector "$(pwd)/.venv/bin/python" -m fastmcp.server.mcp_entry_point

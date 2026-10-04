@@ -83,7 +83,6 @@ echo "📁 Checking required directories and files..."
 REQUIRED_PATHS=(
     ".cursor/rules/tasks/tasks.json"
     ".cursor/rules/brain/projects.json"
-    "agenthub_main/agent-library"
     "agenthub_main/src/fastmcp"
 )
 
@@ -118,4 +117,4 @@ echo "   - call_agent"
 echo "   - update_auto_rule"
 echo "   - validate_rules"
 echo "   - manage_rule"
-echo "   - validate_tasks_json" 
+echo "   - validate_tasks_json"

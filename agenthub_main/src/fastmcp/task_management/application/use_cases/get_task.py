@@ -11,7 +11,6 @@ from ...application.dtos.task import TaskResponse
 from ...domain import TaskId, TaskRepository
 from ...domain.events import TaskRetrieved
 from ...domain.exceptions.task_exceptions import TaskNotFoundError
-from ...infrastructure.services.agent_doc_generator import generate_docs_for_assignees
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +65,6 @@ class GetTaskUseCase:
 
             if not task:
                 raise TaskNotFoundError(f"Task with ID {task_id} not found")
-
-            # Generate agent documentation if requested
-            if generate_rules:
-                generate_docs_for_assignees(
-                    task.assignees, clear_all=force_full_generation
-                )
 
             # Fetch context data if requested
             context_data = None
