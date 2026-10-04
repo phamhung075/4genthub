@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — agent assignment stubs removed
+
+- Added: `TestAgentsAssignmentRoutesAreNotServed` (`agents_mount_test.go`): the four assignment paths answer 404 or 405. Verified red first: all four returned 500 before the handlers were deleted.
+- Removed: `TestAgentsAssignmentRoutesMatchPythonErrors`, `TestAgentsAssignRequiresQueryParameters`, and the four assignment probes in `TestMountAgentsRoutesRegistersEveryPattern` (it now probes `/call` only).
+- Ran: `go vet ./fastmcp/server/...` clean, `gofmt -l fastmcp` clean, `go test ./fastmcp/server/...` pass.
+
 ## 2026-10-04 — concrete versions only on overlay add and in the resolver
 
 - Added: `TestResolveRejectsNonConcreteVersions` (seat type ref, overlay add, with `""` and `"latest"`) and `TestResolveIgnoresNewlyPublishedModuleVersions` in `resolver_test.go`; `add` bodies without a version or with `"latest"` in `TestSeatAdminOverlayValidation` (`seat_admin_mount_test.go`).

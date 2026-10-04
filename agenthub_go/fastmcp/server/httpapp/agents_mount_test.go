@@ -49,16 +49,12 @@ func doAgentsRequest(t *testing.T, mux *http.ServeMux, method, path, body string
 	return rec
 }
 
-// TestMountAgentsRoutesRegistersEveryPattern checks the five patterns are served
+// TestMountAgentsRoutesRegistersEveryPattern checks the pattern is served
 // (a registered authed route answers 403 without a bearer, never 404).
 func TestMountAgentsRoutesRegistersEveryPattern(t *testing.T) {
 	mux := http.NewServeMux()
 	mountAgentsRoutes(mux, nil)
 	probes := []struct{ method, path string }{
-		{http.MethodPost, "/api/v2/agents/assign"},
-		{http.MethodDelete, "/api/v2/agents/unassign/branch-1"},
-		{http.MethodGet, "/api/v2/agents/branch/branch-1/assignment"},
-		{http.MethodGet, "/api/v2/agents/project/project-1/assignments"},
 		{http.MethodPost, "/api/v2/agents/call"},
 	}
 	for _, p := range probes {
@@ -71,40 +67,20 @@ func TestMountAgentsRoutesRegistersEveryPattern(t *testing.T) {
 	}
 }
 
-// TestAgentsAssignmentRoutesMatchPythonErrors pins the Python quirk: the
-// AgentAPIController has no assign/unassign/assignment methods, so agent_routes.py
-// returns 500 with these details.
-func TestAgentsAssignmentRoutesMatchPythonErrors(t *testing.T) {
+// TestAgentsAssignmentRoutesAreNotServed checks the assignment endpoints stay deleted: the
+// controller has no assignment methods, so serving them would only fake a 500.
+func TestAgentsAssignmentRoutesAreNotServed(t *testing.T) {
 	authenticateAgentsTestUser(t)
 	mux := agentsTestMux(t)
-	cases := []struct{ method, path, want string }{
-		{http.MethodPost, "/api/v2/agents/assign?branch_id=b1&agent_id=a1", "Failed to assign agent"},
-		{http.MethodDelete, "/api/v2/agents/unassign/b1", "Failed to unassign agent"},
-		{http.MethodGet, "/api/v2/agents/branch/b1/assignment", "Failed to get agent assignment"},
-		{http.MethodGet, "/api/v2/agents/project/p1/assignments", "Failed to get assignments"},
-	}
-	for _, c := range cases {
-		rec := doAgentsRequest(t, mux, c.method, c.path, "")
-		if rec.Code != http.StatusInternalServerError {
-			t.Errorf("%s %s: status = %d, want 500", c.method, c.path, rec.Code)
+	for _, c := range []struct{ method, path string }{
+		{http.MethodPost, "/api/v2/agents/assign?branch_id=b1&agent_id=a1"},
+		{http.MethodDelete, "/api/v2/agents/unassign/b1"},
+		{http.MethodGet, "/api/v2/agents/branch/b1/assignment"},
+		{http.MethodGet, "/api/v2/agents/project/p1/assignments"},
+	} {
+		if rec := doAgentsRequest(t, mux, c.method, c.path, ""); rec.Code != http.StatusNotFound && rec.Code != http.StatusMethodNotAllowed {
+			t.Errorf("%s %s: status = %d, want 404 or 405", c.method, c.path, rec.Code)
 		}
-		if !strings.Contains(rec.Body.String(), c.want) {
-			t.Errorf("%s %s: body = %s, want detail %q", c.method, c.path, rec.Body.String(), c.want)
-		}
-	}
-}
-
-// TestAgentsAssignRequiresQueryParameters checks the FastAPI required query params.
-func TestAgentsAssignRequiresQueryParameters(t *testing.T) {
-	authenticateAgentsTestUser(t)
-	mux := agentsTestMux(t)
-	rec := doAgentsRequest(t, mux, http.MethodPost, "/api/v2/agents/assign", "")
-	if rec.Code != http.StatusUnprocessableEntity {
-		t.Fatalf("status = %d, want 422", rec.Code)
-	}
-	body := rec.Body.String()
-	if !strings.Contains(body, "branch_id") || !strings.Contains(body, "agent_id") {
-		t.Fatalf("body = %s, want both missing query params", body)
 	}
 }
 

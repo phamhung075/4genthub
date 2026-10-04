@@ -8,6 +8,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Removed the four Go agent assignment stubs that faked Python 500 errors** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/agents_mount.go`: deleted `POST /api/v2/agents/assign`, `DELETE /api/v2/agents/unassign/{branch_id}`, `GET /api/v2/agents/branch/{branch_id}/assignment` and `GET /api/v2/agents/project/{project_id}/assignments`. The controller has no assignment methods; each handler only returned a hard-coded 500 to preserve a Python quirk. `POST /call` stays; `GET /metadata` and `GET /{agent_name}` stay in `routes_mount.go`. The header comment now describes only `/call`.
+- Impact: those four paths now answer 404 or 405. No live frontend caller exists (the client functions are removed by web-dev).
+
 **Pinned seats no longer move when a module is published: overlay `add` requires a concrete version** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: an overlay `add` op with a missing version or `"latest"` is rejected with 400 `add requires a concrete version`, like `pin`. `seatAdminOverlayModulesExist` now only looks up concrete versions (the latest-version branch is deleted).

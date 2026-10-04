@@ -1,13 +1,7 @@
 package httpapp
 
-// agents_mount.go mounts the five /api/v2/agents endpoints of
-// fastmcp/server/routes/agent_routes.py that App.Handler does not already serve.
-// GET /metadata and GET /{agent_name} are registered by mountAgentRoutes
-// (routes_mount.go); mountAgentsRoutes must not repeat them.
-//
-// The Python module also exposes GET /capabilities, which is outside this slice: it
-// is left unregistered so it cannot collide with mountAgentRoutes' GET
-// /api/v2/agents/{agent_name} pattern or with another worker's mount.
+// agents_mount.go mounts POST /api/v2/agents/call. GET /metadata and GET /{agent_name} are
+// registered by mountAgentRoutes (routes_mount.go); mountAgentsRoutes must not repeat them.
 
 import (
 	"context"
@@ -25,45 +19,10 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-// mountAgentsRoutes registers agent_routes.py's assign, unassign, branch
-// assignment, project assignments and call endpoints. The leader wires it into
-// App.Handler alongside mountRoutes.
+// mountAgentsRoutes registers the call endpoint. The leader wires it into App.Handler
+// alongside mountRoutes.
 func mountAgentsRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	const base = "/api/v2/agents"
-
-	// agent_routes.py's assign_agent_to_branch takes branch_id/agent_id as FastAPI
-	// query parameters (no Form/Body annotation), then calls
-	// AgentAPIController.assign_agent, which the controller does not define:
-	// AttributeError is swallowed by the route's except Exception and returned as
-	// 500 "Failed to assign agent". The Go controller likewise has no assignment
-	// methods, so the port preserves the Python quirk instead of inventing
-	// behaviour.
-	mux.HandleFunc("POST "+base+"/assign", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		var missing []string
-		if !r.URL.Query().Has("branch_id") {
-			missing = append(missing, "branch_id")
-		}
-		if !r.URL.Query().Has("agent_id") {
-			missing = append(missing, "agent_id")
-		}
-		if len(missing) > 0 {
-			writeMissing(w, "query", missing...)
-			return
-		}
-		writeDetail(w, http.StatusInternalServerError, "Failed to assign agent")
-	}))
-
-	mux.HandleFunc("DELETE "+base+"/unassign/{branch_id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		writeDetail(w, http.StatusInternalServerError, "Failed to unassign agent")
-	}))
-
-	mux.HandleFunc("GET "+base+"/branch/{branch_id}/assignment", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		writeDetail(w, http.StatusInternalServerError, "Failed to get agent assignment")
-	}))
-
-	mux.HandleFunc("GET "+base+"/project/{project_id}/assignments", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		writeDetail(w, http.StatusInternalServerError, "Failed to get assignments")
-	}))
 
 	mux.HandleFunc("POST "+base+"/call", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleAgentCall(w, r, u, sessions)
