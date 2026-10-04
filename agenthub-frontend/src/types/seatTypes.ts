@@ -13,10 +13,10 @@
 // Core entities
 // =============================================================================
 
-export type SeatRuntime = 'claude-code' | 'codex';
+export type SeatRuntime = 'claude-code' | 'codex' | 'agy' | 'omp';
 
 /** Single source of truth for the runtimes offered in the UI. */
-export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex'];
+export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex', 'agy', 'omp'];
 
 /** Single source of truth for the policies the server accepts (resolver.PermissionPolicies). */
 export const SEAT_PERMISSION_POLICIES = ['locked', 'standard', 'open', 'yolo', 'none'] as const;

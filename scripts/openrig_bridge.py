@@ -83,7 +83,7 @@ HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 PANE_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9:_-]{0,31}")
 
 SEAT_STATES = {"running", "idle", "blocked", "stopped", "unknown"}
-RUNTIMES = {"claude-code", "codex", "agy", "terminal", "unknown"}
+RUNTIMES = {"claude-code", "codex", "agy", "omp", "terminal", "unknown"}
 AGENT_STATUSES = {"idle", "working", "blocked", "done", "unknown"}
 
 Runner = Callable[[list[str]], str]

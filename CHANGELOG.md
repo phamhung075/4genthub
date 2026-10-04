@@ -8,6 +8,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**omp accepted by the API but rejected by the UI, the sync CLI and the bridge** (2026-10-04)
+
+Found by a headless DeepSeek review of `2c8d05f3` and confirmed by reading every file it named: the server was taught to accept `omp`, but each client-side enumeration of runtimes was left behind, so "a seat can run DeepSeek" held only through the raw API or MCP.
+
+- `agenthub-frontend/src/types/seatTypes.ts`: `SeatRuntime` and `SEAT_RUNTIMES` listed only `claude-code` and `codex` — `agy` had been missing too. Both now carry all four runtimes. Consequence before the fix: the occupant switcher in `SeatLlmPanel.tsx`, `SeatTypeVersionForm.tsx` and `SeatsPage.tsx` could not select `omp`, and a seat already stored as `omp` rendered with an unmatched option, so any edit rewrote the occupant.
+- `scripts/openrig_seat_sync.py` (`RUNTIMES`, used by `switch`): `omp` added, so `switch --runtime omp` no longer exits with a usage error before reaching a server that accepts it.
+- `scripts/openrig_bridge.py` (`RUNTIMES`): `omp` added. Before the fix the bridge coerced an `omp` node's runtime to `"unknown"` before posting, so the DeepSeek supervisor seat would have reached the cloud mislabelled — the same declared-versus-live drift already recorded for the nine `agy`-labelled `4genthub-dev` seats. The Go side already accepted it, so the existing Go test was verified only against a producer that could never emit `omp`.
+- `agenthub_go/NEXT_GEN.md`: Request 16's line and T3 no longer quote a three-runtime list, and T3 no longer cites line numbers that the change invalidated.
+- Checked: `tsc --noEmit` reports 0 errors, the three affected vitest suites pass (54 tests across `SeatAuthoringPage`, `SeatDetailPage`, `SeatsPage`), and both scripts compile (`python3 -m py_compile`).
+
 **Deleted the unused Go port of agent_routes.py** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/routes/agent_routes.go`: removed. Its `AgentController` interface, request types and handlers (`GetAllAgentsMetadata`, `GetSingleAgentMetadata`, `RegisterAgent`, `ListAgents`, `UpdateAgent`, `DeleteAgent`, `AssignAgent`, `UnassignAgent`) had no caller or test anywhere in the module; the served agent routes are in `httpapp/routes_mount.go` and `httpapp/agents_mount.go`. Checked: `go build ./...`, `go vet ./fastmcp/server/...`, `go test ./fastmcp/server/...`; the helpers it used (`httpErr`, `pyOrStr`, `currentUserID`, `containsNotFound`) are still used by other route files.
