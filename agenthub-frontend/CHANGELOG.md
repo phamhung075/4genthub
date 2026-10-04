@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 ### Fixed
+- **Failed seat mutations no longer raise an unhandled promise rejection** - 2026-10-04
+  - The seat page handlers awaited `mutateAsync` with no catch, so a failed create/remove/delete rejected into the
+    browser ("Uncaught (in promise)") and made `SeatsPage.test.tsx` exit 1 with an unhandled error although all
+    23 tests passed. They now call `mutate(vars, { onSuccess })`; the error stays in the mutation state, which the
+    pages already render through `isError`/`error.message`. Seven call sites: create room, add seat, remove seat,
+    delete room (`SeatsPage.tsx`), add/delete overlay op and add link (`SeatDetailPage.tsx`).
+  - Files: `src/pages/SeatsPage.tsx`, `src/pages/SeatDetailPage.tsx`; the existing delete-room failure test is the regression check
 - **Removed two test files for APIs the code does not have** - 2026-10-04
   - `src/tests/utils/contextHelpers.test.ts` (33 tests) called `parseContextData`, `stringifyContextData`,
     `mergeContextData`, `extractContextValue`, `isValidContextData` and `sanitizeContextData`;

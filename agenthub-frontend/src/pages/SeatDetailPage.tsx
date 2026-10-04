@@ -177,7 +177,7 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
   const canAdd =
     !!slug.trim() && (opKind !== 'override' || !!content.trim()) && (opKind !== 'pin' || !!version.trim());
 
-  const handleAddOp = async (event: React.FormEvent) => {
+  const handleAddOp = (event: React.FormEvent) => {
     event.preventDefault();
     if (!canAdd) {
       return;
@@ -188,14 +188,20 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
       version: opKind === 'add' || opKind === 'pin' ? version.trim() : '',
       content: opKind === 'override' ? content : '',
     };
-    await updateOverlay.mutateAsync({ scope, ops: [...scopeOps, op] });
-    setSlug('');
-    setVersion('');
-    setContent('');
+    updateOverlay.mutate(
+      { scope, ops: [...scopeOps, op] },
+      {
+        onSuccess: () => {
+          setSlug('');
+          setVersion('');
+          setContent('');
+        },
+      }
+    );
   };
 
-  const handleDeleteOp = async (index: number) => {
-    await updateOverlay.mutateAsync({ scope, ops: scopeOps.filter((_, i) => i !== index) });
+  const handleDeleteOp = (index: number) => {
+    updateOverlay.mutate({ scope, ops: scopeOps.filter((_, i) => i !== index) });
   };
 
   return (
@@ -388,14 +394,20 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
     return map;
   }, [roomSeats]);
 
-  const handleAddLink = async (event: React.FormEvent) => {
+  const handleAddLink = (event: React.FormEvent) => {
     event.preventDefault();
     if (!target) {
       return;
     }
-    await upsertLink.mutateAsync({ to_seat: target, kind, allow });
-    setTarget('');
-    setAllow(true);
+    upsertLink.mutate(
+      { to_seat: target, kind, allow },
+      {
+        onSuccess: () => {
+          setTarget('');
+          setAllow(true);
+        },
+      }
+    );
   };
 
   return (

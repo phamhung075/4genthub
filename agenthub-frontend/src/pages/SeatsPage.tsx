@@ -84,18 +84,24 @@ export const SeatsPage: React.FC = () => {
   const seatKeyInvalid = seatForm.seat_key !== '' && !seatKeyValid;
   const seatModelValid = isValidSeatModel(seatForm.model.trim());
 
-  const handleCreateRoom = async (event: React.FormEvent) => {
+  const handleCreateRoom = (event: React.FormEvent) => {
     event.preventDefault();
     if (!roomSlugValid || !roomName.trim()) {
       return;
     }
-    const response = await createRoom.mutateAsync({ slug: roomSlug.trim(), name: roomName.trim() });
-    setRoomSlug('');
-    setRoomName('');
-    setSelectedRoom(response.room.slug);
+    createRoom.mutate(
+      { slug: roomSlug.trim(), name: roomName.trim() },
+      {
+        onSuccess: response => {
+          setRoomSlug('');
+          setRoomName('');
+          setSelectedRoom(response.room.slug);
+        },
+      }
+    );
   };
 
-  const handleAddSeat = async (event: React.FormEvent) => {
+  const handleAddSeat = (event: React.FormEvent) => {
     event.preventDefault();
     if (!seatKeyValid || !seatForm.seat_type || !seatModelValid) {
       return;
@@ -113,23 +119,28 @@ export const SeatsPage: React.FC = () => {
       body.follow_latest = true;
     }
 
-    await createSeat.mutateAsync(body);
-    setAddSeatOpen(false);
-    setSeatForm({ seat_key: '', seat_type: '', runtime: 'claude-code', model: '', pin: 'company-default' });
+    createSeat.mutate(body, {
+      onSuccess: () => {
+        setAddSeatOpen(false);
+        setSeatForm({ seat_key: '', seat_type: '', runtime: 'claude-code', model: '', pin: 'company-default' });
+      },
+    });
   };
 
-  const handleRemoveSeat = async () => {
+  const handleRemoveSeat = () => {
     if (!seatToRemove) {
       return;
     }
-    await removeSeat.mutateAsync(seatToRemove.seat_key);
-    setSeatToRemove(null);
+    removeSeat.mutate(seatToRemove.seat_key, { onSuccess: () => setSeatToRemove(null) });
   };
 
-  const handleDeleteRoom = async () => {
-    await deleteRoom.mutateAsync(selectedRoom);
-    setDeleteRoomOpen(false);
-    setSelectedRoom('');
+  const handleDeleteRoom = () => {
+    deleteRoom.mutate(selectedRoom, {
+      onSuccess: () => {
+        setDeleteRoomOpen(false);
+        setSelectedRoom('');
+      },
+    });
   };
 
   const seatTypeOptions = seatTypes.map(type => (
