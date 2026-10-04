@@ -24,7 +24,7 @@ func (a *App) registerSessionStreamRoutes(mux *http.ServeMux) {
 				afterSeq = n
 			}
 		}
-		limit := 100
+		limit := 500
 		if q := r.URL.Query().Get("limit"); q != "" {
 			if n, err := strconv.Atoi(q); err == nil {
 				limit = n

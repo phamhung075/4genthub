@@ -13,6 +13,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 - New `fastmcp/session_stream/testdb` (`NewSessions`): the throwaway-Postgres helper moved out of `repository_test.go` so `session_stream` and `server/httpapp` tests share it (recipe in its doc comment).
 - New `server/httpapp/ws_connector_test.go`: websocket and REST tests through a real client against the mounted routes. First test: `TestSessionEventsLimitIsClampedTo1000` (1200 events stored through the connector, `limit=5000` returns 1000). It failed before the argument-order fix (`returned 0 events, want 1000`) and passes after.
 - Fix 2: `TestSessionEventsOfAnUnknownSessionIs404`, `TestUserBCannotListReadReplayOrAppendToUserAsSession` (user B cannot list, read over REST, replay over the viewer socket or append to user A's session; B reusing A's connector id and key gets its own session id and A's events are unchanged; the repository refuses B's append with `unknown session`) and `routes.TestGetSessionEventsDatabaseFailureIsNotA404`. Failing before: `200 [], want 404` (both REST cases) and the database error reported as 404.
+- Fix 4: `TestSessionEventsDefaultLimitIs 500` (600 events, no `limit`): failed before (`returned 100 events, want 500`).
 - `ws_mount_test.go`: `wsTestTokenFor(user, scopes)`, and `wsTestWriteText` writes 64-bit frame lengths.
 
 ## 2026-10-04 — One assignee rule (Task D6d, Go)

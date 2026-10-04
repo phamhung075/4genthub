@@ -270,3 +270,21 @@ func TestSessionEventsOfAnUnknownSessionIs404(t *testing.T) {
 		t.Fatalf("status = %d %v, want 404", status, body)
 	}
 }
+
+// Python's events route defaults to limit=500.
+func TestSessionEventsDefaultLimitIs500(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	sid := c.ingest("s1")
+	batch := make([]any, session_stream.MaxEventsPerBatch)
+	for i := range batch {
+		batch[i] = map[string]any{}
+	}
+	for i := 0; i < 3; i++ { // 600 events
+		c.appendEvents("s1", batch...)
+	}
+	_, body := env.restGet(t, "user-1", "/api/v2/sessions/"+sid+"/events")
+	if got := len(body.([]any)); got != 500 {
+		t.Fatalf("no limit returned %d events, want 500", got)
+	}
+}

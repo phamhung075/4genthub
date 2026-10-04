@@ -20,6 +20,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written. A stored known role or `@` name is shown in its `@` form; any other stored name stays as stored. The subtask-create error is now the entity's one message ('An assignee is `@<seat_key>` or a known agent role.').
 
+**Session events route default page is 500 events (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go`: `limit` defaults to 500 as in the Python route (it was 100). The page is still clamped to 1000.
+
 **Session events route answers 404 for an unknown or foreign session (A6)** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` checks `GetSessionForUser` first, as the Python route does: a session that does not exist and one that belongs to another user both give 404 "Session not found". It returned 200 `[]`, and mapped every database error to 404; a database error is now a 500.
