@@ -159,7 +159,6 @@ func FormatSecureHealthResponse(result *entities.OrderedMap[any], accessLevel st
 		b.WriteString("\n• Python Path: " + value_objects.PyStr(srvGet(env, "pythonpath", "not set")))
 		b.WriteString("\n• Tasks JSON Path: " + value_objects.PyStr(srvGet(env, "tasks_json_path", "not set")))
 		b.WriteString("\n• Projects File Path: " + value_objects.PyStr(srvGet(env, "projects_file_path", "not set")))
-		b.WriteString("\n• Agent Library Dir: " + value_objects.PyStr(srvGet(env, "agent_library_dir", "not set")))
 		b.WriteString("\n• Cursor Tools Disabled: " + value_objects.PyStr(srvGet(env, "cursor_tools_disabled", "false")))
 		b.WriteString("\n• Supabase Configured: " + value_objects.PyStr(srvGet(env, "supabase_configured", false)))
 	}

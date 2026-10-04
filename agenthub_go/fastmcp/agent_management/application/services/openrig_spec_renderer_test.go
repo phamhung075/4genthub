@@ -1,29 +1,45 @@
 package services
 
 import (
-	"context"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	amentities "agenthub/fastmcp/agent_management/domain/entities"
-	"agenthub/fastmcp/agent_management/domain/repositories"
+	amvo "agenthub/fastmcp/agent_management/domain/value_objects"
+	tmentities "agenthub/fastmcp/task_management/domain/entities"
 
 	"gopkg.in/yaml.v3"
 )
 
 func loadTestTemplate(t *testing.T) *amentities.AgentTemplate {
 	t.Helper()
-	loader, err := NewYAMLAgentTemplateLoader(newTestLibrary(t))
+	outputFormat := tmentities.NewOrderedMap[any]()
+	outputFormat.Set("format", "markdown")
+	config, err := amvo.NewAgentConfiguration(
+		"You are the coding agent.",
+		[]string{"read", "write"},
+		tmentities.NewOrderedMap[any](),
+		[]string{`{"name":"testing","content":{"always_test":true}}`},
+		outputFormat,
+		tmentities.NewOrderedMap[any](),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	templates := loader.LoadAllAgents()
-	if len(templates) != 1 {
-		t.Fatalf("templates = %d, want 1", len(templates))
+	template := amentities.DefaultAgentTemplate()
+	id := amvo.GenerateNewAgentTemplateId()
+	template.ID = &id
+	template.Slug = "coding-agent"
+	template.Name = "Coding Agent"
+	template.Description = "Writes code"
+	template.Category = "development"
+	template.Version = "1.2.3"
+	template.DefaultConfiguration = &config
+	built, err := amentities.NewAgentTemplate(template)
+	if err != nil {
+		t.Fatal(err)
 	}
-	return templates[0]
+	return built
 }
 
 func renderTestSpec(t *testing.T) (*OpenRigSpec, map[string]string) {
@@ -112,61 +128,5 @@ func TestRenderOpenRigSpecIsDeterministic(t *testing.T) {
 		if a.Files[i] != b.Files[i] {
 			t.Errorf("file %s differs between renders", a.Files[i].Path)
 		}
-	}
-}
-
-type fakeTemplateRepo struct {
-	repositories.AgentTemplateRepository
-	bySlug map[string]*amentities.AgentTemplate
-	saves  int
-}
-
-func (r *fakeTemplateRepo) FindBySlug(_ context.Context, slug string) (*amentities.AgentTemplate, error) {
-	return r.bySlug[slug], nil
-}
-
-func (r *fakeTemplateRepo) Save(_ context.Context, template *amentities.AgentTemplate) (*amentities.AgentTemplate, error) {
-	r.saves++
-	r.bySlug[template.Slug] = template
-	return template, nil
-}
-
-func TestSeedAgentTemplatesIsIdempotentBySlug(t *testing.T) {
-	library := newTestLibrary(t)
-	if err := os.RemoveAll(filepath.Join(library, "agents", "broken-agent")); err != nil {
-		t.Fatal(err)
-	}
-	loader, err := NewYAMLAgentTemplateLoader(library)
-	if err != nil {
-		t.Fatal(err)
-	}
-	repo := &fakeTemplateRepo{bySlug: map[string]*amentities.AgentTemplate{}}
-
-	if n, err := SeedAgentTemplates(context.Background(), loader, repo); err != nil || n != 1 {
-		t.Fatalf("first seed = %d, %v", n, err)
-	}
-	firstID := repo.bySlug["coding-agent"].ID
-	if n, err := SeedAgentTemplates(context.Background(), loader, repo); err != nil || n != 1 {
-		t.Fatalf("second seed = %d, %v", n, err)
-	}
-	if len(repo.bySlug) != 1 || repo.saves != 2 {
-		t.Errorf("templates = %d saves = %d", len(repo.bySlug), repo.saves)
-	}
-	if got := repo.bySlug["coding-agent"].ID; got == nil || firstID == nil || got.String() != firstID.String() {
-		t.Errorf("id changed on reseed: %v -> %v", firstID, got)
-	}
-}
-
-func TestSeedAgentTemplatesFailsOnUnloadableAgent(t *testing.T) {
-	loader, err := NewYAMLAgentTemplateLoader(newTestLibrary(t)) // includes broken-agent
-	if err != nil {
-		t.Fatal(err)
-	}
-	repo := &fakeTemplateRepo{bySlug: map[string]*amentities.AgentTemplate{}}
-	if _, err := SeedAgentTemplates(context.Background(), loader, repo); err == nil {
-		t.Fatal("expected error for a partial library")
-	}
-	if repo.saves != 0 {
-		t.Errorf("saved %d templates despite failure", repo.saves)
 	}
 }

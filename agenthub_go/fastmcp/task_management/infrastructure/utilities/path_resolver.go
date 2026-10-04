@@ -252,15 +252,3 @@ func (r *PathResolver) settingsRulesPath() (path string, found, ok bool) {
 	}
 	return "", false, true
 }
-
-// GetCursorAgentDir is PathResolver.get_cursor_agent_dir.
-func (r *PathResolver) GetCursorAgentDir() string {
-	projectAgentLibrary := pypath.PyJoin(r.ProjectRoot, "agent-library")
-	if r.env.Exists(projectAgentLibrary) {
-		return projectAgentLibrary
-	}
-	if v, ok := r.env.Getenv("AGENT_LIBRARY_DIR_PATH"); ok && v != "" {
-		return pypath.PyPath(v)
-	}
-	return r.resolve("agenthub_main/agent-library")
-}

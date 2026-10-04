@@ -12,15 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	agentservices "agenthub/fastmcp/agent_management/application/services"
-	agentorm "agenthub/fastmcp/agent_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/server/httpapp"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 func main() {
 	healthcheckFlag := flag.Bool("healthcheck", false, "check the health endpoint and exit")
-	seedAgentsFlag := flag.Bool("seed-agents", false, "seed agent_templates from AGENT_LIBRARY_DIR_PATH and exit")
 	flag.Parse()
 
 	port := envOr("FASTMCP_PORT", "8000")
@@ -43,12 +40,6 @@ func main() {
 	cfg, err := database.GetInstance(ctx, deps)
 	if err != nil {
 		log.Fatalf("database config: %v", err)
-	}
-	if *seedAgentsFlag {
-		if err := seedAgents(ctx, database.NewSessionManager(cfg)); err != nil {
-			log.Fatalf("seed agents: %v", err)
-		}
-		return
 	}
 	app, err := httpapp.NewApp(ctx, database.NewSessionManager(cfg))
 	if err != nil {
@@ -88,28 +79,6 @@ func main() {
 		}
 		log.Printf("agenthub shutdown complete")
 	}
-}
-
-// seedAgents loads the agent-library YAML and upserts every template by slug.
-func seedAgents(ctx context.Context, sessions *database.SessionManager) error {
-	libraryPath := os.Getenv("AGENT_LIBRARY_DIR_PATH")
-	if libraryPath == "" {
-		return fmt.Errorf("AGENT_LIBRARY_DIR_PATH is not set")
-	}
-	loader, err := agentservices.NewYAMLAgentTemplateLoader(libraryPath)
-	if err != nil {
-		return err
-	}
-	repo, err := agentorm.NewORMAgentTemplateRepository(sessions)
-	if err != nil {
-		return err
-	}
-	count, err := agentservices.SeedAgentTemplates(ctx, loader, repo)
-	if err != nil {
-		return err
-	}
-	log.Printf("seeded %d agent templates from %s", count, libraryPath)
-	return nil
 }
 
 // healthcheck reports whether the local server's /health endpoint returns 200.

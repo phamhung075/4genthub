@@ -194,7 +194,6 @@ func TestFormatSecureHealthResponseAdmin(t *testing.T) {
 		"• Python Path: /app\n" +
 		"• Tasks JSON Path: not set\n" +
 		"• Projects File Path: not set\n" +
-		"• Agent Library Dir: not set\n" +
 		"• Cursor Tools Disabled: false\n" +
 		"• Supabase Configured: False\n\n" +
 		"**Security Context:**\n" +

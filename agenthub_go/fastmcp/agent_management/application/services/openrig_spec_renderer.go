@@ -209,7 +209,7 @@ func renderOpenRigGuidance(template *amentities.AgentTemplate, config amvo.Agent
 	return b.String(), nil
 }
 
-// decodeRule reads a rule stored by the loader as compact JSON {"name","content"}.
+// decodeRule reads a rule stored in the configuration as compact JSON {"name","content"}.
 func decodeRule(raw string) (name, body string, err error) {
 	var rule struct {
 		Name    string `json:"name"`

@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Removed
+
+**Go `call_agent` tool and the agent-library seeding path (T6)** (2026-10-04)
+
+- Removed the `call_agent` MCP tool and everything only it used: `agenthub_go/fastmcp/server/httpapp/{agents_mount.go,call_agent_wiring.go}` (the `/api/v2/agents` routes), `fastmcp/agent_management/interface/mcp_controllers/call_agent*.go`, `fastmcp/task_management/application/use_cases/call_agent.go`, `.../agent_mcp_controller/handlers/agent_invocation_handler.go`, the YAML template loader and `agent_template_seeder.go` in `fastmcp/agent_management/application/services/`, the `-seed-agents` flag of `cmd/agenthub`, `PathResolver.GetCursorAgentDir`, and the `agent_library_dir` field of the health environment and the connection tool text. `call_agent` is gone from `tools_golden.json`, the tool config (`TOOL_CALL_AGENT`), the token costs (68 to 67 operations) and the mcp-developer role tool list. Use `call_seat` to resolve a seat.
+- Kept: `manage_agent`'s `call_agent` field and parameter (the agent registry @handle; owner decision pending, T7/D2) and `task_management/infrastructure/services/agent_doc_generator.go`, which still reads `AGENT_LIBRARY_DIR_PATH`.
+- `healthVersion` 0.0.13 to 0.0.14 (`agenthub_go/fastmcp/server/httpapp/http.go`); not deployed.
+- Tests: `openrig_spec_renderer_test.go` builds its template directly instead of through the loader; the seeder, loader, `/api/v2/agents` and `GetCursorAgentDir` tests went with their code; `TestMCPToolsListPublishesCallSeat` also asserts that tools/list has no `call_agent`. `gofmt -l`, `go vet ./...` and `go test ./...` (139 packages ok) from `agenthub_go` pass.
+
 ### Fixed
 
 **Resolved seat snapshot: losing the first-save race is not a failure** (2026-10-04)

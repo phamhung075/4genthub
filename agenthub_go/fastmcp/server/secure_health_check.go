@@ -207,7 +207,6 @@ func (c *SecureHealthChecker) getEnvironmentInfo() *entities.OrderedMap[any] {
 	om.Set("pythonpath", envOr("PYTHONPATH", "not set"))
 	om.Set("tasks_json_path", envOr("TASKS_JSON_PATH", "not set"))
 	om.Set("projects_file_path", envOr("PROJECTS_FILE_PATH", "not set"))
-	om.Set("agent_library_dir", envOr("AGENT_LIBRARY_DIR_PATH", "not set"))
 	om.Set("auth_enabled", envOr("AUTH_ENABLED", "true"))
 	om.Set("cursor_tools_disabled", envOr("AGENTHUB_DISABLE_CURSOR_TOOLS", "false"))
 	om.Set("mvp_mode", envOr("PRODUCTION", "false"))

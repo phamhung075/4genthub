@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — call_agent removal: tests removed and re-homed (T6, Go)
+
+- Removed with their code: `agents_mount_test.go`, `call_agent_test.go`, `call_agent_port_test.go`, `agent_invocation_handler_test.go`, `yaml_agent_template_loader_test.go`, the seeder tests (in `openrig_spec_renderer_test.go`) and `TestPathResolverGetCursorAgentDir`.
+- Changed: `openrig_spec_renderer_test.go` `loadTestTemplate` builds the `AgentTemplate` directly (same slug, version, prompt, rule and output format values); `authenticateTestUser` and `doTestRequest` moved into `seat_mount_test.go` for the seat mount tests; token cost tests 68 to 67 operations; golden and tool config fixtures lost `call_agent`; version test expects 0.0.14; connection tool text test lost the Agent Library Dir line.
+- Added: `TestMCPToolsListPublishesCallSeat` fails if tools/list publishes `call_agent`.
+- Result: `gofmt -l` empty, `go vet ./...` clean, `go test ./...` 139 packages ok (from `agenthub_go`).
+
 ## 2026-10-04 — TaskRowDesktop test: split negated class assertion (Task B4b)
 
 - Changed: `agenthub-frontend/src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx`: `not.toHaveClass('loading', 'bg-orange-100')` (passes if only one is absent) is now two separate `not.toHaveClass` calls. Added a test that `has_dependencies: true` with `dependency_count: 0` renders '0 dependencies' (the component trusts the flag), now 24 tests.

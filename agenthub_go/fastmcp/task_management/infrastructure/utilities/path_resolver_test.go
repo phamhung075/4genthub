@@ -169,30 +169,6 @@ func TestPathResolverRulesDirectoryFromSettings(t *testing.T) {
 	}
 }
 
-func TestPathResolverGetCursorAgentDir(t *testing.T) {
-	root := t.TempDir()
-	env := testEnv(t, root, map[string]bool{}, map[string]string{})
-	r := &PathResolver{ProjectRoot: root, env: env}
-	if got := r.GetCursorAgentDir(); got != root+"/agenthub_main/agent-library" {
-		t.Fatalf("default agent dir = %q", got)
-	}
-
-	envOverride := testEnv(t, root, map[string]bool{}, map[string]string{"AGENT_LIBRARY_DIR_PATH": "/opt/agents"})
-	r2 := &PathResolver{ProjectRoot: root, env: envOverride}
-	if got := r2.GetCursorAgentDir(); got != "/opt/agents" {
-		t.Fatalf("env agent dir = %q", got)
-	}
-
-	if err := os.MkdirAll(filepath.Join(root, "agent-library"), 0o777); err != nil {
-		t.Fatal(err)
-	}
-	projectLocal := testEnv(t, root, map[string]bool{filepath.Join(root, "agent-library"): true}, nil)
-	r3 := &PathResolver{ProjectRoot: root, env: projectLocal}
-	if got := r3.GetCursorAgentDir(); got != root+"/agent-library" {
-		t.Fatalf("project agent dir = %q", got)
-	}
-}
-
 func TestPathResolverLegacyAndAutoRule(t *testing.T) {
 	root := t.TempDir()
 	r := &PathResolver{ProjectRoot: root, env: testEnv(t, root, map[string]bool{}, map[string]string{})}
