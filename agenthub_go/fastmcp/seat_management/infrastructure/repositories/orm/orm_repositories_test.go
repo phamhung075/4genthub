@@ -963,3 +963,181 @@ func assertNoStatement(t *testing.T, f *fakeDriver, substr string) {
 		}
 	}
 }
+
+// ---- cross-tenant coverage for the five seat tables the other tests do not assert ----
+//
+// The reviewer found that module_versions, seat_type_versions, rooms, seat_links and
+// resolved_seats had no test asserting the user_id filter. Every statement that touches a
+// seat table must carry it (an INSERT writes the column; a SELECT/UPDATE/DELETE filters on it).
+
+// assertTenantScoped fails when a recorded statement touches table without user_id.
+func assertTenantScoped(t *testing.T, f *fakeDriver, table string) {
+	t.Helper()
+	saw := false
+	for _, q := range f.recorded() {
+		if !strings.Contains(q, `"`+table+`"`) {
+			continue
+		}
+		saw = true
+		if strings.Contains(q, "INSERT INTO") {
+			if !strings.Contains(q, `"user_id"`) {
+				t.Errorf("%s insert does not write user_id: %s", table, q)
+			}
+			continue
+		}
+		if !strings.Contains(q, `"user_id" = $`) {
+			t.Errorf("%s statement not tenant-scoped: %s", table, q)
+		}
+	}
+	if !saw {
+		t.Fatalf("no statement touched %q", table)
+	}
+}
+
+func TestRoomStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	roomCols := []string{"id", "user_id", "slug", "name", "created_at", "updated_at"}
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		if strings.Contains(q, `FROM "rooms"`) {
+			return roomCols, [][]driver.Value{fakeRow(testRoomID, testUser, "eng", "Engineering", now, now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMRoomRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.List(ctx, testUser); err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if _, err := repo.GetBySlug(ctx, testUser, "eng"); err != nil {
+		t.Fatalf("GetBySlug: %v", err)
+	}
+	if err := repo.Delete(ctx, testUser, testRoomID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	assertTenantScoped(t, f, "rooms")
+}
+
+func TestSeatLinkStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	cols := []string{"id", "user_id", "from_seat_id", "to_seat_id", "kind", "allow", "created_at"}
+	linkRow := fakeRow("l1", testUser, testSeatID, testRoomID, "delegates_to", true, now)
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `FROM "seat_links"`):
+			return cols, nil, nil // no existing link, so Upsert takes the create path
+		case strings.Contains(q, `INSERT INTO "seat_links"`):
+			return cols, [][]driver.Value{linkRow}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatLinkRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.Upsert(ctx, testUser, domainrepo.SeatLink{FromSeatID: testSeatID, ToSeatID: testRoomID, Kind: "delegates_to", Allow: true}); err != nil {
+		t.Fatalf("Upsert: %v", err)
+	}
+	if _, err := repo.ListFrom(ctx, testUser, testSeatID); err != nil {
+		t.Fatalf("ListFrom: %v", err)
+	}
+	if _, err := repo.Delete(ctx, testUser, testSeatID, testRoomID, "delegates_to"); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if err := repo.DeleteBySeat(ctx, testUser, testSeatID); err != nil {
+		t.Fatalf("DeleteBySeat: %v", err)
+	}
+	assertTenantScoped(t, f, "seat_links")
+}
+
+func TestResolvedSeatStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	cols := []string{"id", "user_id", "seat_id", "hash", "runtime", "files", "policy", "created_at"}
+	row := fakeRow("66666666-6666-4666-8666-666666666666", testUser, testSeatID, "h1", "omp", []byte("[]"), []byte("{}"), now)
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `FROM "resolved_seats"`):
+			return cols, nil, nil // no snapshot yet, so Save takes the create path
+		case strings.Contains(q, `INSERT INTO "resolved_seats"`):
+			return cols, [][]driver.Value{row}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMResolvedSeatRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.GetLatest(ctx, testUser, testSeatID); err != nil {
+		t.Fatalf("GetLatest: %v", err)
+	}
+	if _, err := repo.Save(ctx, testUser, domainrepo.ResolvedSeat{SeatID: testSeatID, Hash: "h1", Runtime: "omp"}); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if err := repo.DeleteBySeat(ctx, testUser, testSeatID); err != nil {
+		t.Fatalf("DeleteBySeat: %v", err)
+	}
+	assertTenantScoped(t, f, "resolved_seats")
+}
+
+func TestModuleVersionStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `FROM "modules"`):
+			return moduleCols, [][]driver.Value{fakeRow(testModuleID, testUser, "instr", "instruction", now)}, nil
+		case strings.Contains(q, `FROM "module_versions"`):
+			return moduleVersionCols, nil, nil // no version yet, so AddVersion inserts
+		case strings.Contains(q, `INSERT INTO "module_versions"`):
+			return moduleVersionCols, [][]driver.Value{fakeRow(testVersionID, testUser, testModuleID, "1.0.0", "hello", moduleVersionChecksum("hello"), now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMModuleRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.AddVersion(ctx, testUser, "instr", "1.0.0", "hello"); err != nil {
+		t.Fatalf("AddVersion: %v", err)
+	}
+	assertTenantScoped(t, f, "module_versions")
+}
+
+func TestSeatTypeVersionStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	refs := []resolver.ModuleRef{{Slug: "instr", Version: "1.0.0"}}
+	encoded, err := encodeModuleRefs(refs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	versionCols := []string{"id", "user_id", "seat_type_id", "version", "default_runtime", "module_refs", "created_at"}
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `FROM "seat_types"`):
+			return []string{"id", "user_id", "slug", "name", "description", "created_at"}, [][]driver.Value{fakeRow(testSeatTypeID, testUser, "seat.standard", "Standard", "desc", now)}, nil
+		case strings.Contains(q, `FROM "seat_type_versions"`):
+			return versionCols, nil, nil // no version yet, so AddVersion inserts
+		case strings.Contains(q, `INSERT INTO "seat_type_versions"`):
+			return versionCols, [][]driver.Value{fakeRow("v", testUser, testSeatTypeID, "0.0.1", "go1.23", []byte(encoded), now)}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatTypeRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.AddVersion(ctx, testUser, "seat.standard", "0.0.1", "go1.23", refs); err != nil {
+		t.Fatalf("AddVersion: %v", err)
+	}
+	assertTenantScoped(t, f, "seat_type_versions")
+}

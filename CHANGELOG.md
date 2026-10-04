@@ -8,9 +8,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Project skills are now generic — `.agents/skills` is the single source** (2026-10-04)
+
+- All 12 project skills moved from `.claude/skills/` to `.agents/skills/` (the house convention: `deepseek-offload/.agents/skills/<name>/SKILL.md`, optional `scripts/`/`references/`), so every agent — Claude Code, the omp/DeepSeek seats, codex, agy — reads the same files. `.claude/skills` is now a symlink to `../.agents/skills`: Claude Code keeps loading all skills unchanged (verified end-to-end: `rig-runtime-switch` loads through the symlink, and both paths resolve to the same file). A skill added under either path lands in the same store; no duplicate copies. Note: `.agents/` is gitignored (local store); the symlink lives in the `.claude` submodule.
+
 **Rig runtime-switch playbook as a reusable skill** (2026-10-04)
 
-- `.claude/skills/rig-runtime-switch/SKILL.md`: the verified playbook for keeping an OpenRig team working through a usage cap by swapping its runtime variant — authoring `rig-omp.yaml` (`runtime: omp`, `model: deepseek/deepseek-flash`, `builtin:yolo`), `.env` placement for the omp launch dir, `rig up --plan` dry-run, the owner-named teardown, down/up + verification, the kickoff requirements (state-at-cutoff, rules, the omp runtime note), companion-rig revival (`rig up 4genthub-deepseek --existing --yes`), the herdr watch wall (`rig terminal open <rig>`), and the switch-back path. Derived from the 2026-10-04 `4genthub-min` claude-code → omp/DeepSeek switch executed while the Claude weekly cap was active.
+- `.agents/skills/rig-runtime-switch/SKILL.md`: the verified playbook for keeping an OpenRig team working through a usage cap by swapping its runtime variant — authoring `rig-omp.yaml` (`runtime: omp`, `model: deepseek/deepseek-flash`, `builtin:yolo`), `.env` placement for the omp launch dir, `rig up --plan` dry-run, the owner-named teardown, down/up + verification, the kickoff requirements (state-at-cutoff, rules, the omp runtime note), companion-rig revival (`rig up 4genthub-deepseek --existing --yes`), the herdr watch wall (`rig terminal open <rig>`), and the switch-back path. Derived from the 2026-10-04 `4genthub-min` claude-code → omp/DeepSeek switch executed while the Claude weekly cap was active.
 
 ### Changed
 
@@ -62,6 +66,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Not changed, on purpose: `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and REST create keep any bare name (a Python-parity test pins `custom` kept), so they never reject a seat key; REST create's own `ResolveLegacyRole` maps `coding-agent` to `@senior_developer` while MCP create gives `@coding-agent`.
 
 ### Added
+
+**Cross-tenant coverage for every seat table (OF2)** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`: five tests assert the `user_id` filter on the statements of `module_versions`, `seat_type_versions`, `rooms`, `seat_links` and `resolved_seats` — the five seat tables that had none (`TestModuleVersionStatementsAreTenantScoped`, `TestSeatTypeVersionStatementsAreTenantScoped`, `TestRoomStatementsAreTenantScoped`, `TestSeatLinkStatementsAreTenantScoped`, `TestResolvedSeatStatementsAreTenantScoped`). All nine seat tables now have one; each new test was mutation-proved (dropping `user_id` from that table's statement makes it fail).
+- `agenthub_go/NEXT_GEN.md` G1: the inherited "SQLite and Postgres schemas identical" clause is removed — the Go server is Postgres-only, `grep -rn sqlite agenthub_go/fastmcp/seat_management` finds nothing, and no SQLite dialect was added to satisfy it. The check now states the Postgres schema and the per-table cross-tenant tests, with the evidence.
 
 **Session-stream handler tests: the Python suite ported in full (A4/A6/A7)** (2026-10-04)
 

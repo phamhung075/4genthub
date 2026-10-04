@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Cross-tenant coverage for every seat table (OF2, Go)
+
+- The reviewer/lead finding: `module_versions`, `seat_type_versions`, `rooms`, `seat_links` and `resolved_seats` had no test asserting the `user_id` filter; the other four (`modules`, `seat_types`, `seats`, `overlays`) did. Added five tests to `fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`, each exercising the repository's real statements over the scripted driver and asserting every statement that touches the table carries `user_id` (`assertTenantScoped`; an INSERT must write the `user_id` column, a SELECT/UPDATE/DELETE must filter on it). All nine seat tables now have one.
+- Mutation checks (each applied and reverted, verified by `git diff`):
+  - `DELETE FROM "rooms"` without `"user_id" = $1` -> `TestRoomStatementsAreTenantScoped` FAILS: `rooms statement not tenant-scoped: DELETE FROM "rooms" WHERE "id" = $2`.
+  - `DELETE FROM "seat_links"` without the filter -> `TestSeatLinkStatementsAreTenantScoped` FAILS.
+  - `DELETE FROM "resolved_seats"` without the filter -> `TestResolvedSeatStatementsAreTenantScoped` FAILS.
+  - the shared base `where` builder (`task_management/infrastructure/repositories/base_orm_repository.go:367`) skipping the `user_id` condition -> `TestModuleVersionStatementsAreTenantScoped` and `TestSeatTypeVersionStatementsAreTenantScoped` both FAIL (`SELECT ... FROM "module_versions" WHERE "module_id" = $1 ...`).
+- The four named ORM tests PASS: `TestTenantScoping`, `TestSeatUpdateOccupantTenantScoped`, `TestOverlayUpsertScoped`, `TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped`.
+- Real Postgres: `TestSeatRepositoriesIntegration` and `TestSeatDeletesIntegration` (gated on `SEAT_TEST_DATABASE_URL`; they skip without it) add behavioural cross-tenant checks (modules, seat types/versions, seats, rooms, links, overlays, resolved seats, machines, seat_status, machine tokens) and PASS against the throwaway Postgres at 54329.
+- Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` set): `gofmt -l` empty; `go vet ./fastmcp/seat_management/infrastructure/repositories/orm/` clean; `go test -count=1` for that package ok (0 skipped with `SEAT_TEST_DATABASE_URL` set, 2 skipped without).
+
 ## 2026-10-04 — A4/A6/A7 tests are mutation-proved; list order tiebreaker (review item, Go)
 
 - Reviewer required mutation checks on the three new tests. Each mutation was applied, the named test failed, and the mutation was reverted exactly (verified by `git diff` showing only the intended change afterwards). From `agenthub_go` (`GOCACHE`/`TMPDIR` set, `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable`):
