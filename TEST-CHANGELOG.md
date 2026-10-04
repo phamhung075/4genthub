@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — B5 review follow-ups (Task B5b)
+
+- `agenthub-frontend/src/tests/setupTests.test.tsx`: comment explaining the second `setupTests` copy and its duplicated hooks. `test_useRealtimeSync_project.test.tsx`: two stray blank lines removed. No assertion changed.
+- `agenthub_go/NEXT_GEN.md` G6 measurement now gives a range because `e2e/websocket-protocol-v2.test.tsx` fails one test only under full-suite load.
+- Result (in `agenthub-frontend`): both files pass (7 and 19 tests), `npx tsc --noEmit -p .` 0 errors.
+
 ## 2026-10-04 — dialog ARIA (Task B6)
 
 - Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `accessibility` block (4 tests): `role="dialog"` with `aria-modal="true"`, `aria-labelledby` equal to the title id (and the accessible name), no `aria-labelledby` without a title, two open dialogs resolve to their own titles. `TaskDetailsDialog` 'should have proper ARIA attributes' now passes (30 of 30).

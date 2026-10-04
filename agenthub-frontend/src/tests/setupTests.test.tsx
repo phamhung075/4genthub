@@ -8,6 +8,12 @@ import '../setupTests';
 // setupTests keeps the console.error it finds when it loads as the sink for every message
 // its filter lets through. A second copy loaded here keeps `passedThrough` as that sink, so
 // the console.error tests below can see what the real filter forwards.
+// Loading a second copy (top-level await + vi.resetModules) also registers a second set of
+// beforeEach/afterEach hooks in the root suite, next to the ones from the setup file. That is
+// safe: both sets only swap console.error between their own filter and their own sink, and
+// every test starts from a beforeEach that installs a filter, so the order of the duplicated
+// hooks does not change what a test sees. The first filter's sink is the real console, which
+// is never asserted on.
 const passedThrough = vi.fn();
 const loadTimeConsoleError = console.error;
 console.error = passedThrough;

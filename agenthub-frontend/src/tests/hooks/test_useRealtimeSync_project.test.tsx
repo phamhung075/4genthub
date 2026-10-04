@@ -186,7 +186,6 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
 
       // The handler stops at the missing id and logs a warning
       expect(logger.warn).toHaveBeenCalledWith('[useRealtimeSync] Project update missing ID');
-
     });
 
     it('should reject payload missing required name field', async () => {
@@ -242,7 +241,6 @@ describe('useRealtimeSync - Project Handler Type Guards (TDD)', () => {
         '[useRealtimeSync] Project delete payload validation failed',
         expect.objectContaining({ requiredFields: ['id', 'name'] })
       );
-
     });
   });
 
