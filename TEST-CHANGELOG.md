@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — frontend suite triage: 298 failing tests down to 140 (see agenthub-frontend/CHANGELOG.md)
+
+Full `npx vitest run` (3 forks, 2 GB heap): before 1720 tests, 1422 passed, 298 failed, 9 files that do not load;
+after the commits below 1609 tests, 1469 passed, 140 failed, 9 files that do not load (the 710 in NEXT_GEN G6 was stale).
+Code and the backend payload are the truth; no expectation was loosened. Counts are from the run report or the file.
+
+- Removed (the code under test does not exist, no caller, never in `git log -S` for the missing names):
+  `contextHelpers.test.ts` (33 tests) and `api-lazy.test.ts` (10) in `3aedc74d`; `typeValidation.test.ts` (34, 22 failing)
+  with its unused module in `75d1489c`; the `Rule operations` (5) and `checkHealth` (3) blocks of `api.test.ts` (116 -> 108 tests)
+  in `44ab626a`; the duplicate `src/utils/logger.test.ts` (29 tests, 22 failing, outside `src/tests`, configs the type
+  does not have) in `1f9345e4`.
+- Rewritten to the code, same intents: `statusEmojis.test.ts` 25 tests (24 failing) -> 18 run (5 declarations; `in_progress`
+  is `⚙️`, not `⏳`); `logger.config.test.ts` 40 (31 failing) -> 33 run, with `vi.stubEnv` instead of a faked
+  `global.import.meta`, and the removed alias exports no longer tested; `environment.test.ts` 25 tests (11 failing),
+  same 25 test names and same 41 `expect` lines, only the stubbing changed; `badge.test.tsx` 24 (13 failing) asserts the
+  green/gray/red palette the component uses; `GlobalContextDialog.test.tsx` 15 (12 failing) asserts the redesigned dialog;
+  `logger.test.ts` (canonical) 45 tests, 5 fixed (debug goes through `console.log`, `%c` prefix, object-URL stubs for jsdom);
+  `api.test.ts` 9 expectations (`includeContext` pass-through, default `assignees: []`).
+- Added: `useSubtaskExpansion.test.ts` 1 -> 4 (timers cancelled on unmount, dialog auto-clear, stagger timers, no timer after
+  unmount); SeatsPage 23 -> 27 and SeatDetailPage 13 -> 16 (failed create room / add seat / remove seat / add op / add link
+  keep the form and show the server error, a reopened dialog shows no stale error, Add op needs a version for add and pin);
+  `src/tests/utils/seatModules.test.ts` (5, new: `src/tests/lib` is ignored by the global `lib/` rule).
+- Offload: the `environment` and `GlobalContextDialog` rewrites were drafted by deepseek workers; each diff was read line
+  by line and the files rerun before commit (reviewer confirmed `environment`: identical test names and `expect` lines).
+- Still failing on purpose: 8 `getAvailableAgents` tests in `api.test.ts` assert `toHaveLength(32)` and `@`-prefixed names
+  that match neither `src/api.ts` (42 names) nor the agent library; the picker source is an open decision (NEXT_GEN D6).
+
 ## 2026-10-04 — agent assignment stubs removed
 
 - Added: `TestAgentsAssignmentRoutesAreNotServed` (`agents_mount_test.go`): the four assignment paths answer 404 or 405. Verified red first: all four returned 500 before the handlers were deleted.
