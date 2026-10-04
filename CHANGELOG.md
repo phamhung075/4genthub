@@ -109,7 +109,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 **The Python `/api/v2/agents` metadata surface is retired (T8 follow-up)** (2026-10-04)
 
 - Removed `agenthub_main/src/fastmcp/server/routes/agent_routes.py` — its only route was `GET /api/v2/agents/metadata` (`APIRouter(prefix="/api/v2/agents")` + `@router.get("/metadata")`) — and its two mounts in `server/http_server.py`, plus its test `src/tests/server/test_agent_routes.py`; the stale `agent_routes` entry in `http_server_test.py` and a dead comment were dropped. It had no consumer (the frontend `agentApiV2.getAgentsMetadata` went in T7; the Python scripts call `/api/agents/metadata`, not `/v2`), matching the Go retirement in `05617cf0`.
-- The paths its test asserted were "not served" (`/api/v2/agents/{coding-agent,assign,unassign,branch/*,project/*,capabilities}`) are not routes anywhere (`grep -rn` over `agenthub_main/src/fastmcp` is empty), so nothing else was touched or added for them.
+- Its test also pinned five other `/api/v2/agents` paths as NOT served: `GET /coding-agent`, `POST /assign`, `DELETE /unassign/branch-1`, `GET /branch/branch-1/assignment`, `GET /project/project-1/assignments`. They are not routes anywhere (`grep -rn` over `agenthub_main/src/fastmcp/server/routes/*.py` finds only the unrelated branch `/{branch_id}/assign-agent`), so they remain unserved and nothing was added for them; that pin is kept here as this durable note rather than a rebuilt test (the surface no longer exists).
 
 **The retired agent system is gone from the Python backend and the Go doc generator (T8)** (2026-10-04)
 
