@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — BranchItem, ProjectListContent, AuthWrapper, taskTypes (Task B8)
+
+- `agenthub-frontend/src/tests/types/taskTypes.test.ts` (1 to 0): wrong side was the test. `SubtaskSummary.assignees` is optional, and the "undefined optional properties" test set `assignees: []` and then expected `undefined`; the literal now omits it.
+- `agenthub-frontend/src/tests/components/auth/AuthWrapper.test.tsx` (4 to 0): wrong side was the test. `test-utils` `render` wraps in `AuthProvider`, which this file mocks, so there were two `auth-provider` elements; the file renders with plain `@testing-library/react`.
+- `agenthub-frontend/src/tests/components/ProjectList/components/BranchItem.test.tsx` (4 to 0): the tests used removed props (`isNew`, `isFadingOut`, `isDeleting`, a deleting spinner). The component now animates through `useBranchAnimation`. Replaced by five tests of that behaviour (create animation for a branch under 2 s old and none for an old one, the CSS create class when the factory returns false, delete animation then removal after 800 ms, the CSS delete class), with fake timers and `act` (no `waitFor`); the registration test expects the real call shape `(id, element, 'branch', callbacks)`. `src/setupTests.ts` auto-mocks `branchDeletionTracker`, so the tests set `isMarkedForDeletion` on the mock.
+- `agenthub-frontend/src/tests/components/ProjectList/components/ProjectListContent.test.tsx` (4 to 0): `ProjectItem` sums `branch.task_count`, not a `tasks` array, so the fixtures use `task_count`; a closed project's branches stay in the DOM inside a `ul` with `display: none` (the test asserts the `ul`, and `flex` for the open one); without `onShowProjectDetails` the "View Project Details" button is not rendered, so the old "click does not throw" test became an assertion that it is absent.
+- No source file changed in B8; none had a defect.
+- Result (in `agenthub-frontend`): `npx vitest run` 20 failed / 1723 passed before (the run during B7b), 14 failed / 1729 passed (1743) after, failing files 5 to 3 (api.test.ts, dto-integration, testWebSocket: all out of scope), no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
 ## 2026-10-04 — dialog focus follow-up (Task B7b)
 
 - Added to `agenthub-frontend/src/tests/components/ui/dialog.test.tsx`: focus returns to the opener when a child has `autoFocus` (fails on 40057b20, passes with the fix), and hidden controls are skipped by focus-in and by the Tab wrap. File 39 of 39.
