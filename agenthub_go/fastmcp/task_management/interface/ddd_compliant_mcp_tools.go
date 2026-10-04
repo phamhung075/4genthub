@@ -41,6 +41,7 @@ type DDDCompliantMCPTools struct {
 	AgentController      *agent_mcp_controller.AgentMCPController
 	CallAgentController  *mcp_controllers.CallAgentMCPController
 	ManageSeatController *seatcontrollers.ManageSeatController
+	CallSeatController   *seatcontrollers.CallSeatController
 	ContextController    *contextctl.UnifiedContextMCPController // nil when the database is unavailable
 	WorkflowHintEnhancer *workflow_hint_enhancer.WorkflowHintEnhancer
 }
@@ -53,6 +54,7 @@ type Dependencies struct {
 	DatabaseAvailable bool
 	CallAgent         *mcp_controllers.CallAgentMCPController
 	ManageSeat        *seatcontrollers.ManageSeatController
+	CallSeat          *seatcontrollers.CallSeatController
 }
 
 // NewDDDCompliantMCPTools ports __init__(projects_file_path, config_overrides,
@@ -77,7 +79,7 @@ func NewDDDCompliantMCPTools(deps Dependencies, configOverrides map[string]any) 
 	}
 	wireAuthHooks()
 	wireWorkflowGuidance()
-	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, CallAgentController: deps.CallAgent, ManageSeatController: deps.ManageSeat}
+	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, CallAgentController: deps.CallAgent, ManageSeatController: deps.ManageSeat, CallSeatController: deps.CallSeat}
 	formatter := utils.NewMCPResponseFormatter()
 	if err := t.initControllers(deps, formatter); err != nil {
 		return nil, err
@@ -272,6 +274,9 @@ func (t *DDDCompliantMCPTools) RegisterTools(mcp MCPServer) {
 	}
 	if t.ManageSeatController != nil {
 		t.ManageSeatController.RegisterTools(mcp)
+	}
+	if t.CallSeatController != nil {
+		t.CallSeatController.RegisterTools(mcp)
 	}
 }
 

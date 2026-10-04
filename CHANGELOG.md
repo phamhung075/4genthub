@@ -41,6 +41,18 @@ Found by a headless DeepSeek review of `2c8d05f3` and confirmed by reading every
 
 ### Added
 
+**call_seat: resolve one exact seat** (2026-10-04)
+
+Owner decision: the tool is `call_seat`, not `call_agent` — the name should say which layer it reaches. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain (claude, openai, gemini, deepseek) is the occupant.
+
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`: the `call_seat` MCP tool over a one-method `SeatResolver`. It resolves one seat by room and seat key through `SeatResolutionService.ResolveSeat` and returns the resolved snapshot hash, runtime, policy and rendered files. Failures are `success=false` with the reason, matching `manage_seat`.
+- `agenthub_go/fastmcp/server/httpapp/call_seat_wiring.go`: wires it to the same resolution source the resolved-seat REST route uses, built per call, so an unset `AGENTHUB_PUBLIC_URL` is a tool-call failure with that reason rather than a failure to start the server (the route behaves the same way).
+- `ddd_compliant_mcp_tools.go`, `app.go`, `mcp_routes.go`: registration, dependency and dispatch.
+- Tests: `call_seat_controller_test.go` (resolve, input failures, tenant failure, tool registration, input schema) and `call_seat_mcp_test.go` (tools/list publishes it with the right schema and required fields; tools/call resolves a seat end to end; a resolver failure is reported as a tool result).
+- `mcp_routes_test.go`: the golden file is the Python parity registry, so `call_seat` joins `manage_seat` as a Go-only tool excluded from it with the reason recorded, and covered by its own route tests.
+- Checked: `gofmt` clean, `go vet ./...` clean, `go test ./...` green.
+- Not done, deliberately: `call_agent` is untouched. Removing it is T6 (it also carries the routes, `-seed-agents`, the library path utils and the health field) and is the immediate follow-on so that two tools for one job do not coexist.
+
 **omp runtime supported: a seat can now run DeepSeek** (2026-10-04)
 
 - `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `RuntimeOmp = "omp"` added to the one runtime list and to `CheckRuntime`, so API validation, rigspec, the seed library and the renderer all accept it. `omp` (Oh My Pi) is the runtime that carries a non-Anthropic provider: OpenRig passes a seat its provider key only when the model is written `provider/id` such as `deepseek/deepseek-flash`, which is how the DeepSeek supervisor seat in `~/.openrig/agenthub-seats/4genthub-deepseek/` runs. `pi` stays unsupported deliberately (no evidence, and no `pi` installed here).

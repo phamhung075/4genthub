@@ -60,11 +60,13 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	if err != nil {
 		return nil, err
 	}
+	callSeat := newCallSeatController(sessions)
 	mcpTools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     facadeService,
 		DatabaseAvailable: true,
 		CallAgent:         callAgent,
 		ManageSeat:        manageSeat,
+		CallSeat:          callSeat,
 	}, nil)
 	if err != nil {
 		return nil, err

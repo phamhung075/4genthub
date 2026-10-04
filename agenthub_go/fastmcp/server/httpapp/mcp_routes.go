@@ -267,6 +267,15 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 		"description": seatcontrollers.ManageSeatToolDescription,
 		"inputSchema": seatSchema,
 	})
+	callSeatSchema, err := plainJSON(seatcontrollers.CallSeatInputSchema())
+	if err != nil {
+		return nil, err
+	}
+	tools = append(tools, map[string]any{
+		"name":        seatcontrollers.CallSeatToolName,
+		"description": seatcontrollers.CallSeatToolDescription,
+		"inputSchema": callSeatSchema,
+	})
 	connTool, err := connectionToolDefinition()
 	if err != nil {
 		return nil, err
@@ -451,6 +460,13 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			return res, false
 		}
 		return map[string]any{"error": "ManageSeatController not initialized"}, true
+
+	case seatcontrollers.CallSeatToolName:
+		if a.mcpTools != nil && a.mcpTools.CallSeatController != nil {
+			res := a.mcpTools.CallSeatController.CallSeat(ctx, getOptStringPtr(args, "room"), getOptStringPtr(args, "seat"), userID)
+			return res, false
+		}
+		return map[string]any{"error": "CallSeatController not initialized"}, true
 
 	default:
 		return map[string]any{"error": fmt.Sprintf("Unknown tool: %s", name)}, true

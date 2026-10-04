@@ -73,8 +73,9 @@ func TestMCPToolsListMatchesGolden(t *testing.T) {
 	}
 
 	// manage_connection is registered by mcp_entry_point.py (register_ddd_connection_tools),
-	// and manage_seat exists only in Go; both are outside the Python registry the golden
-	// file was generated from (manage_seat is covered by TestMCPManageSeat*).
+	// and manage_seat and call_seat exist only in Go; all three are outside the Python
+	// registry the golden file was generated from (the seat tools are covered by
+	// TestMCPManageSeat* and TestMCPCallSeat*).
 	got := make(map[string]any, len(wire.Result.Tools))
 	sawConnection := false
 	for _, tool := range wire.Result.Tools {
@@ -82,7 +83,7 @@ func TestMCPToolsListMatchesGolden(t *testing.T) {
 			sawConnection = true
 			continue
 		}
-		if tool.Name == "manage_seat" {
+		if tool.Name == "manage_seat" || tool.Name == "call_seat" {
 			continue
 		}
 		var schema any
