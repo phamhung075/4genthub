@@ -41,6 +41,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`GET /api/v2/agents/metadata` no longer returns 500** (2026-10-04)
+
+- `agenthub_main/src/fastmcp/server/routes/agent_routes.py` (`get_all_agents_metadata`): `AgentAPIController.get_agent_metadata` returns a plain dict, but the route read `result.success` and called `result.model_dump`, so every request raised `'dict' object has no attribute 'success'` and answered 500. The route now reads `result.get("success")` and returns the dict; a failed result still answers 500 with the controller `message`.
+- Not fixed, reported to the lead: the other six routes in that file call controller methods that do not exist (`get_single_agent_metadata`, `assign_agent`, `unassign_agent`, `get_branch_assignment`, `get_project_assignments`, `get_all_capabilities`), so they always answer 500; `GET /capabilities` is also shadowed by `GET /{agent_name}`. The controller falls back to static metadata when the facade fails (`agent_api_controller.py` lines 49-56 and 68-78), which conflicts with the no-fallback rule.
+
 **The seatcheck PATH check reads the PATH seats inherit** (2026-10-04)
 
 - `scripts/openrig_seat_sync.py`: `resolve_checker` and `describe_found` now resolve `seatcheck` against `tmux show-environment -g PATH` (new `tmux_global_path`, `seat_path`) when a tmux server answers, instead of this shell's PATH. With no tmux server (no seat exists yet) they check the shell PATH and print `note: checked seatcheck on the shell PATH (no tmux server is running, ...)` to stderr; failure messages name the PATH that was checked, and `PATH_LIMIT` now describes the cold-start case (the first seat inherits the daemon's PATH) and says that only the default tmux socket is queried. The tmux call has a 5 second timeout; a hung server counts as no server. Not verified: the cold start case, and a non-default tmux socket.

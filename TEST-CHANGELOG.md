@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — agent metadata route returns the controller dict
+
+- Added: `agenthub_main/src/tests/server/test_agent_routes.py` (4 tests, FastAPI `TestClient` on the agent router with stubbed auth and database): the controller dict is returned unchanged (200), a failed result answers 500 with its `message` or the default text, and the real `AgentAPIController` with a stubbed facade serves `source: facade` and the total.
+- Verified red first: before the fix 2 of the 4 failed with `'dict' object has no attribute 'success'` in the route log (the default-message test passed by coincidence because the route's generic 500 text is the same); after the fix 4 passed. Run: `cd agenthub_main && .venv/bin/python -m pytest --noconftest -p no:cacheprovider src/tests/server/test_agent_routes.py -q`. `ruff format --check` and `ruff check` clean on both files.
+
 ## 2026-10-04 — G5 pin and follow-latest through SeatResolutionService
 
 - Added: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion` (`seat_resolution_service_test.go`, fakes only): a module version published alone changes neither a pinned nor a follow-latest seat; a new seat type version referencing it changes only the follow-latest seat; the pinned seat keeps hash and content. It passed on first run (the behavior already held, so there was no red step).

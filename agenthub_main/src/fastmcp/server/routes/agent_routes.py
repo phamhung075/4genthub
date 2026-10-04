@@ -47,13 +47,13 @@ async def get_all_agents_metadata(
             user_id=current_user.id, session=db
         )
 
-        if not result.success:
+        if not result.get("success"):
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.message or "Failed to fetch agent metadata",
+                detail=result.get("message") or "Failed to fetch agent metadata",
             )
 
-        return result.model_dump(by_alias=True)
+        return result
 
     except HTTPException:
         raise
