@@ -7,6 +7,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Changed: `TestRenderSeatSameModulesOnBothRuntimes` (`seatrenderer/renderer_test.go`) loops `codex` and `agy`: no `runtime/` file, skill still names `seatcheck send`. Coverage only, so there was no red step.
 - Verified: with `receivesClaudeFragments` mutated to treat agy as Claude the test fails for agy (two runtime files), and passes with the source restored; `go vet` and `go test ./fastmcp/seat_management/domain/seatrenderer/` ok.
 
+## 2026-10-04 — seatcheck PATH check uses the tmux global PATH
+
+- Added (`test_openrig_seat_sync.py`): `test_tmux_global_path_reads_the_global_environment`, `test_tmux_global_path_is_none_without_an_answer` (4 cases: non-zero exit, `-PATH`, tmux missing, tmux hangs past the 5 s timeout), `test_path_limit_says_only_the_default_tmux_socket_is_queried`, `test_pull_checks_the_tmux_global_path_not_the_shell_path`, `test_pull_fails_when_the_tmux_global_path_lacks_the_checker`, `test_shell_path_fallback_is_said_in_the_output`. Added an autouse fixture `no_tmux_server` so the other tests never reach a real tmux server.
+- Verified: the 4 new behaviour tests failed before the change; `pytest --noconftest src/tests/scripts` 166 passed after it (the timeout case and the PATH_LIMIT test failed first).
+
 ## 2026-10-04 — TestMachineExpectedHashIntegration reruns on a used database
 
 - Changed: `TestMachineExpectedHashIntegration` (`seat_management/infrastructure/repositories/orm/integration_test.go`): the second tenant is `userID + "-other"` (was the constant `seat-sync-other-user`). With the constant, a rerun against the same Postgres failed with `duplicate key value violates unique constraint "uq_seats_room_seat_key"` because the previous run's room and seat for that tenant still existed.

@@ -33,6 +33,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The seatcheck PATH check reads the PATH seats inherit** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: `resolve_checker` and `describe_found` now resolve `seatcheck` against `tmux show-environment -g PATH` (new `tmux_global_path`, `seat_path`) when a tmux server answers, instead of this shell's PATH. With no tmux server (no seat exists yet) they check the shell PATH and print `note: checked seatcheck on the shell PATH (no tmux server is running, ...)` to stderr; failure messages name the PATH that was checked, and `PATH_LIMIT` now describes the cold-start case (the first seat inherits the daemon's PATH) and says that only the default tmux socket is queried. The tmux call has a 5 second timeout; a hung server counts as no server. Not verified: the cold start case, and a non-default tmux socket.
+
 **`openrig_seat_sync.py switch` accepts the agy runtime** (2026-10-04)
 
 - `scripts/openrig_seat_sync.py`: `RUNTIMES` now includes `agy`, so `switch ROOM SEAT --runtime agy --model <model>` is no longer rejected with exit 2 by the client before the server sees it. The Python lists in `openrig_bridge.py` and this script are still separate from Go's `resolver.CheckRuntime`; the single-source claim of the status-report entry above holds for Go only.

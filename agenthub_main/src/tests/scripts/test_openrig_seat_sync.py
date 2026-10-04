@@ -190,12 +190,19 @@ def env(monkeypatch, server):
 
 
 REAL_REQUIRE_CHECKER = getattr(seat_sync, "require_checker", None)
+REAL_TMUX_GLOBAL_PATH = getattr(seat_sync, "tmux_global_path", None)
 
 
 @pytest.fixture(autouse=True)
 def checker_present(monkeypatch):
     """Most tests are not about the checker binary: stub the requirement."""
     monkeypatch.setattr(seat_sync, "require_checker", lambda out: None, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def no_tmux_server(monkeypatch):
+    """Tests do not talk to a real tmux server: the checker falls back to the shell PATH."""
+    monkeypatch.setattr(seat_sync, "tmux_global_path", lambda: None, raising=False)
 
 
 @pytest.fixture
@@ -1112,3 +1119,78 @@ def test_install_checker_build_failure_exits_1_and_links_nothing(
     assert run_cli(["install-checker", "--out", str(tmp_path / "pins")]) == 1
     assert "go build failed with exit code 3" in capsys.readouterr().err
     assert not (checker_home / "seatcheck").exists()
+
+
+def fake_tmux(stdout="", returncode=0, missing=False, hangs=False):
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if missing:
+            raise FileNotFoundError("tmux")
+        if hangs:
+            assert kwargs["timeout"] == 5
+            raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+        return subprocess.CompletedProcess(command, returncode, stdout=stdout)
+
+    return run, calls
+
+
+def test_tmux_global_path_reads_the_global_environment(monkeypatch):
+    run, calls = fake_tmux("PATH=/a/bin:/b/bin\n")
+    monkeypatch.setattr(seat_sync.subprocess, "run", run)
+    assert REAL_TMUX_GLOBAL_PATH() == "/a/bin:/b/bin"
+    assert calls == [["tmux", "show-environment", "-g", "PATH"]]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"returncode": 1},
+        {"stdout": "-PATH\n"},
+        {"missing": True},
+        {"hangs": True},
+    ],
+)
+def test_tmux_global_path_is_none_without_an_answer(monkeypatch, kwargs):
+    run, _ = fake_tmux(**kwargs)
+    monkeypatch.setattr(seat_sync.subprocess, "run", run)
+    assert REAL_TMUX_GLOBAL_PATH() is None
+
+
+def test_pull_checks_the_tmux_global_path_not_the_shell_path(
+    env, real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
+):
+    env.set_seat(HASH_A)
+    pins = tmp_path / "pins"
+    (checker_home / "seatcheck").symlink_to(make_binary(pins))
+    monkeypatch.setenv("PATH", str(tmp_path / "elsewhere"))
+    monkeypatch.setattr(seat_sync, "tmux_global_path", lambda: str(checker_home))
+    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 0
+
+
+def test_pull_fails_when_the_tmux_global_path_lacks_the_checker(
+    env, real_checker_requirement, checker_home, monkeypatch, tmp_path, capsys
+):
+    pins = tmp_path / "pins"
+    (checker_home / "seatcheck").symlink_to(make_binary(pins))
+    monkeypatch.setattr(
+        seat_sync, "tmux_global_path", lambda: str(tmp_path / "elsewhere")
+    )
+    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 2
+    err = capsys.readouterr().err
+    assert "tmux global PATH" in err and "install-checker" in err
+
+
+def test_shell_path_fallback_is_said_in_the_output(
+    env, real_checker_requirement, checker_home, tmp_path, capsys
+):
+    env.set_seat(HASH_A)
+    pins = tmp_path / "pins"
+    (checker_home / "seatcheck").symlink_to(make_binary(pins))
+    assert run_cli(["pull", "room1", "seat1", "--out", str(pins)]) == 0
+    assert "no tmux server is running" in capsys.readouterr().err
+
+
+def test_path_limit_says_only_the_default_tmux_socket_is_queried():
+    assert "default tmux socket" in seat_sync.PATH_LIMIT

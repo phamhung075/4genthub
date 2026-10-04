@@ -320,24 +320,61 @@ def checker_link() -> Path:
     return Path.home() / ".local" / "bin" / CHECKER_NAME
 
 
+TMUX_TIMEOUT_SECONDS = 5
+
+
+def tmux_global_path() -> str | None:
+    """The PATH new seats inherit (tmux's global environment); None without a tmux server."""
+    try:
+        result = subprocess.run(
+            ["tmux", "show-environment", "-g", "PATH"],
+            capture_output=True,
+            text=True,
+            timeout=TMUX_TIMEOUT_SECONDS,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0 or not result.stdout.startswith("PATH="):
+        return None
+    return result.stdout.strip()[len("PATH=") :]
+
+
+SHELL_PATH_SOURCE = "shell PATH (no tmux server is running, so no seat exists yet)"
+
+
+def seat_path() -> tuple[str, str]:
+    """The PATH to check and its source: the tmux global PATH, else this shell's."""
+    tmux_path = tmux_global_path()
+    if tmux_path is not None:
+        return tmux_path, "tmux global PATH"
+    return os.environ.get("PATH", ""), SHELL_PATH_SOURCE
+
+
 def resolve_checker(out: Path) -> bool:
     """True when the bare name ``seatcheck`` resolves to the seat store's binary."""
-    found = shutil.which(CHECKER_NAME)
+    path, source = seat_path()
+    if source == SHELL_PATH_SOURCE:
+        print(f"note: checked {CHECKER_NAME} on the {source}", file=sys.stderr)
+    found = shutil.which(CHECKER_NAME, path=path)
     return found is not None and os.path.realpath(found) == os.path.realpath(
         checker_binary(out)
     )
 
 
 PATH_LIMIT = (
-    "this checks the PATH of this shell; seats inherit the PATH the OpenRig daemon "
-    "started with, which `rig` does not expose: restart it from a shell where "
+    "seats inherit the tmux global PATH, which is what this checks while a tmux server "
+    "runs (only the default tmux socket is queried); at cold start the first seat "
+    "inherits the PATH the OpenRig daemon started "
+    "with, which `rig` does not expose: restart it from a shell where "
     f"{CHECKER_NAME} resolves (`rig daemon stop`, `rig daemon start`)"
 )
 
 
 def describe_found() -> str:
-    found = shutil.which(CHECKER_NAME)
-    return f"{found} -> {os.path.realpath(found)}" if found else "not on PATH"
+    path, source = seat_path()
+    found = shutil.which(CHECKER_NAME, path=path)
+    where = f"{found} -> {os.path.realpath(found)}" if found else "not on PATH"
+    return f"{where}, on the {source}"
 
 
 def require_checker(out: Path) -> None:
