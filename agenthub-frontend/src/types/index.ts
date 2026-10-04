@@ -62,9 +62,3 @@ export * from './logger.types';
 export * from './context.types';
 export * from './utilityTypes';
 export * from './testTypes';
-
-// ============================================
-// TYPE VALIDATION (Runtime type checking)
-// ============================================
-// Note: Import validators separately to avoid circular dependencies
-// Usage: import { validators } from '@/utils/typeValidation'

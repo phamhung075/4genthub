@@ -3,6 +3,15 @@
 ## [Unreleased]
 
 ### Fixed
+- **Removed the unused `typeValidation` module and its test** - 2026-10-04
+  - `src/utils/typeValidation.ts` had no importer anywhere in `agenthub-frontend` (static or dynamic); only a
+    comment in `src/types/index.ts` pointed at it, and its test (22 of 24 tests failing) called `isTaskArray`,
+    `isSubtaskArray` and `ensure*`, which it never had. Its guards also disagreed with the types: the full-`Task`
+    guard required summary-only fields (`assignees_count`, `has_context`), so it would have rejected a real task.
+    The module, `src/tests/utils/typeValidation.test.ts` and the comment are removed.
+  - Open gap, not changed here: the backend list payloads (`types/entities.py` `TaskSummary`/`SubtaskSummary`)
+    carry `assignees_count`, but the TS `TaskSummary`/`SubtaskSummary` in `src/types/taskTypes.ts` omit it;
+    nothing consumes it yet.
 - **statusEmojis tests cover the functions the module has** - 2026-10-04
   - `src/tests/utils/statusEmojis.test.ts` (25 tests, 24 failing) called `getStatusLabel`, `getStatusColor` and
     `isValidStatus`, which `src/utils/statusEmojis.ts` never exported (checked with `git log -S`; the only
