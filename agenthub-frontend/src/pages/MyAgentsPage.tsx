@@ -1369,7 +1369,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ instance, onViewDetails, onEdit, 
   const toolsCount = instance.tools ? instance.tools.length : 0;
   const capabilitiesCount = instance.capabilities ? Object.keys(instance.capabilities).length : 0;
 
-  // Check if agent is callable (has required configuration for call_agent)
+  // Check if agent is callable (has the configuration an agent needs to run)
   const isCallable = Boolean(
     instance.system_prompt &&
     instance.tools &&

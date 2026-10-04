@@ -66,7 +66,7 @@ const ClaudeHooks = ({ expandedSections, toggleSection, deploymentMode }: Claude
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>Updates documentation index (ai_docs/index.json) automatically</li>
                   <li>Synchronizes context with MCP backend</li>
-                  <li>Tracks agent state changes (call_agent responses)</li>
+                  <li>Tracks agent state changes</li>
                   <li>Generates post-action hints and insights</li>
                   <li>Logs all tool executions for audit trails</li>
                 </ul>

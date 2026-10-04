@@ -11,6 +11,13 @@
     and state are deleted. The dialog keeps its title, task context and the static Agent Description section.
     `getAvailableAgents` and the assignee picker are untouched.
 
+### Changed
+- **Help text and dialog state no longer mention the removed `call_agent` tool** - 2026-10-04
+  - `src/components/help/sections/Troubleshooting.tsx`: dropped the step "Verify agent is properly loaded with `mcp__agenthub_http__call_agent`".
+  - `src/components/help/sections/ClaudeHooks.tsx`: post-tool hook line no longer says "call_agent responses".
+  - `src/pages/MyAgentsPage.tsx`: comment above `isCallable` no longer names the tool.
+  - `src/components/AgentInfoDialog.tsx`: `expandedSections` starts with `description` only (`basic` no longer exists).
+
 ### Fixed
 - **Dialogs are announced as dialogs** - 2026-10-04
   - `src/components/ui/dialog.tsx`: `DialogContent` now renders `role="dialog"` and `aria-modal="true"`, and

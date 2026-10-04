@@ -63,7 +63,6 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
               <ul className="list-disc list-inside ml-4 space-y-1">
                 <li><strong>Create Missing Agents:</strong> Go to <strong>My Agents</strong> page (http://localhost:3800/agents/my-agents) and create agents that are missing. You can either use default agent templates or create all 32 specialized agents.</li>
                 <li>Check MCP server is running: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">curl http://localhost:8000/health</code></li>
-                <li>Verify agent is properly loaded with <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">mcp__agenthub_http__call_agent</code></li>
                 <li>Check agent tools are available (Dynamic Tool Enforcement v2.0)</li>
                 <li>Restart Claude Code application</li>
                 <li>Check system resources (RAM/CPU) - agents need minimum 4GB RAM</li>

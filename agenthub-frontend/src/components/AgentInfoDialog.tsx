@@ -19,7 +19,7 @@ export const AgentInfoDialog: React.FC<AgentInfoDialogProps> = ({
   taskTitle,
   onClose
 }) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic', 'description']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['description']));
 
   // Agent descriptions mapping (using kebab-case without @ prefix)
   const agentDescriptions: Record<string, { description: string; category: string; skills: string[] }> = {
