@@ -14,13 +14,37 @@ describe('hooks/index', () => {
 
   it('only exports expected hooks', () => {
     const exportedHooks = Object.keys(hooks);
-    expect(exportedHooks).toEqual(['useTheme']);
+    expect(exportedHooks).toEqual([
+      'useTheme',
+      'useTaskFilters',
+      'useTaskGrouping',
+      'useAgentTemplates',
+      'useUserAgentInstances',
+      'useAgentSharing',
+      'useAgentMarketplace',
+      'useAgentAnalytics',
+      'seatKeys',
+      'useRooms',
+      'useCreateRoom',
+      'useSeatTypes',
+      'useModuleVersion',
+      'useSeats',
+      'useCreateSeat',
+      'useRemoveSeat',
+      'useSeatSettings',
+      'useUpdateSeatSettings',
+      'useSeatOverlays',
+      'useUpdateOverlay',
+      'useSeatLinks',
+      'useUpsertSeatLink',
+      'useResolvedSeat',
+    ]);
   });
 
   it('maintains the same reference to imported hooks', () => {
     const { useTheme: firstImport } = hooks;
     const { useTheme: secondImport } = hooks;
-    
+
     expect(firstImport).toBe(secondImport);
     expect(firstImport).toBe(useTheme);
   });

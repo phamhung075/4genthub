@@ -1,4 +1,3 @@
-import { createTheme } from '@mui/material/styles';
 import { lightTheme, darkTheme, getTheme } from '../../theme/muiTheme';
 import { themeConfig } from '../../theme/themeConfig';
 
@@ -94,8 +93,6 @@ vi.mock('../../theme/themeConfig', () => ({
 }));
 
 describe('muiTheme', () => {
-  const mockCreateTheme = createTheme as anyedFunction<typeof createTheme>;
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -257,20 +254,24 @@ describe('muiTheme', () => {
   });
 
   describe('createTheme calls', () => {
-    it('calls createTheme for both themes', () => {
-      // The themes are created when the module is imported
-      // Since we import at the top, they should already be created
-      expect(mockCreateTheme).toHaveBeenCalledTimes(2);
+    // beforeEach clears the createTheme spy after the module has been imported,
+    // so the themes themselves (createTheme's mocked output) are what is asserted.
+    it('creates both themes with createTheme', () => {
+      expect(lightTheme).toMatchObject({ isTheme: true });
+      expect(darkTheme).toMatchObject({ isTheme: true });
+      expect(lightTheme).not.toBe(darkTheme);
     });
 
     it('passes ThemeOptions type to createTheme', () => {
-      expect(mockCreateTheme).toHaveBeenCalledWith(
-        expect.objectContaining({
-          palette: expect.any(Object),
-          components: expect.any(Object),
-          typography: expect.any(Object),
-        })
-      );
+      for (const theme of [lightTheme, darkTheme]) {
+        expect(theme).toEqual(
+          expect.objectContaining({
+            palette: expect.any(Object),
+            components: expect.any(Object),
+            typography: expect.any(Object),
+          })
+        );
+      }
     });
   });
 
@@ -301,7 +302,7 @@ describe('muiTheme', () => {
 
     it('has consistent typography configuration', () => {
       const typographyKeys = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
-      
+
       typographyKeys.forEach(key => {
         expect(lightTheme.typography[key]).toBeDefined();
         expect(darkTheme.typography[key]).toBeDefined();

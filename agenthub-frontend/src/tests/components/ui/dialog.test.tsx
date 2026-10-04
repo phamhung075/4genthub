@@ -25,7 +25,7 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(screen.getByText('Dialog content')).toBeInTheDocument();
     });
 
@@ -36,7 +36,7 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(screen.queryByText('Dialog content')).not.toBeInTheDocument();
     });
 
@@ -47,10 +47,10 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       const overlay = screen.getByText('Dialog content').closest('.theme-modal-overlay');
       fireEvent.click(overlay!);
-      
+
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
@@ -61,9 +61,9 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       fireEvent.keyDown(document, { key: 'Escape' });
-      
+
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
@@ -74,9 +74,9 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       fireEvent.keyDown(document, { key: 'Escape' });
-      
+
       expect(onOpenChange).not.toHaveBeenCalled();
     });
 
@@ -87,7 +87,7 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(document.body.style.overflow).toBe('hidden');
     });
 
@@ -98,15 +98,15 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(document.body.style.overflow).toBe('hidden');
-      
+
       rerender(
         <Dialog open={false} onOpenChange={onOpenChange}>
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(document.body.style.overflow).toBe('unset');
     });
 
@@ -117,11 +117,11 @@ describe('Dialog components', () => {
           <div>Dialog content</div>
         </Dialog>
       );
-      
+
       expect(document.body.style.overflow).toBe('hidden');
-      
+
       unmount();
-      
+
       expect(document.body.style.overflow).toBe('unset');
     });
 
@@ -132,15 +132,15 @@ describe('Dialog components', () => {
           <div data-testid="content">Dialog content</div>
         </Dialog>
       );
-      
+
       const overlay = document.querySelector('.theme-modal-overlay');
       expect(overlay).toBeInTheDocument();
-      
-      const fixedContainer = overlay?.querySelector('.fixed.inset-0.overflow-y-auto');
-      expect(fixedContainer).toBeInTheDocument();
-      
-      const flexContainer = fixedContainer?.querySelector('.flex.min-h-full.items-center.justify-center.p-4');
-      expect(flexContainer).toBeInTheDocument();
+
+      expect(overlay).toHaveClass('flex', 'items-center', 'justify-center');
+
+      const scrollContainer = overlay?.querySelector('.w-full.overflow-y-auto.p-4');
+      expect(scrollContainer).toBeInTheDocument();
+      expect(scrollContainer).toContainElement(screen.getByTestId('content'));
     });
   });
 
@@ -151,7 +151,7 @@ describe('Dialog components', () => {
           <div>Content text</div>
         </DialogContent>
       );
-      
+
       expect(screen.getByText('Content text')).toBeInTheDocument();
     });
 
@@ -161,7 +161,7 @@ describe('Dialog components', () => {
           <div>Content</div>
         </DialogContent>
       );
-      
+
       const content = screen.getByText('Content').parentElement;
       expect(content.className).toContain('theme-modal');
       expect(content.className).toContain('w-full');
@@ -174,7 +174,7 @@ describe('Dialog components', () => {
           <div>Content</div>
         </DialogContent>
       );
-      
+
       const content = screen.getByText('Content').parentElement;
       expect(content.className).toContain('theme-modal');
       expect(content.className).toContain('w-full');
@@ -191,10 +191,10 @@ describe('Dialog components', () => {
           </DialogContent>
         </div>
       );
-      
+
       const content = screen.getByText('Content').parentElement;
       fireEvent.click(content!);
-      
+
       expect(parentClick).not.toHaveBeenCalled();
     });
   });
@@ -206,7 +206,7 @@ describe('Dialog components', () => {
           <div>Header content</div>
         </DialogHeader>
       );
-      
+
       expect(screen.getByText('Header content')).toBeInTheDocument();
     });
 
@@ -216,7 +216,7 @@ describe('Dialog components', () => {
           <div>Header</div>
         </DialogHeader>
       );
-      
+
       const header = screen.getByText('Header').parentElement;
       expect(header.className).toContain('mb-4');
     });
@@ -227,7 +227,7 @@ describe('Dialog components', () => {
           <div>Header</div>
         </DialogHeader>
       );
-      
+
       const header = screen.getByText('Header').parentElement;
       expect(header.className).toContain('mb-4');
       expect(header.className).toContain('custom-header');
@@ -237,14 +237,14 @@ describe('Dialog components', () => {
   describe('DialogTitle', () => {
     it('renders as h2 element', () => {
       render(<DialogTitle>Dialog Title</DialogTitle>);
-      
+
       const title = screen.getByRole('heading', { level: 2 });
       expect(title).toHaveTextContent('Dialog Title');
     });
 
     it('applies default classes', () => {
       render(<DialogTitle>Title</DialogTitle>);
-      
+
       const title = screen.getByRole('heading', { level: 2 });
       expect(title.className).toContain('theme-modal-header');
       expect(title.className).toContain('text-left');
@@ -252,7 +252,7 @@ describe('Dialog components', () => {
 
     it('applies custom className', () => {
       render(<DialogTitle className="custom-title">Title</DialogTitle>);
-      
+
       const title = screen.getByRole('heading', { level: 2 });
       expect(title.className).toContain('theme-modal-header');
       expect(title.className).toContain('text-left');
@@ -268,7 +268,7 @@ describe('Dialog components', () => {
           <button>Save</button>
         </DialogFooter>
       );
-      
+
       expect(screen.getByText('Cancel')).toBeInTheDocument();
       expect(screen.getByText('Save')).toBeInTheDocument();
     });
@@ -279,7 +279,7 @@ describe('Dialog components', () => {
           <button>Action</button>
         </DialogFooter>
       );
-      
+
       const footer = screen.getByText('Action').parentElement;
       expect(footer.className).toContain('mt-6');
       expect(footer.className).toContain('flex');
@@ -293,7 +293,7 @@ describe('Dialog components', () => {
           <button>Action</button>
         </DialogFooter>
       );
-      
+
       const footer = screen.getByText('Action').parentElement;
       expect(footer.className).toContain('mt-6');
       expect(footer.className).toContain('flex');
@@ -320,7 +320,7 @@ describe('Dialog components', () => {
           </DialogContent>
         </Dialog>
       );
-      
+
       expect(screen.getByRole('heading', { name: 'Test Dialog' })).toBeInTheDocument();
       expect(screen.getByText('Dialog body content')).toBeInTheDocument();
       expect(screen.getByText('Cancel')).toBeInTheDocument();
@@ -336,9 +336,9 @@ describe('Dialog components', () => {
           </DialogContent>
         </Dialog>
       );
-      
+
       fireEvent.click(screen.getByText('Click me'));
-      
+
       expect(onOpenChange).not.toHaveBeenCalled();
     });
 
@@ -351,7 +351,7 @@ describe('Dialog components', () => {
           <DialogFooter className="footer-class">Footer</DialogFooter>
         </>
       );
-      
+
       expect(cn).toHaveBeenCalledWith('theme-modal w-full relative', 'content-class');
       expect(cn).toHaveBeenCalledWith('mb-4', 'header-class');
       expect(cn).toHaveBeenCalledWith('theme-modal-header text-left', 'title-class');

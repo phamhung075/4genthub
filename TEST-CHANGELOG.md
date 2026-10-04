@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — eight stale frontend test files follow the current code (Task B1)
+
+- Changed (tests only, no source change): `tokenService.test.ts` (5 failing) and `mcpTokenService.test.ts` (2) assert on the mocked `utils/logger` (`debug`/`info`/`error`) instead of `console`; `hooks/index.test.ts` (1) lists the 23 current exports; `useAuthenticatedFetch.test.ts` (3) defines `mockResponse`, uses `skipAuth` for the plain-401 case and awaits the rejection inside `act`; `muiTheme.test.ts` (2) asserts the themes `createTheme` returned (the spy is cleared after import); `ui/button.test.tsx` (2) and `ui/dialog.test.tsx` (1) follow the current class names and overlay markup; `ui/toast.test.tsx` (2) uses `vi` timers and the `border-success`/`border-error` classes.
+- Ran (in `agenthub-frontend`): before, 18 tests failing in these files; after, 8 files, 160 tests passed; `npx tsc --noEmit -p .` 0 errors.
+
 ## 2026-10-04 — jest leftovers ported to vitest in five test files
 
 - Changed: `src/tests/components/auth/LoginForm.test.tsx` (partial `react-router-dom` mock, `^password` label, loading-state check in `waitFor`), `src/tests/index.test.tsx`, `src/tests/services/WebSocketClient.test.ts`, `src/tests/hooks/useTheme.test.tsx` (replaces `useTheme.test.ts`); no source change.

@@ -1,6 +1,7 @@
 // MCPTokenService Tests
 import Cookies from 'js-cookie';
 import { mcpTokenService } from '../../services/mcpTokenService';
+import logger from '../../utils/logger';
 
 // Mock js-cookie with default export for Vitest compatibility
 vi.mock('js-cookie', () => {
@@ -12,6 +13,10 @@ vi.mock('js-cookie', () => {
     ...mockCookies
   };
 });
+
+vi.mock('../../utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
 
 // Mock import.meta.env
 const mockApiUrl = 'http://localhost:8000';
@@ -187,7 +192,7 @@ describe('MCPTokenService', () => {
 
     it('should work without authentication token', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       const mockResponse = {
         success: true,
         token: mockMCPToken,
@@ -252,7 +257,7 @@ describe('MCPTokenService', () => {
       });
 
       const token = await mcpTokenService.getMCPToken();
-      
+
       expect(token).toBe(mockMCPToken);
       expect(fetch).toHaveBeenCalledTimes(1);
     });
@@ -273,7 +278,7 @@ describe('MCPTokenService', () => {
       });
 
       await mcpTokenService.generateMCPToken();
-      
+
       // New token with longer expiry
       const mockResponse2 = {
         success: true,
@@ -288,7 +293,7 @@ describe('MCPTokenService', () => {
       });
 
       const token = await mcpTokenService.getMCPToken();
-      
+
       expect(token).toBe(mockMCPToken);
       expect(fetch).toHaveBeenCalledTimes(2);
     });
@@ -301,7 +306,7 @@ describe('MCPTokenService', () => {
       });
 
       const token = await mcpTokenService.getMCPToken();
-      
+
       expect(token).toBeNull();
     });
 
@@ -319,10 +324,10 @@ describe('MCPTokenService', () => {
       });
 
       await mcpTokenService.generateMCPToken();
-      
+
       // Should not use cache since no expiry
       const token = await mcpTokenService.getMCPToken();
-      
+
       expect(token).toBe(mockMCPToken);
       expect(fetch).toHaveBeenCalledTimes(2); // Initial + regeneration
     });
@@ -383,7 +388,7 @@ describe('MCPTokenService', () => {
       });
 
       const result = await mcpTokenService.revokeTokens();
-      
+
       expect(result).toBe(false);
     });
 
@@ -391,7 +396,7 @@ describe('MCPTokenService', () => {
       (fetch as any).mockRejectedValue(new Error('Network error'));
 
       const result = await mcpTokenService.revokeTokens();
-      
+
       expect(result).toBe(false);
     });
   });
@@ -432,7 +437,7 @@ describe('MCPTokenService', () => {
       });
 
       const result = await mcpTokenService.getTokenStats();
-      
+
       expect(result).toBeNull();
     });
 
@@ -440,7 +445,7 @@ describe('MCPTokenService', () => {
       (fetch as any).mockRejectedValue(new Error('Network error'));
 
       const result = await mcpTokenService.getTokenStats();
-      
+
       expect(result).toBeNull();
     });
   });
@@ -688,32 +693,19 @@ describe('MCPTokenService', () => {
       });
 
       await mcpTokenService.generateMCPToken();
-      
+
       // Clear cache
       mcpTokenService.clearCache();
 
       // Should regenerate token
       const token = await mcpTokenService.getMCPToken();
-      
+
       expect(token).toBe(mockMCPToken);
       expect(fetch).toHaveBeenCalledTimes(2); // Initial + after clear
     });
   });
 
-  describe('console logging', () => {
-    let consoleLogSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-      consoleLogSpy = vi.spyOn(console, 'log').mockImplementation();
-      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
-    });
-
-    afterEach(() => {
-      consoleLogSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
-    });
-
+  describe('logging', () => {
     it('should log successful token generation', async () => {
       const mockResponse = {
         success: true,
@@ -729,12 +721,7 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.generateMCPToken();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleLogSpy).toHaveBeenCalled();
-      const logCalls = consoleLogSpy.mock.calls;
-      expect(logCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('MCP token generated successfully')
-      ))).toBe(true);
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('MCP token generated successfully'), expect.anything());
     });
 
     it('should log token generation errors', async () => {
@@ -743,12 +730,7 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.generateMCPToken();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      const errorCalls = consoleErrorSpy.mock.calls;
-      expect(errorCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('Failed to generate MCP token')
-      ))).toBe(true);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to generate MCP token'), expect.anything());
     });
 
     it('should log getMCPToken failures', async () => {
@@ -760,12 +742,7 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.getMCPToken();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      const errorCalls = consoleErrorSpy.mock.calls;
-      expect(errorCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('Failed to obtain MCP token')
-      ))).toBe(true);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to obtain MCP token'), expect.anything());
     });
 
     it('should log successful token revocation', async () => {
@@ -776,12 +753,7 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.revokeTokens();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleLogSpy).toHaveBeenCalled();
-      const logCalls = consoleLogSpy.mock.calls;
-      expect(logCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('MCP tokens revoked successfully')
-      ))).toBe(true);
+      expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('MCP tokens revoked successfully'));
     });
 
     it('should log token revocation errors', async () => {
@@ -790,12 +762,7 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.revokeTokens();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      const errorCalls = consoleErrorSpy.mock.calls;
-      expect(errorCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('Failed to revoke MCP tokens')
-      ))).toBe(true);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to revoke MCP tokens'), expect.anything());
     });
 
     it('should log stats retrieval errors', async () => {
@@ -804,23 +771,13 @@ describe('MCPTokenService', () => {
 
       await mcpTokenService.getTokenStats();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      const errorCalls = consoleErrorSpy.mock.calls;
-      expect(errorCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('Failed to get token stats')
-      ))).toBe(true);
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to get token stats'), expect.anything());
     });
 
     it('should log cache clearing', () => {
       mcpTokenService.clearCache();
 
-      // Logger adds formatted prefix, check that call contains expected message
-      expect(consoleLogSpy).toHaveBeenCalled();
-      const logCalls = consoleLogSpy.mock.calls;
-      expect(logCalls.some((call: any) => call.some((arg: any) =>
-        typeof arg === 'string' && arg.includes('MCP token cache cleared')
-      ))).toBe(true);
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('MCP token cache cleared'));
     });
   });
 });
