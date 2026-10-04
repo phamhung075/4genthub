@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**T1 open line updated with the tester run** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (T1): cites the tester's scratch-rig run (real Claude seats under `yolo`, which passes `--dangerously-skip-permissions`: `rig send` and tmux `send-keys` denied, `seatcheck` deny exits 3, delivery works) and keeps the open lines: deny under the default policy not tested, nothing verified on production, Codex and agy seats have no deny. Documentation only; no behavior change, no tests.
+
 **delegate-deepseek module 1.1.0: chef/worker wording** (2026-10-04)
 
 - `scripts/team/4genthub/delegate-deepseek.txt`: opens with the owner's culture rule (Request 17): each seat's session is the chef (takes the demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers only do bounded jobs for it, get priority for delegable work, and their output is never forwarded unreviewed. `scripts/team/4genthub/team.json`: module version `1.0.0` to `1.1.0`, so the next `openrig_team_setup.py apply` publishes a new immutable version and the company overlay pins it; version 1.0.0 is not edited. Not applied to any server.
