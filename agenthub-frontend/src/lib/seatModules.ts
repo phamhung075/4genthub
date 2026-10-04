@@ -30,7 +30,7 @@ export function computeEffectiveModules(
     }
     const created: EffectiveSeatModule = {
       slug,
-      version: 'latest',
+      version: '',
       overridden: false,
       removed: false,
       changes: [],
@@ -40,7 +40,7 @@ export function computeEffectiveModules(
   };
 
   refs.forEach(ref => {
-    ensure(ref.slug).version = ref.version || 'latest';
+    ensure(ref.slug).version = ref.version;
   });
 
   SCOPE_ORDER.forEach(scope => {
@@ -53,7 +53,7 @@ export function computeEffectiveModules(
       module.changes.push({ scope, kind: op.kind });
       switch (op.kind) {
         case 'add':
-          module.version = op.version || 'latest';
+          module.version = op.version;
           module.removed = false;
           break;
         case 'remove':
@@ -64,7 +64,7 @@ export function computeEffectiveModules(
           module.contentOverride = op.content;
           break;
         case 'pin':
-          module.version = op.version || module.version;
+          module.version = op.version;
           break;
       }
     });

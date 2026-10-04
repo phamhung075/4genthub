@@ -3,6 +3,16 @@
 ## [Unreleased]
 
 ### Fixed
+- **Overlay add and pin ops need a concrete version** - 2026-10-04
+  - The backend now rejects an overlay `add` with an empty or `latest` version (400 'add requires a concrete
+    version'), but the module form enabled "Add op" for `add` without one. `canAdd` now requires a version for `add`
+    and `pin`; the label reads "Version (x.y.z)".
+  - `computeEffectiveModules` (`src/lib/seatModules.ts`) no longer maps an empty version to `latest`: a ref, an `add`
+    and a `pin` carry their version as given, and a module no ref or `add` names has an empty version (no `@` badge).
+    The "resolved on the server when the version follows latest" hint and the `latest` check in `useModuleVersion`
+    are removed. The seat-level "follows latest" label is a different setting and stays.
+  - Tests: new `src/tests/utils/seatModules.test.ts` (5) and one `SeatDetailPage` test for the disabled button.
+  - Files: `src/pages/SeatDetailPage.tsx`, `src/lib/seatModules.ts`, `src/hooks/useSeats.ts`
 - **GlobalContextDialog tests match the redesigned dialog** - 2026-10-04
   - `src/tests/components/GlobalContextDialog.test.tsx` (12 of 15 failing; 7 on the `lucide-react` mock lacking
     `Package`) looked for texts the dialog no longer renders. They now expect what `GlobalContextDialog.tsx`

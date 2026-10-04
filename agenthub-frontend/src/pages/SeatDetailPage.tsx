@@ -115,7 +115,7 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
           {module.removed ? (
             <Badge variant="destructive">removed</Badge>
           ) : (
-            <Badge variant="outline">@{module.version}</Badge>
+            module.version && <Badge variant="outline">@{module.version}</Badge>
           )}
           {module.changes.map((change, index) => (
             <Badge key={`${change.scope}-${change.kind}-${index}`} variant="outline">
@@ -146,11 +146,7 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
             <pre className="max-h-64 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
               {fetched.content}
             </pre>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Content is resolved on the server when the version follows latest.
-            </p>
-          )}
+          ) : null}
         </div>
       )}
     </div>
@@ -175,7 +171,9 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
 
   const scopeOps = overlays ? overlays[scope].ops : [];
   const canAdd =
-    !!slug.trim() && (opKind !== 'override' || !!content.trim()) && (opKind !== 'pin' || !!version.trim());
+    !!slug.trim() &&
+    (opKind !== 'override' || !!content.trim()) &&
+    ((opKind !== 'add' && opKind !== 'pin') || !!version.trim());
 
   const handleAddOp = (event: React.FormEvent) => {
     event.preventDefault();
@@ -324,7 +322,7 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
               {(opKind === 'add' || opKind === 'pin') && (
                 <div className="space-y-1">
                   <label className="text-sm font-medium" htmlFor="op-version">
-                    Version
+                    Version (x.y.z)
                   </label>
                   <Input
                     id="op-version"

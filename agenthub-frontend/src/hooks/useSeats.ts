@@ -126,7 +126,7 @@ export function useModuleVersion(slug: string | null, version: string | null, en
       const response = await seatApi.getModuleVersion(slug as string, version as string);
       return response.module;
     },
-    enabled: enabled && !!slug && !!version && version !== 'latest',
+    enabled: enabled && !!slug && !!version,
   });
   return { module: query.data ?? null, isLoading: query.isLoading, error: query.error };
 }

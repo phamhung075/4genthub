@@ -132,6 +132,24 @@ describe('SeatDetailPage', () => {
     await screen.findByText('rules');
   };
 
+  it('keeps Add op disabled until an add or pin op carries a concrete version', async () => {
+    await openModules();
+    const addOp = () => screen.getByRole('button', { name: /add op/i });
+    fireEvent.change(screen.getByLabelText('Module slug'), { target: { value: 'extra' } });
+
+    fireEvent.change(screen.getByLabelText('Op kind'), { target: { value: 'add' } });
+    expect(addOp()).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Version'), { target: { value: '2.0.0' } });
+    expect(addOp()).toBeEnabled();
+
+    fireEvent.change(screen.getByLabelText('Version'), { target: { value: '  ' } });
+    fireEvent.change(screen.getByLabelText('Op kind'), { target: { value: 'pin' } });
+    expect(addOp()).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Op kind'), { target: { value: 'remove' } });
+    expect(addOp()).toBeEnabled();
+  });
+
   it('builds the full ordered ops list for add, remove, override and pin and deletes an op', async () => {
     await openModules();
 
