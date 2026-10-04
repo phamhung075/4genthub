@@ -48,6 +48,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Session-stream handler tests: the Python suite ported in full (A4/A6/A7)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_connector_test.go`: six connector-ingest scenarios ported from `agenthub_main/src/tests/session_stream/session_stream_test.py` (bad token refused before the upgrade, events for an unregistered session key, a second `hello`, non-object events plus a non-string `project`, disconnect marks the connector's sessions offline, a reconnect keeps them online until the last socket closes), `TestSessionViewerReplaysIngestedEventsFromTheDatabase` (the viewer's real-Postgres path) and `TestSessionListIsNewestLastSeenFirst`.
+- `agenthub_go/fastmcp/session_stream/repository_test.go`: `TestSessionTimestampsRenderAsNaiveUTC`.
+- The audit found 16 Python tests (MIGRATION said 9); the full test-to-test mapping and the A1–A7 verification run are recorded in `agenthub_go/MIGRATION.md`.
+
 **`WS /ws/sessions/{id}`, the session viewer (A5)** (2026-10-04)
 
 - `agenthub_go/fastmcp/server/httpapp/ws_session_viewer.go`, mounted in `ws_mount.go`. Token from `?token=` through `auth.ValidateTokenUniversal`; a missing id and a session of another user both close with 4004 "Session not found". The viewer subscribes to the hub before it replays `after_seq` in pages of 500, then follows live events (events at or below the last sent seq are skipped), keeps reading the socket so a client that closed while idle releases its subscription, and closes a viewer the hub dropped as too slow with 1013 "Too slow, reconnect". Ports `session_viewer` in `session_stream_routes.py`.

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"agenthub/fastmcp/session_stream/testdb"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -236,5 +237,30 @@ func TestRepositoryPostgres(t *testing.T) {
 	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil)
 	if !errors.As(err, &pe) || pe.Msg != "session belongs to another user" {
 		t.Fatalf("foreign row upsert err = %v", err)
+	}
+}
+
+// Python: test_model_timestamps_are_naive_utc. A Go time.Time always carries a location,
+// so the ported property is the one the API exposes: created_at and last_seen render as
+// naive UTC with no zone designator, like the Python naive datetimes.
+func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+	row, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"created_at", "last_seen"} {
+		v, _ := row.Get(key)
+		s, ok := v.(string)
+		if !ok {
+			t.Fatalf("%s = %v, want an ISO string", key, v)
+		}
+		if strings.ContainsAny(s, "Zz+") {
+			t.Errorf("%s = %q, want naive UTC with no zone designator", key, s)
+		}
+		if _, err := time.Parse("2006-01-02T15:04:05", strings.SplitN(s, ".", 2)[0]); err != nil {
+			t.Errorf("%s = %q is not an ISO timestamp: %v", key, s, err)
+		}
 	}
 }

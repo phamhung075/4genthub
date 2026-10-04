@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Session stream: the remaining Python tests ported (Task A4/A6/A7, Go)
+
+- Six connector-ingest tests ported from `agenthub_main/src/tests/session_stream/session_stream_test.py` into `server/httpapp/ws_connector_test.go`: `TestConnectorRejectsABadToken` (HTTP 403 before the upgrade; Python closes before `accept`, so a real client also sees no close code), `TestConnectorRefusesEventsForAnUnregisteredSessionKey` (`{"type":"error","error":"unknown session"}`), `TestConnectorHelloCannotSwitchTheConnectorID` (`connector_id already set`), `TestConnectorSurvivesNonObjectEventsAndAnOddProject` (non-object events give `each event must be an object`, the socket still answers `events_ack`, a non-string `project` is accepted), `TestConnectorDisconnectMarksItsSessionsOffline`, `TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline`.
+- `TestSessionViewerReplaysIngestedEventsFromTheDatabase`: the viewer's real-Postgres path (ingest through the connector, then the owner's viewer socket replays `seq 1` with its payload). The earlier viewer tests used an in-memory store only, so A5's database path was unproven before this.
+- `TestSessionListIsNewestLastSeenFirst` (A6): re-registering a key makes it newest, so `GET /api/v2/sessions` orders it first.
+- `TestSessionTimestampsRenderAsNaiveUTC` (`session_stream/repository_test.go`): `created_at`/`last_seen` render with no zone designator (the port of Python's `test_model_timestamps_are_naive_utc`; Go's `time.Time` always carries a location).
+- A6 REST session tests are Postgres-gated: they skip without `AGENTHUB_TEST_PG_URL`. The reviewer ran them at 54329 and they PASS.
+- Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` inside the repo): `gofmt -l fastmcp/server/httpapp/ws_connector_test.go fastmcp/session_stream/repository_test.go` empty; `go vet ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` clean; `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` ok (0 skipped).
+- The 16-test mapping is in `agenthub_go/MIGRATION.md` group A. Not run: mutation checks on the new tests (each is a new scenario for existing behaviour, not a fix).
+
 ## 2026-10-04 — D6e hydration of old-style assignees (Go)
 
 - `TestSubtaskRepositoryLoadsAStoredBareAssigneeName` (real Postgres): a stored `["go-dev"]` row loads by id and in `FindByParentTaskID` next to a normal row. Mutation: hydration back to `NewSubtask` fails it (`Invalid assignees: ['go-dev']` on find); without `AGENTHUB_TEST_PG_URL` it skips.

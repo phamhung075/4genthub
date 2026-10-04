@@ -381,3 +381,111 @@ func TestConnectorReadIsBoundedInBytes(t *testing.T) {
 		}
 	})
 }
+
+// ---- the ingest flow, ported from the Python client tests ----
+
+// Python: test_connector_rejects_bad_token_and_missing_scope. A real client sees the
+// handshake refused (Python closes before accept, which the ASGI server turns into an
+// HTTP 403 too); the missing-scope half is TestMountWebSocketsConnectorRequiresScope.
+func TestConnectorRejectsABadToken(t *testing.T) {
+	env := newStreamEnv(t, nil)
+	if status := wsTestDialStatus(t, env.server.URL, "/ws/connector?token=nope"); status != http.StatusForbidden {
+		t.Fatalf("handshake with a bad token = %d, want 403", status)
+	}
+}
+
+// Python: test_events_for_unregistered_session_key_are_refused.
+func TestConnectorRefusesEventsForAnUnregisteredSessionKey(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	c.hello("c1")
+	if got := c.appendEvents("nope", event(map[string]any{"text": "x"})); got["type"] != "error" || got["error"] != "unknown session" {
+		t.Fatalf("events for an unregistered key answered %v", got)
+	}
+}
+
+// Python: test_hello_cannot_switch_connector_id.
+func TestConnectorHelloCannotSwitchTheConnectorID(t *testing.T) {
+	c := newStreamEnv(t, nil).connector(t, "user-1")
+	c.hello("c1")
+	c.send(map[string]any{"type": "hello", "connector_id": "c2"})
+	if got := c.recv(); got["type"] != "error" || got["error"] != "connector_id already set" {
+		t.Fatalf("the second hello answered %v", got)
+	}
+}
+
+// Python: test_non_object_events_and_odd_project_do_not_crash_the_connector.
+func TestConnectorSurvivesNonObjectEventsAndAnOddProject(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	c.hello("c1")
+	c.send(map[string]any{"type": "session", "session_key": "s1", "name": "n", "project": map[string]any{"x": 1}})
+	if got := c.recv(); got["type"] != "session_ack" {
+		t.Fatalf("a session with a non-string project answered %v", got)
+	}
+	if got := c.appendEvents("s1", 1, "x", nil); got["type"] != "error" || got["error"] != "each event must be an object" {
+		t.Fatalf("non-object events answered %v", got)
+	}
+	if got := c.appendEvents("s1", event(map[string]any{"a": 1})); got["type"] != "events_ack" {
+		t.Fatalf("events after the error answered %v, want the socket to still work", got)
+	}
+}
+
+// Python: test_disconnect_marks_sessions_offline.
+func TestConnectorDisconnectMarksItsSessionsOffline(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	sid := c.ingest("s1")
+	if got := env.sessionStatus(t, "user-1", sid); got != "active" {
+		t.Fatalf("status before the disconnect = %q, want active", got)
+	}
+	_ = c.conn.Close()
+	env.waitStatus(t, "user-1", sid, "offline")
+}
+
+// Python: test_reconnect_does_not_mark_live_sessions_offline. The longer-lived socket
+// keeps the connector's sessions online; only the last socket to close takes them offline.
+func TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline(t *testing.T) {
+	env := newPGStreamEnv(t)
+	older := env.connector(t, "user-1")
+	sid := older.ingest("s1")
+	newer := env.connector(t, "user-1")
+	if got := newer.ingest("s1"); got != sid {
+		t.Fatalf("the reconnect resolved %s, want %s", got, sid)
+	}
+	_ = newer.conn.Close()
+	if got := env.sessionStatus(t, "user-1", sid); got != "active" {
+		t.Fatalf("status after the newer socket closed = %q, want active", got)
+	}
+	_ = older.conn.Close()
+	env.waitStatus(t, "user-1", sid, "offline")
+}
+
+// Python: list_sessions orders newest last_seen first; re-registering a key makes it newest.
+func TestSessionListIsNewestLastSeenFirst(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	first := c.ingest("s1")
+	second := c.register("s2")
+	c.register("s1")
+	rows := env.sessionList(t, "user-1")
+	if len(rows) != 2 || rows[0]["id"] != first || rows[1]["id"] != second {
+		t.Fatalf("list order = %v, want [%s %s]", rows, first, second)
+	}
+}
+
+// The owner half of Python's test_ingest_then_owner_can_replay_but_other_user_cannot,
+// through the real database: the in-memory viewer tests do not exercise this path.
+func TestSessionViewerReplaysIngestedEventsFromTheDatabase(t *testing.T) {
+	env := newPGStreamEnv(t)
+	c := env.connector(t, "user-1")
+	sid := c.ingest("s1")
+	c.appendEvents("s1", event(map[string]any{"text": "hi"}))
+	got := env.viewer(t, "user-1", sid).recv()
+	if got["seq"] != float64(1) {
+		t.Fatalf("viewer replayed seq %v, want 1", got["seq"])
+	}
+	if payload, ok := got["payload"].(map[string]any); !ok || payload["text"] != "hi" {
+		t.Fatalf("viewer replayed payload %v, want {\"text\":\"hi\"}", got["payload"])
+	}
+}
