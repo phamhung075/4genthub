@@ -86,6 +86,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**Dead `SubtaskFromDict` removed (review follow-up)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/subtask.go`: `SubtaskFromDict` had no caller outside its own definition and called the validating `NewSubtask`, so any future use that loaded a stored row would have reintroduced the D6d hydration blocker. Stored rows load through `RestoreSubtask` (`subtask_repository.go:77`). No test referenced it; `gofmt`, `go vet` and `go test ./fastmcp/task_management/domain/entities/` are green.
+
 **Go `call_agent` tool and the agent-library seeding path (T6)** (2026-10-04)
 
 - Removed the `call_agent` MCP tool and everything only it used: `agenthub_go/fastmcp/server/httpapp/{agents_mount.go,call_agent_wiring.go}` (the `/api/v2/agents` routes), `fastmcp/agent_management/interface/mcp_controllers/call_agent*.go`, `fastmcp/task_management/application/use_cases/call_agent.go`, `.../agent_mcp_controller/handlers/agent_invocation_handler.go`, the YAML template loader and `agent_template_seeder.go` in `fastmcp/agent_management/application/services/`, the `-seed-agents` flag of `cmd/agenthub`, `PathResolver.GetCursorAgentDir`, and the `agent_library_dir` field of the health environment and the connection tool text. `call_agent` is gone from `tools_golden.json`, the tool config (`TOOL_CALL_AGENT`), the token costs (68 to 67 operations) and the mcp-developer role tool list. Use `call_seat` to resolve a seat.
