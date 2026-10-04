@@ -4,7 +4,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-04 — branch collection POST exact match (Go)
 
-- New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` asserts the unchanged collection POST (422 missing-field shape for `project_id`/`git_branch_name`) and that an unknown subpath with a complete body is refused by routing, not by validation: `POST /api/v2/branches/x/y` -> 404, `POST /api/v2/branches/abc` -> 405 (path matches the GET-only `/{id}` pattern). Before the change both matched the collection POST's subtree and reached CreateBranch.
+- New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` drives the mount with a stub `BranchController`, so it proves the collection POST still reaches CreateBranch and answers 200 (`createCalls==1`, project/name recorded) while `POST /api/v2/branches/x/y` -> 404 and `POST /api/v2/branches/abc` -> 405 with the same complete body and with `createCalls` still 1 - the refusal is routing, not validation. `TestBranchCollectionPostKeepsTheMissingFieldShape` pins the unchanged 422 missing-field body (`project_id`, `git_branch_name`). Before the change both unknown paths matched the collection POST's subtree and reached CreateBranch.
 - `routes_mount_test.go`: the inventory now lists `POST /api/v2/branches/{$}`.
 - Commands: `go test -count=1 -run 'TestBranchCollectionPostMatchesOnlyTheCollectionPath|TestMountRoutesDoesNotDuplicateHandlerPatterns' ./fastmcp/server/httpapp/` -> both PASS; `gofmt -l` empty.
 
