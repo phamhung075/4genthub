@@ -27,6 +27,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Recorded the DeepSeek supervisor seat and the stale runtime registry** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md`: a "DeepSeek seats via OpenRig `omp`" section (rig `4genthub-deepseek`, one seat `supervisor`, runtime `omp`, model `deepseek/deepseek-flash`, `builtin:yolo` required for a headless launch; the cloud cannot store this seat until `RuntimeOmp` is added to the one runtime list), the finding that `rig ps --nodes` and the rig's `rig.yaml` report runtime `agy` for all nine `4genthub-dev` seats while those seats emit Claude Code statusline samples, and the T3 clarification that `CheckRuntime` already rejects an unsupported runtime with an explicit error.
+- Re-verified by the supervisor 2026-10-04 before recording: `rig usage series --lane provider_window --since 2026-10-04T05:00:00Z` returned 588 samples, emitted by all nine `4genthub-dev` seats and none by `4genthub-min`; `resolver/runtime.go:17-24` returns `unsupported runtime %q: supported runtimes are claude-code, codex, agy`.
+
 **G5 ticked; its check wording corrected** (2026-10-04)
 
 - `agenthub_go/NEXT_GEN.md` (G5): ticked after `fab45cee` (service test) and `c92121cf` (overlay `add` needs a concrete version). The check text is corrected, not just met: it said a module publish changes a follow-latest seat, but the owner's policy is that nothing moves until a new resolved version is published, so a follow-latest seat moves with a new seat type version. Open lines kept: fakes only, no Postgres run, client lock (`--update`) not re-tested.
