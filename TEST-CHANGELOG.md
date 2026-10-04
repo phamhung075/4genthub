@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — Python /api/v2/agents metadata surface retired (T8 follow-up)
+
+- Deleted `agenthub_main/src/tests/server/test_agent_routes.py` with its subject (the `GET /api/v2/agents/metadata` route). Its four metadata cases and the "not served" parametrized case go with the module; those not-served paths are not routes anywhere (`grep` empty).
+- Dropped the stale `"fastmcp.server.routes.agent_routes": None` entry from the `http_server_test.py` sys.modules patch.
+- `python3 -m py_compile` on `server/http_server.py` and `tests/server/http_server_test.py` -> ok; scripts suite (from agenthub_main) -> 170 passed, 4 warnings (the deleted file is under `src/tests/server`, not `src/tests/scripts`, so this count is the control, not coverage of the removal).
+
 ## 2026-10-04 — seatcheck PATH cold start (Go/scripts)
 
 - Added `test_seat_path_reads_the_daemon_path_at_cold_start`: at cold start `seat_path` returns the rig daemon's PATH (stubbed) with source `DAEMON_PATH_SOURCE`, and falls back to the shell PATH with `SHELL_PATH_SOURCE` only when no daemon is found. The autouse `no_tmux_server` fixture now also stubs `openrig_daemon_pid` to None so tests never touch the live daemon.

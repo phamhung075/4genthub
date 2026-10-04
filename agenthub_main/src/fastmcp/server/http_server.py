@@ -486,7 +486,6 @@ def create_sse_app(
     try:
         from fastapi import FastAPI
 
-        from .routes.agent_routes import router as agent_router
         from .routes.branch_routes import router as branch_router
         from .routes.connection_routes import router as connection_router
         from .routes.project_routes import router as project_router
@@ -500,7 +499,6 @@ def create_sse_app(
         v2_app.include_router(task_router)
         v2_app.include_router(task_summary_router)
         v2_app.include_router(branch_router)
-        v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
 
@@ -613,9 +611,6 @@ def create_sse_app(
     # Store the FastMCP server instance on the Starlette app state
     app.state.fastmcp_server = server
     app.state.path = sse_path
-
-    # Agent metadata routes are now part of the FastAPI v2 routes at /api/v2/agents
-    # Legacy agent_metadata registration removed
 
     return app
 
@@ -796,7 +791,6 @@ def create_streamable_http_app(
     try:
         from fastapi import FastAPI
 
-        from .routes.agent_routes import router as agent_router
         from .routes.branch_routes import router as branch_router
         from .routes.connection_routes import router as connection_router
         from .routes.project_routes import router as project_router
@@ -810,7 +804,6 @@ def create_streamable_http_app(
         v2_app.include_router(task_router)
         v2_app.include_router(task_summary_router)
         v2_app.include_router(branch_router)
-        v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
 

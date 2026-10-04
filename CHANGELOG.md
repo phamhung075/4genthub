@@ -106,6 +106,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**The Python `/api/v2/agents` metadata surface is retired (T8 follow-up)** (2026-10-04)
+
+- Removed `agenthub_main/src/fastmcp/server/routes/agent_routes.py` — its only route was `GET /api/v2/agents/metadata` (`APIRouter(prefix="/api/v2/agents")` + `@router.get("/metadata")`) — and its two mounts in `server/http_server.py`, plus its test `src/tests/server/test_agent_routes.py`; the stale `agent_routes` entry in `http_server_test.py` and a dead comment were dropped. It had no consumer (the frontend `agentApiV2.getAgentsMetadata` went in T7; the Python scripts call `/api/agents/metadata`, not `/v2`), matching the Go retirement in `05617cf0`.
+- The paths its test asserted were "not served" (`/api/v2/agents/{coding-agent,assign,unassign,branch/*,project/*,capabilities}`) are not routes anywhere (`grep -rn` over `agenthub_main/src/fastmcp` is empty), so nothing else was touched or added for them.
+
 **The retired agent system is gone from the Python backend and the Go doc generator (T8)** (2026-10-04)
 
 - Go: deleted `fastmcp/task_management/infrastructure/services/agent_doc_generator.go` (+ test) and the `IAgentDocGenerator` interface, `PlaceholderAgentDocGenerator` and both `GetAgentDocGenerator` accessors with their factory wiring; removed the `GenerateDocsForAssignees` calls in `get_task.go` and `next_task.go`; the `stringList` helper moved to `performance_cache_manager.go` (its only remaining caller is `decodeTags`).
