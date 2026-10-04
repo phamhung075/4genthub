@@ -30,8 +30,8 @@ type Subtask struct {
 	Events []events.Event
 }
 
-// NewSubtask applies the defaults, normalizes assignees (@ prefix / legacy
-// roles), initializes timestamps and validates.
+// NewSubtask applies the defaults, normalizes assignees (NormalizeAssignees, so an
+// unknown bare name is an error), initializes timestamps and validates.
 func NewSubtask(st Subtask) (*Subtask, error) {
 	s := st
 	if s.Status == nil {
@@ -49,12 +49,9 @@ func NewSubtask(st Subtask) (*Subtask, error) {
 		s.ProgressHistory = map[string]any{}
 	}
 	if len(s.Assignees) > 0 {
-		normalized := []string{}
-		for _, a := range s.Assignees {
-			if a != "" && strings.TrimSpace(a) != "" {
-				v, _ := normalizeAssignee(a)
-				normalized = append(normalized, v)
-			}
+		normalized, err := NormalizeAssignees(s.Assignees)
+		if err != nil {
+			return nil, err
 		}
 		s.Assignees = normalized
 	}
@@ -179,12 +176,9 @@ func (s *Subtask) UpdateDescription(description string) error {
 }
 
 func (s *Subtask) UpdateAssignees(assignees []string) error {
-	validated := []string{}
-	for _, a := range assignees {
-		if a != "" && strings.TrimSpace(a) != "" {
-			v, _ := normalizeAssignee(a)
-			validated = append(validated, v)
-		}
+	validated, err := NormalizeAssignees(assignees)
+	if err != nil {
+		return err
 	}
 	old := append([]string{}, s.Assignees...)
 	s.Assignees = validated
@@ -254,7 +248,11 @@ func (s *Subtask) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
 	}
-	validated, _ := normalizeAssignee(assignee)
+	normalized, err := NormalizeAssignees([]string{assignee})
+	if err != nil {
+		return err
+	}
+	validated := normalized[0]
 	if indexOf(s.Assignees, validated) >= 0 {
 		return nil
 	}

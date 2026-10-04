@@ -64,13 +64,12 @@ func (h *SubtaskCRUDHandler) CreateSubtask(ctx context.Context, facade *facades.
 	}
 
 	if len(assignees) > 0 {
-		dummyTask := &entities.Task{}
-		validated, err := dummyTask.ValidateAssigneeList(assignees)
+		validated, err := entities.NormalizeAssignees(assignees)
 		if err != nil {
 			return h.responseFormatter.CreateErrorResponse("create_subtask",
 				fmt.Sprintf("Invalid assignees: %s. Use valid agent roles like 'coding-agent', '@test-orchestrator-agent'", err.Error()),
 				ErrorCodeValidation,
-				metaMap("field", "assignees", "hint", "Provide valid agent roles from AgentRole enum"))
+				metaMap("field", "assignees", "hint", "Provide '@<seat_key>' or a known agent role"))
 		}
 		assignees = validated
 	}

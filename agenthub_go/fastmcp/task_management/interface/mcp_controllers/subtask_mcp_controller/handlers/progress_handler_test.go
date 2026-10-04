@@ -188,15 +188,3 @@ func TestUpdateSubtaskRequiresProgressNotes(t *testing.T) {
 		t.Errorf("msg=%q", f.errMsg)
 	}
 }
-
-func TestValidateAssigneeListQuirk(t *testing.T) {
-	// Keep the Python quirk: ValidateAssigneeList usage.
-	task := &entities.Task{}
-	got, err := task.ValidateAssigneeList([]string{"coding-agent"})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(got) != 1 {
-		t.Fatalf("got %v", got)
-	}
-}

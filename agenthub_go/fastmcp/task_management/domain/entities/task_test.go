@@ -26,14 +26,17 @@ func TestTaskLifecycle(t *testing.T) {
 	if err := task.UpdateStatus(mustTaskStatus("blocked")); err == nil || err.Error() != "Cannot transition from todo to blocked" {
 		t.Fatalf("transition: %v", err)
 	}
-	if err := task.UpdateAssignees([]string{"coding-agent", "custom", "", "@x"}); err != nil {
+	if err := task.UpdateAssignees([]string{"coding-agent", "", "@x"}); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(task.Assignees, ",") != "@coding-agent,custom,@x" {
+	if strings.Join(task.Assignees, ",") != "@coding-agent,@x" {
 		t.Fatalf("assignees %v", task.Assignees)
 	}
-	if _, err := task.ValidateAssigneeList([]string{"custom"}); err == nil || err.Error() != "Invalid assignees: ['custom']. Valid assignees must be from AgentRole enum." {
+	if err := task.UpdateAssignees([]string{"custom"}); err == nil || err.Error() != "Invalid assignees: ['custom']. An assignee is '@<seat_key>' or a known agent role." {
 		t.Fatalf("validate: %v", err)
+	}
+	if strings.Join(task.Assignees, ",") != "@coding-agent,@x" {
+		t.Fatalf("a rejected update must leave assignees unchanged: %v", task.Assignees)
 	}
 	if err := task.UpdateDueDate(ptr("2025-10-29")); err != nil || *task.DueDate != "2025-10-29T00:00:00+00:00" {
 		t.Fatalf("due: %v %v", err, task.DueDate)
@@ -113,19 +116,17 @@ func TestTaskEventsSerializeTaskIDLikeAsdict(t *testing.T) {
 	}
 }
 
-// A seat key is an '@'-prefixed assignee: ValidateAssigneeList keeps it as given, a bare
+// A seat key is an '@'-prefixed assignee: NormalizeAssignees keeps it as given, a bare
 // known role gets the prefix and a bare name that is no role is rejected.
-func TestValidateAssigneeListAcceptsSeatKeysAndRejectsBareUnknownNames(t *testing.T) {
-	task := &Task{}
-
-	got, err := task.ValidateAssigneeList([]string{"@go-dev", "@lead", "coding-agent"})
+func TestNormalizeAssigneesAcceptsSeatKeysAndRejectsBareUnknownNames(t *testing.T) {
+	got, err := NormalizeAssignees([]string{"@go-dev", " @lead ", "coding-agent", ""})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if strings.Join(got, ",") != "@go-dev,@lead,@coding-agent" {
 		t.Fatalf("validated = %v", got)
 	}
-	if _, err := task.ValidateAssigneeList([]string{"go-dev"}); err == nil {
+	if _, err := NormalizeAssignees([]string{"go-dev"}); err == nil {
 		t.Fatal("a bare name that is no role must be rejected")
 	}
 }

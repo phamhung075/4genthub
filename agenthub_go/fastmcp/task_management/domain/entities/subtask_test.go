@@ -10,11 +10,11 @@ import (
 
 func TestSubtaskBehaviour(t *testing.T) {
 	id, parent := value_objects.GenerateNewTaskId(), value_objects.GenerateNewTaskId()
-	st, err := CreateSubtask(id, "s", "d", parent, nil, nil, SubtaskOptions{Assignees: []string{"coding-agent", " ", "x"}})
+	st, err := CreateSubtask(id, "s", "d", parent, nil, nil, SubtaskOptions{Assignees: []string{"coding-agent", " ", "@x"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(st.Assignees, ",") != "@coding-agent,x" {
+	if strings.Join(st.Assignees, ",") != "@coding-agent,@x" {
 		t.Fatalf("assignees %v", st.Assignees)
 	}
 	if err := st.UpdateProgressPercentage(50); err != nil || st.Status.Value != "in_progress" {

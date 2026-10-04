@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — One assignee rule (Task D6d, Go)
+
+- Added `TestAssigneeRuleIsIdenticalOnEveryPath` (`application/dtos/task/task_test.go`): 6 inputs through `NewCreateTaskRequest`, `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and `NewSubtask` must equal `entities.NormalizeAssignees` (result or error text). Mutation checks (each call site bypassing the rule, restored after): DTO, `Task.UpdateAssignees`, `Subtask.UpdateAssignees`, `NewSubtask` all fail the test.
+- `TestValidateAssigneeListAcceptsSeatKeys...` became `TestNormalizeAssigneesAcceptsSeatKeysAndRejectsBareUnknownNames`; `TestValidateAssigneeListQuirk` (Python quirk pin) removed; `TestTaskLifecycle` now expects a bare `custom` to be rejected and the assignees unchanged. Expectations changed: DTO `@senior_developer`/`@qa_engineer`/`@architect` to `@coding-agent`/`@test-orchestrator-agent`/`@system-architect-agent`; `subtask_test.go` and `create_task_test.go` use `@x`/`@bob`.
+
 ## 2026-10-04 — session_stream on a real Postgres (Task PG, Go)
 
 - A throwaway Postgres 16.4 runs from the binaries already on this box (`~/.cache/agenthub-testpg/bin`: `initdb`, `pg_ctl`, `postgres`; no install, no existing database touched). Recipe, also in the comment above `newTestSessions` in `agenthub_go/fastmcp/session_stream/repository_test.go`: `initdb -D $DIR -U postgres --auth=trust -E UTF8 --locale=C`, add `listen_addresses='127.0.0.1'`, `port=54329`, `unix_socket_directories=''`, `fsync=off` to `$DIR/postgresql.conf`, `pg_ctl -D $DIR -l $DIR/pg.log -w start`, then from `agenthub_go`: `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 -v ./fastmcp/session_stream/`.

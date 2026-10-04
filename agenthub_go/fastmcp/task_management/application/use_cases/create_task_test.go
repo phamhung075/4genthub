@@ -69,7 +69,7 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 		Description:     &desc,
 		Details:         "first steps",
 		EstimatedEffort: "3h",
-		Assignees:       []string{"coding-agent", "bob"},
+		Assignees:       []string{"coding-agent", "@bob"},
 		Labels:          []string{"bug"},
 	})
 	if err != nil {
@@ -111,7 +111,7 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	if tr.Details != "=== Progress 1 ===\nfirst steps" {
 		t.Fatalf("details = %q", tr.Details)
 	}
-	if !reflect.DeepEqual(tr.Assignees, []string{"senior-developer-agent", "bob-agent"}) {
+	if !reflect.DeepEqual(tr.Assignees, []string{"coding-agent", "bob-agent"}) {
 		t.Fatalf("assignees = %v", tr.Assignees)
 	}
 	if !reflect.DeepEqual(tr.Labels, []string{"bug"}) {

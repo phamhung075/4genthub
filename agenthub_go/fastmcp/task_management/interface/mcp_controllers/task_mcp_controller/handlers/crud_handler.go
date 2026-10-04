@@ -88,13 +88,9 @@ func (h *CRUDHandler) CreateTask(ctx context.Context, facade TaskFacade,
 			"Include 'assignees' with at least one valid agent (e.g., ['coding-agent'] or ['@test-orchestrator-agent'])")
 	}
 
-	// One rule for every create path (see Task.ValidateAssigneeList): '@<name>' (a seat key or
+	// One rule for every path (see entities.NormalizeAssignees): '@<name>' (a seat key or
 	// a role) is kept, a bare known role or legacy name becomes '@<role>', anything else is rejected.
-	stripped := make([]string, 0, len(assignees))
-	for _, assignee := range assignees {
-		stripped = append(stripped, value_objects.PyStrip(assignee))
-	}
-	validatedAssignees, err := (&entities.Task{}).ValidateAssigneeList(stripped)
+	validatedAssignees, err := entities.NormalizeAssignees(assignees)
 	if err != nil {
 		return h.createStandardizedError("create_task", "assignees",
 			"'@<seat_key>' (for example '@lead') or a known agent role",

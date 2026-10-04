@@ -85,14 +85,9 @@ func (s *AgentInheritanceService) ApplyInheritanceToAllSubtasks(ctx context.Cont
 	return updatedSubtasks, nil
 }
 
-// ValidateAgentAssignments validates and normalizes assignees via the Task entity's
-// validation method, raising a *value_objects.ValueError for invalid assignees.
+// ValidateAgentAssignments validates and normalizes assignees via entities.NormalizeAssignees, raising a *value_objects.ValueError for invalid assignees.
 func (s *AgentInheritanceService) ValidateAgentAssignments(assignees []string) ([]string, error) {
-	dummyTask, err := entities.NewTask(entities.Task{Title: "dummy", Description: "dummy"})
-	if err != nil {
-		return nil, err
-	}
-	return dummyTask.ValidateAssigneeList(assignees)
+	return entities.NormalizeAssignees(assignees)
 }
 
 // GetInheritanceSummary returns the inheritance summary dict for a task and its

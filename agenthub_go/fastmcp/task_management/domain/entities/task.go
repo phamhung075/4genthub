@@ -322,7 +322,7 @@ func (t *Task) UpdateEstimatedEffort(effort string) error {
 }
 
 // normalizeAssignee resolves legacy roles, valid roles and @-prefixed names;
-// known is false when the assignee is none of those (kept as-is).
+// known is false when the assignee is none of those.
 func normalizeAssignee(assignee string) (validated string, known bool) {
 	if resolved, ok := value_objects.ResolveLegacyRole(assignee); ok {
 		if !strings.HasPrefix(resolved, "@") {
@@ -343,12 +343,9 @@ func normalizeAssignee(assignee string) (validated string, known bool) {
 }
 
 func (t *Task) UpdateAssignees(assignees []string) error {
-	validated := []string{}
-	for _, a := range assignees {
-		if a != "" && strings.TrimSpace(a) != "" {
-			v, _ := normalizeAssignee(a)
-			validated = append(validated, v)
-		}
+	validated, err := NormalizeAssignees(assignees)
+	if err != nil {
+		return err
 	}
 	old := append([]string{}, t.Assignees...)
 	t.Assignees = validated
@@ -368,7 +365,11 @@ func (t *Task) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
 	}
-	validated, _ := normalizeAssignee(assignee)
+	normalized, err := NormalizeAssignees([]string{assignee})
+	if err != nil {
+		return err
+	}
+	validated := normalized[0]
 	if indexOf(t.Assignees, validated) >= 0 {
 		return nil
 	}
@@ -445,15 +446,18 @@ func (t *Task) GetInheritedAssigneesForSubtasks() []string {
 	return append([]string{}, t.Assignees...)
 }
 
-// ValidateAssigneeList normalizes assignees and rejects unknown ones.
-func (t *Task) ValidateAssigneeList(assignees []string) ([]string, error) {
+// NormalizeAssignees is the one assignee rule of every path that stores assignees (REST and
+// MCP create, task and subtask updates, subtask creation): blank entries are dropped, the rest is stripped,
+// '@<name>' (a seat key or a role) is kept as given, a bare known role or legacy name becomes
+// '@<role>', and any other bare name is rejected.
+func NormalizeAssignees(assignees []string) ([]string, error) {
 	if len(assignees) == 0 {
 		return []string{}, nil
 	}
 	validated, invalid := []string{}, []string{}
 	for _, a := range assignees {
-		if a != "" && strings.TrimSpace(a) != "" {
-			if v, known := normalizeAssignee(a); known {
+		if clean := value_objects.PyStrip(a); clean != "" {
+			if v, known := normalizeAssignee(clean); known {
 				validated = append(validated, v)
 			} else {
 				invalid = append(invalid, a)
@@ -462,7 +466,7 @@ func (t *Task) ValidateAssigneeList(assignees []string) ([]string, error) {
 	}
 	if len(invalid) > 0 {
 		return nil, value_objects.ValueErrorf(
-			"Invalid assignees: %s. Valid assignees must be from AgentRole enum.", value_objects.PyRepr(invalid))
+			"Invalid assignees: %s. An assignee is '@<seat_key>' or a known agent role.", value_objects.PyRepr(invalid))
 	}
 	return validated, nil
 }

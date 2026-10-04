@@ -1,6 +1,6 @@
 package handlers
 
-// The create_task assignee rule is the Task entity's ValidateAssigneeList, the same one
+// The create_task assignee rule is entities.NormalizeAssignees, the same one
 // subtask creation uses: '@<name>' (a seat key or a role) is kept, a bare known role
 // becomes '@<role>', any other bare name is rejected.
 

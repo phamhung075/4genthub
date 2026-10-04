@@ -16,13 +16,13 @@ import (
 func TestCreateTaskRequestNormalization(t *testing.T) {
 	r, err := NewCreateTaskRequest(CreateTaskRequest{
 		Title: "t", GitBranchID: "b",
-		Assignees: []string{"coding-agent", "test-orchestrator-agent", "system-architect-agent", "custom", "@already"},
+		Assignees: []string{"coding-agent", "test-orchestrator-agent", "system-architect-agent", "@custom", "@already"},
 		Labels:    []string{"bug", "  Frontend ", "weird label!", ""},
 	})
 	if err != nil {
 		t.Fatalf("err = %v", err)
 	}
-	wantAssignees := []string{"@senior_developer", "@qa_engineer", "@architect", "@custom", "@already"}
+	wantAssignees := []string{"@coding-agent", "@test-orchestrator-agent", "@system-architect-agent", "@custom", "@already"}
 	if !reflect.DeepEqual(r.Assignees, wantAssignees) {
 		t.Fatalf("assignees = %v", r.Assignees)
 	}
@@ -287,5 +287,64 @@ func TestTaskListResponseFromDomainList(t *testing.T) {
 	}
 	if resp.Tasks[0].CompletedSubtasks != 3 {
 		t.Fatalf("completed = %d", resp.Tasks[0].CompletedSubtasks)
+	}
+}
+
+// Every path that writes an assignee goes through entities.NormalizeAssignees: the same
+// inputs must give the same result (or the same error) through the REST request DTO,
+// Task.UpdateAssignees, Subtask.UpdateAssignees and NewSubtask.
+func TestAssigneeRuleIsIdenticalOnEveryPath(t *testing.T) {
+	parent := value_objects.GenerateNewTaskId()
+	taskID := value_objects.GenerateNewTaskId()
+	cases := [][]string{
+		{"coding-agent"},
+		{"@go-dev", "@lead"},
+		{" @lead ", "", "coding-agent"},
+		{"go-dev"},
+		{"custom", "@x"},
+		{"system-architect-agent"},
+	}
+	for _, in := range cases {
+		want, wantErr := entities.NormalizeAssignees(in)
+
+		check := func(path string, got []string, err error) {
+			t.Helper()
+			if (err == nil) != (wantErr == nil) || (err != nil && err.Error() != wantErr.Error()) {
+				t.Errorf("%v via %s: err = %v, want %v", in, path, err, wantErr)
+			}
+			if err == nil && !reflect.DeepEqual(got, want) {
+				t.Errorf("%v via %s: got %v, want %v", in, path, got, want)
+			}
+		}
+
+		req, err := NewCreateTaskRequest(CreateTaskRequest{Title: "t", GitBranchID: "b", Assignees: in})
+		var dto []string
+		if err == nil {
+			dto = req.Assignees
+		}
+		check("CreateTaskRequest", dto, err)
+
+		tk, err := entities.CreateTask(entities.Task{ID: &taskID, Title: "t", Description: "d"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = tk.UpdateAssignees(in)
+		check("Task.UpdateAssignees", tk.Assignees, err)
+
+		st, err := entities.NewSubtask(entities.Subtask{Title: "s", Description: "d", ParentTaskID: &parent})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = st.UpdateAssignees(in)
+		check("Subtask.UpdateAssignees", st.Assignees, err)
+
+		ns, err := entities.NewSubtask(entities.Subtask{Title: "s", Description: "d", ParentTaskID: &parent, Assignees: in})
+		var nsa []string
+		if err == nil {
+			nsa = ns.Assignees
+		}
+		if len(in) > 0 { // NewSubtask normalizes only when assignees are given
+			check("NewSubtask", nsa, err)
+		}
 	}
 }
