@@ -255,8 +255,11 @@ Planner's plan (items 2 and 3). Tasks T1 to T4 are independent; reviewer reviews
 - [x] T4 (go-dev, in progress): per-machine tokens, with cross-tenant, revoke, machine A cannot report for B, and bridge status recording the token's machine. Verified by tests only (go-dev, 2026-10-03): `03fa066f`; `TestMachineToken*` in `machine_token_mount_test.go` cover revoke, cross-tenant and machine A cannot report for B. Open: Postgres integration tests not run.
 - [ ] T5 (architect, owner; depends on D1 to D3): read-only export of the 58 production `user_agent_instances` saved off-repo; the owner states drop or keep; the writer records it here.
 - [x] T6 (go-dev; depends on D1): remove the Go `call_agent` tool, routes and wiring, the loader, the seeder, `-seed-agents`, the library path utils and the health field `agent_library_dir`.
+  Verified 2026-10-04: b0d441bd, 19373d03; go test ./... 139 packages ok, reviewer-run; tools/list has call_seat, no call_agent. Kept: manage_agent's `call_agent` field. Frontend `callAgent` removed in fa22c648.
+  Note: `/api/v2/openrig/agents` now serves only rows already in `agent_templates`, because nothing seeds them any more.
 - [ ] T7 (go-dev, web-dev; depends on T6): delete `/api/v2/openrig/agents`, `scripts/openrig_sync.py`, the `agent_templates` and `user_agent_instances` tables, ORM and DDL; replace the frontend agent pages with seat screens.
 - [ ] T8 (go-dev or writer for hooks, reviewer; depends on D1, D3): remove `agenthub_main/agent-library`, the Python `call_agent` and agent management, the agent scripts, `.claude/agents/*.md` and the `call_agent` hooks.
+  Also goes with the agent library: `fastmcp/task_management/infrastructure/services/agent_doc_generator.go:54` (reads `AGENT_LIBRARY_DIR_PATH`; the cursor doc generator; injected in `domain_service_factory.go`, while `service_adapter_factory.go:128` returns a `PlaceholderAgentDocGenerator`).
 - [ ] T9 (writer; depends on T6 to T8): CHANGELOG, frontend CHANGELOG, TEST-CHANGELOG (fix the stale "32 library agents" line).
 - [ ] T10 (owner; after verified commits): bump `healthVersion`, approve the push; production needs the new image and the seat DDL (G1a).
 
