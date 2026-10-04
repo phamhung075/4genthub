@@ -496,3 +496,47 @@ func TestSessionViewerReplaysIngestedEventsFromTheDatabase(t *testing.T) {
 		t.Fatalf("viewer replayed payload %v, want {\"text\":\"hi\"}", got["payload"])
 	}
 }
+
+// C4: two users each connect a connector and see only their own session, through the REST
+// list and events routes, the viewer socket, and the connector ingest path end to end.
+func TestTwoUsersEachSeeOnlyTheirOwnSessions(t *testing.T) {
+	env := newPGStreamEnv(t)
+
+	a := env.connector(t, "user-a")
+	sidA := a.ingest("s1")
+	if got := a.appendEvents("s1", event(map[string]any{"text": "from a"})); got["type"] != "events_ack" {
+		t.Fatalf("A events_ack = %v", got)
+	}
+	b := env.connector(t, "user-b")
+	sidB := b.ingest("s1")
+	if got := b.appendEvents("s1", event(map[string]any{"text": "from b"})); got["type"] != "events_ack" {
+		t.Fatalf("B events_ack = %v", got)
+	}
+	if sidA == sidB {
+		t.Fatal("both users resolved to the same session id")
+	}
+
+	rowsA := env.sessionList(t, "user-a")
+	if len(rowsA) != 1 || rowsA[0]["id"] != sidA {
+		t.Fatalf("A's list = %v, want only A's session %s", rowsA, sidA)
+	}
+	rowsB := env.sessionList(t, "user-b")
+	if len(rowsB) != 1 || rowsB[0]["id"] != sidB {
+		t.Fatalf("B's list = %v, want only B's session %s", rowsB, sidB)
+	}
+
+	statusA, bodyA := env.restGet(t, "user-a", "/api/v2/sessions/"+sidA+"/events")
+	if statusA != 200 || len(wrapped(t, bodyA, "events")) != 1 {
+		t.Fatalf("A's own events = %d %v, want the one A ingested", statusA, bodyA)
+	}
+	if status, body := env.restGet(t, "user-b", "/api/v2/sessions/"+sidA+"/events"); status != http.StatusNotFound {
+		t.Fatalf("B reading A's events = %d %v, want 404", status, body)
+	}
+
+	if got := env.viewer(t, "user-a", sidA).recv(); got["seq"] != float64(1) {
+		t.Fatalf("A's viewer replayed %v, want A's first event", got)
+	}
+	if code, _ := env.viewer(t, "user-b", sidA).recvClose(); code != routes.SessionStreamNotFoundCode {
+		t.Fatalf("B's viewer on A's session closed %d, want 4004", code)
+	}
+}

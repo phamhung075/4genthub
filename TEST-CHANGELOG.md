@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — C4 two-user connector isolation end to end (Go)
+
+- Added `TestTwoUsersEachSeeOnlyTheirOwnSessions` (`server/httpapp/ws_connector_test.go`): two users each connect a connector, ingest their own session and append an event; each user's `GET /api/v2/sessions` holds exactly its own session id; the owner's `GET /api/v2/sessions/{id}/events` returns its event and the other user asking for that id gets 404; the owner's viewer replays the event and the other user's viewer on that session closes with 4004. It complements `TestUserBCannotListReadReplayOrAppendToUserAsSession`.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 -v -run 'TestTwoUsersEachSeeOnlyTheirOwnSessions|TestUserBCannotListReadReplayOrAppendToUserAsSession|TestSessionViewerReplaysIngestedEventsFromTheDatabase' ./fastmcp/server/httpapp/` -> all three PASS (2.076s); `gofmt` empty, `go vet` clean.
+- Not exercised: the separate `cmd/agenthub` binary with an out-of-process connector; the harness mounts the same routes over the real Postgres and dials real websocket clients, so protocol and isolation are real.
+
 ## 2026-10-04 — T4 machine-token integration tests run on real Postgres
 
 - `TestMachineTokensIntegration` and `TestMachineExpectedHashIntegration` (`fastmcp/seat_management/infrastructure/repositories/orm/integration_test.go`) were run against a fresh throwaway Postgres with `SEAT_TEST_DATABASE_URL`: `go test -count=1 -v -run 'TestMachineTokensIntegration|TestMachineExpectedHashIntegration' ./fastmcp/seat_management/infrastructure/repositories/orm/` -> both PASS, 0 skipped, 0 failed (1.06s and 4.69s). This closes T4's "Open: Postgres integration tests not run".
