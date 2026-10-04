@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from './../../test-utils';
+import { render, screen, waitFor, fireEvent, act } from './../../test-utils';
 import { useNavigate } from 'react-router-dom';
 import { EmailVerification } from '../../../components/auth/EmailVerification';
+import { API_BASE_URL } from '../../../config/environment';
 import { useAuth } from '../../../hooks/useAuth';
 
 // Mock dependencies
@@ -47,12 +48,14 @@ describe('EmailVerification', () => {
   };
 
   describe('Initial Rendering', () => {
-    it('renders processing state initially', () => {
+    // The hash is parsed in an effect during render, so the 'processing' state is never
+    // observable; without a hash the component settles on the invalid-link state.
+    it('renders the verification card for a link without tokens', () => {
       renderComponent();
 
       expect(screen.getByText('Email Verification')).toBeInTheDocument();
-      expect(screen.getByText('Processing your verification...')).toBeInTheDocument();
-      expect(screen.getByText('Verifying your email...')).toBeInTheDocument();
+      expect(screen.getByText('Verification failed')).toBeInTheDocument();
+      expect(screen.getByText('Email link is invalid or has expired')).toBeInTheDocument();
     });
   });
 
@@ -66,18 +69,20 @@ describe('EmailVerification', () => {
 
       renderComponent();
 
-      await waitFor(() => {
-        expect(mockSetTokens).toHaveBeenCalledWith({
-          access_token: 'test-access',
-          refresh_token: 'test-refresh'
-        });
+      // The hash is parsed in an effect that runs during render, so no waiting is needed
+      // (and waitFor would hang under fake timers).
+      expect(mockSetTokens).toHaveBeenCalledWith({
+        access_token: 'test-access',
+        refresh_token: 'test-refresh'
       });
 
       expect(screen.getByText('Verification complete!')).toBeInTheDocument();
       expect(screen.getByText('Email verified successfully! Welcome to agenthub.')).toBeInTheDocument();
 
       // Check navigation after timeout
-      vi.advanceTimersByTime(2000);
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
 
@@ -86,17 +91,19 @@ describe('EmailVerification', () => {
 
       renderComponent();
 
-      await waitFor(() => {
-        expect(mockSetTokens).toHaveBeenCalledWith({
-          access_token: 'test-access',
-          refresh_token: 'test-refresh'
-        });
+      // The hash is parsed in an effect that runs during render, so no waiting is needed
+      // (and waitFor would hang under fake timers).
+      expect(mockSetTokens).toHaveBeenCalledWith({
+        access_token: 'test-access',
+        refresh_token: 'test-refresh'
       });
 
       expect(screen.getByText('Password reset verified. You can now set a new password.')).toBeInTheDocument();
 
       // Check navigation to reset password page
-      vi.advanceTimersByTime(2000);
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
       expect(mockNavigate).toHaveBeenCalledWith('/reset-password');
     });
 
@@ -105,16 +112,18 @@ describe('EmailVerification', () => {
 
       renderComponent();
 
-      await waitFor(() => {
-        expect(mockSetTokens).toHaveBeenCalledWith({
-          access_token: 'test-access',
-          refresh_token: 'test-refresh'
-        });
+      // The hash is parsed in an effect that runs during render, so no waiting is needed
+      // (and waitFor would hang under fake timers).
+      expect(mockSetTokens).toHaveBeenCalledWith({
+        access_token: 'test-access',
+        refresh_token: 'test-refresh'
       });
 
       expect(screen.getByText('Email verified successfully!')).toBeInTheDocument();
 
-      vi.advanceTimersByTime(2000);
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
   });
@@ -196,7 +205,7 @@ describe('EmailVerification', () => {
       });
 
       const emailInput = screen.getByPlaceholderText('Enter your email address');
-      const submitButton = screen.getByText('Resend Verification Email');
+      const submitButton = screen.getByRole('button', { name: 'Resend Verification Email' });
 
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
       fireEvent.click(submitButton);
@@ -267,11 +276,7 @@ describe('EmailVerification', () => {
       });
     });
 
-    it('uses custom API URL from environment variable', async () => {
-      // Mock import.meta.env
-      const originalViteApiUrl = (import.meta as any).env.VITE_API_URL;
-      (import.meta as any).env = { VITE_API_URL: 'https://api.example.com' };
-
+    it('posts to the configured API base URL', async () => {
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
@@ -279,23 +284,16 @@ describe('EmailVerification', () => {
 
       renderComponent();
 
-      await waitFor(() => {
-        expect(screen.getByPlaceholderText('Enter your email address')).toBeInTheDocument();
-      });
-
       const emailInput = screen.getByPlaceholderText('Enter your email address');
       fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.click(screen.getByText('Resend Verification Email'));
+      fireEvent.click(screen.getByRole('button', { name: 'Resend Verification Email' }));
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          'https://api.example.com/auth/supabase/resend-verification',
+          `${API_BASE_URL}/auth/supabase/resend-verification`,
           expect.any(Object)
         );
       });
-
-      // Restore original
-      (import.meta as any).env.VITE_API_URL = originalViteApiUrl;
     });
   });
 
@@ -339,31 +337,16 @@ describe('EmailVerification', () => {
   });
 
   describe('UI Elements', () => {
-    it('displays correct icons for different states', async () => {
-      const { rerender } = renderComponent();
-
-      // Processing state - uses Loader2 icon
-      expect(screen.getByText('Email Verification')).toBeInTheDocument();
-
-      // Success state
+    it('shows the success state for a link with tokens and the error state for an error link', () => {
       window.location.hash = '#access_token=test&refresh_token=test';
-      rerender(
-        <EmailVerification />
-      );
+      const { unmount } = renderComponent();
+      expect(screen.getByText('Verification complete!')).toBeInTheDocument();
+      unmount();
 
-      await waitFor(() => {
-        expect(screen.getByText('Verification complete!')).toBeInTheDocument();
-      });
-
-      // Error state
+      // The hash is only read on mount, so the error state needs a fresh render.
       window.location.hash = '#error=invalid';
-      rerender(
-        <EmailVerification />
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Verification failed')).toBeInTheDocument();
-      });
+      renderComponent();
+      expect(screen.getByText('Verification failed')).toBeInTheDocument();
     });
   });
 });

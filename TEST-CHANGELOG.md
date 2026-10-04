@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — SignupForm and EmailVerification tests follow the components (Task B3)
+
+- Changed (tests only, plus `agenthub-frontend/vite.config.ts`): `SignupForm.test.tsx` (21 failing -> 23 pass): labels are queried with anchored regexes (MUI appends ` *` to required labels), the `Sign Up` heading by role, `Medium123` is `Good`, a successful signup navigates to `/registration-success`, the loading check uses `waitFor` and `within(button)`, the API URL test uses `API_BASE_URL`; the 'too weak' assertion is removed (see below). `EmailVerification.test.tsx` (7 failing -> 15 pass): the hash is parsed in an effect during render, so `waitFor` under fake timers hung (removed, timers advance in `act`), the 'processing' state is never observable, `rerender` does not re-read the hash (fresh render per state), the resend button is queried by role, the API URL test uses `API_BASE_URL`.
+- Excluded: `src/tests/e2e/live-websocket.test.ts` is no longer collected by vitest (`test.exclude`); it is a Playwright spec and the repo has no Playwright config or script. Whether to set up Playwright is an open owner question.
+- Not fixed: `TaskRowDesktop.test.tsx` (17 failing) tests an older component (default export, `task`/`isEditing`/`onSaveEdit` props); `TaskRowDesktop.tsx` has a named export and takes `summary`/`fullTask` with `useTaskRowState`, so the file needs a rewrite or removal.
+- Code observation, not changed: in `SignupForm.tsx` the `passwordStrength.score < 40` rule can never fire after `minLength: 8`, because any 8-character password scores at least 40.
+- Ran (in `agenthub-frontend`): SignupForm and EmailVerification, 2 files, 38 tests passed; `npx tsc --noEmit -p .` 0 errors.
+
 ## 2026-10-04 — three frontend test files load again (Task B2)
 
 - Changed (tests only): `EmailVerification.test.tsx` and `SignupForm.test.tsx` used `jest.requireActual` inside `vi.mock` (not defined, so the file failed to load); they now use the `importOriginal` partial mock, drop the nested `BrowserRouter` that `test-utils` already provides, and use `vi` timers / user-event v13 directly; `SignupForm.test.tsx` also mocks `ThemeToggle`. `TaskRowDesktop.test.tsx` spreads the real `lucide-react` exports instead of listing icons. `hooks/index.test.ts` test renamed 'exports the expected hooks'.

@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
@@ -178,7 +179,9 @@ export default defineConfig(({ mode }) => {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
-    css: true
+    css: true,
+    // Playwright spec; the repo has no Playwright config, so vitest must not collect it
+    exclude: [...configDefaults.exclude, 'src/tests/e2e/live-websocket.test.ts']
   },
   envDir: '..' // Load .env from parent directory
   }
