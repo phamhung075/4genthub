@@ -41,6 +41,17 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **Dead branch and connection callers, and the dead remote-logging default** - 2026-10-05
+  - Deleted frontend callers that no mounted page uses and that could not work against the Go mounts:
+    `branchApiV2.getBranches` (no such route; Go's `/api/v2/branches/` subtree ran ListBranches and returned every
+    branch unfiltered), `branchApiV2.updateBranch` (form body vs Go's query params), `branchApiV2.assignAgent`
+    (form body vs Go's query param), `branchApiV2.getBranchHealth` and `connectionApiV2.testConnection` (no route in
+    either backend). Their `api.ts` wrappers (`listBranches`, `updateBranch`), the unused `useBranches` query hook and
+    the `updateMutation` in `useBranchMutations` went with them; `ProjectList` uses only `createBranchAsync` and
+    `deleteBranchAsync`. Tests for the removed functions are gone too.
+  - `src/config/logger.config.ts`: dropped the implicit `/api/logs/frontend` remote-logging fallback. No backend has
+    ever served that route and remote logging is off by default, so the fallback was a call that could never work;
+    `VITE_LOG_REMOTE_ENDPOINT` is now required to enable remote logging.
 - **The agent-management UI is gone; assignee pickers are seat-only (T7)** - 2026-10-04
   - Deleted the pages `src/pages/MyAgentsPage.tsx` and `src/pages/MarketplacePage.tsx`, the `src/components/agents/` directory (AgentConfigEditor, AgentList, AgentSharingDialog, SharedAgentPreview, index), `src/hooks/useAgentManagement.ts`, `src/types/agentTypes.ts` and `src/tests/useAgentManagement.test.tsx`, with their exports in `src/hooks/index.ts` and `src/types/index.ts` and the `/agents/marketplace` and `/agents/my-agents` routes in `src/App.tsx`.
   - `src/services/apiV2.ts`: the `agentApiV2` and `agentManagementApiV2` clients are gone (they called the removed `/api/v2/agents/metadata` and `/api/v2/agent-management/*` routes). `src/api.ts`: `listAgents` (agent metadata) is gone; `getAvailableAgents` (seat keys) stays.

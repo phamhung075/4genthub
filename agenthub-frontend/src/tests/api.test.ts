@@ -20,12 +20,10 @@ import {
     getTaskContext,
     getTasks,
     isAuthenticated,
-    listBranches,
     listProjects,
     listSubtasks,
     listTasks,
     searchTasks,
-    updateBranch,
     updateBranchContext,
     updateGlobalContext,
     updateProject,
@@ -65,13 +63,9 @@ vi.mock('../services/apiV2', () => ({
     deleteProject: vi.fn(),
   },
   branchApiV2: {
-    getBranches: vi.fn(),
     getBranch: vi.fn(),
     createBranch: vi.fn(),
-    updateBranch: vi.fn(),
     deleteBranch: vi.fn(),
-    assignAgent: vi.fn(),
-    getBranchHealth: vi.fn(),
   },
   contextApiV2: {
     getContext: vi.fn(),
@@ -82,7 +76,6 @@ vi.mock('../services/apiV2', () => ({
   connectionApiV2: {
     healthCheck: vi.fn(),
     systemStatus: vi.fn(),
-    testConnection: vi.fn(),
   },
   getCurrentUserId: vi.fn(),
   isAuthenticated: vi.fn(),
@@ -715,20 +708,6 @@ describe('API V2 Module', () => {
   });
 
   describe('Branch Operations', () => {
-    describe('listBranches', () => {
-      it('should return branches for project', async () => {
-        const mockBranches = [
-          { id: '1', git_branch_name: 'main', project_id: 'proj-123' },
-          { id: '2', git_branch_name: 'develop', project_id: 'proj-123' },
-        ];
-        branchApiV2.getBranches.mockResolvedValue({ branches: mockBranches });
-
-        const result = await listBranches('proj-123');
-        expect(result).toEqual(mockBranches);
-        expect(branchApiV2.getBranches).toHaveBeenCalledWith('proj-123');
-      });
-    });
-
     describe('createBranch', () => {
       it('should create branch with required fields', async () => {
         const newBranch = {
@@ -743,26 +722,6 @@ describe('API V2 Module', () => {
         expect(branchApiV2.createBranch).toHaveBeenCalledWith('proj-123', {
           git_branch_name: newBranch.git_branch_name,
           description: newBranch.description
-        });
-      });
-    });
-
-    describe('updateBranch', () => {
-      it('should update branch with provided fields', async () => {
-        const updates = {
-          git_branch_name: 'feature/updated-feature',
-          description: 'Updated description',
-          is_active: false
-        };
-        const updatedBranch = { id: 'branch-123', ...updates };
-        branchApiV2.updateBranch.mockResolvedValue({ branch: updatedBranch });
-
-        const result = await updateBranch('branch-123', updates);
-        expect(result).toEqual(updatedBranch);
-        expect(branchApiV2.updateBranch).toHaveBeenCalledWith('branch-123', {
-          git_branch_name: updates.git_branch_name,
-          description: updates.description,
-          is_active: updates.is_active
         });
       });
     });

@@ -706,16 +706,6 @@ export const contextApiV2 = {
 
 // Branch API V2 - User-isolated endpoints
 export const branchApiV2 = {
-  // List branches for a project
-  getBranches: async (projectId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/project/${projectId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
   // Get a specific branch
   getBranch: async (branchId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
@@ -752,60 +742,10 @@ export const branchApiV2 = {
     return handleResponse(response);
   },
 
-  // Update a branch
-  updateBranch: async (branchId: string, updates: {
-    git_branch_name?: string;
-    description?: string;
-    is_active?: boolean;
-  }) => {
-    const formData = new URLSearchParams();
-    if (updates.git_branch_name) formData.append('git_branch_name', updates.git_branch_name);
-    if (updates.description) formData.append('description', updates.description);
-    if (updates.is_active !== undefined) {
-      formData.append('is_active', updates.is_active.toString());
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
-    return handleResponse(response);
-  },
-
   // Delete a branch
   deleteBranch: async (branchId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Assign agent to branch
-  assignAgent: async (branchId: string, agentId: string) => {
-    const formData = new URLSearchParams();
-    formData.append('agent_id', agentId);
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/assign-agent`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
-    return handleResponse(response);
-  },
-
-  // Get branch health
-  getBranchHealth: async (branchId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/health`, {
-      method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
     });
@@ -875,16 +815,6 @@ export const connectionApiV2 = {
   systemStatus: async () => {
     const response = await fetch(`${API_BASE_URL}/api/v2/connections/status`, {
       method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Test connection
-  testConnection: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/connections/test`, {
-      method: 'POST',
       headers: getAuthHeaders(),
       credentials: 'include',
     });

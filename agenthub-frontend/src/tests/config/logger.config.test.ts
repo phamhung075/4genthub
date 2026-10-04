@@ -53,7 +53,7 @@ describe('logger.config', () => {
         maxStorageSize: 5242880,
         batchSize: 10,
         batchInterval: 5000,
-        remoteEndpoint: 'http://test-api.com/api/logs/frontend',
+        remoteEndpoint: '',
       });
     });
   });
@@ -161,10 +161,10 @@ describe('logger.config', () => {
       expect(loggerConfig.remoteEndpoint).toBe('https://logs.example.com/in?x=1&y=2');
     });
 
-    it('falls back to the API base URL for an empty variable', async () => {
+    it('has no endpoint for an empty variable (no backend serves the old default)', async () => {
       const { loggerConfig } = await loadConfig({ VITE_LOG_REMOTE_ENDPOINT: '' });
 
-      expect(loggerConfig.remoteEndpoint).toBe('http://test-api.com/api/logs/frontend');
+      expect(loggerConfig.remoteEndpoint).toBe('');
     });
   });
 
