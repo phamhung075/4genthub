@@ -93,8 +93,6 @@ export interface DialogState {
   deleteDialog: DeleteDialogState;
   activeDialog: ActiveDialogState;
   detailsDialog: DetailsDialogState;
-  selectedAgentForInfo: string | null;
-  agentInfoDialogOpen: boolean;
   createSubtaskDialogOpen: boolean;
 }
 
@@ -189,7 +187,6 @@ export interface UseSubtaskExpansionReturn extends SubtaskExpansionState {
 
 export interface UseSubtaskDialogsReturn extends DialogState {
   handleSubtaskDialogClose: () => void;
-  handleAgentInfoClick: (agentName: string) => void;
   handleOpenCreateSubtask: () => void;
   openDetailsDialog: (subtask: any) => void; // Subtask from API
   openEditDialog: (subtask: any) => void; // Subtask from API
@@ -197,7 +194,6 @@ export interface UseSubtaskDialogsReturn extends DialogState {
   openDeleteDialog: (subtaskId: string) => void;
   closeDeleteDialog: () => void;
   closeDetailsDialog: () => void;
-  closeAgentInfoDialog: () => void;
   closeCreateSubtaskDialog: () => void;
   closeAllDialogs: () => void;
   handleDialogAction: (action: 'details' | 'edit' | 'complete', subtaskId: string, subtask?: any) => void;
@@ -217,7 +213,6 @@ export interface SubtaskRowProps {
   showDetails: boolean;
   parentTaskId: string;
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void;
-  onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
   onRegisterCallbacks?: (subtaskId: string, callbacks: AnimationCallbacks) => void;
   onUnregisterCallbacks?: (subtaskId: string) => void;
@@ -247,5 +242,4 @@ export interface SubtaskRowBadgesProps {
 export interface SubtaskRowAssigneesProps {
   assignees?: string[];
   assigneesCount: number;
-  onAgentInfoClick: (agentName: string) => void;
 }

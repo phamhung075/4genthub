@@ -127,11 +127,8 @@ export function LazySubtaskListRefactored({
     deleteDialog,
     activeDialog,
     detailsDialog,
-    selectedAgentForInfo,
-    agentInfoDialogOpen,
     createSubtaskDialogOpen,
     handleSubtaskDialogClose,
-    handleAgentInfoClick,
     handleOpenCreateSubtask,
     openDetailsDialog,
     openEditDialog,
@@ -301,8 +298,6 @@ export function LazySubtaskListRefactored({
           deleteDialog={deleteDialog}
           activeDialog={activeDialog}
           detailsDialog={detailsDialog}
-          selectedAgentForInfo={selectedAgentForInfo}
-          agentInfoDialogOpen={agentInfoDialogOpen}
           createSubtaskDialogOpen={createSubtaskDialogOpen}
           editingSubtask={editingSubtask}
           isOpeningDialog={isOpeningDialog}
@@ -310,15 +305,12 @@ export function LazySubtaskListRefactored({
           parentTaskId={parentTaskId}
           onDeleteDialogChange={(open) => !open && closeAllDialogs()}
           onActiveDialogChange={setActiveDialog}
-          onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
           onCreateDialogChange={(open) => !open && closeAllDialogs()}
           onEditingSubtaskChange={setEditingSubtask}
           onDeleteSubtask={handleDeleteSubtask}
           onCompleteSubtask={handleCompleteSubtask}
           onSubtaskCreated={handleSubtaskCreated}
           onSubtaskDialogClose={handleSubtaskDialogClose}
-          onAgentInfoClose={() => {/* handle */}}
-          onSelectedAgentChange={() => {/* handle */}}
         />
       </>
     );
@@ -340,7 +332,6 @@ export function LazySubtaskListRefactored({
         loadingSubtasks={loadingSubtasks}
         showDetails={showDetails}
         onSubtaskAction={handleSubtaskAction}
-        onAgentInfoClick={handleAgentInfoClick}
         onDeleteSubtask={openDeleteDialog}
         onRegisterCallbacks={registerRowCallbacks}
         onUnregisterCallbacks={unregisterRowCallbacks}
@@ -354,8 +345,6 @@ export function LazySubtaskListRefactored({
         deleteDialog={deleteDialog}
         activeDialog={activeDialog}
         detailsDialog={detailsDialog}
-        selectedAgentForInfo={selectedAgentForInfo}
-        agentInfoDialogOpen={agentInfoDialogOpen}
         createSubtaskDialogOpen={createSubtaskDialogOpen}
         editingSubtask={editingSubtask}
         isOpeningDialog={isOpeningDialog}
@@ -363,15 +352,12 @@ export function LazySubtaskListRefactored({
         parentTaskId={parentTaskId}
         onDeleteDialogChange={(open) => !open && closeAllDialogs()}
         onActiveDialogChange={setActiveDialog}
-        onAgentInfoDialogChange={(open) => !open && closeAllDialogs()}
         onCreateDialogChange={(open) => !open && closeAllDialogs()}
         onEditingSubtaskChange={setEditingSubtask}
         onDeleteSubtask={handleDeleteSubtask}
         onCompleteSubtask={handleCompleteSubtask}
         onSubtaskCreated={handleSubtaskCreated}
         onSubtaskDialogClose={handleSubtaskDialogClose}
-        onAgentInfoClose={() => {/* handle */}}
-        onSelectedAgentChange={() => {/* handle */}}
       />
     </div>
   );

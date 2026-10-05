@@ -1,12 +1,11 @@
 import React from "react";
-import { Play, Info, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Checkbox } from "./ui/checkbox";
 import { Separator } from "./ui/separator";
 import { Input } from "./ui/input";
 import { Task } from "../api";
-import AgentInfoDialog from "./AgentInfoDialog";
 
 interface AgentAssignmentDialogProps {
   open: boolean;
@@ -30,8 +29,6 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   saving = false
 }) => {
   const [selectedSeats, setSelectedSeats] = React.useState<string[]>([]);
-  const [selectedAgentForInfo, setSelectedAgentForInfo] = React.useState<string | null>(null);
-  const [agentInfoDialogOpen, setAgentInfoDialogOpen] = React.useState(false);
   const [seatSearchQuery, setSeatSearchQuery] = React.useState("");
 
   // Update selected seats when task changes
@@ -57,11 +54,6 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
     // Reset to original task assignees
     setSelectedSeats(task?.assignees || []);
     onClose();
-  };
-
-  const handleAgentInfoClick = (agentName: string) => {
-    setSelectedAgentForInfo(agentName);
-    setAgentInfoDialogOpen(true);
   };
 
   // Filter available seats based on search query
@@ -144,18 +136,6 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
                         </div>
                       </label>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAgentInfoClick(seatKey);
-                      }}
-                      title="View seat information"
-                    >
-                      <Info className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               )))
@@ -198,20 +178,6 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    {/* Seat Info Dialog */}
-    {selectedAgentForInfo && (
-      <AgentInfoDialog
-        open={agentInfoDialogOpen}
-        onOpenChange={setAgentInfoDialogOpen}
-        agentName={selectedAgentForInfo}
-        taskTitle={task?.title}
-        onClose={() => {
-          setAgentInfoDialogOpen(false);
-          setSelectedAgentForInfo(null);
-        }}
-      />
-    )}
     </>
   );
 };

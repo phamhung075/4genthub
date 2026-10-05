@@ -5,7 +5,6 @@ import { TaskSummary, TaskActiveDialog } from "../../../types/taskTypes";
 const TaskDetailsDialog = lazy(() => import("../../TaskDetailsDialog"));
 const TaskEditDialog = lazy(() => import("../../TaskEditDialog"));
 const AgentAssignmentDialog = lazy(() => import("../../AgentAssignmentDialog"));
-const AgentInfoDialog = lazy(() => import("../../AgentInfoDialog"));
 const TaskContextDialog = lazy(() => import("../../TaskContextDialog"));
 const DeleteConfirmDialog = lazy(() => import("../../DeleteConfirmDialog"));
 
@@ -105,16 +104,6 @@ export const DialogSection: React.FC<DialogSectionProps> = ({
           title="Delete Task"
           description="Are you sure you want to delete this task? This action cannot be undone."
           itemName={fullTasks.get(activeDialog.taskId)?.title || taskSummaries.find(t => t.id === activeDialog.taskId)?.title}
-        />
-      )}
-
-      {activeDialog.type === 'agent-info' && activeDialog.data && (
-        <AgentInfoDialog
-          open={true}
-          onOpenChange={onCloseDialog}
-          agentName={activeDialog.data.agentName}
-          taskTitle={activeDialog.data.taskTitle}
-          onClose={onCloseDialog}
         />
       )}
     </Suspense>

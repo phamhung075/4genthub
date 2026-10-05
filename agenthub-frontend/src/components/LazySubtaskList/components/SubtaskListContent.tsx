@@ -15,7 +15,6 @@ interface SubtaskListContentProps {
   loadingSubtasks: Set<string>;
   showDetails: string | null;
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void | Promise<void>;
-  onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
   onRegisterCallbacks: (subtaskId: string, callbacks: RowAnimationCallbacks) => void;
   onUnregisterCallbacks: (subtaskId: string) => void;
@@ -31,7 +30,6 @@ export function SubtaskListContent({
   loadingSubtasks,
   showDetails,
   onSubtaskAction,
-  onAgentInfoClick,
   onDeleteSubtask,
   onRegisterCallbacks,
   onUnregisterCallbacks
@@ -62,7 +60,6 @@ export function SubtaskListContent({
         isLoading={isLoadingFull}
         showDetails={isShowingDetails}
         onSubtaskAction={onSubtaskAction}
-        onAgentInfoClick={onAgentInfoClick}
         onDeleteSubtask={(subtaskId) => onDeleteSubtask(subtaskId)}
         onRegisterCallbacks={onRegisterCallbacks}
         onUnregisterCallbacks={onUnregisterCallbacks}

@@ -124,7 +124,7 @@ export interface LazyTaskListProps {
 }
 
 // Dialog types
-export type TaskDialogType = 'details' | 'edit' | 'delete' | 'complete' | 'context' | 'assign' | 'agent-info' | 'agent-response' | 'create';
+export type TaskDialogType = 'details' | 'edit' | 'delete' | 'complete' | 'context' | 'assign' | 'create';
 export type SubtaskDialogType = 'subtask-details' | 'subtask-edit' | 'subtask-complete';
 export type DialogType = TaskDialogType | SubtaskDialogType;
 

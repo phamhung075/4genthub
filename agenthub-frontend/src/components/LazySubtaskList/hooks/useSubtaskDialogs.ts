@@ -40,8 +40,6 @@ export function useSubtaskDialogs(
     subtask: null
   });
 
-  const [selectedAgentForInfo, setSelectedAgentForInfo] = useState<string | null>(null);
-  const [agentInfoDialogOpen, setAgentInfoDialogOpen] = useState(false);
   const [createSubtaskDialogOpen, setCreateSubtaskDialogOpen] = useState(false);
 
   // Track if we're in the middle of closing to prevent race conditions
@@ -78,18 +76,6 @@ export function useSubtaskDialogs(
 
     logger.debug('Navigated to branch URL:', branchUrl);
   }, [navigate, projectId, taskTreeId]);
-
-  /**
-   * Handle agent info click
-   */
-  const handleAgentInfoClick = useCallback((agentName: string) => {
-    logger.debug('Agent info clicked:', agentName);
-
-    setSelectedAgentForInfo(agentName);
-    setAgentInfoDialogOpen(true);
-
-    logger.debug('Agent info dialog opened for:', agentName);
-  }, []);
 
   /**
    * Handle opening create subtask dialog
@@ -188,16 +174,6 @@ export function useSubtaskDialogs(
   }, []);
 
   /**
-   * Close agent info dialog
-   */
-  const closeAgentInfoDialog = useCallback(() => {
-    logger.debug('Closing agent info dialog');
-
-    setAgentInfoDialogOpen(false);
-    setSelectedAgentForInfo(null);
-  }, []);
-
-  /**
    * Close create subtask dialog
    */
   const closeCreateSubtaskDialog = useCallback(() => {
@@ -214,8 +190,6 @@ export function useSubtaskDialogs(
     setDeleteDialog({ open: false, subtaskId: null });
     setActiveDialog({ type: null });
     setDetailsDialog({ open: false, subtask: null });
-    setAgentInfoDialogOpen(false);
-    setSelectedAgentForInfo(null);
     setCreateSubtaskDialogOpen(false);
   }, []);
 
@@ -245,7 +219,6 @@ export function useSubtaskDialogs(
   const hasOpenDialog =
     deleteDialog.open ||
     detailsDialog.open ||
-    agentInfoDialogOpen ||
     createSubtaskDialogOpen ||
     activeDialog.type !== null;
 
@@ -254,15 +227,12 @@ export function useSubtaskDialogs(
     deleteDialog,
     activeDialog,
     detailsDialog,
-    selectedAgentForInfo,
-    agentInfoDialogOpen,
     createSubtaskDialogOpen,
 
     // Navigation handlers
     handleSubtaskDialogClose,
 
     // Dialog openers
-    handleAgentInfoClick,
     handleOpenCreateSubtask,
     openDetailsDialog,
     openEditDialog,
@@ -272,7 +242,6 @@ export function useSubtaskDialogs(
     // Dialog closers
     closeDeleteDialog,
     closeDetailsDialog,
-    closeAgentInfoDialog,
     closeCreateSubtaskDialog,
     closeAllDialogs,
 

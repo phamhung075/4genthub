@@ -103,9 +103,6 @@ export const TaskRowMobile: React.FC<TaskRowMobileProps> = ({
                         <ClickableAssignees
                           assignees={summary.assignees}
                           task={fullTask || summary as any}
-                          onAgentClick={(agentName, task) => {
-                            onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
-                          }}
                           variant="secondary"
                           className=""
                         />

@@ -146,9 +146,6 @@ export const TaskRowDesktop: React.FC<TaskRowDesktopProps> = ({
             <ClickableAssignees
               assignees={summary.assignees}
               task={fullTask || summary as any}
-              onAgentClick={(agentName, task) => {
-                onOpenDialog('agent-info', undefined, { agentName, taskTitle: task.title });
-              }}
               variant="secondary"
               className=""
               compact={true}

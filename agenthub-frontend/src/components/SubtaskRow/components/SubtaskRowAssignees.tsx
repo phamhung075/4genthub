@@ -7,8 +7,7 @@ import type { SubtaskRowAssigneesProps } from '../../../types/subtaskTypes';
 
 export const SubtaskRowAssignees: React.FC<SubtaskRowAssigneesProps> = ({
   assignees = [],
-  assigneesCount,
-  onAgentInfoClick
+  assigneesCount
 }) => {
   if (assigneesCount === 0) {
     return (
@@ -24,8 +23,7 @@ export const SubtaskRowAssignees: React.FC<SubtaskRowAssigneesProps> = ({
         <Badge
           key={assignee}
           variant="secondary"
-          className="text-xs cursor-pointer hover:bg-primary/20"
-          onClick={() => onAgentInfoClick(assignee)}
+          className="text-xs"
         >
           {assignee}
         </Badge>
