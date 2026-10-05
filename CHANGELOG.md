@@ -8,6 +8,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The status bridge authenticates with its own machine token, and `register` issues it** (2026-10-05)
+
+- `scripts/openrig_bridge.py` read its bearer from `AGENTHUB_TOKEN` — the SAME variable `scripts/openrig_seat_sync.py` uses as the USER token (`require_env` at :500, :569, :940) — while `POST /api/v2/openrig/seat-status` accepts only a machine token (`machineAuthed`; an unknown, revoked or malformed token is 401). Nothing ever called `POST /api/v2/openrig/machines` (the only mention was this script's own docstring), so per-machine authentication was nominal: an operator following the sync client's docs set `AGENTHUB_TOKEN` to the user token, and the bridge then answered 401 forever. One environment variable must never mean two credentials.
+- The bridge now reads `AGENTHUB_MACHINE_TOKEN`, and a new `register` subcommand issues that token: it posts `/api/v2/openrig/machines` with the USER token (`AGENTHUB_TOKEN`) and writes the returned machine token plus the URL into the env file the service unit already reads (`%h/.config/agenthub-bridge.env`) at mode 0600, preserving other lines and never printing the token. `run` and `once` never read the user token.
+- Failure is loud: a missing `AGENTHUB_URL`/`AGENTHUB_MACHINE_TOKEN` is a usage exit whose message names `register`, and a 401 on the status route reports "machine token rejected (HTTP 401)" and names the register step rather than looping silently. The server-side contract is unchanged — one route, one machine, exactly as `machine_token_mount.go:8` documents it.
+- Deliberately not changed: the pinned-hash half. The sync client already writes `pinned.json`'s hash, the bridge already reports it, and the cloud already compares it (`hash`, `expected_hash`, `sync` in `GET /api/v2/openrig/machines`), so the drift visibility was already delivered.
+
 **A blank runtime on the occupant PUT keeps the seat's runtime** (2026-10-05)
 
 - The occupant pair was asymmetric in the wrong place: CREATE inherits the seat type version's `default_runtime` when `runtime` is omitted (`bf0a3ded`), while CHANGE (`PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` → `SeatAdminService.SetOccupant`) validated first and answered `400 unsupported runtime ""` for the same blank. The operator ruling (2026-10-05): **a blank runtime never changes a runtime**. On CHANGE it now means "keep the seat's current runtime" — the caller is changing the model — and the type-default inheritance stays CREATE-only, because inheriting a default on change would silently reset a live seat's runtime. An explicit runtime still wins and is still validated, and an explicit bogus runtime still 400s.

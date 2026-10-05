@@ -41,15 +41,24 @@ If a tool is missing or fails, that source is reported as empty and the loop
 continues; the condition is logged to stderr once per change.
 
 Environment:
-  AGENTHUB_URL    base URL of the 4genthub server
-  AGENTHUB_TOKEN  machine token (sent as a header, never logged or written), issued once by
-                  POST /api/v2/openrig/machines {"machine_id": ID} and valid only for that
-                  machine id (--machine-id), revocable with DELETE .../machines/ID/token
+  AGENTHUB_URL            base URL of the 4genthub server
+  AGENTHUB_MACHINE_TOKEN  THIS PC's machine token (sent as a header, never logged or written),
+                          issued by `openrig_bridge.py register`, valid only on
+                          POST /api/v2/openrig/seat-status and only for this machine id. One
+                          variable never means two credentials: the bridge reads THIS name, and
+                          `run` fails loudly when it is missing.
+  AGENTHUB_TOKEN          the USER token, read ONLY by `register` to call
+                          POST /api/v2/openrig/machines. `run` and `once` never read it.
 
 Usage:
+  openrig_bridge.py register [--machine-id ID] [--env-file PATH]   issue this PC's machine token
   openrig_bridge.py run [--interval 20] [--machine-id ID] [--once]
   openrig_bridge.py once [--print] [--machine-id ID]
   openrig_bridge.py install-service
+
+`register` posts /api/v2/openrig/machines with the user token and writes the returned machine
+token into the env file the service unit reads (%h/.config/agenthub-bridge.env, mode 0600). Use
+the SAME --machine-id for register and run, because the server binds a token to its machine.
 
 Exit codes: 0 success, 1 send failure (--once), 2 usage error.
 """
@@ -74,6 +83,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import openrig_scrub  # noqa: E402
 
 STATUS_PATH = "/api/v2/openrig/seat-status"
+REGISTER_PATH = "/api/v2/openrig/machines"
+DEFAULT_ENV_FILE = Path.home() / ".config" / "agenthub-bridge.env"
 DEFAULT_PINS = Path.home() / ".openrig" / "agenthub-seats"
 HEARTBEAT_SECONDS = 60.0
 MAX_BACKOFF = 120.0
@@ -145,13 +156,9 @@ def seat_state(node: dict) -> str:
     # `lifecycleState: attention_required` is deliberately NOT a "blocked" signal: OpenRig keeps it
     # for a dead agent AND for a live busy seat, so it cannot tell a seat waiting on a human from
     # one that is gone or working; the agent's own activity is the truth source.
-    if (
-        activity == "needs_input"
-        or startup
-        in (
-            "attention_required",
-            "failed",
-        )
+    if activity == "needs_input" or startup in (
+        "attention_required",
+        "failed",
     ):
         return "blocked"
     if activity in ("running", "idle"):
@@ -308,6 +315,98 @@ def make_sender(base_url: str, token: str) -> Sender:
     return send
 
 
+class RegistrationError(Exception):
+    """`register` could not obtain a machine token."""
+
+
+def register_machine(base_url: str, user_token: str, machine_id: str) -> str:
+    """Issue this machine's token with the USER credential and return it.
+
+    The token is never printed. A non-2xx answer or a body without a token is a loud failure:
+    a bridge that cannot report must not start quietly without a credential.
+    """
+    request = urllib.request.Request(
+        base_url.rstrip("/") + REGISTER_PATH,
+        data=json.dumps({"machine_id": machine_id}).encode("utf-8"),
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {user_token}",
+            "Content-Type": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=SEND_TIMEOUT) as response:
+            body = response.read()
+    except urllib.error.HTTPError as err:
+        raise RegistrationError(
+            f"machine registration refused: HTTP {err.code}"
+        ) from err
+    except OSError as err:
+        raise RegistrationError(
+            f"machine registration failed: {type(err).__name__}: {err}"
+        ) from err
+    try:
+        token = json.loads(body.decode("utf-8")).get("token")
+    except ValueError as err:
+        raise RegistrationError("machine registration returned no JSON token") from err
+    if not isinstance(token, str) or not token:
+        raise RegistrationError("machine registration returned no token")
+    return token
+
+
+def write_env_file(path: Path, url: str, machine_token: str) -> None:
+    """Write AGENTHUB_URL and AGENTHUB_MACHINE_TOKEN into path at mode 0600.
+
+    Other lines are preserved, so an existing file keeps whatever else it held. The mode is set
+    explicitly after writing because O_CREAT's mode is masked by the umask.
+    """
+    values = {"AGENTHUB_URL": url, "AGENTHUB_MACHINE_TOKEN": machine_token}
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    kept = [line for line in lines if line.split("=", 1)[0].strip() not in values]
+    kept.extend(f"{key}={value}" for key, value in values.items())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with os.fdopen(
+        os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600),
+        "w",
+        encoding="utf-8",
+    ) as handle:
+        handle.write("\n".join(kept) + "\n")
+    os.chmod(path, 0o600)
+
+
+def register_command(args) -> int:
+    """`register`: issue this machine's token and store it where the service unit reads it."""
+    url, user_token = (
+        os.environ.get("AGENTHUB_URL", ""),
+        os.environ.get("AGENTHUB_TOKEN", ""),
+    )
+    if not url or not user_token:
+        print(
+            "AGENTHUB_URL and AGENTHUB_TOKEN (the user token) must be set to register a machine",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+    machine_id = args.machine_id or sanitize_machine_id(socket.gethostname())
+    if not NAME_RE.fullmatch(machine_id):
+        print(f"invalid machine id: {machine_id!r}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        token = register_machine(url, user_token, machine_id)
+    except RegistrationError as err:
+        print(f"openrig-bridge: {err}", file=sys.stderr)
+        return EXIT_REMOTE
+    env_file = Path(args.env_file) if args.env_file else DEFAULT_ENV_FILE
+    write_env_file(env_file, url, token)
+    print(
+        f"registered machine {machine_id!r}; its token is in {env_file} (mode 0600, not printed). "
+        f"Run the bridge with --machine-id {machine_id!r} so the token and the report agree."
+    )
+    return EXIT_OK
+
+
 class Bridge:
     """Builds payloads and decides when to send them."""
 
@@ -399,6 +498,13 @@ class Bridge:
                 "server rejected text as secret-bearing (422); dropping detail next cycle",
             )
             return self.interval
+        if status == 401:
+            # Loud and actionable: a rejected credential never recovers by retrying, and a bridge
+            # that cannot report must say so rather than loop silently.
+            return self._fail(
+                "machine token rejected (HTTP 401): run `openrig_bridge.py register` to issue this "
+                "machine's token, and check that --machine-id matches the one it was issued for"
+            )
         return self._fail(f"server answered HTTP {status}")
 
     def _fail(self, message: str) -> float:
@@ -456,10 +562,15 @@ def build_bridge(args, send: Sender) -> Bridge:
 def sender_from_env() -> Sender:
     url, token = (
         os.environ.get("AGENTHUB_URL", ""),
-        os.environ.get("AGENTHUB_TOKEN", ""),
+        os.environ.get("AGENTHUB_MACHINE_TOKEN", ""),
     )
     if not url or not token:
-        print("AGENTHUB_URL and AGENTHUB_TOKEN must be set", file=sys.stderr)
+        print(
+            "AGENTHUB_URL and AGENTHUB_MACHINE_TOKEN must be set; run "
+            "`openrig_bridge.py register` once (it needs AGENTHUB_TOKEN, the user token) to "
+            "issue this machine's token",
+            file=sys.stderr,
+        )
         raise SystemExit(EXIT_USAGE)
     return make_sender(url, token)
 
@@ -474,6 +585,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     once = sub.add_parser("once")
     once.add_argument("--print", action="store_true", dest="print_only")
     once.add_argument("--machine-id")
+    register = sub.add_parser("register")
+    register.add_argument("--machine-id")
+    register.add_argument("--env-file")
     sub.add_parser("install-service")
     args = parser.parse_args(argv)
     if args.command == "run" and args.interval <= 0:
@@ -486,6 +600,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "install-service":
         print(service_unit(), end="")
         return EXIT_OK
+    if args.command == "register":
+        return register_command(args)
     if args.command == "once" and args.print_only:
         bridge = build_bridge(args, lambda body: 200)
         print(json.dumps(bridge.build_payload(), indent=2))
