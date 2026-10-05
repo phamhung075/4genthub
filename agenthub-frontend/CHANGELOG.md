@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 ### Added
+- **API reference documentation page (owner directive E)** - 2026-10-05
+  - `src/docs/api-reference.en.md` is the API reference the `/docs` page renders: authentication and the token flow, the mounted route
+    families with method and path, the MCP surface (the nine published tools and how a client calls them), the seat-composition model, and
+    an errors/status section grounded in the handlers. It lives in the frontend tree because the production build copies only
+    `agenthub-frontend`; an `ai_docs` file would render locally and be absent from the deployed page.
+  - Deployment-specific values are placeholders — `{{API_ORIGIN}}`, `{{MCP_URL}}`, `{{VERSION}}` — substituted at render time; no
+    deployment name, hostname or version literal is in the file. Source of truth: `ai_docs/api-integration/surface-inventory.md`.
 - **The mcp block kind in the palette, one whole server per block (D1/D2/D4 frontend)** - 2026-10-05
   - `src/types/seatTypes.ts` gains `mcp` in the module-kind union (`SEAT_MODULE_KINDS`, the single source of truth the backend row also
     touches) plus `McpServerBlock`, field for field with the Go `mcpblock.Server`.
