@@ -3,6 +3,31 @@
 ## [Unreleased]
 
 ### Added
+- **Seat authoring rebuilt as block composition (owner directive 2)** - 2026-10-05
+  - `src/pages/SeatAuthoringPage.tsx` now headlines a composition surface for one seat: pick a room and a seat and a
+    level (company / room / seat) and add or remove ONE block at a time. `src/components/seats/SeatComposer.tsx` renders
+    every block with the scope it is inherited from and what removing it here does; `src/lib/blockComposition.ts`
+    folds the overlays exactly as the Go resolver does (company -> room -> seat over one state map) and answers per
+    level. `ModulePublishForm` and `SeatTypeVersionForm` stay below the composer, because a block must be publishable
+    before it can be composed.
+  - Vocabulary mapped from OpenRig's composition model, studied read-only: atom -> module (`slug@version`); pack -> seat
+    type version; profile/phases -> the overlay stack; source label ("every assembled piece names its source") -> the
+    overlay scope a block originates from; order -> the ops order inside an overlay plus the fixed company/room/seat
+    order. OpenRig has no remove/shadow operation at all and our modules carry no `requires[]` edges - both recorded as
+    deliberate gaps, so the outcome vocabulary comes from OUR resolver, not theirs.
+  - The two outcomes do not collapse. An applying removal says `removed at seat · still defined at <origin>` ("the seat
+    type"/company/room), or "this level is the only definition" when the block was added here. A removal that cannot
+    apply is refused with the resolver's reason - `already removed at seat: the resolver refuses a second remove`, or
+    `not in effect at <level>: there is nothing to remove here` - instead of silently doing nothing, and it offers
+    Restore wherever this level wrote the remove. An `add` of a block already in effect is refused the same way (its
+    option is disabled and the Add button stays off).
+  - No invented pin lock: a `pin` op marks a block `pinned at <scope>` and a removal is still offered, because
+    `OpPin` only sets the version and a later `remove` still wins (`seat_management/domain/resolver/resolver.go:191-199`).
+    The underlying question (a real lock vs a version selector) is an owner decision, filed by the lead.
+  - Tests: `src/tests/utils/blockComposition.test.ts` (fold, origins, both refusal modes, the pinned-removal rule, the op
+    helpers) and six composer cases in `src/tests/pages/SeatAuthoringPage.test.tsx` - 97 files / 1689 tests, up from
+    96 / 1663.
+
 - **Topology graph: rooms, seats and links (F6)** - 2026-10-05
   - `src/pages/TopologyPage.tsx` (`/topology`) renders the workspace as a graph - rooms are the groups ("pods" in
     F6's wording), seats are the nodes and seat links are the edges drawn by kind - plus a seats table. Components in

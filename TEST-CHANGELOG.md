@@ -13,7 +13,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-05 — seat block composition (frontend, owner directive 2)
 
-- `src/tests/lib/blockComposition.test.ts` (18 tests): the fold matches the Go resolver - a block added at a scope is
+- `src/tests/utils/blockComposition.test.ts` (18 tests): the fold matches the Go resolver - a block added at a scope is
   inherited by the more specific scopes; a remove at a scope is recorded there and drops the block from the final set;
   a re-add after a remove is owned by the scope that re-added it; `pin` records the version and the pinning scope;
   `override` marks the block without changing presence or version; a slug only an op names is still known, so an

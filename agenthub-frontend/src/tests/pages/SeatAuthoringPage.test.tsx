@@ -7,6 +7,7 @@ import { SeatAuthoringPage } from '../../pages/SeatAuthoringPage';
 import { seatApi } from '../../services/seatApi';
 import { useWebSocket } from '../../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
+import type { SeatOverlayOp, SeatOverlayScope } from '../../types/seatTypes';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -14,6 +15,10 @@ vi.mock('../../services/seatApi', () => ({
     listModules: vi.fn(),
     putModuleVersion: vi.fn(),
     createSeatTypeVersion: vi.fn(),
+    listRooms: vi.fn(),
+    listSeats: vi.fn(),
+    getOverlay: vi.fn(),
+    putOverlay: vi.fn(),
   },
 }));
 
@@ -78,6 +83,31 @@ describe('SeatAuthoringPage', () => {
       success: true,
       module: { slug: 'rules', kind: 'instruction', version: '1.1.0', sha256: 'abc' },
     });
+    mockApi.listRooms.mockResolvedValue({
+      success: true,
+      rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room' }],
+    });
+    mockApi.listSeats.mockResolvedValue({
+      success: true,
+      seats: [
+        {
+          id: 'seat-1',
+          room_id: 'room-dev',
+          seat_key: 'alice',
+          seat_type: 'coder',
+          seat_type_id: 'type-1',
+          pinned_version: '1.0.0',
+          runtime: 'claude-code',
+          model: '',
+          permission_policy: 'standard',
+        },
+      ],
+    });
+    mockApi.getOverlay.mockImplementation(async (scope) => ({
+      success: true,
+      overlay: { scope, ops: [] },
+    }));
+    mockApi.putOverlay.mockResolvedValue({ success: true, overlay: { scope: 'seat', ops: [] } });
   });
 
   it('lists seat types with their default runtime and module refs', async () => {
@@ -253,5 +283,106 @@ describe('SeatAuthoringPage', () => {
 
     expect(vi.mocked(useWebSocket)).toHaveBeenCalledWith('test-user', 'test-token');
     expect(vi.mocked(useRealtimeSync)).toHaveBeenCalled();
+  });
+});
+
+describe('SeatAuthoringPage composer', () => {
+  const overlaysFor = (ops: Partial<Record<SeatOverlayScope, SeatOverlayOp[]>>) => {
+    mockApi.getOverlay.mockImplementation(async (scope) => ({
+      success: true,
+      overlay: { scope, ops: ops[scope] ?? [] },
+    }));
+  };
+
+  // The composer needs rooms and seats to resolve before it renders.
+  const openComposer = async () => {
+    renderPage();
+    return screen.findByLabelText('Compose level');
+  };
+
+  it('labels each block with where it is inherited from and what removing it here does', async () => {
+    overlaysFor({ company: [{ kind: 'add', slug: 'style', version: '2.0.0', content: '' }] });
+    await openComposer();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    expect(within(blocks).getByText('rules@1.0.0')).toBeInTheDocument();
+    expect(within(blocks).getByText('inherited from the seat type')).toBeInTheDocument();
+    expect(within(blocks).getByText('style@2.0.0')).toBeInTheDocument();
+    expect(within(blocks).getByText('inherited from company')).toBeInTheDocument();
+    expect(
+      within(blocks).getByText('Removing here: removed at seat · still defined at company')
+    ).toBeInTheDocument();
+  });
+
+  it('removes an inherited block by writing one remove op at this level', async () => {
+    overlaysFor({ company: [{ kind: 'add', slug: 'style', version: '2.0.0', content: '' }] });
+    await openComposer();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    const row = within(blocks).getByText('style@2.0.0').closest('li') as HTMLElement;
+    fireEvent.click(within(row).getByRole('button', { name: /Remove here/ }));
+
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'remove', slug: 'style', version: '', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
+  });
+
+  it('adds exactly one block at this level', async () => {
+    overlaysFor({});
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [
+        { slug: 'rules', kind: 'instruction', version: '1.0.0', sha256: 'abcdef0123456789' },
+        { slug: 'style', kind: 'document', version: '2.0.0', sha256: 'bbbbbbbbbbbbbbbb' },
+      ],
+    });
+    await openComposer();
+
+    fireEvent.change(screen.getByLabelText('Add a block'), { target: { value: 'style' } });
+    fireEvent.change(screen.getByLabelText('Block version'), { target: { value: '2.0.0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add at Seat' }));
+
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'add', slug: 'style', version: '2.0.0', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
+  });
+
+  it('refuses to add a block already in effect at this level', async () => {
+    overlaysFor({});
+    await openComposer();
+
+    expect(screen.getByRole('option', { name: 'rules (already in effect)' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add at Seat' })).toBeDisabled();
+  });
+
+  it('shows why a block cannot be removed at this level rather than doing nothing', async () => {
+    overlaysFor({ seat: [{ kind: 'remove', slug: 'rules', version: '', content: '' }] });
+    await openComposer();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    expect(
+      within(blocks).getByText('already removed at seat: the resolver refuses a second remove')
+    ).toBeInTheDocument();
+    expect(within(blocks).getByRole('button', { name: /Restore/ })).toBeInTheDocument();
+  });
+
+  it('marks a pinned block and still offers removal - no invented pin lock', async () => {
+    overlaysFor({ company: [{ kind: 'pin', slug: 'rules', version: '1.2.0', content: '' }] });
+    await openComposer();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    expect(within(blocks).getByText('pinned at company')).toBeInTheDocument();
+    const row = within(blocks).getByText('rules@1.2.0').closest('li') as HTMLElement;
+    expect(within(row).getByRole('button', { name: /Remove here/ })).toBeEnabled();
   });
 });
