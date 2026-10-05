@@ -107,9 +107,11 @@ type MissedNotification struct {
 	DeliveryAttempts int
 }
 
-// MissedNotificationStore is the minimal persistence port for the
-// missed_notifications helpers. Python calls get_session()/MissedNotification
-// directly; there is no Go repository yet, so the caller injects one.
+// MissedNotificationStore is the persistence port for the missed_notifications helpers.
+// Python calls get_session()/MissedNotification directly; the Go repository lives in
+// task_management/infrastructure/repositories/orm (`MissedNotificationRepository`) and httpapp
+// assigns it to MissedStore at startup (`wireMissedNotificationStore`). The global stays a seam
+// so tests can inject a fake; nil keeps Python's exception path.
 type MissedNotificationStore interface {
 	Store(ctx context.Context, userID string, message *entities.OrderedMap[any]) (string, error)
 	Fetch(ctx context.Context, userID string, delivered bool, limit int) ([]*MissedNotification, error)
