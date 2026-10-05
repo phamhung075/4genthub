@@ -10,6 +10,12 @@ import (
 // DefaultVersion is the default server version, overridable with SERVER_VERSION.
 const DefaultVersion = "0.0.2c"
 
+// ServerName is the server's NAME — the brand subtitle after the dash, not a
+// description sentence. One definition for every place that advertises the
+// server name: the version metadata, the MCP status tool, the health endpoint
+// and the server records built by the connection-management use cases.
+const ServerName = "agenthub - AI Orchestration Platform"
+
 // ResolveVersion is SERVER_VERSION when set (even to the empty string), else DefaultVersion.
 func ResolveVersion(lookup func(string) (string, bool)) string {
 	if v, ok := lookup("SERVER_VERSION"); ok {
@@ -28,7 +34,7 @@ func VersionInfo() *entities.OrderedMap[any] { return VersionInfoFor(Version) }
 func VersionInfoFor(version string) *entities.OrderedMap[any] {
 	m := entities.NewOrderedMap[any]()
 	m.Set("version", version)
-	m.Set("name", "agenthub - Task Management & Agent Orchestration")
+	m.Set("name", ServerName)
 	m.Set("codename", "Vision System Enhanced")
 	m.Set("release_date", "2025-09-10")
 	return m

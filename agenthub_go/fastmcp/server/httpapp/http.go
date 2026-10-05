@@ -16,6 +16,7 @@ import (
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -150,7 +151,7 @@ func authenticateUser(ctx context.Context, r *http.Request) (*authdomain.User, e
 // The description after the dash is the one-line product description the frontend
 // landed with directive G (agenthub-frontend/src/components/Header.tsx:125); keep the
 // two in step rather than phrasing a third one here.
-const healthServerName = "agenthub - AI Orchestration Platform"
+const healthServerName = config.ServerName
 
 // healthVersion is the release the server reports on /health. Bump it with every
 // change that must be confirmable after a deploy: the Docker build context has
