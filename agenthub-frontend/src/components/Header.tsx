@@ -1,4 +1,4 @@
-import { Armchair, HelpCircle, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
+import { Armchair, BookOpen, HelpCircle, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -189,6 +189,13 @@ export const Header: React.FC = () => {
                     title="Help & Setup"
                   >
                     <HelpCircle className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/docs"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="API reference"
+                  >
+                    <BookOpen className="h-5 w-5" />
                   </Link>
                   <Link
                     to="/profile"

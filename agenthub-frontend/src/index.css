@@ -87,3 +87,25 @@ code {
     background-position: 200% center;
   }
 }
+
+/* Rendered markdown documents (the API reference page).
+   Tailwind utilities cannot reach HTML injected by dangerouslySetInnerHTML, so
+   the document body is styled here - once, next to the sanitizer policy that
+   produced it. scroll-mt keeps a linked heading clear of the sticky header. */
+.markdown-body { @apply text-sm leading-6; }
+.markdown-body h1 { @apply text-2xl font-bold mb-4; }
+.markdown-body h2 { @apply text-xl font-semibold mt-8 mb-3 scroll-mt-24; }
+.markdown-body h3 { @apply text-base font-semibold mt-6 mb-2 scroll-mt-24; }
+.markdown-body p { @apply mb-4; }
+.markdown-body ul { @apply list-disc pl-6 mb-4 space-y-1; }
+.markdown-body ol { @apply list-decimal pl-6 mb-4 space-y-1; }
+.markdown-body a { @apply text-primary underline; }
+.markdown-body code { @apply rounded bg-surface-hover px-1 py-0.5 font-mono text-xs; }
+.markdown-body pre { @apply mb-4 overflow-x-auto rounded bg-surface-hover p-3; }
+.markdown-body pre code { @apply bg-transparent p-0 text-xs; }
+.markdown-body blockquote { @apply border-l-4 border-surface-border pl-4 mb-4 text-text-tertiary; }
+.markdown-body table { @apply mb-4 w-full border-collapse text-sm; }
+.markdown-body th { @apply border border-surface-border px-3 py-1 text-left font-medium; }
+.markdown-body td { @apply border border-surface-border px-3 py-1; }
+.markdown-body hr { @apply my-6 border-surface-border; }
+.markdown-body img { @apply max-w-full; }
