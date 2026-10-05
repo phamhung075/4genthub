@@ -3,6 +3,24 @@
 ## [Unreleased]
 
 ### Added
+- **Topology graph: rooms, seats and links (F6)** - 2026-10-05
+  - `src/pages/TopologyPage.tsx` (`/topology`) renders the workspace as a graph - rooms are the groups ("pods" in
+    F6's wording), seats are the nodes and seat links are the edges drawn by kind - plus a seats table. Components in
+    `src/components/topology/`: `TopologyGraph.tsx` (hand-rolled SVG, deterministic grid per room, one colour and dash
+    per kind, a `Denied` dash for `allow: false`, and a legend), `TopologySeatsTable.tsx` and `linkStyles.ts` (labels
+    reused from `SEAT_LINK_KINDS`). Nav item in `src/components/Header.tsx`; route in `src/App.tsx`.
+  - Data: `src/hooks/useTopology.ts` folds three existing routes into one `['seatTopology']` query - `GET
+    /api/v2/openrig/rooms`, `/rooms/{room}/seats` and `/rooms/{room}/seats/{seat}/links` (the links route returns the
+    links FROM a seat, so one call per seat covers every edge). No new backend route, no new dependency: the app
+    carries no graph-layout library and the SVG is written directly rather than adding one for a single view.
+  - Live through the same realtime socket the seat pages use (`useWebSocket` + `useRealtimeSync`), not the session
+    stream: F6's "live via /ws/sessions" predates the seat model, and the topology IS seat data. The seat handler in
+    `useRealtimeSync.ts` must also invalidate `topologyKeys.all` for the view to update; that edit belongs to the
+    file's owner (fe-dev) and was handed over as three lines rather than applied by another seat.
+  - Tests: `useTopology.test.tsx` (one links call per seat, rooms fold their own nodes/edges, key identity) and
+    `TopologyPage.test.tsx` (room groups with seats and an edge per link, legend, seats table, empty state) - 96 files
+    / 1663 tests, up from 94 / 1658.
+
 - **Sessions dashboard: session list and live stream (C3)** - 2026-10-05
   - `src/pages/SessionsPage.tsx` with `src/components/sessions/SessionList.tsx` and `SessionLiveView.tsx` render the
     signed-in user's sessions and the selected one's live event stream; `src/hooks/useSessions.ts` holds `useSessions`

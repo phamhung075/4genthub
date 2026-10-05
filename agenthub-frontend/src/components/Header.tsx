@@ -1,4 +1,4 @@
-import { Armchair, HelpCircle, Home, Key, Menu, Moon, Settings, Sun, Terminal, X } from 'lucide-react';
+import { Armchair, HelpCircle, Home, Key, Menu, Moon, Network, Settings, Sun, Terminal, X } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -58,6 +58,13 @@ export const Header: React.FC = () => {
       href: "/sessions",
       gradient: "radial-gradient(circle, rgba(56,189,248,0.15) 0%, rgba(14,165,233,0.06) 50%, rgba(2,132,199,0) 100%)",
       iconColor: "text-sky-500",
+    },
+    {
+      icon: Network,
+      label: "Topology",
+      href: "/topology",
+      gradient: "radial-gradient(circle, rgba(244,63,94,0.15) 0%, rgba(225,29,72,0.06) 50%, rgba(190,18,60,0) 100%)",
+      iconColor: "text-rose-500",
     },
     {
       icon: HelpCircle,
@@ -168,6 +175,13 @@ export const Header: React.FC = () => {
                     title="Sessions"
                   >
                     <Terminal className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/topology"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Topology"
+                  >
+                    <Network className="h-5 w-5" />
                   </Link>
                   <Link
                     to="/help-setup"

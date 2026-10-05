@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — topology graph (frontend, F6)
+
+- `src/tests/hooks/useTopology.test.tsx`: the composite query issues exactly one links call per seat (`dev/alice`,
+  `dev/bob`, `ops/carol`), each room entry carries its own seats and links, and `topologyKeys.all` is `['seatTopology']`
+  - the key identity the realtime handler matches by reference, so the test pins the contract fe-dev's invalidation
+  depends on. Mocks `seatApi` and uses a real `QueryClient`.
+- `src/tests/pages/TopologyPage.test.tsx`: a room renders as a group with its seats and one `line[data-link-kind]` per
+  link (kind and `allow` read off the SVG attributes), the legend names every kind, the Seats tab shows one row per seat
+  with room/type/runtime/model/version/policy, and zero rooms shows the empty state. The Seats tab is activated with
+  `user-event`, not `fireEvent.click`, because Radix Tabs activates on a real pointer event.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 96 files / 1663 tests passed; `npx vite build` ok.
+  Browser smoke of the production bundle served by one local Bun stub (the three openrig seat routes): `/topology`
+  rendered the summary `2 rooms · 3 seats · 2 links`, both room groups with their nodes, two edges by kind
+  (`delegates_to`, `escalates_to`) and the legend; the Seats tab rendered the three-row table with `follows latest` and
+  `locked` intact.
+
 ## 2026-10-05 — teams/sharing domain (Go, NEXT_GEN D5 slice 1)
 
 - `fastmcp/team_management/application/services/team_service_test.go`: `fakeTeamRepo` (in-memory `TeamRepository`) plus four cases over the membership rules: validation and creator-is-owner; a viewer is refused for every mutation (`ErrNotTeamOwner`) but can list members; a non-member sees no team (404) for both a real team and a missing slug; the single-owner rules (`ErrSecondOwner` for a second owner or a promotion, `ErrLastOwner` for demoting or removing the owner, an invalid role rejected); and the owner can add a viewer, hit `ErrMemberExists` on a duplicate, remove the viewer and delete the team.

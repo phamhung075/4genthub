@@ -38,6 +38,7 @@ const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m
 const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
 const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
 const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })));
+const TopologyPage = lazy(() => import('./pages/TopologyPage').then(m => ({ default: m.TopologyPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
@@ -376,6 +377,18 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <SessionsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/topology"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <TopologyPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>
