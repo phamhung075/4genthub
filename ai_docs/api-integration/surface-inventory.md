@@ -546,6 +546,8 @@ document.
 
 Run from `/home/daihu/__projects__/4genthub/agenthub_go` unless noted.
 
+**Why every count below carries its command:** a count of text is not a count of structure, and four conflations found in this rig are the reason — an `httpapp`-only glob read as the whole tree (which hid the 20 auth registrations), a registration read as its truncated `base + suffix` tail, a header COMMENT counted as a `CREATE TABLE` statement (the unanchored 14 versus the anchored 13), and `initialize` read as a dispatch case when it is a `handleJSONRPC` protocol method. Each count below is therefore the structurally anchored form, and where two counts of one thing disagree, the discrepancy is evidence to CHECK rather than a story to tell.
+
 ```bash
 # Every route registration (the source of §1)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go'
