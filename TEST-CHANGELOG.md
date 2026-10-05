@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — context-pack algebra (Go, NEXT_GEN F2)
+
+- New `fastmcp/seat_management/domain/contextpacks/` with 24 tests over six files. Acceptance clauses: each of the three modes composed from a real markdown fixture (`TestComposeProfileThreeModes`, which also pins the full-span rule — `alpha`'s piece carries its H3 child and stops before the next H2); determinism (`TestComposeProfileIsDeterministic`: two composes deep-equal, and the walk is ordered by `Order`); the token estimate is monotonic in content (`TestEstimateTokensIsMonotonicInContent`, over 200 growing inputs) and is a byte projection, not a rune count; and a dangling address is rejected rather than dropped (`TestComposeRejectsDanglingAddress` at the compose, `TestAssertSafePackRefRejectsRatherThanDrops` at the ref gate).
+- Also covered: closure over `requires` including the loud missing-dependency and runtime-excluded cases, the runtime filter, `profileOnly` exclusion, the budget report's drop order with no truncation, named profiles (atom vs context phases; missing context, missing atom, wrong situation), source labelling, address parse/resolve errors (ambiguity, no-match candidates, empty path), fenced headers, addressability findings, plain and framed bundle assembly (missing files, read error), and the recap chain, contract and write gate.
+- Two defects were caught by the tests: a fence capture-group index bug in `scanHeaders` (a panic on any fenced document) and a wrong expectation of mine about `_` in slugify (the markdown markers `*_~` are stripped, so `and_text` slugifies to `andtext`).
+- Commands: `gofmt -l` clean; `go vet ./fastmcp/seat_management/domain/contextpacks/` exit 0; `go build ./...` exit 0; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` ok.
+- Nothing is wired to a route or repository yet; no existing file changed.
+
 ## 2026-10-05 — seat creation inherits the version's default runtime (Go)
 
 - `fastmcp/server/httpapp/seat_create_runtime_fallback_test.go` (new): six route tests over the seat-admin mux and its fake source. Omitting `runtime` creates the seat with the chosen version's `default_runtime`; an explicit `runtime` wins over that default; an invalid explicit runtime still 400s; a version whose default is empty and no explicit runtime still 400s; an omitted runtime with an unknown seat type is still 404 (no invented default); and an inherited runtime still validates the model (codex with a `claude-` model is 400).
