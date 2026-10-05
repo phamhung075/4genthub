@@ -45,6 +45,8 @@ export interface AuthContextType {
   tokens: AuthTokens | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Why a stored token could not start a session, when that is the case; null otherwise. */
+  authError: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, username: string, password: string) => Promise<SignupResult>;
   logout: () => void;

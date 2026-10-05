@@ -36,7 +36,7 @@ interface LoginFormData {
 }
 
 export const LoginForm: React.FC = () => {
-  const { login } = useAuth();
+  const { login, authError } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -121,7 +121,7 @@ export const LoginForm: React.FC = () => {
         <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 20 }}>
           <ThemeToggle />
         </Box>
-        
+
         <Box
           sx={{
             width: '100%',
@@ -135,8 +135,8 @@ export const LoginForm: React.FC = () => {
               padding: 4,
               width: '100%',
               borderRadius: 3,
-              backgroundColor: theme.palette.mode === 'dark' 
-                ? 'rgba(18, 18, 18, 0.95)' 
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(18, 18, 18, 0.95)'
                 : 'rgba(255, 255, 255, 0.98)',
               backdropFilter: 'blur(10px)',
               border: theme.palette.mode === 'dark'
@@ -166,6 +166,14 @@ export const LoginForm: React.FC = () => {
               Welcome back! Please sign in to continue.
             </Typography>
           </Box>
+
+          {/* A stored token that could not form a session is not a dead session: say why the user
+              is looking at a login form instead of a dashboard rather than clearing it silently. */}
+          {authError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {authError}
+            </Alert>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -282,7 +290,7 @@ export const LoginForm: React.FC = () => {
           </Paper>
         </Box>
       </FallingGlitch>
-      
+
       {/* Version display in bottom right */}
       <VersionDisplay backendVersion={backendVersion} />
     </Box>

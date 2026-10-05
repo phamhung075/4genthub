@@ -138,6 +138,51 @@ describe('AuthContext', () => {
       });
     });
 
+    // MEASURED DEFECT (dashboard-token row): a token minted by POST /api/v2/tokens decodes but has
+    // no `email` claim, so building a username threw; the mount path fell through to refreshToken
+    // and its failure called logout() - both cookies cleared, every request afterwards 403, and the
+    // user told nothing. The guard: the token is classified as unusable, the reason is reported, and
+    // the stored credentials are left alone. This fails if the silent logout path returns, because
+    // that path removes both cookies and POSTs /api/auth/refresh.
+    it('reports a stored token with no email claim instead of clearing the session', async () => {
+      vi.mocked(Cookies.get).mockImplementation((key?: string) => {
+        if (key === 'access_token') return 'minted-api-token';
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return undefined;
+      });
+
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue({
+        sub: 'user-123',
+        scopes: ['read'],
+        type: 'api',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      // Settle the mount path, including any refresh a missing guard would have started.
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // The silent logout path clears both cookies and POSTs /api/auth/refresh: neither happens.
+      expect(Cookies.remove).not.toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+      // Not signed in, and told why rather than logged out with no reason.
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+      expect(authContext!.authError).toMatch(/cannot start a session/i);
+    });
+
     it('should handle expired token on mount', async () => {
       const expiredToken = {
         ...mockDecodedToken,

@@ -2,13 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a token that cannot name a user is reported, not cleared (frontend)
+
+- `src/tests/contexts/AuthContext.test.tsx` adds a case for a stored token that decodes, is unexpired
+  and carries no `email` claim: with the guard in place no cookie is removed, no `POST /api/auth/refresh`
+  is sent, and `authError` names the reason. Proved as a guard by deleting the guard branch and re-running
+  it: the test then fails at `Cookies.remove` (called 8 times, the refresh/logout loop) - the measured
+  behaviour it exists to catch - and passes again once the branch is restored.
+- `src/tests/components/auth/LoginForm.test.tsx` adds a case that the reason on the context is rendered
+  on the form a user lands on, mocking the full context value rather than a partial one.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/contexts/AuthContext.test.tsx
+  src/tests/components/auth/LoginForm.test.tsx` -> 48 passed; `npx vitest run` -> 102 files / 1748 tests
+  passed; `npx vite build` -> ok.
+
 ## 2026-10-05 — a blank field never clears a field on the occupant PUT (Go)
 
 - `fastmcp/server/httpapp/seat_occupant_runtime_test.go` gains the case fe-dev measured on the real stack: a runtime-only PUT changes the runtime and KEEPS the model. Plus an explicit-empty-model case (indistinguishable from an omission, so it keeps too), an all-blank no-op case, and an explicit-model case. `fastmcp/seat_management/application/services/seat_admin_service_test.go` gains `TestSeatAdminServiceSetOccupantBlankModelKeepsIt`.
 - One obsolete expectation moved with the ruling, named because a test change is a finding: `TestSeatAdminSetOccupant` asserted a blank model CLEARS to `""`; it now asserts the model is kept, with the ruling and the new pin in the comment.
 - Commands: `gofmt -l` clean on both packages; `go vet ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` exit 0; `go test -count=1 ./fastmcp/seat_management/application/services/` ok; the eleven occupant cases in httpapp all PASS when selected. NOTE: the full httpapp package currently fails `TestRoomRigSpecDerivesPublicURLFromRequest` from another seat's uncommitted rigspec edits in the same package — the case passes at HEAD and when run alone, so it is not this change.
 
-## 2026-10-06 — the link delete asks first (frontend)
+## 2026-10-06 - the link delete asks first (frontend)
 
 - `src/tests/pages/SeatDetailPage.test.tsx` updates the two existing delete tests to the confirmed flow - they still
   assert the same call (`deleteLink('dev', 'alice', 'bob', 'delegates_to')`) and the same surfaced error - and adds two:

@@ -211,6 +211,19 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A token that cannot start a session is reported, not silently cleared** - 2026-10-06
+ - A token minted by `POST /api/v2/tokens` decodes but carries no `email` claim. The token decoder built
+ the username from that claim, so it threw, returned null exactly like an expired token, and the mount
+ path read that as expiry: it refreshed, the refresh failed, and logout cleared both cookies. The user
+ landed on the login screen with no explanation, and the measured end state was an empty session whose
+ every request returned 403.
+ - The decoder is now `classifyToken`, returning `undecodable`, `expired` or `no-identity` instead of a
+ bare null, so three outcomes are no longer one. `no-identity` is not a dead session: the mount path
+ reports it through the new `authError` field on the context and leaves the stored credentials alone -
+ no refresh, no cookie removal - while `expired` and `undecodable` keep the existing refresh path. A
+ username is never invented from a missing claim.
+ - The login screen renders `authError` above the form, so someone who lands there holding an unusable
+ token is told why rather than seeing a logout nobody asked for.
 - **Deleting a link now says what it removes before it removes it** - 2026-10-06
   - The trash button in the seat page's outgoing-links panel called the delete mutation on one click: it removes an
     enforced communication permission or deny with no confirmation and no way back except re-creating it. It now opens
