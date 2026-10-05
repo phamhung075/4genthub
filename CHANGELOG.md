@@ -12,6 +12,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `ai_docs/` and the root `README.md` were rewritten against the mounted Go server: `ai_docs/api-integration/surface-inventory.md` is the authoritative reference (132 route registrations, nine published MCP tools, 36 runtime tables), and stale legacy descriptions were replaced. Residual corrections in this pass: `agenthub_go/FIX_PLAN_BRIEF.md` WP3's requirement to model `agent_templates`/`user_agent_instances` is marked superseded (both tables were dropped; `models_prod.go` declares six `ProductionTables`); the two `ai_docs/core-architecture/agent-knowledge-skill-system-*` proposals carry an explicit not-implemented/not-mounted banner naming their fabricated `/mcp/manage_skill`, `/mcp/manage_knowledge` and `/mcp/call_agent` routes, their unpublished tools and their proposed tables; the dangling `mcp-client-integration-complete.md` link in `ai_docs/api-integration/mcp-tools-api-complete.md` now points at the surface inventory. Docs only; no code changed.
 
+**ai_docs broken relative links swept** (2026-10-05)
+
+- 21 site-absolute Anthropic references (`/en/ai_docs/...`) in `anthropic_custom_slash_commands.md`, `anthropic_docs_subagents.md`, `anthropic_output_styles.md` and `cc_hooks_docs.md` were repointed to `https://docs.claude.com/en/docs/...` (all ten distinct targets verified `200`). 12 dangling local links were removed — their targets were deleted (`dad51589 remove : all obsolete files`) or live only in the uncommitted `.claude/` submodule — and one was repointed (`../authentication/complete-authentication-system.md` → `complete-authentication-guide.md`). Relative-link check now reports 0 broken.
+
 ### Removed
 
 **Three orphaned Go branch routes deleted** (2026-10-04)

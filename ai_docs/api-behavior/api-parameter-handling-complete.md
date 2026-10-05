@@ -242,6 +242,5 @@ manage_context(data="{not valid json}")           # Parse error
 ---
 
 ## Related Documentation
-- [MCP Tools Reference](../.claude/ai_docs/claude-code/tools-and-mcp-reference.md)
 - [API Integration Guide](../api-integration/)
 - [Error Handling](../development-guides/)

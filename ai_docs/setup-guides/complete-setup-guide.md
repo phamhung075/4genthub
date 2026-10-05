@@ -551,7 +551,4 @@ curl -X POST http://localhost:8000/api/v2/projects/ \
 ---
 
 ## Related Documentation
-- [Database Configuration](../operations/database-configuration-guide.md)
-- [Authentication System](../authentication/complete-authentication-system.md)
-- [Docker Deployment](../operations/docker-deployment-guide.md)
-- [Production Guide](../operations/production-deployment-guide.md)
+- [Authentication Guide](../authentication/complete-authentication-guide.md)

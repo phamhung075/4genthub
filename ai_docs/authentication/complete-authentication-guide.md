@@ -568,4 +568,3 @@ curl http://localhost:8000/health  # Application
 ## Related Documentation
 - [Setup Guide](../setup-guides/complete-setup-guide.md)
 - [API Integration](../api-integration/)
-- [Security Best Practices](../operations/production-deployment-guide.md)

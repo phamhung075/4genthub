@@ -640,5 +640,3 @@ curl http://localhost:8000/health
 
 ## Related Documentation
 - [Setup Guide](../setup-guides/complete-setup-guide.md)
-- [Production Deployment](../operations/production-deployment-guide.md)
-- [Database Configuration](../operations/database-configuration-guide.md)
