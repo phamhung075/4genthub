@@ -42,14 +42,14 @@ vi.mock('../../components/LazyTaskList/components', () => ({
   TaskListHeader: () => null,
   TaskListContent: () => null,
   TaskSearchSection: () => null,
-  DialogSection: ({ availableAgents, availableAgentsError }: {
-    availableAgents: string[];
-    availableAgentsError: boolean;
+  DialogSection: ({ availableSeats, availableSeatsError }: {
+    availableSeats: string[];
+    availableSeatsError: boolean;
   }) => (
     <div
       data-testid="sections"
-      data-seats={availableAgents.join(',')}
-      data-error={String(availableAgentsError)}
+      data-seats={availableSeats.join(',')}
+      data-error={String(availableSeatsError)}
     />
   ),
 }));

@@ -10,7 +10,7 @@ export function useDialogManager(
   urlTaskId?: string,
   subtaskId?: string,
   onLoadFullTask?: (taskId: string) => void,
-  onLoadAgents?: () => void
+  onLoadSeats?: () => void
 ): UseDialogManagerReturn {
   const navigate = useNavigate();
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>({ type: null });
@@ -28,15 +28,15 @@ export function useDialogManager(
       onLoadFullTask(taskId);
     }
 
-    if (type === 'assign' && onLoadAgents) {
-      onLoadAgents();
+    if (type === 'assign' && onLoadSeats) {
+      onLoadSeats();
     }
 
     // Navigate to task URL only for details dialog
     if (type === 'details' && taskId) {
       navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${taskId}`);
     }
-  }, [navigate, projectId, taskTreeId, onLoadFullTask, onLoadAgents]);
+  }, [navigate, projectId, taskTreeId, onLoadFullTask, onLoadSeats]);
 
   const closeDialog = useCallback(() => {
     logger.debug('Starting dialog close process');

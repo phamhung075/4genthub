@@ -23,14 +23,14 @@ vi.mock('../../hooks/useSubtasks', () => ({
 }));
 
 vi.mock('../../components/AgentAssignmentDialog', () => ({
-  default: ({ availableAgents, availableAgentsError }: {
-    availableAgents: string[];
-    availableAgentsError: boolean;
+  default: ({ availableSeats, availableSeatsError }: {
+    availableSeats: string[];
+    availableSeatsError: boolean;
   }) => (
     <div
       data-testid="assignment"
-      data-seats={availableAgents.join(',')}
-      data-error={String(availableAgentsError)}
+      data-seats={availableSeats.join(',')}
+      data-error={String(availableSeatsError)}
     />
   ),
 }));

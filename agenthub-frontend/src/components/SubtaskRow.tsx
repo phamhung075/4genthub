@@ -187,7 +187,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
                     e.stopPropagation();
                     onAgentInfoClick(assignee);
                   }}
-                  title={`View ${assignee} information`}
+                  title={`View seat ${assignee} information`}
                 >
                   {assignee}
                 </Badge>

@@ -33,7 +33,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
 
   // Clean up assignees data to handle any edge cases
   let cleanAssignees: string[] = [];
-  
+
   if (Array.isArray(assignees)) {
     // Filter out any invalid entries like "[", "]", " ", etc.
     cleanAssignees = assignees
@@ -44,7 +44,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
         return trimmed && trimmed !== '[' && trimmed !== ']' && trimmed !== '[]';
       })
       .map(assignee => {
-        // Normalize agent names: remove @ prefix and keep kebab-case
+        // Normalize seat keys: remove @ prefix and keep kebab-case
         return assignee.startsWith('@') ? assignee.slice(1) : assignee;
       });
   }
@@ -62,7 +62,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
             <span
               className="cursor-pointer hover:text-primary underline decoration-dotted"
               onClick={() => onAgentClick(assignee, task)}
-              title={`Click to call ${assignee}`}
+              title={`Click to view seat ${assignee}`}
             >
               {assignee}
             </span>
@@ -82,7 +82,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
           variant={variant}
           className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors whitespace-nowrap`}
           onClick={() => onAgentClick(assignee, task)}
-          title={`Click to call ${assignee}`}
+          title={`Click to view seat ${assignee}`}
         >
           {assignee}
         </Badge>
