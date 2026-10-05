@@ -567,6 +567,5 @@ testground/
 # OpenRig runtime and orchestration files
 .openrig/
 .agents/
-AGENTS.md
 CULTURE.md
 rig.yaml

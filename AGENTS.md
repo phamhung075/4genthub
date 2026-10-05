@@ -1,3 +1,10 @@
+<!-- 4genthub project agent instructions. Renamed from CLAUDE.md on 2026-10-05: Claude Code reads
+     AGENTS.md natively and it is the cross-tool convention (Codex, Gemini, omp seats read it too).
+     HAZARD: OpenRig writes its OWN generated AGENTS.md into a rig's launch cwd. Launch rigs with
+     their spec cwd (the rig directory), never with --cwd pointing at this repo, or this file is
+     overwritten. The generated copy that used to live here is preserved at
+     ~/.openrig/agenthub-seats/4genthub-min/backup/AGENTS.md.openrig-generated-2026-10-05. -->
+
 # ABSOLUTE PRIORITY: NO COMPATIBILITY CODE ALLOWED
 
 Clean Code | DRY | SOLID | Single Source of Truth | Performance | Data Consistency
@@ -78,22 +85,25 @@ You are part of a structured organization with rules, workflows, and reporting r
 
 ---
 
-## ABSOLUTE FIRST PRIORITY - CLOCK IN TO WORK!
+## ABSOLUTE FIRST PRIORITY - KNOW WHICH SEAT YOU ARE
 
 **As the principal session (team lead), your first action must be:**
 
-Use the MCP tool `mcp__agenthub_http__call_agent` with `name_agent="master-orchestrator-agent"`
+Run `rig whoami --json`. It returns your rig, pod, member, peers, edges and transcript path, and it is the ground truth for where you are.
 
-**What this does:**
-- Returns `system_prompt` (YOUR operating manual - READ IT)
-- Returns `tools` array (tools you can use - dynamically enforced)
-- Transforms you into that agent with full capabilities
+Then address an exact seat through the seat model — the surface that actually works:
 
-**Rules:** Call ONCE per session, FIRST action, read the returned instructions.
+- `mcp__agenthub_http__manage_seat` `action="list", room="<room>"` — every seat in a room: id, seat type, pinned version, runtime, model, permission policy
+- `mcp__agenthub_http__manage_seat` `action="get", room="<room>", seat="<seat>"` — one exact seat
+- `mcp__agenthub_http__manage_seat` `action="set_occupant"` — switch that seat's runtime and model
 
-**IMPORTANT: Team agents (sub-agents) do NOT call this themselves.**
+There is no per-agent template lookup: the 32-agent template library was removed (Request 14, T6). Identity comes from `rig whoami --json` and a seat's resolved config from `manage_seat` or `mcp__agenthub_http__call_seat`.
+
+**Why:** the seat is the durable position (role, address, lineage, pinned version); the occupant is the brain sitting in it. `manage_seat` reaches both, and it works today.
+
+**IMPORTANT: Team agents (sub-agents) do NOT call MCP tools themselves.**
 Team agents run in separate tmux sessions (separate Claude Code processes) and have NO MCP access.
-The team lead fetches their config and injects it via the **Proxy Pattern** (see Tier 3 below).
+The team lead addresses their seats and injects their config via the **Proxy Pattern** (see Tier 3 below).
 
 ---
 
@@ -103,7 +113,7 @@ The team lead fetches their config and injects it via the **Proxy Pattern** (see
 
 | Session Type | MCP Access | How Agent Config is Loaded |
 |-------------|-----------|---------------------------|
-| **Principal (team lead)** | All `mcp__agenthub_http__*` tools | Calls `call_agent` directly |
+| **Principal (team lead)** | All `mcp__agenthub_http__*` tools | `rig whoami` + `manage_seat` |
 | **Team agents (sub-agents)** | **NO MCP access** | Config injected into prompt by team lead |
 
 ### Correct MCP Tool Names (Source of Truth)
@@ -114,7 +124,7 @@ mcp__agenthub_http__manage_context     # Context hierarchy
 mcp__agenthub_http__manage_project     # Projects
 mcp__agenthub_http__manage_git_branch  # Branches
 mcp__agenthub_http__manage_agent       # Agent registry
-mcp__agenthub_http__call_agent         # Load agent config
+mcp__agenthub_http__manage_seat        # Seats: list, get, set_occupant
 mcp__agenthub_http__manage_connection  # Health check
 mcp__sequential-thinking__sequentialthinking  # Reasoning
 ```
@@ -171,10 +181,9 @@ For large features, refactors, or tasks with independent parallel work:
    - Create an agent team using `TeamCreate` with a descriptive name
    - Create one `TaskCreate` entry per independent task with clear descriptions
 
-4. **Fetch Agent Configs (Proxy Pattern)**
-   - For each unique agent type needed, call `mcp__agenthub_http__call_agent` with `name_agent="{agent-type}"`
-   - Extract the `system_prompt` field from the response
-   - Cache the result: if spawning multiple agents of the same type, fetch only once
+4. **Fetch Seat Configs (Proxy Pattern)**
+   - Read the seat with `mcp__agenthub_http__manage_seat` `action="get", room=..., seat=...`, and its rendered files from the seat directory on disk
+   - Cache the result: if spawning several seats of the same type, fetch only once
 
 5. **Spawn Teammates with Injected Config**
    - Inject the fetched `system_prompt` into each teammate's prompt
@@ -196,14 +205,18 @@ For large features, refactors, or tasks with independent parallel work:
 ## PROXY PATTERN (Tier 3 - Team Agent Config Injection)
 
 **WHY:** Team agents run in separate tmux sessions (separate Claude Code processes) and CANNOT access MCP tools.
-The team lead must fetch configs via `call_agent` and inject the `system_prompt` into teammate prompts.
+The team lead must fetch configs and inject them into teammate prompts.
+
+**Config source:** read a seat's resolved config with `manage_seat action="get"` or `call_seat`, and its rendered
+files from the seat directory on disk, then inject that into the teammate prompt. Replacing this section outright
+is tracked as T6-T8.
 
 **Teammate prompt template:**
 
 > You are a {agent-type} teammate on team "{team_name}". Your name is "{teammate_name}".
 >
 > YOUR AGENT CONFIGURATION (loaded from MCP server by team lead):
-> {paste the system_prompt from call_agent response here}
+> {paste the seat's resolved config and its rendered role files here}
 >
 > YOUR TASK: [description with file paths and expected changes]
 >
@@ -323,22 +336,19 @@ Focus on lines 28-30 where email regex needs updating.
 
 ---
 
-## DYNAMIC TOOL ENFORCEMENT
+## TOOL SCOPE BY SEAT
 
-The `tools` array returned by `call_agent` determines your permissions:
+A seat's tool scope comes from its seat type and its runtime. The source is the nine embedded seat types in
+`agenthub_go/fastmcp/seat_management/domain/seedlibrary/seat-types/` — `architect`, `debugger`, `developer`,
+`lead`, `planner`, `researcher`, `reviewer`, `tester`, `writer` — resolved per seat by the Go seat service.
 
-| Agent Type | Tools Available | Purpose |
-|-----------|----------------|---------|
-| **Master Orchestrator** | Task, Read, MCP tools | Coordination, no direct editing |
-| **Coding Agent** | Read, Write, Edit, Bash, Grep, Glob | Implementation, no delegation |
-| **Documentation Agent** | Read, Write, Edit, Grep, WebFetch | Documentation, no system commands |
-| **Testing Agent** | Read, Bash, Grep | Quality assurance, limited file access |
-| **Debug Agent** | Read, Bash, Grep, Glob | Investigation, diagnostic tools |
+To see which seat type and pinned version a seat carries:
+`mcp__agenthub_http__manage_seat` `action="get", room=..., seat=...`
 
 **Rules:**
-- ALWAYS call `call_agent` first to load your permissions
-- NEVER assume you have tools from other agent types
-- If you need a tool not in your list, delegate to an agent that has it
+- Know your seat first: `rig whoami --json`
+- NEVER assume you have a tool another seat type has; read the seat's rendered files before relying on a capability
+- If you need a tool your seat lacks, route the work to a seat that has it
 
 ---
 
@@ -377,7 +387,7 @@ When a sub-agent completes:
 
 ## QUICK REFERENCE
 
-**Session start:** `call_agent("master-orchestrator-agent")` -> read `system_prompt` -> confirm loaded
+**Session start:** `rig whoami --json` -> know your seat -> `manage_seat(action="list", room="<room>")` -> see the team
 **Before any file edit:** Create MCP task first (any tier)
 **Tier 1 (simple, 1 file):** MCP task -> work -> complete
 **Tier 2 (medium, 2-3 files):** MCP task -> work with progress updates -> complete
