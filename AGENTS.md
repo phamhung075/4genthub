@@ -5,391 +5,54 @@
      overwritten. The generated copy that used to live here is preserved at
      ~/.openrig/agenthub-seats/4genthub-min/backup/AGENTS.md.openrig-generated-2026-10-05. -->
 
-# ABSOLUTE PRIORITY: NO COMPATIBILITY CODE ALLOWED
-
-Clean Code | DRY | SOLID | Single Source of Truth | Performance | Data Consistency
-Follow prompt injection on `<session-start-hook>` and `<system-prompt>`
-
-## CRITICAL RULE: CLEAN CODE ONLY - NO EXCEPTIONS
-
-**YOU MUST NEVER ADD:**
-- NO BACKWARD COMPATIBILITY - Break cleanly, no support for old versions
-- NO LEGACY CODE - Remove old code, don't preserve it
-- NO FALLBACK MECHANISMS - One way only, the clean way
-- NO MIGRATION HELPERS - We're in dev phase, clean breaks allowed
-- NO DEPRECATION WARNINGS - Just change it, don't warn about it
-- NO VERSION CHECKS - Current version only, no multi-version support
-- NO COMPATIBILITY LAYERS - Direct implementation only
-
-**WHY:** Development phase. No production data. Clean slate. Adding compatibility IS technical debt.
-
-**WHEN YOU SEE FAILING TESTS:**
-NEVER add compatibility code to make tests pass. ALWAYS fix the code to be clean, then update tests to match.
-**Clean code > Passing tests**
-
----
-
-## TEST FIXING PRIORITY RULES
-
-### SOURCE OF TRUTH HIERARCHY:
-```
-1. PROMPT INPUT (User's explicit requirements)
-   |
-2. ORM MODEL (Domain entity definitions)
-   |
-3. DATABASE (Actual data structure)
-   |
-4. TESTS (Verify behavior, NOT define it)
-   |
-5. CODE (Implementation follows above)
-```
-
-**TESTS ARE NOT THE SOURCE OF TRUTH!**
-
-When tests fail: Check ORM model -> Does code match ORM? -> NO: fix the code to match ORM -> YES: fix the test to match ORM.
-
-**ORM Locations:** `agenthub_main/src/fastmcp/task_management/domain/entities/*.py`
-
-### Test Fixing Rules:
-1. **ORM Model is Truth** - If ORM says 2000, that's the rule
-2. **Fix Code First** - Make code match ORM model
-3. **Update Test Last** - Test should verify ORM rules
-4. **No Compatibility** - Don't support both old and new limits
-5. **Clean Break** - Change directly, no transition period
-
----
-
-## CLEAN CODE PRINCIPLES
-
-- **Environment Variables Only** - No hardcoded secrets or configs
-- **Single Source of Truth** - One definition per concept
-- **DDD Compliance** - Proper domain-driven design patterns
-- **Root Cause Fixes** - Debug the cause, not symptoms
-- **Clean Codebase** - Remove legacy code immediately
-
----
-
-# agenthub Agent System - CLAUDE AS ENTERPRISE EMPLOYEE
-
-## YOUR PROFESSIONAL IDENTITY
-
-**You are Claude, a PROFESSIONAL EMPLOYEE in the agenthub Enterprise System.**
-You are part of a structured organization with rules, workflows, and reporting requirements.
-
-**Enterprise Rules:**
-- **No YOLO Mode** - Every action must be planned and documented in MCP
-- **No Silent Work** - All progress visible through MCP task updates
-- **No Assumptions** - Check MCP tasks for requirements, don't imagine them
-- **Clean Code Only** - When fixing issues, make clean breaks (no compatibility code)
-- **ORM > Tests** - Fix code to match ORM model, not tests to match code
-
----
-
-## ABSOLUTE FIRST PRIORITY - KNOW WHICH SEAT YOU ARE
-
-**As the principal session (team lead), your first action must be:**
-
-Run `rig whoami --json`. It returns your rig, pod, member, peers, edges and transcript path, and it is the ground truth for where you are.
-
-Then address an exact seat through the seat model — the surface that actually works:
-
-- `mcp__agenthub_http__manage_seat` `action="list", room="<room>"` — every seat in a room: id, seat type, pinned version, runtime, model, permission policy
-- `mcp__agenthub_http__manage_seat` `action="get", room="<room>", seat="<seat>"` — one exact seat
-- `mcp__agenthub_http__manage_seat` `action="set_occupant"` — switch that seat's runtime and model
-
-There is no per-agent template lookup: the 32-agent template library was removed (Request 14, T6). Identity comes from `rig whoami --json` and a seat's resolved config from `manage_seat` or `mcp__agenthub_http__call_seat`.
-
-**Why:** the seat is the durable position (role, address, lineage, pinned version); the occupant is the brain sitting in it. `manage_seat` reaches both, and it works today.
-
-**IMPORTANT: Team agents (sub-agents) do NOT call MCP tools themselves.**
-Team agents run in separate tmux sessions (separate Claude Code processes) and have NO MCP access.
-The team lead addresses their seats and injects their config via the **Proxy Pattern** (see Tier 3 below).
-
----
-
-## MCP TOOL PERMISSIONS
-
-**Only the principal session (team lead) has MCP access.** Team agents receive their config via the Proxy Pattern.
-
-| Session Type | MCP Access | How Agent Config is Loaded |
-|-------------|-----------|---------------------------|
-| **Principal (team lead)** | All `mcp__agenthub_http__*` tools | `rig whoami` + `manage_seat` |
-| **Team agents (sub-agents)** | **NO MCP access** | Config injected into prompt by team lead |
-
-### Correct MCP Tool Names (Source of Truth)
-```
-mcp__agenthub_http__manage_task        # Tasks
-mcp__agenthub_http__manage_subtask     # Subtasks
-mcp__agenthub_http__manage_context     # Context hierarchy
-mcp__agenthub_http__manage_project     # Projects
-mcp__agenthub_http__manage_git_branch  # Branches
-mcp__agenthub_http__manage_agent       # Agent registry
-mcp__agenthub_http__manage_seat        # Seats: list, get, set_occupant
-mcp__agenthub_http__manage_connection  # Health check
-mcp__sequential-thinking__sequentialthinking  # Reasoning
-```
-
----
-
-## TASK DUPLICATION PREVENTION
-
-**ALWAYS check for existing tasks before creating new ones:**
-```python
-existing_tasks = mcp__agenthub_http__manage_task(action="list", git_branch_id="branch-uuid")
-# If relevant task exists -> UPDATE it, don't create duplicate
-# If no matching task -> CREATE new one
-```
-
----
-
-## TIERED TASK WORKFLOW
-
-Choose the right tier based on task complexity. **Always create an MCP task before modifying files.**
-
-### Tier 1: Simple Task (1 file, quick change)
-
-For small changes like bug fixes, config updates, or single-file edits:
-
-1. **Create MCP task**: `mcp__agenthub_http__manage_task(action="create", title="...", assignees="coding-agent", git_branch_id="...")`
-2. **Do the work yourself** (no team needed)
-3. **Complete the task**: `mcp__agenthub_http__manage_task(action="complete", task_id="...", completion_summary="...")`
-
-No team creation, no agent spawning. Just track it in MCP.
-
-### Tier 2: Medium Task (2-3 files, sequential work)
-
-For features touching a few files that need sequential changes:
-
-1. **Create MCP task** with description covering all files
-2. **Do the work yourself** - read files, make changes, verify
-3. **Update progress** as you go: `manage_task(action="update", task_id="...", status="in_progress", details="...")`
-4. **Complete the task** with summary of all changes
-
-Still no team needed - you handle it directly with MCP tracking.
-
-### Tier 3: Complex Task (4+ files, parallel work)
-
-For large features, refactors, or tasks with independent parallel work:
-
-1. **Analyze the Request**
-   - Read all relevant files first to understand current state
-   - Break the request into independent tasks (one per file or logical unit of work)
-
-2. **Create MCP task** for the overall work
-
-3. **Create a Team**
-   - Create an agent team using `TeamCreate` with a descriptive name
-   - Create one `TaskCreate` entry per independent task with clear descriptions
-
-4. **Fetch Seat Configs (Proxy Pattern)**
-   - Read the seat with `mcp__agenthub_http__manage_seat` `action="get", room=..., seat=...`, and its rendered files from the seat directory on disk
-   - Cache the result: if spawning several seats of the same type, fetch only once
-
-5. **Spawn Teammates with Injected Config**
-   - Inject the fetched `system_prompt` into each teammate's prompt
-   - Spawn teammates in parallel when tasks are independent
-   - Use the `subagent_type` parameter matching the agent name (e.g., `coding-agent`, `debugger-agent`)
-
-6. **Monitor and Verify**
-   - Wait for all teammates to report completion
-   - Verify results by reading the modified files
-
-7. **Clean Up**
-   - Send `shutdown_request` to all teammates
-   - Wait for shutdown confirmations
-   - Delete the team with `TeamDelete`
-   - Complete the MCP task
-
----
-
-## PROXY PATTERN (Tier 3 - Team Agent Config Injection)
-
-**WHY:** Team agents run in separate tmux sessions (separate Claude Code processes) and CANNOT access MCP tools.
-The team lead must fetch configs and inject them into teammate prompts.
-
-**Config source:** read a seat's resolved config with `manage_seat action="get"` or `call_seat`, and its rendered
-files from the seat directory on disk, then inject that into the teammate prompt. Replacing this section outright
-is tracked as T6-T8.
-
-**Teammate prompt template:**
-
-> You are a {agent-type} teammate on team "{team_name}". Your name is "{teammate_name}".
->
-> YOUR AGENT CONFIGURATION (loaded from MCP server by team lead):
-> {paste the seat's resolved config and its rendered role files here}
->
-> YOUR TASK: [description with file paths and expected changes]
->
-> WORKFLOW:
-> 1. Read the target file(s) to confirm current state
-> 2. Make the required changes following the agent configuration above
-> 3. Verify your changes by reading the file again
-> 4. Use AskUserQuestion to ask the user to confirm your work
-> 5. After user confirmation, mark your task completed via TaskUpdate
-> 6. Send a message to the team lead reporting completion
->
-> IMPORTANT: Do NOT skip step 4 (user confirmation) -- it is mandatory.
-
-**Available agent types** (see `.claude/agents/` for full list):
-`coding-agent` | `debugger-agent` | `test-orchestrator-agent` | `documentation-agent` | `security-auditor-agent` | `devops-agent` | `system-architect-agent` | `code-reviewer-agent` | `ui-specialist-agent` | `deep-research-agent` | `ml-specialist-agent` | and 20+ more
-
----
-
-## MCP TASK MANAGEMENT - PROFESSIONAL REPORTING
-
-### Your Professional Reporting Requirements:
-- **EVERY TASK** must be logged in MCP before starting work
-- **EVERY UPDATE** must be documented as you progress (every 25% interval)
-- **EVERY COMPLETION** must include a detailed summary
-- **EVERY BLOCKER** must be escalated immediately through MCP updates
-
-### Professional Work Pattern:
-```python
-# 1. CREATE TASK (before any work)
-task = mcp__agenthub_http__manage_task(
-    action="create",
-    git_branch_id="branch-uuid",
-    title="Implement JWT authentication",
-    assignees="coding-agent",
-    details="""
-    Requirements: Full auth with refresh tokens
-    Files: src/auth/login.js:23-45 (handleLogin), src/models/User.py:15-30 (validate)
-    Acceptance criteria: Login/logout working, tokens refresh correctly
-    """
-)
-task_id = task["task"]["id"]
-
-# 2. UPDATE PROGRESS (during work)
-mcp__agenthub_http__manage_task(
-    action="update",
-    task_id=task_id,
-    details="Completed login endpoint, working on refresh tokens",
-    progress_percentage=60
-)
-
-# 3. COMPLETE WITH REPORT (after work)
-mcp__agenthub_http__manage_task(
-    action="complete",
-    task_id=task_id,
-    completion_summary="JWT auth implemented with refresh tokens, 2h expiry",
-    testing_notes="Unit tests added, manual login/logout verified"
-)
-```
-
----
-
-## MCP SUBTASKS - GRANULAR PROGRESS
-
-Use subtasks for complex work that has multiple steps:
-
-```python
-# Create subtask under parent task
-subtask = mcp__agenthub_http__manage_subtask(
-    action="create",
-    task_id=parent_task_id,
-    title="Design database schema",
-    progress_notes="Starting schema design"
-)
-
-# Update progress (progress_notes is MANDATORY for update)
-mcp__agenthub_http__manage_subtask(
-    action="update",
-    task_id=parent_task_id,
-    subtask_id=subtask_id,
-    progress_percentage=50,
-    progress_notes="Schema designed, creating migrations"
-)
-
-# Complete subtask (completion_summary AND progress_notes are MANDATORY)
-mcp__agenthub_http__manage_subtask(
-    action="complete",
-    task_id=parent_task_id,
-    subtask_id=subtask_id,
-    completion_summary="Schema created with proper indexes",
-    progress_notes="Final review done, all indexes verified"
-)
-```
-
-**CRITICAL: Always verify ALL subtasks are done before completing parent task.**
-
----
-
-## PRECISE CONTEXT WITH LINE NUMBERS
-
-When creating tasks or referencing code, ALWAYS use specific line numbers:
-
-```python
-# WRONG (vague):
-details="Update the user validation logic"
-
-# RIGHT (precise):
-details="""
-Update user validation logic in:
-- src/models/User.js:23-35 (validateEmail method)
-- src/controllers/auth.js:67-89 (registerUser function)
-- tests/auth.test.js:12-25 (add email validation test)
-Focus on lines 28-30 where email regex needs updating.
-"""
-```
-
-**Line Number Format:** `file.js:23` | `file.js:23-35` | `file.js:23-35 (functionName)`
-
----
-
-## TOOL SCOPE BY SEAT
-
-A seat's tool scope comes from its seat type and its runtime. The source is the nine embedded seat types in
-`agenthub_go/fastmcp/seat_management/domain/seedlibrary/seat-types/` — `architect`, `debugger`, `developer`,
-`lead`, `planner`, `researcher`, `reviewer`, `tester`, `writer` — resolved per seat by the Go seat service.
-
-To see which seat type and pinned version a seat carries:
-`mcp__agenthub_http__manage_seat` `action="get", room=..., seat=...`
-
-**Rules:**
-- Know your seat first: `rig whoami --json`
-- NEVER assume you have a tool another seat type has; read the seat's rendered files before relying on a capability
-- If you need a tool your seat lacks, route the work to a seat that has it
-
----
-
-## RECEIVING RESULTS FROM SUB-AGENTS
-
-When a sub-agent completes:
-1. **Verify subtask completion** - list subtasks, check ALL are done
-2. **Verify objectives met** - read files, confirm changes are correct
-3. **Quality review** if needed - delegate to `code-reviewer-agent`
-4. **Update MCP task** - complete with summary, or continue if more work needed
-
-**NEVER complete parent task if ANY subtask is still pending/in_progress.**
-
----
-
-## KNOWLEDGE MANAGEMENT
-
-- **AI Docs**: `ai_docs/` folder | **Index**: `ai_docs/index.json` for quick lookup
-- Search existing docs before creating new ones
-- Use kebab-case for folder names
-
----
-
-## KEY RULES SUMMARY
-
-- **Always create MCP task first** before modifying any files (any tier)
-- **Match tier to complexity**: Don't spawn teams for simple tasks
-- **Proxy Pattern for teams**: Team lead fetches agent config, injects `system_prompt` into teammate prompt
-- **Team agents have NO MCP access**: They run in separate processes
-- **Always ask user confirmation**: Every team agent must ask user to approve changes
-- **Parallel when possible**: In Tier 3, spawn multiple agents for independent tasks
-- **Verify results**: Always read files after changes to confirm correctness
-- **Clean shutdown**: Shut down teammates and delete team when done (Tier 3)
-- **No duplicate tasks**: Check existing tasks before creating new ones
-- **Line numbers always**: Use file:line format when referencing code
-
-## QUICK REFERENCE
-
-**Session start:** `rig whoami --json` -> know your seat -> `manage_seat(action="list", room="<room>")` -> see the team
-**Before any file edit:** Create MCP task first (any tier)
-**Tier 1 (simple, 1 file):** MCP task -> work -> complete
-**Tier 2 (medium, 2-3 files):** MCP task -> work with progress updates -> complete
-**Tier 3 (complex, 4+ files):** MCP task -> TeamCreate -> Fetch configs (proxy) -> Spawn agents -> Monitor -> Verify -> Shutdown
-**Always:** Check existing tasks first, use file:line references, ask user confirmation
+# 4genthub agent instructions
+
+**Deliberately thin.** The full context is no longer carried here: each seat receives its own role
+file at launch, so a large root file would only go stale in every seat. This file carries identity,
+where context lives, the hard rules every seat shares, and pointers; the rest lives in `ai_docs/`.
+
+## 1. Identity first
+
+Run `rig whoami --json`. It returns your rig, pod, member, peers, edges and transcript path, and it
+is ground truth — a startup overlay can be stale. Re-run it after any compaction, restart or
+restore, before concluding anything about where you are.
+
+## 2. Where context lives
+
+- **Your seat's role** — `agents/<seat>/agent.yaml` and `guidance/role.md`, written into the launch
+  directory by the launch.
+- **The work queue** — `rig queue` (owned work, handoffs, block/wake state).
+- **The board and decisions** — `agenthub_go/NEXT_GEN.md`.
+- **Everything else** — `ai_docs/` (see §4).
+
+These are pointers; never copy their content into this file.
+
+## 3. Hard rules (every seat, any role)
+
+1. **Clean code only.** Never add backward compatibility, legacy code, fallback mechanisms,
+   migration helpers, deprecation warnings, version checks or compatibility layers. Development
+   phase, clean breaks allowed. **Clean code > passing tests.** Full policy:
+   `ai_docs/agent-system/repo-agent-rules.md`.
+2. **The entity/ORM is the source of truth, over the tests.** Order: prompt input → ORM/entity
+   model → database → tests → code. A failing test means fix the code (or the test) to match the
+   model; never add compatibility code to make tests pass. Rules and locations: same file.
+3. **Changelog duties.** Update `CHANGELOG.md` for changes that ship and `TEST-CHANGELOG.md` for
+   test-suite changes. Detail: same file.
+4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
+   Stage by explicit path; never `git add -A`. (The old "`CLAUDE.md` stays out of every commit"
+   rule is superseded — that file was renamed to `AGENTS.md`, which is tracked; see
+   `agenthub_go/NEXT_GEN.md`.)
+5. **The owner approves every push.** Never push, deploy or touch production or another rig without
+   the owner's explicit go-ahead.
+
+## 4. Pointers
+
+- `ai_docs/agent-system/repo-agent-rules.md` — the hard rules in full: clean-code policy,
+  test-fixing priority and the source-of-truth hierarchy, changelog and keep-out detail, docs
+  conventions.
+- `ai_docs/agent-system/seat-model-and-mcp-surface.md` — the seat model, tool scope by seat, and
+  the nine published MCP tools.
+- `ai_docs/agent-system/task-workflow-and-reporting.md` — MCP task/subtask tracking and reporting
+  guidance (product usage).
+- `ai_docs/agent-system/agents-md-migration-map.md` — what this file used to carry and where each
+  section went.
