@@ -568,18 +568,34 @@ func ValidateLocalToken(token string) (*authentities.User, error) {
 	})
 }
 
+// AuthEnabled reports whether AUTH_ENABLED turns token validation on. It is the ONE reading
+// of the setting: the REST dependency chain currentUser/authenticateUser ->
+// authinterface.GetCurrentUser -> GetCurrentUserUniversal resolves AUTH_ENABLED=false by
+// returning DevUser without looking at the bearer, and the WebSocket upgrade asks this
+// function instead of interpreting the variable itself. Two readers, one helper, so the
+// surfaces cannot drift on what the setting means.
+func AuthEnabled() bool {
+	return strings.ToLower(envOr("AUTH_ENABLED", "true")) == "true"
+}
+
+// DevUser is the identity AUTH_ENABLED=false substitutes for whatever bearer arrived - the
+// user every accepted REST route already runs as with auth off.
+func DevUser() (*authentities.User, error) {
+	id := envOr("DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000")
+	return authentities.NewUser(authentities.User{
+		ID:           &id,
+		Email:        envOr("DEFAULT_USER_EMAIL", "dev@localhost"),
+		Username:     envOr("DEFAULT_USERNAME", "developer"),
+		PasswordHash: "bypass-no-auth",
+	})
+}
+
 // GetCurrentUserUniversal ports get_current_user_universal: it validates the bearer token
 // as a Keycloak token (RS256) when the issuer matches KEYCLOAK_URL, otherwise as a local
 // JWT (HS256). AUTH_ENABLED=false returns the default development user.
 func GetCurrentUserUniversal(ctx context.Context, token string) (*authentities.User, error) {
-	if strings.ToLower(envOr("AUTH_ENABLED", "true")) != "true" {
-		id := envOr("DEFAULT_USER_ID", "dev-user-00000000-0000-0000-0000-000000000000")
-		return authentities.NewUser(authentities.User{
-			ID:           &id,
-			Email:        envOr("DEFAULT_USER_EMAIL", "dev@localhost"),
-			Username:     envOr("DEFAULT_USERNAME", "developer"),
-			PasswordHash: "bypass-no-auth",
-		})
+	if !AuthEnabled() {
+		return DevUser()
 	}
 
 	claims, err := jwtUnverifiedClaims(token)

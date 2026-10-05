@@ -14,7 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/auth"
 	"agenthub/fastmcp/auth/domain/services"
+	authinterface "agenthub/fastmcp/auth/interface"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
@@ -100,6 +102,103 @@ func wsTestDialStatus(t *testing.T, serverURL, path string) int {
 		t.Fatalf("read handshake: %v", err)
 	}
 	return resp.StatusCode
+}
+
+// wsTestDialAuth is wsTestDial with one extra request header (e.g. Authorization), for the
+// realtime socket's bearer path.
+func wsTestDialAuth(t *testing.T, serverURL, path, header string) (net.Conn, *bufio.Reader) {
+	t.Helper()
+	u, err := url.Parse(serverURL)
+	if err != nil {
+		t.Fatalf("parse server url: %v", err)
+	}
+	conn, err := net.Dial("tcp", u.Host)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	key := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef"))
+	extra := ""
+	if header != "" {
+		extra = "\r\n" + header
+	}
+	req := "GET " + path + " HTTP/1.1\r\nHost: " + u.Host +
+		"\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: " + key +
+		"\r\nSec-WebSocket-Version: 13" + extra + "\r\n\r\n"
+	if _, err := conn.Write([]byte(req)); err != nil {
+		_ = conn.Close()
+		t.Fatalf("write handshake: %v", err)
+	}
+	br := bufio.NewReader(conn)
+	resp, err := http.ReadResponse(br, nil)
+	if err != nil {
+		_ = conn.Close()
+		t.Fatalf("read handshake: %v", err)
+	}
+	if resp.StatusCode != http.StatusSwitchingProtocols {
+		_ = conn.Close()
+		t.Fatalf("handshake status = %d, want 101", resp.StatusCode)
+	}
+	return conn, br
+}
+
+// wsTestReadClose reads the server's close frame and returns its code and reason.
+func wsTestReadClose(t *testing.T, br *bufio.Reader) (int, string) {
+	t.Helper()
+	opcode, payload := wsTestReadFrame(t, br)
+	if opcode != wsOpClose {
+		t.Fatalf("opcode = %d, want close", opcode)
+	}
+	if len(payload) < 2 {
+		t.Fatalf("close payload = %d bytes, want at least the 2-byte code", len(payload))
+	}
+	return int(binary.BigEndian.Uint16(payload[:2])), string(payload[2:])
+}
+
+// wsTestWelcomePrimary decodes a realtime welcome frame and returns payload.data.primary.
+func wsTestWelcomePrimary(t *testing.T, payload []byte) map[string]any {
+	t.Helper()
+	msg := wsTestJSON(t, payload)
+	if msg["type"] != "sync" {
+		t.Fatalf("type = %v, want sync", msg["type"])
+	}
+	body, ok := msg["payload"].(map[string]any)
+	if !ok {
+		t.Fatalf("payload type = %T", msg["payload"])
+	}
+	data, _ := body["data"].(map[string]any)
+	primary, _ := data["primary"].(map[string]any)
+	if primary == nil {
+		t.Fatal("welcome frame has no payload.data.primary")
+	}
+	return primary
+}
+
+// wsWireRESTAuth performs the wiring NewApp does so the REST bearer dependency resolves in a
+// unit test exactly as in the server.
+func wsWireRESTAuth(t *testing.T) {
+	t.Helper()
+	prev := authinterface.GetCurrentUserUniversal
+	authinterface.GetCurrentUserUniversal = auth.GetCurrentUserUniversal
+	t.Cleanup(func() { authinterface.GetCurrentUserUniversal = prev })
+}
+
+// wsRESTUser drives the REST bearer dependency every REST route reaches (http.go currentUser
+// -> authinterface.GetCurrentUser -> auth.GetCurrentUserUniversal) and returns the HTTP status
+// plus the resolved user id ("" when refused).
+func wsRESTUser(t *testing.T, authorization string) (int, string) {
+	t.Helper()
+	wsWireRESTAuth(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/rest-probe", nil)
+	if authorization != "" {
+		req.Header.Set("Authorization", authorization)
+	}
+	rec := httptest.NewRecorder()
+	user, ok := currentUser(rec, req)
+	if !ok || user == nil || user.ID == nil {
+		return rec.Code, ""
+	}
+	return rec.Code, *user.ID
 }
 
 // wsTestReadFrame reads one unmasked server frame.
@@ -281,14 +380,123 @@ func TestMountWebSocketsConnectorRequiresScope(t *testing.T) {
 }
 
 func TestMountWebSocketsRealtimeRejectsMissingToken(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+
+	// REST's bearer dependency refuses a missing credential even with auth off
+	// (http.go currentUser writes 403 before the provider runs), and the socket must agree.
+	if status, _ := wsRESTUser(t, ""); status != http.StatusForbidden {
+		t.Fatalf("REST status = %d, want 403 for a missing bearer", status)
+	}
+
 	mux := http.NewServeMux()
 	mountWebSockets(mux, nil)
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	status := wsTestDialStatus(t, server.URL, "/ws/realtime")
-	if status != http.StatusForbidden {
-		t.Fatalf("status = %d, want 403", status)
+	conn, br := wsTestDial(t, server.URL, "/ws/realtime")
+	defer conn.Close()
+	code, reason := wsTestReadClose(t, br)
+	if code != wsClosePolicyViolation {
+		t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+	}
+	if reason != wsAuthMissingTokenReason {
+		t.Fatalf("close reason = %q, want %q - a refused upgrade must say what the server wanted", reason, wsAuthMissingTokenReason)
+	}
+}
+
+// TestMountWebSocketsRealtimeAgreesWithRESTOnSelfCraftedTokenWhenAuthDisabled pins the ruling:
+// with AUTH_ENABLED=false one decision governs both surfaces, so a bearer no provider minted is
+// accepted by the REST dependency AND by the realtime socket, as the same user. Before the fix
+// REST accepted it while the socket answered 403. ENV=dev reproduces the local stack, where the
+// REST dependency resolves its development fallback user.
+func TestMountWebSocketsRealtimeAgreesWithRESTOnSelfCraftedTokenWhenAuthDisabled(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+	t.Setenv("ENV", "dev")
+	wsWireRESTAuth(t)
+	const crafted = "self-crafted-token-no-provider-minted"
+
+	status, restUserID := wsRESTUser(t, "Bearer "+crafted)
+	if status != http.StatusOK || restUserID == "" {
+		t.Fatalf("REST refused the self-crafted token: status=%d user=%q", status, restUserID)
+	}
+
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	conn, br := wsTestDialAuth(t, server.URL, "/ws/realtime", "Authorization: Bearer "+crafted)
+	defer conn.Close()
+
+	opcode, payload := wsTestReadFrame(t, br)
+	if opcode != wsOpText {
+		t.Fatalf("opcode = %d, want text", opcode)
+	}
+	primary := wsTestWelcomePrimary(t, payload)
+	if primary["user_id"] != restUserID {
+		t.Fatalf("socket user_id = %v, REST user_id = %q - the surfaces applied different decisions", primary["user_id"], restUserID)
+	}
+	if primary["authenticated"] != true {
+		t.Fatalf("authenticated = %v, want true", primary["authenticated"])
+	}
+}
+
+// TestMountWebSocketsRealtimeAcceptsMintedTokenWithAuthEnabled is the other half of the same
+// decision: with auth on a real minted token still upgrades the socket and REST still accepts.
+func TestMountWebSocketsRealtimeAcceptsMintedTokenWithAuthEnabled(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	const user = "user-realtime-rest"
+	token := wsTestTokenFor(t, user, nil)
+
+	status, restUserID := wsRESTUser(t, "Bearer "+token)
+	if status != http.StatusOK || restUserID != user {
+		t.Fatalf("REST rejected the minted token: status=%d user=%q, want 200/%q", status, restUserID, user)
+	}
+
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	conn, br := wsTestDial(t, server.URL, "/ws/realtime?token="+url.QueryEscape(token))
+	defer conn.Close()
+
+	opcode, payload := wsTestReadFrame(t, br)
+	if opcode != wsOpText {
+		t.Fatalf("opcode = %d, want text", opcode)
+	}
+	if got := wsTestWelcomePrimary(t, payload)["user_id"]; got != user {
+		t.Fatalf("socket user_id = %v, want %q", got, user)
+	}
+}
+
+// TestMountWebSocketsRealtimeRejectionCarriesReason checks a refused upgrade names what the
+// server wanted instead of closing with 1006 and no message: the handshake is completed and
+// closed with 1008 plus a readable reason, and REST refuses the same credential.
+func TestMountWebSocketsRealtimeRejectionCarriesReason(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	t.Setenv("JWT_SECRET_KEY", "ws-mount-test-secret-000000000000")
+	t.Setenv("KEYCLOAK_URL", "")
+	const crafted = "self-crafted-token-no-provider-minted"
+
+	status, _ := wsRESTUser(t, "Bearer "+crafted)
+	if status != http.StatusUnauthorized {
+		t.Fatalf("REST status = %d, want 401 for the invalid token", status)
+	}
+
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	conn, br := wsTestDialAuth(t, server.URL, "/ws/realtime", "Authorization: Bearer "+crafted)
+	defer conn.Close()
+	code, reason := wsTestReadClose(t, br)
+	if code != wsClosePolicyViolation {
+		t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+	}
+	if reason != wsAuthInvalidTokenReason {
+		t.Fatalf("close reason = %q, want %q - a refused upgrade must say what the server wanted", reason, wsAuthInvalidTokenReason)
 	}
 }
 
