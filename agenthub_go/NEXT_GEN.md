@@ -110,6 +110,33 @@ What that page is, mechanically:
 
 Split: a frontend seat builds the shell and the pipeline; the `writer` seat fills the markdown from the surface inventory. The shell must not wait on the inventory — it renders whatever the file contains, so an empty or partial document is a valid intermediate state, not a blocked one.
 
+**(F) MOVING OPENRIG INTO THE CLOUD (owner decisions 2026-10-05).** The owner asked which parts of OpenRig can move to 4genthub, then answered four questions. All five candidates are IN. Ownership: **the cloud computes** — the logic is ported to Go and the client reports raw facts. Sequencing: the content slice runs now, the code-bearing items queue behind (D) and (E). The skills are **mirrored with a digest guard**.
+
+OpenRig is the owner's own repository (`phamhung075/openrig`, Apache-2.0, `private: true`), so this is a design decision and not a licensing one; the Apache notice travels with any content taken from it. A full module inventory of OpenRig was taken on 2026-10-05 (daemon: 408 `.ts` files under `domain/`, 65 routers, 92 migrations; cli: 85 commands and 18 MCP tools; ui: declared **maintenance mode**; tui; skills) and the paths below come from it, so a seat does not re-survey.
+
+**F1 — the skill library (content, no code) — runs now.** The library is **52 distinct skills**, and the count needs care because it is the union of two **committed** edges, not one directory:
+
+| Edge (committed) | Skills | Notes |
+|---|---|---|
+| `skills/_canonical/` (mirrored to `packages/daemon/specs/agents/shared/skills/`) | 35 | `core/` 17, `pm/` 7, `pods/` 4, `process/` 7 |
+| `packages/daemon/assets/plugins/openrig-core/skills/` | 19 | flat; **this is the edge that carries `delegating-work` and `queue-handoff`** |
+
+They overlap by two names (`messaging-the-human`, `openrig-skills`), so the union is **52**. That union is why seeding the obvious 35 is the wrong move: our own `lead.yaml` names `delegating-work` and `queue-handoff`, and both live only on the 19-skill plugin edge. Seeding the canonical 35 alone would leave the seat types referencing blocks that still do not exist — the exact defect this row exists to clear.
+
+**Do not read the daemon's assembled tree as the source.** `packages/daemon/context-packs/` is **gitignored** (`.gitignore:44`) and is a build artifact assembled from the edges at package time; it is also where the 52 first caught the eye, since it is what the daemon actually ships. Digests must pin the **committed** files on the two edges, or the guard measures a rebuild against itself. OpenRig's own `.agents/skills/` is a local working set (1 committed skill), not part of the library.
+
+The 52 become catalog blocks of kind `skill`, published through the module publish path, and the nine seat types gain refs to the ones they name, so a default team arrives with its skills already attached. Each published block carries its **source path and sha256**, and a check compares stored against source and **reports drift** rather than diverging silently — OpenRig already guards its own three mirrors with pinned digests (`scripts/skill-edge-digests.generated.json`), and we produced this exact bug by hand today when two copies of the rules file disagreed.
+
+**F2 — the context-pack algebra (queued).** `domain/context-packs/`: `profile-composer.ts` (three modes — `FRESH` base walk, `HANDOVER` with handover atoms, `POST-COMPACTION` tagged subset plus handover), `token-estimate.ts` (token budgeting), `seat-recap-store.ts` (the outgoing occupant authors the recap), `bundle-assembler.ts`, `ref-safety.ts`. Pure logic, no OS dependency. This is the composition brain the cloud's module/overlay model lacks.
+
+**F3 — the queue ledger (queued).** `domain/queue-repository.ts`, `queue-owner.ts`, `queue-pickup.ts`, `queue-transition-log.ts`, `queue-wake-{repository,ladder,backoff}.ts`, `queue-retention.ts`, `queue-stuck-sweep.ts`, `claim-service.ts`, `hot-potato-enforcer.ts`, `human-questions.ts`, `human-route-enforcer.ts`, `seat-delivery-guard.ts`. The property worth keeping intact: **a pickup receipt is derived from facts and never written by the claimant**, so the ledger cannot be talked into a claim its evidence does not support. States: `pending`, `claimed`, `handed-off`, `blocked`, `done`.
+
+**The sharp edge, recorded before the code is written.** "The cloud computes" makes the cloud's ledger the **system of record**, but OpenRig's daemon also owns a `queue_items` ledger locally — it is what actually wakes a seat. Two ledgers of the same work is a divergence waiting to happen, and the failure is silent: a seat works on something the cloud believes is unclaimed. Resolution: the client **reports transitions as facts** (it does not decide), the cloud derives and owns the state, and a **mismatch between the client's reading and the cloud's state is reported, never reconciled by preference**. That is the same shape as `seatsync`'s hash comparison, which already refuses to call two different hashes equal.
+
+**F4 — usage samples and permission policies (queued).** `domain/usage-samples-store.ts` (**advance-only**: a byte-identical sample in the same lane is refused, so an idle seat adds zero rows), `domain/usage-series.ts` (over-time query and burn projection; it serves facts and leaves thresholds at the edge), `domain/model-divergence/*` (runtime-versus-declared model). Policies are data: `packages/daemon/policies/builtin/{locked,standard,open,yolo}.policy.md`, parsed by `domain/permission-policy/policy-spec.ts` — a Markdown plus YAML-frontmatter contract that is **advisory and fail-open, never enforcement**. That stance is worth copying deliberately, not accidentally: it decides what a seat does with a policy it cannot parse.
+
+**Never moved, whatever else changes.** All of `adapters/` (tmux plus the five runtime adapters), `terminal/TerminalSessionBroker.ts`, the `daemon-lifecycle*` scripts, `restore-packet/*` transcript parsers, and the vendor-local readers (`claude-usage-reader`, `codex-auth-reader`). These are this machine's processes, and the Direction above already assigns them to the client. Do not port the 92 SQLite migrations either: the cloud schema already exists as Postgres DDL and is re-derived, not translated.
+
 **D1-D4 slice plan (2026-10-05).** The decisions above are the owner's wording; this is the pointer table to the work, so a reader can find it without the queue. Row ids are the durable addresses.
 
 | Slice | Seat | Row |
