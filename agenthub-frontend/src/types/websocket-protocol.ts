@@ -226,6 +226,27 @@ export interface RoomEventPayload {
   name?: string;
 }
 
+/**
+ * Notification payload. The client posts this through POST /api/v2/broadcast/notify; the server
+ * delivers it on the realtime socket as payload.entity 'notification' with action 'notification',
+ * live to a connected socket or replayed from the missed-notification store on reconnect. The
+ * server copies data.primary through unchanged and carries entity_id and kind in metadata.
+ */
+export interface NotificationEventPayload {
+  /** The message the human should see. */
+  message: string;
+  /** Who sent it: a seat key. */
+  from?: string;
+  room?: string;
+  seat?: string;
+  /** Free-form kind, for example 'notice'. */
+  kind?: string;
+}
+
+// The frame carries metadata.entity_id, which the client uses as the dedupe key: it must be
+// unique per notification, because two notifications posted with the same entity_id collapse
+// into one inbox row (that is the idempotency the reconnect replay relies on).
+
 // =============================================================================
 // WEBSOCKET MESSAGE STRUCTURE (v2.0)
 // =============================================================================
@@ -248,7 +269,6 @@ export interface WSMetadata {
   project_id?: string;
   git_branch_id?: string;
   task_id?: string;
-  agent_name?: string;
 
   // Display metadata (for toasts)
   project_name?: string;
@@ -264,7 +284,7 @@ export interface WSMetadata {
  * WebSocket payload structure
  */
 export interface WSPayload<T = any> {
-  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'agent' | 'seat' | 'room';
+  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'seat' | 'room';
   action: 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned';
   data: {
     primary: T;           // Main entity data (MUST include 'id' field)

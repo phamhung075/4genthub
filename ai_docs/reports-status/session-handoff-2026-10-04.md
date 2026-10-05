@@ -20,6 +20,9 @@ purpose; do not treat a pending item as done because it is written down.
    served from the seat model; implemented and committed as `2740697e`. `call_agent` is untouched
    and must go — T6 also carries its routes, `-seed-agents`, the library path utils and the
    `agent_library_dir` health field. Two tools for one job must not coexist.
+   **Update (later): T6 landed.** The `call_agent` tool, its routes, `-seed-agents` and the
+   library-path utils are removed (commits `b0d441bd`, `60bcdb68`); `call_seat` is the published
+   seat-call tool now — do not treat this item as still pending.
 3. **The `runtime: agy` registry drift.** `rig ps --nodes --json` reported `runtime: agy` for the
    nine `4genthub-dev` seats while those seats emitted Claude statusline samples. Fixing it needs
    `rig down` + `rig up` from a corrected spec because OpenRig cannot switch a runtime in place.
@@ -30,6 +33,8 @@ purpose; do not treat a pending item as done because it is written down.
    retire the room.
 5. **`call_seat` is not on production** until the push deploys. Anything on production that calls
    MCP tools cannot see it yet.
+   **Update (later): superseded** by item 2's update — T6 landed and `call_seat` is the published
+   seat-call tool.
 
 ## 2. What landed today (commits are local, unpushed)
 
@@ -93,7 +98,9 @@ edited today and the edits are live in the working tree:
 - **`call_agent` root cause:** production runs the Go image, whose `agent_templates` rows are in
   the Python `rules` format the Go value object rejects, and the lookup swallows the error — so it
   answers "Agent template not found" for every name. `master-orchestrator-agent` additionally has
-  no template at all. `manage_seat list/get` **works** on production.
+  no template at all. `manage_seat list/get` **works** on production. **Subsequent update:**
+  `agent_templates` has since been dropped — it has no declaration in the Go models/DDL or the
+  production SQL (surface-inventory §4) — and the `call_agent` tool itself is gone.
 - **OpenRig seat commands need flags:** `rig seat stop <seat> --reason <text>` and
   `rig seat launch <seat> --fresh --reason <text>`. A stopped rig comes back with
   `rig up <rig> --existing --fresh <logical-id>`.

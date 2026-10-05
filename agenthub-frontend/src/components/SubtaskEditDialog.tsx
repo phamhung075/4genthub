@@ -31,10 +31,10 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   const [priority, setPriority] = useState<string>(subtask.priority || "medium");
   const [assignees, setAssignees] = useState<string[]>(subtask.assignees || []);
 
-  // Agent assignment dialog state
+  // Seat assignment dialog state
   const [agentDialogOpen, setAgentDialogOpen] = useState(false);
-  const [availableAgents, setAvailableAgents] = useState<string[]>([]);
-  const [availableAgentsError, setAvailableAgentsError] = useState(false);
+  const [availableSeats, setAvailableSeats] = useState<string[]>([]);
+  const [availableSeatsError, setAvailableSeatsError] = useState(false);
 
   // Use React Query mutation hook
   const { updateSubtaskAsync, isUpdating, updateError } = useSubtaskMutations();
@@ -50,17 +50,17 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
     }
   }, [open, subtask]);
 
-  // Load available agents when dialog opens
+  // Load available seats when dialog opens
   useEffect(() => {
     if (open) {
       getAvailableAgents().then(
         seats => {
-          setAvailableAgents(seats);
-          setAvailableAgentsError(false);
+          setAvailableSeats(seats);
+          setAvailableSeatsError(false);
         },
         error => {
           logger.error('Error loading seats for the assignee picker:', error);
-          setAvailableAgentsError(true);
+          setAvailableSeatsError(true);
         }
       );
     }
@@ -95,8 +95,8 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
     }
   };
 
-  const handleAssignAgents = (selectedAgents: string[]) => {
-    setAssignees(selectedAgents);
+  const handleAssignSeats = (selectedSeats: string[]) => {
+    setAssignees(selectedSeats);
     setAgentDialogOpen(false);
   };
 
@@ -230,8 +230,8 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
             >
               <Users className="w-4 h-4 mr-2" />
               {assignees.length > 0
-                ? `${assignees.length} agent${assignees.length > 1 ? 's' : ''} assigned`
-                : 'Assign agents to subtask'}
+                ? `${assignees.length} seat${assignees.length > 1 ? 's' : ''} assigned`
+                : 'Assign seats to subtask'}
             </Button>
             {assignees.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
@@ -247,7 +247,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Click to select agents from your seats
+              Click to select seats
             </p>
           </div>
 
@@ -300,15 +300,15 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
       </DialogContent>
     </Dialog>
 
-    {/* Agent Assignment Dialog */}
+    {/* Seat Assignment Dialog */}
     <AgentAssignmentDialog
       open={agentDialogOpen}
       onOpenChange={setAgentDialogOpen}
       task={{ ...subtask, assignees } as any}
       onClose={() => setAgentDialogOpen(false)}
-      onAssign={handleAssignAgents}
-      availableAgents={availableAgents}
-      availableAgentsError={availableAgentsError}
+      onAssign={handleAssignSeats}
+      availableSeats={availableSeats}
+      availableSeatsError={availableSeatsError}
       saving={false}
     />
     </>

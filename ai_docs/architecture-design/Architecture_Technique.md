@@ -30,12 +30,12 @@
 AgentHub is an enterprise-grade AI agent orchestration platform that enables intelligent task management, multi-agent coordination, and real-time collaboration between humans and AI agents.
 
 **Core Capabilities**:
-- Multi-agent task orchestration with 32+ specialized agents
+- Multi-agent task orchestration through the `manage_agent` MCP tool (the Python agent library with 32+ specialized agents was retired; see `ai_docs/api-integration/surface-inventory.md` §4)
 - Real-time WebSocket synchronization (v2.0 protocol)
 - 4-tier hierarchical context management (Global → Project → Branch → Task)
 - Domain-Driven Design (DDD) architecture
 - Keycloak-based authentication with JWT tokens
-- PostgreSQL database with SQLAlchemy ORM
+- PostgreSQL database (Go server; Postgres-only, no SQLite or SQLAlchemy path)
 - React 19 + TypeScript frontend with React Query caching
 
 ---
@@ -45,10 +45,10 @@ AgentHub is an enterprise-grade AI agent orchestration platform that enables int
 | Layer | Technology | Purpose | Port |
 |-------|------------|---------|------|
 | **Frontend** | React 19, TypeScript, Vite | User interface, real-time updates | 3800 |
-| **Backend** | Python 3.14, FastAPI, FastMCP | Business logic, API endpoints | 8000 |
-| **Database** | PostgreSQL (local), SQLite (fallback) | Data persistence | 5432 |
+| **Backend** | Go (`agenthub_go`, `cmd/agenthub`), net/http + FastMCP-compatible MCP layer | Business logic, API endpoints | 8000 |
+| **Database** | PostgreSQL (Postgres-only) | Data persistence | 5432 |
 | **Auth** | Keycloak, JWT tokens | User authentication & authorization | - |
-| **WebSocket** | FastAPI WebSocket, v2.0 protocol | Real-time notifications | 8000/ws |
+| **WebSocket** | Go WebSocket (`/ws/realtime`, `/ws/connector`, `/ws/sessions/{id}`, `/ws/metrics`), v2.0 protocol | Real-time notifications | 8000 |
 | **Cache** | React Query (TanStack Query) | Frontend data caching | - |
 | **Container** | Docker, docker-compose | Development environment | - |
 
@@ -221,6 +221,8 @@ interface TaskCompletePayload {
 
 ## Backend Architecture
 
+> **Retired implementation note:** the Python/FastAPI modules shown in this section are the earlier backend, retained in `agenthub_main/` but not the production path (production serves the Go image). The live backend is the Go service in `agenthub_go/`; the authoritative HTTP/MCP/table surface is `ai_docs/api-integration/surface-inventory.md`.
+
 ### Domain-Driven Design (DDD) Structure
 
 **4-Layer Architecture**:
@@ -323,8 +325,8 @@ class SQLAlchemyTaskRepository(TaskRepository):
 ```
 
 **Benefits**:
-- Domain layer doesn't know about SQLAlchemy
-- Easy to swap database (PostgreSQL ↔ SQLite)
+- Domain layer doesn't know the persistence mechanism
+- Easy to swap the database implementation
 - Testable with in-memory repository
 
 ---
@@ -337,23 +339,36 @@ class SQLAlchemyTaskRepository(TaskRepository):
 
 | Endpoint | Method | Purpose | Auth Required |
 |----------|--------|---------|---------------|
-| `/api/projects` | GET | List all projects | ✅ |
-| `/api/projects` | POST | Create project | ✅ |
-| `/api/projects/{id}` | GET | Get project details | ✅ |
-| `/api/projects/{id}` | PUT | Update project | ✅ |
-| `/api/projects/{id}` | DELETE | Delete project | ✅ |
-| `/api/branches` | GET | List branches | ✅ |
-| `/api/branches` | POST | Create branch | ✅ |
-| `/api/tasks` | GET | List tasks (filtered by branch) | ✅ |
-| `/api/tasks` | POST | Create task | ✅ |
-| `/api/tasks/{id}` | GET | Get task details | ✅ |
-| `/api/tasks/{id}/complete` | POST | Complete task | ✅ |
-| `/api/subtasks` | GET | List subtasks (filtered by task) | ✅ |
-| `/api/subtasks` | POST | Create subtask | ✅ |
+| `/api/v2/projects/` | POST | Create project | ✅ |
+| `/api/v2/projects/` | GET | List projects | ✅ |
+| `/api/v2/projects/{id}` | GET | Get project details | ✅ |
+| `/api/v2/projects/{id}` | PUT | Update project | ✅ |
+| `/api/v2/projects/{id}` | DELETE | Delete project | ✅ |
+| `/api/v2/projects/{id}/health-check` | POST | Project health check | ✅ |
+| `/api/v2/branches/{$}` | POST | Create branch | ✅ |
+| `/api/v2/branches/{id}` | GET | Get branch details | ✅ |
+| `/api/v2/branches/{id}` | DELETE | Delete branch | ✅ |
+| `/api/v2/branches/project/{project_id}/summaries` | POST | Branch list with task counts | ✅ |
+| `/api/v2/branches/summaries/bulk` | POST | Bulk branch summaries | ✅ |
+| `/api/v2/tasks/` | POST | Create task | ✅ |
+| `/api/v2/tasks/` | GET | List tasks | ✅ |
+| `/api/v2/tasks/stats/summary` | GET | Task statistics | ✅ |
+| `/api/v2/tasks/{id}` | GET | Get task details | ✅ |
+| `/api/v2/tasks/{id}` | PUT | Update task | ✅ |
+| `/api/v2/tasks/{id}` | DELETE | Delete task | ✅ |
+| `/api/v2/tasks/{id}/complete` | POST | Complete task | ✅ |
+| `/api/v2/subtasks` | POST | Create subtask | ✅ |
+| `/api/v2/subtasks/task/{id}` | GET | List subtasks for a task | ✅ |
+| `/api/v2/subtasks/{id}` | GET | Get subtask | ✅ |
+| `/api/v2/subtasks/{id}` | PUT | Update subtask | ✅ |
+| `/api/v2/subtasks/{id}` | DELETE | Delete subtask | ✅ |
+| `/api/v2/subtasks/{id}/complete` | POST | Complete subtask | ✅ |
+
+The full surface (132 route registrations) is in `ai_docs/api-integration/surface-inventory.md` §1.
 
 **Request/Response Format**:
 ```typescript
-// POST /api/tasks
+// POST /api/v2/tasks/
 Request: {
   title: string;
   description?: string;
@@ -380,18 +395,24 @@ Response: {
 ### MCP Tools Integration
 
 **MCP Server**: `agenthub_http`
-**Location**: `agenthub_main/src/fastmcp/server/mcp_entry_point.py`
+**Transport**: `POST /mcp` (JSON-RPC 2.0 dispatcher) and `GET /mcp` (SSE)
+**Source of truth**: `ai_docs/api-integration/surface-inventory.md` §2
 
-**Tool Categories** (15 total):
+**Published tools** (`tools/list`, nine total):
 
-| Category | Tools | Purpose |
-|----------|-------|---------|
-| **Task Management** | manage_task | CRUD operations, search, dependencies, AI planning |
-| **Subtask Management** | manage_subtask | Subtask CRUD, progress tracking, completion |
-| **Project Management** | manage_project | Project lifecycle, health checks, validation |
-| **Branch Management** | manage_git_branch | Branch CRUD, agent assignment, statistics |
-| **Context Management** | manage_context | 4-tier hierarchy, inheritance, delegation |
-| **Agent Management** | manage_agent | Register, assign, update agents |
+| Tool | Purpose |
+|------|---------|
+| `manage_task` | Task CRUD, search, dependencies, AI planning |
+| `manage_subtask` | Subtask CRUD, progress tracking, completion |
+| `manage_project` | Project lifecycle, health checks, validation |
+| `manage_git_branch` | Branch CRUD, agent assignment, statistics |
+| `manage_context` | 4-tier hierarchy, inheritance, delegation |
+| `manage_agent` | Agent registry: register, assign, update |
+| `manage_seat` | Seat list/get/set_occupant (Go-only) |
+| `call_seat` | Resolve one seat and its rendered context files (Go-only) |
+| `manage_connection` | Health check |
+
+`initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `prompts/list` and `notifications/initialized` are JSON-RPC protocol methods (`handleJSONRPC`), not tools. The retired `call_agent` tool was removed with the Python agent library; `call_agent` survives only as a field of `manage_agent`.
 
 **Example MCP Tool Call**:
 ```python
@@ -559,7 +580,7 @@ resolved = manage_context(
 
 ## WebSocket v2.0 Protocol
 
-**Connection URL**: `ws://localhost:8000/ws`
+**Connection URL**: `ws://localhost:8000/ws/realtime`
 
 ### Message Structure
 
@@ -720,7 +741,7 @@ KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
 **Token Usage**:
 ```typescript
 // Frontend: Add token to all API requests
-const response = await fetch('/api/tasks', {
+const response = await fetch('/api/v2/tasks/', {
   headers: {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -745,78 +766,48 @@ projects = await repository.find_by_user(user_id)
 **Database Level**:
 ```sql
 -- User isolation at query level
-SELECT * FROM tasks WHERE git_branch_id = ? AND user_id = ?;
+SELECT * FROM tasks WHERE git_branch_id = $1 AND user_id = $2;
 ```
 
 ---
 
 ## Database Layer
 
-### ORM Models (SQLAlchemy)
+### Table Definitions (Go, Postgres-only)
 
-**Location**: `agenthub_main/src/fastmcp/task_management/infrastructure/persistence/models.py`
+**Location**: `agenthub_go/fastmcp/task_management/infrastructure/database/models.go` (`database.Tables`), plus `models_auth.go`, `seat_tables.go` and `models_prod.go`.
 
-**Key Models**:
+The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` holds the **36 tables** the server creates; `ProductionTables` (`models_prod.go`) declares 6 more that are deliberately not appended and are therefore not created by `CreateTables`. The full list is in `ai_docs/api-integration/surface-inventory.md` §3.
 
-| Model | Purpose | Key Fields |
-|-------|---------|------------|
-| `TaskModel` | Task entity | id, title, status, priority, git_branch_id, user_id, assignees, created_at, updated_at |
-| `SubtaskModel` | Subtask entity | id, task_id, title, status, progress_percentage, assignees, created_at |
-| `ProjectModel` | Project entity | id, name, description, user_id, created_at |
-| `GitBranchModel` | Git branch | id, project_id, git_branch_name, user_id, created_at |
-| `ContextModel` | Context data | id, level, context_id, data (JSONB), user_id |
+**Key tables**:
 
-**Example ORM Model**:
-```python
-class TaskModel(Base):
-    __tablename__ = 'tasks'
+| Table | Purpose |
+|-------|---------|
+| `tasks`, `subtasks`, `task_assignees`, `task_dependencies`, `task_labels`, `task_contexts` | Task domain |
+| `projects` | Projects |
+| `project_git_branchs` | Git branches (note the actual table name) |
+| `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` | 4-tier context data |
+| `agents`, `agent_sessions`, `agent_session_events` | Agent registry and session records |
+| `users`, `user_token_balances`, `email_tokens` | Auth tables |
+| `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `machines`, `machine_tokens`, `seat_status` | Seat management (13 tables) |
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    title = Column(String(500), nullable=False)
-    description = Column(Text, nullable=True)
-    status = Column(Enum(TaskStatus), nullable=False, default=TaskStatus.TODO)
-    priority = Column(Enum(Priority), nullable=False, default=Priority.MEDIUM)
-    git_branch_id = Column(UUID(as_uuid=True), ForeignKey('git_branches.id'), nullable=False)
-    user_id = Column(String(255), nullable=False, index=True)
-    assignees = Column(ARRAY(String), nullable=False, default=[])
-    progress_percentage = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+Every runtime table carries a `user_id` column except `applied_migrations` (a `ProductionTables` ledger).
 
-    # Relationships
-    subtasks = relationship("SubtaskModel", back_populates="task", cascade="all, delete-orphan")
-    git_branch = relationship("GitBranchModel", back_populates="tasks")
-```
+### Schema Creation
 
-### Database Migrations
-
-**Tool**: Alembic (SQLAlchemy migrations)
-
-**Commands**:
-```bash
-# Generate migration
-alembic revision --autogenerate -m "Add new field"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback
-alembic downgrade -1
-```
-
-**Migration Files**: `agenthub_main/alembic/versions/`
+**Mechanism**: the Go server creates the schema from `database.Tables` via `DatabaseConfig.CreateTables` (`fastmcp/task_management/infrastructure/database/database_config.go:421`), plus the PostgreSQL init SQL file. It runs on startup only when `AUTO_MIGRATE=true` (`init_database.go`); without that opt-in the server starts and reports the tables that are missing. There is no Alembic and no SQLAlchemy, and existing tables are not altered automatically — schema changes are applied by hand (`missing_tables.go`).
 
 ### Source of Truth Hierarchy
 
 ```
 1. PROMPT INPUT (User requirements) ↓
-2. ORM MODEL (Domain definitions) ↓
+2. TABLE DEFINITION (`TableDef` in models.go) ↓
 3. DATABASE (Actual structure) ↓
 4. TESTS (Verify behavior) ↓
 5. CODE (Implementation)
 ```
 
-**Rule**: When test fails, check ORM model first. Update code/tests to match ORM, never add compatibility layers.
+**Rule**: When a test fails, check the table definition first. Update code/tests to match the schema, never add compatibility layers.
 
 ---
 
@@ -1032,7 +1023,7 @@ KEYCLOAK_CLIENT_ID=agenthub-client
 KEYCLOAK_CLIENT_SECRET=secret
 
 # WebSocket
-WEBSOCKET_URL=ws://localhost:8000/ws
+WEBSOCKET_URL=ws://localhost:8000/ws/realtime
 
 # Development
 DEBUG=True
@@ -1127,7 +1118,7 @@ npm test -- LazyTaskList            # Specific test file
 **Frontend** (via API):
 ```typescript
 const createTask = async (data: CreateTaskRequest) => {
-  const response = await fetch('http://localhost:8000/api/tasks', {
+  const response = await fetch('http://localhost:8000/api/v2/tasks/', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -1249,7 +1240,7 @@ subtask = manage_subtask(
 |---------|------|-----|
 | Frontend | 3800 | http://localhost:3800 |
 | Backend API | 8000 | http://localhost:8000 |
-| WebSocket | 8000 | ws://localhost:8000/ws |
+| WebSocket | 8000 | ws://localhost:8000/ws/realtime |
 | PostgreSQL | 5432 | postgresql://localhost:5432 |
 
 ### Key Directories

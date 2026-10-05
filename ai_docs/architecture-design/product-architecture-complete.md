@@ -14,7 +14,7 @@
 
 ### Product Vision
 
-**agenthub** revolutionizes human-AI collaboration through an intuitive web-based platform orchestrating 42+ specialized AI agents via Model Context Protocol (MCP) native architecture.
+**agenthub** revolutionizes human-AI collaboration through an intuitive web-based platform orchestrating human and AI work through a Model Context Protocol (MCP) native architecture. The Python agent library's 42+ specialized agent roles were retired; agents are now registry rows managed through the `manage_agent` MCP tool.
 
 **Problem Solved**:
 - Context loss between AI sessions → Persistent 4-tier context hierarchy
@@ -40,10 +40,10 @@
 
 **Technology Stack**:
 - Frontend: React 19 + TypeScript + Vite + Tailwind CSS
-- Backend: Python 3.14 + FastMCP + FastAPI + SQLAlchemy
-- Database: PostgreSQL (prod) / SQLite (dev) + Redis cache
+- Backend: Go (`agenthub_go`, `cmd/agenthub`), net/http + FastMCP-compatible MCP layer
+- Database: PostgreSQL (Postgres-only) + Redis cache
 - Auth: Keycloak SSO + JWT tokens
-- Protocol: MCP 2.1.0 over HTTP
+- Protocol: MCP over HTTP (`POST /mcp`, `GET /mcp` SSE)
 
 ---
 
@@ -67,34 +67,15 @@
 |---------|----------|--------|------------|------------------|
 | **Web Dashboard** | P0 | ✅ Implemented | Visual agent management without CLI | Real-time updates, responsive, drag-drop tasks |
 | **4-Tier Context** | P0 | ✅ Implemented | AI remembers all context across sessions | Global→Project→Branch→Task, <5ms sync |
-| **42+ Agents** | P0 | ✅ Implemented | Expert-level specialized assistance | 12 categories, dynamic tool enforcement |
-| **MCP Protocol** | P0 | ✅ Implemented | Industry-standard integration | HTTP transport, 15+ tool categories |
+| **Agent registry** | P0 | ✅ Implemented | Register and assign agents via MCP | `manage_agent` tool + `agents` table; the 42-role Python agent library was retired |
+| **MCP Protocol** | P0 | ✅ Implemented | Industry-standard integration | `POST /mcp` (JSON-RPC) + `GET /mcp` (SSE), 9 published tools |
 | **Agent Coordination** | P0 | ✅ Implemented | Multi-agent parallel execution | Real-time collaboration, progress tracking |
 | **Keycloak Auth** | P0 | ✅ Implemented | Enterprise SSO + multi-tenancy | JWT tokens, RBAC, session management |
 | **WebSocket v2** | P1 | ✅ Implemented | Real-time UI updates | Sub-100ms latency, auto-reconnect |
 
-### Agent Categories (42 Total)
+### Agent Library — retired
 
-| Category | Agents | Responsibilities |
-|----------|--------|------------------|
-| **Development** (4) | coding-agent, debugger-agent, code-reviewer-agent, prototyping-agent | Code writing, debugging, review |
-| **Testing** (3) | test-orchestrator-agent, uat-coordinator-agent, performance-load-tester-agent | QA, UAT, performance |
-| **Architecture** (4) | system-architect-agent, design-system-agent, shadcn-ui-expert-agent, core-concept-agent | System design, UI |
-| **DevOps** (1) | devops-agent | Infrastructure, deployment |
-| **Documentation** (1) | documentation-agent | Technical writing |
-| **Project** (4) | project-initiator-agent, task-planning-agent, master-orchestrator-agent, elicitation-agent | Planning, coordination |
-| **Security** (3) | security-auditor-agent, compliance-scope-agent, ethical-review-agent | Auditing, compliance |
-| **Analytics** (3) | analytics-setup-agent, efficiency-optimization-agent, health-monitor-agent | Metrics, optimization |
-| **Marketing** (3) | marketing-strategy-orchestrator, community-strategy-agent, branding-agent | Strategy, branding |
-| **Research** (4) | deep-research-agent, llm-ai-agents-research, root-cause-analysis-agent, technology-advisor-agent | Analysis, research |
-| **ML** (1) | ml-specialist-agent | Machine learning |
-| **Creative** (1) | creative-ideation-agent | Ideation |
-
-**Dynamic Tool Enforcement v2.0**:
-- Master orchestrator: Task delegation tools (no file editing)
-- Coding agents: File operations (no task delegation)
-- Documentation agents: Content creation (limited system access)
-- Infrastructure-level enforcement prevents unauthorized tool usage
+The Python agent library (42 role templates across 12 categories: `coding-agent`, `debugger-agent`, `master-orchestrator-agent`, …) and its `call_agent` MCP tool were removed. The Go server keeps only the `agents` registry table and the `manage_agent` MCP tool (register, assign, get, list, update, unassign, unregister, rebalance); `call_agent` survives only as an optional field of `manage_agent`. The "Dynamic Tool Enforcement v2.0" doctrine, which derived tool permissions from the `call_agent` response, went with the tool — tool scope is now per seat.
 
 ---
 
@@ -111,14 +92,14 @@
                  │
 ┌────────────────▼────────────────────────────────────┐
 │  API Gateway Layer (Port 8000)                     │
-│  • FastAPI Gateway                                 │
+│  • Go HTTP API (net/http)                          │
 │  • WebSocket Server (Real-time Updates)            │
 └────────────────┬────────────────────────────────────┘
                  │
 ┌────────────────▼────────────────────────────────────┐
 │  MCP Protocol Layer                                │
-│  • MCP Server (FastMCP Framework)                  │
-│  • 15+ Tool Categories                             │
+│  • MCP Server (Go)                                 │
+│  • 9 published MCP tools                           │
 │  • Resource Management                             │
 └────────────────┬────────────────────────────────────┘
                  │
@@ -149,7 +130,7 @@ External Services:
 ┌─────────────────────────────────────────────────┐
 │  INTERFACE LAYER                               │
 │  • MCP Controllers                             │
-│  • HTTP Endpoints (FastAPI)                    │
+│  • HTTP Endpoints (net/http)                   │
 │  • WebSocket Handlers                          │
 │  • Request/Response DTOs                       │
 └─────────────────┬───────────────────────────────┘
@@ -174,7 +155,7 @@ External Services:
 ┌─────────────────────────────────────────────────┐
 │  INFRASTRUCTURE LAYER                          │
 │  • Repository Implementations                  │
-│  • Database Access (SQLAlchemy)                │
+│  • Database Access (Postgres, TableDef)        │
 │  • External Service Integrations               │
 │  • Caching (Redis)                             │
 │  • File System Operations                      │
@@ -186,7 +167,7 @@ External Services:
 | Context | Purpose | Entities | Location |
 |---------|---------|----------|----------|
 | **Task Management** | Hierarchical task structures | Task, Subtask, TaskDependency | `task_management/` |
-| **Agent Orchestration** | AI agent coordination | Agent, AgentAssignment, AgentCapability | `agent_management/` |
+| **Agent Orchestration** | Agent registry coordination | Agent | `task_management/interface/mcp_controllers/agent_mcp_controller/` |
 | **Context Management** | 4-tier hierarchy | GlobalContext, ProjectContext, BranchContext, TaskContext | `context_management/` |
 | **Project Management** | Projects & git branches | Project, GitBranch, Milestone | `project_management/` |
 | **Authentication** | User auth & sessions | User, Session, Role | `auth/` |
@@ -239,40 +220,42 @@ src/
 
 ### Technology Stack
 
-| Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| Framework | FastMCP | Custom | MCP server framework |
-| Web Framework | FastAPI | 0.104+ | HTTP API |
-| ORM | SQLAlchemy | 2.0+ | Database access |
-| Migration | Alembic | 1.12+ | Schema migrations |
-| Validation | Pydantic | 2.5+ | Data validation |
-| Async Runtime | asyncio | Native | Async operations |
-| Cache | Redis | 7.0+ | Caching layer |
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Language / runtime | Go (`agenthub_go`, `cmd/agenthub`) | HTTP server, MCP layer |
+| Web framework | `net/http` (`fastmcp/server/httpapp`) | HTTP API |
+| DB access | generated `TableDef` metadata (`database.Tables`), Postgres driver | Database access |
+| Schema creation | `DatabaseConfig.CreateTables`, gated by `AUTO_MIGRATE=true` | Schema creation |
+| Cache | Redis decorators + in-process cache | Caching layer |
+| MCP transport | `POST /mcp` (JSON-RPC), `GET /mcp` (SSE) | MCP protocol |
 
-### MCP Tools (15+ Categories)
+### MCP Tools (9 published)
 
-| Category | Tools | Purpose |
-|----------|-------|---------|
-| **Task Management** | manage_task, manage_subtask | CRUD operations, progress tracking |
-| **Project** | manage_project, manage_git_branch | Project lifecycle, branch ops |
-| **Context** | manage_context | 4-tier context hierarchy |
-| **Agent** | manage_agent, call_agent | Agent registration, invocation |
-| **Delegation** | manage_delegation_queue | Task delegation |
-| **Compliance** | manage_compliance | Security & audit |
-| **Rules** | manage_rule | Rule system |
-| **Health** | manage_connection | System health |
+| Tool | Purpose |
+|------|---------|
+| **manage_task** | Task CRUD, search, dependencies, AI planning |
+| **manage_subtask** | Subtask CRUD, progress tracking, completion |
+| **manage_project** | Project lifecycle, health checks, validation |
+| **manage_git_branch** | Branch CRUD, agent assignment, statistics |
+| **manage_context** | 4-tier context hierarchy, inheritance, delegation |
+| **manage_agent** | Agent registry: register, assign, update |
+| **manage_seat** | Seat list/get/set_occupant (Go-only) |
+| **call_seat** | Resolve one seat and its rendered context files (Go-only) |
+| **manage_connection** | System health |
+
+`initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `prompts/list` and `notifications/initialized` are JSON-RPC protocol methods, not tools. The retired `call_agent` tool and the never-published `manage_delegation_queue`, `manage_compliance` and `manage_rule` names are not part of the surface (`ai_docs/api-integration/surface-inventory.md` §2).
 
 ### Database Schema
 
-**Core Tables**:
+**Core Tables** (full list: `ai_docs/api-integration/surface-inventory.md` §3):
 - `tasks` - Task entities with hierarchical structure
 - `subtasks` - Granular task decomposition
 - `projects` - Project definitions
-- `git_branches` - Git branch tracking
+- `project_git_branchs` - Git branch tracking
 - `agents` - Agent registry
-- `contexts` - 4-tier context storage (global, project, branch, task)
+- `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` - 4-tier context storage
 - `users` - User accounts (Keycloak sync)
-- `sessions` - Active user sessions
+- `agent_sessions`, `agent_session_events` - Session records
 
 **Relationships**:
 - Task → Subtasks (1:many)

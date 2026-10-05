@@ -6,7 +6,7 @@ import logger from "../utils/logger";
 interface ClickableAssigneesProps {
   assignees: string[];
   task: Task | Subtask;
-  onAgentClick: (agentName: string, task: Task | Subtask) => void;
+  onAgentClick?: (agentName: string, task: Task | Subtask) => void;
   variant?: "default" | "secondary" | "destructive" | "outline";
   className?: string;
   showAsString?: boolean; // Option to show as comma-separated string instead of badges
@@ -33,7 +33,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
 
   // Clean up assignees data to handle any edge cases
   let cleanAssignees: string[] = [];
-  
+
   if (Array.isArray(assignees)) {
     // Filter out any invalid entries like "[", "]", " ", etc.
     cleanAssignees = assignees
@@ -44,7 +44,7 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
         return trimmed && trimmed !== '[' && trimmed !== ']' && trimmed !== '[]';
       })
       .map(assignee => {
-        // Normalize agent names: remove @ prefix and keep kebab-case
+        // Normalize seat keys: remove @ prefix and keep kebab-case
         return assignee.startsWith('@') ? assignee.slice(1) : assignee;
       });
   }
@@ -59,13 +59,17 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
       <span className="text-sm font-medium">
         {cleanAssignees.map((assignee, index) => (
           <React.Fragment key={index}>
-            <span
-              className="cursor-pointer hover:text-primary underline decoration-dotted"
-              onClick={() => onAgentClick(assignee, task)}
-              title={`Click to call ${assignee}`}
-            >
-              {assignee}
-            </span>
+            {onAgentClick ? (
+              <span
+                className="cursor-pointer hover:text-primary underline decoration-dotted"
+                onClick={() => onAgentClick(assignee, task)}
+                title={`Click to view seat ${assignee}`}
+              >
+                {assignee}
+              </span>
+            ) : (
+              <span>{assignee}</span>
+            )}
             {index < cleanAssignees.length - 1 && ", "}
           </React.Fragment>
         ))}
@@ -80,9 +84,9 @@ export const ClickableAssignees: React.FC<ClickableAssigneesProps> = ({
         <Badge
           key={index}
           variant={variant}
-          className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors whitespace-nowrap`}
-          onClick={() => onAgentClick(assignee, task)}
-          title={`Click to call ${assignee}`}
+          className={`${compact ? 'px-1 py-0 text-xs h-auto' : 'px-2'} ${onAgentClick ? 'cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors' : ''} whitespace-nowrap`}
+          onClick={onAgentClick ? () => onAgentClick(assignee, task) : undefined}
+          title={onAgentClick ? `Click to view seat ${assignee}` : undefined}
         >
           {assignee}
         </Badge>

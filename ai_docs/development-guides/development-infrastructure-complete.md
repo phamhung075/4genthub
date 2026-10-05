@@ -162,7 +162,7 @@ pytest --collect-only -m unit
 | **PostgreSQL Local** | Local PostgreSQL | 5432, 8000, 3800 | Full local development |
 | **Supabase Cloud** | Remote Supabase | 8000, 3800 | Cloud integration |
 | **Supabase + Redis** | Remote + Redis | 6379, 8000, 3800 | Production-like |
-| **Development Mode** | Native Python | No Docker | Fastest iteration |
+| **Development Mode** | Native Go | No Docker | Fastest iteration |
 
 ### System Architecture
 
@@ -172,7 +172,7 @@ Docker Menu System v3.0
 │   ├── --no-cache builds
 │   ├── BuildKit optimization
 │   ├── Port conflict resolution
-│   └── Python cache clearing
+│   └── Go build cache clearing
 │
 ├── PostgreSQL Local ──── 5432, 8000, 3800
 ├── Supabase Cloud ────── Remote DB, 8000, 3800
@@ -204,9 +204,9 @@ ENV=development|production
 ### Hot Reload
 
 **Backend**:
-- Python files reload on change (FastAPI `--reload`)
-- Docker volume mounts for real-time sync
-- FastMCP development server
+- Go binaries rebuild/restart on change (no in-process reload)
+- Docker volume mounts for real-time sync (rebuild the Go image)
+- `agenthub` Go server (`cmd/agenthub`)
 
 **Frontend**:
 - Vite HMR (Hot Module Replacement)
@@ -635,39 +635,31 @@ setDeletingBranches(prev => new Set(prev).add(branchId));
 ### Core Structure
 
 ```
-agenthub_main/src/fastmcp/server/
-├── mcp_entry_point.py      # Dual auth entry
-├── server.py               # FastMCP core
-├── connection_manager.py   # Connection state
-├── middleware.py           # Auth & request
-├── http_server.py         # HTTP transport
-└── dependencies.py        # DI
+agenthub_go/
+├── cmd/agenthub/main.go              # Entry point (flags, DB init, HTTP server)
+├── fastmcp/server/httpapp/
+│   ├── app.go                        # Handler/mux builder
+│   ├── mcp_routes.go                 # POST /mcp (JSON-RPC) + GET /mcp (SSE)
+│   ├── *_routes.go, *_mount.go       # REST route registrations
+│   └── ws_mount.go                   # WebSocket mounts
+└── fastmcp/auth/                     # /api/auth/* and /auth/supabase/* route sets
 ```
 
 ### Key Components
 
-**MCP Entry Point**:
-- Dual Authentication (JWT + MCP session)
-- Environment configuration
-- Database initialization
-- Middleware stack
-- Transport selection (stdio/streamable-http)
+**Entry Point** (`cmd/agenthub/main.go`):
+- Database initialization (`database.InitDatabase`)
+- HTTP server on `FASTMCP_PORT` (default 8000)
+- `app.Handler()` as the sole mux (`fastmcp/server/httpapp/app.go`)
+- SSE-friendly server timeouts for `GET /mcp`
 
-**Tool Registration**:
-```python
-from fastmcp.task_management.interface.ddd_compliant_mcp_tools import DDDCompliantMCPTools
-ddd_tools = DDDCompliantMCPTools()
-ddd_tools.register_tools(server)
-```
+**Tool Registration**: MCP tools are registered from `DDDCompliantMCPTools`
+(`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go`); the `tools/list` result
+is built by `getMCPToolsList` (`fastmcp/server/httpapp/mcp_routes.go`).
 
-**Authentication Middleware**:
-```python
-middleware_stack = [
-    Middleware(DualAuthMiddleware),      # JWT
-    Middleware(RequestContextMiddleware), # Context
-    Middleware(DebugLoggingMiddleware)   # Logging
-]
-```
+**Authentication**: protected REST routes are wrapped with `authed(...)`; MCP methods are
+authorized in `authorizeMCPMethod` (`mcp_routes.go`), which requires a bearer token for
+`initialize` and `tools/list` when `AUTH_ENABLED=true` (the default).
 
 ### Frontend-Backend Communication
 
@@ -678,20 +670,20 @@ Frontend (React/TypeScript)
 ├── mcpTokenService.ts # Tokens
 └── authContext.tsx    # Auth state
      │
-     │ HTTP/REST
+     │ HTTP/REST + MCP
      ▼
-Backend (Python/FastMCP)
+Backend (Go/FastMCP)
 ├── HTTP Server (8000)
-├── MCP Server
-└── Dual Auth
+├── POST /mcp (JSON-RPC) + GET /mcp (SSE)
+└── JWT / Supabase auth
 ```
 
 **API Layers**:
 
 | API | Base URL | Auth | Isolation | Use Case |
 |-----|----------|------|-----------|----------|
-| **V1** | `/mcp/` | Optional | None | Anonymous/fallback |
-| **V2** | `/api/v2/` | JWT required | User-scoped | Authenticated |
+| **MCP transport** | `/mcp` | Bearer required for `initialize`/`tools/list` when `AUTH_ENABLED=true` | Session | MCP JSON-RPC clients |
+| **REST v2** | `/api/v2/` | JWT required | User-scoped | Authenticated REST callers |
 
 ---
 

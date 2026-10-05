@@ -38,22 +38,25 @@ Describe E2E testing strategies, tools, and workflows for agenthub.
 
 ## 7. MCP Tool API Protocol: JSON-RPC 2.0 Envelope Required
 
-All E2E tests that interact with MCP tool endpoints (e.g., `/mcp/tool/manage_task`, `/mcp/tool/manage_agent`, etc.) **must** send requests using the JSON-RPC 2.0 protocol envelope. Directly sending a dict as the payload (e.g., `{ "action": "list" }`) will result in a 400 error due to missing required fields.
+All E2E tests that interact with MCP **must** POST a JSON-RPC 2.0 request to the single MCP endpoint, `POST /mcp` (`handleJSONRPC`, `agenthub_go/fastmcp/server/httpapp/mcp_routes.go:55`). There is no `/mcp/tool/<name>` route: the tool is named inside the `tools/call` request. Posting a bare tool payload (e.g., `{ "action": "list" }`) fails because it is not a JSON-RPC request. (`GET /mcp` is the SSE transport, `mcpSSEHandler`, `mcp_routes.go:116`.)
 
 **Required JSON-RPC 2.0 Envelope Example:**
 
 ```json
 {
   "jsonrpc": "2.0",
-  "method": "manage_task",
-  "params": { "action": "list", "project_id": "default_project" },
+  "method": "tools/call",
+  "params": {
+    "name": "manage_task",
+    "arguments": { "action": "list", "project_id": "default_project" }
+  },
   "id": "test-manage-task"
 }
 ```
 
 - `jsonrpc`: Always "2.0"
-- `method`: The tool name (e.g., "manage_task")
-- `params`: The original tool arguments
+- `method`: Always `"tools/call"` to invoke a tool. The other JSON-RPC methods are the protocol layer, not tools: `initialize`, `notifications/initialized`, `ping`, `tools/list`, `resources/list`, `prompts/list`
+- `params`: `{ "name": <tool name>, "arguments": <original tool arguments> }`
 - `id`: Any unique string or number for the request
 
 **Incorrect (will fail):**
@@ -65,20 +68,22 @@ All E2E tests that interact with MCP tool endpoints (e.g., `/mcp/tool/manage_tas
 ```json
 {
   "jsonrpc": "2.0",
-  "method": "manage_task",
-  "params": { "action": "list", "project_id": "default_project" },
+  "method": "tools/call",
+  "params": {
+    "name": "manage_task",
+    "arguments": { "action": "list", "project_id": "default_project" }
+  },
   "id": "test-manage-task"
 }
 ```
 
-This applies to all tool endpoints. See E2E test code for working examples.
+This applies to every tool call on `POST /mcp`. See E2E test code for working examples.
 
-> **Note:** The `MCP-Protocol-Version` header must be set to a supported version (e.g., `2025-06-18`) in all client and test requests. Using an unsupported version (such as `1.0`) will result in a 400 error. In frontend code, set this header in your API helper (e.g., `api.ts`). In tests, set it in your test header helper.
+> **Note:** The Go server does not reject requests based on protocol version. `initialize` reports `"protocolVersion": "2024-11-05"` (`mcp_routes.go:160`); the `MCP-Protocol-Version` header is used only by the dual-auth middleware to classify a request as MCP (`agenthub_go/fastmcp/auth/middleware/dual_auth_middleware.go:69`).
 
 ## 8. Updated Context System (January 2025)
 
-The context system has been unified under the `manage_context` tool:
-- **Deprecated**: `manage_context` is no longer used
+The context system is unified under the live `manage_context` tool:
 - **Use**: `manage_context` for all context operations (create, update, resolve, delegate)
 - **Auto-creation**: Contexts are automatically created when creating projects, branches, and tasks
 - **Parameter flexibility**: Boolean parameters accept string values ("true", "false", "yes", "no")
@@ -88,16 +93,19 @@ The context system has been unified under the `manage_context` tool:
 ```json
 {
   "jsonrpc": "2.0",
-  "method": "manage_context",
+  "method": "tools/call",
   "params": {
-    "action": "create",
-    "level": "task",
-    "context_id": "task-123",
-    "data": {"title": "Test Task", "status": "in_progress"}
+    "name": "manage_context",
+    "arguments": {
+      "action": "create",
+      "level": "task",
+      "context_id": "task-123",
+      "data": {"title": "Test Task", "status": "in_progress"}
+    }
   },
   "id": "test-context-create"
 }
 ```
 
 ---
-*This document follows the agenthub PRD template. Update as E2E testing practices evolve.* 
+*This document follows the agenthub PRD template. Update as E2E testing practices evolve.*

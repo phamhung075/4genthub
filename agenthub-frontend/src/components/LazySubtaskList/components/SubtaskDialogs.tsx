@@ -18,15 +18,12 @@ const DeleteConfirmDialog = lazy(() => import("../../DeleteConfirmDialog"));
 const SubtaskCompleteDialog = lazy(() => import("../../SubtaskCompleteDialog"));
 const SubtaskEditDialog = lazy(() => import("../../SubtaskEditDialog"));
 const SubtaskDetailsDialog = lazy(() => import("../../SubtaskDetailsDialog"));
-const AgentInfoDialog = lazy(() => import("../../AgentInfoDialog"));
 
 interface SubtaskDialogsProps {
   // Dialog states
   deleteDialog: DeleteDialogState;
   activeDialog: ActiveDialogState;
   detailsDialog: DetailsDialogState;
-  selectedAgentForInfo: string | null;
-  agentInfoDialogOpen: boolean;
   createSubtaskDialogOpen: boolean;
   editingSubtask: Subtask | null;
   isOpeningDialog: boolean;
@@ -38,7 +35,6 @@ interface SubtaskDialogsProps {
   // Dialog handlers
   onDeleteDialogChange: (open: boolean) => void;
   onActiveDialogChange: (dialog: ActiveDialogState) => void;
-  onAgentInfoDialogChange: (open: boolean) => void;
   onCreateDialogChange: (open: boolean) => void;
   onEditingSubtaskChange: (subtask: Subtask | null) => void;
 
@@ -47,10 +43,6 @@ interface SubtaskDialogsProps {
   onCompleteSubtask: (subtask: Subtask) => void;
   onSubtaskCreated: (subtask: Subtask) => void;
   onSubtaskDialogClose: () => void;
-
-  // Agent dialog handlers
-  onAgentInfoClose: () => void;
-  onSelectedAgentChange: (agent: string | null) => void;
 }
 
 /**
@@ -61,8 +53,6 @@ export function SubtaskDialogs({
   deleteDialog,
   activeDialog,
   detailsDialog,
-  selectedAgentForInfo,
-  agentInfoDialogOpen,
   createSubtaskDialogOpen,
   editingSubtask,
   isOpeningDialog,
@@ -70,15 +60,12 @@ export function SubtaskDialogs({
   parentTaskId,
   onDeleteDialogChange,
   onActiveDialogChange,
-  onAgentInfoDialogChange,
   onCreateDialogChange,
   onEditingSubtaskChange,
   onDeleteSubtask,
   onCompleteSubtask,
   onSubtaskCreated,
-  onSubtaskDialogClose,
-  onAgentInfoClose,
-  onSelectedAgentChange
+  onSubtaskDialogClose
 }: SubtaskDialogsProps) {
 
   return (
@@ -159,29 +146,6 @@ export function SubtaskDialogs({
             parentTaskId={parentTaskId}
             onClose={onSubtaskDialogClose}
           />
-        )}
-
-        {/* Agent Info Dialog */}
-        {selectedAgentForInfo && (
-          <>
-            {logger.debug('🚀 Rendering AgentInfoDialog:', {
-              agentName: selectedAgentForInfo,
-              open: agentInfoDialogOpen,
-              taskTitle: `Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`
-            })}
-            <AgentInfoDialog
-              open={agentInfoDialogOpen}
-              onOpenChange={onAgentInfoDialogChange}
-              agentName={selectedAgentForInfo}
-              taskTitle={`Subtask: ${subtaskSummaries.find(s => s.assignees?.includes(selectedAgentForInfo))?.title || ''}`}
-              onClose={() => {
-                logger.debug('🔒 Closing AgentInfoDialog');
-                onAgentInfoDialogChange(false);
-                onSelectedAgentChange(null);
-                onAgentInfoClose();
-              }}
-            />
-          </>
         )}
       </Suspense>
     </>

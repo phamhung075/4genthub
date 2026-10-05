@@ -55,7 +55,7 @@ vi.mock('../../../../components/TaskRow/components/TaskRowActions', () => ({
 }));
 
 vi.mock('../../../../components/ClickableAssignees', () => ({
-  default: ({ assignees, task, onAgentClick, variant }: any) => (
+  default: ({ assignees, task, variant }: { assignees: string[]; task?: { title?: string }; variant?: string }) => (
     <div
       data-testid="clickable-assignees"
       data-assignees={assignees.join(',')}
@@ -63,9 +63,7 @@ vi.mock('../../../../components/ClickableAssignees', () => ({
       data-variant={variant}
     >
       {assignees.map((assignee: string) => (
-        <button key={assignee} onClick={() => onAgentClick(assignee, task)}>
-          {`agent-${assignee}`}
-        </button>
+        <span key={assignee}>{`agent-${assignee}`}</span>
       ))}
     </div>
   )
@@ -307,17 +305,6 @@ describe('TaskRowMobile', () => {
       fireEvent.click(screen.getByText('Open details'));
 
       expect(defaultProps.onOpenDialog).toHaveBeenCalledWith('details', 'task-123');
-    });
-
-    it('should open the agent info dialog when an assignee is clicked', () => {
-      renderComponent();
-
-      fireEvent.click(screen.getByText('agent-user-1'));
-
-      expect(defaultProps.onOpenDialog).toHaveBeenCalledWith('agent-info', undefined, {
-        agentName: 'user-1',
-        taskTitle: 'Mobile Task Title'
-      });
     });
   });
 

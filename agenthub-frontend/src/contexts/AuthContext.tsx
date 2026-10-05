@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 import logger from '../utils/logger';
@@ -15,9 +15,16 @@ interface AuthProviderProps {
 }
 
 import { API_BASE_URL } from '../config/environment';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNotificationStore } from '../store/notifications';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
+  // `logout` must not change identity when `user` changes: the mount and refresh-token effects list
+  // it as a dependency, so a new identity re-runs them (a refresh/logout loop under test).
+  const userRef = useRef<User | null>(null);
+  userRef.current = user;
   const [tokens, setTokensState] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const decodeToken = (token: string): User | null => {
     try {
       const decoded = jwtDecode<JWTPayload>(token);
-      
+
       // Check if token is expired
       if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         return null;
@@ -59,15 +66,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Set tokens and update user state
   const setTokens = useCallback((tokens: AuthTokens) => {
     setTokensState(tokens);
-    
+
     // Store tokens in cookies
-    Cookies.set('access_token', tokens.access_token, { 
+    Cookies.set('access_token', tokens.access_token, {
       expires: 7, // 7 days - longer storage for better UX
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
     });
-    
-    Cookies.set('refresh_token', tokens.refresh_token, { 
+
+    Cookies.set('refresh_token', tokens.refresh_token, {
       expires: 30, // 30 days
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
@@ -77,6 +84,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const userData = decodeToken(tokens.access_token);
     setUser(userData);
   }, []);
+
+  // An identity boundary: a new identity's tokens are arriving, so anything cached for the previous
+  // one must go. Needed on login and signup because /login and /signup are public routes and their
+  // forms swap identity with SPA navigation - no logout runs, and the client lives above the router,
+  // so neither the cache nor this module remounts to drop the old identity's rows and inbox.
+  const discardPreviousIdentity = useCallback(() => {
+    queryClient.clear();
+    useNotificationStore.getState().reset();
+  }, [queryClient]);
 
   // Login function - Updated to use unified auth API
   const login = async (email: string, password: string) => {
@@ -101,13 +117,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Check if email verification is required
       if (data.requires_email_verification) {
         throw new Error('Please verify your email before signing in. Check your inbox for the verification link.');
       }
-      
+
       if (data.access_token && data.refresh_token) {
+        discardPreviousIdentity();
         setTokens({
           access_token: data.access_token,
           refresh_token: data.refresh_token
@@ -139,8 +156,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Accept': 'application/json',
         },
         credentials: 'include', // Include cookies for CORS
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
           username,  // Will be stored in user metadata
           full_name: username  // Optional: can be different from username
@@ -153,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Check if email verification is required
       if (data.requires_email_verification) {
         // Don't auto-login, user needs to verify email first
@@ -163,9 +180,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           message: data.message || 'Please check your email to verify your account'
         };
       }
-      
+
       // If email verification is not required (unlikely with Supabase)
       if (data.success && data.access_token) {
+        discardPreviousIdentity();
         setTokens({
           access_token: data.access_token,
           refresh_token: data.refresh_token
@@ -176,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
         }
       }
-      
+
       return data;
     } catch (error) {
       logger.error('Signup error:', error);
@@ -204,14 +222,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove('access_token');
     Cookies.remove('refresh_token');
 
+    // Notifications are addressed to an identity, so they must not survive a user switch in the
+    // same tab (the query cache is not cleared, but it holds no other identity's message text).
+    useNotificationStore.getState().reset();
+
+    // The query cache is the same hazard at list scale: its keys carry no user id, so the next
+    // user in this tab would render the previous user's tasks, seats and projects. Only a live
+    // session can have cached another identity's data: the mount path (a cookie that does not
+    // decode) has no session and starts with an empty cache on a fresh load, so it must not wipe
+    // a cache a caller has already primed.
+    if (userRef.current) {
+      queryClient.clear();
+    }
+
     logger.info('Logout complete - user session cleared');
-  }, [disconnectWebSocket, isWebSocketConnected]);
+  }, [disconnectWebSocket, isWebSocketConnected, queryClient]);
 
   // Refresh token function
   const refreshToken = useCallback(async () => {
     try {
       const refresh_token = Cookies.get('refresh_token');
-      
+
       if (!refresh_token) {
         throw new Error('No refresh token available');
       }
@@ -250,17 +281,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Update tokens - refresh_token might not always be returned
       const newTokens = {
         access_token: data.access_token,
         refresh_token: data.refresh_token || refresh_token  // Use existing if not provided
       };
-      
-      setTokens(newTokens);
-      
-      // Update user info from new access token
+
       const userData = decodeToken(data.access_token);
+
+      // A refresh can come back with a DIFFERENT identity: these are plain same-origin document
+      // cookies shared by every tab, so if another tab logged out and signed in as someone else,
+      // this tab's refresh picks that identity up. That is an identity replacement like login, so
+      // the previous identity's cache and inbox must go - while the ordinary same-identity refresh,
+      // which is the common case, must not drop the cache.
+      // Unusable identity data (a token with no `sub` on either side) fails toward clearing rather
+      // than toward keeping another identity's rows. No previous session still skips the clear.
+      const previousId = userRef.current?.id;
+      if (userData && userRef.current && (!userData.id || !previousId || userData.id !== previousId)) {
+        discardPreviousIdentity();
+      }
+
+      setTokens(newTokens);
+
+      // Update user info from new access token
       if (userData) {
         setUser(userData);
 
@@ -283,7 +327,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout();
       throw error;
     }
-  }, [disconnectWebSocket, isWebSocketConnected, logout, setTokens]);
+  }, [disconnectWebSocket, isWebSocketConnected, logout, setTokens, discardPreviousIdentity]);
 
   // Check for existing tokens on mount and establish WebSocket connection
   useEffect(() => {

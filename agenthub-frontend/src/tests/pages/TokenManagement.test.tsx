@@ -148,7 +148,7 @@ describe('TokenManagement', () => {
       renderWithProviders(<TokenManagement />);
 
       // Scopes are grouped by category headings
-      const categories = ['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute', 'Sessions'];
+      const categories = ['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Branches', 'Execute', 'Sessions'];
       categories.forEach((category) => {
         expect(screen.getByText(`${category} Permissions`)).toBeInTheDocument();
       });
@@ -194,7 +194,6 @@ describe('TokenManagement', () => {
         'tasks:create', 'tasks:read', 'tasks:update', 'tasks:delete',
         'subtasks:create', 'subtasks:read', 'subtasks:update', 'subtasks:delete',
         'contexts:create', 'contexts:read', 'contexts:update', 'contexts:delete',
-        'agents:create', 'agents:read', 'agents:update', 'agents:delete',
         'branches:create', 'branches:read', 'branches:update', 'branches:delete',
         'mcp:execute', 'mcp:delegate',
       ];

@@ -100,7 +100,6 @@ describe('SubtaskRowRefactored - Phase 1 Assignees Count', () => {
     showDetails: false,
     parentTaskId: 'parent-task-456',
     onSubtaskAction: vi.fn(),
-    onAgentInfoClick: vi.fn(),
     onDeleteSubtask: vi.fn(),
     onRegisterCallbacks: vi.fn(),
     onUnregisterCallbacks: vi.fn()

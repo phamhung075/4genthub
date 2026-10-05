@@ -1,21 +1,20 @@
 import React from "react";
-import { Play, Info, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Checkbox } from "./ui/checkbox";
 import { Separator } from "./ui/separator";
 import { Input } from "./ui/input";
 import { Task } from "../api";
-import AgentInfoDialog from "./AgentInfoDialog";
 
 interface AgentAssignmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task: Task | null;
   onClose: () => void;
-  onAssign: (agents: string[]) => void;
-  availableAgents: string[]; // Seat keys as assignees (@seat_key)
-  availableAgentsError?: boolean; // The seats could not be loaded
+  onAssign: (seats: string[]) => void;
+  availableSeats: string[]; // Seat keys as assignees (@seat_key)
+  availableSeatsError?: boolean; // The seats could not be loaded
   saving?: boolean;
 }
 
@@ -25,55 +24,48 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
   task,
   onClose,
   onAssign,
-  availableAgents,
-  availableAgentsError = false,
+  availableSeats,
+  availableSeatsError = false,
   saving = false
 }) => {
-  const [selectedAgents, setSelectedAgents] = React.useState<string[]>([]);
-  const [selectedAgentForInfo, setSelectedAgentForInfo] = React.useState<string | null>(null);
-  const [agentInfoDialogOpen, setAgentInfoDialogOpen] = React.useState(false);
-  const [agentSearchQuery, setAgentSearchQuery] = React.useState("");
+  const [selectedSeats, setSelectedSeats] = React.useState<string[]>([]);
+  const [seatSearchQuery, setSeatSearchQuery] = React.useState("");
 
-  // Update selected agents when task changes
+  // Update selected seats when task changes
   React.useEffect(() => {
     if (task) {
-      setSelectedAgents(task.assignees || []);
+      setSelectedSeats(task.assignees || []);
     }
   }, [task]);
 
-  const toggleAgentSelection = (agentId: string) => {
-    setSelectedAgents(prev =>
-      prev.includes(agentId)
-        ? prev.filter(id => id !== agentId)
-        : [...prev, agentId]
+  const toggleSeatSelection = (seatKey: string) => {
+    setSelectedSeats(prev =>
+      prev.includes(seatKey)
+        ? prev.filter(key => key !== seatKey)
+        : [...prev, seatKey]
     );
   };
 
   const handleAssign = () => {
-    onAssign(selectedAgents);
+    onAssign(selectedSeats);
   };
 
   const handleCancel = () => {
     // Reset to original task assignees
-    setSelectedAgents(task?.assignees || []);
+    setSelectedSeats(task?.assignees || []);
     onClose();
   };
 
-  const handleAgentInfoClick = (agentName: string) => {
-    setSelectedAgentForInfo(agentName);
-    setAgentInfoDialogOpen(true);
-  };
-
-  // Filter available agents based on search query
-  const filteredAvailableAgents = React.useMemo(() => {
-    if (!agentSearchQuery.trim()) {
-      return availableAgents;
+  // Filter available seats based on search query
+  const filteredAvailableSeats = React.useMemo(() => {
+    if (!seatSearchQuery.trim()) {
+      return availableSeats;
     }
-    const query = agentSearchQuery.toLowerCase();
-    return availableAgents.filter(agentName =>
-      agentName.toLowerCase().includes(query)
+    const query = seatSearchQuery.toLowerCase();
+    return availableSeats.filter(seatKey =>
+      seatKey.toLowerCase().includes(query)
     );
-  }, [availableAgents, agentSearchQuery]);
+  }, [availableSeats, seatSearchQuery]);
 
 
   return (
@@ -81,7 +73,7 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-5xl w-[90vw]">
           <DialogHeader>
-            <DialogTitle className="text-xl text-left">Assign Agents to Task</DialogTitle>
+            <DialogTitle className="text-xl text-left">Assign Seats to Task</DialogTitle>
           </DialogHeader>
 
         <div className="space-y-4">
@@ -97,65 +89,53 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
 
           <Separator />
 
-          {/* Available Agents from Library */}
+          {/* Available Seats */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium text-sm">Seats ({filteredAvailableAgents.length})</h4>
+              <h4 className="font-medium text-sm">Seats ({filteredAvailableSeats.length})</h4>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   type="text"
                   placeholder="Search seats..."
-                  value={agentSearchQuery}
-                  onChange={(e) => setAgentSearchQuery(e.target.value)}
+                  value={seatSearchQuery}
+                  onChange={(e) => setSeatSearchQuery(e.target.value)}
                   className="pl-8 pr-3 h-8 text-sm"
                 />
               </div>
             </div>
             <div className="space-y-2 max-h-[300px] overflow-y-auto border dark:border-gray-700 rounded p-2">
-              {filteredAvailableAgents.length === 0 ? (
+              {filteredAvailableSeats.length === 0 ? (
                 <p
-                  className={`text-sm text-center py-4 ${availableAgentsError ? "text-destructive" : "text-muted-foreground"}`}
-                  role={availableAgentsError ? "alert" : undefined}
+                  className={`text-sm text-center py-4 ${availableSeatsError ? "text-destructive" : "text-muted-foreground"}`}
+                  role={availableSeatsError ? "alert" : undefined}
                 >
-                  {availableAgentsError
+                  {availableSeatsError
                     ? "Could not load your seats. Close this dialog and open it again to retry."
-                    : agentSearchQuery
-                      ? `No seats found matching "${agentSearchQuery}"`
+                    : seatSearchQuery
+                      ? `No seats found matching "${seatSearchQuery}"`
                       : "You have no seats yet. Seats are created on the Seats page."}
                 </p>
               ) : (
-                filteredAvailableAgents.map((agentName) => (
-                <div key={agentName} className="border dark:border-gray-700 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+                filteredAvailableSeats.map((seatKey) => (
+                <div key={seatKey} className="border dark:border-gray-700 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`lib-${agentName}`}
-                        checked={selectedAgents.includes(agentName)}
-                        onCheckedChange={() => toggleAgentSelection(agentName)}
+                        id={`lib-${seatKey}`}
+                        checked={selectedSeats.includes(seatKey)}
+                        onCheckedChange={() => toggleSeatSelection(seatKey)}
                       />
                       <label
-                        htmlFor={`lib-${agentName}`}
+                        htmlFor={`lib-${seatKey}`}
                         className="cursor-pointer flex-1"
                       >
                         <div>
-                          <p className="font-medium text-sm">{agentName}</p>
+                          <p className="font-medium text-sm">{seatKey}</p>
                           <p className="text-xs text-muted-foreground">Seat key</p>
                         </div>
                       </label>
                     </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAgentInfoClick(agentName);
-                      }}
-                      title="View agent information"
-                    >
-                      <Info className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               )))
@@ -163,19 +143,19 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
             </div>
           </div>
 
-          {/* Selected Agents Summary */}
-          {selectedAgents.length > 0 && (
+          {/* Selected Seats Summary */}
+          {selectedSeats.length > 0 && (
             <>
               <Separator />
               <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
-                <h4 className="font-medium text-sm mb-2">Selected Agents ({selectedAgents.length}):</h4>
+                <h4 className="font-medium text-sm mb-2">Selected Seats ({selectedSeats.length}):</h4>
                 <div className="flex flex-wrap gap-1">
-                  {selectedAgents.map((agent, index) => (
+                  {selectedSeats.map((seat, index) => (
                     <span
                       key={index}
                       className="text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded"
                     >
-                      {agent}
+                      {seat}
                     </span>
                   ))}
                 </div>
@@ -193,25 +173,11 @@ export const AgentAssignmentDialog: React.FC<AgentAssignmentDialogProps> = ({
             onClick={handleAssign}
             disabled={saving}
           >
-            {saving ? "Assigning..." : "Assign Agents"}
+            {saving ? "Assigning..." : "Assign Seats"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    {/* Agent Info Dialog */}
-    {selectedAgentForInfo && (
-      <AgentInfoDialog
-        open={agentInfoDialogOpen}
-        onOpenChange={setAgentInfoDialogOpen}
-        agentName={selectedAgentForInfo}
-        taskTitle={task?.title}
-        onClose={() => {
-          setAgentInfoDialogOpen(false);
-          setSelectedAgentForInfo(null);
-        }}
-      />
-    )}
     </>
   );
 };

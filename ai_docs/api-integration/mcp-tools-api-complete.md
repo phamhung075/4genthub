@@ -9,11 +9,14 @@
 | **manage_project** | create, list, project_health_check | name | Project coordination |
 | **manage_git_branch** | create, assign_agent, get_statistics | project_id, git_branch_name | Branch operations |
 | **manage_context** | create, get, resolve, delegate | level, context_id | 4-tier context hierarchy |
-| **manage_agent** | register, assign, list | project_id, name | Agent orchestration |
-| **call_agent** | N/A (single action) | name_agent | Load agent instructions |
+| **manage_agent** | register, assign, get, list, update, unassign, unregister, rebalance | project_id, name, call_agent (field) | Agent registry orchestration |
+| **manage_seat** | list, get, set_occupant | room, seat, runtime, model | Seat management (switch a seat's occupant) |
+| **call_seat** | N/A (single action) | room, seat | Resolve one exact seat and its rendered context files |
 | **manage_connection** | N/A (health check) | include_details | System health monitoring |
 
-**Common Pattern**: All tools require `action` parameter (except call_agent, manage_connection)
+**Common Pattern**: All tools require `action` parameter except `call_seat` and `manage_connection`.
+
+The live registry publishes **nine** tools, the nine rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. The Go-only tools `manage_seat` and `call_seat` are appended to the Python registry by their own controllers; `tools/list` is not gated by any `TOOL_*` environment variable.
 
 ---
 
@@ -382,42 +385,66 @@ manage_agent(action="rebalance", project_id="project-uuid")
 
 ---
 
-### call_agent
+### manage_seat
 
-**Purpose**: Load agent instructions dynamically (role-switching model)
+**Purpose**: Seat management over the seat model: list seats, get one seat, or switch the occupant (runtime + model) of a seat
+
+**Actions**: list, get, set_occupant
+
+**Key Parameters**:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| action | string | `list` \| `get` \| `set_occupant` (REQUIRED) |
+| room | string | Room slug (optional for list, REQUIRED for get/set_occupant) |
+| seat | string | Seat key (REQUIRED for get/set_occupant) |
+| runtime | string | `claude-code`, `codex`, `agy` or `omp` (REQUIRED for set_occupant) |
+| model | string | Model id; empty uses the runtime default (optional for set_occupant) |
+
+**Examples**:
+```python
+# List seats in a room
+manage_seat(action="list", room="4genthub-dev")
+
+# Get one seat
+manage_seat(action="get", room="4genthub-dev", seat="lead")
+
+# Switch the occupant of a seat
+manage_seat(action="set_occupant", room="4genthub-dev", seat="lead",
+            runtime="omp", model="deepseek/deepseek-flash")
+```
+
+**Response**: `{"success": true, "seats": [...]}` for list, `{"success": true, "seat": {...}}` for get/set_occupant; failures are `{"success": false, "error": "..."}`.
+
+Go-only tool, appended to `tools/list` by `ManageSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:257`).
+
+---
+
+### call_seat
+
+**Purpose**: Resolve one exact seat by room and seat key. Returns the seat's runtime, permission policy, resolved snapshot hash and its rendered context files. When the hash is new, the call writes a `resolved_seats` row.
 
 **Parameters**:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| name_agent | string | Agent name to load (REQUIRED) |
-| user_id | string | User identifier (optional, auto-populated) |
+| room | string | Room slug (REQUIRED) |
+| seat | string | Seat key (REQUIRED) |
 
-**Examples**:
+**Example**:
 ```python
-# Load master orchestrator
-call_agent(name_agent="master-orchestrator-agent")
-# Returns: system_prompt (complete instructions), tools array (permissions)
-
-# Switch to coding agent
-call_agent(name_agent="coding-agent")
-# Returns: coding-specific system_prompt + tools
-
-# Switch back to orchestrator
-call_agent(name_agent="master-orchestrator-agent")
+call_seat(room="4genthub-dev", seat="lead")
 ```
 
-**Response Structure**:
-```json
-{
-  "system_prompt": "Complete agent instructions...",
-  "tools": ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
-  "name": "coding-agent",
-  "description": "Specialized coding agent"
-}
-```
+**Response**: `{"success": true, "room": ..., "seat": ..., "hash": ..., "runtime": ..., "policy": ..., "files": [{"path": ..., "content": ...}]}`; failures are `{"success": false, "error": "..."}`.
 
-**Usage Pattern**: Call → Read system_prompt → Follow instructions → Use only tools in array → Switch as needed
+Go-only tool, appended to `tools/list` by `CallSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:266`).
+
+---
+
+### call_agent — retired
+
+The `call_agent` **tool** ("load agent instructions") no longer exists: it was removed together with the Python agent library (`agenthub_main/agent-library`), which is retired. It is gone from `tools/list`, from `tools_golden.json` and from the tests, and calling it now returns `{"error":"Unknown tool: call_agent"}` from `dispatchMCPTool`. `call_agent` survives only as an optional **field/parameter of the `manage_agent` tool** (register/update) — that field is live and deliberate, and is not a tool.
 
 ---
 

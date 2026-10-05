@@ -1,3 +1,5 @@
+> **Historical artifact — retired model.** This optimization record for `CLAUDE.md` references the retired `call_agent` MCP tool. The live model is the seat model (`manage_seat` / `call_seat`) plus the `agents` registry via `manage_agent` (`ai_docs/api-integration/surface-inventory.md` §2). Kept as history only.
+
 # CLAUDE.md Optimization Results
 
 ## Summary

@@ -20,7 +20,6 @@ interface SubtaskRowProps {
 
   // Other callbacks
   onSubtaskAction: (action: 'details' | 'edit' | 'complete', subtaskId: string) => void | Promise<void>;
-  onAgentInfoClick: (agentName: string) => void;
   onDeleteSubtask: (subtaskId: string) => void;
 
   // Callback registration function from parent
@@ -38,7 +37,6 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
   isLoading,
   showDetails,
   onSubtaskAction,
-  onAgentInfoClick,
   onDeleteSubtask,
   onRegisterCallbacks,
   onUnregisterCallbacks
@@ -182,12 +180,7 @@ const SubtaskRow: React.FC<SubtaskRowProps> = ({
                 <Badge
                   key={index}
                   variant="secondary"
-                  className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAgentInfoClick(assignee);
-                  }}
-                  title={`View ${assignee} information`}
+                  className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300"
                 >
                   {assignee}
                 </Badge>

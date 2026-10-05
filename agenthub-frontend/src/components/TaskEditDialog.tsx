@@ -36,19 +36,19 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     due_date: "",
     progress_notes: ""  // New field for progress updates
   });
-  const [availableAgents, setAvailableAgents] = React.useState<string[]>([]);
-  const [availableAgentsError, setAvailableAgentsError] = React.useState(false);
-  const [showAgentDropdown, setShowAgentDropdown] = React.useState(false);
-  const [agentSearch, setAgentSearch] = React.useState("");
+  const [availableSeats, setAvailableSeats] = React.useState<string[]>([]);
+  const [availableSeatsError, setAvailableSeatsError] = React.useState(false);
+  const [showSeatDropdown, setShowSeatDropdown] = React.useState(false);
+  const [seatSearch, setSeatSearch] = React.useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load available agents on mount
+  // Load available seats on mount
   React.useEffect(() => {
     getAvailableAgents()
-      .then(setAvailableAgents)
+      .then(setAvailableSeats)
       .catch(error => {
         logger.error('Error loading seats for the assignee picker:', error);
-        setAvailableAgentsError(true);
+        setAvailableSeatsError(true);
       });
   }, []);
 
@@ -56,18 +56,18 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowAgentDropdown(false);
+        setShowSeatDropdown(false);
       }
     };
 
-    if (showAgentDropdown) {
+    if (showSeatDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showAgentDropdown]);
+  }, [showSeatDropdown]);
 
   // Update form when task changes
   React.useEffect(() => {
@@ -149,24 +149,24 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     onClose();
   };
 
-  const toggleAgent = (agent: string) => {
+  const toggleSeat = (seatKey: string) => {
     setEditForm(prev => ({
       ...prev,
-      assignees: prev.assignees.includes(agent)
-        ? prev.assignees.filter(a => a !== agent)
-        : [...prev.assignees, agent]
+      assignees: prev.assignees.includes(seatKey)
+        ? prev.assignees.filter(a => a !== seatKey)
+        : [...prev.assignees, seatKey]
     }));
   };
 
-  const removeAgent = (agent: string) => {
+  const removeSeat = (seatKey: string) => {
     setEditForm(prev => ({
       ...prev,
-      assignees: prev.assignees.filter(a => a !== agent)
+      assignees: prev.assignees.filter(a => a !== seatKey)
     }));
   };
 
-  const filteredAgents = availableAgents.filter(agent =>
-    agent.toLowerCase().includes(agentSearch.toLowerCase())
+  const filteredSeats = availableSeats.filter(seatKey =>
+    seatKey.toLowerCase().includes(seatSearch.toLowerCase())
   );
 
   return (
@@ -328,22 +328,22 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
             </div>
           )}
 
-          {/* Agent Assignment */}
+          {/* Seat Assignment */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Assign Agents</label>
+            <label className="text-sm font-medium mb-2 block">Assign Seats</label>
 
-            {/* Selected agents */}
+            {/* Selected seats */}
             {editForm.assignees.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
-                {editForm.assignees.map(agent => (
+                {editForm.assignees.map(seat => (
                   <div
-                    key={agent}
+                    key={seat}
                     className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
                   >
-                    <span>{agent}</span>
+                    <span>{seat}</span>
                     <button
                       type="button"
-                      onClick={() => removeAgent(agent)}
+                      onClick={() => removeSeat(seat)}
                       className="hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full p-0.5"
                     >
                       <X className="h-3 w-3" />
@@ -353,42 +353,42 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
               </div>
             )}
 
-            {/* Agent search input */}
+            {/* Seat search input */}
             <div className="relative" ref={dropdownRef}>
               <Input
                 placeholder="Search and select seats..."
-                value={agentSearch}
-                onChange={(e) => setAgentSearch(e.target.value)}
-                onFocus={() => setShowAgentDropdown(true)}
+                value={seatSearch}
+                onChange={(e) => setSeatSearch(e.target.value)}
+                onFocus={() => setShowSeatDropdown(true)}
                 disabled={saving}
               />
 
-              {/* Agent dropdown */}
-              {showAgentDropdown && (
+              {/* Seat dropdown */}
+              {showSeatDropdown && (
                 <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-                  {filteredAgents.length > 0 ? (
-                    filteredAgents.map(agent => (
+                  {filteredSeats.length > 0 ? (
+                    filteredSeats.map(seat => (
                       <div
-                        key={agent}
+                        key={seat}
                         className={`px-3 py-2 hover:bg-accent cursor-pointer flex items-center justify-between ${
-                          editForm.assignees.includes(agent) ? 'bg-accent/50' : ''
+                          editForm.assignees.includes(seat) ? 'bg-accent/50' : ''
                         }`}
-                        onClick={() => toggleAgent(agent)}
+                        onClick={() => toggleSeat(seat)}
                       >
-                        <span className="text-sm">{agent}</span>
-                        {editForm.assignees.includes(agent) && (
+                        <span className="text-sm">{seat}</span>
+                        {editForm.assignees.includes(seat) && (
                           <span className="text-xs text-green-600 dark:text-green-400">✓ Selected</span>
                         )}
                       </div>
                     ))
                   ) : (
                     <div
-                      className={`px-3 py-2 text-sm ${availableAgentsError ? "text-destructive" : "text-muted-foreground"}`}
-                      role={availableAgentsError ? "alert" : undefined}
+                      className={`px-3 py-2 text-sm ${availableSeatsError ? "text-destructive" : "text-muted-foreground"}`}
+                      role={availableSeatsError ? "alert" : undefined}
                     >
-                      {availableAgentsError
+                      {availableSeatsError
                         ? "Could not load your seats. Close this dialog and open it again to retry."
-                        : availableAgents.length === 0
+                        : availableSeats.length === 0
                           ? "You have no seats yet. Seats are created on the Seats page."
                           : "No seats found"}
                     </div>
@@ -397,7 +397,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
                     <button
                       type="button"
                       className="text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowAgentDropdown(false)}
+                      onClick={() => setShowSeatDropdown(false)}
                     >
                       Close
                     </button>

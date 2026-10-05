@@ -114,7 +114,7 @@ const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 
               <div className="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg mt-3">
                 <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-1">Expected Status:</p>
                 <code className="text-xs bg-indigo-200 dark:bg-indigo-800 px-2 py-1 rounded">
-                  🎯 Active: master-orchestrator-agent | 🔗 MCP: ✅ Connected (localhost:8000)
+                  🎯 Active: @developer | 🔗 MCP: ✅ Connected (localhost:8000)
                 </code>
               </div>
             </div>
@@ -136,7 +136,7 @@ const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 
           </ul>
           <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
             <li>✅ Debug backend and frontend</li>
-            <li>✅ Custom agent development</li>
+            <li>✅ Custom seat types and modules</li>
             <li>✅ Database access for inspection</li>
             <li>✅ Zero hosting costs</li>
           </ul>
@@ -336,15 +336,15 @@ const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 
                 </p>
                 <ul className="list-disc list-inside text-sm text-orange-800 dark:text-orange-200 space-y-1 ml-4">
                   <li>✅ Connect to hosted 4genthub service</li>
-                  <li>✅ Load master-orchestrator-agent</li>
+                  <li>✅ Load the room's seats</li>
                   <li>✅ Enable real-time status tracking</li>
-                  <li>✅ Activate all 32 specialized agents</li>
+                  <li>✅ Launch an occupant for every seat</li>
                 </ul>
 
                 <div className="bg-orange-100 dark:bg-orange-900 p-3 rounded-lg mt-3">
                   <p className="text-sm font-semibold text-orange-900 dark:text-orange-100 mb-1">Expected Status Line:</p>
                   <code className="text-xs bg-orange-200 dark:bg-orange-800 px-2 py-1 rounded">
-                    🎯 Active: master-orchestrator-agent | 🔗 MCP: ✅ Connected | 🌿 main
+                    🎯 Active: @developer | 🔗 MCP: ✅ Connected | 🌿 main
                   </code>
                 </div>
               </div>
@@ -365,7 +365,7 @@ const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 
               <h5 className="font-semibold text-green-900 dark:text-green-100 mb-2">Test the Integration:</h5>
               <div className="text-sm text-green-800 dark:text-green-200 space-y-2">
                 <p>In Claude Code, try: <strong>"Create a simple hello world function"</strong></p>
-                <p className="text-xs">Expected: Auto-delegation to coding-agent with MCP task tracking</p>
+                <p className="text-xs">Expected: The task is assigned to a seat with @&lt;seat_key&gt; and tracked over MCP</p>
               </div>
             </div>
 
@@ -431,7 +431,7 @@ const GettingStartedGuide= ({ expandedSections, toggleSection, deploymentMode = 
               <li>✅ Automatic scaling</li>
             </ul>
             <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1">
-              <li>✅ 32 specialized agents ready instantly</li>
+              <li>✅ Rooms, seats and occupants ready instantly</li>
               <li>✅ Real-time task management</li>
               <li>✅ Zero infrastructure required</li>
               <li>✅ Professional support included</li>

@@ -8,6 +8,7 @@ import {
   type WSMessage,
   type SeatEventPayload,
   type RoomEventPayload,
+  type NotificationEventPayload,
   isBranchDeletePayload,
   isSubtaskDeletePayload,
   isProjectDeletePayload,
@@ -17,6 +18,7 @@ import {
 } from '../types/websocket-protocol';
 import { animationFactory } from '../services/AnimationFactory';
 import { seatKeys } from './useSeats';
+import { useNotificationStore } from '../store/notifications';
 
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
 // This prevents duplicate toasts when multiple components use useRealtimeSync
@@ -909,6 +911,36 @@ export const useRealtimeSync = (
       }
     };
 
+    // Handler for dashboard notifications: an agent-to-human message arriving over the socket,
+    // either live or replayed from the missed-notification store on reconnect.
+    const handleNotification = (message: WSMessage) => {
+      const primary = message.payload.data.primary as NotificationEventPayload;
+      const text = typeof primary?.message === 'string' ? primary.message : '';
+
+      if (!text) {
+        logger.warn('[useRealtimeSync] Notification frame without a message');
+        return;
+      }
+
+      const id = message.metadata?.entity_id || message.id;
+      const from = primary.from || '';
+
+      useNotificationStore.getState().add({
+        id,
+        message: text,
+        from: primary.from,
+        room: primary.room,
+        seat: primary.seat,
+        kind: primary.kind,
+      });
+
+      showToastOnce(`notification-${id}`, () => {
+        showInfo(from ? `${from}: ${text}` : text);
+      });
+
+      logger.debug('[useRealtimeSync] Notification stored:', id);
+    };
+
     // Handler for room events (entity 'room'): room create/delete and the company
     // settings change, which arrives as a room 'updated' with id 'company'.
     const handleRoomUpdate = (message: WSMessage) => {
@@ -992,6 +1024,9 @@ export const useRealtimeSync = (
               break;
             case 'room':
               handleRoomUpdate(message);
+              break;
+            case 'notification':
+              handleNotification(message);
               break;
             default:
               logger.debug('[useRealtimeSync] Unknown entity type:', entity);

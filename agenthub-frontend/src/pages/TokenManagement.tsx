@@ -28,7 +28,6 @@ interface UsageStats {
   project_update?: number;
   branch_create?: number;
   branch_update?: number;
-  agent_call?: number;
   context_create?: number;
   context_update?: number;
   [key: string]: number | undefined;
@@ -173,12 +172,6 @@ const AVAILABLE_SCOPES = [
   { value: 'contexts:read', label: 'Read Contexts', description: 'View contexts and data', category: 'Contexts' },
   { value: 'contexts:update', label: 'Update Contexts', description: 'Modify context data', category: 'Contexts' },
   { value: 'contexts:delete', label: 'Delete Contexts', description: 'Delete contexts', category: 'Contexts' },
-
-  // Agents CRUD Scopes
-  { value: 'agents:create', label: 'Register Agents', description: 'Register new agents', category: 'Agents' },
-  { value: 'agents:read', label: 'Read Agents', description: 'View agent configurations', category: 'Agents' },
-  { value: 'agents:update', label: 'Update Agents', description: 'Modify agent settings', category: 'Agents' },
-  { value: 'agents:delete', label: 'Unregister Agents', description: 'Remove agents', category: 'Agents' },
 
   // Branches CRUD Scopes
   { value: 'branches:create', label: 'Create Branches', description: 'Create new git branches', category: 'Branches' },
@@ -506,7 +499,7 @@ export function TokenManagement() {
                   </p>
 
                   {/* Improved Grid Layout for Scopes */}
-                  {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute', 'Sessions'].map((category) => {
+                  {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Branches', 'Execute', 'Sessions'].map((category) => {
                     const categoryScopes = AVAILABLE_SCOPES.filter(s => s.category === category);
                     if (categoryScopes.length === 0) return null;
 

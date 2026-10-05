@@ -40,7 +40,6 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
   isLoading,
   parentTaskId,
   onSubtaskAction,
-  onAgentInfoClick,
   onDeleteSubtask,
   onRegisterCallbacks,
   onUnregisterCallbacks
@@ -111,7 +110,6 @@ const SubtaskRowRefactored: React.FC<SubtaskRowProps> = ({
         <SubtaskRowAssignees
           assignees={summary.assignees}
           assigneesCount={summary.assignees?.length ?? 0}
-          onAgentInfoClick={onAgentInfoClick}
         />
       </TableCell>
 

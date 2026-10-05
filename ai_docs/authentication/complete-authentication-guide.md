@@ -36,7 +36,7 @@
 │                   AGENTHUB BACKEND                           │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐ │
 │  │ JWT Validator│ -> │  Middleware  │ -> │  Protected   │ │
-│  │              │    │   (FastAPI)  │    │   Routes     │ │
+│  │              │    │ (Go server)  │    │   Routes     │ │
 │  └──────────────┘    └──────────────┘    └──────────────┘ │
 └─────────────────────────────────────────────────────────────┘
                             │
@@ -425,47 +425,21 @@ requests.post(
 
 ## 6. Backend Integration
 
-### FastAPI Middleware
+### Backend Middleware (Go)
 
-**JWT Dependency**:
-```python
-from fastapi import Depends, HTTPException, Security
-from fastapi.security import HTTPBearer
+> **Status:** the live backend is the Go service (`agenthub_go`, PostgreSQL-only); the
+> Python/FastAPI snippets formerly in this section described the retired Python
+> implementation. The Go auth surface is `POST /api/auth/register`, `/api/auth/login`,
+> `/api/auth/refresh`, `/api/auth/dev-login`, `/api/auth/logout`,
+> `GET /api/auth/provider`, `POST /api/auth/registration-success`, `GET /api/auth/verify`,
+> `GET /api/auth/password-requirements`, `POST /api/auth/validate-password`, plus the
+> Supabase set under `/auth/supabase/*` (signup, signin, signout, password-reset,
+> update-password, verify-token, resend-verification, oauth, me, health).
 
-security = HTTPBearer()
-
-async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, jwks, algorithms=["RS256"])
-        return payload
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-# Use in routes
-@app.get("/protected")
-async def protected_route(payload: dict = Depends(verify_token)):
-    user_id = payload["sub"]
-    return {"user_id": user_id}
-```
-
-### Role-Based Access Control
-
-**Check Roles**:
-```python
-def require_role(required_role: str):
-    async def role_checker(payload: dict = Depends(verify_token)):
-        roles = payload.get("realm_access", {}).get("roles", [])
-        if required_role not in roles:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
-        return payload
-    return role_checker
-
-# Use in routes
-@app.get("/admin")
-async def admin_route(payload: dict = Depends(require_role("admin"))):
-    return {"message": "Admin access granted"}
-```
+**Validation**: the Go server validates the Keycloak-issued JWT (signature against the
+realm JWKS, `exp`, `iss`, `aud`) before dispatching a protected request, and maps
+`realm_access.roles` onto the platform's role checks. An invalid or expired token returns
+`401`; a valid token missing the required role returns `403`.
 
 ---
 

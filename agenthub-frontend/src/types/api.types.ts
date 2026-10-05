@@ -210,11 +210,6 @@ export interface HealthResponse extends ApiResponse {
   timestamp: string;
 }
 
-export interface AgentsResponse extends ApiResponse {
-  agents: any[];
-  total?: number;
-}
-
 /**
  * API Types for Bulk Summary Operations
  *

@@ -19,6 +19,11 @@ The domain, application and repository layers are ported and pass tests. The com
 | B5 | Critical | No Go Dockerfile exists. `captain-definition.backend` points at `docker-system/docker/Dockerfile.backend.production`, which builds the Python app. Docker is not installed on this host, so no image build was possible. | See section 6. |
 | B6 | High | Startup DDL against production. `CreateTables` (create_all with checkfirst plus `EnsureAIColumnsExist`) would create `agent_sessions`, `agent_session_events` and `email_tokens` in the production database on first boot. Eight production tables are unknown to the Go models: `agent_import_history`, `agent_templates`, `applied_migrations`, `token_transactions`, `user_agent_configurations_md`, `user_agent_instances`, `user_api_tokens`, `user_sessions`. | Production schema metadata vs. Go schema (scratch `schema_dump.json`, `prod_schema.json`). |
 
+> **Status update (docs rewrite against HEAD `c4ff8d42`; see `ai_docs/api-integration/surface-inventory.md` §2, §3, §5.4).** The specific B4 and B6 statements above are superseded and must not be read as the current surface:
+> - **B4:** at this HEAD `getMCPToolsList` builds `tools/list` from `DDDCompliantMCPTools.ToolDefinitions()` plus three appended schemas (`manage_seat`, `call_seat`, `manage_connection`) — nine published tools, not stub schemas and not `manage_unified_context`. The golden registry test passes. `GET /mcp` is `mcpSSEHandler` (an SSE stream), and `initialize`/`tools/list` require a bearer when `AUTH_ENABLED=true`.
+> - **B6:** `models_prod.go` now declares six `ProductionTables` (`agent_import_history`, `applied_migrations`, `token_transactions`, `user_agent_configurations_md`, `user_api_tokens`, `user_sessions`), still deliberately not appended to `database.Tables`. `agent_templates` and `user_agent_instances` were dropped and are no longer part of the schema at all.
+> - The `call_agent` MCP tool was retired together with `agenthub_main/agent-library`; later lists in this report that include it among `tools/call` targets are historical. `call_agent` survives only as a field of `manage_agent`.
+
 ## 1. Surface parity
 
 - HTTP: see B2, B3. Served routes (project, branch, task, subtask CRUD) worked end to end against a production-like schema.
@@ -113,7 +118,7 @@ Recommended: do not replace the Python service in place. Deploy Go as a second C
 
 - The ledger says 100% `done`, but `httpapp` (the composition root) and `cmd/agenthub` have no tests; the verified blockers B1 to B4 live exactly there. A per-file `done` does not imply a working server.
 - Differential checks I ran earlier found residual divergences in rows marked `done` (for example `response_optimizer`, fixed and re-verified today), so other `done` rows that I did not diff are not proven equal to Python.
-- Two of the eight tables unknown to Go hold live data (`user_agent_instances` 58 rows, `agent_templates` 32 rows). Agent-management features backed by them would break or lose data on the Go server.
+- SUPERSEDED 2026-10-05 (both tables were dropped, owner-run; the row counts and export size below are OWNER-REPORTED via the lead and were not independently verified by a seat): `user_agent_instances` was already at 0 rows and `agent_templates` held 32 rows for which a 397 KB export was taken first as the recoverable before-state, so neither table exists now. Nothing "holds live data" on the Go server, and no agent-management feature can break or lose data from them.
 - JSON number/null handling, timezones (naive vs aware isoformat), set ordering and error message formats were differential-tested only for the packages listed in earlier handoffs, not for the HTTP layer.
 - Python-only dependencies named in the brief (redis, pybars, supabase) were not re-audited here.
 - Concurrency: a data race class (unsynchronised maps in singleton services) was found and fixed in two services; no systematic race run under HTTP load exists. `go test -race` passes but does not cover `httpapp`.

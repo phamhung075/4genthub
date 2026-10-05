@@ -36,8 +36,8 @@ vi.mock('../../../../components/ui/holographic-badges', () => ({
 }));
 
 vi.mock('../../../../components/ClickableAssignees', () => ({
-  default: ({ assignees, onAgentClick, task }: any) => (
-    <button data-testid="assignees" onClick={() => onAgentClick(assignees[0], task)}>
+  default: ({ assignees }: { assignees: string[] }) => (
+    <button data-testid="assignees" type="button">
       {assignees.join(',')}
     </button>
   )
@@ -206,28 +206,6 @@ describe('TaskRowDesktop', () => {
 
       expect(screen.getByText('Unassigned')).toBeInTheDocument();
       expect(screen.queryByTestId('assignees')).not.toBeInTheDocument();
-    });
-
-    it('opens the agent-info dialog with the agent name and the task title', () => {
-      const { props } = renderRow();
-
-      fireEvent.click(screen.getByTestId('assignees'));
-
-      expect(props.onOpenDialog).toHaveBeenCalledWith('agent-info', undefined, {
-        agentName: 'coding-agent',
-        taskTitle: 'Test Task'
-      });
-    });
-
-    it('passes the full task to the assignees when it is loaded', () => {
-      const { props } = renderRow({ fullTask: { title: 'Full Task Title' } });
-
-      fireEvent.click(screen.getByTestId('assignees'));
-
-      expect(props.onOpenDialog).toHaveBeenCalledWith('agent-info', undefined, {
-        agentName: 'coding-agent',
-        taskTitle: 'Full Task Title'
-      });
     });
   });
 

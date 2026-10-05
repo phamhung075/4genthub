@@ -32,7 +32,7 @@ export const LandingPage: React.FC = () => {
   // Comprehensive SEO optimization
   useEffect(() => {
     // Title
-    document.title = '4genthub - AI Development Platform | 32 Specialized AI Agents for Developers';
+    document.title = '4genthub - AI Development Platform | Rooms, Seats and Modules for Development Teams';
 
     // Helper function to update or create meta tags
     const updateMeta = (name: string, content: string, property?: boolean) => {
@@ -51,14 +51,14 @@ export const LandingPage: React.FC = () => {
     };
 
     // Basic SEO Meta Tags
-    updateMeta('description', 'Transform your development workflow with 4genthub - enterprise-grade MCP platform featuring 32 specialized AI agents for coding, testing, debugging, security auditing, DevOps automation, and more. Start free trial today.');
-    updateMeta('keywords', 'AI agents, MCP platform, development tools, code generation, automated testing, AI coding assistant, Claude integration, enterprise AI, developer productivity, DevOps automation, CI/CD, security scanning, code review AI');
+    updateMeta('description', 'Transform your development workflow with 4genthub - an enterprise-grade MCP platform for AI development teams. Compose rooms, seats and modules, staff each seat with an occupant runtime and model, and keep every seat versioned and reproducible. Start free today.');
+    updateMeta('keywords', 'AI development teams, MCP platform, seat management, room topology, seat types, modules, development tools, code generation, AI coding assistant, Claude integration, enterprise AI, developer productivity, DevOps automation, CI/CD, code review');
     updateMeta('author', '4genthub');
     updateMeta('robots', 'index, follow');
 
     // Open Graph Meta Tags (Facebook, LinkedIn)
-    updateMeta('og:title', '4genthub - 32 Specialized AI Agents for Modern Development', true);
-    updateMeta('og:description', 'Enterprise-grade MCP platform with AI agents for coding, testing, security, DevOps, and more. Cloud or self-hosted. Setup in 2 minutes.', true);
+    updateMeta('og:title', '4genthub - Rooms, Seats and Modules for Modern Development', true);
+    updateMeta('og:description', 'Enterprise-grade MCP platform for composing rooms, seats and modules. Staff each seat with an occupant runtime and model, pin versions, and run cloud or self-hosted. Setup in 2 minutes.', true);
     updateMeta('og:type', 'website', true);
     updateMeta('og:url', 'https://www.4genthub.com', true);
     updateMeta('og:image', 'https://www.4genthub.com/og-image.png', true);
@@ -67,8 +67,8 @@ export const LandingPage: React.FC = () => {
 
     // Twitter Card Meta Tags
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', '4genthub - AI Development Platform with 32 Specialized Agents');
-    updateMeta('twitter:description', 'Enterprise MCP platform featuring specialized AI agents for every development task. Cloud or self-hosted. Free trial available.');
+    updateMeta('twitter:title', '4genthub - AI Development Platform with Rooms, Seats and Modules');
+    updateMeta('twitter:description', 'Enterprise MCP platform where rooms hold seats and each seat carries a versioned seat type, an occupant runtime and model, and modules. Cloud or self-hosted. Free during beta.');
     updateMeta('twitter:image', 'https://www.4genthub.com/twitter-card.png');
     updateMeta('twitter:site', '@4genthub');
 
@@ -101,12 +101,12 @@ export const LandingPage: React.FC = () => {
         "ratingValue": "4.8",
         "reviewCount": "127"
       },
-      "description": "Enterprise-grade MCP platform featuring 32 specialized AI agents for coding, testing, debugging, security auditing, and DevOps automation. Integrates with Claude Code for AI-powered development workflows.",
+      "description": "Enterprise-grade MCP platform for composing AI development teams: rooms, seats and occupants, versioned seat types and modules, and enforced seat links. Integrates with Claude Code for AI-powered development workflows.",
       "featureList": [
-        "32 Specialized AI Agents",
+        "Rooms, Seats and Occupants",
+        "Versioned Seat Types and Modules",
         "Claude Code Integration",
-        "Automated Code Generation",
-        "Security Auditing",
+        "Seat Links and Communication Policy",
         "DevOps Automation",
         "Cloud or Self-Hosted Deployment",
         "4-Tier Context Management",
@@ -140,8 +140,8 @@ export const LandingPage: React.FC = () => {
   const features = [
     {
       icon: <Brain className="h-8 w-8 text-purple-500" />,
-      title: '32 Specialized AI Agents',
-      description: 'From coding and testing to security auditing and DevOps - each agent is an expert in its domain.'
+      title: 'Rooms, Seats and Modules',
+      description: 'Model your team as rooms and seats. Each seat is a durable position with a versioned seat type, an occupant runtime and model, and modules you can add or remove.'
     },
     {
       icon: <Zap className="h-8 w-8 text-yellow-500" />,
@@ -151,7 +151,7 @@ export const LandingPage: React.FC = () => {
     {
       icon: <Shield className="h-8 w-8 text-green-500" />,
       title: 'Enterprise Security',
-      description: 'Built-in security agents scan for vulnerabilities, audit code, and ensure compliance with best practices.'
+      description: 'Seat links are enforced, each occupant runs under a pinned permission policy, and every message is audited against your team policy.'
     },
     {
       icon: <Globe className="h-8 w-8 text-blue-500" />,
@@ -170,14 +170,6 @@ export const LandingPage: React.FC = () => {
     }
   ];
 
-  const agents = [
-    'Coding Agent', 'Test Orchestrator', 'Debugger Agent', 'Security Auditor',
-    'Code Reviewer', 'DevOps Agent', 'Database Agent', 'API Agent',
-    'Frontend Agent', 'Backend Agent', 'Mobile Agent', 'Documentation Agent',
-    'Performance Agent', 'Architecture Agent', 'ML/AI Agent', 'Data Agent',
-    '...and 16 more specialized agents'
-  ];
-
   const howItWorks = [
     {
       step: '1',
@@ -193,14 +185,14 @@ export const LandingPage: React.FC = () => {
     },
     {
       step: '3',
-      title: 'Create Your Agents',
-      description: 'Use default templates or create all 32 specialized agents from your dashboard.',
+      title: 'Compose Your Rooms',
+      description: 'Create rooms and seats from your dashboard, start from the built-in seat types, and customize them with overlays.',
       icon: <Brain className="h-6 w-6" />
     },
     {
       step: '4',
       title: 'Start Building',
-      description: 'Interact naturally with Claude Code - agents handle the rest automatically.',
+      description: 'Interact naturally with Claude Code - your seats handle the rest automatically.',
       icon: <Sparkles className="h-6 w-6" />
     }
   ];
@@ -271,11 +263,11 @@ export const LandingPage: React.FC = () => {
             <h1 className="text-5xl sm:text-7xl font-bold text-gray-900 dark:text-gray-100 mb-6">
               Transform Development with
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">
-                32 AI Agents
+                Rooms, Seats and Modules
               </span>
             </h1>
             <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-              Enterprise-grade MCP platform that supercharges your development workflow with specialized AI agents for every task
+              Enterprise-grade MCP platform that turns your workflow into rooms, seats and modules - each seat a durable position you can staff, version and link
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/register">
@@ -391,33 +383,6 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* AI Agents Showcase */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              32 Specialized AI Agents
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Each agent is an expert in its domain, ready to assist you
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {agents.map((agent, index) => (
-              <div
-                key={index}
-                className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center"
-              >
-                <CheckCircle2 className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                  {agent}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-6">
@@ -475,7 +440,7 @@ export const LandingPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">100% Free Access</h3>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                Full access to all 32 AI agents, features, and updates during beta. No hidden costs, no credit card required.
+                Full access to every seat, module and feature during beta. No hidden costs, no credit card required.
               </p>
             </Card>
 
@@ -499,7 +464,7 @@ export const LandingPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Early Access</h3>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
-                Get first access to new agents, features, and capabilities before public release.
+                Get first access to new seat types, modules and capabilities before public release.
               </p>
             </Card>
           </div>
@@ -696,7 +661,7 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <span>⚡ Power development → New features & agents</span>
+                    <span>⚡ Power development → New features & seat types</span>
                   </div>
                 </div>
 
@@ -760,8 +725,8 @@ export const LandingPage: React.FC = () => {
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Create New Agents</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-300">Design specialized AI agents for specific tasks</p>
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Author Seat Types &amp; Modules</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-300">Design reusable seat types and modules for specific kinds of work</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -811,8 +776,8 @@ export const LandingPage: React.FC = () => {
                 <p className="text-purple-100">Free Forever</p>
               </div>
               <div>
-                <p className="text-3xl font-bold text-white">32</p>
-                <p className="text-purple-100">AI Agents</p>
+                <p className="text-3xl font-bold text-white">4</p>
+                <p className="text-purple-100">Occupant Runtimes</p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-white">Open</p>
@@ -859,7 +824,7 @@ export const LandingPage: React.FC = () => {
             <div>
               <h3 className="text-white dark:text-gray-100 font-bold text-xl mb-4">4genthub</h3>
               <p className="text-sm">
-                Enterprise AI platform with 32 specialized agents for modern development teams.
+                Enterprise AI platform for composing rooms, seats and modules for modern development teams.
               </p>
             </div>
             <div>

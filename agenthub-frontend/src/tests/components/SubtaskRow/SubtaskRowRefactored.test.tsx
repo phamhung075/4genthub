@@ -46,7 +46,6 @@ describe('SubtaskRowRefactored', () => {
     showDetails: false,
     parentTaskId: 'parent-task-456',
     onSubtaskAction: vi.fn(),
-    onAgentInfoClick: vi.fn(),
     onDeleteSubtask: vi.fn(),
     onRegisterCallbacks: vi.fn(),
     onUnregisterCallbacks: vi.fn()
@@ -180,14 +179,6 @@ describe('SubtaskRowRefactored', () => {
       expect(screen.getByText('user-2')).toBeInTheDocument();
       expect(screen.queryByText('user-3')).not.toBeInTheDocument();
       expect(screen.getByText('+3')).toBeInTheDocument();
-    });
-
-    it('should call onAgentInfoClick with the assignee name', () => {
-      renderRow();
-
-      fireEvent.click(screen.getByText('user-1'));
-
-      expect(defaultProps.onAgentInfoClick).toHaveBeenCalledWith('user-1');
     });
   });
 

@@ -46,7 +46,7 @@ export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 /**
  * Entity types across the system (MERGED from multiple sources)
  */
-export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent' | 'seat' | 'room';
+export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'seat' | 'room';
 
 /**
  * Event types across the system (MERGED from multiple sources)
@@ -155,7 +155,6 @@ export interface UsageStats {
   project_update?: number;
   branch_create?: number;
   branch_update?: number;
-  agent_call?: number;
   context_create?: number;
   context_update?: number;
   [key: string]: number | undefined; // Allow other operation types

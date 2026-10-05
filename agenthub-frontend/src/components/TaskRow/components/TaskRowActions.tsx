@@ -49,7 +49,7 @@ export const TaskRowActions: React.FC<TaskRowActionsProps> = ({
         variant="ghost"
         size="icon"
         onClick={handleAssign}
-        title="Assign agents"
+        title="Assign seats"
         className={assignButtonClassName}
       >
         <Users className="w-4 h-4" />

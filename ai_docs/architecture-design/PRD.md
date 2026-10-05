@@ -11,7 +11,7 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Vision
-agenthub is revolutionizing human-AI collaboration in software development by providing an intuitive web-based platform that orchestrates 42+ specialized AI agents through a Model Context Protocol (MCP) native architecture.
+agenthub is revolutionizing human-AI collaboration in software development by providing an intuitive web-based platform that orchestrates human and AI work through a Model Context Protocol (MCP) native architecture. The Python agent library's 42+ specialized agent roles were retired; agents are now registry rows managed through the `manage_agent` MCP tool.
 
 ### 1.2 Problem Statement
 Current AI development tools suffer from:
@@ -25,10 +25,10 @@ Current AI development tools suffer from:
 agenthub delivers:
 - **Persistent 4-Tier Context**: Global → Project → Branch → Task hierarchy ensures AI never forgets
 - **Web-First Experience**: Beautiful React dashboard designed for humans who prefer visual interfaces
-- **42+ Specialized Agents**: Each agent masters a specific domain (coding, testing, security, etc.)
+- **Agent Registry**: Agents are registry rows managed through the `manage_agent` MCP tool (the Python library's 42+ role templates were retired)
 - **MCP Protocol Native**: Built on industry-standard Model Context Protocol for seamless integration
 - **Real-Time Visualization**: Watch AI agents collaborate on your tasks through live dashboards
-- **Dynamic Tool Enforcement**: v2.0 system ensures agents use only authorized tools for their role
+- **Per-Seat Tool Scope**: The seat model scopes each seat's tools and permissions (the retired `call_agent`-based "Dynamic Tool Enforcement v2.0" doctrine is gone)
 - **Vision System**: AI enrichment provides workflow guidance, progress tracking, and intelligent insights
 
 ### 1.4 Success Metrics
@@ -49,10 +49,10 @@ agenthub delivers:
    - Maintain complete context across all interactions
 
 2. **Scale AI Agent Orchestration**
-   - Coordinate 42+ specialized agents efficiently
+   - Coordinate many agent registry entries efficiently
    - Support parallel agent execution for complex workflows
    - Optimize resource usage for 10-50 concurrent users
-   - Dynamic tool enforcement ensures role-based agent permissions
+   - Per-seat tool scope ensures role-based tool permissions
 
 3. **Ensure Enterprise Readiness**
    - Implement robust authentication via Keycloak
@@ -145,11 +145,13 @@ agenthub delivers:
 - [x] Context sync overhead <5ms
 - [x] 100% data consistency across tiers
 
-### 4.3 Feature: 42+ Specialized AI Agents
+### 4.3 Feature: Agent Registry (retired: the 42+ Specialized AI Agents library)
 **Priority**: P0 (Must Have)
-**Status**: Implemented (recently optimized from 69 agents)
+**Status**: Superseded — the Python agent library and its `call_agent` tool were retired
 
-**User Story**: As a developer, I want specialized AI agents for different tasks so I get expert-level assistance.
+**User Story**: As a developer, I want to register and assign agents through MCP so work is attributed consistently.
+
+The Python agent library (42+ role templates across 12 categories, listed below for reference) was removed together with the `call_agent` MCP tool. The live surface is the `agents` registry table plus the `manage_agent` MCP tool (register, assign, get, list, update, unassign, unregister, rebalance); `call_agent` survives only as an optional field of `manage_agent`. The retired categories were:
 
 **Agent Categories** (42+ total agents across 12 categories):
 1. **Development & Coding** (4 agents)
@@ -188,19 +190,13 @@ agenthub delivers:
 12. **Creative & Ideation** (1 agent)
     - creative-ideation-agent
 
-**Dynamic Tool Enforcement v2.0**:
-- Each agent has specific, dynamically enforced tool permissions
-- Master orchestrator: Task delegation tools (no direct file editing)
-- Coding agents: File operations tools (no task delegation)
-- Documentation agents: Content creation tools (limited system access)
-- Security: Infrastructure-level enforcement prevents unauthorized tool usage
+**Dynamic Tool Enforcement v2.0** (retired): tool permissions were derived from the `call_agent` response. That tool is gone; tool scope is now per seat.
 
 **Acceptance Criteria**:
-- [x] Each agent has clear, non-overlapping responsibilities
+- [x] Agents are registry rows (register/assign/update) reachable through `manage_agent`
 - [x] Agent assignment based on task requirements
 - [x] Support for parallel agent execution
-- [x] Dynamic agent role switching
-- [x] Role-based tool permissions enforced at system level
+- [x] No `call_agent` tool is published in `tools/list`
 
 ### 4.4 Feature: Task Management System
 **Priority**: P0 (Must Have)
@@ -311,27 +307,21 @@ agenthub delivers:
 - [x] Impact assessment identifies dependent tasks
 - [x] Context updates maintain team coordination
 
-### 4.9 Feature: Dynamic Tool Enforcement v2.0
+### 4.9 Feature: Per-Seat Tool Scope (retired: Dynamic Tool Enforcement v2.0)
 **Priority**: P0 (Must Have)
-**Status**: Implemented
+**Status**: Superseded — the `call_agent` tool that returned tool permissions was retired
 
-**User Story**: As a security officer, I want strict control over which tools each agent can use so that system security is maintained.
+**User Story**: As a security officer, I want control over which tools each seat can use so that system security is maintained.
 
 **Requirements**:
-- Dynamic tool permission loading based on agent type
-- Infrastructure-level enforcement (not just configuration)
-- Tool permissions returned by call_agent API
-- Automatic blocking of unauthorized tool attempts
-- Clear error messages for permission violations
-- Support for 42+ specialized agents with unique tool sets
+- Tool scope is per seat in the seat model (`manage_seat`, `call_seat`)
+- The `call_agent` API that returned per-agent tool permissions is gone
+- No `call_agent` tool is published in `tools/list`
 
 **Acceptance Criteria**:
-- [x] Master orchestrator limited to coordination tools only
-- [x] Coding agents cannot delegate to other agents
-- [x] Documentation agents have read/write but not system access
-- [x] All tool violations blocked before execution
-- [x] Error messages include available tools for agent type
-- [x] Tool permissions sourced from agent responses, not static config
+- [x] No `call_agent` tool is published in `tools/list`
+- [x] Seat tooling is reachable through `manage_seat`/`call_seat`
+- [x] The retired per-agent permission list is not used anywhere
 
 ---
 
@@ -388,13 +378,13 @@ agenthub delivers:
 ```
 Frontend (React + TypeScript)
     ↓ HTTP/WebSocket
-MCP Server (FastMCP + Python)
+MCP Server (Go, POST /mcp + GET /mcp SSE)
     ↓
-Agent Orchestration Layer
+Agent Registry (manage_agent)
     ↓
 Task Management (DDD Architecture)
     ↓
-Database Layer (PostgreSQL/SQLite + Redis)
+Database Layer (PostgreSQL + Redis)
 ```
 
 ### 6.2 Technology Stack
@@ -408,16 +398,13 @@ Database Layer (PostgreSQL/SQLite + Redis)
 - Redux Toolkit
 
 **Backend**:
-- Python 3.14.0
-- FastMCP framework
-- FastAPI
-- SQLAlchemy ORM
-- Alembic migrations
-- Pydantic validation
+- Go (`agenthub_go`, `cmd/agenthub`)
+- `net/http` API layer (`fastmcp/server/httpapp`)
+- Generated `TableDef` metadata (no ORM)
+- MCP transport: `POST /mcp` (JSON-RPC), `GET /mcp` (SSE)
 
 **Database**:
-- PostgreSQL (production)
-- SQLite (development)
+- PostgreSQL (Postgres-only)
 - Redis (session/cache)
 
 **Authentication**:
@@ -427,14 +414,14 @@ Database Layer (PostgreSQL/SQLite + Redis)
 
 **Infrastructure**:
 - Docker + Docker Compose
-- Uvicorn ASGI server
+- Go binary (no ASGI server)
 - Nginx (reverse proxy - planned)
 
 ### 6.3 Integration Points
 - **MCP Protocol**: HTTP transport on port 8000
 - **Web Dashboard**: REST API + WebSocket on port 3800
 - **Keycloak**: OAuth2/OIDC integration
-- **Database**: SQLAlchemy connection pool
+- **Database**: PostgreSQL connection pool
 - **Redis**: Session persistence and caching
 
 ---
@@ -492,7 +479,7 @@ Database Layer (PostgreSQL/SQLite + Redis)
 - **PostgreSQL**: Production database
 - **Redis**: Session and cache storage
 - **Docker**: Container runtime
-- **Python 3.14+**: Runtime environment
+- **Go**: Runtime environment (the Python 3.14 runtime is no longer the production path)
 - **Node.js 18+**: Frontend build tools
 
 ### 8.2 Constraints

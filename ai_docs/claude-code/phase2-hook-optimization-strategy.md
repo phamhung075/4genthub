@@ -157,12 +157,12 @@ class ConditionalMCPProvider(ContextProvider):
    • Key files: package.json, vite.config.ts, tsconfig.json
    • Port: 3800
 
-🐍 Backend (agenthub_main/)
-   • Framework: FastMCP + FastAPI
+🐹 Backend (live: `agenthub_go/`; the Python `agenthub_main/` backend is retired, not the production path)
+   • Framework: Go `net/http` + FastMCP-compatible MCP layer
    • Architecture: DDD (Domain-Driven Design)
-   • Language: Python 3.14.0
-   • ORM: SQLAlchemy
-   • Key files: pyproject.toml
+   • Language: Go
+   • Data access: generated `TableDef` metadata, PostgreSQL only (no ORM)
+   • MCP: `POST /mcp` (JSON-RPC) + `GET /mcp` (SSE)
    • Port: 8000
 
 🪝 Hook System (.claude/hooks/)

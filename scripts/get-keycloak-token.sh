@@ -47,8 +47,9 @@ if echo "$RESPONSE" | grep -q "access_token"; then
     # Test the token against the backend
     echo ""
     echo "🧪 Testing token against backend API..."
+    # Trailing slash is required: /api/v2/projects redirects 301 to /api/v2/projects/.
     curl -s -X GET \
-      "http://localhost:8000/api/v2/projects" \
+      "http://localhost:8000/api/v2/projects/" \
       -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
 else
     echo "❌ Failed to obtain token"

@@ -74,26 +74,26 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
 
   // UI state
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
-  const [loadedAgents, setLoadedAgents] = useState(false);
-  const [availableAgentsError, setAvailableAgentsError] = useState(false);
-  const [availableAgents, setAvailableAgents] = useState<string[]>([]);
+  const [loadedSeats, setLoadedSeats] = useState(false);
+  const [availableSeatsError, setAvailableSeatsError] = useState(false);
+  const [availableSeats, setAvailableSeats] = useState<string[]>([]);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
 
   // Load seats on demand
-  const loadAgentsOnDemand = useCallback(async () => {
-    if (loadedAgents) return;
-    // A failed seat load leaves loadedAgents false, so the next dialog open retries.
+  const loadSeatsOnDemand = useCallback(async () => {
+    if (loadedSeats) return;
+    // A failed seat load leaves loadedSeats false, so the next dialog open retries.
     try {
       const seats = await getAvailableAgents();
-      setAvailableAgents(seats);
-      setAvailableAgentsError(false);
-      setLoadedAgents(true);
+      setAvailableSeats(seats);
+      setAvailableSeatsError(false);
+      setLoadedSeats(true);
     } catch (error) {
       logger.error('Error loading seats', { component: 'LazyTaskList', error });
-      setAvailableAgentsError(true);
+      setAvailableSeatsError(true);
     }
-  }, [loadedAgents]);
+  }, [loadedSeats]);
 
   // Dialog management
   const { activeDialog, openDialog, closeDialog, saving, setSaving, isClosingRef } = useDialogManager(
@@ -102,7 +102,7 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
     urlTaskId,
     subtaskId,
     loadFullTask,
-    loadAgentsOnDemand
+    loadSeatsOnDemand
   );
 
   // Track the last processed taskId to prevent reopening loops
@@ -289,8 +289,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         activeDialog={activeDialog as TaskActiveDialog}
         fullTasks={fullTasks}
         taskSummaries={displayTasks}
-        availableAgents={availableAgents}
-        availableAgentsError={availableAgentsError}
+        availableSeats={availableSeats}
+        availableSeatsError={availableSeatsError}
         saving={saving}
         onCloseDialog={closeDialog}
         onOpenDialog={openDialog}

@@ -74,7 +74,6 @@ describe('taskTypes', () => {
           'complete',
           'context',
           'assign',
-          'agent-info',
           'subtask-details',
           'subtask-edit',
           'subtask-complete'

@@ -33,6 +33,8 @@ vi.mock('../../config/environment', () => ({
 
 // Import useWebSocket mock after mocking
 import { useWebSocket } from '../../hooks/useWebSocketV2';
+import { useNotificationStore } from '../../store/notifications';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 (useWebSocket as any).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
@@ -85,6 +87,7 @@ describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authContext = null;
+    useNotificationStore.getState().reset();
     mockDisconnect.mockClear();
     mockUseWebSocket.mockClear();
     (Cookies.get as any).mockReset();
@@ -447,6 +450,343 @@ describe('AuthContext', () => {
 
       expect(Cookies.remove).toHaveBeenCalledWith('access_token');
       expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+    });
+
+    it('clears the notification inbox on logout', async () => {
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      // Notifications are addressed to an identity; a sign-out must not leave them on screen.
+      useNotificationStore.getState().add({ id: 'n1', message: 'meant for this user' });
+      expect(useNotificationStore.getState().notifications).toHaveLength(1);
+
+      act(() => {
+        getByText('Logout').click();
+      });
+
+      expect(useNotificationStore.getState().notifications).toHaveLength(0);
+      expect(useNotificationStore.getState().unreadCount).toBe(0);
+    });
+
+    it('clears the query cache on logout', async () => {
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'secret', name: 'previous user room' }]);
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+      expect(queryClient.getQueryData(['seatRooms'])).toBeDefined();
+
+      act(() => {
+        getByText('Logout').click();
+      });
+
+      // The keys carry no user id, so a cache left behind would render for the next identity.
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+    });
+
+    it('clears the cache and inbox when login replaces a live session', async () => {
+      // A is live (restored from cookies), then B signs in on /login without any logout: the route
+      // is public and the form swaps identity with SPA navigation, so this module and the cache stay
+      // mounted and nothing else would drop A's rows.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token' ? { ...mockDecodedToken, email: 'b@example.com' } : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Login').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
+    it('clears the cache and inbox when signup establishes a new identity', async () => {
+      // /signup is public and auto-logs-in, so it reaches the same boundary as login.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token'
+          ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
+          : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Signup').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
+    it('clears the cache and inbox when a refresh returns another identity', async () => {
+      // The tokens are plain same-origin document cookies shared by every tab, so a refresh fired in
+      // this tab after another tab signed in as B hands this tab B's identity.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token'
+          ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
+          : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
+    it('keeps the cache when a refresh returns the same identity', async () => {
+      // The guard must not fire on the ordinary refresh: dropping the cache every refresh window
+      // would be worse than the leak it closes.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: mockTokens.access_token,
+          refresh_token: mockTokens.refresh_token
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://test-api.com/api/auth/refresh',
+          expect.objectContaining({ method: 'POST' })
+        );
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toEqual([
+        { id: 'r1', slug: 'a-private-room', name: 'A room' }
+      ]);
+      expect(useNotificationStore.getState().notifications).toHaveLength(1);
+    });
+
+    it('keeps refreshToken stable across a token change', async () => {
+      // The guard's dependency must not churn this callback: the mount and refresh-timer effects list
+      // refreshToken, and a new identity each render re-runs them (that shape already ended in a 4GB
+      // heap once, via logout's deps). discardPreviousIdentity is a useCallback with only
+      // useQueryClient() in it, which is provider-stable, so the array addition must be inert.
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      const before = authContext!.refreshToken;
+
+      await act(async () => {
+        getByText('Set Tokens').click();
+      });
+
+      expect(authContext!.refreshToken).toBe(before);
+    });
+
+    it('clears the cache when a refresh arrives with no usable identity on either side', async () => {
+      // Fail-safe direction: a token with no `sub` on both sides must clear rather than keep another
+      // identity's rows. No previous session still skips (that is the mount path, empty cache).
+      const noSub = { ...mockDecodedToken, sub: undefined };
+
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(noSub);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'no-sub-access-token',
+          refresh_token: 'no-sub-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      });
     });
 
     it('should disconnect WebSocket on logout', async () => {
