@@ -252,7 +252,7 @@ describe('SeatDetailPage', () => {
     });
   });
 
-  it('deletes a link and refetches the list', async () => {
+  it('deletes a link after the confirmation and refetches the list', async () => {
     mockApi.deleteLink.mockResolvedValue({ success: true });
     renderDetail();
     await screen.findByText('rules');
@@ -260,6 +260,7 @@ describe('SeatDetailPage', () => {
     expect(mockApi.listLinks).toHaveBeenCalledTimes(1);
 
     fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete link' }));
 
     await waitFor(() => {
       expect(mockApi.deleteLink).toHaveBeenCalledWith('dev', 'alice', 'bob', 'delegates_to');
@@ -274,8 +275,44 @@ describe('SeatDetailPage', () => {
     fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
 
     fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete link' }));
 
     expect(await screen.findByText(/link alice delegates_to bob not found/)).toBeInTheDocument();
+  });
+
+  it('confirms what is about to be removed, and cancelling deletes nothing', async () => {
+    renderDetail();
+    await screen.findByText('rules');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+
+    fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+
+    // The mutation waits for the confirm, and the confirm states the seat, the target, the
+    // kind and the allow state as the row reads it rather than asking a bare yes/no.
+    expect(mockApi.deleteLink).not.toHaveBeenCalled();
+    expect(await screen.findByText('Delete this link?')).toBeInTheDocument();
+    expect(
+      screen.getByText('Removes the delegates_to link from alice to bob. The row currently allows it.')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(mockApi.deleteLink).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByText('Delete this link?')).not.toBeInTheDocument());
+  });
+
+  it('closes the confirmation on Escape and deletes nothing', async () => {
+    renderDetail();
+    await screen.findByText('rules');
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+
+    fireEvent.click(await screen.findByLabelText('Delete bob (delegates_to)'));
+    expect(await screen.findByText('Delete this link?')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByText('Delete this link?')).not.toBeInTheDocument());
+    expect(mockApi.deleteLink).not.toHaveBeenCalled();
   });
 
   it('shows the resolved hash and switches files', async () => {

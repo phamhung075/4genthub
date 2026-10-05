@@ -211,6 +211,18 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **Deleting a link now says what it removes before it removes it** - 2026-10-06
+  - The trash button in the seat page's outgoing-links panel called the delete mutation on one click: it removes an
+    enforced communication permission or deny with no confirmation and no way back except re-creating it. It now opens
+    the existing dialog primitive first (`SeatDetailPage.tsx`), naming the seat, the target, the kind and the allow state
+    as the row reads it ("Removes the delegates_to link from alice to bob. The row currently allows it."), with Cancel and
+    Escape both leaving the link alone; the mutation runs only on the confirm.
+  - It uses the same service layer as link creation (`useDeleteSeatLink` -> `seatApi.deleteLink`, beside
+    `useUpsertSeatLink` -> `seatApi.putLink`) rather than a second call path, and it is the page's only dialog, so the
+    known `dialog.tsx` Escape behaviour (its document keydown listener closes every OPEN dialog) has nothing else to close.
+  - Tests: the two existing delete tests now go through the confirm (the same call args and the same error path are still
+    asserted), plus two new ones - the confirm's wording with Cancel deleting nothing, and Escape closing it with the
+    mutation uncalled.
 - **The home page's remaining claim classes are gone, and the guard is a class rather than a list** - 2026-10-06
   - Directive (G) was delivered and pinned by a deny-list, and a deny-list only catches what someone listed: five claims
     of the same class survived it. The band framed 4genthub as "AI-agnostic and compatible with any AI client that

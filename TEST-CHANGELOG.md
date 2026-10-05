@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the link delete asks first (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx` updates the two existing delete tests to the confirmed flow - they still
+  assert the same call (`deleteLink('dev', 'alice', 'bob', 'delegates_to')`) and the same surfaced error - and adds two:
+  the confirm names the seat, the target, the kind and the allow state as the row reads it while Cancel deletes nothing,
+  and Escape closes the confirm with the mutation uncalled.
+- Escape was exercised because `dialog.tsx` carries a known defect: its document keydown listener closes every OPEN
+  dialog. `SeatDetailPage.tsx` has exactly one dialog (it had none before this change), so what was observed is the
+  intended close with nothing deleted, not the defect.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> 19 passed;
+  `npx vitest run` -> 102 files / 1746 tests passed; `npx vite build` -> ok.
+
+## 2026-10-05 — the bridge's machine token and register step (scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_bridge.py` gains eight cases and a body slot on its fake HTTP server (so a register response can carry a token). `test_sender_reads_the_machine_token_not_the_user_token` (the bearer is `AGENTHUB_MACHINE_TOKEN`, never the user token); `test_sender_without_the_machine_token_exits_2_naming_it` (loud usage failure naming the variable); `test_401_names_the_register_step` (the cycle reports the 401 and the register command); `test_register_writes_env_file_0600_and_never_prints_the_token` (the POST carries the user bearer and `{"machine_id": ...}`, the file is mode 0600, and the token appears in neither stdout nor stderr); `test_register_preserves_other_env_lines_and_replaces_the_token` (merge, not overwrite); `test_register_refused_is_loud_and_writes_nothing` (a 401 from the register route exits 1 and leaves no file); `test_register_without_the_user_token_is_a_usage_error` (exit 2). `test_usage_errors_exit_2` now clears `AGENTHUB_MACHINE_TOKEN`, which is the variable `run` actually reads.
+- Commands: `python3 -m py_compile` on the script and the test file OK; `ruff check` All checks passed; `ruff format --check` clean; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 48 passed (was 40 before these eight).
+
 ## 2026-10-05 — occupant PUT keeps the runtime when it is blank (Go)
 
 - `fastmcp/server/httpapp/seat_occupant_runtime_test.go` (new): five handler cases over the seat-admin mux. A BLANK runtime keeps the seat's runtime while the model still changes (this is the case that fails if blank goes back to a 400); an OMITTED runtime does the same; an explicit runtime wins; an explicit bogus runtime is still 400; and a blank runtime never inherits the seat type version's default (the seat runs claude-code while its type version default is codex, and it stays claude-code). Service-level companion: `TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt` in `seat_admin_service_test.go`.
