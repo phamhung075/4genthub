@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — Legacy Python auth tests run again (5 real failures fixed, principal)
+
+- The "hang" was the conftest's autouse DB fixture demanding a local PostgreSQL at localhost:5432 as role postgres (6 retries, ~2.4 min per test); database_config loads env files with override=True so a CLI DATABASE_HOST/PORT cannot redirect it. Both files are mock-based and now carry `pytestmark = pytest.mark.unit` (the conftest's documented escape).
+- Five real failures fixed: four stale patch targets (`token_consumption_helper.get_operation_cost` is not a module attribute — the import is function-local; patch `fastmcp.auth.config.token_costs.get_operation_cost`) and one under-specified mock in `test_consume_tokens_for_operation_auto_create_balance` (second `get_balance` returned None; now `side_effect=[None, {"available_tokens": 995}]`).
+- Result: `pytest -q src/tests/auth/interface/test_token_consumption_helper.py src/tests/auth/application/test_token_consumption_service.py` -> **36 passed in 2.17s** (commit d40f2a8c). DB-bound and untouched: `test_token_balance_repository.py`, `test_database_connection_analysis.py`.
+
 ## 2026-10-05 — unreachable MCP-token chain removed (Go)
 
 - `token_api_controller_port_test.go`: the `fakeTokenFacade` no longer implements `GenerateMCPTokenFromUser` (the interface member is gone).
