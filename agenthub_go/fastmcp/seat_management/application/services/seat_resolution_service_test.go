@@ -201,7 +201,7 @@ func TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion(t *testing.T) {
 	}
 }
 
-// overlayResolutionStore is the read surface ValidateOverlayResolution folds over.
+// overlayResolutionStore is the data the resolution service folds over in the validator test.
 type overlayResolutionStore struct {
 	rooms     []repositories.Room
 	seats     []repositories.Seat
@@ -212,13 +212,34 @@ type overlayResolutionStore struct {
 	modules   map[string]*repositories.ModuleVersion
 }
 
-func (s *overlayResolutionStore) ListRooms(context.Context, string) ([]repositories.Room, error) {
-	return s.rooms, nil
+// service adapts the store's data to the repositories the resolution service holds.
+func (s *overlayResolutionStore) service() *SeatResolutionService {
+	return &SeatResolutionService{
+		Rooms:      storeRooms{store: s},
+		Seats:      storeSeats{store: s},
+		SeatTypes:  storeSeatTypes{store: s},
+		Overlays:   storeOverlays{store: s},
+		NewCatalog: func(string) CheckedCatalog { return storeCatalog{store: s} },
+	}
 }
 
-func (s *overlayResolutionStore) ListSeats(_ context.Context, _, roomID string) ([]repositories.Seat, error) {
+type storeRooms struct {
+	repositories.RoomRepository
+	store *overlayResolutionStore
+}
+
+func (r storeRooms) List(context.Context, string) ([]repositories.Room, error) {
+	return r.store.rooms, nil
+}
+
+type storeSeats struct {
+	repositories.SeatRepository
+	store *overlayResolutionStore
+}
+
+func (s storeSeats) ListByRoom(_ context.Context, _, roomID string) ([]repositories.Seat, error) {
 	var out []repositories.Seat
-	for _, seat := range s.seats {
+	for _, seat := range s.store.seats {
 		if seat.RoomID == roomID {
 			out = append(out, seat)
 		}
@@ -226,25 +247,43 @@ func (s *overlayResolutionStore) ListSeats(_ context.Context, _, roomID string) 
 	return out, nil
 }
 
-func (s *overlayResolutionStore) ListSeatTypes(context.Context, string) ([]repositories.SeatType, error) {
-	return s.seatTypes, nil
+type storeSeatTypes struct {
+	repositories.SeatTypeRepository
+	store *overlayResolutionStore
 }
 
-func (s *overlayResolutionStore) LatestSeatTypeVersion(_ context.Context, _, slug string) (*repositories.SeatTypeVersion, error) {
-	return s.latest[slug], nil
+func (t storeSeatTypes) List(context.Context, string) ([]repositories.SeatType, error) {
+	return t.store.seatTypes, nil
 }
 
-func (s *overlayResolutionStore) GetSeatTypeVersion(_ context.Context, _, slug, version string) (*repositories.SeatTypeVersion, error) {
-	return s.versions[slug+"@"+version], nil
+func (t storeSeatTypes) LatestVersion(_ context.Context, _, slug string) (*repositories.SeatTypeVersion, error) {
+	return t.store.latest[slug], nil
 }
 
-func (s *overlayResolutionStore) FindOverlay(_ context.Context, _, scope, roomID, seatID string) (*repositories.Overlay, error) {
-	return s.overlays[scope+"|"+roomID+"|"+seatID], nil
+func (t storeSeatTypes) GetVersion(_ context.Context, _, slug, version string) (*repositories.SeatTypeVersion, error) {
+	return t.store.versions[slug+"@"+version], nil
 }
 
-func (s *overlayResolutionStore) GetModuleVersion(_ context.Context, _, slug, version string) (*repositories.ModuleVersion, error) {
-	return s.modules[slug+"@"+version], nil
+type storeOverlays struct {
+	repositories.OverlayRepository
+	store *overlayResolutionStore
 }
+
+func (o storeOverlays) Find(_ context.Context, _, scope, roomID, seatID string) (*repositories.Overlay, error) {
+	return o.store.overlays[scope+"|"+roomID+"|"+seatID], nil
+}
+
+type storeCatalog struct{ store *overlayResolutionStore }
+
+func (c storeCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
+	module := c.store.modules[slug+"@"+version]
+	if module == nil {
+		return resolver.ModuleVersion{}, false
+	}
+	return resolver.ModuleVersion{Slug: module.Slug, Version: module.Version, Kind: module.Kind, Content: module.Content}, true
+}
+
+func (storeCatalog) Err() error { return nil }
 
 // ValidateOverlayResolution refuses a candidate whose fold breaks an affected seat, naming the
 // failing op and scope, and allows a candidate that keeps every affected seat resolvable.
@@ -267,7 +306,7 @@ func TestValidateOverlayResolution(t *testing.T) {
 	}
 
 	refused := newStore()
-	err := ValidateOverlayResolution(context.Background(), refused, "u", repositories.Overlay{
+	err := refused.service().ValidateOverlayResolution(context.Background(), "u", repositories.Overlay{
 		Scope: repositories.ScopeRoom, RoomID: "r1",
 		Ops: []resolver.Op{{Kind: resolver.OpAdd, Slug: "m", Version: "1"}},
 	})
@@ -276,7 +315,7 @@ func TestValidateOverlayResolution(t *testing.T) {
 	}
 
 	legal := newStore()
-	if err := ValidateOverlayResolution(context.Background(), legal, "u", repositories.Overlay{
+	if err := legal.service().ValidateOverlayResolution(context.Background(), "u", repositories.Overlay{
 		Scope: repositories.ScopeCompany,
 		Ops:   []resolver.Op{{Kind: resolver.OpAdd, Slug: "n", Version: "1"}},
 	}); err != nil {

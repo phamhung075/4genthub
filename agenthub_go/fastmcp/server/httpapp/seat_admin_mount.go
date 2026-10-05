@@ -977,6 +977,18 @@ func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 	}
 }
 
+// seatOverlayResolutionFor builds the resolution service the overlay PUT routes validate
+// through. It is the same construction the seat routes resolve through (newSeatResolution);
+// validating a candidate never renders it, so no MCP URL is needed.
+func seatOverlayResolutionFor(w http.ResponseWriter, sessions *database.SessionManager) (*seatservices.SeatResolutionService, bool) {
+	resolution, err := newSeatResolution(sessions, "")
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return nil, false
+	}
+	return resolution, true
+}
+
 func handleCompanyOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	source, ok := seatAdminSourceFor(w, sessions)
 	if !ok {
@@ -987,7 +999,11 @@ func handleCompanyOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.
 		return
 	}
 	candidate := repositories.Overlay{Scope: repositories.ScopeCompany, Ops: ops}
-	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+	resolution, ok := seatOverlayResolutionFor(w, sessions)
+	if !ok {
+		return
+	}
+	if err := resolution.ValidateOverlayResolution(r.Context(), userID(u), candidate); err != nil {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -1016,7 +1032,11 @@ func handleRoomOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		return
 	}
 	candidate := repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: room.ID, Ops: ops}
-	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+	resolution, ok := seatOverlayResolutionFor(w, sessions)
+	if !ok {
+		return
+	}
+	if err := resolution.ValidateOverlayResolution(r.Context(), userID(u), candidate); err != nil {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -1049,7 +1069,11 @@ func handleSeatOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		return
 	}
 	candidate := repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: seat.ID, Ops: ops}
-	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+	resolution, ok := seatOverlayResolutionFor(w, sessions)
+	if !ok {
+		return
+	}
+	if err := resolution.ValidateOverlayResolution(r.Context(), userID(u), candidate); err != nil {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}

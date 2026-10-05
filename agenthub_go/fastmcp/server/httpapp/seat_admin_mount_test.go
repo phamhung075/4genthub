@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -328,11 +329,86 @@ func (f *fakeSeatAdmin) SetSettings(_ context.Context, userID string, followLate
 	return settings, nil
 }
 
-func seatAdminTestMux(t *testing.T, source seatAdminSource) *http.ServeMux {
+// fakeResolutionService adapts the admin fake's seeded data to the repositories the resolution
+// service holds, so the overlay PUT routes exercise the real candidate-overlay validation.
+func fakeResolutionService(fake *fakeSeatAdmin) *seatservices.SeatResolutionService {
+	return &seatservices.SeatResolutionService{
+		Rooms:      fakeResolutionRooms{fake: fake},
+		Seats:      fakeResolutionSeats{fake: fake},
+		SeatTypes:  fakeResolutionSeatTypes{fake: fake},
+		Overlays:   fakeResolutionOverlays{fake: fake},
+		NewCatalog: func(string) seatservices.CheckedCatalog { return fakeResolutionCatalog{fake: fake} },
+	}
+}
+
+type fakeResolutionRooms struct {
+	repositories.RoomRepository
+	fake *fakeSeatAdmin
+}
+
+func (r fakeResolutionRooms) List(ctx context.Context, userID string) ([]repositories.Room, error) {
+	return r.fake.ListRooms(ctx, userID)
+}
+
+type fakeResolutionSeats struct {
+	repositories.SeatRepository
+	fake *fakeSeatAdmin
+}
+
+func (s fakeResolutionSeats) ListByRoom(ctx context.Context, userID, roomID string) ([]repositories.Seat, error) {
+	return s.fake.ListSeats(ctx, userID, roomID)
+}
+
+type fakeResolutionSeatTypes struct {
+	repositories.SeatTypeRepository
+	fake *fakeSeatAdmin
+}
+
+func (t fakeResolutionSeatTypes) List(ctx context.Context, userID string) ([]repositories.SeatType, error) {
+	return t.fake.ListSeatTypes(ctx, userID)
+}
+
+func (t fakeResolutionSeatTypes) LatestVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error) {
+	return t.fake.LatestSeatTypeVersion(ctx, userID, slug)
+}
+
+func (t fakeResolutionSeatTypes) GetVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error) {
+	return t.fake.GetSeatTypeVersion(ctx, userID, slug, version)
+}
+
+type fakeResolutionOverlays struct {
+	repositories.OverlayRepository
+	fake *fakeSeatAdmin
+}
+
+func (o fakeResolutionOverlays) Find(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error) {
+	return o.fake.FindOverlay(ctx, userID, scope, roomID, seatID)
+}
+
+type fakeResolutionCatalog struct{ fake *fakeSeatAdmin }
+
+func (c fakeResolutionCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
+	module, err := c.fake.GetModuleVersion(context.Background(), "", slug, version)
+	if err != nil || module == nil {
+		return resolver.ModuleVersion{}, false
+	}
+	return resolver.ModuleVersion{Slug: module.Slug, Version: module.Version, Kind: module.Kind, Content: module.Content}, true
+}
+
+func (fakeResolutionCatalog) Err() error { return nil }
+
+func seatAdminTestMux(t *testing.T, fake *fakeSeatAdmin) *http.ServeMux {
 	t.Helper()
-	previous := newSeatAdminSource
-	newSeatAdminSource = func(*database.SessionManager) (seatAdminSource, error) { return source, nil }
-	t.Cleanup(func() { newSeatAdminSource = previous })
+	previousSource := newSeatAdminSource
+	newSeatAdminSource = func(*database.SessionManager) (seatAdminSource, error) { return fake, nil }
+	previousResolution := newSeatResolution
+	newSeatResolution = func(*database.SessionManager, string) (*seatservices.SeatResolutionService, error) {
+		return fakeResolutionService(fake), nil
+	}
+	t.Cleanup(func() {
+		newSeatAdminSource = previousSource
+		newSeatResolution = previousResolution
+	})
 	authenticateTestUser(t)
 	mux := http.NewServeMux()
 	mountSeatAdminRoutes(mux, nil)

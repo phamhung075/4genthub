@@ -63,7 +63,7 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 	if err != nil {
 		return nil, err
 	}
-	overlays, err := s.overlays(ctx, userID, room.ID, seat.ID)
+	overlays, err := s.overlayStack(ctx, userID, room.ID, seat.ID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,11 @@ func (s *SeatResolutionService) seatTypeVersion(ctx context.Context, userID, slu
 	return version, nil
 }
 
-func (s *SeatResolutionService) overlays(ctx context.Context, userID, roomID, seatID string) ([]resolver.Overlay, error) {
+// overlayStack assembles the seat's three overlays in scope order (company, then room, then
+// seat), appending the ones that exist. candidate, when not nil, is the overlay a write
+// proposes: it replaces any overlay already stored at its own scope while the other scopes
+// stay as stored. Resolving a seat and validating a candidate overlay fold this one stack.
+func (s *SeatResolutionService) overlayStack(ctx context.Context, userID, roomID, seatID string, candidate *repositories.Overlay) ([]resolver.Overlay, error) {
 	targets := []struct{ scope, roomID, seatID string }{
 		{repositories.ScopeCompany, "", ""},
 		{repositories.ScopeRoom, roomID, ""},
@@ -130,9 +134,15 @@ func (s *SeatResolutionService) overlays(ctx context.Context, userID, roomID, se
 	}
 	var out []resolver.Overlay
 	for _, t := range targets {
-		overlay, err := s.Overlays.Find(ctx, userID, t.scope, t.roomID, t.seatID)
-		if err != nil {
-			return nil, err
+		var overlay *repositories.Overlay
+		if candidate != nil && candidate.Scope == t.scope && candidate.RoomID == t.roomID && candidate.SeatID == t.seatID {
+			overlay = candidate
+		} else {
+			found, err := s.Overlays.Find(ctx, userID, t.scope, t.roomID, t.seatID)
+			if err != nil {
+				return nil, err
+			}
+			overlay = found
 		}
 		if overlay != nil {
 			out = append(out, resolver.Overlay{Scope: t.scope, Ops: overlay.Ops})
@@ -141,33 +151,20 @@ func (s *SeatResolutionService) overlays(ctx context.Context, userID, roomID, se
 	return out, nil
 }
 
-// OverlayResolutionStore is the read surface ValidateOverlayResolution needs: the seats a
-// candidate overlay would reach, their seat types, the overlays already stored and the module
-// versions the resolver folds.
-type OverlayResolutionStore interface {
-	ListRooms(ctx context.Context, userID string) ([]repositories.Room, error)
-	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
-	ListSeatTypes(ctx context.Context, userID string) ([]repositories.SeatType, error)
-	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
-	GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error)
-	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
-	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
-}
-
 // ValidateOverlayResolution resolves every seat the candidate overlay would affect as if the
 // overlay were already stored: the candidate replaces any overlay stored at its own scope and
 // the other scopes stay as they are. It returns the resolver's error, prefixed with the scope,
 // as soon as one affected seat would no longer resolve, so the write can be refused before it
 // is stored. A scope that reaches no seat cannot break one and always succeeds.
-func ValidateOverlayResolution(ctx context.Context, store OverlayResolutionStore, userID string, candidate repositories.Overlay) error {
-	seats, err := overlayAffectedSeats(ctx, store, userID, candidate)
+func (s *SeatResolutionService) ValidateOverlayResolution(ctx context.Context, userID string, candidate repositories.Overlay) error {
+	seats, err := s.overlayAffectedSeats(ctx, userID, candidate)
 	if err != nil {
 		return err
 	}
 	if len(seats) == 0 {
 		return nil
 	}
-	types, err := store.ListSeatTypes(ctx, userID)
+	types, err := s.SeatTypes.List(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -181,11 +178,11 @@ func ValidateOverlayResolution(ctx context.Context, store OverlayResolutionStore
 		if !ok {
 			return fmt.Errorf("overlay %s: seat %q: seat type %q not found", candidate.Scope, seat.SeatKey, seat.SeatTypeID)
 		}
-		version, err := overlaySeatTypeVersion(ctx, store, userID, seatType.Slug, seat)
+		version, err := s.seatTypeVersion(ctx, userID, seatType.Slug, &seat)
 		if err != nil {
 			return err
 		}
-		overlays, err := overlayStack(ctx, store, userID, seat, candidate)
+		overlays, err := s.overlayStack(ctx, userID, seat.RoomID, seat.ID, &candidate)
 		if err != nil {
 			return err
 		}
@@ -193,7 +190,7 @@ func ValidateOverlayResolution(ctx context.Context, store OverlayResolutionStore
 		if runtime == "" {
 			runtime = version.DefaultRuntime
 		}
-		catalog := &overlayCatalog{ctx: ctx, store: store, userID: userID}
+		catalog := s.NewCatalog(userID)
 		if _, err := resolver.Resolve(catalog, resolver.SeatTypeVersion{
 			Slug: seatType.Slug, Version: version.Version, Runtime: runtime, Modules: version.ModuleRefs,
 		}, overlays); err != nil {
@@ -208,8 +205,8 @@ func ValidateOverlayResolution(ctx context.Context, store OverlayResolutionStore
 
 // overlayAffectedSeats lists the seats a candidate overlay would reach: every seat for a
 // company overlay, the room's seats for a room overlay and the one seat for a seat overlay.
-func overlayAffectedSeats(ctx context.Context, store OverlayResolutionStore, userID string, candidate repositories.Overlay) ([]repositories.Seat, error) {
-	rooms, err := store.ListRooms(ctx, userID)
+func (s *SeatResolutionService) overlayAffectedSeats(ctx context.Context, userID string, candidate repositories.Overlay) ([]repositories.Seat, error) {
+	rooms, err := s.Rooms.List(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +215,7 @@ func overlayAffectedSeats(ctx context.Context, store OverlayResolutionStore, use
 		if candidate.Scope == repositories.ScopeRoom && room.ID != candidate.RoomID {
 			continue
 		}
-		found, err := store.ListSeats(ctx, userID, room.ID)
+		found, err := s.Seats.ListByRoom(ctx, userID, room.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -231,79 +228,6 @@ func overlayAffectedSeats(ctx context.Context, store OverlayResolutionStore, use
 	}
 	return seats, nil
 }
-
-// overlaySeatTypeVersion mirrors the seat's pinned version, or the latest when the seat follows latest.
-func overlaySeatTypeVersion(ctx context.Context, store OverlayResolutionStore, userID, slug string, seat repositories.Seat) (*repositories.SeatTypeVersion, error) {
-	var (
-		version *repositories.SeatTypeVersion
-		err     error
-	)
-	if seat.PinnedVersion != nil {
-		version, err = store.GetSeatTypeVersion(ctx, userID, slug, *seat.PinnedVersion)
-	} else {
-		version, err = store.LatestSeatTypeVersion(ctx, userID, slug)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if version == nil {
-		return nil, fmt.Errorf("seat type %q has no usable version for seat %q", slug, seat.SeatKey)
-	}
-	return version, nil
-}
-
-// overlayStack assembles the seat's three overlays with the candidate replacing the stored
-// overlay at its own scope; the other scopes stay as stored.
-func overlayStack(ctx context.Context, store OverlayResolutionStore, userID string, seat repositories.Seat, candidate repositories.Overlay) ([]resolver.Overlay, error) {
-	targets := []struct{ scope, roomID, seatID string }{
-		{repositories.ScopeCompany, "", ""},
-		{repositories.ScopeRoom, seat.RoomID, ""},
-		{repositories.ScopeSeat, "", seat.ID},
-	}
-	var out []resolver.Overlay
-	for _, t := range targets {
-		var overlay *repositories.Overlay
-		if candidate.Scope == t.scope && candidate.RoomID == t.roomID && candidate.SeatID == t.seatID {
-			overlay = &candidate
-		} else {
-			found, err := store.FindOverlay(ctx, userID, t.scope, t.roomID, t.seatID)
-			if err != nil {
-				return nil, err
-			}
-			overlay = found
-		}
-		if overlay != nil {
-			out = append(out, resolver.Overlay{Scope: t.scope, Ops: overlay.Ops})
-		}
-	}
-	return out, nil
-}
-
-// overlayCatalog adapts GetModuleVersion to the resolver's catalog and carries the first
-// error, which the bool-only Catalog interface cannot.
-type overlayCatalog struct {
-	ctx    context.Context
-	store  OverlayResolutionStore
-	userID string
-	err    error
-}
-
-func (c *overlayCatalog) Get(slug, version string) (resolver.ModuleVersion, bool) {
-	if c.err != nil {
-		return resolver.ModuleVersion{}, false
-	}
-	module, err := c.store.GetModuleVersion(c.ctx, c.userID, slug, version)
-	if err != nil {
-		c.err = err
-		return resolver.ModuleVersion{}, false
-	}
-	if module == nil {
-		return resolver.ModuleVersion{}, false
-	}
-	return resolver.ModuleVersion{Slug: module.Slug, Version: module.Version, Kind: module.Kind, Content: module.Content}, true
-}
-
-func (c *overlayCatalog) Err() error { return c.err }
 
 // policy builds the sending seat's communication policy snapshot from its outgoing links.
 func (s *SeatResolutionService) policy(ctx context.Context, userID string, seat *repositories.Seat) (map[string]any, string, error) {
