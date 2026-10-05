@@ -85,6 +85,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(userData);
   }, []);
 
+  // An identity boundary: a new identity's tokens are arriving, so anything cached for the previous
+  // one must go. Needed on login and signup because /login and /signup are public routes and their
+  // forms swap identity with SPA navigation - no logout runs, and the client lives above the router,
+  // so neither the cache nor this module remounts to drop the old identity's rows and inbox.
+  const discardPreviousIdentity = useCallback(() => {
+    queryClient.clear();
+    useNotificationStore.getState().reset();
+  }, [queryClient]);
+
   // Login function - Updated to use unified auth API
   const login = async (email: string, password: string) => {
     try {
@@ -115,6 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (data.access_token && data.refresh_token) {
+        discardPreviousIdentity();
         setTokens({
           access_token: data.access_token,
           refresh_token: data.refresh_token
@@ -173,6 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // If email verification is not required (unlikely with Supabase)
       if (data.success && data.access_token) {
+        discardPreviousIdentity();
         setTokens({
           access_token: data.access_token,
           refresh_token: data.refresh_token

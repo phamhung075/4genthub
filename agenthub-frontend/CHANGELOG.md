@@ -41,6 +41,13 @@
     load starts with an empty cache, so skipping the clear there loses nothing and avoids wiping a cache the caller has
     already primed. Tests cover the explicit logout button with a live session for both the inbox and the cache; the other
     paths reach the same code rather than being covered individually.
+  - The same boundary is enforced on the way IN, which is where the leak was actually reachable: `login()` and `signup()`
+    can run while another session is live - `/login` and `/signup` are public routes, their forms swap identity with SPA
+    navigation, and the `QueryClient` lives above the router, so neither the cache nor the module remounts - and neither
+    called `logout()`. Both now call `discardPreviousIdentity()` (the `clear()` plus the notification store's `reset()`)
+    before `setTokens()`, so the previous identity's cached rows and inbox go with its tokens. `setTokens` is
+    deliberately not the boundary: `refreshToken` calls it too, and clearing there would drop the whole cache on every
+    token refresh.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
   - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
     `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through

@@ -516,6 +516,57 @@ describe('AuthContext', () => {
       expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
     });
 
+    it('clears the cache and inbox when login replaces a live session', async () => {
+      // A is live (restored from cookies), then B signs in on /login without any logout: the route
+      // is public and the form swaps identity with SPA navigation, so this module and the cache stay
+      // mounted and nothing else would drop A's rows.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token' ? { ...mockDecodedToken, email: 'b@example.com' } : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Login').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
     it('should disconnect WebSocket on logout', async () => {
       // Mock WebSocket as connected
       mockUseWebSocket.mockReturnValue({
