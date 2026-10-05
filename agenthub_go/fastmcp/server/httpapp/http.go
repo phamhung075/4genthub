@@ -203,8 +203,13 @@ func healthConnections(count int) *entities.OrderedMap[any] {
 }
 
 // healthStatusBroadcasting builds health_data["status_broadcasting"]. active is
-// true because the fan-out registry is live whenever the server is serving;
-// registered_clients is the same registry count /health reports as active_connections.
+// ASSERTED, not measured: the fan-out registry is package-level and lives exactly
+// as long as the process, so active is true by construction while the server
+// serves - deliberately NOT the old defect's shape, which asserted a false
+// UNAVAILABLE state while fan-out worked. If the fan-out ever becomes stoppable
+// while the server stays up, this field needs a real source instead of the
+// constant. registered_clients is the same registry count /health reports as
+// active_connections.
 func healthStatusBroadcasting(count int) *entities.OrderedMap[any] {
 	out := entities.NewOrderedMap[any]()
 	out.Set("active", true)
