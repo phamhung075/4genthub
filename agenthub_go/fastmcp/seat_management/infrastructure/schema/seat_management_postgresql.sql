@@ -281,3 +281,7 @@ CREATE TABLE IF NOT EXISTS team_members (
 
 CREATE INDEX IF NOT EXISTS ix_team_members_team_id ON team_members (team_id);
 CREATE INDEX IF NOT EXISTS ix_team_members_user_id ON team_members (user_id);
+
+-- At most one owner per team. The service also refuses a second owner, but the schema holds
+-- the invariant: two owner rows would let both be demoted and leave the team ownerless.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner';

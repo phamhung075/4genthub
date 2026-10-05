@@ -129,6 +129,14 @@ func TestTeamRepositoryIntegration(t *testing.T) {
 	if _, err := repo.AddMember(ctx, team.ID, viewer, domainrepo.RoleViewer); !errors.Is(err, domainrepo.ErrMemberExists) {
 		t.Fatalf("duplicate AddMember = %v, want ErrMemberExists", err)
 	}
+	// The DB itself refuses a second owner (partial unique index uq_team_members_one_owner),
+	// so the single-owner rule holds for a caller that bypasses the service and against the
+	// ErrLastOwner trap: with one owner row, demoting "the" owner cannot leave the team
+	// ownerless behind a second owner. A distinct user is used so the only possible
+	// conflict is the one-owner index, not the (team_id, user_id) key.
+	if _, err := repo.AddMember(ctx, team.ID, "team-it-second-owner", domainrepo.RoleOwner); !errors.Is(err, domainrepo.ErrTeamHasOwner) {
+		t.Fatalf("second owner = %v, want ErrTeamHasOwner from the DB", err)
+	}
 	members, err := repo.ListMembers(ctx, team.ID)
 	if err != nil || len(members) != 2 {
 		t.Fatalf("ListMembers = %+v, %v", members, err)

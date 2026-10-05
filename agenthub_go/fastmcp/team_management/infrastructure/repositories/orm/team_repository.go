@@ -180,7 +180,12 @@ func (r *ORMTeamRepository) ListMembers(ctx context.Context, teamID string) ([]d
 func (r *ORMTeamRepository) AddMember(ctx context.Context, teamID, userID, role string) (*domainrepo.TeamMember, error) {
 	created, err := r.members.Create(ctx, baserepo.NewKwargs("team_id", teamID, "user_id", userID, "role", role))
 	if err != nil {
-		if isUniqueViolation(err) {
+		// The one-owner index raises the same SQLSTATE as the per-team unique key; the
+		// index name is what tells them apart.
+		switch {
+		case isUniqueViolation(err) && strings.Contains(err.Error(), "uq_team_members_one_owner"):
+			return nil, domainrepo.ErrTeamHasOwner
+		case isUniqueViolation(err):
 			return nil, domainrepo.ErrMemberExists
 		}
 		return nil, err

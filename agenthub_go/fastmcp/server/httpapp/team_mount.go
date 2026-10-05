@@ -126,6 +126,7 @@ func writeTeamError(w http.ResponseWriter, err error) {
 		writeDetail(w, http.StatusNotFound, teamrepos.ErrTeamNotFound.Error())
 	case errors.Is(err, teamrepos.ErrTeamExists),
 		errors.Is(err, teamrepos.ErrMemberExists),
+		errors.Is(err, teamrepos.ErrTeamHasOwner),
 		errors.Is(err, teamservices.ErrSecondOwner),
 		errors.Is(err, teamservices.ErrLastOwner):
 		writeDetail(w, http.StatusConflict, err.Error())

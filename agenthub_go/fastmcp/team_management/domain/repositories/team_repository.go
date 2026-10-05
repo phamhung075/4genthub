@@ -32,6 +32,10 @@ var (
 	ErrTeamNotFound = errors.New("team not found")
 	// ErrMemberExists means the team already has that member.
 	ErrMemberExists = errors.New("team member already exists")
+	// ErrTeamHasOwner means the team already has its one owner. The partial unique index
+	// uq_team_members_one_owner raises it; the service refuses a second owner first, so
+	// this is the database holding the invariant when a caller bypasses the service.
+	ErrTeamHasOwner = errors.New("team already has an owner")
 )
 
 // teamSlugPattern is the OpenRig name rule, the same one room slugs use: a team slug is a

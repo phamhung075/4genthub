@@ -50,6 +50,7 @@ var teamManagementDatabaseTables = []taskdb.TableDef{
 			")",
 		"CREATE INDEX ix_team_members_team_id ON team_members (team_id)",
 		"CREATE INDEX ix_team_members_user_id ON team_members (user_id)",
+		"CREATE UNIQUE INDEX uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner'",
 	}},
 }
 

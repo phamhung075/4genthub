@@ -156,6 +156,7 @@ func TestTeamRoutesErrorMapping(t *testing.T) {
 		{"not found", teamrepos.ErrTeamNotFound, http.StatusNotFound},
 		{"team exists", teamrepos.ErrTeamExists, http.StatusConflict},
 		{"member exists", teamrepos.ErrMemberExists, http.StatusConflict},
+		{"team has owner", teamrepos.ErrTeamHasOwner, http.StatusConflict},
 		{"second owner", teamservices.ErrSecondOwner, http.StatusConflict},
 		{"last owner", teamservices.ErrLastOwner, http.StatusConflict},
 		{"not owner", teamservices.ErrNotTeamOwner, http.StatusForbidden},
