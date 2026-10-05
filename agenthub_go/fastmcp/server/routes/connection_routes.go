@@ -10,6 +10,8 @@ import (
 	"fmt"
 
 	"agenthub/fastmcp/auth"
+	"agenthub/fastmcp/config"
+	dtos "agenthub/fastmcp/connection_management/application/dtos"
 	connfacades "agenthub/fastmcp/connection_management/application/facades"
 	connrepos "agenthub/fastmcp/connection_management/infrastructure/repositories"
 	connservices "agenthub/fastmcp/connection_management/infrastructure/services"
@@ -32,20 +34,32 @@ var connectionFacade = connfacades.NewConnectionApplicationFacade(
 	connservices.NewMCPStatusBroadcastingService(),
 )
 
+// healthCheckFn performs the probe HealthCheck reports on. It wraps the shared
+// facade so production keeps one wiring point, while tests can substitute a
+// panicking probe to exercise HealthCheck's recover branch.
+var healthCheckFn = func(includeDetails *bool, userID *string) *dtos.HealthCheckResponse {
+	return connectionFacade.CheckServerHealth(includeDetails, userID)
+}
+
 // HealthCheck mirrors GET /health. include_details defaults to True.
-func HealthCheck(includeDetails *bool) *entities.OrderedMap[any] {
+func HealthCheck(includeDetails *bool) (out *entities.OrderedMap[any]) {
 	include := true
 	if includeDetails != nil {
 		include = *includeDetails
 	}
-	out := entities.NewOrderedMap[any]()
+	out = entities.NewOrderedMap[any]()
 	defer func() {
 		if r := recover(); r != nil {
-			// Python returns a basic healthy status even on error.
+			// Python returns a basic healthy status even on error. out is the
+			// named result, so this rebuilt body actually reaches the caller;
+			// the name is the package-level config.ServerName constant: a
+			// constant has no receiver and cannot be nil, so it is safe to read
+			// inside this recover branch, where the probed health response may
+			// never have been produced.
 			out = entities.NewOrderedMap[any]()
 			out.Set("success", true)
 			out.Set("status", "healthy")
-			out.Set("server_name", "AgentHub MCP Server")
+			out.Set("server_name", config.ServerName)
 			out.Set("version", "unknown")
 			out.Set("uptime_seconds", 0)
 			out.Set("timestamp", 0)
@@ -53,7 +67,7 @@ func HealthCheck(includeDetails *bool) *entities.OrderedMap[any] {
 		}
 	}()
 
-	health := connectionFacade.CheckServerHealth(&include, nil)
+	health := healthCheckFn(&include, nil)
 
 	out.Set("success", health.Success)
 	out.Set("status", health.Status)
