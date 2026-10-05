@@ -235,11 +235,11 @@ export interface RoomEventPayload {
 export interface NotificationEventPayload {
   /** The message the human should see. */
   message: string;
-  /** Who sent it: a seat key or an agent name. */
+  /** Who sent it: a seat key. */
   from?: string;
   room?: string;
   seat?: string;
-  /** Free-form kind, for example 'agent_message'. */
+  /** Free-form kind, for example 'notice'. */
   kind?: string;
 }
 
@@ -269,7 +269,6 @@ export interface WSMetadata {
   project_id?: string;
   git_branch_id?: string;
   task_id?: string;
-  agent_name?: string;
 
   // Display metadata (for toasts)
   project_name?: string;
@@ -285,7 +284,7 @@ export interface WSMetadata {
  * WebSocket payload structure
  */
 export interface WSPayload<T = any> {
-  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'agent' | 'seat' | 'room';
+  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'seat' | 'room';
   action: 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned';
   data: {
     primary: T;           // Main entity data (MUST include 'id' field)
