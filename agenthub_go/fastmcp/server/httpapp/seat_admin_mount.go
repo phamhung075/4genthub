@@ -986,7 +986,12 @@ func handleCompanyOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if !ok || !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
-	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeCompany, Ops: ops})
+	candidate := repositories.Overlay{Scope: repositories.ScopeCompany, Ops: ops}
+	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	overlay, err := source.UpsertOverlay(r.Context(), userID(u), candidate)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1010,7 +1015,12 @@ func handleRoomOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
-	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: room.ID, Ops: ops})
+	candidate := repositories.Overlay{Scope: repositories.ScopeRoom, RoomID: room.ID, Ops: ops}
+	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	overlay, err := source.UpsertOverlay(r.Context(), userID(u), candidate)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1038,7 +1048,12 @@ func handleSeatOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !seatAdminOverlayModulesExist(w, r, source, userID(u), ops) {
 		return
 	}
-	overlay, err := source.UpsertOverlay(r.Context(), userID(u), repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: seat.ID, Ops: ops})
+	candidate := repositories.Overlay{Scope: repositories.ScopeSeat, SeatID: seat.ID, Ops: ops}
+	if err := seatservices.ValidateOverlayResolution(r.Context(), source, userID(u), candidate); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	overlay, err := source.UpsertOverlay(r.Context(), userID(u), candidate)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return

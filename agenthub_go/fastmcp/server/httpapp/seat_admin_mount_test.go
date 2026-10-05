@@ -353,11 +353,17 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 	fake.seedRoom("dev")
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
-	overlay := `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`
-	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
-		t.Fatalf("seed module: %d %s", rec.Code, rec.Body.String())
+	overlay := func(slug string) string {
+		return `{"ops":[{"kind":"add","slug":"` + slug + `","version":"1.0.0"}]}`
 	}
-	frames = nil // the module PUT above is not a seat-domain mutation; start the observation here
+	// Each scope adds a distinct module: the same slug in two scopes would be a duplicate add
+	// on every shared seat, which the overlay fold now refuses.
+	for _, slug := range []string{"instr-room", "instr-company", "instr-seat"} {
+		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+slug+"/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+			t.Fatalf("seed module %s: %d %s", slug, rec.Code, rec.Body.String())
+		}
+	}
+	frames = nil // the module PUTs above are not seat-domain mutations; start the observation here
 
 	steps := []struct {
 		name, method, path, body, entity, action, id string
@@ -365,9 +371,9 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 		{"room create", http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"team","name":"Team"}`, "room", "created", "team"},
 		{"seat create", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/alice"},
 		{"permission policy", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`, "seat", "updated", "dev/alice"},
-		{"room overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", overlay, "room", "updated", "dev"},
-		{"company overlay", http.MethodPut, "/api/v2/openrig/overlay", overlay, "room", "updated", "company"},
-		{"seat overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay", overlay, "seat", "updated", "dev/alice"},
+		{"room overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", overlay("instr-room"), "room", "updated", "dev"},
+		{"company overlay", http.MethodPut, "/api/v2/openrig/overlay", overlay("instr-company"), "room", "updated", "company"},
+		{"seat overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay", overlay("instr-seat"), "seat", "updated", "dev/alice"},
 		{"seat create bob", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"bob","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/bob"},
 		{"link upsert", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`, "seat", "updated", "dev/alice"},
 		{"occupant", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`, "seat", "updated", "dev/alice"},
@@ -735,8 +741,9 @@ func TestSeatAdminGetModuleVersion(t *testing.T) {
 func TestSeatAdminGetOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	fake.moduleVersions["instr@1"] = &repositories.ModuleVersion{Slug: "instr", Version: "1"}
+	fake.seedSeatType("coder", "1.0.0")
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
 
 	for _, path := range []string{
@@ -1050,16 +1057,20 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 
 func TestSeatAdminOverlays(t *testing.T) {
 	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	fake.seatTypes["coder"].ModuleRefs = []resolver.ModuleRef{{Slug: "m", Version: "1"}}
+	fake.moduleVersions["m@1"] = &repositories.ModuleVersion{Slug: "m", Version: "1"}
 	fake.moduleVersions["m@2"] = &repositories.ModuleVersion{Slug: "m", Version: "2"}
+	fake.moduleVersions["n@1"] = &repositories.ModuleVersion{Slug: "n", Version: "1"}
 	room := fake.seedRoom("dev")
-	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"})
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
 	cases := []struct {
 		path string
 		body string
 		want string
 	}{
-		{"/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m","version":"2"}]}`, `"scope":"room"`},
+		{"/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`, `"scope":"room"`},
 		{"/api/v2/openrig/overlay", `{"ops":[{"kind":"pin","slug":"m","version":"2"}]}`, `"scope":"company"`},
 		{"/api/v2/openrig/rooms/dev/seats/alice/overlay", `{"ops":[{"kind":"override","slug":"m","content":"x"}]}`, `"scope":"seat"`},
 	}
@@ -1068,6 +1079,49 @@ func TestSeatAdminOverlays(t *testing.T) {
 		if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), c.want) {
 			t.Errorf("PUT %s: %d %s", c.path, rec.Code, rec.Body.String())
 		}
+	}
+}
+
+// A room overlay that would make an affected seat unresolvable is refused before the write,
+// with the failing op and scope named, and nothing is stored.
+func TestSeatAdminOverlayPutRefusesUnresolvableStack(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	fake.seatTypes["coder"].ModuleRefs = []resolver.ModuleRef{{Slug: "m", Version: "1"}}
+	fake.moduleVersions["m@1"] = &repositories.ModuleVersion{Slug: "m", Version: "1"}
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"})
+	mux := seatAdminTestMux(t, fake)
+
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", `{"ops":[{"kind":"add","slug":"m","version":"1"}]}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400: %s", rec.Code, rec.Body.String())
+	}
+	if detail := seatAdminDetail(t, rec); !strings.Contains(detail, `add "m"`) || !strings.Contains(detail, "module already present") || !strings.Contains(detail, "overlay room") {
+		t.Errorf("detail %q does not name the failing op and scope", detail)
+	}
+	if len(fake.overlays) != 0 {
+		t.Errorf("overlay stored despite the broken stack: %+v", fake.overlays)
+	}
+}
+
+// A legal overlay PUT still succeeds and is stored.
+func TestSeatAdminOverlayPutStoresResolvingStack(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedSeatType("coder", "1.0.0")
+	fake.seatTypes["coder"].ModuleRefs = []resolver.ModuleRef{{Slug: "m", Version: "1"}}
+	fake.moduleVersions["m@1"] = &repositories.ModuleVersion{Slug: "m", Version: "1"}
+	fake.moduleVersions["n@1"] = &repositories.ModuleVersion{Slug: "n", Version: "1"}
+	room := fake.seedRoom("dev")
+	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder"})
+	mux := seatAdminTestMux(t, fake)
+
+	rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/overlay", `{"ops":[{"kind":"add","slug":"n","version":"1"}]}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"scope":"company"`) {
+		t.Fatalf("legal overlay PUT: %d %s", rec.Code, rec.Body.String())
+	}
+	if fake.overlays[repositories.ScopeCompany+"||"] == nil {
+		t.Errorf("legal overlay not stored: %+v", fake.overlays)
 	}
 }
 
@@ -1473,8 +1527,11 @@ func TestSeatAdminOverlayRoutesRejectSecretContent(t *testing.T) {
 	} {
 		t.Run(path, func(t *testing.T) {
 			fake := newFakeSeatAdmin()
+			fake.seedSeatType("coder", "1.0.0")
+			fake.seatTypes["coder"].ModuleRefs = []resolver.ModuleRef{{Slug: "m", Version: "1"}}
+			fake.moduleVersions["m@1"] = &repositories.ModuleVersion{Slug: "m", Version: "1"}
 			room := fake.seedRoom("dev")
-			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", PermissionPolicy: "standard"})
+			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", SeatTypeID: "st-coder", PermissionPolicy: "standard"})
 			mux := seatAdminTestMux(t, fake)
 			for _, body := range bodies {
 				rec := doTestRequest(t, mux, http.MethodPut, path, body)

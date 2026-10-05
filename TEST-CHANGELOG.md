@@ -2,6 +2,41 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — overlay PUT fold guard (Go, seat management)
+
+- New `TestSeatAdminOverlayPutRefusesUnresolvableStack` (`fastmcp/server/httpapp/seat_admin_mount_test.go`): a room overlay `add m@1` where that room's seat type already carries `m@1` is rejected with `400`, the detail names the scope and the op (`overlay room: add "m": module already present`), and the store stays empty — the reachable sequence, exercised through the real HTTP handler and the production fold logic rather than a reimplementation.
+- New `TestSeatAdminOverlayPutStoresResolvingStack`: a company overlay `add n@1` (`n@1` in the catalog, absent from the seat type) is accepted with `200` and stored — the legal write still succeeds.
+- New `TestValidateOverlayResolution` (`fastmcp/seat_management/application/services/seat_resolution_service_test.go`): the service entry point refuses the breaking candidate and accepts the resolving one.
+- Existing fixture tests updated, none deleted: the overlay fixtures in `seat_admin_mount_test.go` stored stacks the resolver cannot resolve (they only required the module version to exist), so they now use legal stacks (`add n@1` room, `pin m@2` company, `override m` seat; distinct slugs per scope where one slug was added twice); no assertion was weakened.
+- Mutation proof: removing the `ValidateOverlayResolution` call from `handleRoomOverlay` makes `TestSeatAdminOverlayPutRefusesUnresolvableStack` FAIL with `status = 200, want 400` and the accepted overlay printed; restored -> PASS.
+- Commands: `gofmt -l` empty on the four touched files; `go vet ./fastmcp/server/httpapp/... ./fastmcp/seat_management/...` clean; `go build ./...` ok; `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/seat_management/application/services/` -> both ok.
+
+## 2026-10-05 — seat block composition (frontend, owner directive 2)
+
+- `src/tests/lib/blockComposition.test.ts` (18 tests): the fold matches the Go resolver - a block added at a scope is
+  inherited by the more specific scopes; a remove at a scope is recorded there and drops the block from the final set;
+  a re-add after a remove is owned by the scope that re-added it; `pin` records the version and the pinning scope;
+  `override` marks the block without changing presence or version; a slug only an op names is still known, so an
+  impossible removal stays visible. Outcomes: an inherited removal says `removed at seat · still defined at company`;
+  a removal of a block this level added says it is the only definition; a removal that cannot apply is refused with the
+  resolver's reason; and a PINNED block is still removable (the resolver has no pin lock - `resolver.go:191-199`),
+  pinned by a test so a future client-side lock cannot appear silently. `additionOutcome` refuses a block already in
+  effect. The op helpers: add appends; removing an add undoes it rather than writing a second op; removing an inherited
+  block appends a `remove`; restore drops the `remove`.
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains six composer cases: origin labels for the seat type, company and
+  room with the per-level removal text; a removal writes exactly one `remove` op via `putOverlay`; an add writes
+  exactly one `add` op; an already-in-effect block cannot be added (disabled option, Add off); a block removed at this
+  level shows the resolver's refusal and offers Restore; a pinned block is labelled and still removable. The composer
+  list carries `aria-label="Composed blocks"` so the assertions scope to it (the seat-type section also renders the
+  same `slug@version` badge).
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 97 files / 1689 tests passed; `npx vite build` ok.
+  Browser drive of the production bundle served by one local Bun stub (stateful: PUT replaces the scope's ops) over
+  `/seats/authoring`: the page rendered all three origins - `rules@1.0.0 inherited from the seat type`,
+  `style@2.0.0 inherited from company`, `policy@1.0.0 inherited from room` - each with its own "Removing here" text;
+  clicking Remove wrote `seat ops [{kind:remove,slug:style}]`, after which the block showed the refusal reason and a
+  Restore control; adding `tool.new@1.0.0` wrote `seat ops [remove style, add tool.new]` and the block showed
+  `added at seat`.
+
 ## 2026-10-05 — /health live-registry test (Go, health seam fix)
 
 - `fastmcp/server/httpapp/http_health_test.go` rewritten: the old `fakeHealthStatusProvider`/`swapHealthStatusProvider` cases injected the deleted seam and asserted the nil-provider error path — they passed while production's reading stayed permanently wrong. The new `TestHealthReportsTheLiveRegistry` registers real sockets through `routes.RegisterConnection` (the same entry point `ws_mount.go` uses) and asserts `connections.active_connections` and `status_broadcasting.registered_clients` equal the live registry count (baseline, baseline+1, baseline+2, then back to baseline after unregister), `uptime_seconds` is a non-negative number, and the dropped keys (`server_restart_count`, `recommended_action`, `last_broadcast`, `last_broadcast_time`) are absent. The fake socket carries an `id` field so two instances are distinct map keys (zero-size struct pointers alias to `runtime.zerobase`).
