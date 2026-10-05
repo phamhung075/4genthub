@@ -44,6 +44,9 @@ func TestWithCORSPreflightAllowedOrigin(t *testing.T) {
 	if got := rec.Header().Get("Access-Control-Max-Age"); got != "600" {
 		t.Errorf("Access-Control-Max-Age = %q, want 600", got)
 	}
+	if got := rec.Header().Get("Vary"); got != "Origin" {
+		t.Errorf("Vary = %q, want Origin (shared with the simple path)", got)
+	}
 }
 
 // The default when CORS_ORIGINS is unset is ["*"]; with credentials the preflight still
@@ -108,12 +111,19 @@ func TestWithCORSSimpleRequestAllowedOrigin(t *testing.T) {
 	if got := rec.Header().Get("Access-Control-Expose-Headers"); got != "*" {
 		t.Errorf("Access-Control-Expose-Headers = %q, want *", got)
 	}
+	if got := rec.Header().Get("Vary"); got != "Origin" {
+		t.Errorf("Vary = %q, want Origin (so caches do not serve one origin's response to another)", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got == "*" {
+		t.Error("Access-Control-Allow-Origin must never be * when credentials are allowed")
+	}
 }
 
-// With the default wildcard and no Cookie, a simple request gets a bare "*" (Starlette's
-// allow_all_origins without the cookie exception). A credentials:'include' fetch is rejected
-// by the browser on this path, so it is pinned here.
-func TestWithCORSSimpleRequestDefaultWildcardWithoutCookie(t *testing.T) {
+// With the default wildcard (CORS_ORIGINS unset) and credentials enabled, a simple request
+// echoes the concrete request origin and adds Vary: Origin. It must NEVER emit a bare "*"
+// together with "Access-Control-Allow-Credentials: true" - browsers reject that pairing and
+// the frontend sends credentials:'include'. This is the fresh-local-stack fallback path.
+func TestWithCORSSimpleRequestDefaultWildcardEchoesOrigin(t *testing.T) {
 	t.Setenv("CORS_ORIGINS", "")
 	h := withCORS(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -124,11 +134,46 @@ func TestWithCORSSimpleRequestDefaultWildcardWithoutCookie(t *testing.T) {
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 
-	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "*" {
-		t.Errorf("Access-Control-Allow-Origin = %q, want * (no Cookie, wildcard default)", got)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "https://anything.example" {
+		t.Errorf("Access-Control-Allow-Origin = %q, want the origin echoed (never * with credentials)", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got == "*" {
+		t.Error("Access-Control-Allow-Origin must never be * when credentials are allowed")
 	}
 	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
 		t.Errorf("Access-Control-Allow-Credentials = %q, want true", got)
+	}
+	if got := rec.Header().Get("Vary"); got != "Origin" {
+		t.Errorf("Vary = %q, want Origin", got)
+	}
+}
+
+// A non-allowlisted origin on the actual (non-preflight) response gets NO CORS permission
+// headers at all: no Access-Control-Allow-Origin and no Access-Control-Allow-Credentials.
+// The browser then blocks the credentialed call rather than being told a permission the
+// policy does not grant. The request itself is still processed (CORS is browser-enforced).
+func TestWithCORSSimpleRequestDisallowedOrigin(t *testing.T) {
+	t.Setenv("CORS_ORIGINS", "https://www.4genthub.com")
+	h := withCORS(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/projects/", nil)
+	req.Header.Set("Origin", "https://evil.example")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204 (CORS is browser-enforced, the handler still runs)", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Errorf("Access-Control-Allow-Origin = %q, want empty for a non-allowlisted origin", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "" {
+		t.Errorf("Access-Control-Allow-Credentials = %q, want empty for a non-allowlisted origin", got)
+	}
+	if got := rec.Header().Get("Access-Control-Expose-Headers"); got != "" {
+		t.Errorf("Access-Control-Expose-Headers = %q, want empty for a non-allowlisted origin", got)
 	}
 }
 

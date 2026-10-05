@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — Wildcard+credentials CORS combination removed (local-stack fallback)
+
+- `cors_test.go`: `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (which pinned `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) is replaced by `TestWithCORSSimpleRequestDefaultWildcardEchoesOrigin`: with `CORS_ORIGINS` unset and credentials on, the actual response echoes the concrete origin, sets `Access-Control-Allow-Credentials: true` and `Vary: Origin`, and never `*`. New `TestWithCORSSimpleRequestDisallowedOrigin`: an explicit allowlist that omits the origin yields no `Access-Control-Allow-Origin`, no `Access-Control-Allow-Credentials` and no `Access-Control-Expose-Headers`, while the handler still runs (204). `TestWithCORSSimpleRequestAllowedOrigin` and `TestWithCORSPreflightAllowedOrigin` gained `Vary: Origin` and never-`*` assertions; both preflight cases are otherwise unchanged.
+- `testdata/cors_cases.json`: 120 non-preflight outputs for non-allowlisted origins dropped `access-control-allow-credentials` and `access-control-expose-headers`. This is an intentional divergence from Starlette's `CORSMiddleware`, which emits its `simple_headers` (credentials, expose) regardless of origin; a header that grants a permission the origin does not have is the defect. The change is removal-only (no added keys, request/config fields untouched).
+- Real stack (fresh build of `cmd/agenthub`, `CORS_ORIGINS` unset, origin `http://localhost:3800`): actual response `Access-Control-Allow-Origin: http://localhost:3800`, `Access-Control-Allow-Credentials: true`, `Vary: Origin` (before: `*` + credentials); with `CORS_ORIGINS=http://localhost:3800`, the actual response from `https://evil.example` carries no `Access-Control-*` headers and logs `WARN CORS: request from non-allowlisted origin origin=https://evil.example method=GET path=…`.
+- Commands: `gofmt -l` (touched) empty; `go vet ./fastmcp/config/ ./fastmcp/server/httpapp/` clean; `go test -count=1 ./fastmcp/config/` ok; `go test -count=1 ./fastmcp/server/httpapp/` ok; `go build ./...` ok.
+
 ## 2026-10-06 — the home page's claim rules are a class, not a list (frontend)
 
 - `src/tests/pages/LandingPage.head.test.tsx` gains four class rules BESIDE the existing removed list: no unmeasured
