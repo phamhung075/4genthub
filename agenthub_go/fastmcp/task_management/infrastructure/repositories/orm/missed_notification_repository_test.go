@@ -201,4 +201,21 @@ func TestMissedNotificationRepositoryStoreFetchDeliverCleanup(t *testing.T) {
 	if remaining != 2 {
 		t.Fatalf("remaining rows = %d, want 2", remaining)
 	}
+
+	// The two windows are DISTINCT, which the single-window version of this method got wrong: a
+	// DELIVERED row older than the undelivered window but younger than the delivered one must
+	// survive. firstID is delivered and is now pinned 48h old.
+	mustExec(`UPDATE "missed_notifications" SET "created_at" = $1 WHERE "id" = $2`, now.Add(-48*time.Hour), firstID)
+	if n, err := repo.CleanupExpired(ctx, 24); err != nil || n != 0 {
+		t.Fatalf("CleanupExpired with a 48h-old DELIVERED row = %d err=%v, want 0 (delivered history is kept 7 days)", n, err)
+	}
+	var survived int
+	if err := sm.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx, `SELECT count(*) FROM "missed_notifications" WHERE "id" = $1`, firstID).Scan(&survived)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if survived != 1 {
+		t.Fatal("a delivered row 48h old was deleted on the undelivered window; the two cutoffs are not distinct")
+	}
 }

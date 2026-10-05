@@ -23,6 +23,10 @@ import (
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
 
+// deliveredNotificationRetention is Python's second cleanup window
+// (`delivered_cutoff = now - timedelta(days=7)`): delivered history is kept a week.
+const deliveredNotificationRetention = 7 * 24 * time.Hour
+
 // MissedNotificationRepository is the ORM store over missed_notifications.
 type MissedNotificationRepository struct {
 	*baserepo.ORMRepository[database.MissedNotification]
@@ -150,13 +154,21 @@ func (r *MissedNotificationRepository) IncrementDeliveryAttempts(ctx context.Con
 	return updated, err
 }
 
-// CleanupExpired deletes rows created more than olderThanHours ago and returns the deleted count.
+// CleanupExpired mirrors Python's cleanup_expired_notifications, which uses TWO cutoffs: an
+// UNDELIVERED notification older than olderThanHours is removed (a user who never came back), and a
+// DELIVERED one older than 7 days is removed (history that has served its purpose). Deleting every
+// row on one window would either keep delivered history as long as undelivered rows or, worse,
+// discard an undelivered notification on the shorter window without distinguishing it. Returns the
+// total deleted.
 func (r *MissedNotificationRepository) CleanupExpired(ctx context.Context, olderThanHours int) (int, error) {
 	deleted := 0
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		cutoff := time.Now().UTC().Add(-time.Duration(olderThanHours) * time.Hour)
+		now := time.Now().UTC()
 		res, err := s.ExecContext(ctx,
-			`DELETE FROM "missed_notifications" WHERE "created_at" < $1`, cutoff)
+			`DELETE FROM "missed_notifications" WHERE `+
+				`("delivered" = $1 AND "created_at" < $2) OR ("delivered" = $3 AND "created_at" < $4)`,
+			false, now.Add(-time.Duration(olderThanHours)*time.Hour),
+			true, now.Add(-deliveredNotificationRetention))
 		if err != nil {
 			return err
 		}
