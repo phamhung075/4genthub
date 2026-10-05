@@ -46,7 +46,7 @@ export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 /**
  * Entity types across the system (MERGED from multiple sources)
  */
-export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent';
+export type EntityType = 'task' | 'subtask' | 'project' | 'branch' | 'context' | 'agent' | 'seat' | 'room';
 
 /**
  * Event types across the system (MERGED from multiple sources)

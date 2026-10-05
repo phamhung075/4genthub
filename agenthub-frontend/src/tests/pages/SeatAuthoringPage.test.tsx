@@ -15,6 +15,19 @@ vi.mock('../../services/seatApi', () => ({
   },
 }));
 
+// The page mounts the live seat sync (item 16); stub the socket and the auth context.
+vi.mock('../../hooks/useWebSocketV2', () => ({
+  useWebSocket: () => ({ client: { on: vi.fn(), off: vi.fn() }, isConnected: false }),
+}));
+
+vi.mock('../../hooks/useRealtimeSync', () => ({
+  useRealtimeSync: vi.fn(),
+}));
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'test-user' }, tokens: { access_token: 'test-token' } }),
+}));
+
 const mockApi = vi.mocked(seatApi);
 
 const renderPage = () => {

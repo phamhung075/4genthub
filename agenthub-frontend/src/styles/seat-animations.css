@@ -1,0 +1,111 @@
+/**
+ * SEAT ANIMATIONS
+ * Animations for the seat cards on the Seats page, driven by WebSocket seat
+ * events through AnimationFactory (entity type 'seat').
+ * Class names follow AnimationFactory's {entity}Row{Animation}Animation rule.
+ */
+
+/* ========================================
+   CREATE ANIMATION (Slide In from RIGHT to LEFT)
+   ======================================== */
+@keyframes seatRowSlideIn {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  20% {
+    transform: translateX(60%);
+    opacity: 0.2;
+  }
+  40% {
+    transform: translateX(30%);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateX(10%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(-2%);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.seatRowCreateAnimation {
+  animation: seatRowSlideIn 0.5s ease-out forwards;
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* ========================================
+   UPDATE ANIMATION (Flash Background 3x)
+   ======================================== */
+@keyframes seatRowFlash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  16.67% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  33.33% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+  66.67% {
+    background-color: transparent;
+  }
+  83.33% {
+    background-color: rgba(59, 130, 246, 0.3);
+  }
+}
+
+.seatRowUpdateAnimation {
+  animation: seatRowFlash 1.7s ease-in-out;
+}
+
+/* ========================================
+   DELETE ANIMATION (Slide Out to Right)
+   ======================================== */
+@keyframes seatRowSlideOut {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  30% {
+    transform: translateX(20%);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(50%);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateX(80%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.seatRowDeleteAnimation {
+  animation: seatRowSlideOut 0.8s ease-in;
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .seatRowCreateAnimation,
+  .seatRowUpdateAnimation,
+  .seatRowDeleteAnimation {
+    animation: none;
+  }
+}

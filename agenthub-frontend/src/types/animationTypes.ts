@@ -10,7 +10,7 @@ import type { EntityType } from './serviceTypes';
 // =============================================================================
 
 /** Entity types that have a `{entity}Row{Animation}Animation` CSS class. */
-export type AnimatedEntityType = Extract<EntityType, 'task' | 'subtask' | 'branch' | 'project'>;
+export type AnimatedEntityType = Extract<EntityType, 'task' | 'subtask' | 'branch' | 'project' | 'seat'>;
 
 export type AnimationType = 'create' | 'delete' | 'update' | 'complete';
 export type AnimationSource = 'websocket' | 'callback' | 'mount';

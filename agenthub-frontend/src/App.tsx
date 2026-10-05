@@ -7,6 +7,7 @@ import './styles/animations.css';
 import './styles/task-animations.css';
 import './styles/subtask-animations.css';
 import './styles/branch-animations.css';
+import './styles/seat-animations.css';
 import { Header } from './components/Header';
 import { ShimmerButton } from './components/ui/shimmer-button';
 import { ToastProvider } from './components/ui/toast';

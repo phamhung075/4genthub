@@ -8,6 +8,7 @@
 @import './styles/task-animations.css';
 @import './styles/subtask-animations.css';
 @import './styles/branch-animations.css';
+@import './styles/seat-animations.css';
 
 @tailwind base;
 @tailwind components;
@@ -18,43 +19,43 @@
   .bg-base {
     background-color: var(--color-background);
   }
-  
+
   .bg-base-secondary {
     background-color: var(--color-background-secondary);
   }
-  
+
   .bg-base-tertiary {
     background-color: var(--color-background-tertiary);
   }
-  
+
   .bg-surface {
     background-color: var(--color-surface);
   }
-  
+
   .bg-surface-hover {
     background-color: var(--color-surface-hover);
   }
-  
+
   .text-base-primary {
     color: var(--color-text);
   }
-  
+
   .text-base-secondary {
     color: var(--color-text-secondary);
   }
-  
+
   .text-base-tertiary {
     color: var(--color-text-tertiary);
   }
-  
+
   .border-base {
     border-color: var(--color-surface-border);
   }
-  
+
   .border-base-hover {
     border-color: var(--color-surface-border-hover);
   }
-  
+
   .transition-theme {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
   }

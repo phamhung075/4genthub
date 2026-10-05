@@ -6,6 +6,8 @@ import logger from '../utils/logger';
 import { useSuccessToast, useInfoToast, useWarningToast } from '../components/ui/toast';
 import {
   type WSMessage,
+  type SeatEventPayload,
+  type RoomEventPayload,
   isBranchDeletePayload,
   isSubtaskDeletePayload,
   isProjectDeletePayload,
@@ -14,6 +16,7 @@ import {
   getDisplayName
 } from '../types/websocket-protocol';
 import { animationFactory } from '../services/AnimationFactory';
+import { seatKeys } from './useSeats';
 
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
 // This prevents duplicate toasts when multiple components use useRealtimeSync
@@ -850,76 +853,110 @@ export const useRealtimeSync = (
       }
     };
 
-    // Handler for agent instance updates
-    const handleAgentUpdate = (message: WSMessage) => {
+    // Handler for seat-domain updates (seat admin mutations, entity 'seat')
+    const handleSeatUpdate = (message: WSMessage) => {
       const { action, data } = message.payload;
-      const agentData = data.primary as any;
+      const seat = data.primary as SeatEventPayload;
 
-      if (!agentData || typeof agentData !== 'object' || Array.isArray(agentData) || !agentData.id) {
-        logger.warn('[useRealtimeSync] Agent update missing ID or invalid data');
+      if (!seat || typeof seat !== 'object' || Array.isArray(seat) || !seat.room || !seat.seat_key) {
+        logger.warn('[useRealtimeSync] Seat event missing room or seat_key');
         return;
       }
 
-      const agentId = agentData.id;
-      const agentName = agentData.name || agentData.agent_name || message.metadata?.agent_name || `Agent ${agentId.slice(0, 8)}`;
+      const room = seat.room;
+      const seatKey = seat.seat_key;
+      const seatId = seat.id || `${room}/${seatKey}`;
+      const seatName = seat.name || seatKey;
 
-      logger.debug('[useRealtimeSync] Agent event:', action, agentId);
+      logger.debug('[useRealtimeSync] Seat event:', action, seatId);
 
       switch (action) {
         case 'created':
-          // Optimistic update: add new agent to cache
-          queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
-            // Check if agent already exists (from optimistic update)
-            const exists = old.some((a: any) => a.id === agentId);
-            if (exists) {
-              return old.map((a: any) => a.id === agentId ? agentData : a);
-            }
-            return [...old, agentData];
-          });
-
-          // Show success toast (deduplicated)
-          showToastOnce(`agent-created-${agentId}`, () => {
-            showSuccess(`Agent "${agentName}" created successfully`);
+          queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+          queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          animationFactory.animate(seatId, 'create', 'websocket');
+          showToastOnce(`seat-created-${seatId}`, () => {
+            showSuccess(`Seat "${seatName}" created`);
           });
           break;
 
         case 'updated':
-          // Optimistic update: update existing agent in cache
-          queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
-            if (!old) return old;
-            return old.map((a: any) => a.id === agentId ? { ...a, ...agentData } : a);
-          });
-
-          // Show info toast (deduplicated)
-          showToastOnce(`agent-updated-${agentId}`, () => {
-            showInfo(`Agent "${agentName}" updated`);
+          queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+          queryClient.invalidateQueries({ queryKey: seatKeys.overlays(room, seatKey) });
+          queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seatKey) });
+          queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seatKey) });
+          animationFactory.animate(seatId, 'update', 'websocket');
+          showToastOnce(`seat-updated-${seatId}`, () => {
+            showInfo(`Seat "${seatName}" updated`);
           });
           break;
 
         case 'deleted':
-          // Show warning toast FIRST
-          showToastOnce(`agent-deleted-${agentId}`, () => {
-            showWarning(`Agent "${agentName}" deleted`);
+          queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+          queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.removeQueries({ queryKey: seatKeys.overlays(room, seatKey) });
+          queryClient.removeQueries({ queryKey: seatKeys.links(room, seatKey) });
+          queryClient.removeQueries({ queryKey: seatKeys.resolved(room, seatKey) });
+          animationFactory.animate(seatId, 'delete', 'websocket');
+          showToastOnce(`seat-deleted-${seatId}`, () => {
+            showWarning(`Seat "${seatName}" deleted`);
           });
-
-          // Optimistic update: remove agent from cache (with delay for animation)
-          setTimeout(() => {
-            queryClient.setQueryData(['userAgentInstances'], (old: any[] = []) => {
-              if (!old) return old;
-              return old.filter((a: any) => a.id !== agentId);
-            });
-          }, 150); // Small delay to allow delete animation
           break;
 
         default:
-          // For unknown actions, just invalidate the cache
-          logger.debug(`[useRealtimeSync] Unknown agent action: ${action}, invalidating cache`);
-          queryClient.invalidateQueries({ queryKey: ['userAgentInstances'] });
+          logger.debug('[useRealtimeSync] Unknown seat action, invalidating:', action);
+          queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
+      }
+    };
+
+    // Handler for room events (entity 'room'): room create/delete and the company
+    // settings change, which arrives as a room 'updated' with id 'company'.
+    const handleRoomUpdate = (message: WSMessage) => {
+      const { action, data } = message.payload;
+      const room = data.primary as RoomEventPayload;
+      const roomSlug = room?.room || room?.id;
+
+      if (!room || typeof room !== 'object' || Array.isArray(room) || !roomSlug) {
+        logger.warn('[useRealtimeSync] Room event missing id/room');
+        return;
       }
 
-      // Also invalidate agent templates in case template-related changes occurred
-      if (action === 'created' || action === 'updated') {
-        queryClient.invalidateQueries({ queryKey: ['agentTemplates'] });
+      logger.debug('[useRealtimeSync] Room event:', action, roomSlug);
+
+      if (roomSlug === 'company') {
+        // A company-scoped overlay or the company settings change: it affects the
+        // settings panel and every seat's overlays/resolved preview, so invalidate
+        // those root keys rather than a single room.
+        queryClient.invalidateQueries({ queryKey: seatKeys.settings });
+        queryClient.invalidateQueries({ queryKey: ['seatOverlays'] });
+        queryClient.invalidateQueries({ queryKey: ['seatResolved'] });
+        return;
+      }
+
+      const roomName = room.name || roomSlug;
+
+      switch (action) {
+        case 'created':
+          queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          showToastOnce(`room-created-${roomSlug}`, () => {
+            showSuccess(`Room "${roomName}" created`);
+          });
+          break;
+
+        case 'deleted':
+          queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.removeQueries({ queryKey: seatKeys.seats(roomSlug) });
+          showToastOnce(`room-deleted-${roomSlug}`, () => {
+            showWarning(`Room "${roomName}" deleted`);
+          });
+          break;
+
+        default:
+          queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.invalidateQueries({ queryKey: seatKeys.seats(roomSlug) });
+          showToastOnce(`room-updated-${roomSlug}`, () => {
+            showInfo(`Room "${roomName}" updated`);
+          });
       }
     };
 
@@ -950,9 +987,11 @@ export const useRealtimeSync = (
             case 'branch':
               handleBranchUpdate(message);
               break;
-            case 'agent':
-            case 'agent_instance':
-              handleAgentUpdate(message);
+            case 'seat':
+              handleSeatUpdate(message);
+              break;
+            case 'room':
+              handleRoomUpdate(message);
               break;
             default:
               logger.debug('[useRealtimeSync] Unknown entity type:', entity);

@@ -195,6 +195,38 @@ export type CompletePayload =
   | { entity: 'subtask'; data: SubtaskCompletePayload };
 
 // =============================================================================
+// SEAT / ROOM PAYLOADS (seat-domain broadcasts)
+// =============================================================================
+
+/**
+ * Seat event payload. The Go seat admin mutations emit this in the same v2
+ * envelope; the client invalidates the seat react-query keys and animates the
+ * row, so it does not need the full seat body.
+ */
+export interface SeatEventPayload {
+  /** Stable id for cache/animation keying: '<room>/<seat_key>'. */
+  id: string;
+  /** Room slug; selects the seat query keys. */
+  room: string;
+  /** Seat member key within the room. */
+  seat_key: string;
+  /** Display name for the toast; falls back to seat_key. */
+  name?: string;
+}
+
+/**
+ * Room event payload (room create/delete, and company settings as id 'company').
+ */
+export interface RoomEventPayload {
+  /** Room slug ('company' for the company settings change). */
+  id: string;
+  /** Room slug. */
+  room: string;
+  /** Display name for the toast. */
+  name?: string;
+}
+
+// =============================================================================
 // WEBSOCKET MESSAGE STRUCTURE (v2.0)
 // =============================================================================
 
@@ -232,7 +264,7 @@ export interface WSMetadata {
  * WebSocket payload structure
  */
 export interface WSPayload<T = any> {
-  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'agent';
+  entity: 'project' | 'branch' | 'task' | 'subtask' | 'context' | 'agent' | 'seat' | 'room';
   action: 'created' | 'updated' | 'deleted' | 'completed' | 'assigned' | 'unassigned';
   data: {
     primary: T;           // Main entity data (MUST include 'id' field)
