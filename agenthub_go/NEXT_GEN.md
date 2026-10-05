@@ -170,6 +170,21 @@ Two structural gaps beyond the copy: `index.html` carries **no `og:` tags at all
 
 One seat owns both `LandingPage.tsx` and `index.html`; the `writer` seat reviews the copy before it lands rather than editing the same file.
 
+**(H) SEATS CAN REPORT FRICTION (owner directive, 2026-10-05).** Owner's words: *"when these llm use 4genthub and openrig, if have contraint or need improve, they can feedback for we can make better"*. The seats are the only users of this platform who hit its edges every day, and today their friction dies in a transcript. This is the channel that captures it.
+
+Four owner decisions, all recorded as chosen:
+
+1. **One endpoint, two front doors.** `POST /api/v2/openrig/feedback`. A claude-code seat calls an MCP tool; an `omp` or codex seat — which has no MCP at all — runs a shell command. Both write the same record, so every runtime can submit.
+2. **One line at submit time, with optional detail.** The seat writes a sentence; the client attaches rig, seat, runtime, model, timestamp, cwd and the row in flight. Optional flags add `--layer openrig|cloud|project|role` and `--severity blocked|annoying|idea`. Capture must stay cheap while a seat is mid-task, or it will not happen.
+3. **Stored in the cloud, read in the frontend.** A `seat_feedback` table per user and workspace, and a page that groups by layer and shows recurrence, so a theme that four seats hit is visible as four, not as four separate notes.
+4. **Built in 4genthub, not in OpenRig.** The seats already carry a token and already POST upward, so no OpenRig change is needed and the channel stays generic for every project.
+
+**The seam is already there, and it carries one constraint that must be handled deliberately.** `POST /api/v2/openrig/seat-status` is wrapped in `machineAuthed(sessions, func(w, r, token *repositories.MachineToken))` (`seat_status_mount.go:91`), and the machine-token doc comment states the rule plainly: *"A machine token is valid on one route, POST /api/v2/openrig/seat-status, and only for the [token's] machine"* (`machine_token_mount.go:8`). Adding a second route means **widening that contract on purpose** — a documented second valid route — rather than discovering later that a token silently stopped working. The read side is the easy half: `GET` takes the ordinary user token via `authed` and is tenant-scoped by the caller's user id, exactly as `GET /api/v2/openrig/machines` does.
+
+Two more things the existing endpoint already does that this one should copy rather than reinvent: **every string field is scanned for credentials before storage** — so a seat pasting a token into its own feedback does not store a secret, and the `secretscan` package already exists for it — and **reports store under the token's user and machine**, which is the tenancy this table needs too.
+
+Acceptance: a seat on a runtime without MCP can submit from the shell; a claude-code seat can submit by tool call; both appear in the same list; and a submission carrying something credential-shaped is stored with that field redacted rather than rejected or leaked.
+
 **Never moved, whatever else changes.** All of `adapters/` (tmux plus the five runtime adapters), `terminal/TerminalSessionBroker.ts`, the `daemon-lifecycle*` scripts, `restore-packet/*` transcript parsers, and the vendor-local readers (`claude-usage-reader`, `codex-auth-reader`). These are this machine's processes, and the Direction above already assigns them to the client. Do not port the 92 SQLite migrations either: the cloud schema already exists as Postgres DDL and is re-derived, not translated.
 
 **D1-D4 slice plan (2026-10-05).** The decisions above are the owner's wording; this is the pointer table to the work, so a reader can find it without the queue. Row ids are the durable addresses.
