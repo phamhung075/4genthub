@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — the TS mcp parse mirror matches Go on emptiness (frontend)
+
+- `src/tests/utils/mcpBlock.test.ts` gains two cases pinned to the authority's rule: an EMPTY string on the transport a
+  block does not use (`{"type":"stdio","command":"x","url":""}` and
+  `{"type":"http","url":"https://x.test","command":""}`) is accepted, because `mcpblock.Parse` tests
+  `server.Command != ""` and `server.URL != ""` rather than presence; the NON-empty forms on the wrong transport are
+  still refused. The control - a stdio block with an EMPTY `headers` object, which Go accepts because
+  `len(server.Headers) > 0` is false for `{}` - keeps agreeing, which is what shows the rule is about emptiness rather
+  than about optional fields.
+- Mutation proof: reverting both predicates in `src/lib/mcpBlock.ts` fails exactly the new "accepts an EMPTY string"
+  case (`expected false to be true`) with the other 26 passing in that file; restoring gives 27 passed.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/utils/mcpBlock.test.ts` -> 27 passed;
+  `npx vitest run` -> 102 files / 1740 tests passed; `npx vite build` -> ok. Found by the gate on `88fe3852`.
+
 ## 2026-10-05 — publish-skills + skill blocks (scripts + Go seeds/renderer)
 
 - `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains six cases for `publish-skills` over a fixture library (a canonical-only skill, a plugin-only skill, and a canonical/plugin overlap), reusing the file's recording HTTP server: one block per skill with the exact provenance dict; the plugin-only skill sources from the plugin path with no mirror; the overlap is ONE module carrying canonical `source_path`/`sha256` plus `mirror_path`/`mirror_sha256` (three PUTs, not four); a re-run skips all three with no request; changed content lands at the next patch; a credential-shaped literal is refused with exit 2 and zero requests; a source file that no longer matches the inventory digest is refused as stale; a missing `--source-root`/`OPENRIG_SKILLS_ROOT` is a usage error. The two `import-project` skill assertions now check the block shape and its computed digest.

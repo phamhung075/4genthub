@@ -211,6 +211,18 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The mcp parse mirror tests non-emptiness, as Go does** - 2026-10-05
+  - `src/lib/mcpBlock.ts` refused two blocks the server accepts: it tested PRESENCE (`raw.command !== undefined` on an
+    http block, `raw.url !== undefined` on a stdio block) where `mcpblock.Parse` tests NON-EMPTINESS
+    (`server.Command != ""`, `server.URL != ""`). So `{"name":"a","type":"stdio","command":"x","url":""}` and
+    `{"name":"a","type":"http","url":"https://x.test","command":""}` came back as an error from the preview and `nil`
+    from the authority.
+  - Both checks now test non-emptiness: an empty string on the transport a block does not use is accepted, a NON-empty
+    field on the wrong transport is still refused, and the empty-`headers` control still agrees because Go's
+    `len(server.Headers) > 0` is false for `{}`. Found by the gate on `88fe3852`; the divergence was one-directional
+    with TS the stricter side, so the failure mode was a user-visible false refusal rather than a false accept.
+  - Tests: the two differential cases and the control are pinned in `src/tests/utils/mcpBlock.test.ts` (27 in the
+    file); reverting both predicates fails exactly the new case and nothing else.
 - **Runaway frontend test run drained the machine** - 2026-10-05
   - `package.json` declared `"test": "vitest"`, which starts Vitest in **watch mode** — a plain `npm test` never exits,
     so a forgotten run keeps its jsdom workers alive. It is now `"test": "vitest run"`, with `"test:watch": "vitest"`

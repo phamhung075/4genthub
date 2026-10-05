@@ -120,7 +120,7 @@ export function parseMcpBlock(content: string): McpBlockParse {
     if (url === '') {
       return { ok: false, error: 'field url is required for a "http" server' };
     }
-    if (raw.command !== undefined || (args?.length ?? 0) > 0 || (env && Object.keys(env).length > 0)) {
+    if ((raw.command !== undefined && raw.command !== '') || (args?.length ?? 0) > 0 || (env && Object.keys(env).length > 0)) {
       return { ok: false, error: 'a "http" server takes url and headers, not command, args or env' };
     }
     const urlError = checkURL(url);
@@ -132,7 +132,7 @@ export function parseMcpBlock(content: string): McpBlockParse {
   if (command === '') {
     return { ok: false, error: 'field command is required for a "stdio" server' };
   }
-  if (raw.url !== undefined || (headers && Object.keys(headers).length > 0)) {
+  if ((raw.url !== undefined && raw.url !== '') || (headers && Object.keys(headers).length > 0)) {
     return { ok: false, error: 'a "stdio" server takes command, args and env, not url or headers' };
   }
   return {
