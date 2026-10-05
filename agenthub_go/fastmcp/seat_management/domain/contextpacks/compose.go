@@ -175,9 +175,13 @@ func ComposeProfile(in ComposeInput) (ComposedProfile, error) {
 	for len(queue) > 0 {
 		id := queue[len(queue)-1]
 		queue = queue[:len(queue)-1]
+		// The queue only ever holds ids that were added to selected — the seed at the top and each
+		// required atom just below — so a miss is an internal invariant violation, not input. Fail
+		// loud rather than closing over the zero Atom, which would silently thin the walk.
 		atom, ok := selected[id]
 		if !ok {
-			atom = byID[id]
+			return ComposedProfile{}, &ProfileComposeError{Msg: fmt.Sprintf(
+				"internal invariant violated: atom %q was queued for closure but is not selected", id)}
 		}
 		for _, req := range atom.Requires {
 			if _, ok := selected[req]; ok {
