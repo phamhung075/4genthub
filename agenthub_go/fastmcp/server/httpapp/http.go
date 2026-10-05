@@ -156,7 +156,7 @@ const healthServerName = config.ServerName
 // healthVersion is the release the server reports on /health. Bump it with every
 // change that must be confirmable after a deploy: the Docker build context has
 // no .git, so no commit id can be embedded.
-const healthVersion = "0.0.17"
+const healthVersion = "0.0.18"
 
 // healthProcessStart is the process start time captured at init; /health reports seconds since it.
 // The Python handler read uptime from the connection manager, an object the Go server never had.
