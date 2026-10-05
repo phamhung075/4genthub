@@ -311,6 +311,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          url: 'http://localhost:8000/api/v2/subtasks?task_id=task-1',  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           headers: new Headers(),  // Add headers to prevent logging error
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
@@ -361,6 +362,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          url: `http://localhost:8000/api/v2/subtasks/${validSubtaskId}`,  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
 
@@ -409,6 +411,7 @@ describe('DTO Integration Tests - Backend to Frontend', () => {
 
         (global.fetch as any).mockResolvedValue({
           ok: true,
+          url: 'http://localhost:8000/api/v2/subtasks',  // a real Response always has one; the subtask calls pass no endpoint to handleResponse
           json: vi.fn().mockResolvedValue(mockBackendResponse)
         });
 

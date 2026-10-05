@@ -1,6 +1,6 @@
 ---
 description: PRD
-globs: 
+globs:
 alwaysApply: false
 ---
 # 4genthub Multi-Project AI Orchestration Platform - Product Requirements Document (PRD)
@@ -90,7 +90,7 @@ The agenthub platform provides:
 │  Interface Layer (15+ MCP Tool Categories)                      │
 │  ├── Task Management (manage_task, manage_subtask)             │
 │  ├── Project Management (manage_project, manage_git_branch)     │
-│  ├── Agent Management (call_agent, manage_agent)               │
+│  ├── Seat Model (manage_seat, call_seat) + Agent Registry               │
 │  ├── Context Management (manage_context, hierarchical)         │
 │  ├── Rule Management (manage_rule)                             │
 │  └── Connection/Compliance Tools                               │
@@ -142,9 +142,9 @@ The agenthub platform provides:
 ### Primary User Stories
 
 #### US001: Multi-Agent Task Execution
-**As a** developer working on complex features  
-**I want to** assign tasks to specialized AI agents  
-**So that** I can leverage domain expertise for optimal results  
+**As a** developer working on complex features
+**I want to** assign tasks to specialized AI agents
+**So that** I can leverage domain expertise for optimal results
 
 **Acceptance Criteria:**
 - I can call any of 60+ specialized agents
@@ -153,9 +153,9 @@ The agenthub platform provides:
 - Vision System provides workflow guidance
 
 #### US002: Multi-Project Management
-**As a** project manager  
-**I want to** manage multiple concurrent projects  
-**So that** resources are optimally allocated  
+**As a** project manager
+**I want to** manage multiple concurrent projects
+**So that** resources are optimally allocated
 
 **Acceptance Criteria:**
 - Create and manage multiple projects
@@ -164,9 +164,9 @@ The agenthub platform provides:
 - Prioritize tasks across projects
 
 #### US003: Hierarchical Context Management
-**As a** team member  
-**I want** context to flow between related tasks  
-**So that** no information is lost  
+**As a** team member
+**I want** context to flow between related tasks
+**So that** no information is lost
 
 **Acceptance Criteria:**
 - Context inherits from Global→Project→Branch→Task
@@ -177,9 +177,9 @@ The agenthub platform provides:
 ### Secondary User Stories
 
 #### US004: Vision System Guidance
-**As a** developer  
-**I want** intelligent workflow suggestions  
-**So that** I follow optimal development patterns  
+**As a** developer
+**I want** intelligent workflow suggestions
+**So that** I follow optimal development patterns
 
 **Acceptance Criteria:**
 - Every task includes vision-enriched guidance
@@ -188,9 +188,9 @@ The agenthub platform provides:
 - Multi-agent coordination is suggested
 
 #### US005: Enterprise Performance
-**As a** system administrator  
-**I want** reliable high-performance operation  
-**So that** the platform scales with our needs  
+**As a** system administrator
+**I want** reliable high-performance operation
+**So that** the platform scales with our needs
 
 **Acceptance Criteria:**
 - Sustain 15,255+ RPS
@@ -234,7 +234,7 @@ The agenthub platform provides:
 #### Acceptance Criteria:
 - [x] 60+ agents fully implemented
 - [x] Each agent has unique capabilities
-- [x] Agent switching via call_agent tool
+- [x] Seat resolution via call_seat tool
 - [x] Context preserved between agents
 
 ### 3. 4-Tier Hierarchical Context System ✅ **IMPLEMENTED**

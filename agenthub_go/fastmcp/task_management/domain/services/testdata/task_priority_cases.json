@@ -1,0 +1,246 @@
+{
+ "scores": {
+  "00000000-0000-4000-8000-000000000001": 33.0,
+  "00000000-0000-4000-8000-000000000002": 53.0,
+  "00000000-0000-4000-8000-000000000003": 64.5,
+  "00000000-0000-4000-8000-000000000004": 25.0,
+  "00000000-0000-4000-8000-000000000005": 50.5,
+  "00000000-0000-4000-8000-000000000006": 36.5,
+  "00000000-0000-4000-8000-000000000007": 51.0
+ },
+ "ctx": {
+  "00000000-0000-4000-8000-000000000001": 45.0,
+  "00000000-0000-4000-8000-000000000002": 65.0,
+  "00000000-0000-4000-8000-000000000003": 76.5,
+  "00000000-0000-4000-8000-000000000004": 37.0,
+  "00000000-0000-4000-8000-000000000005": 62.5,
+  "00000000-0000-4000-8000-000000000006": 48.5,
+  "00000000-0000-4000-8000-000000000007": 63.0
+ },
+ "bad_ctx": 0.0,
+ "order": [
+  [
+   "00000000-0000-4000-8000-000000000003",
+   64.5,
+   "critical",
+   "review",
+   {
+    "base_priority": {
+     "value": "critical",
+     "score": 100.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 100.0,
+    "progress_factor": {
+     "status": "review",
+     "score": 80.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000002",
+   53.0,
+   "high",
+   "in_progress",
+   {
+    "base_priority": {
+     "value": "high",
+     "score": 75.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 60.0,
+    "progress_factor": {
+     "status": "in_progress",
+     "score": 100.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000007",
+   51.0,
+   "high",
+   "todo",
+   {
+    "base_priority": {
+     "value": "high",
+     "score": 75.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 80.0,
+    "progress_factor": {
+     "status": "todo",
+     "score": 50.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000005",
+   50.5,
+   "urgent",
+   "done",
+   {
+    "base_priority": {
+     "value": "urgent",
+     "score": 90.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 80.0,
+    "progress_factor": {
+     "status": "done",
+     "score": 0.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000006",
+   36.5,
+   "medium",
+   "testing",
+   {
+    "base_priority": {
+     "value": "medium",
+     "score": 50.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 20.0,
+    "progress_factor": {
+     "status": "testing",
+     "score": 70.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000001",
+   33.0,
+   "medium",
+   "todo",
+   {
+    "base_priority": {
+     "value": "medium",
+     "score": 50.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 10.0,
+    "progress_factor": {
+     "status": "todo",
+     "score": 50.0
+    }
+   }
+  ],
+  [
+   "00000000-0000-4000-8000-000000000004",
+   25.0,
+   "low",
+   "blocked",
+   {
+    "base_priority": {
+     "value": "low",
+     "score": 25.0
+    },
+    "urgency": {
+     "due_date": null,
+     "score": 30.0
+    },
+    "blocking_factor": {
+     "dependent_tasks": 0,
+     "score": 20.0
+    },
+    "age_factor": 40.0,
+    "progress_factor": {
+     "status": "blocked",
+     "score": 0.0
+    }
+   }
+  ]
+ ],
+ "rec": {
+  "task_id": "00000000-0000-4000-8000-000000000003",
+  "title": "t3",
+  "priority_score": 64.5,
+  "recommendation_reason": "Recommended because: critical priority",
+  "alternative_tasks": [
+   {
+    "task_id": "00000000-0000-4000-8000-000000000002",
+    "title": "t2",
+    "priority_score": 53.0
+   },
+   {
+    "task_id": "00000000-0000-4000-8000-000000000007",
+    "title": "t7",
+    "priority_score": 51.0
+   }
+  ],
+  "total_eligible_tasks": 6
+ },
+ "rec_excl": {
+  "task_id": "00000000-0000-4000-8000-000000000003",
+  "title": "t3",
+  "priority_score": 64.5,
+  "recommendation_reason": "Recommended because: critical priority",
+  "alternative_tasks": [
+   {
+    "task_id": "00000000-0000-4000-8000-000000000007",
+    "title": "t7",
+    "priority_score": 51.0
+   },
+   {
+    "task_id": "00000000-0000-4000-8000-000000000006",
+    "title": "t6",
+    "priority_score": 36.5
+   }
+  ],
+  "total_eligible_tasks": 5
+ },
+ "adjust": {
+  "00000000-0000-4000-8000-000000000001": 1.2,
+  "00000000-0000-4000-8000-000000000002": 1.2,
+  "00000000-0000-4000-8000-000000000003": 1.0,
+  "00000000-0000-4000-8000-000000000004": 1.0,
+  "00000000-0000-4000-8000-000000000005": 1.2,
+  "00000000-0000-4000-8000-000000000006": 0.9,
+  "00000000-0000-4000-8000-000000000007": 0.9
+ },
+ "adjust_none": 1.0
+}

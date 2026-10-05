@@ -1,0 +1,775 @@
+{
+ "health": [
+  [
+   [
+    "healthy",
+    "c",
+    1.5,
+    2.5,
+    {
+     "n": "x"
+    },
+    [],
+    []
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "status",
+       "healthy"
+      ],
+      [
+       "connection_id",
+       "c"
+      ],
+      [
+       "idle_time_seconds",
+       1.5
+      ],
+      [
+       "duration_seconds",
+       2.5
+      ],
+      [
+       "client_info",
+       {
+        "__od__": [
+         [
+          "n",
+          "x"
+         ]
+        ]
+       }
+      ],
+      [
+       "issues",
+       []
+      ],
+      [
+       "recommendations",
+       []
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    "unhealthy",
+    "c",
+    0,
+    0,
+    {},
+    [
+     "i"
+    ],
+    [
+     "r"
+    ]
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "status",
+       "unhealthy"
+      ],
+      [
+       "connection_id",
+       "c"
+      ],
+      [
+       "idle_time_seconds",
+       0
+      ],
+      [
+       "duration_seconds",
+       0
+      ],
+      [
+       "client_info",
+       {
+        "__od__": []
+       }
+      ],
+      [
+       "issues",
+       [
+        "i"
+       ]
+      ],
+      [
+       "recommendations",
+       [
+        "r"
+       ]
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    "weird",
+    "c",
+    0,
+    0,
+    {},
+    [],
+    []
+   ],
+   {
+    "err": "Invalid status: weird. Must be 'healthy' or 'unhealthy'"
+   }
+  ],
+  [
+   [
+    "healthy",
+    "c",
+    -1,
+    0,
+    {},
+    [],
+    []
+   ],
+   {
+    "err": "Idle time seconds cannot be negative"
+   }
+  ],
+  [
+   [
+    "healthy",
+    "c",
+    0,
+    -0.5,
+    {},
+    [],
+    []
+   ],
+   {
+    "err": "Duration seconds cannot be negative"
+   }
+  ]
+ ],
+ "status": [
+  [
+   [
+    "healthy",
+    "s",
+    "1.0",
+    5.5,
+    2,
+    {
+     "__od__": [
+      [
+       "status",
+       "healthy"
+      ],
+      [
+       "uptime_seconds",
+       5.5
+      ],
+      [
+       "extra",
+       {
+        "__od__": [
+         [
+          "x",
+          1
+         ]
+        ]
+       }
+      ]
+     ]
+    }
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "status",
+       "healthy"
+      ],
+      [
+       "server_name",
+       "s"
+      ],
+      [
+       "version",
+       "1.0"
+      ],
+      [
+       "uptime_seconds",
+       5.5
+      ],
+      [
+       "restart_count",
+       2
+      ],
+      [
+       "extra",
+       {
+        "__od__": [
+         [
+          "x",
+          1
+         ]
+        ]
+       }
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    "unhealthy",
+    "s",
+    "1",
+    0.0,
+    0,
+    {
+     "__od__": []
+    }
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "status",
+       "unhealthy"
+      ],
+      [
+       "server_name",
+       "s"
+      ],
+      [
+       "version",
+       "1"
+      ],
+      [
+       "uptime_seconds",
+       0.0
+      ],
+      [
+       "restart_count",
+       0
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    "x",
+    "s",
+    "1",
+    0,
+    0,
+    {
+     "__od__": []
+    }
+   ],
+   {
+    "err": "Invalid status: x. Must be 'healthy' or 'unhealthy'"
+   }
+  ],
+  [
+   [
+    "healthy",
+    "s",
+    "1",
+    -1,
+    0,
+    {
+     "__od__": []
+    }
+   ],
+   {
+    "err": "Uptime seconds cannot be negative"
+   }
+  ],
+  [
+   [
+    "healthy",
+    "s",
+    "1",
+    0,
+    -1,
+    {
+     "__od__": []
+    }
+   ],
+   {
+    "err": "Restart count cannot be negative"
+   }
+  ]
+ ],
+ "caps": [
+  [
+   [
+    [
+     "f"
+    ],
+    {
+     "__od__": [
+      [
+       "x",
+       [
+        "a",
+        "b"
+       ]
+      ],
+      [
+       "y",
+       [
+        "c"
+       ]
+      ]
+     ]
+    },
+    true,
+    false,
+    "1.0"
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "f"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "x",
+          [
+           "a",
+           "b"
+          ]
+         ],
+         [
+          "y",
+          [
+           "c"
+          ]
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       true
+      ],
+      [
+       "mvp_mode",
+       false
+      ],
+      [
+       "version",
+       "1.0"
+      ],
+      [
+       "total_actions",
+       3
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    [
+     "f"
+    ],
+    {
+     "__od__": [
+      [
+       "x",
+       []
+      ]
+     ]
+    },
+    "yes",
+    null,
+    "v"
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "success",
+       true
+      ],
+      [
+       "core_features",
+       [
+        "f"
+       ]
+      ],
+      [
+       "available_actions",
+       {
+        "__od__": [
+         [
+          "x",
+          []
+         ]
+        ]
+       }
+      ],
+      [
+       "authentication_enabled",
+       "yes"
+      ],
+      [
+       "mvp_mode",
+       null
+      ],
+      [
+       "version",
+       "v"
+      ],
+      [
+       "total_actions",
+       0
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    [],
+    {
+     "__od__": [
+      [
+       "x",
+       [
+        "a"
+       ]
+      ]
+     ]
+    },
+    true,
+    true,
+    "1"
+   ],
+   {
+    "err": "Core features cannot be empty"
+   }
+  ],
+  [
+   [
+    [
+     "f"
+    ],
+    {
+     "__od__": []
+    },
+    true,
+    true,
+    "1"
+   ],
+   {
+    "err": "Available actions cannot be empty"
+   }
+  ],
+  [
+   [
+    [
+     "f"
+    ],
+    {
+     "__od__": [
+      [
+       "x",
+       [
+        "a"
+       ]
+      ]
+     ]
+    },
+    true,
+    true,
+    ""
+   ],
+   {
+    "err": "Version cannot be empty"
+   }
+  ]
+ ],
+ "caps_methods": {
+  "total": 2,
+  "f": [
+   true,
+   false
+  ],
+  "c": [
+   true,
+   false
+  ]
+ },
+ "su": [
+  [
+   [
+    "server_health_changed",
+    {
+     "__dt__": "2026-03-01T09:30:15.250000"
+    },
+    {
+     "__od__": [
+      [
+       "k",
+       1
+      ]
+     ]
+    },
+    "s"
+   ],
+   {
+    "ok": {
+     "__od__": [
+      [
+       "event_type",
+       "server_health_changed"
+      ],
+      [
+       "timestamp",
+       "2026-03-01T09:30:15.250000"
+      ],
+      [
+       "session_id",
+       "s"
+      ],
+      [
+       "data",
+       {
+        "__od__": [
+         [
+          "k",
+          1
+         ]
+        ]
+       }
+      ]
+     ]
+    }
+   }
+  ],
+  [
+   [
+    "",
+    {
+     "__dt__": "2026-03-01T09:30:15.250000"
+    },
+    {
+     "__od__": []
+    },
+    "s"
+   ],
+   {
+    "err": "Event type cannot be empty"
+   }
+  ],
+  [
+   [
+    "connection_lost",
+    {
+     "__dt__": "2026-03-01T09:30:15.250000"
+    },
+    {
+     "__od__": []
+    },
+    ""
+   ],
+   {
+    "err": "Session ID cannot be empty"
+   }
+  ],
+  [
+   [
+    "bogus",
+    {
+     "__dt__": "2026-03-01T09:30:15.250000"
+    },
+    {
+     "__od__": []
+    },
+    "s"
+   ],
+   {
+    "err": "Invalid event type: bogus. Must be one of ['server_health_changed', 'connection_established', 'connection_lost', 'status_broadcast', 'client_registered', 'client_unregistered']"
+   }
+  ]
+ ],
+ "fact": [
+  {
+   "ok": {
+    "__od__": [
+     [
+      "event_type",
+      "server_health_changed"
+     ],
+     [
+      "timestamp",
+      "2026-03-01T10:00:00.500000"
+     ],
+     [
+      "session_id",
+      "s"
+     ],
+     [
+      "data",
+      {
+       "__od__": [
+        [
+         "health_status",
+         "override"
+        ],
+        [
+         "uptime",
+         1
+        ]
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "ok": {
+    "__od__": [
+     [
+      "event_type",
+      "connection_established"
+     ],
+     [
+      "timestamp",
+      "2026-03-01T10:00:00.500000"
+     ],
+     [
+      "session_id",
+      "s"
+     ],
+     [
+      "data",
+      {
+       "__od__": [
+        [
+         "connection_id",
+         "c1"
+        ]
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "ok": {
+    "__od__": [
+     [
+      "event_type",
+      "connection_lost"
+     ],
+     [
+      "timestamp",
+      "2026-03-01T10:00:00.500000"
+     ],
+     [
+      "session_id",
+      "s"
+     ],
+     [
+      "data",
+      {
+       "__od__": [
+        [
+         "connection_id",
+         "c1"
+        ]
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "err": "Invalid event type: connection_weird. Must be one of ['server_health_changed', 'connection_established', 'connection_lost', 'status_broadcast', 'client_registered', 'client_unregistered']"
+  },
+  {
+   "ok": {
+    "__od__": [
+     [
+      "event_type",
+      "client_registered"
+     ],
+     [
+      "timestamp",
+      "2026-03-01T10:00:00.500000"
+     ],
+     [
+      "session_id",
+      "s"
+     ],
+     [
+      "data",
+      {
+       "__od__": []
+      }
+     ]
+    ]
+   }
+  },
+  {
+   "ok": {
+    "__od__": [
+     [
+      "event_type",
+      "client_unregistered"
+     ],
+     [
+      "timestamp",
+      "2026-03-01T10:00:00.500000"
+     ],
+     [
+      "session_id",
+      "s"
+     ],
+     [
+      "data",
+      {
+       "__od__": []
+      }
+     ]
+    ]
+   }
+  }
+ ]
+}

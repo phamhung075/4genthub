@@ -25,9 +25,6 @@ from ..application.services.facade_service import FacadeService
 if TYPE_CHECKING:
     pass
 
-# Agent management imports (new implementation)
-from fastmcp.agent_management.interface.mcp_controllers import CallAgentMCPController
-
 # Infrastructure layer imports (proper DDD dependency direction)
 from ..infrastructure.configuration.tool_config import ToolConfig
 from ..infrastructure.repositories.subtask_repository_factory import (
@@ -38,9 +35,6 @@ from ..infrastructure.utilities.path_resolver import PathResolver
 from .mcp_controllers.agent_mcp_controller.agent_mcp_controller import (
     AgentMCPController,
 )
-
-# Claude agent controller removed
-# CallAgentMCPController now imported from agent_management module (see line 28)
 from .mcp_controllers.git_branch_mcp_controller.git_branch_mcp_controller import (
     GitBranchMCPController,
 )
@@ -180,12 +174,6 @@ class DDDCompliantMCPTools:
             facade_service=self._facade_service, config=self._config
         )
 
-        # Initialize new call agent controller (agent_management module)
-        # This uses the database-backed user agent instance system
-        self._call_agent_controller = CallAgentMCPController()
-
-        # Claude agent controller removed
-
         # Initialize cursor rules tools (DDD-compliant)
         # FIXED: Commented out non-existent module import
         # from .cursor_rules_tools_ddd import CursorRulesToolsDDD
@@ -249,11 +237,8 @@ class DDDCompliantMCPTools:
         # Register git branch management tools
         self._register_git_branch_tools(mcp)
 
-        # Register unified agent management and invocation tools
+        # Register unified agent management tools
         self._register_agent_tools(mcp)
-
-        # Register call_agent tool separately for backward compatibility
-        self._register_call_agent_tool(mcp)
 
         # Register cursor rules tools
         self._register_cursor_rules_tools(mcp)
@@ -301,7 +286,7 @@ class DDDCompliantMCPTools:
             )
 
     def _register_agent_tools(self, mcp: FastMCP):
-        """Register unified agent management and invocation MCP tools via controller"""
+        """Register unified agent management MCP tools via controller"""
         # FIXED: Use correct attribute name
         if hasattr(self, "_agent_controller"):
             self._agent_controller.register_tools(mcp)
@@ -315,16 +300,6 @@ class DDDCompliantMCPTools:
             self._cursor_rules_tools.register_tools(mcp)
         else:
             logger.info("Cursor rules tools disabled - module not available")
-
-    def _register_call_agent_tool(self, mcp: FastMCP):
-        """Register call agent MCP tool via controller"""
-        if self._call_agent_controller:
-            self._call_agent_controller.register_tools(mcp)
-            logger.info("Call agent tool registered successfully")
-        else:
-            logger.warning(
-                "Call agent controller not available - skipping call_agent tool registration"
-            )
 
     def _register_vision_enhanced_tools(self, mcp: FastMCP):
         """Register Vision System enhanced tools"""
@@ -376,11 +351,6 @@ class DDDCompliantMCPTools:
     def agent_controller(self) -> AgentMCPController:
         """Get the agent controller for direct access"""
         return self._agent_controller
-
-    @property
-    def call_agent_controller(self) -> CallAgentMCPController:
-        """Get the call agent controller for direct access"""
-        return self._call_agent_controller
 
     # Vision System Properties
     @property
@@ -438,7 +408,3 @@ class DDDCompliantMCPTools:
     def manage_agent(self, **kwargs) -> dict[str, Any]:
         """Wrapper method for agent management - delegates to agent controller"""
         return self._agent_controller.manage_agent(**kwargs)
-
-    def call_agent(self, **kwargs) -> dict[str, Any]:
-        """Wrapper method for agent calls - delegates to call agent controller"""
-        return self._call_agent_controller.call_agent(**kwargs)

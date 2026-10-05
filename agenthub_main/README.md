@@ -324,7 +324,8 @@ manage_context       # Context management
 manage_project       # Project operations
 manage_git_branch    # Git branch management
 manage_agent         # Agent registration and assignment
-call_agent           # Load agent configuration
+manage_seat          # Seat model: list, get, set occupant
+call_seat            # Resolve one exact seat
 ```
 
 ### REST API (Alternative)

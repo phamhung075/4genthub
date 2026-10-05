@@ -1,0 +1,441 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "type": "object",
+ "title": "Task Context Schema",
+ "description": "Schema for task context JSON files",
+ "version": "1.0",
+ "required": [
+  "metadata",
+  "objective"
+ ],
+ "properties": {
+  "metadata": {
+   "type": "object",
+   "required": [
+    "task_id"
+   ],
+   "properties": {
+    "task_id": {
+     "type": "string"
+    },
+    "status": {
+     "type": "string",
+     "enum": [
+      "todo",
+      "in_progress",
+      "blocked",
+      "review",
+      "testing",
+      "done",
+      "cancelled"
+     ]
+    },
+    "priority": {
+     "type": "string",
+     "enum": [
+      "low",
+      "medium",
+      "high",
+      "urgent",
+      "critical"
+     ]
+    },
+    "assignees": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "labels": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "created_at": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "updated_at": {
+     "type": "string",
+     "format": "date-time"
+    },
+    "version": {
+     "type": "integer",
+     "minimum": 1
+    }
+   }
+  },
+  "objective": {
+   "type": "object",
+   "required": [
+    "title"
+   ],
+   "properties": {
+    "title": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    },
+    "estimated_effort": {
+     "type": "string",
+     "enum": [
+      "quick",
+      "short",
+      "small",
+      "medium",
+      "large",
+      "xlarge",
+      "epic",
+      "massive"
+     ]
+    },
+    "due_date": {
+     "type": [
+      "string",
+      "null"
+     ],
+     "format": "date"
+    }
+   }
+  },
+  "requirements": {
+   "type": "object",
+   "properties": {
+    "checklist": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "id",
+       "title"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "title": {
+        "type": "string"
+       },
+       "completed": {
+        "type": "boolean",
+        "default": false
+       },
+       "priority": {
+        "type": "string",
+        "enum": [
+         "low",
+         "medium",
+         "high"
+        ]
+       },
+       "notes": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "custom_requirements": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "completion_criteria": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "technical": {
+   "type": "object",
+   "properties": {
+    "technologies": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "frameworks": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "database": {
+     "type": "string"
+    },
+    "key_files": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "key_directories": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "architecture_notes": {
+     "type": "string"
+    },
+    "patterns_used": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "dependencies": {
+   "type": "object",
+   "properties": {
+    "task_dependencies": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "task_id"
+      ],
+      "properties": {
+       "task_id": {
+        "type": "string"
+       },
+       "title": {
+        "type": "string"
+       },
+       "status": {
+        "type": "string"
+       },
+       "blocking_reason": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "external_dependencies": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "blocked_by": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "progress": {
+   "type": "object",
+   "properties": {
+    "completed_actions": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "timestamp",
+       "action",
+       "agent"
+      ],
+      "properties": {
+       "timestamp": {
+        "type": "string",
+        "format": "date-time"
+       },
+       "action": {
+        "type": "string"
+       },
+       "agent": {
+        "type": "string"
+       },
+       "details": {
+        "type": "string"
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "completed",
+         "in_progress",
+         "failed"
+        ]
+       }
+      }
+     }
+    },
+    "current_session_summary": {
+     "type": "string"
+    },
+    "next_steps": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "completion_percentage": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    },
+    "time_spent_minutes": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  },
+  "subtasks": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "id",
+       "title"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "title": {
+        "type": "string"
+       },
+       "description": {
+        "type": "string"
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "todo",
+         "in_progress",
+         "done",
+         "cancelled"
+        ]
+       },
+       "assignees": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "completed": {
+        "type": "boolean"
+       },
+       "progress_notes": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "total_count": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "completed_count": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "progress_percentage": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 100
+    }
+   }
+  },
+  "notes": {
+   "type": "object",
+   "properties": {
+    "agent_insights": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "timestamp",
+       "agent",
+       "category",
+       "content"
+      ],
+      "properties": {
+       "timestamp": {
+        "type": "string",
+        "format": "date-time"
+       },
+       "agent": {
+        "type": "string"
+       },
+       "category": {
+        "type": "string",
+        "enum": [
+         "insight",
+         "challenge",
+         "solution",
+         "decision"
+        ]
+       },
+       "content": {
+        "type": "string"
+       },
+       "importance": {
+        "type": "string",
+        "enum": [
+         "low",
+         "medium",
+         "high",
+         "critical"
+        ]
+       }
+      }
+     }
+    },
+    "challenges_encountered": {
+     "type": "array",
+     "items": {
+      "$ref": "#/properties/notes/properties/agent_insights/items"
+     }
+    },
+    "solutions_applied": {
+     "type": "array",
+     "items": {
+      "$ref": "#/properties/notes/properties/agent_insights/items"
+     }
+    },
+    "decisions_made": {
+     "type": "array",
+     "items": {
+      "$ref": "#/properties/notes/properties/agent_insights/items"
+     }
+    },
+    "general_notes": {
+     "type": "string"
+    }
+   }
+  },
+  "custom_sections": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "data": {
+      "type": "object"
+     },
+     "schema_version": {
+      "type": "string",
+      "default": "1.0"
+     }
+    }
+   }
+  }
+ }
+}

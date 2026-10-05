@@ -2,7 +2,6 @@
 // All operations use the V2 authenticated endpoints
 
 import {
-    agentApiV2,
     branchApiV2,
     contextApiV2,
     getCurrentUserId,
@@ -11,6 +10,7 @@ import {
     subtaskApiV2,
     taskApiV2
 } from './services/apiV2';
+import { seatApi } from './services/seatApi';
 import type {
     AgentsResponse,
     ApiResponse,
@@ -136,7 +136,7 @@ export const searchTasks = async (query: string, params?: { git_branch_id?: stri
     // Search functionality can be implemented on frontend by filtering list results
     const tasks = await listTasks(params);
     const searchLower = query.toLowerCase();
-    return tasks.filter(task => 
+    return tasks.filter(task =>
         task.title.toLowerCase().includes(searchLower) ||
         task.description?.toLowerCase().includes(searchLower)
     );
@@ -217,30 +217,11 @@ export const deleteProject = async (project_id: string): Promise<DeleteResponse>
 };
 
 // --- Branch Operations ---
-export const listBranches = async (project_id: string): Promise<Branch[]> => {
-    try {
-        const response = await branchApiV2.getBranches(project_id) as BranchesResponse;
-        return response.branches || [];
-    } catch (error) {
-        logger.error('listBranches: Error fetching branches:', error);
-        throw error;
-    }
-};
-
 // Get bulk summaries using the new optimized endpoint
 export const createBranch = async (project_id: string, branch: Partial<Branch>): Promise<Branch> => {
     const response = await branchApiV2.createBranch(project_id, {
         git_branch_name: branch.git_branch_name || '',
         description: branch.description
-    }) as BranchResponse;
-    return response.branch || response;
-};
-
-export const updateBranch = async (branch_id: string, updates: Partial<Branch>): Promise<Branch> => {
-    const response = await branchApiV2.updateBranch(branch_id, {
-        git_branch_name: updates.git_branch_name,
-        description: updates.description,
-        is_active: updates.is_active
     }) as BranchResponse;
     return response.branch || response;
 };
@@ -377,77 +358,14 @@ export const updateTaskContext = async (task_id: string, data: any): Promise<any
 };
 
 // --- Agent Operations ---
-export const listAgents = async (): Promise<any[]> => {
-    try {
-        const response = await agentApiV2.getAgentsMetadata() as AgentsResponse;
-        return response.agents || [];
-    } catch (error) {
-        logger.error('Error listing agents:', error);
-        return [];
-    }
-};
-
+// The names an assignee picker offers are the user's seat keys, collected over every room
+// the Seats page lists. A seat is assigned as "@<seat_key>": the backend keeps an assignee
+// that starts with "@" as given and rejects an unknown bare name.
 export const getAvailableAgents = async (): Promise<string[]> => {
-    // Return all 32 available agents from the agent library
-    return [
-        'coding-agent',
-        'debugger-agent',
-        'code-reviewer-agent',
-        'prototyping-agent',
-        'test-orchestrator-agent',
-        'uat-coordinator-agent',
-        'performance-load-tester-agent',
-        'system-architect-agent',
-        'design-system-agent',
-        'ui-designer-expert-shadcn-agent',
-        'core-concept-agent',
-        'devops-agent',
-        'adaptive-deployment-strategist-agent',
-        'swarm-scaler-agent',
-        'documentation-agent',
-        'tech-spec-agent',
-        'prd-architect-agent',
-        'project-initiator-agent',
-        'task-planning-agent',
-        'master-orchestrator-agent',
-        'elicitation-agent',
-        'security-auditor-agent',
-        'compliance-scope-agent',
-        'ethical-review-agent',
-        'analytics-setup-agent',
-        'efficiency-optimization-agent',
-        'health-monitor-agent',
-        'marketing-strategy-orchestrator-agent',
-        'seo-sem-agent',
-        'growth-hacking-idea-agent',
-        'content-strategy-agent',
-        'community-strategy-agent',
-        'branding-agent',
-        'deep-research-agent',
-        'mcp-researcher-agent',
-        'root-cause-analysis-agent',
-        'technology-advisor-agent',
-        'brainjs-ml-agent',
-        'mcp-configuration-agent',
-        'idea-generation-agent',
-        'idea-refinement-agent',
-        'remediation-agent'
-    ];
-};
-
-export const callAgent = async (agent_name: string, params?: any): Promise<any> => {
-    try {
-        const response = await agentApiV2.callAgent(agent_name, params);
-        return response;
-    } catch (error: any) {
-        logger.error('Error calling agent:', error);
-        const errorMessage = error?.message || error?.detail || 'Failed to call agent';
-        return { 
-            success: false, 
-            message: errorMessage,
-            error: error?.toString() || 'Unknown error'
-        };
-    }
+    const { rooms } = await seatApi.listRooms();
+    const perRoom = await Promise.all(rooms.map(room => seatApi.listSeats(room.slug)));
+    const assignees = perRoom.flatMap(({ seats }) => seats.map(seat => `@${seat.seat_key}`));
+    return [...new Set(assignees)].sort();
 };
 
 // --- Connection Operations ---

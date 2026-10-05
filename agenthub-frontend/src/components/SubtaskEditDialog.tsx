@@ -4,15 +4,15 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Save, FileText, Users } from "lucide-react";
-import { Subtask, getAvailableAgents, listAgents } from "../api";
+import { Subtask, getAvailableAgents } from "../api";
 import { useSubtaskMutations } from "../hooks/useSubtasks";
 import AgentAssignmentDialog from "./AgentAssignmentDialog";
+import logger from "../utils/logger";
 
 interface SubtaskEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subtask: Subtask;
-  parentTaskId: string;
   onClose: () => void;
   onUpdated?: (subtask: Subtask) => void;
 }
@@ -21,7 +21,6 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   open,
   onOpenChange,
   subtask,
-  parentTaskId,
   onClose,
   onUpdated,
 }) => {
@@ -35,7 +34,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   // Agent assignment dialog state
   const [agentDialogOpen, setAgentDialogOpen] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
-  const [projectAgents, setProjectAgents] = useState<any[]>([]);
+  const [availableAgentsError, setAvailableAgentsError] = useState(false);
 
   // Use React Query mutation hook
   const { updateSubtaskAsync, isUpdating, updateError } = useSubtaskMutations();
@@ -54,15 +53,18 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
   // Load available agents when dialog opens
   useEffect(() => {
     if (open) {
-      Promise.all([
-        listAgents(parentTaskId).catch(() => []),
-        getAvailableAgents().catch(() => [])
-      ]).then(([projAgents, availAgents]) => {
-        setProjectAgents(projAgents);
-        setAvailableAgents(availAgents);
-      });
+      getAvailableAgents().then(
+        seats => {
+          setAvailableAgents(seats);
+          setAvailableAgentsError(false);
+        },
+        error => {
+          logger.error('Error loading seats for the assignee picker:', error);
+          setAvailableAgentsError(true);
+        }
+      );
     }
-  }, [open, parentTaskId]);
+  }, [open]);
 
   const handleUpdate = async () => {
     if (!title.trim()) {
@@ -245,7 +247,7 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Click to select agents from your project or the agent library
+              Click to select agents from your seats
             </p>
           </div>
 
@@ -305,8 +307,8 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
       task={{ ...subtask, assignees } as any}
       onClose={() => setAgentDialogOpen(false)}
       onAssign={handleAssignAgents}
-      agents={projectAgents}
       availableAgents={availableAgents}
+      availableAgentsError={availableAgentsError}
       saving={false}
     />
     </>

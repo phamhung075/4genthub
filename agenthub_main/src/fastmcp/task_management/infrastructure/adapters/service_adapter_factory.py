@@ -19,7 +19,7 @@ from ...domain.interfaces.repository_factory import (
     IRepositoryFactory,
     ITaskRepositoryFactory,
 )
-from ...domain.interfaces.utility_service import IAgentDocGenerator, IPathResolver
+from ...domain.interfaces.utility_service import IPathResolver
 from ...domain.interfaces.validation_service import (
     IDocumentValidator,
     IValidationService,
@@ -156,10 +156,3 @@ class ServiceAdapterFactory:
         from .placeholder_adapters import PlaceholderPathResolver
 
         return PlaceholderPathResolver()
-
-    @classmethod
-    def get_agent_doc_generator(cls) -> IAgentDocGenerator:
-        """Get agent doc generator - placeholder implementation"""
-        from .placeholder_adapters import PlaceholderAgentDocGenerator
-
-        return PlaceholderAgentDocGenerator()

@@ -30,7 +30,6 @@ from fastmcp.task_management.domain.interfaces.repository_factory import (
     ITaskRepositoryFactory,
 )
 from fastmcp.task_management.domain.interfaces.utility_service import (
-    IAgentDocGenerator,
     IPathResolver,
 )
 from fastmcp.task_management.domain.interfaces.validation_service import (
@@ -65,7 +64,6 @@ class DomainServiceFactory:
     _validation_service: IValidationService | None = None
     _document_validator: IDocumentValidator | None = None
     _path_resolver: IPathResolver | None = None
-    _agent_doc_generator: IAgentDocGenerator | None = None
     _hint_manager: HintManager | None = None
 
     def __new__(cls):
@@ -108,8 +106,6 @@ class DomainServiceFactory:
             cls._document_validator = services["document_validator"]
         if "path_resolver" in services:
             cls._path_resolver = services["path_resolver"]
-        if "agent_doc_generator" in services:
-            cls._agent_doc_generator = services["agent_doc_generator"]
         if "hint_manager" in services:
             cls._hint_manager = services["hint_manager"]
 
@@ -219,13 +215,6 @@ class DomainServiceFactory:
         return cls._path_resolver
 
     @classmethod
-    def get_agent_doc_generator(cls) -> IAgentDocGenerator:
-        """Get agent doc generator"""
-        if cls._agent_doc_generator is None:
-            cls._lazy_init_services()
-        return cls._agent_doc_generator
-
-    @classmethod
     def get_hint_manager(cls) -> HintManager:
         """Get hint manager"""
         if cls._hint_manager is None:
@@ -269,9 +258,6 @@ class DomainServiceFactory:
                 cls._validation_service = ServiceAdapterFactory.get_validation_service()
                 cls._document_validator = ServiceAdapterFactory.get_document_validator()
                 cls._path_resolver = ServiceAdapterFactory.get_path_resolver()
-                cls._agent_doc_generator = (
-                    ServiceAdapterFactory.get_agent_doc_generator()
-                )
             except ImportError:
                 # Fallback to placeholder implementations
                 import logging

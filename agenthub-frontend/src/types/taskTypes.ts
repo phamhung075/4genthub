@@ -50,6 +50,7 @@ export interface TaskSummary {
   updated_at?: string;
   subtask_count?: number; // Total number of subtasks
   completed_subtasks?: number; // Number of completed subtasks
+  dependency_count?: number; // Total number of dependencies
   dependencies?: string[]; // Array of dependency task IDs
   subtasks?: any[]; // Array of subtask objects or IDs
 }

@@ -1,5 +1,7 @@
 import React from 'react';
-import { render, screen } from './../../test-utils';
+// Plain render: test-utils wraps in the (here mocked) AuthProvider, which would add a second
+// auth-provider element around the one AuthWrapper renders.
+import { render, screen } from '@testing-library/react';
 import { AuthWrapper } from '../../../components/auth/AuthWrapper';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import { MuiThemeWrapper } from '../../../contexts/MuiThemeProvider';
@@ -24,13 +26,13 @@ describe('AuthWrapper', () => {
 
   it('renders children correctly', () => {
     const testContent = 'Test Child Content';
-    
+
     render(
       <AuthWrapper>
         <div>{testContent}</div>
       </AuthWrapper>
     );
-    
+
     expect(screen.getByText(testContent)).toBeInTheDocument();
   });
 
@@ -40,7 +42,7 @@ describe('AuthWrapper', () => {
         <div>Test Content</div>
       </AuthWrapper>
     );
-    
+
     expect(screen.getByTestId('auth-provider')).toBeInTheDocument();
   });
 
@@ -50,7 +52,7 @@ describe('AuthWrapper', () => {
         <div>Test Content</div>
       </AuthWrapper>
     );
-    
+
     expect(screen.getByTestId('mui-theme-wrapper')).toBeInTheDocument();
   });
 
@@ -60,14 +62,14 @@ describe('AuthWrapper', () => {
         <div data-testid="child-content">Test Content</div>
       </AuthWrapper>
     );
-    
+
     const authProvider = screen.getByTestId('auth-provider');
     const muiThemeWrapper = screen.getByTestId('mui-theme-wrapper');
     const childContent = screen.getByTestId('child-content');
-    
+
     // Check that MuiThemeWrapper is inside AuthProvider
     expect(authProvider).toContainElement(muiThemeWrapper);
-    
+
     // Check that child content is inside MuiThemeWrapper
     expect(muiThemeWrapper).toContainElement(childContent);
   });
@@ -80,7 +82,7 @@ describe('AuthWrapper', () => {
         <span>Third Child</span>
       </AuthWrapper>
     );
-    
+
     expect(screen.getByText('First Child')).toBeInTheDocument();
     expect(screen.getByText('Second Child')).toBeInTheDocument();
     expect(screen.getByText('Third Child')).toBeInTheDocument();
@@ -92,7 +94,7 @@ describe('AuthWrapper', () => {
         {null}
       </AuthWrapper>
     );
-    
+
     expect(screen.getByTestId('auth-provider')).toBeInTheDocument();
     expect(screen.getByTestId('mui-theme-wrapper')).toBeInTheDocument();
   });
@@ -103,7 +105,7 @@ describe('AuthWrapper', () => {
         {undefined}
       </AuthWrapper>
     );
-    
+
     expect(screen.getByTestId('auth-provider')).toBeInTheDocument();
     expect(screen.getByTestId('mui-theme-wrapper')).toBeInTheDocument();
   });
@@ -116,13 +118,13 @@ describe('AuthWrapper', () => {
         <button>Button</button>
       </div>
     );
-    
+
     render(
       <AuthWrapper>
         <ComplexComponent />
       </AuthWrapper>
     );
-    
+
     expect(screen.getByText('Title')).toBeInTheDocument();
     expect(screen.getByText('Paragraph')).toBeInTheDocument();
     expect(screen.getByText('Button')).toBeInTheDocument();

@@ -1,0 +1,25 @@
+SAFETY. Never git push, tag, deploy, change production configuration or touch production data without explicit approval from the human operator. A push to main auto-deploys to production at https://api.4genthub.com. Verify a deploy through the version reported by /health, and bump healthVersion in agenthub_go/fastmcp/server/httpapp/http.go with each release. Commit locally only when the lead asks. Never print secrets or tokens.
+
+PROJECT. 4genthub is an agent orchestration platform. The backend is Go in agenthub_go, being ported from the Python backend in agenthub_main. The frontend is React in agenthub-frontend. Storage is Postgres; authentication is Keycloak with JWT. OpenRig is the client and runtime; 4genthub is the cloud data for orchestration. The OpenRig integration lives under agenthub_go/fastmcp/seat_management (seats, rooms, modules, overlays, resolver) and the scripts/openrig_*.py client scripts.
+
+LAYOUT.
+- agenthub_go: Go server, packages under fastmcp/*, plan and backlog in NEXT_GEN.md and MIGRATION.md.
+- agenthub-frontend: React app (src/pages, src/hooks, src/services, src/types, src/tests).
+- agenthub_main: legacy Python backend; its script tests live in agenthub_main/src/tests/scripts.
+- scripts: operator and OpenRig client scripts.
+- ai_docs: documentation.
+
+TESTS.
+- Go: run from agenthub_go with GOCACHE and TMPDIR set inside .gocache and .gotmp. Run go vet and go test ./... by package.
+- Python scripts: cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q
+- Frontend: npx vitest run, npx tsc --noEmit -p . (23 known pre-existing errors), npx vite build.
+
+WORKING RULES.
+- Clean code only. No backward-compatibility code, fallbacks, legacy paths or migration helpers: this is a development phase with no production users.
+- ORM and domain entities are the source of truth. When a test disagrees with them, fix the code to match the entity, then update the test.
+- Make the smallest safe change and preserve unrelated behavior. Inspect the diff after editing.
+- Update CHANGELOG.md (root) for project changes, agenthub-frontend/CHANGELOG.md for frontend-only changes, and TEST-CHANGELOG.md when test files change.
+- Put tests only in the existing test locations. Create no new root files.
+- Never read or create .env files; configuration comes from environment variables.
+- Commit messages follow Conventional Commits, for example feat(seats): add room overlay.
+- Report what you ran and its exact result; do not claim verification you did not perform.

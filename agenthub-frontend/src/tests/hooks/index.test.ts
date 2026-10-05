@@ -12,15 +12,35 @@ describe('hooks/index', () => {
     expect(hooks.useTheme).toBe(useTheme);
   });
 
-  it('only exports expected hooks', () => {
+  it('exports the expected hooks', () => {
     const exportedHooks = Object.keys(hooks);
-    expect(exportedHooks).toEqual(['useTheme']);
+    // Subset check: adding a hook to the barrel must not break this test.
+    expect(exportedHooks).toEqual(expect.arrayContaining([
+      'useTheme',
+      'useTaskFilters',
+      'useTaskGrouping',
+      'seatKeys',
+      'useRooms',
+      'useCreateRoom',
+      'useSeatTypes',
+      'useModuleVersion',
+      'useSeats',
+      'useCreateSeat',
+      'useRemoveSeat',
+      'useSeatSettings',
+      'useUpdateSeatSettings',
+      'useSeatOverlays',
+      'useUpdateOverlay',
+      'useSeatLinks',
+      'useUpsertSeatLink',
+      'useResolvedSeat',
+    ]));
   });
 
   it('maintains the same reference to imported hooks', () => {
     const { useTheme: firstImport } = hooks;
     const { useTheme: secondImport } = hooks;
-    
+
     expect(firstImport).toBe(secondImport);
     expect(firstImport).toBe(useTheme);
   });

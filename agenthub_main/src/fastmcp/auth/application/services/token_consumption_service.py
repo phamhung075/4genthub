@@ -88,7 +88,7 @@ class TokenConsumptionService:
 
         Args:
             user_id: User identifier
-            operation: Operation name (e.g., 'create_project', 'call_agent')
+            operation: Operation name (e.g., 'create_project', 'manage_task')
             custom_cost: Override the default cost for this operation (optional)
 
         Returns:

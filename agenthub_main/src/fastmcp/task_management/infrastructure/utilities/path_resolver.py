@@ -212,18 +212,3 @@ class PathResolver:
             from ....dual_mode_config import get_rules_directory
 
             return get_rules_directory()
-
-    def get_cursor_agent_dir(self) -> Path:
-        """Get the agent library directory path"""
-        # Check if we have a project-specific agent-library directory
-        project_agent_library = self.project_root / "agent-library"
-        if project_agent_library.exists():
-            return project_agent_library
-
-        # Use the AGENT_LIBRARY_DIR_PATH environment variable
-        agent_library_path = os.environ.get("AGENT_LIBRARY_DIR_PATH")
-        if agent_library_path:
-            return Path(agent_library_path)
-
-        # Fallback to default agent-library location
-        return self._resolve_path("agenthub_main/agent-library")

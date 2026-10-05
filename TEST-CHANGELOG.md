@@ -2,6 +2,716 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-04 — branch collection POST exact match (Go)
+
+- New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` drives the mount with a stub `BranchController`, so it proves the collection POST still reaches CreateBranch and answers 200 (`createCalls==1`, project/name recorded) while `POST /api/v2/branches/x/y` -> 404 and `POST /api/v2/branches/abc` -> 405 with the same complete body and with `createCalls` still 1 - the refusal is routing, not validation. `TestBranchCollectionPostKeepsTheMissingFieldShape` pins the unchanged 422 missing-field body (`project_id`, `git_branch_name`). Before the change both unknown paths matched the collection POST's subtree and reached CreateBranch.
+- `routes_mount_test.go`: the inventory now lists `POST /api/v2/branches/{$}`.
+- Commands: `go test -count=1 -run 'TestBranchCollectionPostMatchesOnlyTheCollectionPath|TestMountRoutesDoesNotDuplicateHandlerPatterns' ./fastmcp/server/httpapp/` -> both PASS; `gofmt -l` empty.
+
+## 2026-10-04 — orphaned Go branch routes removed (audit follow-up)
+
+- `fastmcp/server/httpapp/routes_mount_test.go`: the mount inventory no longer lists the deleted patterns `GET /api/v2/branches/`, `PUT /api/v2/branches/{id}`, `POST /api/v2/branches/{id}/assign-agent`. The test only detects pattern collisions, so it passed either way; the list is kept accurate so it does not claim routes that no longer exist.
+- Route deletions: `httpapp/branch_routes.go` (three mounts), `routes/branch_routes.go` (three handlers + three `BranchController` methods), `httpapp/branch_wiring.go` (three adapter methods).
+- Evidence: `gofmt -l` empty; `go vet ./fastmcp/server/...` clean; `go test ./fastmcp/server/...` -> server, auth, httpapp, metrics, routes all ok. A throwaway routing probe (deleted before handoff) showed the ListBranches fall-through is gone: `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` matched `GET /api/v2/branches/` before and have no match (404) after; `POST /api/v2/branches/` still matches unknown subpaths.
+- Part 3: `GET /api/v2/branches/{id}/task-counts` deleted (mount, `routes.GetBranchTaskCounts`, `BranchController` method, adapter method, `BranchAPIController.GetBranchTaskCounts`, inventory row, stub method). `TestDeletedBranchTaskCountsRouteIsNotServed` asserts `GET /api/v2/branches/b1/task-counts` -> 404. Package runs after part 3: `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/server/routes/ ./fastmcp/task_management/interface/api_controllers/` -> all ok; `gofmt -l` empty, build and vet clean.
+
+## 2026-10-04 — F4: dead-agent state mapping (Python scripts)
+
+- `src/tests/scripts/test_openrig_bridge.py`: three `seat_state` cases added/updated — the captured death node (session running, `lifecycleState: attention_required`, `agentActivity.state: unknown` + `no_runtime_hook`) maps to `unknown`; `attention_required` alone maps to `unknown`; `attention_required` with `needs_input` maps to `blocked`. The payload-shape test is unchanged (its `needs_input` node still blocks).
+- `scripts/openrig_bridge.py` (not a test): `attention_required` alone is no longer a blocked signal; reproduced live on a scratch rig before/after (bridge `blocked` -> `unknown`), `rig seat stop` still `stopped`.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 40 passed; `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 172 passed.
+
+## 2026-10-04 — B2: document `--noconftest` for the session_stream test (Python)
+
+- `src/tests/session_stream/session_stream_test.py`: header now states the exact command and why the repo conftest cannot be used (its autouse DB fixture retries a Postgres connect in a sleep loop before the first test, and it mocks `fastapi`/`fastapi.testclient`).
+- Measured: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/session_stream/session_stream_test.py -q` -> 16 passed in 2.43s. Without `--noconftest`: no output in 120s (parked in `connection_retry.py` under `conftest.py:1675`).
+- `src/tests/scripts` needs no flag: `python3 -m pytest -p no:cacheprovider src/tests/scripts -q` -> 170 passed in 43.50s with the normal conftest, 170 in 41.95s with `--noconftest`.
+- No test semantics changed; the only edit is the module docstring.
+
+## 2026-10-04 — C4 two-user connector isolation end to end (Go)
+
+- Added `TestTwoUsersEachSeeOnlyTheirOwnSessions` (`server/httpapp/ws_connector_test.go`): two users each connect a connector, ingest their own session and append an event; each user's `GET /api/v2/sessions` holds exactly its own session id; the owner's `GET /api/v2/sessions/{id}/events` returns its event and the other user asking for that id gets 404; the owner's viewer replays the event and the other user's viewer on that session closes with 4004. It complements `TestUserBCannotListReadReplayOrAppendToUserAsSession`.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 -v -run 'TestTwoUsersEachSeeOnlyTheirOwnSessions|TestUserBCannotListReadReplayOrAppendToUserAsSession|TestSessionViewerReplaysIngestedEventsFromTheDatabase' ./fastmcp/server/httpapp/` -> all three PASS (2.076s); `gofmt` empty, `go vet` clean.
+- Not exercised: the separate `cmd/agenthub` binary with an out-of-process connector; the harness mounts the same routes over the real Postgres and dials real websocket clients, so protocol and isolation are real.
+
+## 2026-10-04 — T4 machine-token integration tests run on real Postgres
+
+- `TestMachineTokensIntegration` and `TestMachineExpectedHashIntegration` (`fastmcp/seat_management/infrastructure/repositories/orm/integration_test.go`) were run against a fresh throwaway Postgres with `SEAT_TEST_DATABASE_URL`: `go test -count=1 -v -run 'TestMachineTokensIntegration|TestMachineExpectedHashIntegration' ./fastmcp/seat_management/infrastructure/repositories/orm/` -> both PASS, 0 skipped, 0 failed (1.06s and 4.69s). This closes T4's "Open: Postgres integration tests not run".
+- Bridge-status half: `machines.ReplaceSnapshot` is covered on real Postgres in `TestSeatRepositoriesIntegration` and `TestMachineExpectedHashIntegration`; the token repository by `TestMachineTokensIntegration`. No single test ties a token to its machine's status snapshot (noted on the T4 line).
+
+## 2026-10-04 — Python /api/v2/agents metadata surface retired (T8 follow-up)
+
+- Deleted `agenthub_main/src/tests/server/test_agent_routes.py` with its subject (the `GET /api/v2/agents/metadata` route). Its four metadata cases and the "not served" parametrized case go with the module; those not-served paths are not routes anywhere (`grep` empty).
+- Dropped the stale `"fastmcp.server.routes.agent_routes": None` entry from the `http_server_test.py` sys.modules patch.
+- `python3 -m py_compile` on `server/http_server.py` and `tests/server/http_server_test.py` -> ok; scripts suite (from agenthub_main) -> 170 passed, 4 warnings (the deleted file is under `src/tests/server`, not `src/tests/scripts`, so this count is the control, not coverage of the removal).
+
+## 2026-10-04 — seatcheck PATH cold start (Go/scripts)
+
+- Added `test_seat_path_reads_the_daemon_path_at_cold_start`: at cold start `seat_path` returns the rig daemon's PATH (stubbed) with source `DAEMON_PATH_SOURCE`, and falls back to the shell PATH with `SHELL_PATH_SOURCE` only when no daemon is found. The autouse `no_tmux_server` fixture now also stubs `openrig_daemon_pid` to None so tests never touch the live daemon.
+- Updated `test_shell_path_fallback_is_said_in_the_output` for the new fallback message.
+- Before/after: at HEAD `scripts/openrig_seat_sync.py` has no `DAEMON_PATH_SOURCE` and `seat_path()` at cold start returns the operator's shell PATH (`/operator/shell/bin`); at the tip it returns the daemon PATH.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q -k cold_start` -> 1 passed; the whole scripts suite -> 167 passed, 4 warnings.
+- Review follow-up (parsing coverage): added `test_openrig_daemon_port_prefers_openrig_port_then_url` (`OPENRIG_PORT` wins, else the `OPENRIG_URL` port, else None), `test_openrig_daemon_pid_parses_ss_output` (a canned `ss -ltnp` via a monkeypatched `subprocess.run`: the `pid=` line returns the pid, a matching line with no `pid=` returns None) and `test_proc_env_path_reads_the_path_of_this_process` (`/proc/<self pid>/environ`, skipped without `/proc`). Whole scripts suite now 170 passed.
+
+## 2026-10-04 — Subtask assignee filter fixed (N2)
+
+- Replaced `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` (which pinned the error) with `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment`: a subtask with `["@go-dev"]` is found by `FindByAssignee` for its owner, not for another user and not for a bare `go-dev`; `GetSubtasksByAssignee` (no user filter, Python parity) finds it for any user; `@nobody` matches nothing.
+- Before/after against the throwaway Postgres (temporary probe, deleted before commit): OLD `SELECT 1 FROM subtasks WHERE "assignees" LIKE '%' || '["@go-dev"]'::json || '%'` -> `ERROR: operator does not exist: json ~~ text (SQLSTATE 42883)`; NEW `... WHERE "assignees"::jsonb @> '["@go-dev"]'::jsonb` -> no error.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 ./fastmcp/task_management/infrastructure/repositories/` -> ok.
+
+## 2026-10-04 — Consumerless /api/v2/agents metadata retired (T7 follow-up)
+
+- `routes_mount_test.go`: dropped the two `/api/v2/agents/metadata` and `/api/v2/agents/coding-agent` route rows and the now-unused `fakeAgentController` (with its import).
+- `src/tests/api.test.ts`: deleted the `Real-time Agent Coordination` describe — 14 placeholder tests, each `expect(true).toBe(true)`, carrying the last commented-out `agentApiV2.*` references.
+- Result: `go test -count=1 ./fastmcp/server/httpapp/` ok; `npx tsc --noEmit -p .` 0 errors; `npx vitest run src/tests/api.test.ts` 82 passed.
+
+## 2026-10-04 — PGALL: PG-gated suites and the assignee filter (Go)
+
+- Real-Postgres run of every `AGENTHUB_TEST_PG_URL`/`SEAT_TEST_DATABASE_URL`-gated package against the throwaway Postgres at 54329, one package at a time with `-count=1 -v` (pass/fail/skip): `fastmcp` 11/0/0; `auth/infrastructure/repositories` 9/0/0; `server/httpapp` 132/0/0; `session_stream` 11/0/0; `task_management/application/services` 394/0/0; `task_management/infrastructure/database` 41/0/1 (pre-existing skip); `task_management/infrastructure/repositories` 114/0/0. No failures.
+- Added `TestTaskRepoFindBySeatKeyAssigneeIsTenantScoped` (`task_repository_test.go`): two users each own a task assigned `@go-dev`; `FindByAssignee` and `FindByCriteria` return only the caller's task, and a bare `go-dev` matches nothing. PASS.
+- The subtask assignee filter is NOT fixed: `subtask_repository.go:302` filters with `WHERE "assignees" LIKE '%' || $1::json || '%'`, so a plain assignee string is invalid JSON and PostgreSQL raises. `TestSubtaskRepositoryAssigneeQueriesReproducePythonJsonLikeDefect` pins this for both `FindByAssignee` and `GetSubtasksByAssignee`; no working `@seat_key` subtask filter can be tested until the query is decided (Python parity vs Go correctness). Reported to the lead; FIXED later the same day — see the N2 entry above.
+
+## 2026-10-04 — Retired agent system removed (T8)
+
+- Go: deleted `agent_doc_generator_test.go`; updated `service_adapter_factory_test.go` and `domain_service_factory_test.go` for the removed generator. `go test -count=1` for adapters / infrastructure-services / application-services / use-cases -> ok; `gofmt -l` empty; `go vet ./...` and `go build ./...` clean.
+- Python: deleted the agent-management test trees (`src/tests/agent_management`, `src/tests/e2e/agent_management`, `src/tests/security/agent_management`, `src/tests/unit/.../agent_doc_generator_test.py`) and pruned the `generate_docs_for_assignees` patches/assertions in `next_task_test.py` and `test_get_task.py`.
+- Command: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 166 passed, 4 warnings.
+
+## 2026-10-04 — Python call_agent removal (principal session)
+
+- Removed with the subject: `agent_management/interface/test_call_agent_mcp_tool.py`; the whole `tests/performance/agent_management/` package (k6 + locust `call_agent` load tests and their README); `agent_management/application/test_orphaned_agent_facade.py` (its entire subject was the `get_agent_for_call` response); the `TestGetAgentForCall` class in `test_agent_management_facade.py`; the two call-specific tests in `agent_management/integration/test_agent_instantiation_flow.py`. `test_orphaned_agent_workflow_e2e.py` lost STEP 6 (the call-response orphan flag) and keeps the marketplace/import flow; `test_agent_customization_e2e.py` exercises `get_or_create_instance` directly (the mechanism it already used).
+- Re-homed: `test_token_consumption_service.py` and `test_token_consumption_helper.py` use `create_context` (5 tokens) instead of `call_agent` (20) as the example operation and their expected numbers were updated; `mcp_keycloak_auth_test.py` asserts `manage_agent` (the role tool lists lost `call_agent`); `ddd_compliant_mcp_tools_test.py` lost the `CallAgentMCPController` patch blocks and the `_call_agent_controller` mock; `server_test.py` and `test_server_edge_cases.py` lost the `enabled_tools["call_agent"]` assertion; `mcp_client_utils.py` lost its `call_agent` branch; `tool_fixtures.py` lost the unused `mock_call_agent_facade`; `mcp_auto_injection_fixtures.py` validates `rig whoami` in the session context (was `call_agent('master-orchestrator-agent')`).
+- Command/result: `cd agenthub_main && .venv/bin/python -m pytest --noconftest -q src/tests/auth/application/test_token_consumption_service.py` → 22 passed, 1 failed (`test_consume_tokens_for_operation_auto_create_balance`, `'NoneType' object is not subscriptable`, unrelated to this removal and failing under `--noconftest`). The full suite with conftest hangs in collection in this environment (pre-existing).
+
+## 2026-10-04 — Agent frontend removed; assignee pickers seat-only (T7, frontend half)
+
+- Deleted `src/tests/useAgentManagement.test.tsx` with its subject. Rewrote `src/tests/components/LazyTaskListAgentLoading.test.tsx` and `src/tests/components/SubtaskEditDialog.test.tsx` to the seat-only behavior (a failed seat load is flagged, a retry clears it, the seats are not reloaded once in). Removed the agent columns from `src/tests/services/apiV2.test.ts` (the whole Agent API describe plus the agent-management tests) and `src/tests/api.test.ts` (the listAgents describe); dropped the removed agent hooks from `src/tests/hooks/index.test.ts` and the `agents` prop from `AgentAssignmentDialog.test.tsx`, `LazySubtaskList.test.tsx` and `components/__tests__/LazySubtaskList.test.tsx`.
+- Result (agenthub-frontend): `npx tsc --noEmit -p .` 0 errors; `npx vite build` ok; `npx vitest run` 91 files / 1722 tests passed, 0 failed files (baseline had 8 to 9 failed files); the 8 touched files pass (191 tests).
+
+## 2026-10-04 — Migrator scheme guard (DEFECT)
+
+- `fastmcp/database_migrations_test.go` (new, internal package fastmcp): `TestIsPostgresURL` pins `postgres://` and `postgresql://` as Postgres and `sqlite:///…`, `mysql://…` and an empty string as not.
+- `TestDatabaseMigratorRunMigrations` goes red -> green: it builds a fresh database with a `tasks(id,status,details,…)` table, runs the migrator over a `postgres://` DSN, and asserts `details` is dropped and `progress_history` added and populated. Before the fix the guard returned early (`postgres://` has no `postgresql` substring), so the tree showed `details=true progress_history=false`.
+- Command: `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable go test -count=1 -run 'TestIsPostgresURL|TestDatabaseMigratorRunMigrations' ./fastmcp/` -> ok.
+
+## 2026-10-04 — Old agent system removed from Go (T7, Go half)
+
+- Deleted with their subjects: the `agent_management` package tests (entities, services, ORM repositories, REST routes) and `server/httpapp/agent_mgmt_mount_test.go`.
+- `fastmcp/task_management/infrastructure/database/models_prod_test.go`: `prodModelTypes` and `prodExpectedColumns` drop `AgentTemplate`/`UserAgentInstance` and `agent_templates`/`user_agent_instances`; `ProductionTables` count 8 to 6.
+- `seatrenderer/renderer_test.go`: uses the moved DTOs (`OpenRigSpec`, `OpenRigTokenEnvVar`) from its own package now.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set, `AGENTHUB_TEST_PG_URL` and `SEAT_TEST_DATABASE_URL` at 54329): `gofmt -l` empty; `go vet ./...` clean; `go test ./...` green except `fastmcp.TestDatabaseMigratorRunMigrations` (`details=true progress_history=false`), which fails identically at HEAD in a clean `git archive` export, so it is pre-existing and unrelated.
+
+## 2026-10-04 — Default-wildcard CORS simple-request branches pinned (OF4 review)
+
+- Reviewer finding: `cors_test.go` covered the wildcard preflight and an explicit-origin simple request, but not the default-wildcard simple request — the exact path the OF4 browser run broke on. Added `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (no Cookie -> `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) and `TestWithCORSSimpleRequestDefaultWildcardWithCookie` (`Cookie: access_token=x` -> the request origin echoed). Both run with `CORS_ORIGINS=""` (the documented default).
+- The OF4 G6 note was corrected to scope the CORS observation to a token-less (no-cookie) stack: a real logged-in session sends the cookie and gets the origin echo, so the default works for it.
+
+## 2026-10-04 — Cross-tenant coverage for every seat table (OF2, Go)
+
+- The reviewer/lead finding: `module_versions`, `seat_type_versions`, `rooms`, `seat_links` and `resolved_seats` had no test asserting the `user_id` filter; the other four (`modules`, `seat_types`, `seats`, `overlays`) did. Added five tests to `fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`, each exercising the repository's real statements over the scripted driver and asserting every statement that touches the table carries `user_id` (`assertTenantScoped`; an INSERT must write the `user_id` column, a SELECT/UPDATE/DELETE must filter on it). All nine seat tables now have one.
+- Mutation checks (each applied and reverted, verified by `git diff`):
+  - `DELETE FROM "rooms"` without `"user_id" = $1` -> `TestRoomStatementsAreTenantScoped` FAILS: `rooms statement not tenant-scoped: DELETE FROM "rooms" WHERE "id" = $2`.
+  - `DELETE FROM "seat_links"` without the filter -> `TestSeatLinkStatementsAreTenantScoped` FAILS.
+  - `DELETE FROM "resolved_seats"` without the filter -> `TestResolvedSeatStatementsAreTenantScoped` FAILS.
+  - the shared base `where` builder (`task_management/infrastructure/repositories/base_orm_repository.go:367`) skipping the `user_id` condition -> `TestModuleVersionStatementsAreTenantScoped` and `TestSeatTypeVersionStatementsAreTenantScoped` both FAIL (`SELECT ... FROM "module_versions" WHERE "module_id" = $1 ...`).
+- The four named ORM tests PASS: `TestTenantScoping`, `TestSeatUpdateOccupantTenantScoped`, `TestOverlayUpsertScoped`, `TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped`.
+- Real Postgres: `TestSeatRepositoriesIntegration` and `TestSeatDeletesIntegration` (gated on `SEAT_TEST_DATABASE_URL`; they skip without it) add behavioural cross-tenant checks (modules, seat types/versions, seats, rooms, links, overlays, resolved seats, machines, seat_status, machine tokens) and PASS against the throwaway Postgres at 54329.
+- Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` set): `gofmt -l` empty; `go vet ./fastmcp/seat_management/infrastructure/repositories/orm/` clean; `go test -count=1` for that package ok (0 skipped with `SEAT_TEST_DATABASE_URL` set, 2 skipped without).
+- Follow-up (reviewer nit): `assertTenantScoped` now requires `"user_id"` inside an INSERT's column list (the text between its first `(` and `)`), not anywhere in the statement, so a statement that only reads `user_id` in a sub-select cannot pass.
+
+## 2026-10-04 — A4/A6/A7 tests are mutation-proved; list order tiebreaker (review item, Go)
+
+- Reviewer required mutation checks on the three new tests. Each mutation was applied, the named test failed, and the mutation was reverted exactly (verified by `git diff` showing only the intended change afterwards). From `agenthub_go` (`GOCACHE`/`TMPDIR` set, `AGENTHUB_TEST_PG_URL=postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable`):
+  - `wsReleaseConnector` (`ws_mount.go:444`) reverted to always return true (every socket close marks the connector offline) -> `TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline` FAILS: `status after the newer socket closed = "offline", want active`.
+  - The unregistered-key branch (`ws_mount.go:276`) changed to answer `events_ack` -> `TestConnectorRefusesEventsForAnUnregisteredSessionKey` FAILS: `events for an unregistered key answered map[last_seq:0 session_id: type:events_ack]`.
+  - `ORDER BY last_seen DESC` dropped from `ListSessions` (`repository.go:289`) -> `TestSessionListIsNewestLastSeenFirst` FAILS: `list order = [...want [<s2> <s1>] (newest last_seen first)` — the old single-phase test passed this mutation, so the test now asserts the newer-first order before it re-touches the older session.
+- `TestSessionListIsNewestLastSeenFirst` rewritten to two phases: s2 (created after s1) must come first (fails if the ORDER BY is missing, because insertion order is s1 then s2), then re-registering s1 must put it first (the `last_seen` update). The list query gained the deterministic tiebreaker `id` (`ListSessions` -> `ORDER BY last_seen DESC, id`), so a `last_seen` tie no longer leaves the order undefined; the test no longer depends on three round trips landing in distinct microseconds.
+- Result: `gofmt -l` empty; `go vet ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` clean; `AGENTHUB_TEST_PG_URL=... go test -count=1 ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` ok (0 skipped).
+
+## 2026-10-04 — G2 validate check is env-gated (OF1, Go)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` now requires `OPENRIG_TEST_AGENT_VALIDATE=1` and fails (does not skip) when `rig` is absent, the daemon is unreachable or a rendered spec is invalid; without the variable it skips with the reason. There is no in-process substitute: only rig's own validator is the G2 check.
+- Behaviour proved in four runs from `agenthub_go` (`GOCACHE`/`TMPDIR` set): unset -> SKIP; set -> PASS for `claude-code`, `codex`, `omp` (daemon on 7433); set + `OPENRIG_URL=http://127.0.0.1:1` -> FAIL ("Daemon did not respond"); set + PATH without `rig` -> FAIL ("rig binary is not on PATH").
+- No frontend test file was uncommitted: `git status --short --untracked-files=all` lists only `.claude`, `CLAUDE.md`, `agenthub_go/NEXT_GEN.md`, `ai_docs/index.json` — none a test file.
+
+## 2026-10-04 — Session stream: the remaining Python tests ported (Task A4/A6/A7, Go)
+
+- Six connector-ingest tests ported from `agenthub_main/src/tests/session_stream/session_stream_test.py` into `server/httpapp/ws_connector_test.go`: `TestConnectorRejectsABadToken` (HTTP 403 before the upgrade; Python closes before `accept`, so a real client also sees no close code), `TestConnectorRefusesEventsForAnUnregisteredSessionKey` (`{"type":"error","error":"unknown session"}`), `TestConnectorHelloCannotSwitchTheConnectorID` (`connector_id already set`), `TestConnectorSurvivesNonObjectEventsAndAnOddProject` (non-object events give `each event must be an object`, the socket still answers `events_ack`, a non-string `project` is accepted), `TestConnectorDisconnectMarksItsSessionsOffline`, `TestConnectorReconnectKeepsTheLongerLivedSocketsSessionsOnline`.
+- `TestSessionViewerReplaysIngestedEventsFromTheDatabase`: the viewer's real-Postgres path (ingest through the connector, then the owner's viewer socket replays `seq 1` with its payload). The earlier viewer tests used an in-memory store only, so A5's database path was unproven before this.
+- `TestSessionListIsNewestLastSeenFirst` (A6): re-registering a key makes it newest, so `GET /api/v2/sessions` orders it first.
+- `TestSessionTimestampsRenderAsNaiveUTC` (`session_stream/repository_test.go`): `created_at`/`last_seen` render with no zone designator (the port of Python's `test_model_timestamps_are_naive_utc`; Go's `time.Time` always carries a location).
+- A6 REST session tests are Postgres-gated: they skip without `AGENTHUB_TEST_PG_URL`. The reviewer ran them at 54329 and they PASS.
+- Result (from `agenthub_go`, `GOCACHE`/`TMPDIR` inside the repo): `gofmt -l fastmcp/server/httpapp/ws_connector_test.go fastmcp/session_stream/repository_test.go` empty; `go vet ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` clean; `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 ./fastmcp/session_stream/ ./fastmcp/server/httpapp/` ok (0 skipped).
+- The 16-test mapping is in `agenthub_go/MIGRATION.md` group A. Mutation checks are recorded in the entry above (2026-10-04, review item): three of the new tests fail when the behaviour they assert is broken.
+
+## 2026-10-04 — D6e hydration of old-style assignees (Go)
+
+- `TestSubtaskRepositoryLoadsAStoredBareAssigneeName` (real Postgres): a stored `["go-dev"]` row loads by id and in `FindByParentTaskID` next to a normal row. Mutation: hydration back to `NewSubtask` fails it (`Invalid assignees: ['go-dev']` on find); without `AGENTHUB_TEST_PG_URL` it skips.
+- `TestRestoreSubtaskAssigneeForms`: `[go-dev]`, `[custom @lead]`, `[@go-dev]` stay; `[coding-agent]` shows `[@coding-agent]`; none gives `[]` (mutation: no `@` normalisation fails it).
+- `TestRestoreSubtaskKeepsAStoredBareNameThatNewSubtaskRefuses`, `TestSubtaskAddAssigneeUsesTheOneRule`, `TestTaskAddAssigneeUsesTheOneRule` (a refused add changes nothing) and `TestCreateSubtaskRefusesABareUnknownAssignee` (MCP subtask create). Mutations (each bypass of the rule at that call site, restored): `Task.AddAssignee`, `Subtask.AddAssignee`, `NewSubtask`, MCP subtask create all fail their test.
+
+## 2026-10-04 — Session stream handler tests on a real Postgres (Task A4/A6/A7, Go)
+
+- New `fastmcp/session_stream/testdb` (`NewSessions`): the throwaway-Postgres helper moved out of `repository_test.go` so `session_stream` and `server/httpapp` tests share it (recipe in its doc comment).
+- New `server/httpapp/ws_connector_test.go`: websocket and REST tests through a real client against the mounted routes. First test: `TestSessionEventsLimitIsClampedTo1000` (1200 events stored through the connector, `limit=5000` returns 1000). It failed before the argument-order fix (`returned 0 events, want 1000`) and passes after.
+- Fix 2: `TestSessionEventsOfAnUnknownSessionIs404`, `TestUserBCannotListReadReplayOrAppendToUserAsSession` (user B cannot list, read over REST, replay over the viewer socket or append to user A's session; B reusing A's connector id and key gets its own session id and A's events are unchanged; the repository refuses B's append with `unknown session`) and `routes.TestGetSessionEventsDatabaseFailureIsNotA404`. Failing before: `200 [], want 404` (both REST cases) and the database error reported as 404.
+- Fix 5: `TestConnectorCapCountsCharactersNotBytes` (1 MiB characters of `é` = 2 MiB bytes is served, 1 MiB + 1 characters gets `message too large` and the socket stays usable) and `TestConnectorReadIsBoundedInBytes` (one frame, and fragments that add up, over 4 MiB end the connection). Failing before: `a message of exactly 1 MiB characters (2097107 bytes) must be served, got ... message too large`, and the fragments case `must end the connection` (no bound on fragments). Test helper `wsTestWriteFrame` writes fragments.
+- Fix 3: the REST tests read the body through `wrapped(body, "sessions"|"events")` and `TestSessionRoutesAnswerAnObjectEvenWhenEmpty`; before the change every REST test failed with `body is a []interface {}, want an object with only ...`.
+- Fix 4: `TestSessionEventsDefaultLimitIs500` (600 events, no `limit`): failed before (`returned 100 events, want 500`).
+- `ws_mount_test.go`: `wsTestTokenFor(user, scopes)`, and `wsTestWriteText` writes 64-bit frame lengths.
+
+## 2026-10-04 — One assignee rule (Task D6d, Go)
+
+- Added `TestAssigneeRuleIsIdenticalOnEveryPath` (`application/dtos/task/task_test.go`): 6 inputs through `NewCreateTaskRequest`, `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and `NewSubtask` must equal `entities.NormalizeAssignees` (result or error text). Mutation checks (each call site bypassing the rule, restored after): DTO, `Task.UpdateAssignees`, `Subtask.UpdateAssignees`, `NewSubtask` all fail the test.
+- `TestValidateAssigneeListAcceptsSeatKeys...` became `TestNormalizeAssigneesAcceptsSeatKeysAndRejectsBareUnknownNames`; `TestValidateAssigneeListQuirk` (Python quirk pin) removed; `TestTaskLifecycle` now expects a bare `custom` to be rejected and the assignees unchanged. Expectations changed: DTO `@senior_developer`/`@qa_engineer`/`@architect` to `@coding-agent`/`@test-orchestrator-agent`/`@system-architect-agent`; `subtask_test.go` and `create_task_test.go` use `@x`/`@bob`.
+
+## 2026-10-04 — session_stream on a real Postgres (Task PG, Go)
+
+- A throwaway Postgres 16.4 runs from the binaries already on this box (`~/.cache/agenthub-testpg/bin`: `initdb`, `pg_ctl`, `postgres`; no install, no existing database touched). Recipe, also in the comment above `newTestSessions` in `agenthub_go/fastmcp/session_stream/repository_test.go`: `initdb -D $DIR -U postgres --auth=trust -E UTF8 --locale=C`, add `listen_addresses='127.0.0.1'`, `port=54329`, `unix_socket_directories=''`, `fsync=off` to `$DIR/postgresql.conf`, `pg_ctl -D $DIR -l $DIR/pg.log -w start`, then from `agenthub_go`: `AGENTHUB_TEST_PG_URL='postgres://postgres@127.0.0.1:54329/postgres?sslmode=disable' go test -count=1 -v ./fastmcp/session_stream/`.
+- Result: `TestRepositoryPostgres` PASS (it skipped before; the audit's A1/A2 gaps: server-assigned seq, 200-event batch, 64K payload truncation, cross-user get/list, MarkOffline, upsert id). 10 tests in the package, 0 skipped.
+- Added `session_stream/schema_test.go` (`TestStreamTablesMatchThePythonSchema`) with the golden file `testdata/stream_tables_python_ddl.txt`: the columns (type, length, nullability, default), constraints and indexes of `agent_sessions` and `agent_session_events` as Python's `Base.metadata.create_all` creates them (sqlalchemy 2.0.44, `agenthub_main/venv`, same Postgres), printed with `information_schema.columns`, `pg_get_constraintdef` and `pg_indexes`. The Go schema (`CreateTables`) produces the identical text: no diff (30 lines each; dumps `ddl_go.txt` and `ddl_python.txt` were `diff`ed before the golden file was made). `init_schema_postgresql.sql` (generated 2025-11-08) does not contain the two tables, so Python's ORM was the reference. Not checked: SQLite.
+- Mutation checks (golden file restored): dropping `ON DELETE CASCADE` from the golden file, and changing `name` from 255 to 254, each fail the test.
+- Also unlocked by the same server (not run for this task): the other `AGENTHUB_TEST_PG_URL` tests in `fastmcp/`, `task_management/infrastructure/{database,repositories}`, `application/services` and `auth/infrastructure/repositories`.
+
+## 2026-10-04 — MCP create assignee rule (Task D6c, Go)
+
+- Added `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_assignees_test.go` (5 tests: a seat key with `@` is kept, a bare known role gets the prefix, a bare name that is no role is rejected with the name in the hint, whitespace is stripped, blank assignees are rejected) and `TestValidateAssigneeListAcceptsSeatKeysAndRejectsBareUnknownNames` in `domain/entities/task_test.go`.
+- Mutation check (reverted): the old `crud_handler.go` against the new tests fails the seat-key, bare-unknown and whitespace tests.
+- Checked by reading, not by a test: `agent_doc_generator.go` `GenerateDocsForAssignees` turns `@go-dev` into the directory `go-dev_agent`, returns a ValueError "not found" (`TestGenerateDocsForAssignees` already covers a missing assignee), and the package-level wrapper called by `get_task.go:57` and `next_task.go` discards the error, so a seat key cannot fail a task read.
+- Not tested: filtering by `@<seat_key>`. Tasks filter with `task_assignees.assignee_id = $n` / `IN (...)` (`task_repository.go:735,1567`), an exact match on the stored `@seat_key`; subtasks use `"assignees" LIKE '%' || $1::json || '%'` (`subtask_repository.go:302`). Both need Postgres (`::json`, `::uuid`); that run belongs to the PG task.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/task_management` empty; `go vet` clean on the touched packages; `go test -count=1 ./fastmcp/task_management/domain/entities/ ./fastmcp/task_management/interface/... ./fastmcp/task_management/infrastructure/services/ ./fastmcp/task_management/application/... ./fastmcp/server/...` ok (golden test `TestToolDefinitionsMatchPythonToolRegistry` included).
+
+## 2026-10-04 — session viewer auth gate and after_seq (Task A5b, Go)
+
+- Added to `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go`: `TestSessionViewerRefusesAConnectionWithoutAValidToken` (no token and bad token: HTTP 403, no upgrade, the store is never read, no hub subscription) and `TestSessionViewerAfterSeqThatIsNotAnIntegerReplaysFromTheStart` (after_seq `2` skips, `abc`, empty and `%205` count as 0; Python's `int(' 5')` reads 5, Go keeps `strconv.Atoi`).
+- Mutation check (reverted): the token check replaced by `if false` fails both auth cases (the 7 earlier tests stayed green, as the reviewer found).
+- Result (from `agenthub_go`): `gofmt -l fastmcp/server` empty; `go vet ./fastmcp/server/httpapp/` clean; `go test -count=1 ./fastmcp/server/... ./fastmcp/session_stream/` ok; `go test -count=2 -race -run TestSessionViewer ./fastmcp/server/httpapp/` ok.
+
+## 2026-10-04 — assignee picker failure and empty states (Task D6b, frontend)
+
+- Added `src/tests/components/{AgentAssignmentDialog,TaskEditDialog,LazyTaskListAgentLoading}.test.tsx` (4 + 4 + 5 tests) and 2 tests in `SubtaskEditDialog.test.tsx`: seats listed, user without seats gets the Seats-page hint, a failed load shows an alert and not the empty text, search without a match, a seat failure keeps the project agents, the next load retries, and a loaded state is not fetched again.
+- Fixed the `js-cookie` mocks of `TaskDetailsDialog.test.tsx` and `TaskDetailsDialog.websocket.test.tsx` (added `remove`; `AuthContext` logout calls it): the 38 unhandled `Cookies.remove is not a function` errors are gone (`vitest` prints no Errors line).
+- Mutation checks (each reverted): `loadedAgents` always true fails the retry test; `setAgents` only when the seats also loaded fails the project-agents test; the error branch of `AgentAssignmentDialog` forced off fails the alert test.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit` 0 errors; `npx vite build` ok; `npx vitest run` 92 files / 1737 tests passed (before: 89 / 1722), no failing file.
+
+## 2026-10-04 — session viewer handler tests (Task A5, Go)
+
+- Added `agenthub_go/fastmcp/server/httpapp/ws_session_viewer_test.go` (7 tests over a real socket and an in-memory `sessionViewerStore`, no Postgres): replay after `after_seq` then live (an already-replayed live seq is skipped); missing id and another user's id close identically with 4004; an event published while the replay is blocked is not lost; an overflowing viewer gets 1013 and no subscription is left; an idle client closing releases its subscription; a client message does not end the stream; replay pages of 500 over 1203 and 1000 events (3 reads each, limit 500).
+- Mutation checks (each reverted): ownership check disabled fails the 4004 test; subscribe moved after the replay fails the lost-event and overflow tests; no idle reader fails 5 tests including the idle-close test.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/server fastmcp/session_stream` empty; `go vet ./fastmcp/server/... ./fastmcp/session_stream/` clean; `go test -count=1 ./fastmcp/server/... ./fastmcp/session_stream/ ./fastmcp/websocket/` ok; `go test -count=3 -race -run TestSessionViewer ./fastmcp/server/httpapp/` ok. Not covered: the real database path (`sessionStreamStore`), which needs the PG task.
+
+## 2026-10-04 — getAvailableAgents reads seats (Task D6, frontend)
+
+- Rewrote the `getAvailableAgents` block of `agenthub-frontend/src/tests/api.test.ts` (8 failing tests that asserted the old 32-name list) as 4 tests over a mocked `seatApi`: seat keys of every room as `@seat_key` sorted, a key in two rooms listed once, no rooms means no seat call, a failing seat API rejects.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit` 0 errors; `npx vite build` ok; `npx vitest run` 89 files passed / 1722 tests passed on the final run (before: 8 failed / 1718 passed, 89 files, only `api.test.ts` failing). One earlier run of the same tree had 1 failed test; I did not record which and it did not repeat. The 38 "Errors" (`Cookies.remove is not a function` in `TaskDetailsDialog*.test.tsx`) are unhandled rejections that also occur with these changes stashed.
+
+## 2026-10-04 — rigspec: agreement with `rig spec validate` (Task F1v, Go)
+
+- Added to `agenthub_go/fastmcp/seat_management/domain/rigspec/rigspec_test.go`: `TestRenderRoomRejectsWhatRigValidateRejects` (bad edge kind, unknown member, duplicate member id: `rig spec validate` answers `Rig spec invalid` with that cause and `RenderRoom` rejects the same input) and `TestLaunchCycleIsNotCaughtByRigValidate` (`rig spec validate` accepts a `delegates_to` cycle, `FindLaunchCycle` finds `a>b>a`). Both skip without the `rig` binary or its daemon, like `TestRenderRoomRigCLI`.
+- Result (from `agenthub_go`, GOCACHE/TMPDIR set): `gofmt -l fastmcp/seat_management` empty; `go vet ./fastmcp/seat_management/...` clean; `go test ./fastmcp/seat_management/...` all packages ok; `go test -v -run TestRenderRoomRigCLI ./fastmcp/seat_management/domain/rigspec/` passes for locked, standard, yolo and none (`Rig spec valid: dev`, `Preflight ready`).
+
+## 2026-10-04 — testWebSocket helper and its test removed (Task B10)
+
+- Removed: `agenthub-frontend/src/tests/utils/testWebSocket.test.ts` (18 tests, fixed in B9) with the helper it tested, `src/utils/testWebSocket.ts`, and its import in `src/App.tsx` (decision: a debug function that takes a token on `window` does not belong in the production bundle). Grep of the repo (frontend src, ai_docs, scripts, help pages, e2e) found no other reference apart from changelog history.
+- Result (in `agenthub-frontend`): `npx vitest run` 8 failed / 1736 passed (1744) before, 8 failed / 1718 passed (1726) after, files 90 to 89; the only failing file is still `api.test.ts` (D6), no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes and `grep -rl testWebSocket build` finds nothing.
+
+## 2026-10-04 — dto-integration and testWebSocket (Task B9)
+
+- `agenthub-frontend/src/tests/integration/dto-integration.test.ts` (3 to 0): wrong side was the test. The subtask API calls (`listSubtasksForTask`, `getSubtask`, `createSubtask`) pass no endpoint to `handleResponse`, which then reads `response.url` for response validation (dev mode); the `fetch` mocks had no `url`, a real `Response` always has one. The three mocks now carry the endpoint URL. No source change.
+- `agenthub-frontend/src/tests/utils/testWebSocket.test.ts` (3 to 0): `Object.defineProperty(import.meta, 'env')` does not affect the module under test, so `VITE_BACKEND_URL` was ignored; the file uses `vi.stubEnv` / `vi.unstubAllEnvs`. The "load" log is written once at import and `beforeEach` clears the mocks, so a test re-evaluates the module (`vi.resetModules`) and asserts on the fresh logger. The undefined-token test expected a logged `'...'`; the helper logs `'undefined...'` (`token?.substring(0, 20) + '...'`), so the test now only requires that it does not throw.
+- `src/utils/testWebSocket.ts` is NOT dead code: `src/App.tsx:18` imports it for its side effect, which sets `window.testWebSocket` in every build, production included. Left in place; reported to lead (a dev-only debug helper with a token argument on `window` in the production bundle, and the `'undefined...'` log quirk).
+- Result (in `agenthub-frontend`): `npx vitest run` 14 failed / 1729 passed before, 8 failed / 1736 passed (1744) after, failing files 3 to 1 (only api.test.ts, D6); no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
+## 2026-10-04 — BranchItem, ProjectListContent, AuthWrapper, taskTypes (Task B8)
+
+- `agenthub-frontend/src/tests/types/taskTypes.test.ts` (1 to 0): wrong side was the test. `SubtaskSummary.assignees` is optional, and the "undefined optional properties" test set `assignees: []` and then expected `undefined`; the literal now omits it.
+- `agenthub-frontend/src/tests/components/auth/AuthWrapper.test.tsx` (4 to 0): wrong side was the test. `test-utils` `render` wraps in `AuthProvider`, which this file mocks, so there were two `auth-provider` elements; the file renders with plain `@testing-library/react`.
+- `agenthub-frontend/src/tests/components/ProjectList/components/BranchItem.test.tsx` (4 to 0): the tests used removed props (`isNew`, `isFadingOut`, `isDeleting`, a deleting spinner). The component now animates through `useBranchAnimation`. Replaced by five tests of that behaviour (create animation for a branch under 2 s old and none for an old one, the CSS create class when the factory returns false, delete animation then removal after 800 ms, the CSS delete class), with fake timers and `act` (no `waitFor`); the registration test expects the real call shape `(id, element, 'branch', callbacks)`. `src/setupTests.ts` auto-mocks `branchDeletionTracker`, so the tests set `isMarkedForDeletion` on the mock.
+- `agenthub-frontend/src/tests/components/ProjectList/components/ProjectListContent.test.tsx` (4 to 0): `ProjectItem` sums `branch.task_count`, not a `tasks` array, so the fixtures use `task_count`; a closed project's branches stay in the DOM inside a `ul` with `display: none` (the test asserts the `ul`, and `flex` for the open one); without `onShowProjectDetails` the "View Project Details" button is not rendered, so the old "click does not throw" test became an assertion that it is absent.
+- No source file changed in B8; none had a defect.
+- Result (in `agenthub-frontend`): `npx vitest run` 20 failed / 1723 passed before (the run during B7b), 14 failed / 1729 passed (1743) after, failing files 5 to 3 (api.test.ts, dto-integration, testWebSocket: all out of scope), no file newly fails; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
+## 2026-10-04 — dialog focus follow-up (Task B7b)
+
+- Added to `agenthub-frontend/src/tests/components/ui/dialog.test.tsx`: focus returns to the opener when a child has `autoFocus` (fails on 40057b20, passes with the fix), and hidden controls are skipped by focus-in and by the Tab wrap. File 39 of 39.
+- Result (in `agenthub-frontend`): no file newly fails against the run before (the working tree already held unfinished B8 test edits, so the totals are not a clean B7b measurement: 27 failed / 1712 passed before, 20 failed / 1723 passed (1743) after, failing files 7 to 5, all five also failed before); `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
+## 2026-10-04 — dialog focus management (Task B7)
+
+- Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `focus management (aria-modal)` block (8 tests): focus to the first focusable on open, to the dialog when nothing is focusable, an `autoFocus` child keeps focus, Tab wraps last to first, Shift+Tab wraps first to last, Tab moves normally in between, focus returns to the trigger on close, only the first of two titles labels the dialog. Mutation: removing the Tab handler fails the two wrap tests and removing the restore fails the restore test (restored, tests pass 37 of 37).
+- Result (in `agenthub-frontend`): `npx vitest run` 27 failed / 1704 passed (1731) before, 27 failed / 1712 passed (1739) after; failing files identical (7: api.test.ts, BranchItem, ProjectListContent, AuthWrapper, dto-integration, taskTypes, testWebSocket), none newly failing; `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
+## 2026-10-04 — B5 review follow-ups (Task B5b)
+
+- `agenthub-frontend/src/tests/setupTests.test.tsx`: comment explaining the second `setupTests` copy and its duplicated hooks. `test_useRealtimeSync_project.test.tsx`: two stray blank lines removed. No assertion changed.
+- `agenthub_go/NEXT_GEN.md` G6 measurement now gives a range because `e2e/websocket-protocol-v2.test.tsx` fails one test intermittently, also in isolation.
+- Result (in `agenthub-frontend`): both files pass (7 and 19 tests), `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — dialog ARIA (Task B6)
+
+- Added: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` `accessibility` block (4 tests): `role="dialog"` with `aria-modal="true"`, `aria-labelledby` equal to the title id (and the accessible name), no `aria-labelledby` without a title, two open dialogs resolve to their own titles. `TaskDetailsDialog` 'should have proper ARIA attributes' now passes (30 of 30).
+- Result (in `agenthub-frontend`): `npx vitest run` 29 failed / 1698 passed before, 27 failed / 1704 passed (1731) after, files failing 9 to 7. Per file, TaskDetailsDialog left the list (1 to 0) and no file newly fails. `e2e/websocket-protocol-v2.test.tsx` failed 1 test in the before run only (it also fails or passes by load in other full runs; the reviewer saw it pass alone 3 of 3), so it is not caused by this change. `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes.
+
+## 2026-10-04 — four "needs a look" frontend test files (Task B5)
+
+- `agenthub-frontend/src/tests/setupTests.test.tsx` (3 failing to 0): the suppression tests replaced `console.error` and then called it, so they never reached the filter in `src/setupTests.ts` (the "not suppressed" tests re-implemented the filter inline). A second copy of `setupTests` is loaded at the top of the file with a spy as its sink, and the tests call the real filter (`it.each` for the three suppressed messages, one for forwarded errors with arguments, one for non-string arguments). Mutation: dropping the `useLayoutEffect` check in `setupTests.ts` fails the matching test (restored, `git diff` empty).
+- `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_project.test.tsx` (2 to 0): the hook reports invalid project payloads through `logger.warn` (`Project update missing ID`, `Project delete payload validation failed`), not `console.error`; the tests assert the logger calls and the unused console spies are gone.
+- `agenthub-frontend/src/tests/useAgentManagement.test.tsx` (7 to 0): `useUserAgentInstances` returns `isLoading`, not `loading` (all 7); and the mutations write the cache and then invalidate it, which refetches the list, so the list mock now comes from a small fake server that the mutation mocks update. The cache test asserts exactly one refetch after a create instead of none.
+- `agenthub-frontend/src/tests/components/TaskDetailsDialog.test.tsx` (5 to 1): two `(Loading...)` markers exist by design (Details and Context tab), Created and Last Updated both show the date, the context fixture put loose keys where the dialog renders `task_data`, and `fireEvent.keyDown` does not press a button, so the keyboard test uses `userEvent.keyboard('{enter}')`. NOT fixed: `should have proper ARIA attributes` expects `role="dialog"`, which the shared `src/components/ui/dialog.tsx` does not render (no `role`, `aria-modal` or label). That is a source accessibility defect, reported to lead, test left failing.
+- Result (in `agenthub-frontend`): `npx vitest run` 44 failed / 1683 passed before, 28 failed / 1699 passed after (1727 tests), failing files 11 to 8; `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — frontend callAgent tests removed (T6b)
+
+- Removed: the `callAgent` describe block (6 tests) and the `callAgent` import and mock entry in `agenthub-frontend/src/tests/api.test.ts`; no `AgentInfoDialog` or `apiV2` test covered it.
+- Result (in `agenthub-frontend`): `npx tsc --noEmit -p .` 0 errors; `npx vite build` passes; `npx vitest run` 45 failed / 1688 passed (1733) before, 44 failed / 1683 passed (1727) after, files failing 12 before, 11 after (the per-file list of the first run was not kept, so which file turned green is unverified). Remaining failures: api.test.ts 8 (`getAvailableAgents`, D6), BranchItem 4, ProjectListContent 4, TaskDetailsDialog 5, AuthWrapper 4, test_useRealtimeSync_project 2, dto-integration 3, setupTests 3, taskTypes 1, useAgentManagement 7, testWebSocket 3.
+
+## 2026-10-04 — call_agent removal: tests removed and re-homed (T6, Go)
+
+- Removed with their code: `agents_mount_test.go`, `call_agent_test.go`, `call_agent_port_test.go`, `agent_invocation_handler_test.go`, `yaml_agent_template_loader_test.go`, the seeder tests (in `openrig_spec_renderer_test.go`) and `TestPathResolverGetCursorAgentDir`.
+- Changed: `openrig_spec_renderer_test.go` `loadTestTemplate` builds the `AgentTemplate` directly (same slug, version, prompt, rule and output format values); `authenticateTestUser` and `doTestRequest` moved into `seat_mount_test.go` for the seat mount tests; token cost tests 68 to 67 operations; golden and tool config fixtures lost `call_agent`; version test expects 0.0.14; connection tool text test lost the Agent Library Dir line.
+- Added: `TestMCPToolsListPublishesCallSeat` fails if tools/list publishes `call_agent`.
+- Result: `gofmt -l` empty, `go vet ./...` clean, `go test ./...` 139 packages ok (from `agenthub_go`).
+
+## 2026-10-04 — TaskRowDesktop test: split negated class assertion (Task B4b)
+
+- Changed: `agenthub-frontend/src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx`: `not.toHaveClass('loading', 'bg-orange-100')` (passes if only one is absent) is now two separate `not.toHaveClass` calls. Added a test that `has_dependencies: true` with `dependency_count: 0` renders '0 dependencies' (the component trusts the flag), now 24 tests.
+- Checked: `npx vitest run` on the file 24 passed; `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — TaskRowDesktop test rewritten against the current component (Task B4)
+
+- Rewritten: `agenthub-frontend/src/tests/components/TaskRow/components/TaskRowDesktop.test.tsx`, 17 failing tests of the removed API (default export, `task`/`isEditing`/`onSaveEdit`) replaced by 23 tests of the current component (named export, `summary`/`fullTask`, `useTaskRowState`): content, subtask and dependency counts with their fallbacks to the full task, assignees and the agent-info dialog, expansion (click does not reach the row, loading, the subtask list needs `isExpanded` and a full task), hover, `elementRef`, row classes. Child components are mocked.
+- Checked: all 23 pass; removing `stopPropagation` and the singular dependency label in the component each fail a test (restored); `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — resolved seat Save lost-race test (Go)
+
+- Added `TestResolvedSeatSaveLostRace` to `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go` (scripted driver, SQLSTATE 23505 on insert). Fails without the `Save` change, passes with it.
+
+## 2026-10-04 — call_seat tests (Go)
+
+- Added with `2740697e`: `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller_test.go` (resolve, input failures, tenant failure, tool registration, input schema) and `agenthub_go/fastmcp/server/httpapp/call_seat_mcp_test.go` (tools/list publishes `call_seat` with its schema, tools/call resolves a seat end to end, a resolver failure is a tool result).
+- Review follow-up: the success test asserts `policy`; the failure table has a whitespace-only room case. `go test ./fastmcp/seat_management/... ./fastmcp/server/httpapp/...` passes.
+
+## 2026-10-04 — SignupForm and EmailVerification tests follow the components (Task B3)
+
+- Changed (tests only, plus `agenthub-frontend/vite.config.ts`): `SignupForm.test.tsx` (21 failing -> 23 pass): labels are queried with anchored regexes (MUI appends ` *` to required labels), the `Sign Up` heading by role, `Medium123` is `Good`, a successful signup navigates to `/registration-success`, the loading check uses `waitFor` and `within(button)`, the API URL test uses `API_BASE_URL`; the 'too weak' assertion is removed (see below). `EmailVerification.test.tsx` (7 failing -> 15 pass): the hash is parsed in an effect during render, so `waitFor` under fake timers hung (removed, timers advance in `act`), the 'processing' state is never observable, `rerender` does not re-read the hash (fresh render per state), the resend button is queried by role, the API URL test uses `API_BASE_URL`.
+- Excluded: `src/tests/e2e/live-websocket.test.ts` is no longer collected by vitest (`test.exclude`); it is a Playwright spec and the repo has no Playwright config or script. Whether to set up Playwright is an open owner question.
+- Not fixed: `TaskRowDesktop.test.tsx` (17 failing) tests an older component (default export, `task`/`isEditing`/`onSaveEdit` props); `TaskRowDesktop.tsx` has a named export and takes `summary`/`fullTask` with `useTaskRowState`, so the file needs a rewrite or removal.
+- The 'too weak' rule in `SignupForm.tsx` (score below 40) is live: each matched class adds 20, so an 8-character password with no matching character, such as `________`, scores 20 and is rejected, while `password` scores 40 and is not. The removed assertion is back as 'rejects a password whose characters match no strength class'.
+- Ran (in `agenthub-frontend`): SignupForm and EmailVerification, 2 files, 38 tests passed; `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — three frontend test files load again (Task B2)
+
+- Changed (tests only): `EmailVerification.test.tsx` and `SignupForm.test.tsx` used `jest.requireActual` inside `vi.mock` (not defined, so the file failed to load); they now use the `importOriginal` partial mock, drop the nested `BrowserRouter` that `test-utils` already provides, and use `vi` timers / user-event v13 directly; `SignupForm.test.tsx` also mocks `ThemeToggle`. `TaskRowDesktop.test.tsx` spreads the real `lucide-react` exports instead of listing icons. `hooks/index.test.ts` test renamed 'exports the expected hooks'.
+- Result (in `agenthub-frontend`): the three files now load. EmailVerification 8 passed / 7 failed, SignupForm 2 / 21, TaskRowDesktop 0 / 17: real assertion or mock mismatches, not fixed here (SignupForm cannot find labels such as 'Email Address'; TaskRowDesktop renders an undefined component). `e2e/live-websocket.test.ts` is unchanged: no Playwright config or script exists in the repo.
+
+## 2026-10-04 — eight stale frontend test files follow the current code (Task B1)
+
+- Changed (tests only, no source change): `tokenService.test.ts` (5 failing) and `mcpTokenService.test.ts` (2) assert on the mocked `utils/logger` (`debug`/`info`/`error`) instead of `console`; `hooks/index.test.ts` (1) lists the 23 current exports; `useAuthenticatedFetch.test.ts` (3) defines `mockResponse`, uses `skipAuth` for the plain-401 case and awaits the rejection inside `act`; `muiTheme.test.ts` (2) asserts the themes `createTheme` returned (the spy is cleared after import); `ui/button.test.tsx` (2) and `ui/dialog.test.tsx` (1) follow the current class names and overlay markup; `ui/toast.test.tsx` (2) uses `vi` timers and the `border-success`/`border-error` classes.
+- Review follow-up (B1b): `hooks/index.test.ts` checks the export list with `arrayContaining`; the duplicate skipAuth-401 test is removed (`useAuthenticatedFetch.test.ts`: 16 -> 15 tests); `muiTheme.test.ts` records the `createTheme` options with `vi.hoisted` and asserts two calls; `button.test.tsx` matches `bg-gray-50` as a whole class.
+- Ran (in `agenthub-frontend`): before, 18 tests failing in these files; after, 8 files, 159 tests passed (after B1b); `npx tsc --noEmit -p .` 0 errors.
+
+## 2026-10-04 — jest leftovers ported to vitest in five test files
+
+- Changed: `src/tests/components/auth/LoginForm.test.tsx` (partial `react-router-dom` mock, `^password` label, loading-state check in `waitFor`), `src/tests/index.test.tsx`, `src/tests/services/WebSocketClient.test.ts`, `src/tests/hooks/useTheme.test.tsx` (replaces `useTheme.test.ts`); no source change.
+- Merged: `src/services/WebSocketAnimationService.test.ts` (outside the test directories) removed; its valid coverage added to `src/tests/services/WebSocketAnimationService.test.ts` (duplicate-init guard, 100-message burst; 23 -> 25 tests). Its null-client, missing-payload and null-data tests were dropped: the types do not allow those inputs.
+- Renamed (review): `index.test.tsx` 'handles logger export module initialization failure silently' -> 'renders the app when the logger export default is a rejected promise'; it never reached the `.catch` in `index.tsx`, the import-failure test does.
+- Ran (in `agenthub-frontend`): the five files + the merged file pass; `npx tsc --noEmit -p .` 0 errors; full `npx vitest run`: 1671 tests, 1609 passed, 62 failed in 23 files, none of them in these files.
+
+## 2026-10-04 — AuthContext tests call the provider's real handlers (`d532cc4d`)
+
+- Rewritten: `agenthub-frontend/src/tests/contexts/AuthContext.test.tsx`, 26 tests, 18 failing before, 26 pass after; no test added or removed, no source change.
+- What changed: the tests capture the value of the rendered provider through `useAuth()` and `await` its `login`, `signup` and `refreshToken` inside `act`; `vi` timers and `vi.stubEnv` replace `jest` and the `import.meta.env.MODE` assignment; `logger.error` is spied instead of `console.error`; the missing-provider test expects `useAuth must be used within an AuthProvider`.
+- Ran: `npx vitest run src/tests/pages/Profile.test.tsx src/tests/contexts/AuthContext.test.tsx` (in `agenthub-frontend`): 2 files, 44 tests passed (26 here, 18 in the Profile entry below).
+
+## 2026-10-04 — Profile tests render the page (`e6d7d1b9`)
+
+- Rewritten: `agenthub-frontend/src/tests/pages/Profile.test.tsx`, 18 tests, all 18 failing before, 18 pass after; no test added or removed, no source change.
+- What changed: `vi.mock('react-router-dom')` keeps the real exports and replaces only `useNavigate` (the automock removed the `BrowserRouter` that `test-utils` renders in); the auth provider value has the current `AuthContextType` keys; the theme mock is shared through `vi.hoisted`; the missing-context test renders without providers; two expectations follow the page (Preferences card text, one initial for a one-word name).
+- Known gap, not changed: `handleSave` in `src/pages/Profile.tsx` only shows an alert and never saves, so the `saves profile changes` test asserts only the alert and leaving edit mode.
+
+## 2026-10-04 — frontend suite triage: 298 failing tests down to 140 (see agenthub-frontend/CHANGELOG.md)
+
+Full `npx vitest run` (3 forks, 2 GB heap): before 1720 tests, 1422 passed, 298 failed, 9 files that do not load;
+after the commits below 1609 tests, 1469 passed, 140 failed, 9 files that do not load (the 710 in NEXT_GEN G6 was stale).
+Code and the backend payload are the truth; no expectation was loosened. Counts are from the run report or the file.
+
+- Removed (the code under test does not exist, no caller, never in `git log -S` for the missing names):
+  `contextHelpers.test.ts` (33 tests) and `api-lazy.test.ts` (10) in `3aedc74d`; `typeValidation.test.ts` (34, 22 failing)
+  with its unused module in `75d1489c`; the `Rule operations` (5) and `checkHealth` (3) blocks of `api.test.ts` (116 -> 108 tests)
+  in `44ab626a`; the duplicate `src/utils/logger.test.ts` (29 tests, 22 failing, outside `src/tests`, configs the type
+  does not have) in `1f9345e4`.
+- Rewritten to the code, same intents: `statusEmojis.test.ts` 25 tests (24 failing) -> 18 run (5 declarations; `in_progress`
+  is `⚙️`, not `⏳`); `logger.config.test.ts` 40 (31 failing) -> 33 run, with `vi.stubEnv` instead of a faked
+  `global.import.meta`, and the removed alias exports no longer tested; `environment.test.ts` 25 tests (11 failing),
+  same 25 test names and same 41 `expect` lines, only the stubbing changed; `badge.test.tsx` 24 (13 failing) asserts the
+  green/gray/red palette the component uses; `GlobalContextDialog.test.tsx` 15 (12 failing) asserts the redesigned dialog;
+  `logger.test.ts` (canonical) 45 tests, 5 fixed (debug goes through `console.log`, `%c` prefix, object-URL stubs for jsdom);
+  `api.test.ts` 9 expectations (`includeContext` pass-through, default `assignees: []`).
+- Added: `useSubtaskExpansion.test.ts` 1 -> 4 (timers cancelled on unmount, dialog auto-clear, stagger timers, no timer after
+  unmount); SeatsPage 23 -> 27 and SeatDetailPage 13 -> 16 (failed create room / add seat / remove seat / add op / add link
+  keep the form and show the server error, a reopened dialog shows no stale error, Add op needs a version for add and pin);
+  `src/tests/utils/seatModules.test.ts` (5, new: `src/tests/lib` is ignored by the global `lib/` rule).
+- Offload: the `environment` and `GlobalContextDialog` rewrites were drafted by deepseek workers; each diff was read line
+  by line and the files rerun before commit (reviewer confirmed `environment`: identical test names and `expect` lines).
+- Still failing on purpose: 8 `getAvailableAgents` tests in `api.test.ts` assert `toHaveLength(32)` and `@`-prefixed names
+  that match neither `src/api.ts` (42 names) nor the agent library; the picker source is an open decision (NEXT_GEN D6).
+
+## 2026-10-04 — agent assignment stubs removed
+
+- Added: `TestAgentsAssignmentRoutesAreNotServed` (`agents_mount_test.go`): the four assignment paths answer 404 or 405. Verified red first: all four returned 500 before the handlers were deleted.
+- Removed: `TestAgentsAssignmentRoutesMatchPythonErrors`, `TestAgentsAssignRequiresQueryParameters`, and the four assignment probes in `TestMountAgentsRoutesRegistersEveryPattern` (it now probes `/call` only).
+- Ran: `go vet ./fastmcp/server/...` clean, `gofmt -l fastmcp` clean, `go test ./fastmcp/server/...` pass.
+
+## 2026-10-04 — concrete versions only on overlay add and in the resolver
+
+- Added: `TestResolveRejectsNonConcreteVersions` (seat type ref, overlay add, with `""` and `"latest"`) and `TestResolveIgnoresNewlyPublishedModuleVersions` in `resolver_test.go`; `add` bodies without a version or with `"latest"` in `TestSeatAdminOverlayValidation` (`seat_admin_mount_test.go`).
+- Verified red first: the resolver test failed with `error = <nil>` for all 4 cases, and the admin test returned 422 instead of 400 for the two `add` bodies.
+- Removed: `TestResolveFollowLatestBecomesConcrete`, the `base latest` and `add unknown latest` cases, the `Latest` fakes (`memCatalog`, `emptyCatalog`, `moduleCatalog`, which also removes the string version compare the reviewer flagged), and the ordered-latest assertion of the catalog test (`TestDBCatalogLatestOrderingAndGet` is now `TestDBCatalogGet`). Existing admin tests that sent `add` without a version now send one.
+- Removed: the `ModuleRepository.LatestVersion` calls in `orm_repositories_test.go` (the swallowed-error check now uses `GetVersion`) and `integration_test.go` (now asserts `ListLatest`; Postgres integration not run).
+- Ran: `go vet ./fastmcp/...` clean, `gofmt -l fastmcp cmd` clean, `go test ./fastmcp/seat_management/... ./fastmcp/server/httpapp/ ./cmd/...` pass. Not run: Postgres integration tests.
+
+## 2026-10-04 — removed agent routes answer 404
+
+- Added: `test_routes_without_a_controller_method_are_not_served` (6 parametrized cases in `agenthub_main/src/tests/server/test_agent_routes.py`): the six removed paths answer 404.
+- Verified red first: before the deletion all 6 cases failed (500); after it all 10 tests in the file pass. `ruff format --check` and `ruff check` clean.
+
+## 2026-10-04 — agent metadata route returns the controller dict
+
+- Added: `agenthub_main/src/tests/server/test_agent_routes.py` (4 tests, FastAPI `TestClient` on the agent router with stubbed auth and database): the controller dict is returned unchanged (200), a failed result answers 500 with its `message` or the default text, and the real `AgentAPIController` with a stubbed facade serves `source: facade` and the total.
+- Verified red first: on the parent commit 3 of the 4 fail (the controller-dict tests with `'dict' object has no attribute 'success'` in the route log, and the controller-message test because the route answers its generic 500 text); the default-message test passes by coincidence because that generic text is the same; after the fix 4 pass. The reviewer reproduced the 3 failures on a parent archive. Run: `cd agenthub_main && .venv/bin/python -m pytest --noconftest -p no:cacheprovider src/tests/server/test_agent_routes.py -q`. `ruff format --check` and `ruff check` clean on both files.
+
+## 2026-10-04 — G5 pin and follow-latest through SeatResolutionService
+
+- Added: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion` (`seat_resolution_service_test.go`, fakes only): a module version published alone changes neither a pinned nor a follow-latest seat; a new seat type version referencing it changes only the follow-latest seat; the pinned seat keeps hash and content. It passed on first run (the behavior already held, so there was no red step).
+- Verified: with the pin check bypassed in `seatTypeVersion` the test fails on the pinned seat; source restored. `go vet` and `go test ./fastmcp/seat_management/...` ok.
+
+## 2026-10-04 — renderer test covers agy with comm-guard
+
+- Changed: `TestRenderSeatSameModulesOnBothRuntimes` (`seatrenderer/renderer_test.go`) loops `codex` and `agy`: no `runtime/` file, skill still names `seatcheck send`. Coverage only, so there was no red step.
+- Verified: with `receivesClaudeFragments` mutated to treat agy as Claude the test fails for agy (two runtime files), and passes with the source restored; `go vet` and `go test ./fastmcp/seat_management/domain/seatrenderer/` ok.
+
+## 2026-10-04 — seatcheck PATH check uses the tmux global PATH
+
+- Added (`test_openrig_seat_sync.py`): `test_tmux_global_path_reads_the_global_environment`, `test_tmux_global_path_is_none_without_an_answer` (4 cases: non-zero exit, `-PATH`, tmux missing, tmux hangs past the 5 s timeout), `test_path_limit_says_only_the_default_tmux_socket_is_queried`, `test_pull_checks_the_tmux_global_path_not_the_shell_path`, `test_pull_fails_when_the_tmux_global_path_lacks_the_checker`, `test_shell_path_fallback_is_said_in_the_output`. Added an autouse fixture `no_tmux_server` so the other tests never reach a real tmux server.
+- Verified: the 4 new behaviour tests failed before the change; `pytest --noconftest src/tests/scripts` 166 passed after it (the timeout case and the PATH_LIMIT test failed first).
+
+## 2026-10-04 — TestMachineExpectedHashIntegration reruns on a used database
+
+- Changed: `TestMachineExpectedHashIntegration` (`seat_management/infrastructure/repositories/orm/integration_test.go`): the second tenant is `userID + "-other"` (was the constant `seat-sync-other-user`). With the constant, a rerun against the same Postgres failed with `duplicate key value violates unique constraint "uq_seats_room_seat_key"` because the previous run's room and seat for that tenant still existed.
+- Verified: on a throwaway Postgres 16 (`127.0.0.1:55433`, own cluster) the test failed on 3 of 3 reruns before the change and passed on 3 of 3 reruns after it; the other seat-management Postgres tests passed in the same runs. No assertion was changed.
+
+## 2026-10-04 — switch accepts the agy runtime
+
+- Added: `test_switch_accepts_the_agy_runtime` (`test_openrig_seat_sync.py`): `switch room1 seat1 --runtime agy` keeps the seat's current model, exits 0, PUTs `{"runtime": "agy", "model": "old-model"}` and prints the `switched:` line. The first draft passed `--model ""`, which is pinned as invalid (exit 2) by `test_switch_usage_errors_exit_2`; another seat replaced it with this runtime-only form before commit.
+- Verified: the test fails (exit 2) with `RUNTIMES` reverted and passes with it; `test_openrig_seat_sync.py` 67 passed.
+
+## 2026-10-04 — delegate-deepseek module 1.1.0
+
+- Added: `test_delegate_module_carries_the_chef_and_worker_wording` (`test_openrig_team_setup.py`): the module text has the chef wording and `team.json` carries version 1.1.0. Changed: the company overlay test expects `delegate-deepseek@1.1.0`; the word limit for the module is 100-230 (was 100-180).
+- Verified: the new test and the overlay test failed before the change; `test_openrig_team_setup.py` 24 passed after it.
+
+## 2026-10-03 — seat status accepts the agy runtime
+
+- Added: `TestSeatStatusPostAcceptsEverySeatRuntime` (`seat_status_mount_test.go`) posts a report for each of claude-code, codex, agy, terminal and unknown and expects 200; `test_runtime_mapping_keeps_every_supported_runtime` (`test_openrig_bridge.py`) checks the bridge maps agy to `agy` and an unlisted runtime to `unknown`.
+- Verified: the Python case for agy failed before the change; `go test ./fastmcp/server/httpapp/` and `pytest --noconftest src/tests/scripts` (155 passed on the committed tests only; the working tree then also held a failing, uncommitted `test_switch_accepts_the_agy_runtime`, fixed in the entry below) pass after it.
+
+## 2026-10-04 — remove tests for APIs the code does not have
+
+- Removed: `src/tests/utils/contextHelpers.test.ts` (33 tests) and `src/tests/api-lazy.test.ts` (10 tests); every test failed with "is not a function" because the functions they call do not exist in the source (see the frontend CHANGELOG).
+- Context: the first full `npx vitest run` (3 forks, 2 GB heap): 1720 tests, 1422 passed, 298 failed in 31 files, plus 9 files that do not load. The 710 in NEXT_GEN G6 was stale. This is cluster 1 of the triage.
+
+## 2026-10-04 — useSubtaskExpansion timer cleanup
+
+- Added: `src/tests/hooks/useSubtaskExpansion.test.ts` (1 test): no timer is pending after the hook unmounts (fails without the fix: 2 timers left).
+- Verified: 10 runs of both LazySubtaskList files plus the new test, 45 tests passed and exit 0 every run. Before the fix 1 of 10 runs exited 1 with an unhandled `window is not defined` error.
+
+## 2026-10-03 — frontend tests for token refresh and API URLs
+
+- Changed (commit 5826863a): 16 frontend test files updated for the token refresh and API URL changes: `App`, `Header`, `LazySubtaskList` (two files), `MCPTokenManager`, `ProjectList`, `SubtaskRowRefactored` (two files), `TaskRowMobile`, `TaskSearch`, `websocket-animations-e2e`, `TokenManagement`, `AnimationFactory`, `WebSocketAnimationService` (two files), `apiV2`.
+- Verified: `npx vitest run` on those 16 files together: 16 files, 445 tests passed; `npx tsc --noEmit -p .`: 0 errors.
+
+## 2026-10-03 — agy runtime occupant and validation tests
+
+- Updated: `TestValidateRuntime` and `TestValidateOccupant` in `names_test.go` to test the `agy` runtime, ensuring it accepts empty model, Gemini, GPT, and Claude models (e.g., `claude-opus-5-5-high`, `claude-sonnet-5-5-medium`), while `codex` continues to reject Claude models.
+- Formatted: `seat_mount_test.go` with `gofmt -w` to remove trailing blank line.
+
+## 2026-10-03 — seat types seed without AGENTHUB_PUBLIC_URL
+
+- Added: `TestSeedSeatTypesWorksWithoutPublicURL` (verifies `POST /api/v2/openrig/seat-types/seed` succeeds without `AGENTHUB_PUBLIC_URL`), `TestSeedSeatTypesErrorMapping` (verifies 500 status on seed repository error) in `seat_mount_test.go`.
+
+## 2026-10-03 — SubtaskEditDialog effects
+
+- Added: `src/tests/components/SubtaskEditDialog.test.tsx` (5 tests): both agent lists load when the dialog opens and not while closed; a subtask change while open does not reload them; the form pre-fills on open and again on a subtask change; unsaved edits are discarded on close and reopen. Mutation check: adding `subtask` to the agent-load effect's deps fails the reload test.
+
+## 2026-10-03 — seat permission policy
+
+- Added: `SeatDetailPage > Permissions panel` (current policy and the five options, Save disabled when unchanged; save calls `putPermissionPolicy('dev','alice','yolo')`, refetches seats and shows the yolo warning; a rejected policy shows the server error; 13 tests in the file) and `sets a permission policy with PUT .../permission-policy` in `seatApi.test.ts`.
+- Changed: the `SeatDetailPage` seat fixtures carry `permission_policy`.
+
+## 2026-10-03 — delete room
+
+- Added: `SeatsPage > delete room` (confirm deletes `dev` and closes the seat list; cancel sends nothing; a server error is shown and the room stays; 23 tests in the file) and `deletes a room with DELETE /rooms/{room}` in `seatApi.test.ts`.
+
+## 2026-10-03 — delete seat link
+
+- Added: `deletes a link and refetches the list` and `shows the server error when deleting a link fails` in `SeatDetailPage.test.tsx` (10 tests in the file); `seatApi.test.ts` (new) checks the DELETE URL (path segments encoded) and method.
+
+## 2026-10-03 — apiRequest 404 detail
+
+- Added: `rejects a 404 with the server detail as the message` and `keeps the generic message for a 404 without a detail` in `apiRequest.test.ts` (8 tests in the file, all pass). The first fails without the fix.
+
+## 2026-10-03 — overlay ops must name catalog modules
+
+- Added: `TestSeatAdminOverlayRejectsUnknownModules` (add of an unknown module and of a missing version, pin of an unknown module: 422 "not found in catalog", nothing stored; add of a known module and remove of a type-supplied module: 200).
+- Changed: `TestSeatAdminOverlays` and `TestSeatAdminGetOverlays` seed the module versions their ops name.
+
+## 2026-10-03 — seatcheck recipient hint and drift query shape
+
+- Added: `TestSendUnknownRecipientHintListsOnlyAllowedSeats` (a roster seat the policy does not allow, and an explicitly denied one, are not named; no allowed seat gives the no-recipient message; a mutation listing every seat fails it). `TestColumnDriftFindsMissingAndBlockingColumns` now asserts that exactly one `information_schema` query ran and that it is scoped by `current_schema()`.
+- Changed: `TestSendUnknownRecipientListsSeatKeys` expects `use a seat key: b`.
+
+## 2026-10-03 — create-seat occupant validation
+
+- Added: `TestSeatAdminCreateSeatValidatesOccupant` (codex + Claude model, a model with spaces/shell characters and a leading dash are 400 and store nothing; a codex model, a Claude model on claude-code and an empty model are 200). Fails without the fix.
+
+## 2026-10-03 — seatcheck full session names
+
+- Added: `TestSendAcceptsAFullSessionName`, `TestSendFullSessionNameOfAnUnlinkedSeatIsDenied`, `TestSendUnknownRecipientListsSeatKeys`, `TestSendFullSessionNameWithRepeatedMemberDeliversToThatSession`, `TestResolveRecipient`. Drafted by deepseek (session e8b7d68e-3d05-40e4-8805-d01ff0968026), verified by me with a mutation check.
+- Changed: `TestSendDeniedWritesAuditAndSkipsDelivery` checks the `denied:` line as a prefix (the unknown-recipient hint follows it).
+
+## 2026-10-03 — column drift notice
+
+- Added: `TestMissingTablesNilEngine`, `TestLogMissingTablesReportsACheckFailure` (nil engine and a failing query are logged, never fatal), `TestColumnDriftFindsMissingAndBlockingColumns` (a missing column and an unknown NOT NULL column without default are reported, an unknown nullable one is not, complete tables and absent tables are not), `TestInitDatabaseLogsColumnDriftWithoutAutoMigrate` (startup succeeds, no DDL runs), `TestColumnDriftNoticeNamesBothKinds`; `fakedriver_test.go` answers the drift query (`schema`, `failQuery`). Drafted by deepseek (session c23cf86b-f5cc-49e0-87e0-35388f9222f1), verified with two mutations.
+- Changed: `TestMissingTablesListsOnlyAbsentRegisteredTables` derives the expected count from the registry instead of `len(Tables)-2`.
+- Note: the `seat_management` tables are not linked into this package's test binary, so the drift fixture uses a registered task_management table; the seats case (status NOT NULL, no permission_policy) is the same comparison and is not covered against a real database.
+
+## 2026-10-03 — permission policy is never empty
+
+- Added: `TestSeatPermissionPolicyCheckMatchesResolver` (the CHECK list in the SQL file and the seats DDL equals `resolver.PermissionPolicies`), an empty policy case in `TestRenderRoomRejectsInvalidMemberPolicy`.
+- Changed: every seat fixture in rigspec, httpapp and the Postgres integration tests carries `PermissionPolicy: "standard"`; the "no policy, no line" expectations are replaced by `builtin:standard`; `TestRenderRoomRigCLI` runs `locked`, `standard`, `yolo`, `none`. Postgres integration tests were updated but not run (no database here). The PUT 400 case already existed in `TestSeatAdminSetPermissionPolicy`; a cross-tenant HTTP test is not possible with the single-user fake, the SQL scoping is covered by `TestSeatUpdatePermissionPolicyIsUserScoped`.
+
+## 2026-10-03 — deterministic bridge timeout, permission-policy route
+
+- Changed (`test_openrig_bridge.py`): the run-loop timeout step no longer races a 0.5 s server sleep against a 0.2 s client timeout; the server holds the request open until the fixture releases it and `SEND_TIMEOUT` is 1 s, so the timeout is certain and normal requests have a wide margin under load. Three runs: 33 passed.
+- Added: `TestSeatAdminPermissionPolicyIsRenderedAndTenantScoped` (PUT permission-policy: another tenant 404 and unchanged, invalid value 400 and not rendered, valid value stored and rendered on the member in the rigspec). The 400 and valid-store cases were already in `TestSeatAdminSetPermissionPolicy`.
+
+## 2026-10-03 — hard-delete cycle subtest, exact expected-hash row count
+
+- Changed: the launch-cycle subtest now deletes the middle seat (a -> b -> c, c -> a is 400, delete b, c -> a is 200) instead of the vacuous "removed seats do not count"; `TestMachineExpectedHashIntegration` asserts exactly three seat rows so a duplicate cannot hide behind the map. The self-loop cases (`a delegates_to a`, `a spawned_by a`) were already in `TestFindLaunchCycle`. Real PG (fresh database), vet and tests for seat_management and httpapp: ok.
+
+## 2026-10-03 — seatcheck end to end and outcome audit failure
+
+- Added: `TestSendEndToEndDeliversThroughRig` (runSend with the real `rigSend` against a fake `rig` on PATH: argv is exactly `[send -- pod-b@r "fix the bug"]`, audit is decision then `delivered`), `TestSendOutcomeAuditFailureAfterDeliveryKeepsExitZero` (the outcome line cannot be written after delivery: exit 0 with a warning when delivered, exit 5 when not; one decision line remains). Drafted by deepseek (session fa08f03c-98de-4c23-b6ae-c1d09b72b09e); mutation check: restoring `return exitAuditFailed` fails them.
+
+## 2026-10-03 — seat checker PATH limit
+
+- Changed (`test_openrig_seat_sync.py`): the pull-without-checker and install-checker-not-on-PATH tests also assert the daemon-PATH note (`rig daemon stop`, "inherit", "does not expose"). file: 66 passed.
+
+## 2026-10-03 — per-seat permission policy
+
+- Added: `TestRenderRoomPermissionPolicyPerSeat` (all five policies render exactly once, on the member), `TestRoomRigSpecRendersPermissionPolicyPerSeat` (three seats, three policies, none on the rig, a `?permission_policy=` query changes nothing), `TestSeatAdminServiceSetPermissionPolicy`, `TestSeatAdminSetPermissionPolicy` (200, 400 for invalid/empty/unknown field, 404 for unknown room/seat, rejected call leaves the seat unchanged), `TestSeatAdminCreateSeatPermissionPolicy` (default `standard`, explicit, invalid is 400 and stores nothing), `TestSeatUpdatePermissionPolicyIsUserScoped`, tenant and update checks in the Postgres integration test, and a probe for the new route in the auth table.
+- Changed: `TestRenderRoomRigCLI` runs the real `rig spec validate` + `preflight` for `""`, `locked`, `standard`, `yolo`, `none` with the policy on every seat; the rig-level and override tests are removed. `test_openrig_seat_sync.py`: the `--permission-policy` tests become one test that the plain path is requested and the flag is rejected.
+
+## 2026-10-03 — place_agent
+
+- Added (`test_openrig_seat_sync.py`): `test_place_agent_links_a_directory_and_a_file`, `test_place_agent_replaces_a_real_directory_and_an_older_link`, `test_place_agent_without_symlinks_fails_loudly_and_copies_nothing`. scripts suite file: 61 passed.
+
+## 2026-10-03 — reviewer-requested seat removal and overlay tests
+
+- Added: `TestRemoveSeatFailureInTheTransactionStopsAndPropagates` (a failing delete at each of the five steps ends the transaction body at that step and returns the error, so `InTransaction` rolls back; the fake now records `tx-begin`/`tx-end`), `TestSeatBodyHasNoStatusKey`, a check in `TestSeatDeletesIntegration` that deleting a seat's `seat_status` leaves another tenant's row of the same seat, and slug/version secret cases in `TestSeatAdminOverlayRoutesRejectSecretContent` (all three routes). Real PG (fresh database): ok.
+
+## 2026-10-03 — seatcheck hardening tests
+
+- Added: `TestSendHasNoPinsFlag`, `TestSendRefusesAPolicyOfAnotherSeat`, `TestSendRefusesAnIdentityThatIsNotADirectoryName`, `TestSendAuditsBeforeDelivering` (the stub reads the audit file at delivery time), `TestSendAuditFileMustBePrivate`, `TestSendDeliveryFailureIsItsOwnExitCode` (rig exits 1,2,3,4,7 all become 5, audit shows the decision then delivery_failed), repeated-member tests; and `exec_test.go` running the real `rigSend` and `rigWhoami` against a fake `rig` on PATH (argv `send -- <session> --rig=x`, message with shell metacharacters is one argument and not evaluated, stdin detached with a pipe holding LEAK on os.Stdin, exit code and missing binary, whoami argv and failures). `exec_test.go` drafted by deepseek session e2c71135-50ac-4873-8cac-5ecdb0c55167 (the worker ran it with `go test -overlay`; I applied it, unescaped, and re-ran it). Mutations: dropping `--` fails `TestRigSendArgv` and the message test; dropping the seat check fails the mismatch test. cmd/seatcheck ok.
+
+## 2026-10-03 — comm-guard allows rig whoami
+
+- Changed: `TestLoadEmbeddedSeedsCarryCommGuard` expects the allow list `seatcheck send`, `rig whoami` and the skill to explain exit codes 2, 3 and 5; the renderer tests expect 5 denies and 2 allows (7 `Bash(` entries) on claude-code and the extra allow order. seatrenderer, seedlibrary, seedmap ok.
+
+## 2026-10-03 — missing-tables startup notice
+
+- Added (`missing_tables_test.go`): `TestMissingTablesListsOnlyAbsentRegisteredTables`, `TestInitDatabaseNamesMissingTablesWithoutAutoMigrate` (log names a missing table and the AUTO_MIGRATE hint, startup succeeds, no DDL), `TestInitDatabaseWithAutoMigrateDoesNotReportMissingTables`, `TestMissingTablesNoticeNamesTablesAndHint`. database package ok.
+
+## 2026-10-03 — bridge run loop error path
+
+- Added: `test_run_loop_backs_off_on_401_500_and_timeout_then_resets` (real HTTP exchanges: 401, 500, a response slower than `SEND_TIMEOUT`, then success; waits 20/40/80/20 s, never below one interval, backoff reset), `test_run_loop_failures_never_leak_the_token` (stdout/stderr of the failing loop contain the HTTP/timeout messages and not the bearer token), `test_run_loop_backoff_stops_at_the_cap` (20, 40, 80, then 120 s). The HTTP fixture is now a `ThreadingHTTPServer` with a per-request delay so a timed-out request does not block the next one. scripts suite: 152 passed.
+
+## 2026-10-03 — overlay secret scan
+
+- Added: `TestSeatAdminOverlayRoutesRejectSecretContent` (company, room and seat route: 422, secret not echoed, nothing stored, clean content still 200). httpapp ok.
+
+## 2026-10-03 — seat removal is a hard delete
+
+- Added: `TestSeatAdminRemoveSeatIsAHardDelete` (other user 404 and nothing deleted, links of both directions, overlay, snapshots and statuses gone, second delete 404, rigspec without the seat or its edges, re-adding the key starts clean), `TestRemoveSeatDeletesOnlyThatSeatsRows`, `TestRemoveSeatAbsentRoomOrSeat`, and a `DeleteSeatStatusForSeat` block in `TestSeatDeletesIntegration` (other tenant, other seat and other room delete nothing).
+- Changed: `TestSeatAdminListExcludesRemovedSeats` -> `TestSeatAdminListSeats`, `TestSeatAdminSetOccupantNotFoundAndRemoved` -> `...NotFound`, the launch-cycle subtest now removes the seat through the API, the rigspec tests lose the `Status` fixtures, `TestRoomRigSpecRendersActiveSeatsEdgesAndHashes` -> `...RendersSeatsEdgesAndHashes` (a link to a deleted seat is skipped). `TestSeatResolutionEndToEnd` deletes the seat's links and snapshots before the seat. The real-PG tests read `SEAT_TEST_DATABASE_URL`, not `AGENTHUB_TEST_PG_URL`, and need a database without tables from an older schema (`default_runtime` NOT NULL): ran on a fresh database, all pass.
+
+## 2026-10-03 — member permission policy in the rigspec
+
+- Added: `TestCheckPermissionPolicy`, `TestDefaultPermissionPolicyIsConservative`, `TestRenderRoomMemberPermissionPolicy`, `TestRenderRoomMemberPolicyOverridesRigLevel`, `TestRenderRoomRejectsInvalidMemberPolicy`, `TestRenderRoomMemberPolicyIsDeterministic` (drafted by deepseek session db826417-5704-40f0-b565-c0a2193f7bbe, not compiled by the worker; reviewed, tightened and run by me) and two self-loop cases in `TestFindLaunchCycle`. resolver and rigspec ok.
+
+## 2026-10-03 — seatcheck roster in multi-pod rigs
+
+- Added: `TestParseWhoamiMultiPodRig` (pods `dev`/`agy` in rig `4genthub-go` resolve), `TestParseWhoamiDuplicateMemberIsAnError`. `TestParseWhoamiRoster` no longer carries a peer of another rig (a roster is the rig's own). cmd/seatcheck ok.
+
+## 2026-10-03 — machine token review follow-ups
+
+- Added: `TestMachineTokenCreateOtherIntegrityErrorsAreNotConflicts` (23503, other 23505, 23502), `TestMachineTokenRejectionsHaveIdenticalBodies` (revoked, unknown and malformed tokens get the same 401 body); the scope test now also sends a machine token to the rooms and seat-types routes (401/403). The conflict test's fake error names `uq_machine_tokens_active`. seat_management and server packages ok.
+
+## 2026-10-03 — seat link launch cycles
+
+- Added: `TestFindLaunchCycle` (9 cases: chain, opposite, 3 seats, spawned_by reversal, mixed kinds, descriptive kinds, tail), `TestSeatAdminLinkRejectsLaunchCycles` (opposite and 3-seat cycles named in the 400, nothing stored; agreeing spawned_by ok; descriptive kinds and `allow:false` ok; re-putting a link ok; removed seats ignored). `TestSeatAdminLinkKinds` puts spawned_by on another seat (alice delegates_to bob plus alice spawned_by bob is a real cycle). Mutation: disabling the check fails the cycle test. seat_management and server packages ok.
+
+## 2026-10-03 — Seat checker: install-checker and a PATH check in pull and rig
+
+- Added in `test_openrig_seat_sync.py`: link missing / resolves elsewhere / correct link for `pull` and `rig`; `install-checker` build command, env and cwd, atomic replacement of an existing link, PATH failure with the link still created, no `go`, build failure (nothing linked). An autouse fixture stubs the requirement for the older pull/rig tests. `src/tests/scripts` 149 passed.
+
+## 2026-10-03 — seatcheck delivers to the full session name
+
+- Changed: `TestSendAllowedDelivers` expects the roster session name (`pod-b@r`). Added `TestSendAllowedRecipientOutsideRosterFails` (exit 1, allowed decision audited, nothing delivered) and `TestParseWhoamiRoster` (peers keyed by member, other rigs ignored, missing identity is an error). cmd/seatcheck ok.
+
+## 2026-10-03 — comm-guard on both runtimes
+
+- Replaced `TestRenderSeatCodexRejectsToolModules` with `TestRenderSeatSameModulesOnBothRuntimes` (the real seeded modules render on claude-code with the 5 denies and the allow, and on codex with no `runtime/` files and the skill). `TestFromSpecSharedModules`: a codex seat type carries the same modules. `TestMergeToolModulesPermissions`: an empty list stays `[]`. Mutations: re-adding the codex error and the nil-union both fail the renderer tests. seat_management and server packages ok.
+
+## 2026-10-03 — one list of seat runtimes
+
+- Added: `TestCheckRuntime` (pi, omp, gemini, empty, wrong case rejected; message names both supported runtimes), `TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes` (400 for pi and omp). seat_management and server packages ok.
+
+## 2026-10-03 — hash drift on the machines list
+
+- Added: `TestSync` (5 cases), `TestSeatStatusGetReportsExpectedHashAndSync` (sync per seat, key order runtime/hash/expected_hash/sync/detail), `TestMachineExpectedHashIntegration` (Postgres: older running hash still expects the newest snapshot, unknown room/seat expects "", other tenant's same-named seat never leaks; skipped without `SEAT_TEST_DATABASE_URL`, not run locally). `TestMachineListGroupsSeatsAndAgentsPerMachine` now asserts the three joins are user-scoped; removing the `resolved_seats` user filter fails it.
+
+## 2026-10-03 — Bridge: duplicate seat keys were reported as invalid names
+
+- Added: `test_same_member_in_two_pods_of_one_rig_is_a_named_duplicate`, `test_invalid_names_have_their_own_message`, `test_same_member_in_two_rigs_is_not_a_duplicate`, `test_duplicate_message_wording`. Red before (duplicate case), `src/tests/scripts` 141 passed after.
+
+## 2026-10-03 — comm-guard shared modules and permissions union
+
+- Added: `TestMergeToolModulesPermissions` (union/dedupe/order, later-wins for other keys, 4 error cases), `TestRenderSeatKeepsCommGuardNextToAnotherToolModule` (real seeded modules plus a second tool module: 5 deny entries plus the extra, allow kept, skill names `seatcheck send`), `TestFromSpecSharedModules` (claude-code gets tool and skill, codex only the skill, version stamped), `TestLoadEmbeddedSeedsCarryCommGuard` (all 9 seeds), `TestLoadFSMissingSharedModuleFails`. Updated seedmap tests to the `seedVersion` constant and the health version test to 0.0.11. Mutation check: making the merge shallow again failed the two renderer tests. seatrenderer, seedlibrary, seedmap, httpapp ok.
+
+## 2026-10-03 — TestToolConfigParity expected the Python tool list without manage_seat
+
+- Fixed: `TestToolConfigParity` (configuration) red at HEAD because the Go default tool list has `manage_seat`; fixture updated, `go test -count=1 ./fastmcp/task_management/infrastructure/configuration/` ok.
+
+## 2026-10-03 — Secret scanners: empty-user URL credentials and whitespace parity
+
+- Added fixture cases `url-empty-user`, `url-empty-password`, `url-nbsp-in-password`, `url-vtab-in-password`, `url-space-ends-userinfo`, `known-gap-url-slash-in-password`; `SECRET_PARTS` entries in `test_openrig_scrub.py`. Red before (Go: url-empty-user; Python: url-empty-user, url-nbsp, url-vtab), green after: secretscan ok, `src/tests/scripts` 137 passed.
+
+## 2026-10-03 — seatcheck send identity and pins layout
+
+- Rewrote the `send` tests in `cmd/seatcheck/main_test.go` around the `identify`/`deliver` seams (the re-exec helper process is gone): allowed (target `b@r`, joined text, audit 0600), exit code passthrough, denied (no link, wrong intent, explicit deny, unlinked recipient; stderr equals the audit reason, nothing delivered), policy missing/corrupt (exit 2, no audit, no delivery), usage errors, identity failure, audit append, audit failure (exit 1, no delivery). `audit-scan` now flags `rig send b@r hi` and not `seatcheck send ...`. Real binary smoke: exit 2 without policy, exit 3 with an empty policy. cmd/seatcheck ok.
+
+## 2026-10-03 — openrig_team_setup.py apply failed with 404 seat type not found on a fresh database
+
+- Changed: `test_openrig_team_setup.py` order test starts with the seed; `test_409_on_a_module_is_an_error` expects 2 requests (seed, failing module). Added: `test_seed_failure_stops_before_any_other_call`. 23 passed (red before: order test).
+
+## 2026-10-03 — `AddVersion` lost-race re-read
+
+- Changed: `TestSeatTypeAddVersionLostRace` now fails any statement on `seat_type_versions` that is not scoped to the user and seat type (covers the re-read). Added `TestSeatTypeAddVersionOnlyReReadsAfterUniqueViolation` (23503 not re-read, re-read failure reported). Mutation check: matching any SQLSTATE 23 made both tests fail. orm package ok.
+
+## 2026-10-03 — POST /rooms silently returned an existing room
+
+- Added: duplicate-slug 409 assertions in `TestSeatAdminRooms`; `TestSeatAdminCreateRoomRejectsLongName` (200 ok, 201 rejected); `TestValidateRoomName`. httpapp, domain, services ok.
+
+## 2026-10-03 — Seat occupant accepted a Claude model on the codex runtime
+
+- Added: `TestValidateOccupant`; a `codex` + `claude-sonnet-5-5` case in `TestSeatAdminServiceSetOccupantErrors` and `TestSeatAdminSetOccupantRejectsInvalidInput`. Red before (undefined `ValidateOccupant`), green after: services, repositories, httpapp ok.
+
+## 2026-10-03 — `TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository
+
+- Fixed: `TestFindProjectRootEnvAndUpward` fixture gets a `.git` directory so the nearest root wins. Red before, green after with TMPDIR inside and outside the repo.
+
+## 2026-10-03 — `TestFindProjectRootParity` failed under a TMPDIR inside the repository
+
+- Fixed: `TestFindProjectRootParity` used the real filesystem above the fixture root; `env.Exists` is now scoped to it. Red before, green after with TMPDIR inside and outside the repo.
+
+## 2026-10-03 — Parser tests failed under a TMPDIR inside the repository
+
+- Fixed: `TestParseMarkdownSections`, `TestParseJSON` depended on the absolute temp path; they now use `writeRelTemp`. Red before (TMPDIR inside `agenthub_go`), green after with TMPDIR inside and outside the repo.
+
+## 2026-10-03 — URL credentials in secret scanners
+
+- Added: fixture cases `url-credentials`, `url-at-in-password`, `url-plain` in `secretscan/testdata/scan_cases.json`; `test_openrig_scrub.py` `SECRET_PARTS` entries for both secret cases. Verified red before the fix (Go `TestContainsMatchesSharedFixture`, Python `test_fixture_secret_cases_are_redacted`), green after: `secretscan` ok, `src/tests/scripts` 130 passed.
+
+## 2026-10-03 — Add-seat model
+
+- Added: 2 tests in `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (empty model posts `model: ''`; invalid model id disables Add seat and shows the rule).
+
+## 2026-10-03 — apiRequest sends the Bearer token
+
+- Added: 2 tests in `apiRequest.test.ts`: a 401 followed by a refresh retries with the caller headers, Content-Type and the new Bearer; no logger level receives any character of the access token. Both fail without the fixes (`aa370d07`).
+- Added: `agenthub-frontend/src/tests/services/apiRequest.test.ts` (4 tests: Bearer from the `access_token` cookie on GET, caller headers/method/body preserved on POST, caller override of a default header, no Authorization without a cookie). The seat tests mock `apiRequest`, which is why the missing header was never caught; the first two tests fail without the fix.
+
+## 2026-10-03 — Nested Router in component tests
+
+- Fixed: `render` from `src/tests/test-utils.tsx` already provides `BrowserRouter`, `QueryClientProvider` and `AuthProvider`; removed the duplicate `BrowserRouter`/`MemoryRouter` wrappers in `Header`, `UserProfileDropdown`, `TokenManagement`, `SubtaskRowRefactored` (2 files) and `TaskRowMobile` (2 files) tests. These 7 files: 133 failing tests before, 63 passing / 70 failing after (the "cannot render a <Router> inside another <Router>" error is gone; the rest are other causes: missing ThemeProvider, named vs default import of `SubtaskRowRefactored`, `task` vs `summary` prop in the Mobile test, shared-wrapper AuthContext).
+
+## 2026-10-03 — Remove the legacy TaskRow test
+
+- Removed: `agenthub-frontend/src/tests/components/TaskRow.test.tsx` (17 tests of the unused legacy `TaskRow.tsx`; the live row is covered by the `TaskRow/` tests).
+- Changed: `AnimationFactory.test.ts` and `websocket-animations-e2e.test.tsx` pass the entity type to `registerElement`.
+
+## 2026-10-03 — Frontend drift badge
+
+- Added: 5 tests in `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (in sync green, drift amber with both short hashes, unknown neutral, "3 drifted" equals three drift badges, seat card shows the latest report's badge) and `agenthub-frontend/src/tests/utils/machineSeats.test.ts` (3 `driftedSeatCount` tests); `machineSeat` fixture gains `expected_hash` and `sync`.
+
+## 2026-10-03 — Frontend seat authoring
+
+- Added: `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx` (seat type list, module list, publish validation, publish payload and form reset, server error shown, seat type version prefill/payload, malformed and duplicate ref rejection, content size limit, seat type version error shown, lists refetch after success, seat type without a version).
+
+## 2026-10-03 — Per-machine tokens
+
+- Added `server/httpapp/machine_token_mount_test.go` (acceptance: valid token accepted, revoked 401, token of machine A cannot report for B (403), other user's revoke 404, token shown once and only its hash stored, scope limited to seat-status, bad credentials, repository failure is 500), `application/services/machine_token_service_test.go`, `orm/machine_token_repository_test.go` (fake driver; written by a DeepSeek worker, reviewed), `TestMachineTokensIntegration` (Postgres; skipped without `SEAT_TEST_DATABASE_URL`).
+- Changed: `seat_status_mount_test.go` posts with a machine token; the DDL-vs-struct test registers `machine_tokens`.
+
+## 2026-10-03 — Parallel schema apply
+
+- Fixed: `TestSeatRepositoriesIntegration`/`TestSeatResolutionEndToEnd` failed on a fresh database when their packages ran in parallel (`CREATE EXTENSION` unique violation). Both prepend `pg_advisory_xact_lock(727274)` to the schema batch, which runs as one transaction. Not run here (no Postgres); to be confirmed by the tester's repro.
+
+## 2026-10-03 — Seat-type version race
+
+- Added: `TestSeatTypeAddVersionLostRace` (fake driver returns SQLSTATE 23505 on insert; identical content returns the winner, another runtime or refs is `ErrSeatTypeVersionConflict`).
+
+## 2026-10-03 — Room deletion removes seat status
+
+- Added: `TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped` (fake driver); seat status step in `TestDeleteRoomRemovesDependentsBeforeParents` and `TestSeatAdminDeleteRoom`; Postgres integration checks (another tenant and another room untouched; skipped without `SEAT_TEST_DATABASE_URL`).
+
+## 2026-10-03 — Versioned default_runtime
+
+- Added: `TestResolveSeatRuntimeComesFromThePinnedVersion` (new version leaves a pinned seat's runtime unchanged, moves a follow-latest seat), `TestCreateSeatTypeVersion`, `TestCreateSeatTypeVersionErrors` (typed errors, no version on rejection), `TestSeatAdminCreateSeatTypeVersionMapsStoreErrors` (409 vs 500); runtime-conflict case in the seat type `AddVersion` repository test.
+- Changed: Postgres integration test proves another tenant cannot add or read a version (replaces the weak `SetDefaultRuntime` check); fake drivers and fakes carry the runtime on the version.
+
+## 2026-10-03 — Link and room deletion
+
+- Added: `TestSeatAdminDeleteLink` (rigspec before/after, 404s, other user), `TestSeatAdminDeleteRoom` (cascade, other user untouched, company overlay kept) and auth/404 probes in `seat_admin_mount_test.go`; `room_deletion_service_test.go` (dependency order, absent room, stop on failure); `TestSeatDeletesIntegration` (other tenant deletes nothing, no FK cascade; skipped without `SEAT_TEST_DATABASE_URL`).
+
+## 2026-10-03 — Module list and seat-type versions
+
+- Added: `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`, `TestSeatAdminCreateSeatTypeVersionRejects`, auth probes in `seat_admin_mount_test.go`; `TestParseModuleRef`, `TestNextPatchVersion` in `names_test.go`; `ListLatest` and `SetDefaultRuntime` tenant checks in the Postgres integration test (skipped without `SEAT_TEST_DATABASE_URL`).
+
+## 2026-10-03 — OpenRig coherence for seats
+
+- Added: `commpolicy` mapping tests, `repositories/names_test.go`, `domain/rigspec/rigspec_test.go` (incl. real `rig spec validate`/`preflight` when a daemon runs), `server/httpapp/seat_rigspec_mount_test.go`.
+- Changed: `seat_admin_mount_test.go`, `policy_test.go` use OpenRig kinds and ids.
+- Added 10 `rig` tests in `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (38 total); 4 frontend tests in `SeatsPage.test.tsx`/`SeatDetailPage.test.tsx` (13 total).
+
+## 2026-10-03 — Bridge v1
+
+- Added: `test_openrig_scrub.py` (19) and `test_openrig_bridge.py` (26), `secretscan_test.go`, `seat_status_mount_test.go`, machine repository tests (fake driver and Postgres integration); 4 frontend tests in `SeatsPage.test.tsx`.
+- Shared fixture `scan_cases.json` is used by both the Go scanner and the Python scrubber.
+
+## 2026-10-03 — Seat library
+
+- Added: `seedlibrary_test.go` (loader, strictness, embedded set of 9), updated `seedmap_test.go`, `seat_mount_test.go`, and the Postgres integration test now seeds from the embedded library.
+
+## 2026-10-03 — Module authoring and team setup
+
+- Added: module PUT handler tests in `seat_admin_mount_test.go`, `names_test.go` validators, `test_openrig_team_setup.py` (21 tests).
+
+## 2026-10-03 — Seat switching
+
+- Added: `seat_admin_service_test.go`, `manage_seat_controller_test.go`, `manage_seat_mcp_test.go`, occupant handler and repository tests, rigspec `permission_policy` tests, 14 `switch` and policy tests in `test_openrig_seat_sync.py` (script suite 127), 4 frontend tests in `SeatDetailPage.test.tsx` (21 seat page tests).
+
 ## Current Status
 
 | Metric | Value | Notes |
@@ -11,6 +721,17 @@ Track test suite changes, fixes, and improvements for agenthub.
 | **Failed** | 0 | All issues resolved |
 | **Skipped** | 92 | Infrastructure utilities |
 | **Coverage** | 51.1% | Frontend 34.2%, Backend 56.6% |
+
+---
+
+## [2026-10-03]
+
+### Added
+
+- Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
+- Frontend: `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (6) and `SeatDetailPage.test.tsx` (3). The rest of the frontend suite already had 710 failing tests before this change (59 files); the count is unchanged.
+- Python: `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (22 unit tests for `scripts/openrig_seat_sync.py`).
+- Gated tests skip without their environment variables. Run the Postgres ones against a throwaway container: `SEAT_TEST_DATABASE_URL=postgres://... AGENT_LIBRARY_DIR_PATH=agenthub_main/agent-library go test ./fastmcp/seat_management/...`.
 
 ---
 
@@ -358,4 +1079,3 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Top blockers: ProjectList (37 failures), LazyTaskList (37), WebSocketAnimation (49)
 - Strategy: Systematic assertion updates for CSS classes and animation expectations
 - Estimated: 2-3 additional focused sessions needed
-

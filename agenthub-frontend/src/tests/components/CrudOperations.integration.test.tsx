@@ -13,50 +13,13 @@ describe('CRUD Operations Integration Tests', () => {
     (apiV2.isAuthenticated as any).mockReturnValue(true);
   });
 
-  describe('Branch Update Operations', () => {
-    it('should call updateBranch with correct parameters', async () => {
-      const mockUpdatedBranch = {
-        id: 'branch-123',
-        name: 'Updated Branch Name',
-        description: 'Updated branch description'
-      };
-
-      (api.updateBranch as any).mockResolvedValue(mockUpdatedBranch);
-
-      // Call the API function directly to test integration
-      const result = await api.updateBranch('proj-123', 'branch-123', {
-        name: 'Updated Branch Name',
-        description: 'Updated branch description'
-      });
-
-      expect(api.updateBranch).toHaveBeenCalledWith('proj-123', 'branch-123', {
-        name: 'Updated Branch Name',
-        description: 'Updated branch description'
-      });
-
-      expect(result).toEqual(mockUpdatedBranch);
-    });
-
-    it('should handle updateBranch failure gracefully', async () => {
-      (api.updateBranch as any).mockRejectedValue(new Error('Network error'));
-
-      try {
-        await api.updateBranch('proj-123', 'branch-123', { name: 'New Name' });
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-      }
-
-      expect(api.updateBranch).toHaveBeenCalled();
-    });
-  });
-
   describe('Project V2 API Operations', () => {
     it('should create project via V2 API when authenticated', async () => {
-      const mockProject = { 
-        id: 'proj-v2-123', 
-        name: 'New V2 Project', 
+      const mockProject = {
+        id: 'proj-v2-123',
+        name: 'New V2 Project',
         description: 'A project created via V2 API',
-        git_branchs: {} 
+        git_branchs: {}
       };
 
       (apiV2.projectApiV2.createProject as any).mockResolvedValue(mockProject);
@@ -90,10 +53,10 @@ describe('CRUD Operations Integration Tests', () => {
 
     it('should delete project via V2 API when authenticated', async () => {
       (apiV2.projectApiV2.deleteProject as any).mockResolvedValue(undefined);
-      (api.deleteProject as any).mockResolvedValue({ 
-        success: true, 
-        message: undefined, 
-        error: undefined 
+      (api.deleteProject as any).mockResolvedValue({
+        success: true,
+        message: undefined,
+        error: undefined
       });
 
       const result = await api.deleteProject('proj-123');
@@ -134,24 +97,19 @@ describe('CRUD Operations Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
-      (api.updateBranch as any).mockRejectedValue(new Error('Network error'));
       (api.createProject as any).mockRejectedValue(new Error('Network error'));
       (api.deleteProject as any).mockRejectedValue(new Error('Network error'));
 
       // All operations should handle errors without crashing
-      await expect(api.updateBranch('proj', 'branch', {})).rejects.toThrow('Network error');
       await expect(api.createProject({})).rejects.toThrow('Network error');
       await expect(api.deleteProject('proj')).rejects.toThrow('Network error');
     });
 
     it('should handle malformed responses', async () => {
-      (api.updateBranch as any).mockResolvedValue(null);
       (api.createProject as any).mockResolvedValue(null);
 
-      const branchResult = await api.updateBranch('proj', 'branch', { name: 'test' });
       const projectResult = await api.createProject({ name: 'test' });
 
-      expect(branchResult).toBeNull();
       expect(projectResult).toBeNull();
     });
   });

@@ -93,7 +93,7 @@ This tool provides server health information with appropriate security filtering
 based on access level. Different access levels return different amounts of information:
 
 • CLIENT: Basic status only (healthy/unhealthy, timestamp)
-• AUTHENTICATED: Limited details (server name, version, uptime, connections)  
+• AUTHENTICATED: Limited details (server name, version, uptime, connections)
 • ADMIN: Full details (all system information, paths, configuration)
 
 Parameters:
@@ -107,7 +107,7 @@ Security Features:
 
 Example Usage:
 - Client: secure_health_check(access_level="client")
-- Auth: secure_health_check(access_level="authenticated") 
+- Auth: secure_health_check(access_level="authenticated")
 - Admin: secure_health_check(access_level="admin")""",
     )
     async def secure_health_check_tool(
@@ -213,7 +213,6 @@ This is a client-safe health check with minimal information disclosure."""
 • Python Path: {env.get("pythonpath", "not set")}
 • Tasks JSON Path: {env.get("tasks_json_path", "not set")}
 • Projects File Path: {env.get("projects_file_path", "not set")}
-• Agent Library Dir: {env.get("agent_library_dir", "not set")}
 • Cursor Tools Disabled: {env.get("cursor_tools_disabled", "false")}
 • Supabase Configured: {env.get("supabase_configured", False)}"""
 

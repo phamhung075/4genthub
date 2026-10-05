@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, screen, act, waitFor } from './../test-utils';
-import { AuthProvider, AuthContext } from '../../contexts/AuthContext';
+import { render as rtlRender } from '@testing-library/react';
+import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/environment';
-import { useContext } from 'react';
 import Cookies from 'js-cookie';
 import * as jwtDecode from 'jwt-decode';
+import logger from '../../utils/logger';
 
 // Mock dependencies
 vi.mock('js-cookie');
@@ -22,7 +23,7 @@ const mockUseWebSocket = vi.fn(() => ({
 }));
 
 // Mock import.meta.env and API_BASE_URL
-(import.meta as any).env = { 
+(import.meta as any).env = {
   MODE: 'test'
 };
 
@@ -57,11 +58,16 @@ describe('AuthContext', () => {
     type: 'access'
   };
 
+  // Captures the context value produced by the *rendered* AuthProvider so tests
+  // can await the provider's real async handlers instead of relying on a DOM click
+  // handler that discards the returned promise.
+  let authContext: ReturnType<typeof useAuth> | null = null;
+
   // Helper component to access context values
   const TestComponent = () => {
-    const context = useContext(AuthContext);
-    if (!context) throw new Error('AuthContext not provided');
-    
+    const context = useAuth();
+    authContext = context;
+
     return (
       <div>
         <div data-testid="user">{context.user ? context.user.email : 'none'}</div>
@@ -78,6 +84,7 @@ describe('AuthContext', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    authContext = null;
     mockDisconnect.mockClear();
     mockUseWebSocket.mockClear();
     (Cookies.get as any).mockReset();
@@ -87,10 +94,15 @@ describe('AuthContext', () => {
     (global.fetch as any).mockReset();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
   describe('Initial State', () => {
     it('should initialize with loading state', () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       render(
         <AuthProvider>
           <TestComponent />
@@ -107,7 +119,7 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       render(
@@ -134,8 +146,12 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
-      (jwtDecode.jwtDecode as any).mockReturnValueOnce(expiredToken);
+
+      // First decode sees the expired token; the refreshed token is decoded on
+      // every subsequent call (decode after refresh + expiry-timer effect).
+      (jwtDecode.jwtDecode as any)
+        .mockReturnValueOnce(expiredToken)
+        .mockReturnValue(mockDecodedToken);
 
       // Mock successful token refresh
       (global.fetch as any).mockResolvedValueOnce({
@@ -145,9 +161,6 @@ describe('AuthContext', () => {
           refresh_token: 'new-refresh-token'
         })
       });
-
-      // Return valid token after refresh
-      (jwtDecode.jwtDecode as any).mockReturnValueOnce(mockDecodedToken);
 
       render(
         <AuthProvider>
@@ -176,7 +189,7 @@ describe('AuthContext', () => {
     it('should login successfully', async () => {
       (Cookies.get as any).mockReturnValue(null);
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -231,7 +244,7 @@ describe('AuthContext', () => {
 
     it('should handle login failure', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -240,22 +253,22 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Login').click();
-        });
-      }).rejects.toThrow('Invalid credentials');
+      await expect(
+        act(async () => {
+          await authContext!.login('test@example.com', 'password');
+        })
+      ).rejects.toThrow('Invalid credentials');
     });
 
     it('should handle email verification required error', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 403,
@@ -264,22 +277,22 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Login').click();
-        });
-      }).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
+      await expect(
+        act(async () => {
+          await authContext!.login('test@example.com', 'password');
+        })
+      ).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
     });
 
     it('should handle email verification response', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -288,24 +301,24 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Login').click();
-        });
-      }).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
+      await expect(
+        act(async () => {
+          await authContext!.login('test@example.com', 'password');
+        })
+      ).rejects.toThrow('Please verify your email before signing in. Check your inbox for the verification link.');
     });
   });
 
   describe('Signup', () => {
     it('should signup and require email verification', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -315,17 +328,18 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      let result;
+      let result: any;
       await act(async () => {
-        const authContext = (AuthProvider as any).Consumer._currentValue;
-        result = await authContext.signup('new@example.com', 'newuser', 'password');
+        result = await authContext!.signup('new@example.com', 'newuser', 'password');
       });
+
+      expect(result).toMatchObject({ requires_email_verification: true });
 
       expect(global.fetch).toHaveBeenCalledWith(
         'http://test-api.com/api/auth/register',
@@ -353,7 +367,7 @@ describe('AuthContext', () => {
     it('should signup and auto-login when no verification required', async () => {
       (Cookies.get as any).mockReturnValue(null);
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -381,7 +395,7 @@ describe('AuthContext', () => {
 
     it('should handle signup failure', async () => {
       (Cookies.get as any).mockReturnValue(null);
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -390,17 +404,17 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Signup').click();
-        });
-      }).rejects.toThrow('Email already exists');
+      await expect(
+        act(async () => {
+          await authContext!.signup('new@example.com', 'newuser', 'password');
+        })
+      ).rejects.toThrow('Email already exists');
     });
   });
 
@@ -411,7 +425,7 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
@@ -430,24 +444,24 @@ describe('AuthContext', () => {
 
       expect(screen.getByTestId('user')).toHaveTextContent('none');
       expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
-      
+
       expect(Cookies.remove).toHaveBeenCalledWith('access_token');
       expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
     });
-    
+
     it('should disconnect WebSocket on logout', async () => {
       // Mock WebSocket as connected
       mockUseWebSocket.mockReturnValue({
         isConnected: true,
         disconnect: mockDisconnect
       });
-      
+
       (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
@@ -472,20 +486,12 @@ describe('AuthContext', () => {
   });
 
   describe('Token Refresh', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
     it('should refresh token successfully', async () => {
       (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -496,32 +502,30 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
       await act(async () => {
-        getByText('Refresh').click();
+        await authContext!.refreshToken();
       });
 
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          'http://test-api.com/api/auth/refresh',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              refresh_token: mockTokens.refresh_token
-            })
-          }
-        );
-      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://test-api.com/api/auth/refresh',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            refresh_token: mockTokens.refresh_token
+          })
+        }
+      );
 
       expect(Cookies.set).toHaveBeenCalledWith(
         'access_token',
@@ -536,7 +540,7 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { getByText } = render(
@@ -558,18 +562,16 @@ describe('AuthContext', () => {
       });
 
       await act(async () => {
-        try {
-          await getByText('Refresh').click();
-        } catch (error) {
-          // Expected to throw
-        }
+        await authContext!.refreshToken().catch(() => {
+          // Expected to reject; this test asserts the observable session cleanup.
+        });
       });
 
       await waitFor(() => {
         expect(screen.getByTestId('user')).toHaveTextContent('none');
-        expect(Cookies.remove).toHaveBeenCalledWith('access_token');
-        expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
       });
+      expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+      expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
     });
 
     it('should disconnect WebSocket on token refresh failure', async () => {
@@ -578,12 +580,12 @@ describe('AuthContext', () => {
         isConnected: true,
         disconnect: mockDisconnect
       });
-      
+
       (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -597,55 +599,56 @@ describe('AuthContext', () => {
       );
 
       await act(async () => {
-        try {
-          await getByText('Refresh').click();
-        } catch (error) {
-          // Expected to throw
-        }
+        await authContext!.refreshToken().catch(() => {
+          // Expected to reject; this test asserts the WebSocket cleanup.
+        });
       });
 
       expect(mockDisconnect).toHaveBeenCalled();
     });
 
     it('should automatically refresh token before expiry', async () => {
-      const nearExpiryToken = {
-        ...mockDecodedToken,
-        exp: Math.floor(Date.now() / 1000) + 120 // Expires in 2 minutes
-      };
+      vi.useFakeTimers();
+      try {
+        const nearExpiryToken = {
+          ...mockDecodedToken,
+          exp: Math.floor(Date.now() / 1000) + 120 // Expires in 2 minutes
+        };
 
-      (Cookies.get as any).mockImplementation((key: string) => {
-        if (key === 'access_token') return mockTokens.access_token;
-        if (key === 'refresh_token') return mockTokens.refresh_token;
-        return null;
-      });
-      
-      (jwtDecode.jwtDecode as any).mockReturnValue(nearExpiryToken);
+        (Cookies.get as any).mockImplementation((key: string) => {
+          if (key === 'access_token') return mockTokens.access_token;
+          if (key === 'refresh_token') return mockTokens.refresh_token;
+          return null;
+        });
 
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          access_token: 'refreshed-access-token',
-          refresh_token: 'refreshed-refresh-token'
-        })
-      });
+        (jwtDecode.jwtDecode as any).mockReturnValue(nearExpiryToken);
 
-      render(
-        <AuthProvider>
-          <TestComponent />
-        </AuthProvider>
-      );
+        (global.fetch as any).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            access_token: 'refreshed-access-token',
+            refresh_token: 'refreshed-refresh-token'
+          })
+        });
 
-      // Fast-forward to 1 minute before expiry
-      await act(async () => {
-        jest.advanceTimersByTime(60 * 1000);
-      });
+        render(
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        );
 
-      await waitFor(() => {
+        // Fast-forward to 1 minute before expiry (refreshTime = expiresIn - 60000)
+        await act(async () => {
+          vi.advanceTimersByTime(60 * 1000);
+        });
+
         expect(global.fetch).toHaveBeenCalledWith(
           'http://test-api.com/api/auth/refresh',
           expect.any(Object)
         );
-      });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -691,9 +694,9 @@ describe('AuthContext', () => {
     });
 
     it('should use secure cookies in production', async () => {
-      // Mock production environment
-      (import.meta as any).env.MODE = 'production';
-      
+      // Mock production environment (vi.stubEnv updates import.meta.env for all modules)
+      vi.stubEnv('MODE', 'production');
+
       (Cookies.get as any).mockReturnValue(null);
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
@@ -716,9 +719,6 @@ describe('AuthContext', () => {
           })
         );
       });
-
-      // Reset environment
-      (import.meta as any).env.MODE = 'test';
     });
   });
 
@@ -729,12 +729,12 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
 
       render(
         <AuthProvider>
@@ -747,9 +747,9 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
       });
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error decoding token:', expect.any(Error));
-      
-      consoleErrorSpy.mockRestore();
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error decoding token:', expect.any(Error));
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should extract username from email if not in token', async () => {
@@ -770,14 +770,14 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
       await act(async () => {
-        getByText('Login').click();
+        await authContext!.login('test@example.com', 'password');
       });
 
       await waitFor(() => {
@@ -785,8 +785,7 @@ describe('AuthContext', () => {
       });
 
       // The user should have username derived from email
-      const authContext = (AuthProvider as any).Consumer._currentValue;
-      expect(authContext.user.username).toBe('test');
+      expect(authContext!.user?.username).toBe('test');
     });
 
     it('should use default roles if not in token', async () => {
@@ -807,14 +806,14 @@ describe('AuthContext', () => {
         })
       });
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
       await act(async () => {
-        getByText('Login').click();
+        await authContext!.login('test@example.com', 'password');
       });
 
       await waitFor(() => {
@@ -822,8 +821,7 @@ describe('AuthContext', () => {
       });
 
       // The user should have default roles
-      const authContext = (AuthProvider as any).Consumer._currentValue;
-      expect(authContext.user.roles).toEqual(['user']);
+      expect(authContext!.user?.roles).toEqual(['user']);
     });
   });
 
@@ -834,7 +832,7 @@ describe('AuthContext', () => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
       const { container } = render(
@@ -865,8 +863,9 @@ describe('AuthContext', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       expect(() => {
-        render(<TestComponent />);
-      }).toThrow('AuthContext not provided');
+        // Use the raw RTL render so the test-utils AuthProvider wrapper is not applied.
+        rtlRender(<TestComponent />);
+      }).toThrow('useAuth must be used within an AuthProvider');
 
       consoleErrorSpy.mockRestore();
     });
@@ -874,76 +873,76 @@ describe('AuthContext', () => {
 
   describe('Error Handling', () => {
     it('should console error on login failure', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
-      
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
+
       (Cookies.get as any).mockReturnValue(null);
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Login').click();
-        });
-      }).rejects.toThrow('Network error');
+      await expect(
+        act(async () => {
+          await authContext!.login('test@example.com', 'password');
+        })
+      ).rejects.toThrow('Network error');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Login error:', expect.any(Error));
-      
-      consoleErrorSpy.mockRestore();
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Login error:', expect.any(Error));
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should console error on signup failure', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
-      
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
+
       (Cookies.get as any).mockReturnValue(null);
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Signup').click();
-        });
-      }).rejects.toThrow('Network error');
+      await expect(
+        act(async () => {
+          await authContext!.signup('new@example.com', 'newuser', 'password');
+        })
+      ).rejects.toThrow('Network error');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Signup error:', expect.any(Error));
-      
-      consoleErrorSpy.mockRestore();
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Signup error:', expect.any(Error));
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should console error on token refresh failure', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
-      
+      const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
+
       (Cookies.get as any).mockImplementation((key: string) => {
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return null;
       });
-      
+
       (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
 
-      const { getByText } = render(
+      render(
         <AuthProvider>
           <TestComponent />
         </AuthProvider>
       );
 
-      await expect(async () => {
-        await act(async () => {
-          getByText('Refresh').click();
-        });
-      }).rejects.toThrow('Network error');
+      await expect(
+        act(async () => {
+          await authContext!.refreshToken();
+        })
+      ).rejects.toThrow('Network error');
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Token refresh error:', expect.any(Error));
-      
-      consoleErrorSpy.mockRestore();
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Token refresh error:', expect.any(Error));
+
+      loggerErrorSpy.mockRestore();
     });
   });
 });

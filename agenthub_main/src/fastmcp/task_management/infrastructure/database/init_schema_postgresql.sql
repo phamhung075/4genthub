@@ -19,8 +19,6 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS user_token_balances CASCADE;
 DROP TABLE IF EXISTS user_sessions CASCADE;
 DROP TABLE IF EXISTS user_api_tokens CASCADE;
-DROP TABLE IF EXISTS user_agent_instances CASCADE;
-DROP TABLE IF EXISTS user_agent_configurations_md CASCADE;
 DROP TABLE IF EXISTS token_transactions CASCADE;
 DROP TABLE IF EXISTS templates CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
@@ -40,8 +38,6 @@ DROP TABLE IF EXISTS context_delegations CASCADE;
 DROP TABLE IF EXISTS branch_contexts CASCADE;
 DROP TABLE IF EXISTS api_tokens CASCADE;
 DROP TABLE IF EXISTS agents CASCADE;
-DROP TABLE IF EXISTS agent_templates CASCADE;
-DROP TABLE IF EXISTS agent_import_history CASCADE;
 
 -- ================================================================================
 -- CREATE TABLES
@@ -54,34 +50,6 @@ DROP TABLE IF EXISTS agent_import_history CASCADE;
 -- Sequence for task_dependencies table
 -- NOTE: Created AFTER drops because CASCADE removes sequences
 CREATE SEQUENCE IF NOT EXISTS task_dependencies_id_seq;
-
--- Table: agent_import_history
-CREATE TABLE agent_import_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    importer_user_id UUID NOT NULL,
-    source_instance_id UUID NOT NULL,
-    imported_instance_id UUID NOT NULL,
-    imported_at TIMESTAMP NOT NULL DEFAULT now(),
-    share_token VARCHAR(64)
-);
-
--- Table: agent_templates
-CREATE TABLE agent_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    slug VARCHAR(100) NOT NULL,
-    name VARCHAR(200) NOT NULL,
-    description TEXT NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    version VARCHAR(50) NOT NULL,
-    system_prompt TEXT NOT NULL,
-    tools TEXT NOT NULL,
-    capabilities TEXT NOT NULL,
-    rules TEXT,
-    output_format TEXT,
-    metadata TEXT,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
-);
 
 -- Table: agents
 CREATE TABLE agents (
@@ -428,42 +396,6 @@ CREATE TABLE token_transactions (
     created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
--- Table: user_agent_configurations_md
-CREATE TABLE user_agent_configurations_md (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    instance_id UUID NOT NULL,
-    configuration_type VARCHAR(50) NOT NULL,
-    content_markdown TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
--- Table: user_agent_instances
-CREATE TABLE user_agent_instances (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL,
-    template_id UUID NOT NULL,
-    agent_name VARCHAR(200) NOT NULL,
-    is_customized BOOLEAN NOT NULL,
-    customization_notes TEXT,
-    system_prompt TEXT NOT NULL,
-    tools TEXT NOT NULL,
-    capabilities TEXT NOT NULL,
-    rules TEXT,
-    output_format TEXT,
-    metadata TEXT,
-    visibility VARCHAR(50) NOT NULL,
-    share_token VARCHAR(64),
-    share_created_at TIMESTAMP,
-    original_creator_id UUID,
-    imported_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-    usage_count INTEGER NOT NULL DEFAULT 0,
-    last_used_at TIMESTAMP,
-    is_enabled BOOLEAN NOT NULL DEFAULT true
-);
-
 -- Table: user_api_tokens
 CREATE TABLE user_api_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -590,17 +522,6 @@ ALTER TABLE user_token_balances ADD CONSTRAINT user_token_balances_user_id_fkey 
 -- INDEXES
 -- ================================================================================
 
--- Indexes for agent_import_history
-CREATE INDEX idx_import_history_date ON agent_import_history (imported_at);
-CREATE INDEX idx_import_history_importer ON agent_import_history (importer_user_id);
-CREATE INDEX idx_import_history_source ON agent_import_history (source_instance_id);
-
--- Indexes for agent_templates
-CREATE INDEX ix_agent_templates_category ON agent_templates (category);
-CREATE INDEX ix_agent_templates_category_version ON agent_templates (category, version);
-CREATE UNIQUE INDEX ix_agent_templates_slug ON agent_templates (slug);
-CREATE INDEX ix_agent_templates_version ON agent_templates (version);
-
 -- Indexes for agents
 CREATE INDEX idx_agent_availability ON agents (availability_score);
 CREATE INDEX idx_agent_status ON agents (status);
@@ -668,20 +589,6 @@ CREATE INDEX ix_token_transactions_operation_type ON token_transactions (operati
 CREATE INDEX ix_token_transactions_user_created ON token_transactions (user_id, created_at);
 CREATE INDEX ix_token_transactions_user_id ON token_transactions (user_id);
 
--- Indexes for user_agent_configurations_md
-CREATE INDEX idx_configurations_md_instance ON user_agent_configurations_md (instance_id, configuration_type);
-CREATE UNIQUE INDEX user_agent_configurations_md_instance_type_key ON user_agent_configurations_md (instance_id, configuration_type);
-
--- Indexes for user_agent_instances
-CREATE UNIQUE INDEX ix_user_agent_instances_share_token ON user_agent_instances (share_token);
-CREATE INDEX ix_user_agent_instances_template_id ON user_agent_instances (template_id);
-CREATE INDEX ix_user_agent_instances_user_enabled ON user_agent_instances (user_id, is_enabled);
-CREATE INDEX ix_user_agent_instances_user_id ON user_agent_instances (user_id);
-CREATE INDEX ix_user_agent_instances_user_visibility ON user_agent_instances (user_id, visibility);
-CREATE INDEX ix_user_agent_instances_visibility ON user_agent_instances (visibility);
-CREATE INDEX ix_user_agent_instances_visibility_created ON user_agent_instances (visibility, created_at);
-CREATE UNIQUE INDEX uq_user_agent_instances_user_template ON user_agent_instances (user_id, template_id);
-
 -- Indexes for user_api_tokens
 CREATE INDEX ix_user_api_tokens_expires_at ON user_api_tokens (expires_at);
 CREATE INDEX ix_user_api_tokens_is_active ON user_api_tokens (is_active);
@@ -731,12 +638,6 @@ ALTER TABLE task_assignees ADD CONSTRAINT uq_task_assignee UNIQUE (task_id, assi
 
 -- Unique constraints for task_dependencies
 ALTER TABLE task_dependencies ADD CONSTRAINT uq_task_dependency UNIQUE (task_id, depends_on_task_id);
-
--- Unique constraints for user_agent_configurations_md
-ALTER TABLE user_agent_configurations_md ADD CONSTRAINT user_agent_configurations_md_instance_type_key UNIQUE (instance_id, configuration_type);
-
--- Unique constraints for user_agent_instances
-ALTER TABLE user_agent_instances ADD CONSTRAINT uq_user_agent_instances_user_template UNIQUE (user_id, template_id);
 
 -- Unique constraints for user_api_tokens
 ALTER TABLE user_api_tokens ADD CONSTRAINT user_api_tokens_token_hash_key UNIQUE (token_hash);
@@ -798,10 +699,7 @@ COMMENT ON TABLE task_contexts IS '4-tier context hierarchy - Task level';
 COMMENT ON TABLE context_delegations IS 'Context delegation between hierarchy levels';
 COMMENT ON TABLE context_inheritance_cache IS 'Cached resolved context with inheritance chain';
 
--- Agent Management
-COMMENT ON TABLE agent_templates IS 'Pre-defined agent templates (33 specialized agents)';
-COMMENT ON TABLE user_agent_instances IS 'User-specific agent instances created from templates';
-COMMENT ON TABLE agent_import_history IS 'History of agent imports between users';
+-- Agents
 COMMENT ON TABLE agents IS 'Legacy agent tracking table';
 
 -- Authentication & Authorization

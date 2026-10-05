@@ -51,37 +51,6 @@ class IPathResolver(ABC):
         pass
 
 
-class IAgentDocGenerator(ABC):
-    """Domain interface for agent documentation generation"""
-
-    @abstractmethod
-    def generate_documentation(
-        self, agent_id: str, agent_config: dict[str, Any]
-    ) -> str:
-        """Generate documentation for an agent"""
-        pass
-
-    @abstractmethod
-    def generate_api_docs(self, agent_id: str) -> dict[str, Any]:
-        """Generate API documentation for agent"""
-        pass
-
-    @abstractmethod
-    def validate_agent_config(self, config: dict[str, Any]) -> bool:
-        """Validate agent configuration"""
-        pass
-
-    @abstractmethod
-    def get_agent_capabilities(self, agent_id: str) -> list[str]:
-        """Get capabilities of an agent"""
-        pass
-
-    @abstractmethod
-    def format_agent_response(self, response: dict[str, Any]) -> str:
-        """Format agent response for documentation"""
-        pass
-
-
 class IUtilityService(ABC):
     """Domain interface for utility operations"""
 

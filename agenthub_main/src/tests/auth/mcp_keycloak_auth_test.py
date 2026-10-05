@@ -218,7 +218,7 @@ class TestMCPKeycloakAuth:
         assert "manage_project" in tools["project"]
         assert "manage_git_branch" in tools["project"]
         assert "manage_task" in tools["task"]
-        assert "call_agent" in tools["agent"]
+        assert "manage_agent" in tools["agent"]
         assert tools["development"] == ["*"]
 
     def test_get_allowed_tools_regular_user(self, auth_instance):
@@ -236,7 +236,6 @@ class TestMCPKeycloakAuth:
         # Should have combined access
         assert "manage_task" in tools["task"]  # From mcp-tools
         assert "search_task" in tools["task"]  # From mcp-user
-        assert "call_agent" in tools["agent"]  # From mcp-tools
 
     @pytest.mark.asyncio
     async def test_get_current_user(self, auth_instance):

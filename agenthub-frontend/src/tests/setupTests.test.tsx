@@ -5,6 +5,22 @@ import React from 'react';
 // Import setupTests to apply its side effects
 import '../setupTests';
 
+// setupTests keeps the console.error it finds when it loads as the sink for every message
+// its filter lets through. A second copy loaded here keeps `passedThrough` as that sink, so
+// the console.error tests below can see what the real filter forwards.
+// Loading a second copy (top-level await + vi.resetModules) also registers a second set of
+// beforeEach/afterEach hooks in the root suite, next to the ones from the setup file. That is
+// safe: both sets only swap console.error between their own filter and their own sink, and
+// every test starts from a beforeEach that installs a filter, so the order of the duplicated
+// hooks does not change what a test sees. The first filter's sink is the real console, which
+// is never asserted on.
+const passedThrough = vi.fn();
+const loadTimeConsoleError = console.error;
+console.error = passedThrough;
+vi.resetModules();
+await import('../setupTests');
+console.error = loadTimeConsoleError;
+
 describe('setupTests', () => {
   let originalMatchMedia: any;
   let originalIntersectionObserver: any;
@@ -121,86 +137,36 @@ describe('setupTests', () => {
   });
 
   describe('console.error suppression', () => {
-    it('should suppress ReactDOM.render warnings', () => {
-      const errorSpy = vi.fn();
-      console.error = errorSpy;
-
-      // This would normally trigger a console error
-      console.error('Warning: ReactDOM.render is no longer supported in React 18');
-
-      expect(errorSpy).not.toHaveBeenCalled();
+    beforeEach(() => {
+      passedThrough.mockClear();
     });
 
-    it('should suppress useLayoutEffect warnings', () => {
-      const errorSpy = vi.fn();
-      console.error = errorSpy;
+    it.each([
+      'Warning: ReactDOM.render is no longer supported in React 18',
+      'Warning: useLayoutEffect does nothing on the server',
+      'Not implemented: HTMLFormElement.prototype.submit'
+    ])('suppresses "%s"', (message) => {
+      console.error(message);
 
-      console.error('Warning: useLayoutEffect does nothing on the server');
-
-      expect(errorSpy).not.toHaveBeenCalled();
+      expect(passedThrough).not.toHaveBeenCalled();
     });
 
-    it('should suppress HTMLFormElement.prototype.submit warnings', () => {
-      const errorSpy = vi.fn();
-      console.error = errorSpy;
-
-      console.error('Not implemented: HTMLFormElement.prototype.submit');
-
-      expect(errorSpy).not.toHaveBeenCalled();
-    });
-
-    it('should not suppress other console errors', () => {
-      const errorSpy = vi.fn();
-      const originalError = console.error;
-      
-      // Apply our console.error override from setupTests
-      console.error = (...args: any[]) => {
-        if (
-          typeof args[0] === 'string' &&
-          (args[0].includes('Warning: ReactDOM.render') ||
-            args[0].includes('Warning: useLayoutEffect') ||
-            args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
-        ) {
-          return;
-        }
-        errorSpy(...args);
-      };
-
+    it('forwards other console errors with all their arguments', () => {
       console.error('Some other error');
       console.error('Application error:', { code: 500 });
 
-      expect(errorSpy).toHaveBeenCalledTimes(2);
-      expect(errorSpy).toHaveBeenCalledWith('Some other error');
-      expect(errorSpy).toHaveBeenCalledWith('Application error:', { code: 500 });
-
-      console.error = originalError;
+      expect(passedThrough).toHaveBeenCalledTimes(2);
+      expect(passedThrough).toHaveBeenCalledWith('Some other error');
+      expect(passedThrough).toHaveBeenCalledWith('Application error:', { code: 500 });
     });
 
-    it('should handle non-string first arguments', () => {
-      const errorSpy = vi.fn();
-      const originalError = console.error;
-      
-      // Apply our console.error override
-      console.error = (...args: any[]) => {
-        if (
-          typeof args[0] === 'string' &&
-          (args[0].includes('Warning: ReactDOM.render') ||
-            args[0].includes('Warning: useLayoutEffect') ||
-            args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
-        ) {
-          return;
-        }
-        errorSpy(...args);
-      };
-
+    it('forwards calls whose first argument is not a string', () => {
       console.error({ error: 'object' });
       console.error(123);
       console.error(null);
       console.error(undefined);
 
-      expect(errorSpy).toHaveBeenCalledTimes(4);
-
-      console.error = originalError;
+      expect(passedThrough).toHaveBeenCalledTimes(4);
     });
   });
 
@@ -212,7 +178,7 @@ describe('setupTests', () => {
 
       expect(element).toBeInTheDocument();
       expect(element).toHaveTextContent('Hello World');
-      
+
       document.body.removeChild(element);
     });
 
@@ -220,10 +186,10 @@ describe('setupTests', () => {
       // This test verifies that cleanup is called after each test
       // by checking that a component is not in the document after render
       const TestComponent = () => <div data-testid="test-component">Test</div>;
-      
+
       const { container } = render(<TestComponent />);
       expect(container.firstChild).toBeTruthy();
-      
+
       // The afterEach hook in setupTests will clean this up
     });
   });
@@ -236,10 +202,10 @@ describe('setupTests', () => {
         React.useEffect(() => {
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
           setIsDark(mediaQuery.matches);
-          
+
           const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
           mediaQuery.addEventListener('change', handler);
-          
+
           return () => mediaQuery.removeEventListener('change', handler);
         }, []);
 

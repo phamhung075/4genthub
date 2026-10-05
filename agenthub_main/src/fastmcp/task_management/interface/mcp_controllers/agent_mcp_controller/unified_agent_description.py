@@ -3,7 +3,6 @@ Agent Management Tool Description
 
 This module contains the comprehensive documentation for the agent management MCP tool
 that handles agent management operations (register, assign, update, etc.).
-Agent invocation is handled separately by the call_agent tool.
 """
 
 UNIFIED_AGENT_DESCRIPTION = """
@@ -12,7 +11,6 @@ UNIFIED_AGENT_DESCRIPTION = """
 ⭐ WHAT IT DOES: Manages agent registration, assignment, and lifecycle within projects. Coordinates 32 specialized agents from development to deployment.
 📋 WHEN TO USE: Agent registration, assignment, updates, and project agent management.
 🎯 CRITICAL FOR: Multi-agent orchestration and dynamic agent assignment.
-📝 NOTE: For agent invocation, use separate 'call_agent' tool.
 
 🚀 AVAILABLE AGENTS (32 Total):
 
@@ -49,7 +47,6 @@ UNIFIED_AGENT_DESCRIPTION = """
 • Optional parameters: omit unless updating values
 • Returns detailed error messages for validation failures
 • Business logic delegated to AgentApplicationFacade
-• For agent invocation: use 'call_agent' tool separately
 
 **Pattern**: {register → assign → work → unassign → unregister}
 **Example**: Register coding-agent → Assign to feature branch → Complete work → Unassign → Cleanup

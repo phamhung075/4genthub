@@ -1,0 +1,2070 @@
+{
+ "detect": [
+  {
+   "strict": true,
+   "value": "",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "",
+   "normalized": null,
+   "error": "ID value cannot be empty or None",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "v4"
+   }
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "task_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "project_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "user_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "context_id",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "whatever",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "not-a-uuid",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "not-a-uuid",
+   "normalized": null,
+   "error": "Invalid UUID format: not-a-uuid. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "abc",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "abc",
+   "normalized": null,
+   "error": "Invalid UUID format: abc. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "normalized": null,
+   "error": "Invalid UUID format: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "<script>alert(1)</script>",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "<script>alert(1)</script>",
+   "normalized": null,
+   "error": "Invalid UUID format: &lt;script&gt;alert(1)&lt;/script&gt;. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "javascript:alert(1)",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "javascript:alert(1)",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]alert(1). Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "JAVASCRIPT:alert(1)",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "JAVASCRIPT:alert(1)",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]alert(1). Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "a&b'c\"d",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "a&b'c\"d",
+   "normalized": null,
+   "error": "Invalid UUID format: a&amp;b&#x27;c&quot;d. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "/etc/passwd",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "/etc/passwd",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "my password",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "my password",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "DROP TABLE x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "DROP TABLE x",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "Admin",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "Admin",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "ＡＢＣ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ＡＢＣ",
+   "normalized": null,
+   "error": "Invalid UUID format: ABC. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "ﬁle",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ﬁle",
+   "normalized": null,
+   "error": "Invalid UUID format: file. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "kK",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "kK",
+   "normalized": null,
+   "error": "Invalid UUID format: kK. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "İadmin",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "İadmin",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "admİn",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "admİn",
+   "normalized": null,
+   "error": "Invalid UUID format: admİn. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "normalized": null,
+   "error": "Invalid UUID format: éééééééééééééééééééééééééééééééééééééééééééééééééé.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "tab\there",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "tab\there",
+   "normalized": null,
+   "error": "Invalid UUID format: tabhere. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "nl\nx",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "nl\nx",
+   "normalized": null,
+   "error": "Invalid UUID format: nlx. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "\u0000\u001f",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "\u0000\u001f",
+   "normalized": null,
+   "error": "Invalid UUID format: . Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "​zero",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "​zero",
+   "normalized": null,
+   "error": "Invalid UUID format: zero. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "😀emoji",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "😀emoji",
+   "normalized": null,
+   "error": "Invalid UUID format: 😀emoji. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "",
+   "normalized": null,
+   "error": "Invalid UUID format: . Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "c:\\windows",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "c:\\windows",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "onload=x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "onload=x",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]x. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "ONERROR=x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ONERROR=x",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]x. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "Ⅻ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "Ⅻ",
+   "normalized": null,
+   "error": "Invalid UUID format: XII. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "normalized": null,
+   "error": "Invalid UUID format: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "normalized": null,
+   "error": "Invalid UUID format: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "private",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "private",
+   "normalized": null,
+   "error": "Invalid UUID format: private. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "ß",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ß",
+   "normalized": null,
+   "error": "Invalid UUID format: ß. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": true,
+   "value": "İ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "İ",
+   "normalized": null,
+   "error": "Invalid UUID format: İ. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "",
+   "normalized": null,
+   "error": "ID value cannot be empty or None",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-42d3-a456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123E4567-E89B-42D3-A456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123E4567-E89B-42D3-A456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": " 123e4567-e89b-42d3-a456-426614174000 ",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": null,
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": null,
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "task_id",
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "mcp_task_id",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "mcp_task_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "git_branch_id",
+   "is_valid": true,
+   "id_type": "git_branch_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "git_branch_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "project_id",
+   "is_valid": true,
+   "id_type": "project_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "project_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "user_id",
+   "is_valid": true,
+   "id_type": "user_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "user_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "context_id",
+   "is_valid": true,
+   "id_type": "context_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "context_id",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "whatever",
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "context_hint": "whatever",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "123e4567-e89b-12d3-a456-426614174000",
+   "hint": "Task_MCP",
+   "is_valid": true,
+   "id_type": "mcp_task_id",
+   "original": "123e4567-e89b-12d3-a456-426614174000",
+   "normalized": "123e4567-e89b-12d3-a456-426614174000",
+   "error": null,
+   "warnings": [
+    "MCP task ID detected - ensure not used as application task ID"
+   ],
+   "metadata": {
+    "context_hint": "Task_MCP",
+    "uuid_version": "any"
+   }
+  },
+  {
+   "strict": false,
+   "value": "not-a-uuid",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "not-a-uuid",
+   "normalized": null,
+   "error": "Invalid UUID format: not-a-uuid. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "abc",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "abc",
+   "normalized": null,
+   "error": "Invalid UUID format: abc. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "normalized": null,
+   "error": "Invalid UUID format: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "<script>alert(1)</script>",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "<script>alert(1)</script>",
+   "normalized": null,
+   "error": "Invalid UUID format: &lt;script&gt;alert(1)&lt;/script&gt;. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "javascript:alert(1)",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "javascript:alert(1)",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]alert(1). Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "JAVASCRIPT:alert(1)",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "JAVASCRIPT:alert(1)",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]alert(1). Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "a&b'c\"d",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "a&b'c\"d",
+   "normalized": null,
+   "error": "Invalid UUID format: a&amp;b&#x27;c&quot;d. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "/etc/passwd",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "/etc/passwd",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "my password",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "my password",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "DROP TABLE x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "DROP TABLE x",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "Admin",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "Admin",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "ＡＢＣ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ＡＢＣ",
+   "normalized": null,
+   "error": "Invalid UUID format: ABC. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "ﬁle",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ﬁle",
+   "normalized": null,
+   "error": "Invalid UUID format: file. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "kK",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "kK",
+   "normalized": null,
+   "error": "Invalid UUID format: kK. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "İadmin",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "İadmin",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "admİn",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "admİn",
+   "normalized": null,
+   "error": "Invalid UUID format: admİn. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "normalized": null,
+   "error": "Invalid UUID format: éééééééééééééééééééééééééééééééééééééééééééééééééé.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "tab\there",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "tab\there",
+   "normalized": null,
+   "error": "Invalid UUID format: tabhere. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "nl\nx",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "nl\nx",
+   "normalized": null,
+   "error": "Invalid UUID format: nlx. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "\u0000\u001f",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "\u0000\u001f",
+   "normalized": null,
+   "error": "Invalid UUID format: . Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "​zero",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "​zero",
+   "normalized": null,
+   "error": "Invalid UUID format: zero. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "😀emoji",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "😀emoji",
+   "normalized": null,
+   "error": "Invalid UUID format: 😀emoji. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "",
+   "normalized": null,
+   "error": "Invalid UUID format: . Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "c:\\windows",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "c:\\windows",
+   "normalized": null,
+   "error": "Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "onload=x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "onload=x",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]x. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "ONERROR=x",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ONERROR=x",
+   "normalized": null,
+   "error": "Invalid UUID format: [removed]x. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "Ⅻ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "Ⅻ",
+   "normalized": null,
+   "error": "Invalid UUID format: XII. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "normalized": null,
+   "error": "Invalid UUID format: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "normalized": null,
+   "error": "Invalid UUID format: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.... Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "private",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "private",
+   "normalized": null,
+   "error": "Invalid UUID format: private. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "ß",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "ß",
+   "normalized": null,
+   "error": "Invalid UUID format: ß. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "strict": false,
+   "value": "İ",
+   "hint": null,
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "İ",
+   "normalized": null,
+   "error": "Invalid UUID format: İ. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  }
+ ],
+ "param_mapping": [
+  {
+   "args": {},
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "",
+   "error": "At least one parameter must be provided",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "args": {
+    "task_id": "123e4567-e89b-42d3-a456-426614174000"
+   },
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "{'task_id': '123e4567-e89b-42d3-a456-426614174000'}",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "validated_parameters": [
+     "task_id"
+    ],
+    "parameter_count": 1
+   }
+  },
+  {
+   "args": {
+    "task_id": "123e4567-e89b-42d3-a456-426614174000",
+    "git_branch_id": "123e4567-e89b-42d3-a456-426614174000"
+   },
+   "is_valid": true,
+   "id_type": "uuid",
+   "original": "{'task_id': '123e4567-e89b-42d3-a456-426614174000', 'git_branch_id': '123e4567-e89b-42d3-a456-426614174000'}",
+   "error": null,
+   "warnings": [
+    "Same ID value used for multiple parameters - verify this is intentional"
+   ],
+   "metadata": {
+    "validated_parameters": [
+     "task_id",
+     "git_branch_id"
+    ],
+    "parameter_count": 2
+   }
+  },
+  {
+   "args": {
+    "task_id": "bad",
+    "project_id": "123e4567-e89b-12d3-a456-426614174000"
+   },
+   "is_valid": false,
+   "id_type": "uuid",
+   "original": "{'task_id': 'bad', 'project_id': '123e4567-e89b-12d3-a456-426614174000'}",
+   "error": "task_id: Invalid UUID format: bad. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx; project_id: Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": {
+    "validated_parameters": [
+     "task_id",
+     "project_id"
+    ],
+    "parameter_count": 2
+   }
+  },
+  {
+   "args": {
+    "user_id": "123e4567-e89b-42d3-a456-426614174000",
+    "project_id": "123e4567-e89b-42d3-a456-426614174000x"
+   },
+   "is_valid": false,
+   "id_type": "uuid",
+   "original": "{'project_id': '123e4567-e89b-42d3-a456-426614174000x', 'user_id': '123e4567-e89b-42d3-a456-426614174000'}",
+   "error": "project_id: Invalid UUID format: 123e4567-e89b-42d3-a456-426614174000x. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": {
+    "validated_parameters": [
+     "project_id",
+     "user_id"
+    ],
+    "parameter_count": 2
+   }
+  },
+  {
+   "args": {
+    "git_branch_id": "password"
+   },
+   "is_valid": false,
+   "id_type": "uuid",
+   "original": "{'git_branch_id': 'password'}",
+   "error": "git_branch_id: Invalid UUID format: [redacted-sensitive-content]. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": {
+    "validated_parameters": [
+     "git_branch_id"
+    ],
+    "parameter_count": 1
+   }
+  }
+ ],
+ "task_context": [
+  {
+   "args": [
+    "123e4567-e89b-42d3-a456-426614174000",
+    null
+   ],
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "validation_type": "task_context"
+   }
+  },
+  {
+   "args": [
+    "bad",
+    null
+   ],
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "bad",
+   "normalized": null,
+   "error": "Invalid UUID format: bad. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "args": [
+    "123e4567-e89b-42d3-a456-426614174000",
+    "123e4567-e89b-42d3-a456-426614174000"
+   ],
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "task_id: 123e4567-e89b-42d3-a456-426614174000, git_branch_id: 123e4567-e89b-42d3-a456-426614174000",
+   "normalized": null,
+   "error": "CRITICAL: task_id and git_branch_id are identical. This indicates parameter confusion that leads to data integrity issues.",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "args": [
+    "123e4567-e89b-42d3-a456-426614174000",
+    "bad"
+   ],
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "task_id: 123e4567-e89b-42d3-a456-426614174000, git_branch_id: bad",
+   "normalized": null,
+   "error": "Invalid git_branch_id: Invalid UUID format: bad. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "args": [
+    "123e4567-e89b-42d3-a456-426614174000",
+    "123e4567-e89b-12d3-a456-426614174000"
+   ],
+   "is_valid": false,
+   "id_type": "unknown",
+   "original": "task_id: 123e4567-e89b-42d3-a456-426614174000, git_branch_id: 123e4567-e89b-12d3-a456-426614174000",
+   "normalized": null,
+   "error": "Invalid git_branch_id: Invalid UUID format: 123e4567-e89b-12d3-a456-426614174000. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+   "warnings": null,
+   "metadata": null
+  },
+  {
+   "args": [
+    "123e4567-e89b-42d3-a456-426614174000",
+    "5e9c7e70-2d0a-4d6c-8b1a-000000000001"
+   ],
+   "is_valid": true,
+   "id_type": "application_task_id",
+   "original": "123e4567-e89b-42d3-a456-426614174000",
+   "normalized": "123e4567-e89b-42d3-a456-426614174000",
+   "error": null,
+   "warnings": null,
+   "metadata": {
+    "validation_type": "task_context",
+    "git_branch_id_validated": true
+   }
+  }
+ ],
+ "suggest": {
+  "issue": "ID confusion detected in ctx",
+  "confused_id": "abc",
+  "root_cause": "MCP task ID being used as application task ID",
+  "immediate_fix": "Look up the correct git_branch_id from the task record before passing to facade service",
+  "code_example": "\n# WRONG (causes data integrity issues):\nfacade = self._facade_service.get_subtask_facade(\n    user_id=user_id,\n    git_branch_id=task_id  # BUG: task_id ≠ git_branch_id\n)\n\n# CORRECT (proper ID resolution):\ntask_facade = self._facade_service.get_task_facade(user_id=user_id)\ntask_response = task_facade.get_task(task_id=task_id)\ngit_branch_id = task_response['data']['task']['git_branch_id']\n\nfacade = self._facade_service.get_subtask_facade(\n    user_id=user_id,\n    git_branch_id=git_branch_id  # FIXED: Use correct git_branch_id\n)\n            ",
+  "prevention": "Use IDValidator.validate_parameter_mapping() before facade calls to catch parameter confusion early"
+ },
+ "suggest_default": "ID confusion detected in unknown"
+}

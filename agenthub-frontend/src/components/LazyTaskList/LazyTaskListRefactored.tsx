@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getAvailableAgents, listAgents } from "../../api";
+import { getAvailableAgents } from "../../api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useErrorToast } from "../ui/toast";
 import logger from "../../utils/logger";
@@ -75,24 +75,23 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // UI state
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const [loadedAgents, setLoadedAgents] = useState(false);
-  const [agents, setAgents] = useState<any[]>([]);
+  const [availableAgentsError, setAvailableAgentsError] = useState(false);
   const [availableAgents, setAvailableAgents] = useState<string[]>([]);
   const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null);
   const [highlightedDependencies, setHighlightedDependencies] = useState<Set<string>>(new Set());
 
-  // Load agents on demand
+  // Load seats on demand
   const loadAgentsOnDemand = useCallback(async () => {
     if (loadedAgents) return;
+    // A failed seat load leaves loadedAgents false, so the next dialog open retries.
     try {
-      const [projectAgents, availableAgentsList] = await Promise.all([
-        listAgents(),
-        getAvailableAgents()
-      ]);
-      setAgents(projectAgents);
-      setAvailableAgents(availableAgentsList);
+      const seats = await getAvailableAgents();
+      setAvailableAgents(seats);
+      setAvailableAgentsError(false);
       setLoadedAgents(true);
-    } catch (e) {
-      logger.error('Error loading agents', { component: 'LazyTaskList', error: e });
+    } catch (error) {
+      logger.error('Error loading seats', { component: 'LazyTaskList', error });
+      setAvailableAgentsError(true);
     }
   }, [loadedAgents]);
 
@@ -290,8 +289,8 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
         activeDialog={activeDialog as TaskActiveDialog}
         fullTasks={fullTasks}
         taskSummaries={displayTasks}
-        agents={agents}
         availableAgents={availableAgents}
+        availableAgentsError={availableAgentsError}
         saving={saving}
         onCloseDialog={closeDialog}
         onOpenDialog={openDialog}

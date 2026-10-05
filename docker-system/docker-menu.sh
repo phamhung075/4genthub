@@ -32,21 +32,21 @@ fi
 # Check and stop conflicting containers on required ports
 check_and_free_ports() {
     echo -e "${YELLOW}🔍 Checking for port conflicts...${RESET}"
-    
+
     # Check for containers using backend port
     local backend_containers=$(docker ps -q --filter "publish=${FASTMCP_PORT}" 2>/dev/null)
     if [[ -n "$backend_containers" ]]; then
         echo -e "${YELLOW}⚠️  Stopping containers using port ${FASTMCP_PORT}...${RESET}"
         docker stop $backend_containers
     fi
-    
-    # Check for containers using frontend port  
+
+    # Check for containers using frontend port
     local frontend_containers=$(docker ps -q --filter "publish=${FRONTEND_PORT}" 2>/dev/null)
     if [[ -n "$frontend_containers" ]]; then
         echo -e "${YELLOW}⚠️  Stopping containers using port ${FRONTEND_PORT}...${RESET}"
         docker stop $frontend_containers
     fi
-    
+
     # Clean up stopped containers
     if [[ -n "$backend_containers" ]] || [[ -n "$frontend_containers" ]]; then
         echo -e "${YELLOW}🧹 Cleaning up stopped containers...${RESET}"
@@ -55,55 +55,110 @@ check_and_free_ports() {
     else
         echo -e "${GREEN}✅ Ports are available${RESET}"
     fi
+
+    ensure_single_backend
+}
+
+# Only ONE backend (Python or Go; Docker container or dev mode) may exist at a time.
+# Stops whichever backend is running so the one about to start owns the port.
+ensure_single_backend() {
+    local want="${BACKEND_RUNTIME_LABEL:-Python}"
+    local port="${FASTMCP_PORT:-8000}"
+
+    # 1) Docker container named agenthub-backend (either runtime shares this name)
+    local image
+    image=$(docker ps -a --filter "name=^agenthub-backend$" --format '{{.Image}}' 2>/dev/null | head -1)
+    if [[ -n "$image" ]]; then
+        local have="Python"
+        [[ "$image" == agenthub-backend-go:* ]] && have="Go"
+        echo -e "${YELLOW}⚠️  A ${have} backend container exists; stopping it (only one backend may run, starting ${want})...${RESET}"
+        docker stop agenthub-backend >/dev/null 2>&1 || true
+        docker rm agenthub-backend >/dev/null 2>&1 || true
+    fi
+
+    # 2) Dev mode (option D): native Python recorded in dev-backend.pid
+    local pidfile="${PROJECT_ROOT}/dev-backend.pid"
+    if [[ -f "$pidfile" ]]; then
+        local devpid
+        devpid=$(cat "$pidfile")
+        if kill -0 "$devpid" 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  A dev-mode backend is running (PID ${devpid}); stopping it (starting ${want})...${RESET}"
+            kill "$devpid" 2>/dev/null || true
+        fi
+        rm -f "$pidfile"
+    fi
+
+    # 3) Any other known backend process still listening on the backend port.
+    #    Unknown processes are never killed: report and stop instead.
+    local pid cmd
+    for pid in $(ss -H -ltnp "sport = :${port}" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u); do
+        cmd=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null)
+        if [[ "$cmd" =~ (mcp_entry_point|uvicorn|agenthub) ]]; then
+            echo -e "${YELLOW}⚠️  Backend process on port ${port} (PID ${pid}); stopping it (starting ${want})...${RESET}"
+            kill "$pid" 2>/dev/null || true
+        else
+            echo -e "${RED}❌ Port ${port} is held by another process (PID ${pid}: ${cmd:0:80}). Not killing it; free the port and retry.${RESET}"
+            return 1
+        fi
+    done
+
+    # Wait up to ~10s for the port to be released
+    local i
+    for i in $(seq 1 20); do
+        ss -H -ltn "sport = :${port}" 2>/dev/null | grep -q . || return 0
+        sleep 0.5
+    done
+    echo -e "${RED}❌ Port ${port} is still in use after stopping the backend.${RESET}"
+    return 1
 }
 
 # Set Docker build optimization environment variables
 set_build_optimization() {
     # Disable slow provenance and SBOM features
     export DOCKER_BUILDKIT_PROVENANCE=false
-    export DOCKER_BUILDKIT_SBOM=false  
+    export DOCKER_BUILDKIT_SBOM=false
     export BUILDX_NO_DEFAULT_ATTESTATIONS=true
-    
+
     # Enable BuildKit for better performance
     export DOCKER_BUILDKIT=1
     export COMPOSE_DOCKER_CLI_BUILD=1
-    
+
     echo -e "${GREEN}✅ Build optimization enabled (provenance disabled)${RESET}"
 }
 
 # Clean up existing builds and images to save space
 clean_existing_builds() {
     echo -e "${YELLOW}🧹 Cleaning up existing builds for fresh rebuild...${RESET}"
-    
+
     # Stop and remove existing containers first
     echo -e "${YELLOW}🛑 Stopping existing agenthub containers...${RESET}"
     docker stop agenthub-backend agenthub-frontend 2>/dev/null || true
     docker rm agenthub-backend agenthub-frontend 2>/dev/null || true
-    
+
     # Remove agenthub project images to force complete rebuild
     local agenthub_images=$(docker images -q --filter "reference=*agenthub*" 2>/dev/null)
     if [[ -n "$agenthub_images" ]]; then
         echo -e "${YELLOW}🗑️  Removing existing agenthub images to ensure fresh build...${RESET}"
         docker rmi $agenthub_images -f >/dev/null 2>&1 || true
     fi
-    
-    # Remove docker project images from docker-system 
+
+    # Remove docker project images from docker-system
     local docker_images=$(docker images -q --filter "reference=docker-*" 2>/dev/null)
     if [[ -n "$docker_images" ]]; then
         echo -e "${YELLOW}🗑️  Removing existing docker-system images...${RESET}"
         docker rmi $docker_images -f >/dev/null 2>&1 || true
     fi
-    
+
     # Clear Python cache to ensure code changes are picked up
     echo -e "${YELLOW}🐍 Clearing Python cache files...${RESET}"
     find ../agenthub_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     find ../agenthub_main -type f -name "*.pyc" -delete 2>/dev/null || true
-    
+
     # Clean up dangling images and build cache
     echo -e "${YELLOW}🧽 Cleaning up dangling images and build cache...${RESET}"
     docker image prune -f >/dev/null 2>&1
     docker builder prune -f >/dev/null 2>&1
-    
+
     echo -e "${GREEN}✅ Build cleanup complete - ready for fresh --no-cache builds${RESET}"
 }
 
@@ -120,51 +175,51 @@ readonly RESET='\033[0m'
 validate_env_variables() {
     local has_errors=false
     local has_warnings=false
-    
+
     # Check required database configuration
     if [[ -z "$DATABASE_TYPE" ]]; then
         echo -e "${RED}❌ ERROR: DATABASE_TYPE is not set${RESET}"
         has_errors=true
     fi
-    
+
     if [[ -z "$DATABASE_HOST" ]]; then
         echo -e "${RED}❌ ERROR: DATABASE_HOST is not set${RESET}"
         has_errors=true
     fi
-    
+
     # Validate port numbers
     if [[ -n "$FASTMCP_PORT" ]] && ! [[ "$FASTMCP_PORT" =~ ^[0-9]+$ ]]; then
         echo -e "${RED}❌ ERROR: FASTMCP_PORT must be a number, got: $FASTMCP_PORT${RESET}"
         has_errors=true
     fi
-    
+
     if [[ -n "$DATABASE_PORT" ]] && ! [[ "$DATABASE_PORT" =~ ^[0-9]+$ ]]; then
         echo -e "${RED}❌ ERROR: DATABASE_PORT must be a number, got: $DATABASE_PORT${RESET}"
         has_errors=true
     fi
-    
+
     if [[ -n "$FRONTEND_PORT" ]] && ! [[ "$FRONTEND_PORT" =~ ^[0-9]+$ ]]; then
         echo -e "${RED}❌ ERROR: FRONTEND_PORT must be a number, got: $FRONTEND_PORT${RESET}"
         has_errors=true
     fi
-    
+
     # Check for port conflicts
     if [[ "$FASTMCP_PORT" == "$FRONTEND_PORT" ]]; then
         echo -e "${RED}❌ ERROR: FASTMCP_PORT and FRONTEND_PORT cannot be the same: $FASTMCP_PORT${RESET}"
         has_errors=true
     fi
-    
+
     # Warn about missing optional but important variables
     if [[ -z "$VITE_API_URL" ]]; then
         echo -e "${YELLOW}⚠️  WARNING: VITE_API_URL is not set (frontend may not connect to backend)${RESET}"
         has_warnings=true
     fi
-    
+
     if [[ -z "$VITE_BACKEND_URL" ]]; then
         echo -e "${YELLOW}⚠️  WARNING: VITE_BACKEND_URL is not set (frontend may not connect to backend)${RESET}"
         has_warnings=true
     fi
-    
+
     # Check if frontend URLs match backend port
     if [[ -n "$VITE_API_URL" ]] && [[ -n "$FASTMCP_PORT" ]]; then
         if ! echo "$VITE_API_URL" | grep -q ":$FASTMCP_PORT"; then
@@ -172,16 +227,16 @@ validate_env_variables() {
             has_warnings=true
         fi
     fi
-    
+
     if [[ "$has_errors" == "true" ]]; then
         echo -e "${RED}❌ Configuration errors detected. Please fix .env.dev file${RESET}"
         return 1
     fi
-    
+
     if [[ "$has_warnings" == "true" ]]; then
         echo -e "${YELLOW}⚠️  Configuration warnings detected. Some features may not work properly${RESET}"
     fi
-    
+
     return 0
 }
 
@@ -189,7 +244,7 @@ validate_env_variables() {
 load_env_config() {
     local env_dev_file="${PROJECT_ROOT}/.env.dev"
     local env_file="${PROJECT_ROOT}/.env"
-    
+
     # Try .env.dev first (primary development file)
     if [[ -f "$env_dev_file" ]]; then
         # Load .env.dev file, ignoring comments and empty lines
@@ -197,10 +252,10 @@ load_env_config() {
         source <(grep -v '^#' "$env_dev_file" | grep -v '^$' | sed 's/\r$//')
         set +a  # stop auto-exporting
         echo -e "${GREEN}✅ Loaded configuration from .env.dev file${RESET}"
-        
+
         # Validate critical variables
         validate_env_variables
-        
+
         # Set defaults for missing variables
         export FASTMCP_PORT=${FASTMCP_PORT:-8000}
         export MCP_PORT=${MCP_PORT:-${FASTMCP_PORT:-8000}}
@@ -214,7 +269,7 @@ load_env_config() {
         export AUTH_PROVIDER=${AUTH_PROVIDER:-keycloak}
         export AUTH_ENABLED=${AUTH_ENABLED:-true}
         export EMAIL_VERIFIED_AUTO=${EMAIL_VERIFIED_AUTO:-true}
-        
+
         return 0
     # Try .env as fallback
     elif [[ -f "$env_file" ]]; then
@@ -223,7 +278,7 @@ load_env_config() {
         source <(grep -v '^#' "$env_file" | grep -v '^$' | sed 's/\r$//')
         set +a
         echo -e "${GREEN}✅ Loaded configuration from .env file (fallback)${RESET}"
-        
+
         # Set defaults for missing variables
         export FASTMCP_PORT=${FASTMCP_PORT:-8000}
         export MCP_PORT=${MCP_PORT:-${FASTMCP_PORT:-8000}}
@@ -237,12 +292,12 @@ load_env_config() {
         export AUTH_PROVIDER=${AUTH_PROVIDER:-keycloak}
         export AUTH_ENABLED=${AUTH_ENABLED:-true}
         export EMAIL_VERIFIED_AUTO=${EMAIL_VERIFIED_AUTO:-true}
-        
+
         return 0
     else
         echo -e "${YELLOW}⚠️  No .env.dev or .env file found${RESET}"
         echo -e "${YELLOW}Using hardcoded default values${RESET}"
-        
+
         # Set hardcoded defaults
         export FASTMCP_PORT=8000
         export MCP_PORT=8000
@@ -255,7 +310,7 @@ load_env_config() {
         export DATABASE_TYPE=postgresql
         export AUTH_PROVIDER=keycloak
         export AUTH_ENABLED=true
-        
+
         return 1
     fi
 }
@@ -437,6 +492,7 @@ show_main_menu() {
     echo -e "${MAGENTA}${BOLD}Build Configurations${RESET}"
     echo "────────────────────────────────────────────────"
     echo "  1) 🚀 Backend + Frontend Only (requires DB running)"
+    echo "  1G) 🐹 Backend (Go) + Frontend Only (requires DB running)"
     echo "  2) ☁️  Supabase Cloud (No Redis)"
     echo "  3) ☁️🔴 Supabase Cloud + Redis (Full Stack)"
     echo ""
@@ -473,14 +529,17 @@ show_main_menu() {
 
 # Build and start PostgreSQL Local configuration with Development Dockerfiles
 start_postgresql_local() {
-    echo -e "${GREEN}🚀 Building and Starting Backend + Frontend Only...${RESET}"
+    # Option 1G sets BACKEND_COMPOSE_FILE / BACKEND_RUNTIME_LABEL and reuses this flow
+    local compose_file="${BACKEND_COMPOSE_FILE:-docker-compose.backend-frontend.yml}"
+    local runtime_label="${BACKEND_RUNTIME_LABEL:-Python}"
+    echo -e "${GREEN}🚀 Building and Starting Backend (${runtime_label}) + Frontend Only...${RESET}"
     echo -e "${YELLOW}Note: PostgreSQL should be running separately (use option B first)${RESET}"
     echo -e "${CYAN}Using credentials from .env.dev${RESET}"
-    
+
     cd "$DOCKER_DIR"
 
     set_build_optimization
-    check_and_free_ports
+    check_and_free_ports || return 1
 
     # Check if PostgreSQL is running
     if ! docker ps | grep -q agenthub-postgres; then
@@ -498,7 +557,7 @@ start_postgresql_local() {
     docker network create agenthub-network 2>/dev/null || true
 
     # Use backend-frontend only docker-compose file
-    echo -e "${CYAN}Using docker-compose.backend-frontend.yml for backend and frontend only...${RESET}"
+    echo -e "${CYAN}Using ${compose_file} for backend and frontend only...${RESET}"
 
     # Validate environment before building
     if ! validate_env_variables; then
@@ -510,26 +569,31 @@ start_postgresql_local() {
     echo -e "${YELLOW}This will be faster as both containers build simultaneously${RESET}"
 
     # Always use .env.dev for consistency and set CONTAINER_ENV=docker
-    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml build --parallel --no-cache || {
+    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f "$compose_file" build --parallel --no-cache || {
         echo -e "${RED}❌ Build failed. Check error messages above${RESET}"
         return 1
     }
 
     echo -e "${CYAN}Starting backend and frontend services...${RESET}"
-    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f docker-compose.backend-frontend.yml up -d || {
+    CONTAINER_ENV=docker docker-compose --env-file "${ENV_DEV_FILE:-../../.env.dev}" -f "$compose_file" up -d || {
         echo -e "${RED}❌ Failed to start services. Check error messages above${RESET}"
         return 1
     }
-    
+
     echo -e "${GREEN}✅ Development services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT:-8000}"
     echo "Frontend: http://localhost:${FRONTEND_PORT:-3800}"
     echo "PostgreSQL: localhost:${DATABASE_PORT:-5432}"
     echo -e "${YELLOW}📝 Note: Rebuild containers to see code changes${RESET}"
-    
+
     # Show running containers
     echo -e "\n${CYAN}Running containers:${RESET}"
     docker ps --filter "name=agenthub" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+}
+
+# Option 1G: same as option 1, but the backend is the Go server (agenthub_go) instead of Python
+start_postgresql_local_go() {
+    BACKEND_RUNTIME_LABEL="Go" BACKEND_COMPOSE_FILE="docker-compose.backend-go-frontend.yml" start_postgresql_local
 }
 
 # Start Database Only (Option B - PostgreSQL standalone)
@@ -812,26 +876,26 @@ clean_database_volume() {
 start_supabase_cloud() {
     echo -e "${GREEN}☁️  Starting Supabase Cloud configuration...${RESET}"
     cd "$DOCKER_DIR"
-    
+
     set_build_optimization
-    
+
     # Verify environment setup
     echo -e "${CYAN}📋 Verifying Supabase configuration...${RESET}"
-    
+
     # Check if env file exists and show Supabase vars
     if [[ -f "../../.env" ]]; then
         echo -e "${GREEN}✓ .env file found${RESET}"
-        
+
         # Check for required Supabase variables
         local required_vars=("SUPABASE_URL" "SUPABASE_ANON_KEY" "DATABASE_TYPE")
         local missing_vars=()
-        
+
         for var in "${required_vars[@]}"; do
             if ! grep -q "^${var}=" ../../.env; then
                 missing_vars+=("$var")
             fi
         done
-        
+
         if [[ ${#missing_vars[@]} -gt 0 ]]; then
             echo -e "${RED}❌ Missing required environment variables:${RESET}"
             for var in "${missing_vars[@]}"; do
@@ -840,14 +904,14 @@ start_supabase_cloud() {
             echo -e "${YELLOW}Please add these to your .env file and try again.${RESET}"
             return 1
         fi
-        
+
         # Verify DATABASE_TYPE is set to supabase
         if ! grep -q "^DATABASE_TYPE=supabase" ../../.env; then
             echo -e "${YELLOW}⚠️  DATABASE_TYPE is not set to 'supabase'. Setting it now...${RESET}"
             sed -i 's/^DATABASE_TYPE=.*/DATABASE_TYPE=supabase/' ../../.env 2>/dev/null || \
             echo "DATABASE_TYPE=supabase" >> ../../.env
         fi
-        
+
         echo -e "${GREEN}✓ Supabase configuration verified${RESET}"
         echo -e "${CYAN}Found Supabase variables:${RESET}"
         grep "^SUPABASE_" ../../.env | sed 's/=.*/=<configured>/' | head -5
@@ -856,20 +920,20 @@ start_supabase_cloud() {
         echo -e "${YELLOW}Please create .env file with Supabase credentials${RESET}"
         return 1
     fi
-    
-    check_and_free_ports
+
+    check_and_free_ports || return 1
     clean_existing_builds
-    
+
     echo -e "${CYAN}🔨 Building with --no-cache (this ensures latest code changes)...${RESET}"
     DATABASE_TYPE=supabase CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml build --no-cache
 
     echo -e "${CYAN}🚀 Starting services...${RESET}"
     DATABASE_TYPE=supabase CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml up -d
-    
+
     # Wait for services to be ready
     echo -e "${YELLOW}⏳ Waiting for services to start (10 seconds)...${RESET}"
     sleep 10
-    
+
     # Health check
     echo -e "${CYAN}🏥 Checking service health...${RESET}"
     if curl -s "http://localhost:${FASTMCP_PORT}/health" > /dev/null 2>&1; then
@@ -877,7 +941,7 @@ start_supabase_cloud() {
     else
         echo -e "${YELLOW}⚠️  Backend may still be starting up${RESET}"
     fi
-    
+
     echo -e "${GREEN}✅ Services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
     echo "Frontend: http://localhost:${FRONTEND_PORT}"
@@ -887,7 +951,7 @@ start_supabase_cloud() {
     echo "  - Your data is stored in Supabase Cloud, not locally"
     echo "  - Check logs: docker logs agenthub-backend --tail 50"
     echo "  - Verify connection: docker exec agenthub-backend env | grep SUPABASE"
-    
+
     show_service_status "docker-compose.yml"
 }
 
@@ -896,23 +960,23 @@ start_supabase_cloud() {
 start_redis_supabase() {
     echo -e "${GREEN}🔴☁️  Starting Redis + Supabase Cloud configuration...${RESET}"
     cd "$DOCKER_DIR"
-    
+
     set_build_optimization
-    check_and_free_ports
+    check_and_free_ports || return 1
     clean_existing_builds
-    
+
     echo "Building with --no-cache..."
     DATABASE_TYPE=supabase ENABLE_REDIS=true CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis build --no-cache
 
     echo "Starting services..."
     DATABASE_TYPE=supabase ENABLE_REDIS=true CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml --profile redis up -d
-    
+
     echo -e "${GREEN}✅ Services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
     echo "Frontend: http://localhost:${FRONTEND_PORT}"
     echo "Database: Supabase Cloud"
     echo "Redis: localhost:6379"
-    
+
     show_service_status "docker-compose.yml"
 }
 
@@ -931,18 +995,18 @@ show_service_status() {
 # Stop all services
 stop_all_services() {
     echo -e "${YELLOW}🛑 Stopping all services...${RESET}"
-    
+
     # Check if dev mode services are running
     if [[ -f "../dev-backend.pid" ]] || [[ -f "../dev-frontend.pid" ]]; then
         echo "Detected development mode services running..."
         stop_dev_mode
     fi
-    
+
     # Stop Docker services
     cd "$DOCKER_DIR"
     echo "Stopping Docker services..."
     CONTAINER_ENV=docker docker-compose --env-file ../../.env.dev -f docker-compose.yml down 2>/dev/null || true
-    
+
     echo -e "${GREEN}✅ All services stopped${RESET}"
 }
 
@@ -950,19 +1014,19 @@ stop_all_services() {
 view_logs() {
     echo -e "${CYAN}📜 Available services for logs:${RESET}"
     echo "1) Backend"
-    echo "2) Frontend" 
+    echo "2) Frontend"
     echo "3) PostgreSQL"
     echo "4) Redis"
     echo "5) All services"
-    
+
     read -p "Select service: " log_choice
-    
+
     case $log_choice in
         1) docker logs -f agenthub-backend 2>/dev/null || echo "Backend container not found" ;;
         2) docker logs -f agenthub-frontend 2>/dev/null || echo "Frontend container not found" ;;
         3) docker logs -f agenthub-postgres 2>/dev/null || echo "PostgreSQL container not found" ;;
         4) docker logs -f agenthub-redis 2>/dev/null || echo "Redis container not found" ;;
-        5) 
+        5)
             echo "Showing logs for all services..."
             docker logs agenthub-backend --tail=50 2>/dev/null || true
             docker logs agenthub-frontend --tail=50 2>/dev/null || true
@@ -1061,26 +1125,26 @@ force_complete_rebuild() {
     echo "  - Force rebuild everything from scratch"
     echo ""
     read -p "Are you sure? This will take several minutes. (y/N): " confirm
-    
+
     if [[ $confirm == "y" || $confirm == "Y" ]]; then
         echo -e "${YELLOW}🛑 Stopping all containers...${RESET}"
         docker stop $(docker ps -aq --filter "name=agenthub") 2>/dev/null || true
-        
+
         echo -e "${YELLOW}🗑️  Removing all containers...${RESET}"
         docker rm $(docker ps -aq --filter "name=agenthub") 2>/dev/null || true
-        
+
         echo -e "${YELLOW}🗑️  Removing all agenthub images...${RESET}"
         docker rmi $(docker images -q --filter "reference=*agenthub*") -f 2>/dev/null || true
         docker rmi $(docker images -q --filter "reference=docker-*") -f 2>/dev/null || true
-        
+
         echo -e "${YELLOW}🐍 Clearing all Python cache...${RESET}"
         find ../agenthub_main -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
         find ../agenthub_main -type f -name "*.pyc" -delete 2>/dev/null || true
-        
+
         echo -e "${YELLOW}🧹 Pruning Docker system...${RESET}"
         docker system prune -af --volumes 2>/dev/null || true
         docker builder prune -af 2>/dev/null || true
-        
+
         echo -e "${GREEN}✅ Complete cleanup done!${RESET}"
         echo ""
         echo -e "${CYAN}Now select a configuration to rebuild:${RESET}"
@@ -1088,9 +1152,9 @@ force_complete_rebuild() {
         echo "2) ☁️  Supabase Cloud (No Redis)"
         echo "3) ☁️🔴 Supabase Cloud + Redis (Full Stack)"
         echo "0) Cancel"
-        
+
         read -p "Select configuration: " rebuild_choice
-        
+
         case $rebuild_choice in
             1) start_postgresql_local ;;
             2) start_supabase_cloud ;;
@@ -1111,7 +1175,7 @@ start_optimized_mode() {
     echo "  • CPU usage by ~40%"
     echo "  • Docker image sizes"
     echo ""
-    
+
     # Check system resources
     echo -e "${CYAN}🔍 Checking system resources...${RESET}"
     if command -v free &> /dev/null; then
@@ -1119,26 +1183,26 @@ start_optimized_mode() {
         MEM_AVAILABLE=$(free -m | awk 'NR==2{print $7}')
         echo -e "  Total Memory: ${MEM_TOTAL}MB"
         echo -e "  Available Memory: ${MEM_AVAILABLE}MB"
-        
+
         if [ "$MEM_AVAILABLE" -lt 2048 ]; then
             echo -e "${YELLOW}⚠️  Low memory detected. Using minimal configuration...${RESET}"
             USE_MINIMAL=true
         fi
     fi
-    
+
     cd "$DOCKER_DIR"
-    
+
     set_build_optimization
-    check_and_free_ports
-    
+    check_and_free_ports || return 1
+
     # Check if optimized compose file exists
     if [[ ! -f "docker-compose.optimized.yml" ]]; then
         echo -e "${YELLOW}Creating optimized configuration...${RESET}"
         create_optimized_compose
     fi
-    
+
     echo -e "${CYAN}🔨 Building optimized images...${RESET}"
-    
+
     # Build with optimized settings
     CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml build \
         --parallel \
@@ -1146,9 +1210,9 @@ start_optimized_mode() {
             echo -e "${RED}Build failed, falling back to standard build${RESET}"
             CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml build
         }
-    
+
     echo -e "${CYAN}🚀 Starting optimized services...${RESET}"
-    
+
     # Start with resource limits
     if [ "$USE_MINIMAL" = "true" ]; then
         # Start only essential services for very low memory
@@ -1157,7 +1221,7 @@ start_optimized_mode() {
     else
         CONTAINER_ENV=docker docker-compose -f docker-compose.optimized.yml up -d
     fi
-    
+
     # Wait for services
     echo -e "${YELLOW}⏳ Waiting for services to start...${RESET}"
     local max_wait=30
@@ -1172,7 +1236,7 @@ start_optimized_mode() {
         echo -n "."
     done
     echo ""
-    
+
     echo -e "${GREEN}✅ Optimized services started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
     [ "$USE_MINIMAL" != "true" ] && echo "Frontend: http://localhost:${FRONTEND_PORT}"
@@ -1325,13 +1389,13 @@ monitor_performance() {
     echo -e "${CYAN}${BOLD}📊 Performance Monitor${RESET}"
     echo -e "${YELLOW}Press Ctrl+C to stop monitoring${RESET}"
     echo ""
-    
+
     # Check if any containers are running
     if [ -z "$(docker ps -q)" ]; then
         echo -e "${RED}No containers are running!${RESET}"
         return
     fi
-    
+
     # Continuous monitoring
     while true; do
         clear
@@ -1339,28 +1403,28 @@ monitor_performance() {
         echo -e "${CYAN}${BOLD}   agenthub Performance Monitor - $(date +%H:%M:%S)${RESET}"
         echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════${RESET}"
         echo ""
-        
+
         # Show container stats
         echo -e "${GREEN}Container Resources:${RESET}"
         docker stats --no-stream --format "table {{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}"
-        
+
         echo ""
         echo -e "${GREEN}Container Status:${RESET}"
         docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Size}}"
-        
+
         # Show system resources if available
         if command -v free &> /dev/null; then
             echo ""
             echo -e "${GREEN}System Memory:${RESET}"
             free -h | grep -E "^(Mem|Swap)"
         fi
-        
+
         if command -v df &> /dev/null; then
             echo ""
             echo -e "${GREEN}Docker Disk Usage:${RESET}"
             df -h | grep -E "(^Filesystem|/var/lib/docker)"
         fi
-        
+
         echo ""
         echo -e "${YELLOW}Refreshing in 3 seconds... (Ctrl+C to stop)${RESET}"
         sleep 3
@@ -1374,31 +1438,34 @@ start_dev_mode() {
     echo "  • Backend: Python FastAPI server on port 8000"
     echo "  • Frontend: React dev server on port 3800"
     echo ""
-    
+
+    # Only one backend (Python or Go) may run at a time
+    ensure_single_backend || return 1
+
     # Check prerequisites
     echo -e "${CYAN}🔍 Checking prerequisites...${RESET}"
-    
+
     # Check Python
     if ! command -v python3 &> /dev/null; then
         echo -e "${RED}❌ Python 3 is not installed${RESET}"
         return 1
     fi
     echo -e "${GREEN}✅ Python 3 found: $(python3 --version)${RESET}"
-    
+
     # Check Node.js
     if ! command -v node &> /dev/null; then
         echo -e "${RED}❌ Node.js is not installed${RESET}"
         return 1
     fi
     echo -e "${GREEN}✅ Node.js found: $(node --version)${RESET}"
-    
+
     # Check pnpm
     if ! command -v pnpm &> /dev/null; then
         echo -e "${RED}❌ pnpm is not installed${RESET}"
         return 1
     fi
     echo -e "${GREEN}✅ pnpm found: $(pnpm --version)${RESET}"
-    
+
     # Check for .env.dev or .env file (prefer .env.dev)
     local env_source=""
     if [[ -f "${PROJECT_ROOT}/.env.dev" ]]; then
@@ -1424,7 +1491,7 @@ start_dev_mode() {
     if [[ -z "${DATABASE_TYPE:-}" ]]; then
         export DATABASE_TYPE=postgresql
     fi
-    
+
     # Kill any existing processes on ports
     echo -e "${YELLOW}🔍 Checking for processes on ports ${FASTMCP_PORT} and ${FRONTEND_PORT}...${RESET}"
     if lsof -Pi :${FASTMCP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
@@ -1436,57 +1503,57 @@ start_dev_mode() {
         kill -9 $(lsof -Pi :${FRONTEND_PORT} -sTCP:LISTEN -t) 2>/dev/null || true
     fi
     echo -e "${GREEN}✅ Ports are available${RESET}"
-    
+
     # Start Backend
     echo ""
     echo -e "${CYAN}🚀 Starting Backend Server...${RESET}"
     echo -e "${YELLOW}Installing Python dependencies...${RESET}"
-    
+
     # Get to the backend directory
     cd "${PROJECT_ROOT}/agenthub_main"
-    
+
     # Check if uv is available (preferred)
     if command -v uv &> /dev/null; then
         echo -e "${GREEN}✅ Using uv for dependency management${RESET}"
-        
+
         # Install dependencies with uv
         if [[ ! -d ".venv" ]]; then
             echo "Creating Python virtual environment with uv..."
             uv venv
         fi
-        
+
         echo "Installing dependencies with uv..."
         uv pip install -e . 2>/dev/null || {
             echo -e "${YELLOW}Installing dependencies (this may take a moment)...${RESET}"
             uv pip install -e .
         }
-        
+
         # Activate uv virtual environment
         source .venv/bin/activate
         export VIRTUAL_ENV="${PROJECT_ROOT}/agenthub_main/.venv"
     else
         # Fallback to regular pip
         echo -e "${YELLOW}uv not found, using pip${RESET}"
-        
+
         # Create virtual environment if it doesn't exist
         if [[ ! -d "venv" ]]; then
             echo "Creating Python virtual environment..."
             python3 -m venv venv
         fi
-        
+
         # Activate virtual environment and install dependencies
         source venv/bin/activate
-        
+
         # Install from pyproject.toml
         pip install -q -e . 2>/dev/null || {
             echo -e "${YELLOW}Installing dependencies (this may take a moment)...${RESET}"
             pip install -e .
         }
     fi
-    
+
     # Create logs directory if it doesn't exist
     mkdir -p "${PROJECT_ROOT}/logs"
-    
+
     # Start backend in background with hot reload
     echo -e "${GREEN}Starting FastAPI backend with hot reload...${RESET}"
     export ENV=development
@@ -1528,20 +1595,20 @@ start_dev_mode() {
     BACKEND_PID=$!
     echo "Backend PID: $BACKEND_PID (with dual auth support)"
     cd ..
-    
+
     # Start Frontend
     echo ""
     echo -e "${CYAN}🚀 Starting Frontend Server...${RESET}"
-    
+
     # Get to the frontend directory
     cd "${PROJECT_ROOT}/agenthub-frontend"
-    
+
     # Install frontend dependencies if needed
     if [[ ! -d "node_modules" ]]; then
         echo -e "${YELLOW}Installing frontend dependencies...${RESET}"
         pnpm install
     fi
-    
+
     # Start frontend in background with hot reload (Vite has HMR by default)
     echo -e "${GREEN}Starting React development server with hot reload...${RESET}"
     export VITE_API_URL="http://localhost:${FASTMCP_PORT}"
@@ -1550,38 +1617,38 @@ start_dev_mode() {
     nohup pnpm start > "${PROJECT_ROOT}/logs/frontend.log" 2>&1 &
     FRONTEND_PID=$!
     echo "Frontend PID: $FRONTEND_PID (with HMR enabled)"
-    
+
     # Save PIDs to file for later stopping
     echo "$BACKEND_PID" > "${PROJECT_ROOT}/dev-backend.pid"
     echo "$FRONTEND_PID" > "${PROJECT_ROOT}/dev-frontend.pid"
-    
+
     # Wait for services to start
     echo ""
     echo -e "${YELLOW}⏳ Waiting for services to start...${RESET}"
     sleep 5
-    
+
     # Check if services are running
     echo -e "${CYAN}🏥 Checking service health...${RESET}"
-    
+
     if kill -0 $BACKEND_PID 2>/dev/null; then
         echo -e "${GREEN}✅ Backend is running (PID: $BACKEND_PID)${RESET}"
     else
         echo -e "${RED}❌ Backend failed to start. Check backend.log for errors${RESET}"
     fi
-    
+
     if kill -0 $FRONTEND_PID 2>/dev/null; then
         echo -e "${GREEN}✅ Frontend is running (PID: $FRONTEND_PID)${RESET}"
     else
         echo -e "${RED}❌ Frontend failed to start. Check frontend.log for errors${RESET}"
     fi
-    
+
     # Try health check
     if curl -s "http://localhost:${FASTMCP_PORT}/health" > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Backend API is healthy${RESET}"
     else
         echo -e "${YELLOW}⚠️  Backend API not responding yet (may still be starting)${RESET}"
     fi
-    
+
     echo ""
     echo -e "${GREEN}✅ Development servers started!${RESET}"
     echo "Backend: http://localhost:${FASTMCP_PORT}"
@@ -1617,7 +1684,7 @@ start_dev_mode() {
     echo "  Stop: ./docker-menu.sh stop-dev"
     echo "  Restart: ./docker-menu.sh restart-dev (or option R)"
     echo "  Start: ./docker-menu.sh start-dev"
-    
+
     # Return to script directory
     cd "${SCRIPT_DIR}"
 }
@@ -1625,7 +1692,7 @@ start_dev_mode() {
 # Stop Development Mode services
 stop_dev_mode() {
     echo -e "${YELLOW}🛑 Stopping Development Mode services...${RESET}"
-    
+
     # Stop backend
     if [[ -f "${PROJECT_ROOT}/dev-backend.pid" ]]; then
         BACKEND_PID=$(cat "${PROJECT_ROOT}/dev-backend.pid")
@@ -1635,7 +1702,7 @@ stop_dev_mode() {
             rm "${PROJECT_ROOT}/dev-backend.pid"
         fi
     fi
-    
+
     # Stop frontend
     if [[ -f "${PROJECT_ROOT}/dev-frontend.pid" ]]; then
         FRONTEND_PID=$(cat "${PROJECT_ROOT}/dev-frontend.pid")
@@ -1645,13 +1712,13 @@ stop_dev_mode() {
             rm "${PROJECT_ROOT}/dev-frontend.pid"
         fi
     fi
-    
+
     # Also check for any orphaned processes
     echo "Checking for orphaned processes..."
     pkill -f "uvicorn.*8000" 2>/dev/null || true
     pkill -f "pnpm.*dev.*3800" 2>/dev/null || true
     pkill -f "vite.*3800" 2>/dev/null || true
-    
+
     echo -e "${GREEN}✅ Development services stopped${RESET}"
 }
 
@@ -1664,11 +1731,11 @@ restart_dev_mode() {
     echo "  • Apply ALL code changes including SSL fixes"
     echo "  • Restart with fresh environment"
     echo ""
-    
+
     # First stop existing services thoroughly
     echo -e "${YELLOW}Stopping all existing services...${RESET}"
     stop_dev_mode
-    
+
     # Kill any remaining Python processes that might be holding connections
     echo -e "${YELLOW}Cleaning up any remaining processes...${RESET}"
     pkill -f "python.*mcp_entry_point" 2>/dev/null || true
@@ -1732,16 +1799,16 @@ restart_dev_mode() {
     else
         echo -e "${GREEN}✅ Port ${FRONTEND_PORT} is free${RESET}"
     fi
-    
+
     # Clear any log files that might have SSL errors cached
     echo -e "${YELLOW}Clearing old logs...${RESET}"
     > "${PROJECT_ROOT}/logs/backend.log" 2>/dev/null || true
     > "${PROJECT_ROOT}/logs/frontend.log" 2>/dev/null || true
-    
+
     # Start services again with fresh environment
     echo -e "${GREEN}Starting services with fresh environment...${RESET}"
     start_dev_mode
-    
+
     echo ""
     echo -e "${GREEN}✅ Development services restarted with clean rebuild!${RESET}"
     echo -e "${CYAN}💡 All code changes including SSL fixes have been applied${RESET}"
@@ -1760,17 +1827,17 @@ clean_docker() {
     echo "- agenthub project images (since we rebuild with --no-cache)"
     echo ""
     read -p "Continue? (y/N): " confirm
-    
+
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         echo "Cleaning up Docker system..."
-        
+
         # Clean project-specific builds first
         clean_existing_builds
-        
+
         # Comprehensive system cleanup
         docker system prune -a -f  # More aggressive cleanup
         docker builder prune -a -f  # Remove all build cache
-        
+
         echo -e "${GREEN}✅ Comprehensive Docker cleanup complete${RESET}"
     fi
 }
@@ -1788,15 +1855,16 @@ main() {
             *) echo "Unknown argument: $1"; exit 1 ;;
         esac
     fi
-    
+
     while true; do
         show_header
         show_main_menu
-        
+
         read -p "Select option: " choice
-        
+
         case $choice in
             1) start_postgresql_local ;;
+            1[Gg]) start_postgresql_local_go ;;
             2) start_supabase_cloud ;;
             3) start_redis_supabase ;;
             [Bb]) start_database_only ;;
@@ -1824,7 +1892,7 @@ main() {
                 sleep 1
                 ;;
         esac
-        
+
         if [[ $choice != "0" && $choice != "5" ]]; then
             echo ""
             read -p "Press Enter to continue..."

@@ -136,25 +136,27 @@ class TestTokenConsumptionHelper:
         mock_token_service.consume_tokens_for_operation.return_value = (
             TokenConsumptionResult(
                 success=False,
-                error_message="Insufficient tokens. Required: 20, Available: 5",
+                error_message="Insufficient tokens. Required: 5, Available: 1",
                 error_code="INSUFFICIENT_TOKENS",
-                operation="call_agent",
+                operation="create_context",
             )
         )
 
         # Execute
-        success, error_response = await helper.consume_tokens(operation="call_agent")
+        success, error_response = await helper.consume_tokens(
+            operation="create_context"
+        )
 
         # Verify
         assert success is False
         assert error_response is not None
         assert error_response["success"] is False
         assert (
-            error_response["error"] == "Insufficient tokens. Required: 20, Available: 5"
+            error_response["error"] == "Insufficient tokens. Required: 5, Available: 1"
         )
         assert error_response["error_code"] == "INSUFFICIENT_TOKENS"
         assert error_response["status_code"] == 402  # Payment Required
-        assert error_response["operation"] == "call_agent"
+        assert error_response["operation"] == "create_context"
 
     @pytest.mark.asyncio
     @patch(
@@ -391,16 +393,16 @@ class TestTokenConsumptionHelper:
         mock_token_service.consume_tokens_for_operation.return_value = (
             TokenConsumptionResult(
                 success=False,
-                error_message="Insufficient tokens. Required: 20, Available: 10",
+                error_message="Insufficient tokens. Required: 5, Available: 2",
                 error_code="INSUFFICIENT_TOKENS",
-                operation="call_agent",
+                operation="create_context",
             )
         )
 
         # Execute
         response = {"success": True, "agent_response": "..."}
         success, final_response = await helper.consume_and_add_info(
-            operation="call_agent", response=response
+            operation="create_context", response=response
         )
 
         # Verify

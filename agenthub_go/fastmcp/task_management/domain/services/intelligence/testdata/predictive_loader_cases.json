@@ -1,0 +1,8812 @@
+{
+ "start": "2026-03-01T10:05:00.123456+00:00",
+ "script": [
+  [
+   "start",
+   "s0",
+   "u1"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c3",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "adv",
+   3600
+  ],
+  [
+   "end"
+  ],
+  [
+   "start",
+   "s1",
+   null
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c3",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "adv",
+   7200
+  ],
+  [
+   "end"
+  ],
+  [
+   "start",
+   "s2",
+   "u1"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c3",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "adv",
+   10800
+  ],
+  [
+   "end"
+  ],
+  [
+   "start",
+   "s3",
+   null
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c3",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Bash",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "manage_task",
+   ""
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "tool",
+   "Read",
+   "c2"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c1",
+   "branch"
+  ],
+  [
+   "tool",
+   "Edit",
+   "c1"
+  ],
+  [
+   "adv",
+   7
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "adv",
+   14400
+  ],
+  [
+   "end"
+  ],
+  [
+   "start",
+   "s9",
+   "u2"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "adv",
+   60
+  ],
+  [
+   "end"
+  ]
+ ],
+ "ends": [
+  {
+   "duration": 61.75,
+   "tools": 15,
+   "ctx": 25,
+   "end": "2026-03-01T11:06:45.123456+00:00"
+  },
+  {
+   "duration": 121.75,
+   "tools": 15,
+   "ctx": 25,
+   "end": "2026-03-01T13:08:30.123456+00:00"
+  },
+  {
+   "duration": 181.75,
+   "tools": 15,
+   "ctx": 25,
+   "end": "2026-03-01T16:10:15.123456+00:00"
+  },
+  {
+   "duration": 241.75,
+   "tools": 15,
+   "ctx": 25,
+   "end": "2026-03-01T20:12:00.123456+00:00"
+  },
+  {
+   "duration": 1.0,
+   "tools": 1,
+   "ctx": 2,
+   "end": "2026-03-01T20:13:00.123456+00:00"
+  }
+ ],
+ "hist": 5,
+ "preds": [
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "c1"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1",
+    "c2"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c1",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c1",
+    "Context transition pattern suggests c2"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2"
+   ],
+   "reasons": [
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "context_id": "c2"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution",
+    "c2",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c3",
+     0.3
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "context_transition:c2",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Context transition pattern suggests c2",
+    "Context transition pattern suggests c3",
+    "Context transition pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c2",
+     0.9
+    ],
+    [
+     "c1",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {},
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": null,
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "c1"
+   ],
+   "conf": [
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history"
+   ],
+   "reasons": [
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [],
+   "conf": [],
+   "patterns": [],
+   "reasons": [],
+   "prio": []
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_file",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_file"
+   ],
+   "conf": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:2"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_file"
+   ],
+   "prio": [
+    [
+     "predicted_file",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_task",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "Read",
+    "Edit",
+    "Bash"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_task"
+   ],
+   "conf": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_task"
+   ],
+   "prio": [
+    [
+     "predicted_task",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": null,
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "manage_task",
+     "Read"
+    ],
+    "context_sequence": [
+     "c1"
+    ]
+   },
+   "predicted": [
+    "predicted_execution",
+    "c1"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ],
+   "patterns": [
+    "session_history",
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution",
+    "Session history pattern suggests c1"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ],
+    [
+     "c1",
+     0.8
+    ]
+   ]
+  },
+  {
+   "cur": {
+    "id": "zz"
+   },
+   "tools": [
+    "manage_task",
+    "Read",
+    "Edit"
+   ],
+   "sc": {
+    "tool_sequence": [
+     "x"
+    ],
+    "context_sequence": []
+   },
+   "predicted": [
+    "predicted_execution"
+   ],
+   "conf": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ],
+   "patterns": [
+    "tool_sequence:3"
+   ],
+   "reasons": [
+    "Tool sequence pattern suggests predicted_execution"
+   ],
+   "prio": [
+    [
+     "predicted_execution",
+     0.9
+    ]
+   ]
+  }
+ ],
+ "pattern_count": 12,
+ "stats": {
+  "total_patterns": 12,
+  "avg_success_rate": 0.0,
+  "high_confidence_patterns": 12,
+  "session_history_count": 5,
+  "pattern_confidence_threshold": 0.6
+ },
+ "stats_conf": [
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   42,
+   0.9
+  ],
+  [
+   56,
+   0.9
+  ]
+ ],
+ "valid": null,
+ "valid_vals": [
+  [
+   0.6666666666666666,
+   0.6666666666666666,
+   0.6666666666666666
+  ],
+  [
+   0.5333333333333333,
+   0.5333333333333333,
+   0.5333333333333333
+  ],
+  [
+   0.4266666666666667,
+   0.4266666666666667,
+   0.4266666666666667
+  ]
+ ],
+ "bad": "invalid literal for int() with base 10: 'type'",
+ "empty_stats": {},
+ "empty_end": {}
+}

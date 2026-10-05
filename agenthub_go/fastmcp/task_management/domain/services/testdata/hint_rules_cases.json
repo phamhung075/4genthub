@@ -1,0 +1,1068 @@
+[
+ {
+  "name": "stalled_base",
+  "rule": "stalled",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "stalled_ctx",
+  "rule": "stalled",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "impl_base",
+  "rule": "impl",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "impl_ctx",
+  "rule": "impl",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "missing_base",
+  "rule": "missing",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "next_action",
+    "priority": "high",
+    "message": "Task is missing context information",
+    "action": "Add context with task objectives, requirements, and initial notes",
+    "source": "missing_context",
+    "confidence": 0.95,
+    "reasoning": "Task has no context information",
+    "patterns": [
+     "missing_context"
+    ],
+    "related": [],
+    "data": {},
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "missing_ctx",
+  "rule": "missing",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "error": "'ContextNotes' object has no attribute 'get'"
+  }
+ },
+ {
+  "name": "deps_base",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "deps_ctx",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "near_base",
+  "rule": "near",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "near_ctx",
+  "rule": "near",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_base",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_ctx",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": true
+  },
+  "want": {
+   "error": "'ContextNotes' object has no attribute 'get'"
+  }
+ },
+ {
+  "name": "stalled_tl",
+  "rule": "stalled",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": true,
+   "ctx": false
+  },
+  "want": {
+   "error": "'ProgressTimeline' object is not subscriptable"
+  }
+ },
+ {
+  "name": "deps2",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 2,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "deps2_subs",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 2,
+   "subs": 1,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "deps3",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 3,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "optimization",
+    "priority": "medium",
+    "message": "Task has 3 dependencies - consider decomposition",
+    "action": "Break down the task into smaller subtasks to manage dependencies more effectively",
+    "source": "complex_dependencies",
+    "confidence": 0.8,
+    "reasoning": "Task has 3 dependencies",
+    "patterns": [
+     "high_complexity"
+    ],
+    "related": [],
+    "data": {
+     "dependency_count": 3
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "deps3_subs",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 3,
+   "subs": 1,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "deps5",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 5,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "optimization",
+    "priority": "medium",
+    "message": "Task has 5 dependencies - consider decomposition",
+    "action": "Break down the task into smaller subtasks to manage dependencies more effectively",
+    "source": "complex_dependencies",
+    "confidence": 0.8,
+    "reasoning": "Task has 5 dependencies",
+    "patterns": [
+     "high_complexity"
+    ],
+    "related": [],
+    "data": {
+     "dependency_count": 5
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "deps5_subs",
+  "rule": "deps",
+  "args": {
+   "st": "todo",
+   "pr": "high",
+   "deps": 5,
+   "subs": 1,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_0_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_0_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_0_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_0_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_8_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running",
+    "patterns": [
+     "long_running"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_low_8_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_8_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": null
+  }
+ },
+ {
+  "name": "collab_low_8_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "low",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running",
+    "patterns": [
+     "long_running"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_0_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_0_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_0_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_0_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_8_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running, high_priority_slow_progress",
+    "patterns": [
+     "long_running",
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running",
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_8_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_8_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_urgent_8_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "urgent",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running, high_priority_slow_progress",
+    "patterns": [
+     "long_running",
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running",
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_0_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_0_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_0_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_0_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 0,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_8_todo",
+  "rule": "collab",
+  "args": {
+   "st": "todo",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running, high_priority_slow_progress",
+    "patterns": [
+     "long_running",
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running",
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_8_done",
+  "rule": "collab",
+  "args": {
+   "st": "done",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_8_cancelled",
+  "rule": "collab",
+  "args": {
+   "st": "cancelled",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: high_priority_slow_progress",
+    "patterns": [
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ },
+ {
+  "name": "collab_critical_8_blocked",
+  "rule": "collab",
+  "args": {
+   "st": "blocked",
+   "pr": "critical",
+   "deps": 0,
+   "subs": 0,
+   "age": 8,
+   "tl": false,
+   "ctx": false
+  },
+  "want": {
+   "hint": {
+    "type": "collaboration",
+    "priority": "medium",
+    "message": "This task might benefit from collaboration",
+    "action": "Consider: 1) Pair programming session, 2) Design review with team, 3) Asking for help on specific blockers",
+    "source": "collaboration_needed",
+    "confidence": 0.75,
+    "reasoning": "Collaboration indicators: long_running, high_priority_slow_progress",
+    "patterns": [
+     "long_running",
+     "high_priority_slow_progress"
+    ],
+    "related": [],
+    "data": {
+     "indicators": [
+      "long_running",
+      "high_priority_slow_progress"
+     ]
+    },
+    "task_id": "00000000-0000-4000-8000-000000000001"
+   }
+  }
+ }
+]

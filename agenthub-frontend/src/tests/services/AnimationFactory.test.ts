@@ -6,6 +6,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import animationFactory from '../../services/AnimationFactory';
 
+// The global test setup (src/setupTests.ts) auto-mocks AnimationFactory so the
+// rest of the suite never runs real animations. This suite exercises the real
+// implementation, so opt back into the real module.
+vi.unmock('../../services/AnimationFactory');
+
 // Mock DOM elements
 const createMockElement = () => {
   const element = {
@@ -62,7 +67,7 @@ describe('AnimationFactory', () => {
     it('should register element successfully', () => {
       const elementId = 'test-element';
 
-      animationFactory.registerElement(elementId, mockElement, mockCallbacks);
+      animationFactory.registerElement(elementId, mockElement, 'task', mockCallbacks);
 
       // Should not throw and element should be registered
       expect(() => {
@@ -74,7 +79,7 @@ describe('AnimationFactory', () => {
       const elementId = 'test-element';
 
       // Register element
-      animationFactory.registerElement(elementId, mockElement);
+      animationFactory.registerElement(elementId, mockElement, 'task');
 
       // Start animation to create state
       animationFactory.animate(elementId, 'create');
@@ -94,7 +99,7 @@ describe('AnimationFactory', () => {
         // onAnimationEnd intentionally missing
       };
 
-      animationFactory.registerElement(elementId, mockElement, partialCallbacks);
+      animationFactory.registerElement(elementId, mockElement, 'task', partialCallbacks);
 
       const result = animationFactory.animate(elementId, 'create');
       expect(result).toBe(true);
@@ -104,35 +109,35 @@ describe('AnimationFactory', () => {
 
   describe('CSS Class Application', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should apply correct CSS class for CREATE animation', () => {
       const result = animationFactory.animate('test-task', 'create');
 
       expect(result).toBe(true);
-      expect(mockElement.classList.add).toHaveBeenCalledWith('draw-in-left-to-right');
+      expect(mockElement.classList.add).toHaveBeenCalledWith('taskRowCreateAnimation');
     });
 
     it('should apply correct CSS class for UPDATE animation', () => {
       const result = animationFactory.animate('test-task', 'update');
 
       expect(result).toBe(true);
-      expect(mockElement.classList.add).toHaveBeenCalledWith('content-update');
+      expect(mockElement.classList.add).toHaveBeenCalledWith('taskRowUpdateAnimation');
     });
 
     it('should apply correct CSS class for DELETE animation', () => {
       const result = animationFactory.animate('test-task', 'delete');
 
       expect(result).toBe(true);
-      expect(mockElement.classList.add).toHaveBeenCalledWith('fade-out-left-to-right');
+      expect(mockElement.classList.add).toHaveBeenCalledWith('taskRowDeleteAnimation');
     });
 
     it('should apply correct CSS class for COMPLETE animation', () => {
       const result = animationFactory.animate('test-task', 'complete');
 
       expect(result).toBe(true);
-      expect(mockElement.classList.add).toHaveBeenCalledWith('task-celebration');
+      expect(mockElement.classList.add).toHaveBeenCalledWith('taskRowCompleteAnimation');
     });
 
     it('should remove existing animation classes before adding new ones', () => {
@@ -142,36 +147,30 @@ describe('AnimationFactory', () => {
       // Clear mock calls
       mockElement.classList.remove.mockClear();
 
+      // Wait past the 100ms cooldown so the second animation is not blocked
+      vi.advanceTimersByTime(150);
+
       // Second animation
       animationFactory.animate('test-task', 'update');
 
       // Should remove all existing animation classes
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('draw-in-left-to-right');
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('fade-out-left-to-right');
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('content-update');
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('task-celebration');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowCreateAnimation');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowDeleteAnimation');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowUpdateAnimation');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowCompleteAnimation');
     });
   });
 
   describe('Animation Durations', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
-    it('should have correct duration for CREATE animation (500ms)', () => {
+    it('should have correct duration for CREATE animation (800ms)', () => {
       animationFactory.animate('test-task', 'create');
 
-      // Fast forward to just before cleanup time
-      vi.advanceTimersByTime(499);
-      expect(mockElement.classList.remove).not.toHaveBeenCalled();
-
-      // Fast forward to cleanup time
-      vi.advanceTimersByTime(1);
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('draw-in-left-to-right');
-    });
-
-    it('should have correct duration for DELETE animation (800ms)', () => {
-      animationFactory.animate('test-task', 'delete');
+      // applyAnimation removes all entity classes up front; ignore those calls
+      mockElement.classList.remove.mockClear();
 
       // Fast forward to just before cleanup time
       vi.advanceTimersByTime(799);
@@ -179,37 +178,58 @@ describe('AnimationFactory', () => {
 
       // Fast forward to cleanup time
       vi.advanceTimersByTime(1);
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('fade-out-left-to-right');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowCreateAnimation');
     });
 
-    it('should have correct duration for UPDATE animation (1200ms)', () => {
+    it('should have correct duration for DELETE animation (800ms)', () => {
+      animationFactory.animate('test-task', 'delete');
+
+      // applyAnimation removes all entity classes up front; ignore those calls
+      mockElement.classList.remove.mockClear();
+
+      // Fast forward to just before cleanup time
+      vi.advanceTimersByTime(799);
+      expect(mockElement.classList.remove).not.toHaveBeenCalled();
+
+      // Fast forward to cleanup time
+      vi.advanceTimersByTime(1);
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowDeleteAnimation');
+    });
+
+    it('should have correct duration for UPDATE animation (1700ms)', () => {
       animationFactory.animate('test-task', 'update');
 
+      // applyAnimation removes all entity classes up front; ignore those calls
+      mockElement.classList.remove.mockClear();
+
       // Fast forward to just before cleanup time
-      vi.advanceTimersByTime(1199);
+      vi.advanceTimersByTime(1699);
       expect(mockElement.classList.remove).not.toHaveBeenCalled();
 
       // Fast forward to cleanup time
       vi.advanceTimersByTime(1);
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('content-update');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowUpdateAnimation');
     });
 
-    it('should have correct duration for COMPLETE animation (3000ms)', () => {
+    it('should have correct duration for COMPLETE animation (1700ms)', () => {
       animationFactory.animate('test-task', 'complete');
 
+      // applyAnimation removes all entity classes up front; ignore those calls
+      mockElement.classList.remove.mockClear();
+
       // Fast forward to just before cleanup time
-      vi.advanceTimersByTime(2999);
+      vi.advanceTimersByTime(1699);
       expect(mockElement.classList.remove).not.toHaveBeenCalled();
 
       // Fast forward to cleanup time
       vi.advanceTimersByTime(1);
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('task-celebration');
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowCompleteAnimation');
     });
   });
 
   describe('Animation Coordination and Cooldown', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should prevent double-triggering within cooldown period', () => {
@@ -224,7 +244,7 @@ describe('AnimationFactory', () => {
 
       // Verify only first animation was applied
       expect(mockElement.classList.add).toHaveBeenCalledTimes(1);
-      expect(mockElement.classList.add).toHaveBeenCalledWith('draw-in-left-to-right');
+      expect(mockElement.classList.add).toHaveBeenCalledWith('taskRowCreateAnimation');
     });
 
     it('should allow animation after cooldown period', () => {
@@ -272,7 +292,7 @@ describe('AnimationFactory', () => {
 
   describe('Priority System', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should enforce priority order: mount > websocket > callback', () => {
@@ -311,23 +331,26 @@ describe('AnimationFactory', () => {
 
   describe('Animation Cleanup', () => {
     beforeEach(() => {
-      animationFactory.registerElement('test-task', mockElement, mockCallbacks);
+      animationFactory.registerElement('test-task', mockElement, 'task', mockCallbacks);
     });
 
     it('should clean up CSS classes after animation completes', () => {
       animationFactory.animate('test-task', 'create');
 
-      // Fast forward to cleanup time
-      vi.advanceTimersByTime(500);
+      // applyAnimation removes all entity classes up front; ignore those calls
+      mockElement.classList.remove.mockClear();
 
-      expect(mockElement.classList.remove).toHaveBeenCalledWith('draw-in-left-to-right');
+      // Fast forward to cleanup time
+      vi.advanceTimersByTime(800);
+
+      expect(mockElement.classList.remove).toHaveBeenCalledWith('taskRowCreateAnimation');
     });
 
     it('should call onAnimationEnd callback after cleanup', () => {
       animationFactory.animate('test-task', 'create');
 
       // Fast forward to cleanup time
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(800);
 
       expect(mockCallbacks.onAnimationEnd).toHaveBeenCalledWith('create');
     });
@@ -340,20 +363,20 @@ describe('AnimationFactory', () => {
       expect(animationFactory.animate('test-task', 'update', 'callback')).toBe(false);
 
       // After cleanup, new animations should be allowed
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(800);
       expect(animationFactory.animate('test-task', 'update', 'callback')).toBe(true);
     });
 
     it('should handle cleanup with missing callbacks gracefully', () => {
       // Register without callbacks
       animationFactory.unregisterElement('test-task');
-      animationFactory.registerElement('test-task', mockElement);
+      animationFactory.registerElement('test-task', mockElement, 'task');
 
       animationFactory.animate('test-task', 'create');
 
       // Should not throw when cleaning up without callbacks
       expect(() => {
-        vi.advanceTimersByTime(500);
+        vi.advanceTimersByTime(800);
       }).not.toThrow();
     });
   });
@@ -364,15 +387,16 @@ describe('AnimationFactory', () => {
       expect(result).toBe(false);
     });
 
-    it('should handle missing element gracefully', () => {
-      animationFactory.registerElement('test-task', null as any);
+    it('should throw when a registered element is null (element is required)', () => {
+      animationFactory.registerElement('test-task', null as any, 'task');
 
-      const result = animationFactory.animate('test-task', 'create');
-      expect(result).toBe(false);
+      // registerElement types `element` as HTMLElement; a null element is not a
+      // supported input and animation throws instead of silently returning false.
+      expect(() => animationFactory.animate('test-task', 'create')).toThrow();
     });
 
     it('should handle invalid animation types gracefully', () => {
-      animationFactory.registerElement('test-task', mockElement);
+      animationFactory.registerElement('test-task', mockElement, 'task');
 
       const result = animationFactory.animate('test-task', 'invalid' as any);
       expect(result).toBe(false);
@@ -385,9 +409,9 @@ describe('AnimationFactory', () => {
       const element2 = createMockElement();
       const element3 = createMockElement();
 
-      animationFactory.registerElement('task-1', element1);
-      animationFactory.registerElement('task-2', element2);
-      animationFactory.registerElement('task-3', element3);
+      animationFactory.registerElement('task-1', element1, 'task');
+      animationFactory.registerElement('task-2', element2, 'task');
+      animationFactory.registerElement('task-3', element3, 'task');
 
       // Animate all elements
       const result1 = animationFactory.animate('task-1', 'create');
@@ -399,17 +423,17 @@ describe('AnimationFactory', () => {
       expect(result3).toBe(true);
 
       // Verify correct classes applied
-      expect(element1.classList.add).toHaveBeenCalledWith('draw-in-left-to-right');
-      expect(element2.classList.add).toHaveBeenCalledWith('content-update');
-      expect(element3.classList.add).toHaveBeenCalledWith('fade-out-left-to-right');
+      expect(element1.classList.add).toHaveBeenCalledWith('taskRowCreateAnimation');
+      expect(element2.classList.add).toHaveBeenCalledWith('taskRowUpdateAnimation');
+      expect(element3.classList.add).toHaveBeenCalledWith('taskRowDeleteAnimation');
     });
 
     it('should maintain independent cooldowns for different elements', () => {
       const element1 = createMockElement();
       const element2 = createMockElement();
 
-      animationFactory.registerElement('task-1', element1);
-      animationFactory.registerElement('task-2', element2);
+      animationFactory.registerElement('task-1', element1, 'task');
+      animationFactory.registerElement('task-2', element2, 'task');
 
       // Start animations on both elements
       animationFactory.animate('task-1', 'create', 'callback');
@@ -431,8 +455,8 @@ describe('AnimationFactory', () => {
 
   describe('Debug Information', () => {
     it('should provide useful debug information', () => {
-      animationFactory.registerElement('task-1', mockElement);
-      animationFactory.registerElement('task-2', createMockElement());
+      animationFactory.registerElement('task-1', mockElement, 'task');
+      animationFactory.registerElement('task-2', createMockElement(), 'task');
 
       animationFactory.animate('task-1', 'create');
 

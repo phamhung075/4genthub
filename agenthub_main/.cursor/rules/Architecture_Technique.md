@@ -1,6 +1,6 @@
 ---
 description: Technical Architecture Documentation Index (Architecture_Technique)
-globs: 
+globs:
 alwaysApply: false
 ---
 
@@ -8,11 +8,11 @@ alwaysApply: false
 
 **Objective**: Analyze and design scalable cloud architecture for agenthub server capable of handling 1000 to 1,000,000 requests per second.
 
-**Current Branch**: v2.0.1.dev  
-**Task ID**: 20250131001  
-**Status**: 100% Complete (11/11 phases) + **DDD Migration Complete**  
-**Created**: 2025-06-27  
-**Updated**: 2025-01-31  
+**Current Branch**: v2.0.1.dev
+**Task ID**: 20250131001
+**Status**: 100% Complete (11/11 phases) + **DDD Migration Complete**
+**Created**: 2025-06-27
+**Updated**: 2025-01-31
 
 ---
 
@@ -221,7 +221,7 @@ Before any significant changes:
 
 Each phase document follows this structure:
 - **Executive Summary**: High-level overview and key decisions
-- **Technical Analysis**: Multiple agent perspectives with `call_agent()` switching
+- **Technical Analysis**: Multiple seat perspectives resolved with `call_seat`
 - **Implementation Details**: Specific technical requirements and recommendations
 - **Next Steps**: Action items and dependencies for subsequent phases
 - **Agent Contributions**: Clear attribution of which agent authored each section

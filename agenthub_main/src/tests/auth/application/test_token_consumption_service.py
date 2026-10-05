@@ -150,15 +150,15 @@ class TestTokenConsumptionService:
         ]
         mock_repository.consume_tokens.return_value = False
 
-        # Execute (call_agent costs 20 tokens)
+        # Execute (create_context costs 5 tokens)
         result = await service.consume_tokens_for_operation(
-            user_id="user123", operation="call_agent"
+            user_id="user123", operation="create_context"
         )
 
         # Verify
         assert result.success is False
         assert result.error_code == "INSUFFICIENT_TOKENS"
-        assert "Required: 20, Available: 3" in result.error_message
+        assert "Required: 5, Available: 3" in result.error_message
 
     @pytest.mark.asyncio
     async def test_consume_tokens_for_operation_unknown_operation(
@@ -441,17 +441,17 @@ class TestTokenConsumptionService:
     ):
         """Test checking balance when user has insufficient tokens"""
         # Setup
-        mock_repository.get_balance.return_value = {"available_tokens": 5}
+        mock_repository.get_balance.return_value = {"available_tokens": 4}
 
-        # Execute (call_agent costs 20 tokens)
+        # Execute (create_context costs 5 tokens)
         has_sufficient, required, available = await service.check_sufficient_balance(
-            user_id="user123", operation="call_agent"
+            user_id="user123", operation="create_context"
         )
 
         # Verify
         assert has_sufficient is False
-        assert required == 20
-        assert available == 5
+        assert required == 5
+        assert available == 4
 
     @pytest.mark.asyncio
     async def test_check_sufficient_balance_custom_cost(self, service, mock_repository):

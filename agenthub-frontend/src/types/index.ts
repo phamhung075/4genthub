@@ -32,11 +32,6 @@ export * from './subtaskTypes';
 export * from './projectTypes';
 
 // ============================================
-// AGENT TYPES (User-Specific Agent System)
-// ============================================
-export * from './agentTypes';
-
-// ============================================
 // API SERVICE TYPES (Response wrappers)
 // ============================================
 export * from './serviceTypes';
@@ -45,6 +40,11 @@ export * from './serviceTypes';
 // COMPONENT TYPES (Props, state interfaces)
 // ============================================
 export * from './componentTypes';
+
+// ============================================
+// SEAT TYPES (Company-workplace model)
+// ============================================
+export * from './seatTypes';
 
 // ============================================
 // UTILITY TYPES
@@ -57,9 +57,3 @@ export * from './logger.types';
 export * from './context.types';
 export * from './utilityTypes';
 export * from './testTypes';
-
-// ============================================
-// TYPE VALIDATION (Runtime type checking)
-// ============================================
-// Note: Import validators separately to avoid circular dependencies
-// Usage: import { validators } from '@/utils/typeValidation'

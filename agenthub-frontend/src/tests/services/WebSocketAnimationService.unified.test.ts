@@ -46,11 +46,16 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     // Create a fresh mock for each test
     animationFactory.animate = vi.fn().mockReturnValue(true);
 
+    // Install fake timers first: useFakeTimers() replaces the global
+    // requestAnimationFrame, so the synchronous stub must be applied AFTER it.
+    // Otherwise the rAF callback is itself queued as a fake timer and the
+    // deferred setTimeout(150) ends up beyond the advance window.
+    vi.useFakeTimers();
+
     // Mock requestAnimationFrame and setTimeout
     vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
       cb();
     });
-    vi.useFakeTimers();
   });
 
   afterEach(() => {
@@ -87,7 +92,8 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).not.toHaveBeenCalled(); // Created events are skipped for tasks!
+        // Tasks DO animate on create (unlike subtask/branch/project).
+        expect(animationFactory.animate).toHaveBeenCalledWith('task-123', 'create', 'websocket');
       });
 
       it('should trigger update animation for task updated', () => {
@@ -248,7 +254,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     });
 
     describe('Branch Entity', () => {
-      it('should trigger create animation for branch created', () => {
+      it('should skip create animation for branch created (mount animation handles it)', () => {
         const message: WSMessage = {
           id: 'msg-branch-created',
           type: 'update',
@@ -267,7 +273,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).toHaveBeenCalledWith('branch-123', 'create', 'websocket');
+        expect(animationFactory.animate).not.toHaveBeenCalled();
       });
 
       it('should trigger update animation for branch updated', () => {
@@ -316,7 +322,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     });
 
     describe('Project Entity - NEW SUPPORT (2025-10-31)', () => {
-      it('should trigger create animation for project created', () => {
+      it('should skip create animation for project created (mount animation handles it)', () => {
         const message: WSMessage = {
           id: 'msg-project-created',
           type: 'update',
@@ -335,8 +341,9 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        // CRITICAL: This validates the gap we just closed
-        expect(animationFactory.animate).toHaveBeenCalledWith('project-123', 'create', 'websocket');
+        // Project entities ARE routed through the service; created is skipped
+        // because the mount animation already handles newly rendered projects.
+        expect(animationFactory.animate).not.toHaveBeenCalled();
       });
 
       it('should trigger update animation for project updated', () => {
@@ -580,30 +587,30 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
   });
 
   describe('Comprehensive Action-to-AnimationType Mapping', () => {
-    const mappings = [
-      // Task mappings (created is skipped)
+    const mappings: Array<{ entity: string; action: string; expectedType: string; skipped?: boolean }> = [
+      // Task mappings
       { entity: 'task', action: 'updated', expectedType: 'update' },
       { entity: 'task', action: 'completed', expectedType: 'complete' },
       { entity: 'task', action: 'deleted', expectedType: 'delete' },
 
-      // Subtask mappings (created is skipped)
+      // Subtask mappings
       { entity: 'subtask', action: 'updated', expectedType: 'update' },
       { entity: 'subtask', action: 'completed', expectedType: 'complete' },
       { entity: 'subtask', action: 'deleted', expectedType: 'delete' },
 
-      // Branch mappings (all actions)
-      { entity: 'branch', action: 'created', expectedType: 'create' },
+      // Branch mappings (created is skipped - mount animation handles it)
+      { entity: 'branch', action: 'created', expectedType: 'create', skipped: true },
       { entity: 'branch', action: 'updated', expectedType: 'update' },
       { entity: 'branch', action: 'deleted', expectedType: 'delete' },
 
-      // Project mappings (all actions) - NEW
-      { entity: 'project', action: 'created', expectedType: 'create' },
+      // Project mappings (created is skipped - mount animation handles it) - NEW
+      { entity: 'project', action: 'created', expectedType: 'create', skipped: true },
       { entity: 'project', action: 'updated', expectedType: 'update' },
       { entity: 'project', action: 'deleted', expectedType: 'delete' }
     ];
 
-    mappings.forEach(({ entity, action, expectedType }) => {
-      it(`should map ${entity}.${action} → ${expectedType}`, () => {
+    mappings.forEach(({ entity, action, expectedType, skipped }) => {
+      it(`should map ${entity}.${action} → ${skipped ? 'no animation' : expectedType}`, () => {
         const message: WSMessage = {
           id: `msg-mapping-${entity}-${action}`,
           type: 'update',
@@ -622,18 +629,24 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).toHaveBeenCalledWith(
-          `${entity}-map-test`,
-          expectedType,
-          'websocket'
-        );
+        if (skipped) {
+          expect(animationFactory.animate).not.toHaveBeenCalled();
+        } else {
+          expect(animationFactory.animate).toHaveBeenCalledWith(
+            `${entity}-map-test`,
+            expectedType,
+            'websocket'
+          );
+        }
       });
     });
   });
 
   describe('Regression Prevention - Project Support', () => {
     it('should NOT ignore project entities (regression from old behavior)', () => {
-      // This test ensures we never regress back to ignoring projects
+      // This test ensures we never regress back to ignoring projects.
+      // Project `created` is intentionally skipped (mount animation handles it),
+      // so `updated` proves the entity is routed to AnimationFactory.
       const message: WSMessage = {
         id: 'msg-regression-check',
         type: 'update',
@@ -642,7 +655,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         priority: 'normal',
         payload: {
           entity: 'project',
-          action: 'created',
+          action: 'updated',
           data: { id: 'project-regression' }
         },
         metadata: {},
@@ -655,7 +668,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
       // MUST trigger animation - this is the fix we implemented
       expect(animationFactory.animate).toHaveBeenCalledWith(
         'project-regression',
-        'create',
+        'update',
         'websocket'
       );
     });

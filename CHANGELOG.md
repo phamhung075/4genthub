@@ -6,7 +6,758 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Removed
+
+**Three orphaned Go branch routes deleted** (2026-10-04)
+
+- `POST /api/v2/branches/{id}/assign-agent`, `PUT /api/v2/branches/{id}` and `GET /api/v2/branches/` (`fastmcp/server/httpapp/branch_routes.go`) had no caller left after the dead frontend callers went in `c7e65486`: the live frontend calls only `GET /{id}`, `POST /` and `DELETE /{id}` plus the POST summaries routes, and nothing in the Go tests, `scripts` or `ai_docs` used them (`.swarm/` is gitignored, not part of the repo); they were not a documented contract. Their route handlers, the `BranchController` methods and the adapter methods went with them (`routes/branch_routes.go`, `httpapp/branch_wiring.go`).
+- Deleting `GET /api/v2/branches/` also removes the subtree fall-through it created: measured with a routing probe, `GET /api/v2/branches/x/y` and `GET /api/v2/branches/project/p1/summaries` previously matched `GET /api/v2/branches/` (200 with all branches) and now have no match (404), while `GET /api/v2/branches/{id}` still serves a one-segment id. The same trailing-slash subtree behaviour remained for `POST /api/v2/branches/`; it is fixed now (see "The branch collection POST is an exact match" under Fixed below).
+
+**Three unreferenced branch API controller methods removed** (2026-10-04)
+
+- `BranchAPIController.ListBranches`, `UpdateBranch` and `AssignAgent` (`fastmcp/task_management/interface/api_controllers/branch_api_controller.go`) had no caller left once the HTTP routes and their adapter went (`f33db13a`); the package's smoke test only exercises `GetBranchPerformanceMetrics`, and a repo-wide grep found no other reference. `task_management` is otherwise untouched, per the lead's instruction: the assign capability stays alive through MCP (`git_branch_mcp_controller/handlers/agent_handler.go:88` -> facade -> `AgentAssignAgent`), and the service and repository layers keep their unit tests.
+
+**The orphaned branch task-counts route removed** (2026-10-04)
+
+- `GET /api/v2/branches/{id}/task-counts` had no consumer outside `agenthub_go` (the only external reference is the Python mirror, `agenthub_main/src/fastmcp/server/routes/branch_routes.py:314`; no frontend, script or doc caller), the same criterion that removed its siblings. Deleted: the mount, `routes.GetBranchTaskCounts`, the `BranchController` method, the adapter method, `BranchAPIController.GetBranchTaskCounts` and the mount-inventory row. `GET /api/v2/branches/b1/task-counts` now 404s, pinned by `TestDeletedBranchTaskCountsRouteIsNotServed`.
+
 ### Fixed
+
+**The branch collection POST is an exact match** (2026-10-04)
+
+- `POST /api/v2/branches/` was a trailing-slash subtree pattern, so a POST to an unknown subpath (`/api/v2/branches/x/y`) matched CreateBranch and only the missing form fields stopped it; a caller posting a complete body to a wrong path would have created a branch at a path that does not exist. It is now `POST /api/v2/branches/{$}` (Go 1.22 exact match). The collection POST itself is unchanged (same 422 missing-field shape for an empty body); `POST /api/v2/branches/x/y` is 404 and `POST /api/v2/branches/abc` is 405 (the path matches the GET-only `/{id}` pattern). Covered by `TestBranchCollectionPostMatchesOnlyTheCollectionPath` (`fastmcp/server/httpapp/branch_routes_test.go`).
+
+**A dead OpenRig seat no longer reads as `blocked`** (2026-10-04)
+
+- `scripts/openrig_bridge.py`: in `seat_state`, `lifecycleState: attention_required` alone is no longer mapped to `blocked`. OpenRig keeps that lifecycle after the agent process dies (`agentActivity.state: unknown`, reason `no_runtime_hook`, while the tmux session is still running), so the old clause reported a seat that is gone as one that needs a human. `blocked` now comes from the agent's own signal (`agentActivity.state == needs_input`) or `startupStatus attention_required|failed`; an agent death outside `rig seat stop` reads `unknown` (with `detail: no_runtime_hook`), and `rig seat stop` still reads `stopped`. Reproduced end to end on a scratch rig (kill the agent process only; tmux session alive): the bridge reported `blocked` before the fix and `unknown` after it, with the healthy seats unchanged.
+
+### Added
+
+**Project skills are now generic — `.agents/skills` is the single source** (2026-10-04)
+
+- All 12 project skills moved from `.claude/skills/` to `.agents/skills/` (the house convention: `deepseek-offload/.agents/skills/<name>/SKILL.md`, optional `scripts/`/`references/`), so every agent — Claude Code, the omp/DeepSeek seats, codex, agy — reads the same files. `.claude/skills` is now a symlink to `../.agents/skills`: Claude Code keeps loading all skills unchanged (verified end-to-end: `rig-runtime-switch` loads through the symlink, and both paths resolve to the same file). A skill added under either path lands in the same store; no duplicate copies. Note: `.agents/` is gitignored (local store); the symlink lives in the `.claude` submodule.
+
+**Rig runtime-switch playbook as a reusable skill** (2026-10-04)
+
+- `.agents/skills/rig-runtime-switch/SKILL.md`: the verified playbook for keeping an OpenRig team working through a usage cap by swapping its runtime variant — authoring `rig-omp.yaml` (`runtime: omp`, `model: deepseek/deepseek-flash`, `builtin:yolo`), `.env` placement for the omp launch dir, `rig up --plan` dry-run, the owner-named teardown, down/up + verification, the kickoff requirements (state-at-cutoff, rules, the omp runtime note), companion-rig revival (`rig up 4genthub-deepseek --existing --yes`), the herdr watch wall (`rig terminal open <rig>`), and the switch-back path. Derived from the 2026-10-04 `4genthub-min` claude-code → omp/DeepSeek switch executed while the Claude weekly cap was active.
+
+### Changed
+
+**The Python `call_agent` tool and its whole trace are removed** (2026-10-04)
+
+- D1 removed `call_agent` in favour of `call_seat` (T6 did the Go side); the Python `agenthub_main` server still exposed the tool, so the stack is deleted cleanly, no compatibility shims: `task_management/application/use_cases/call_agent.py`, `agent_management/interface/mcp_controllers/call_agent.py` + `call_agent_controller.py` (whole package removed), `agent_mcp_controller/handlers/agent_invocation_handler.py`, `AgentManagementFacade.get_agent_for_call`, the MCP registration (`ddd_compliant_mcp_tools.py`), the REST route `POST /api/v2/agents/call` (`server/routes/agent_routes.py`), the token cost `"call_agent": 20` (`auth/config/token_costs.py`), `TOOL_CALL_AGENT` (`tool_config.py`, `.env.sample`), and the keycloak role tool lists (`auth/mcp_keycloak_auth.py`). Stale tool references were scrubbed from the manage_agent description, workflow guidance, fixtures and docstrings.
+- Tests: `test_call_agent_mcp_tool.py`, the k6/locust load tests (whole `tests/performance/agent_management/`), `test_orphaned_agent_facade.py`, the `TestGetAgentForCall` class and the two call-specific instantiation tests were removed with their subjects; token/keycloak/fixture/server suites were re-homed. Touched suites under `--noconftest`: `test_token_consumption_service.py` 22 passed + 1 pre-existing unrelated failure; the full suite with conftest hangs in collection in this environment (pre-existing, not caused by this change).
+- Docs moved to the seat model: root + `agenthub_main` READMEs, `.gemini/gemini.md` (clock-in = `rig whoami --json` + `call_seat`; "TOOL SCOPE BY SEAT" replaces the dynamic-enforcement doctrine), `agenthub_main/.cursor/rules/*`, `.automation` templates, `scripts/team/4genthub/mission.md`; the four `.claude/templates` rule templates were rewritten the same way (nested repo, left uncommitted there).
+- Kept by design: the agent registry's `call_agent` field/param on `manage_agent` — a data field, not the removed tool; T8 item (2) owns its fate. Left to T7/T8: `agenthub_main/agent-library`, its readers, the library scripts, `agent_doc_generator`.
+
+**G2 runtime validation is env-gated; the G6 measurement is corrected (OF1)** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatRigValidate` (the G2 "renders pass OpenRig validation" check) now runs only with `OPENRIG_TEST_AGENT_VALIDATE=1` and FAILS loudly when `rig` is missing, the daemon is unreachable or a spec is invalid, instead of skipping on a missing daemon. Proved: unset skips; set with the daemon up passes for `claude-code`, `codex` and `omp`; set with `OPENRIG_URL=http://127.0.0.1:1` fails; set with `rig` off `PATH` fails.
+- `agenthub_go/NEXT_GEN.md`: the G6 line's unreproducible "710 failing tests and 23 `tsc` errors before this work" claim is withdrawn (the 2026-10-04 measurement is kept); the G2 line now records the env gate. No frontend test file was left uncommitted — `git status --short --untracked-files=all` lists only `.claude`, `CLAUDE.md`, `agenthub_go/NEXT_GEN.md` and `ai_docs/index.json`, none of them a test file.
+
+**One assignee rule on every path (D6d)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/task.go`: new `entities.NormalizeAssignees` (replaces `Task.ValidateAssigneeList`). `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, blanks are dropped, any other bare name is rejected with `Invalid assignees: [...]. An assignee is '@<seat_key>' or a known agent role.` It is now called by `NewCreateTaskRequest` (REST create), `Task.UpdateAssignees`/`AddAssignee`, `Subtask.NewSubtask`/`UpdateAssignees`/`AddAssignee`, MCP `manage_task` create, MCP subtask create and `AgentInheritanceService.ValidateAgentAssignments`. A rejected update leaves the assignees unchanged.
+- Behaviour changes: REST create no longer maps `coding-agent` to `@senior_developer` (`ResolveLegacyRole` call removed from the DTO) and no longer keeps a bare `custom` as `@custom`; `Task.UpdateAssignees` and `Subtask.UpdateAssignees` no longer keep bare unknown names.
+- Operator note (nothing run on production): assignee forms that can exist in data are `@senior_developer` (old REST mapping), bare names, `@<role>` and `@<seat_key>`. Count them with `SELECT assignee_id, count(*) FROM task_assignees GROUP BY 1;` and, for subtasks, a count over the `assignees` JSON column. Stored subtask rows with a bare unknown name still load (D6e below). No data migration (dev phase, clean break).
+
+### Fixed
+
+**The seatcheck PATH check reads the daemon's PATH at cold start** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: at cold start (no tmux server) `resolve_checker` checked the operator's shell PATH, but the first seat inherits the PATH of the rig daemon that starts the first tmux server. It now reads that PATH from the daemon process: `openrig_daemon_port` takes `OPENRIG_PORT` (else the port in `OPENRIG_URL`), `openrig_daemon_pid` finds the listening pid with `ss -ltnp`, and `proc_env_path` reads `/proc/<pid>/environ`. `seat_path` returns the daemon PATH with the source `rig daemon PATH`, falling back to the shell PATH only when neither a tmux server nor a readable daemon PATH exists (and saying so). The module docstring and `PATH_LIMIT` are updated. No OpenRig or `cmd/seatcheck` change.
+
+**Subtask assignee filter works on PostgreSQL (N2)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/subtask_repository.go`: `FindByAssignee` and `GetSubtasksByAssignee` filtered with `"assignees" LIKE '%' || $1::json || '%'`, which PostgreSQL rejects for a json/jsonb column, so both raised for any plain name — the filter was unusable. They now use jsonb array containment (`"assignees"::jsonb @> $1::jsonb`), so an `@seat_key` (or any exact element) is found; the `user_id` cross-tenant filter is unchanged and `GetSubtasksByAssignee` keeps no user filter (Python parity). Intentional deviation, recorded as N2 in `MIGRATION.md`.
+- Tests: `TestSubtaskRepositoryFindByAssigneeUsesJsonbContainment` replaces the defect-pinning test (owner found; another user not found; a bare name and an absent name match nothing).
+
+**Database migrator recognises both PostgreSQL schemes (defect)** (2026-10-04)
+
+- `agenthub_go/fastmcp/database_migrations.go`: `RunMigrations` and `InitializeDatabase` gated on `strings.Contains(url, "postgresql")`, so a valid `postgres://` DSN (what pgx and the throwaway-Postgres tests use) was treated as non-PostgreSQL and the progress-history migration silently skipped; `TestDatabaseMigratorRunMigrations` was red. Both now use `isPostgresURL`, which accepts `postgres://` and `postgresql://`. The app's own URL builder emits `postgresql://`, so production behaviour is unchanged; the guard no longer depends on which valid scheme a caller passes.
+
+**Session list order is deterministic on a `last_seen` tie (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/session_stream/repository.go`: `ListSessions` orders `last_seen DESC, id` so a tie in `last_seen` no longer leaves the order undefined; the uuid5 `id` is a stable tiebreaker and the output is unchanged when timestamps differ. Found by the reviewer as a flake risk in the new ordering test.
+
+**Stored subtasks with an old-style assignee load again (D6e)** (2026-10-04)
+
+- `entities.RestoreSubtask` (new, `domain/entities/subtask.go`) rebuilds a subtask from stored data without judging its assignees; `subtask_repository.go` hydration uses it. D6d had routed hydration through the validating `NewSubtask`, so one row holding a bare unknown name (for example `["go-dev"]`) made every list containing it fail. `NewSubtask` still validates; the rule applies to what is written. A stored known role or `@` name is shown in its `@` form; any other stored name stays as stored. The subtask-create error is now the entity's one message ('An assignee is `@<seat_key>` or a known agent role.').
+
+**Connector message cap counts characters; websocket reads are bounded at 4 MiB (A4)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_mount.go`: the 1 MiB connector limit (`MAX_MESSAGE_CHARS`) counts characters (`utf8.RuneCountInString`), as Python's `len(str)` does; it counted bytes, so a multibyte message of up to 1 MiB characters was refused. The read itself is bounded at `wsMaxMessageBytes` = 4 MiB (4 bytes per character, the most 1 MiB characters can take) per message: the bound was 64 MiB per frame and fragments of one message were not bounded at all; now the fragments of a message count together and an over-bound message ends the connection. The bound also applies to `/ws/realtime` and the session viewer, which share the reader.
+
+**Session REST routes answer `{"sessions": [...]}` and `{"events": [...]}` (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go` and `http.go` (`writeKeyedSliceResult`): `GET /api/v2/sessions` and `GET /api/v2/sessions/{id}/events` return the object the Python routes return (also when empty) instead of a bare array. No caller of these routes exists in `agenthub-frontend`, in the Go code or in the connector.
+
+**Session events route default page is 500 events (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/session_stream_routes.go`: `limit` defaults to 500 as in the Python route (it was 100). The page is still clamped to 1000.
+
+**Session events route answers 404 for an unknown or foreign session (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` checks `GetSessionForUser` first, as the Python route does: a session that does not exist and one that belongs to another user both give 404 "Session not found". It returned 200 `[]`, and mapped every database error to 404; a database error is now a 500.
+
+**`GET /api/v2/sessions/{id}/events` returned no events (A6)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/routes/session_stream_routes.go`: `GetSessionEvents` passed `(sessionID, userID)` to `session_stream.ListEvents`, whose parameters are `(userID, sessionID)`, so the query never matched a row and the route always answered `[]`. Live in 0.0.14. Found by the new real-Postgres handler tests.
+
+**MCP `manage_task` create accepts `@<seat_key>` assignees (D6c)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/handlers/crud_handler.go`: the inline role allow-list (`@name` only if `IsValidRole(name)`) is replaced by `Task.ValidateAssigneeList`, the validator subtask creation already uses. One rule for MCP create and subtask create: `@<name>` (a seat key or a role) is kept, a bare known role or legacy name becomes `@<role>`, any other bare name is rejected. Whitespace around an assignee is stripped first.
+- Tool description of `manage_task` (`manage_task_description.go`) and `interface/testdata/tools_golden.json` now describe `@seat-key` assignees instead of the 42-agent library.
+- Not changed, on purpose: `Task.UpdateAssignees`, `Subtask.UpdateAssignees` and REST create keep any bare name (a Python-parity test pins `custom` kept), so they never reject a seat key; REST create's own `ResolveLegacyRole` maps `coding-agent` to `@senior_developer` while MCP create gives `@coding-agent`.
+
+### Added
+
+**Cross-tenant coverage for every seat table (OF2)** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`: five tests assert the `user_id` filter on the statements of `module_versions`, `seat_type_versions`, `rooms`, `seat_links` and `resolved_seats` — the five seat tables that had none (`TestModuleVersionStatementsAreTenantScoped`, `TestSeatTypeVersionStatementsAreTenantScoped`, `TestRoomStatementsAreTenantScoped`, `TestSeatLinkStatementsAreTenantScoped`, `TestResolvedSeatStatementsAreTenantScoped`). All nine seat tables now have one; each new test was mutation-proved (dropping `user_id` from that table's statement makes it fail).
+- `agenthub_go/NEXT_GEN.md` G1: the inherited "SQLite and Postgres schemas identical" clause is removed — the Go server is Postgres-only, `grep -rn sqlite agenthub_go/fastmcp/seat_management` finds nothing, and no SQLite dialect was added to satisfy it. The check now states the Postgres schema and the per-table cross-tenant tests, with the evidence.
+
+**Session-stream handler tests: the Python suite ported in full (A4/A6/A7)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_connector_test.go`: six connector-ingest scenarios ported from `agenthub_main/src/tests/session_stream/session_stream_test.py` (bad token refused before the upgrade, events for an unregistered session key, a second `hello`, non-object events plus a non-string `project`, disconnect marks the connector's sessions offline, a reconnect keeps them online until the last socket closes), `TestSessionViewerReplaysIngestedEventsFromTheDatabase` (the viewer's real-Postgres path) and `TestSessionListIsNewestLastSeenFirst`.
+- `agenthub_go/fastmcp/session_stream/repository_test.go`: `TestSessionTimestampsRenderAsNaiveUTC`.
+- The audit found 16 Python tests (MIGRATION said 9); the full test-to-test mapping and the A1–A7 verification run are recorded in `agenthub_go/MIGRATION.md`.
+
+**`WS /ws/sessions/{id}`, the session viewer (A5)** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/ws_session_viewer.go`, mounted in `ws_mount.go`. Token from `?token=` through `auth.ValidateTokenUniversal`; a missing id and a session of another user both close with 4004 "Session not found". The viewer subscribes to the hub before it replays `after_seq` in pages of 500, then follows live events (events at or below the last sent seq are skipped), keeps reading the socket so a client that closed while idle releases its subscription, and closes a viewer the hub dropped as too slow with 1013 "Too slow, reconnect". Ports `session_viewer` in `session_stream_routes.py`.
+- Deviation from Python, to confirm: the 4004 close is sent after the upgrade. Starlette closing before `accept` rejects the handshake with HTTP 403, so a Python client sees 403, not 4004. Auth failure is HTTP 403 before the upgrade, as for `/ws/connector`.
+- `session_stream.SessionHub.Subscribers(sessionID)` added (used by the tests).
+
+### Removed
+
+**The Python `/api/v2/agents` metadata surface is retired (T8 follow-up)** (2026-10-04)
+
+- Removed `agenthub_main/src/fastmcp/server/routes/agent_routes.py` — its only route was `GET /api/v2/agents/metadata` (`APIRouter(prefix="/api/v2/agents")` + `@router.get("/metadata")`) — and its two mounts in `server/http_server.py`, plus its test `src/tests/server/test_agent_routes.py`; the stale `agent_routes` entry in `http_server_test.py` and a dead comment were dropped. It had no consumer (the frontend `agentApiV2.getAgentsMetadata` went in T7; the Python scripts call `/api/agents/metadata`, not `/v2`), matching the Go retirement in `05617cf0`.
+- Its test also pinned five other `/api/v2/agents` paths as NOT served: `GET /coding-agent`, `POST /assign`, `DELETE /unassign/branch-1`, `GET /branch/branch-1/assignment`, `GET /project/project-1/assignments`. They are not routes anywhere (`grep -rn` over `agenthub_main/src/fastmcp/server/routes/*.py` finds only the unrelated branch `/{branch_id}/assign-agent`), so they remain unserved and nothing was added for them; that pin is kept here as this durable note rather than a rebuilt test (the surface no longer exists).
+
+**The retired agent system is gone from the Python backend and the Go doc generator (T8)** (2026-10-04)
+
+- Go: deleted `fastmcp/task_management/infrastructure/services/agent_doc_generator.go` (+ test) and the `IAgentDocGenerator` interface, `PlaceholderAgentDocGenerator` and both `GetAgentDocGenerator` accessors with their factory wiring; removed the `GenerateDocsForAssignees` calls in `get_task.go` and `next_task.go`; the `stringList` helper moved to `performance_cache_manager.go` (its only remaining caller is `decodeTags`).
+- Python (`agenthub_main`): deleted `agent-library/**`, the `fastmcp/agent_management` package, the Python `agent_doc_generator.py`, the agent scripts (`populate_agent_templates.py`, `verify_agents.py`, `create_agent_tables.py`, `recreate_agent_tables.py`, `update_agent_metadata.py`) and the agent-management test trees; removed the router mounts, the `call_agent` tool toggle, the YAML readers in `agent_roles.py`, `get_cursor_agent_dir` and the `AGENT_LIBRARY_DIR_PATH` references; `init_schema_postgresql.sql` no longer declares the agent tables.
+- The `call_agent` trace itself landed in `9a657d92`, committed by another actor during this work; it is T8 scope and is adopted here, not authored here.
+- Behaviour change on the legacy Python side (production serves the Go image, so no production impact): once the YAML library is gone `AgentRole.display_name` is slug-derived and `description`/`when_to_use`/`groups` are empty, and `Task.get_assignees_info`/`get_assignee_role_info` return `metadata=None`. Stated here so a future Python revival is not surprised.
+- Verification: Go `gofmt` empty, `go vet ./...` and `go build ./...` clean, and the touched packages' tests pass; `agenthub_main` `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 166 passed.
+
+**The old agent system is gone from Go; the two tables leave the ORM (T7, Go half)** (2026-10-04)
+
+- Deleted the `/api/v2/openrig/agents` route (`server/httpapp/openrig_mount.go`) and the `/api/v2/agent-management/*` router (`server/httpapp/agent_mgmt_mount.go`) with its mount calls in `app.go`; deleted the whole `fastmcp/agent_management` package (agent-template and user-agent-instance entities, value objects, repositories, ORM, services, facade, REST routes/DTOs and their tests) and `scripts/openrig_sync.py`.
+- `fastmcp/task_management/infrastructure/database/models_prod.go`: removed the `AgentTemplate` and `UserAgentInstance` structs and their `ProductionTables` entries (8 to 6 tables); `auto_migration.go`: removed `addUsageTrackingColumns`, the only migration against `user_agent_instances`. `models_prod_test.go` updated to 6 tables.
+- `fastmcp/seat_management/domain/seatrenderer/spec.go`: the AgentSpec DTOs (`OpenRigSpec`, `OpenRigSpecFile`, `OpenRigTokenEnvVar`) moved here from the retired renderer; `renderer.go`, `renderer_test.go` and `seat_management/application/services/seat_resolution_service.go` now use them. `seat_mount.go` keeps `publicURLEnv`, which lived in the deleted file.
+- `healthVersion` 0.0.14 to 0.0.15.
+- Left for T8 (Python backend): `agenthub_main` agent management, `scripts/compare_schema.py`'s import of it, and `agenthub_main/.../init_schema_postgresql.sql`, which still declare the two tables.
+- Operator step (principal/owner; NOT run here): the tables still exist on production. Drop them there in this order: `DROP TABLE IF EXISTS user_agent_instances;` then `DROP TABLE IF EXISTS agent_templates;`.
+- Follow-up (same day): the consumerless `/api/v2/agents` metadata surface was retired too — `mountAgentRoutes`, its `routeDeps.agents` wiring, the `agentMetadataController` interface and `writeAgentResult` are gone from `server/httpapp/routes_mount.go` (the only caller, the frontend `agentApiV2.getAgentsMetadata`, went in the T7 frontend half), and the dead `agentApiV2` placeholder block was deleted from `src/tests/api.test.ts`.
+- Verification: `gofmt -l` and `go vet ./...` clean; `go test ./...` green apart from the pre-existing `fastmcp.TestDatabaseMigratorRunMigrations` failure (`details=true progress_history=false`), reproduced identically at HEAD in a clean `git archive` export.
+
+**Dead `SubtaskFromDict` removed (review follow-up)** (2026-10-04)
+
+- `agenthub_go/fastmcp/task_management/domain/entities/subtask.go`: `SubtaskFromDict` had no caller outside its own definition and called the validating `NewSubtask`, so any future use that loaded a stored row would have reintroduced the D6d hydration blocker. Stored rows load through `RestoreSubtask` (`subtask_repository.go:77`). No test referenced it; `gofmt`, `go vet` and `go test ./fastmcp/task_management/domain/entities/` are green.
+
+**Go `call_agent` tool and the agent-library seeding path (T6)** (2026-10-04)
+
+- Removed the `call_agent` MCP tool and everything only it used: `agenthub_go/fastmcp/server/httpapp/{agents_mount.go,call_agent_wiring.go}` (the `/api/v2/agents` routes), `fastmcp/agent_management/interface/mcp_controllers/call_agent*.go`, `fastmcp/task_management/application/use_cases/call_agent.go`, `.../agent_mcp_controller/handlers/agent_invocation_handler.go`, the YAML template loader and `agent_template_seeder.go` in `fastmcp/agent_management/application/services/`, the `-seed-agents` flag of `cmd/agenthub`, `PathResolver.GetCursorAgentDir`, and the `agent_library_dir` field of the health environment and the connection tool text. `call_agent` is gone from `tools_golden.json`, the tool config (`TOOL_CALL_AGENT`), the token costs (68 to 67 operations) and the mcp-developer role tool list. Use `call_seat` to resolve a seat.
+- Kept: `manage_agent`'s `call_agent` field and parameter (the agent registry @handle; owner decision pending, T7/D2) and `task_management/infrastructure/services/agent_doc_generator.go`, which still reads `AGENT_LIBRARY_DIR_PATH`.
+- `healthVersion` 0.0.13 to 0.0.14 (`agenthub_go/fastmcp/server/httpapp/http.go`); not deployed.
+- Tests: `openrig_spec_renderer_test.go` builds its template directly instead of through the loader; the seeder, loader, `/api/v2/agents` and `GetCursorAgentDir` tests went with their code; `TestMCPToolsListPublishesCallSeat` also asserts that tools/list has no `call_agent`. `gofmt -l`, `go vet ./...` and `go test ./...` (139 packages ok) from `agenthub_go` pass.
+
+### Fixed
+
+**Resolved seat snapshot: losing the first-save race is not a failure** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/resolved_seat_repository.go`: `Save` read the snapshot and then inserted it without a lock, so two concurrent first resolves of the same seat hit `uq_resolved_seats_seat_hash` and one surfaced as a failure (`call_seat` and the resolved-seat route). A unique violation now re-reads and returns the row the other writer stored, like `AddVersion` of a seat type; any other insert error is returned as before, and a failing re-read is reported.
+- Test: `TestResolvedSeatSaveLostRace` (lost race returns the winner after one re-read, other errors are not re-read, a failing re-read is reported); it fails without the change. `go vet` and `go test` for `fastmcp/seat_management/...` and `fastmcp/server/httpapp/...` pass.
+
+**call_seat: description matches the response, input is trimmed** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`: `CallSeatToolDescription` no longer promises a `model` (`CallSeat` never returned one and the snapshot has no model column) and says that a new hash writes a `resolved_seats` row; `SeatResolver` states that `ResolveSeat` returns a non-nil seat whenever the error is nil; `room` and `seat` are trimmed, so a whitespace-only value is the same `room and seat are required` failure as a missing one.
+- Tests: `call_seat_controller_test.go` asserts the `policy` field and a whitespace-only room. `go vet` and `go test` for `fastmcp/seat_management/...` and `fastmcp/server/httpapp/...` pass.
+
+**omp seat gets no runtime fragment: the assertion added** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: the "no `runtime/` file" loop covered `codex` and `agy` only, so the narrowed `receivesClaudeFragments` for `omp` was unasserted — flagged by the DeepSeek supervisor seat, not by reading. `omp` added to the loop. Proven by mutation rather than by the test passing: restoring the old predicate makes it fail with `omp seat has a runtime file "runtime/claude-mcp.fragment.json"`, and the correct implementation was restored exactly (`git diff` on `renderer.go` is empty). Coverage only, no behavior change. `go vet ./...` and `go test ./...` green.
+
+**omp accepted by the API but rejected by the UI, the sync CLI and the bridge** (2026-10-04)
+
+Found by a headless DeepSeek review of `2c8d05f3` and confirmed by reading every file it named: the server was taught to accept `omp`, but each client-side enumeration of runtimes was left behind, so "a seat can run DeepSeek" held only through the raw API or MCP.
+
+- `agenthub-frontend/src/types/seatTypes.ts`: `SeatRuntime` and `SEAT_RUNTIMES` listed only `claude-code` and `codex` — `agy` had been missing too. Both now carry all four runtimes. Consequence before the fix: the occupant switcher in `SeatLlmPanel.tsx`, `SeatTypeVersionForm.tsx` and `SeatsPage.tsx` could not select `omp`, and a seat already stored as `omp` rendered with an unmatched option, so any edit rewrote the occupant.
+- `scripts/openrig_seat_sync.py` (`RUNTIMES`, used by `switch`): `omp` added, so `switch --runtime omp` no longer exits with a usage error before reaching a server that accepts it.
+- `scripts/openrig_bridge.py` (`RUNTIMES`): `omp` added. Before the fix the bridge coerced an `omp` node's runtime to `"unknown"` before posting, so the DeepSeek supervisor seat would have reached the cloud mislabelled — the same declared-versus-live drift already recorded for the nine `agy`-labelled `4genthub-dev` seats. The Go side already accepted it, so the existing Go test was verified only against a producer that could never emit `omp`.
+- `agenthub_go/NEXT_GEN.md`: Request 16's line and T3 no longer quote a three-runtime list, and T3 no longer cites line numbers that the change invalidated.
+- Checked: `tsc --noEmit` reports 0 errors, the three affected vitest suites pass (54 tests across `SeatAuthoringPage`, `SeatDetailPage`, `SeatsPage`), and both scripts compile (`python3 -m py_compile`).
+
+**Deleted the unused Go port of agent_routes.py** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/routes/agent_routes.go`: removed. Its `AgentController` interface, request types and handlers (`GetAllAgentsMetadata`, `GetSingleAgentMetadata`, `RegisterAgent`, `ListAgents`, `UpdateAgent`, `DeleteAgent`, `AssignAgent`, `UnassignAgent`) had no caller or test anywhere in the module; the served agent routes are in `httpapp/routes_mount.go` and `httpapp/agents_mount.go`. Checked: `go build ./...`, `go vet ./fastmcp/server/...`, `go test ./fastmcp/server/...`; the helpers it used (`httpErr`, `pyOrStr`, `currentUserID`, `containsNotFound`) are still used by other route files.
+
+**Removed the four Go agent assignment stubs that faked Python 500 errors** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/agents_mount.go`: deleted `POST /api/v2/agents/assign`, `DELETE /api/v2/agents/unassign/{branch_id}`, `GET /api/v2/agents/branch/{branch_id}/assignment` and `GET /api/v2/agents/project/{project_id}/assignments`. The controller has no assignment methods; each handler only returned a hard-coded 500 to preserve a Python quirk. `POST /call` stays; `GET /metadata` and `GET /{agent_name}` stay in `routes_mount.go`. The header comment now describes only `/call`.
+- Impact: those four paths now answer 404 or 405. No live frontend caller exists (the client functions are removed by web-dev).
+
+**Pinned seats no longer move when a module is published: overlay `add` requires a concrete version** (2026-10-04)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: an overlay `add` op with a missing version or `"latest"` is rejected with 400 `add requires a concrete version`, like `pin`. `seatAdminOverlayModulesExist` now only looks up concrete versions (the latest-version branch is deleted).
+- `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`: `Resolve` rejects an empty or `"latest"` version on seat type refs, `add` and `pin` ops (`requireConcrete`). The follow-latest path and `Catalog.Latest` are removed (`catalog.go` `DBCatalog.Latest` too). Found by the reviewer: a pinned seat's hash changed when only a module version was published, because an overlay `add rules latest` followed the catalog. No compatibility path: a stored overlay holding `""` or `"latest"` on an `add` now fails to resolve with an explicit error until it is edited (dev phase).
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/module_repository.go` and `domain/repositories/repositories.go`: `ModuleRepository.LatestVersion` is deleted (no non-test caller remained; `ListLatest` stays). Stored overlays that hold `""` or `"latest"` on an `add` must be edited by hand: there is no migration.
+- `agenthub_go/NEXT_GEN.md` (G5): the verified sentence is corrected (overlay `add` was the exception to "references are concrete"). G5 stays unticked; the check wording will be corrected when it is ticked.
+- Frontend not changed here: `agenthub-frontend/src/pages/SeatDetailPage.tsx:177-178` `canAdd` requires a version only for `pin`; it must also require one for `add`.
+
+### Added
+
+**call_seat: resolve one exact seat** (2026-10-04)
+
+Owner decision: the tool is `call_seat`, not `call_agent` — the name should say which layer it reaches. 4genthub stores the seat and its context, OpenRig runs the seat, and the brain (claude, openai, gemini, deepseek) is the occupant.
+
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`: the `call_seat` MCP tool over a one-method `SeatResolver`. It resolves one seat by room and seat key through `SeatResolutionService.ResolveSeat` and returns the resolved snapshot hash, runtime, policy and rendered files. Failures are `success=false` with the reason, matching `manage_seat`.
+- `agenthub_go/fastmcp/server/httpapp/call_seat_wiring.go`: wires it to the same resolution source the resolved-seat REST route uses, built per call, so an unset `AGENTHUB_PUBLIC_URL` is a tool-call failure with that reason rather than a failure to start the server (the route behaves the same way).
+- `ddd_compliant_mcp_tools.go`, `app.go`, `mcp_routes.go`: registration, dependency and dispatch.
+- Tests: `call_seat_controller_test.go` (resolve, input failures, tenant failure, tool registration, input schema) and `call_seat_mcp_test.go` (tools/list publishes it with the right schema and required fields; tools/call resolves a seat end to end; a resolver failure is reported as a tool result).
+- `mcp_routes_test.go`: the golden file is the Python parity registry, so `call_seat` joins `manage_seat` as a Go-only tool excluded from it with the reason recorded, and covered by its own route tests.
+- Checked: `gofmt` clean, `go vet ./...` clean, `go test ./...` green.
+- Not done, deliberately: `call_agent` is untouched. Removing it is T6 (it also carries the routes, `-seed-agents`, the library path utils and the health field) and is the immediate follow-on so that two tools for one job do not coexist.
+
+**omp runtime supported: a seat can now run DeepSeek** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `RuntimeOmp = "omp"` added to the one runtime list and to `CheckRuntime`, so API validation, rigspec, the seed library and the renderer all accept it. `omp` (Oh My Pi) is the runtime that carries a non-Anthropic provider: OpenRig passes a seat its provider key only when the model is written `provider/id` such as `deepseek/deepseek-flash`, which is how the DeepSeek supervisor seat in `~/.openrig/agenthub-seats/4genthub-deepseek/` runs. `pi` stays unsupported deliberately (no evidence, and no `pi` installed here).
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer.go`: `receivesClaudeFragments` narrowed from "not codex and not agy" to `runtime == claude-code`, and the comment above the MCP fragment updated. Behavior for the existing runtimes is unchanged; the inversion makes a runtime added later default to no Claude MCP or settings fragment instead of silently receiving one.
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`: the `manage_seat` tool description and the `runtime` parameter text name all four runtimes instead of `claude-code|codex`.
+- Tests corrected to the new truth: `domain/resolver/runtime_test.go` (`omp` moves from the invalid list to the valid one; `pi` stays invalid, with a comment saying why), `domain/repositories/names_test.go`, `domain/seatrenderer/renderer_test.go` (`TestRenderSeatRigValidate` gains an `omp` subtest), `server/httpapp/seat_status_mount_test.go`, and `server/httpapp/seat_admin_mount_test.go`, where `TestSeatAdminSetOccupantRuntimeNamesSupportedRuntimes` had asserted `omp` was a 400 and now asserts it is accepted while `pi` is still a 400 naming all four runtimes. Found by the suite rather than by reading: that assertion failed on the first full run.
+- Checked: `gofmt -l fastmcp` clean, `go vet ./...` clean, `go test ./...` green. The `omp` subtest passes through the real `rig agent validate`, so a 4genthub-rendered omp seat is accepted by OpenRig itself.
+- `agenthub_go/NEXT_GEN.md`: Request 16's open item, T3, and the "DeepSeek seats via OpenRig `omp`" section record this change; the same edit records the owner-stated 167-hour agy limit and the supervisor guidance change that follows from it. T3 stays open on `set_occupant` on production and the occupant panel.
+
+**Recorded the DeepSeek supervisor seat and the stale runtime registry** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md`: a "DeepSeek seats via OpenRig `omp`" section (rig `4genthub-deepseek`, one seat `supervisor`, runtime `omp`, model `deepseek/deepseek-flash`, `builtin:yolo` required for a headless launch; the cloud cannot store this seat until `RuntimeOmp` is added to the one runtime list), the finding that `rig ps --nodes` and the rig's `rig.yaml` report runtime `agy` for all nine `4genthub-dev` seats while those seats emit Claude Code statusline samples, and the T3 clarification that `CheckRuntime` already rejects an unsupported runtime with an explicit error.
+- Re-verified by the supervisor 2026-10-04 before recording: `rig usage series --lane provider_window --since 2026-10-04T05:00:00Z` returned 588 samples, emitted by all nine `4genthub-dev` seats and none by `4genthub-min`; `resolver/runtime.go:17-24` returns `unsupported runtime %q: supported runtimes are claude-code, codex, agy`.
+
+**G5 ticked; its check wording corrected** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G5): ticked after `fab45cee` (service test) and `c92121cf` (overlay `add` needs a concrete version). The check text is corrected, not just met: it said a module publish changes a follow-latest seat, but the owner's policy is that nothing moves until a new resolved version is published, so a follow-latest seat moves with a new seat type version. Open lines kept: fakes only, no Postgres run, client lock (`--update`) not re-tested.
+
+**G2 check re-run and ticked** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G2): the three clauses of the check (same modules for `claude-code` and `codex` pass `rig agent validate`, resolving twice gives the same hash, a `remove` overlay removes a base module) were re-run and pass; ticked with the evidence and two open lines. The follow-latest sentence is reworded: only the seat type follows latest, module and overlay refs are concrete since `c92121cf`. Documentation only, no code.
+
+**Open owner decision D6 recorded: source of the assignee names** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (D6): the assignee pickers use a hard-coded 42-name list in `agenthub-frontend/src/api.ts:389`; per the debugger inventory 2026-10-04, 14 names are not in the agent library, `GET /api/v2/agents/metadata` serves 4 static agents, and six agent routes are dead and being deleted. Recommendation recorded: use the user's seat keys. Documentation only; no behavior change, no tests.
+
+**F4 client bridge check recorded in NEXT_GEN.md** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (F4): records the tester's scratch-environment run (evidence sections 1 to 7). Verified: edge-order launch of a 3-seat rig, reported state `in_sync` with hash equal to `expected_hash` and the pin, a seat stopped with `rig seat stop` shown as `stopped`, relaunch of a stopped seat, recovery of a killed-claude seat with `rig seat launch --fresh --stop` (`rig seat clean` is refused while the tmux session lives), `seatcheck` deny and delivery run with a live scratch seat's environment. Caveat recorded: `seatcheck` reads `$HOME/.openrig/agenthub-seats`, so a scratch run must override `HOME`. Open, owner decision: a seat that dies any way other than `rig seat stop` shows `blocked`, not `stopped`; accept it and reword the check, or change the bridge. Not run: Claude-level deny of `rig send` typed into a seat prompt, herdr agents, codex/agy rigs, bundle launch, production. F4 stays unticked. Documentation only; no behavior change, no tests.
+
+**G5 version policy tested through the resolution service** (2026-10-04)
+
+- `agenthub_go/fastmcp/seat_management/application/services/seat_resolution_service_test.go`: `TestResolveSeatModulesMoveOnlyWithANewSeatTypeVersion`. Test only, no behavior change: publishing a module version moves no seat, a new seat type version moves only follow-latest seats, a pinned seat keeps its snapshot hash. `agenthub_go/NEXT_GEN.md` (G5) records the evidence and the open lines; the box is not ticked.
+
+**Renderer: stale codex defect record corrected, agy covered by the runtime test** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (G3): the "open defect" that a seat switched to codex fails to render while `comm-guard` is present is recorded as fixed (`297ef2ed` for codex, `3caf088f` for agy), with the 2026-10-04 evidence (all 9 seat types render on claude-code, codex and agy). Documentation only.
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: `TestRenderSeatSameModulesOnBothRuntimes` now loops codex and agy. Coverage only: no behavior changed, and the test passed before the edit.
+
+**T1 open line updated with the tester run** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md` (T1): cites the tester's scratch-rig run (real Claude seats under `yolo`, which passes `--dangerously-skip-permissions`: `rig send` and tmux `send-keys` denied, `seatcheck` deny exits 3, delivery works) and keeps the open lines: deny under the default policy not tested, nothing verified on production, Codex and agy seats have no deny. Documentation only; no behavior change, no tests.
+
+**delegate-deepseek module 1.1.0: chef/worker wording** (2026-10-04)
+
+- `scripts/team/4genthub/delegate-deepseek.txt`: opens with the owner's culture rule (Request 17): each seat's session is the chef (takes the demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers only do bounded jobs for it, get priority for delegable work, and their output is never forwarded unreviewed. `scripts/team/4genthub/team.json`: module version `1.0.0` to `1.1.0`, so the next `openrig_team_setup.py apply` publishes a new immutable version and the company overlay pins it; version 1.0.0 is not edited. Not applied to any server.
+
+**Team culture recorded as an owner demand** (2026-10-04)
+
+- `agenthub_go/NEXT_GEN.md`: "Request 17" (added in `f5bb43f0`): each seat's session is the chef (takes demands, decides, answers the owner and the lead, accountable for the result); `deepseek_agent` workers do bounded jobs, get priority for delegable work, and their output is never forwarded unreviewed. Documentation only; no behavior change, no tests.
+
+**Support for agy (Gemini/Antigravity) runtime** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/resolver/runtime.go`: `CheckRuntime` now accepts `"agy"`.
+- `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer.go`: `RenderSeat` uses a shared predicate to explicitly reject both `codex` and `agy` runtimes from receiving Claude fragments, treating `agy` similarly to `codex`.
+- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`: `ValidateOccupant` rejects Claude models on `codex` only, while allowing them on `agy` (which supports Claude models such as `claude-opus-5-5-high` and `claude-sonnet-5-5-medium` alongside Gemini and GPT models).
+
+### Fixed
+
+**Six agent routes that always answered 500 are removed** (2026-10-04)
+
+- `agenthub_main/src/fastmcp/server/routes/agent_routes.py`: deleted `GET /api/v2/agents/{agent_name}`, `POST /assign`, `DELETE /unassign/{branch_id}`, `GET /branch/{branch_id}/assignment`, `GET /project/{project_id}/assignments` and `GET /capabilities`. Each called an `AgentAPIController` method that does not exist (`get_single_agent_metadata`, `assign_agent`, `unassign_agent`, `get_branch_assignment`, `get_project_assignments`, `get_all_capabilities`), so it answered 500 on every request; `GET /capabilities` was also unreachable behind `GET /{agent_name}`. The frontend `agentApiV2` functions for them had no importer outside test mocks, and no Python, MCP or script caller exists. `GET /metadata` and `POST /call` stay. The Go mirrors (`agents_mount.go`) and the frontend functions are removed by their owners.
+
+**`GET /api/v2/agents/metadata` no longer returns 500** (2026-10-04)
+
+- `agenthub_main/src/fastmcp/server/routes/agent_routes.py` (`get_all_agents_metadata`): `AgentAPIController.get_agent_metadata` returns a plain dict, but the route read `result.success` and called `result.model_dump`, so every request raised `'dict' object has no attribute 'success'` and answered 500. The route now reads `result.get("success")` and returns the dict; a failed result still answers 500 with the controller `message`.
+- Not fixed, reported to the lead: the other six routes in that file call controller methods that do not exist (`get_single_agent_metadata`, `assign_agent`, `unassign_agent`, `get_branch_assignment`, `get_project_assignments`, `get_all_capabilities`), so they always answer 500; `GET /capabilities` is also shadowed by `GET /{agent_name}`. The controller falls back to static metadata when the facade fails (`agent_api_controller.py` lines 49-56 and 68-78), which conflicts with the no-fallback rule.
+
+**The seatcheck PATH check reads the PATH seats inherit** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: `resolve_checker` and `describe_found` now resolve `seatcheck` against `tmux show-environment -g PATH` (new `tmux_global_path`, `seat_path`) when a tmux server answers, instead of this shell's PATH. With no tmux server (no seat exists yet) they check the shell PATH and print `note: checked seatcheck on the shell PATH (no tmux server is running, ...)` to stderr; failure messages name the PATH that was checked, and `PATH_LIMIT` now describes the cold-start case (the first seat inherits the daemon's PATH) and says that only the default tmux socket is queried. The tmux call has a 5 second timeout; a hung server counts as no server. Not verified: the cold start case, and a non-default tmux socket.
+
+**`openrig_seat_sync.py switch` accepts the agy runtime** (2026-10-04)
+
+- `scripts/openrig_seat_sync.py`: `RUNTIMES` now includes `agy`, so `switch ROOM SEAT --runtime agy --model <model>` is no longer rejected with exit 2 by the client before the server sees it. The Python lists in `openrig_bridge.py` and this script are still separate from Go's `resolver.CheckRuntime`; the single-source claim of the status-report entry above holds for Go only.
+
+**Seat status reports accept the agy runtime** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_status_mount.go`: `validSeatRuntime` replaces the hard-coded `seatRuntimes` map; it accepts every runtime `resolver.CheckRuntime` accepts (claude-code, codex, agy) plus `terminal` and `unknown`, so the runtime list has one source.
+- `scripts/openrig_bridge.py`: `RUNTIMES` includes `agy`, so an agy seat reports `agy` instead of `unknown`.
+- Tests: `TestSeatStatusPostAcceptsEverySeatRuntime`, `test_runtime_mapping_keeps_every_supported_runtime`.
+
+**Decouple seat types seed from AGENTHUB_PUBLIC_URL requirement** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `handleSeedSeatTypes` was coupled to `AGENTHUB_PUBLIC_URL` validation through `seatSourceFor`, causing `POST /api/v2/openrig/seat-types/seed` to return 500 when `AGENTHUB_PUBLIC_URL` was unset. Seeding only inserts seed modules and seat type definitions and does not render specs. `seatSourceFor` now decouples the public URL check from source creation, allowing seeding without `AGENTHUB_PUBLIC_URL`, while `handleResolveSeat` preserves the requirement.
+- Tests: `TestSeedSeatTypesWorksWithoutPublicURL` and `TestSeedSeatTypesErrorMapping` in `seat_mount_test.go`.
+
+### Fixed
+
+**Overlay ops must name modules the catalog holds** (2026-10-03, found driving the UI)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `PUT` of a company, room or seat overlay stored an `add` or `pin` op for a module (or module version) that does not exist; every later resolution of the seats it reached then failed with `module X@latest not found in catalog` (the preview route answered 404 for a seat that exists). The three overlay routes now answer 422 `module <slug>@<version> not found in catalog` and store nothing; the room and seat lookups (404) still run first, and `remove`/`override` ops are not checked because they may name modules only the seat type supplies.
+- Tests: `TestSeatAdminOverlayRejectsUnknownModules`; `TestSeatAdminOverlays` and `TestSeatAdminGetOverlays` now seed the modules their ops name.
+
+### Fixed
+
+**seatcheck's unknown-recipient hint lists only seats the caller may message** (2026-10-03)
+
+- `agenthub_go/cmd/seatcheck/main.go`: the hint after a denied unknown recipient named every roster member and policy link end. It now lists only the seat keys the caller's own policy allows for the intent (via `commpolicy.Decide`), or says `your policy allows no recipient for intent "<intent>"`. Exit code and audit are unchanged.
+
+### Fixed
+
+**Creating a seat validates the occupant** (2026-10-03, found driving the UI)
+
+- `POST /api/v2/openrig/rooms/{room}/seats` checked only the runtime, so a Claude model on `codex` and a model id such as `a b; rm -rf` were stored (and later rendered into the rigspec and passed to `rig seat set-model`), while `PUT .../occupant` rejected both. `handleCreateSeat` (`server/httpapp/seat_admin_mount.go`) now uses `repositories.ValidateOccupant(runtime, model)`, the same rule as the occupant switch: 400 and nothing stored; an empty model stays allowed.
+
+### Fixed
+
+**seatcheck accepts the full session name a seat replies to** (2026-10-03)
+
+- `agenthub_go/cmd/seatcheck/main.go`: a message header names its sender by session (`From: finalroom-alpha@finalroom`) but the policy speaks in seat keys, so `seatcheck send --to finalroom-alpha@finalroom` was denied "no link" while `--to alpha` was allowed. `--to` may now be a seat key or a full session name of the roster: the session is mapped to its member before the policy check, the audit line records the member, and delivery goes to exactly that session (so a session of a member name repeated across pods is not ambiguous). A name that is neither is still denied "no link" (exit 3, audited, no delivery) and now also prints `unknown recipient "X"; use a seat key: a, b, c`. Exit codes are unchanged.
+- Verified: gofmt, go vet, `go test ./cmd/seatcheck`; a mutation check (no session mapping) fails 4 tests.
+
+### Added
+
+**Startup notice for columns that differ from the ORM definitions** (2026-10-03)
+
+- `task_management/infrastructure/database/missing_tables.go`: without `AUTO_MIGRATE` the server already logged missing tables; it now also compares every registered table that exists with `information_schema.columns` (`ColumnDrift`, one query) and logs, per table, the registered columns the database lacks (queries naming them fail) and the columns the ORM does not know that are `NOT NULL` without a default (inserts fail, e.g. a leftover `seats.status`). Nullable or defaulted unknown columns are not reported. The expected columns come from the `Tables` registry (the ORM definitions), not a second list. Log only: nothing is altered, startup is never stopped; `AUTO_MIGRATE` still creates only missing tables.
+- `MissingTables` and `ColumnDrift` return an error for a nil engine instead of dereferencing it; the failure of either check is logged and does not stop startup.
+- Verified: gofmt, go vet, `go test ./fastmcp/task_management/infrastructure/database`; mutation checks (ignore blocking columns, ignore missing columns) fail the new tests. Not run against a real Postgres.
+
+### Fixed
+
+**An empty permission policy can no longer be stored or rendered** (2026-10-03)
+
+- `seats.permission_policy` gets `CONSTRAINT ck_seats_permission_policy CHECK (permission_policy IN ('locked', 'standard', 'open', 'yolo', 'none'))`, like `ck_seat_links_kind` (`seat_tables.go`, `seat_management_postgresql.sql`); a test ties the list to `resolver.PermissionPolicies`. `rigspec.RenderRoom` rejects a seat without a valid policy instead of rendering no line (an absent line meant the OpenRig floor, not `standard`).
+- `PUT .../seats/{seat}/permission-policy` logs the user id, room, seat and the new policy.
+- Production: a column added with `DEFAULT 'standard'` satisfies the CHECK for existing rows; a manual fill with `''` does not. Owner decision, no migration shipped.
+
+### Changed
+
+**`NEXT_GEN.md` G1a CHECK and UI-drive defect** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: G1a adds `ck_seats_permission_policy` and the startup column check (`d3b45a5f`); records `275f900b` and the missing-Authorization UI defect (`c1b17ba8`). Documentation only, no tests run.
+
+**`NEXT_GEN.md` commit citation fix and process lesson** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: the no-migrate startup log cites `1b7e7bdc` only (`cf7908e4` is a docs cleanup); new "Process lessons" section. Documentation only, no tests run.
+
+**`in_sync` wording** (2026-10-03)
+
+- `seat_management/domain/seatsync/seatsync.go`: the package and constant comments say what `in_sync` means: the running hash equals the newest stored resolved snapshot hash. It is not "up to date" with the seat type or its modules. No code or UI text said "up to date"; the UI label `in sync` is unchanged.
+
+### Fixed
+
+**seatcheck no longer reports failure for a message it delivered** (2026-10-03)
+
+- `agenthub_go/cmd/seatcheck/main.go`: when the outcome audit line cannot be written after delivery, seatcheck prints a warning on stderr and keeps the delivery's own exit code (0 delivered, 5 not delivered) instead of exit 1, so a caller that retries on a non-zero exit cannot send the message twice. The decision line before delivery is still mandatory (exit 1, nothing sent).
+- Documented in the package comment and `commpolicy.AuditRecord.Outcome`: an allowed decision line with no outcome line means the delivery outcome is unknown (the message may have been delivered).
+- Reviewer minors on 951a4136. Verified: gofmt, go vet, `go test ./cmd/seatcheck ./fastmcp/seat_management/domain/commpolicy`.
+
+### Changed
+
+**`NEXT_GEN.md` per-seat permission policy and recent commits** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: Request 12 per-seat `permission_policy` done locally; G1a gains the `seats.permission_policy` column; commits `9115b6ab`, `1afc7555`, `e9a0c106`, `67ac9042`, `ed5c241f` and the seatcheck PATH limit recorded. Documentation only, no tests run.
+
+**The seat checker PATH limit is stated** (2026-10-03)
+
+- Seats inherit the PATH the OpenRig daemon had when it started (visible only as the daemon's tmux `-e PATH=` environment); `rig` 0.6.3 exposes it nowhere (`rig daemon status` has no `--json`, `rig whoami --json` carries no environment), so `openrig_seat_sync.py` cannot check it cheaply. The `install-checker` and `pull`/`rig` messages, and the script docstring, now say that the check reads the PATH of the current shell and tell the operator to restart the daemon (`rig daemon stop`, `rig daemon start`) from a shell where `seatcheck` resolves.
+
+### Changed
+
+**`NEXT_GEN.md` status corrections** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: fixed defects marked with commit hashes; superseded items use `[~]` with a legend; F1 and F4 are unticked (check pending). Documentation only, no tests run.
+
+**Permission policy is a property of each seat, rendered per member** (2026-10-03)
+
+- Breaking, clean cut: the rig-level `permission_policy` line and the `?permission_policy=` query on `GET /api/v2/openrig/rooms/{room}/rigspec` are removed, and so is the `--permission-policy` flag of `scripts/openrig_seat_sync.py rig` (the script now takes the policy from the rendered spec). `rigspec.RenderRoom(roomSlug, roomName, seats, edges)` no longer takes a policy; `rigspec.Seat.PermissionPolicy` renders as `permission_policy: builtin:<name>` (or `none`) on that member.
+- `seats.permission_policy TEXT NOT NULL` (ORM `SeatORM`, `seat_tables.go`, `seat_management_postgresql.sql`). The accepted values are `resolver.PermissionPolicies` (`locked`, `standard`, `open`, `yolo`, `none`), the one list shared by the seat service, the admin routes and the renderer. A seat created without a policy gets `resolver.DefaultPermissionPolicy` (`standard`, never `yolo`); an unknown one is a 400 naming the accepted values.
+- New `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` (`{"permission_policy": "..."}`, tenant scoped, 404 for an unknown room or seat); `SeatBody` and `POST .../seats` carry `permission_policy`. A seat already launched keeps the posture it launched with; the next rigspec render carries the change.
+- Production schema: `seats.permission_policy` is a new NOT NULL column (owner decision through the lead; no migration helper is shipped).
+- Files: `seat_management/domain/{resolver,rigspec,repositories}`, `application/services/seat_admin_service.go`, `infrastructure/{database,repositories/orm,schema}`, `server/httpapp/{seat_admin_mount,seat_rigspec_mount}.go`, `scripts/openrig_seat_sync.py`.
+- Verified: go vet, `go test ./seat_management/... ./server/...`, pytest `test_openrig_seat_sync.py` (66 passed), and the real `rig spec validate` + `rig spec preflight` on a rendered room for every policy (yolo preflights as `full_bypass`, none as `floor`). Not run: Postgres integration tests.
+
+### Fixed
+
+**`place_agent` links a file or a directory, with no copy fallback** (2026-10-03)
+
+- `scripts/openrig_seat_sync.py`: `place_agent` tried a symlink and fell back to `shutil.copytree`, which cannot copy the file `install-checker` links (the seatcheck binary). It now makes one relative symlink for a file or a directory, replaces a real directory or an older link at the target, and a failing symlink is a `SyncError` (exit 2, `cannot link <target> to <source>`) that leaves nothing behind.
+
+### Fixed
+
+**Overlay slug and version are scanned too** (2026-10-03)
+
+- `seatAdminOverlayOps` (`server/httpapp/seat_admin_mount.go`) ran `secretscan.Contains` on op content only; slug and version are free strings echoed back by the overlay body, so they are scanned as well (422 `secret detected in content`, nothing stored).
+
+### Fixed
+
+**`seatcheck send` hardening (reviewer majors)** (2026-10-03)
+
+- `cmd/seatcheck/main.go`: removed `--pins`. The seat the guard constrains could point it at a forged `policy.json` and move the audit trail; the pins directory is now only `~/.openrig/agenthub-seats` (tests replace the `pinsDir` variable). The policy must belong to the caller: `policy.Seat` differing from the `rig whoami` member is refused (exit 2, nothing audited or delivered), and rig or member names that are not one directory name (`..`, `a/b`) are refused.
+- Delivery runs `rig send -- <session> <text>` with stdin detached: a message such as `--rig=x` is text, never an option that fans the message out beyond the checked recipient (checked against the installed `rig`: with `--` the token is a session name).
+- Exit codes: a delivery that cannot start or fails (unknown or ambiguous recipient, `rig send` failing) is exit 5 and never rig's own code, so it cannot read as a policy result (2 usage/policy, 3 denied, 4 bypass). The skill text `comm-guard-skill` explains exit 5.
+- Audit: `AuditRecord.Outcome` (`delivered` or `delivery_failed`) on a second line after an allowed send; the decision line is fsynced before delivery, the close error is returned, and an audit file that others can read or write is refused (exit 1).
+- A member name repeated across pods is no longer an error for the whole rig: all sessions per member are kept and only a send to the repeated name is ambiguous (exit 5 naming both sessions); the other peers still resolve (architect G3).
+
+### Fixed
+
+**A guarded seat prompted for its own startup `rig whoami`** (2026-10-03)
+
+- `seat_management/domain/seedlibrary/shared-modules/comm-guard.json`: `Bash(rig whoami:*)` joins the allow list next to `Bash(seatcheck send:*)` (read-only; under the default non-yolo policy the seat prompted for `rig whoami --json` and nobody could approve it because `rig send` is denied). Nothing else is allowed. `comm-guard-skill.md` explains exit code 5 (allowed but not delivered). `seedVersion` 1.1.0 -> 1.1.1: a stored module version is immutable, so a changed module needs a new version.
+
+### Added
+
+**Startup names the tables the database lacks** (2026-10-03)
+
+- A server started without `AUTO_MIGRATE=true` on an empty database answered healthy and then 500 `relation "machines" does not exist`. `InitDatabase` now logs, once at startup, `database: N table(s) missing: a, b, ...; queries on them fail with 500 until the schema exists. Start once with AUTO_MIGRATE=true to create it` (`task_management/infrastructure/database/missing_tables.go`, `MissingTables` over the one `Tables` registry, which includes the seat tables). It creates nothing and does not stop the server. Checked on a real empty Postgres: 38 tables named, server still listens.
+
+### Changed
+
+**`NEXT_GEN.md` G1a: dropping `seats.status` is mandatory** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md` G1a: creating seats fails on an existing table until `ALTER TABLE seats DROP COLUMN status` runs. Documentation only, no tests run.
+
+**`NEXT_GEN.md` seat removal and production schema list** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: G1 and Request 11 say seat removal is a hard delete (`945648f5`); G1a lists all pending production schema changes. Documentation only, no tests run.
+
+**`MaxRoomNameLength` lives with the Room entity** (2026-10-03)
+
+- The 200-character room-name limit is defined once, as `repositories.MaxRoomNameLength` directly above `Room` in `seat_management/domain/repositories/repositories.go` (it was in `names.go`); `ValidateRoomName` in `names.go` and the `rooms.name` comment in `seat_management_postgresql.sql` refer to it. No behavior change.
+
+### Fixed
+
+**Overlay content is scanned for secrets** (2026-10-03)
+
+- `PUT /api/v2/openrig/overlay`, `/rooms/{room}/overlay` and `/rooms/{room}/seats/{seat}/overlay` stored override content unscanned, while module versions were scanned. `seatAdminOverlayOps` (`server/httpapp/seat_admin_mount.go`), shared by the three routes, now runs `secretscan.Contains` on every op's content and answers 422 `secret detected in content` without echoing the secret; nothing is stored.
+
+### Changed
+
+**Removing a seat is a hard delete; the seat `status` is gone** (2026-10-03)
+
+- `DELETE /api/v2/openrig/rooms/{room}/seats/{seat}` removed the seat only by marking it `removed`, so the row kept holding `UNIQUE (room_id, seat_key)`: re-adding the same key was a 409 while list/get/delete answered 404, and the old links, overlay and snapshots would have come back with the key. `RoomDeletionService.RemoveSeat` now deletes, in one transaction and with `user_id` on every DELETE, the seat's links (both directions), overlay, resolved snapshots, reported statuses and the seat itself, the same cascade as room delete (`seat_management/application/services/room_deletion_service.go`). An unknown seat or another user's seat is a 404; a second delete is a 404; the same key can be added again from scratch.
+- Removed the dead status machinery: `SeatRepository.MarkRemoved`, `Seat.Status`, the `seats.status` column and `ck_seats_status` (ORM `seat_orm.go`, `seat_tables.go`, `seat_management_postgresql.sql`), `ErrSeatRemoved` (it was a 409), the five `removed` filters (list, link-cycle check, resolution, rigspec seats and edges) and `status` in the seat JSON body. New `MachineStatusRepository.DeleteSeatStatusForSeat`. Breaking for clients: the seat body has no `status` field (frontend badge to be removed by web-dev).
+
+### Added
+
+**Per-member permission policy in the rendered RigSpec (domain)** (2026-10-03)
+
+- `seat_management/domain/resolver/permission.go`: `PermissionPolicies` (`locked`, `standard`, `open`, `yolo`, `none`, the bare names of `rig policy list`), `DefaultPermissionPolicy` (`standard`, never yolo) and `CheckPermissionPolicy`, the one list; `rigspec.ValidatePermissionPolicy` reads it. `rigspec.Seat.PermissionPolicy` renders `permission_policy: builtin:<name>` (or the literal `none`) on the member, no line when empty; member overrides the rig-level line (OpenRig precedence member > rig > floor). The seat model, API and client script follow in a later commit.
+- `rigspec` cycle test: self-loop cases (`a delegates_to a`, `a spawned_by a`).
+
+### Fixed
+
+**`seatcheck send` found no recipient in a multi-pod rig** (2026-10-03)
+
+- `cmd/seatcheck/main.go` `parseWhoami`: the peer roster was keyed by stripping `<rig>.` from the logical id, but a logical id is `<pod>.<member>` and the pod equals the rig name only for room-generated rigs, so in a rig with several pods every allowed send failed with `not a seat of rig`. The member is now the part after the first dot (the rule of `openrig_bridge.py seat_name`). Two peers with the same member name are an error naming the member and both sessions (exit 2) instead of the last one winning. The audit line records the policy decision only (commented).
+
+### Changed
+
+**`NEXT_GEN.md` records the live verification run and open items** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: tester results (scratch rigs only), five open items and an owner action on a possibly exposed token. Documentation only, no tests run.
+
+**gofmt** (2026-10-03)
+
+- `agenthub_go/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/subtask_mcp_controller.go`: formatted two type-switch cases (layout only, no behavior change). `gofmt -l` over `agenthub_go` now lists nothing outside the vendored module cache `.gomodcache`.
+
+### Fixed
+
+**Machine token creation reported any integrity error as a conflict** (2026-10-03)
+
+- `machine_token_repository.go` `Create`: only a violation of `uq_machine_tokens_active` (SQLSTATE 23505) is `ErrMachineTokenExists` (409 "already has an active token"); a foreign key, not-null or other unique violation is returned as the underlying error (500). Reviewer minor on the machine-token commit.
+
+### Fixed
+
+**Seat links could form a launch cycle that `rig up` refuses** (2026-10-03)
+
+- `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/links` now returns 400 `link would create a launch cycle: a -> b -> a` when an allowed delegates_to/spawned_by link closes a cycle with the room's other allowed links (before: stored and rendered, then `rig up` failed with `Cycle detected in rig topology`). `rigspec.FindLaunchCycle` is the pure rule (delegates_to: source launches first; spawned_by: the target is the parent and launches first; can_observe, collaborates_with and escalates_to are not counted); `SeatLinkService` (new, with its own `SeatLinkStore`) runs it over the active seats and allowed links of the room, ignoring the link being replaced. Links with `allow: false` are never checked because the rig spec does not render them.
+- A seat key is still the only link target, so a cycle across rooms is not possible.
+
+### Added
+
+**Seat checker: install-checker and a PATH check in pull and rig** (2026-10-03)
+
+- `scripts/openrig_seat_sync.py install-checker [--out DIR]`: builds `agenthub_go/cmd/seatcheck` to `<seat store>/bin/seatcheck` (GOCACHE/TMPDIR inside `agenthub_go/.gocache`/`.gotmp`) and links `~/.local/bin/seatcheck` to it with the atomic `place_agent` helper. It then checks that the bare name `seatcheck` resolves to that binary on PATH and fails (exit 2) with the exact fix (`add ~/.local/bin to PATH`) if not.
+- `pull` and `rig` fail loudly (exit 2, before any network call) when `seatcheck` does not resolve to `<seat store>/bin/seatcheck`. Seats run the bare `seatcheck send ...`, matching the allow rule `Bash(seatcheck send:*)`; no rendered file changes, so seat hashes and pins are unaffected (architect decision F3: no absolute path, no settings env PATH).
+- `.gitignore`: `agenthub_go/seatcheck` (the untracked binary was moved out of the tree). The `seatcheck` CLI itself is unchanged (owned by go-dev).
+- Verified for real in a temp HOME and temp store: `go build` ran, link created, exit 2 with the PATH fix when `~/.local/bin` is not on PATH, exit 0 when it is, `pull` exit 2 without it.
+
+### Fixed
+
+**`seatcheck send` could not deliver an allowed message** (2026-10-03)
+
+- `cmd/seatcheck/main.go`: delivery targeted `<seat>@<rig>`, but `rig send` resolves only full session names (`<pod>-<member>@<rig>`), so an allowed send failed with `Session beta@scratchcomm not found` (exit 1). The target session is now taken from the `peers` roster of `rig whoami --json` (`parseWhoami`, keyed by member name), the one place that names sessions, instead of rebuilding the name from the rig. A recipient that the policy allows but the rig roster does not list exits 1 with `"x" is not a seat of rig "r"` after the allowed decision is audited, and nothing is delivered. Reported by the tester's live run.
+
+### Fixed
+
+**Seat on codex failed to render when its seat type carried comm-guard** (2026-10-03)
+
+- `seatrenderer/renderer.go`: a tool module on a codex seat is skipped instead of failing the render with `runtime "codex" cannot carry tool modules` (a tool module is a Claude settings fragment). `SetOccupant` can switch a seat's runtime while its pinned seat type version keeps the seeded `comm-guard` tool module, so the decision belongs to the seat's runtime at render time. A codex seat renders the skill and no `runtime/` files, so it is not deny-guarded; a codex-default seat type switched to claude-code now gets the deny.
+- `seedmap.go`: both shared modules are attached to every seed regardless of the seat type's default runtime (the `DefaultRuntime` special case from the comm-guard change is gone).
+- `renderer.go` `mergePermissions`: an empty `deny`/`allow`/`ask` list with no earlier value stayed nil and marshalled to `null`; it is now `[]`.
+- A fresh `POST /seat-types/seed` adds seat type version 1.1.0 next to 1.0.0 (module versions too); seats that follow latest resolve to 1.1.0 (`LatestVersion` orders by `created_at`), seats pinned to 1.0.0 keep resolving 1.0.0 without comm-guard. Read from the seeder and resolution service, not run against Postgres.
+
+### Changed
+
+**`NEXT_GEN.md` records the G3 architect findings** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md` G3: L2 limits, codex without a deny path, room = rig identity rule, seatcheck install decision; owner decisions pending. Documentation only, no tests run.
+
+**One list of seat runtimes** (2026-10-03)
+
+- `seat_management/domain/resolver/runtime.go`: `RuntimeClaudeCode`, `RuntimeCodex` and `CheckRuntime`, the single definition of the runtimes the renderer can render. `repositories.ValidateRuntime` (API, MCP `manage_seat`, seat-type versions), `rigspec`, `seedlibrary`, `seedmap` and `seatrenderer` all read it; the four separate lists are gone. A runtime such as `pi` or `omp` is a 400 `unsupported runtime "pi": supported runtimes are "claude-code" and "codex"` on `PUT .../occupant`, `POST .../seats` and `POST /seat-types/{slug}/versions`.
+
+### Fixed
+
+**Bridge: duplicate seat keys were reported as invalid names** (2026-10-03)
+
+- `scripts/openrig_bridge.py` `build_seats`: two pods of one rig with the same member name (e.g. `agy.check` and `dev.check` in rig `4genthub-go`) were skipped as a duplicate but reported as `skipped 2 seat(s) with invalid names`. Invalid names and duplicates are now counted separately: invalid keeps `skipped N seat(s) with invalid names`; a duplicate prints `seat 'check' in rig 4genthub-go exists in pods agy and dev; rename one`. The seat key is unchanged (member name only; architect decision: room = rig, seat = member); the first node is sent.
+
+### Added
+
+**`GET /api/v2/openrig/machines` reports hash drift per seat** (2026-10-03)
+
+- Each seat now carries `expected_hash` (hash of the seat's latest stored resolved snapshot, empty when the room or seat is not in the cloud; no re-resolve on read) and `sync` (`in_sync` | `drift` | `unknown`), after `hash` (the running hash). `seat_management/domain/seatsync` holds the single rule: `unknown` if either hash is empty, `in_sync` if equal, else `drift`.
+- `machine_status_repository.go` `List`: `seat_status` joins `rooms` (slug), `seats` (seat_key) and the newest `resolved_seats` row (created_at, id), every join on the same `user_id`. `SeatStatus.ExpectedHash` is read-only; `ReplaceSnapshot` ignores it. No schema change.
+
+**Communication guard on every seat type (comm-guard)** (2026-10-03)
+
+- `seat_management/domain/seedlibrary/shared-modules/`: two shared modules appended to every seed (single definition, embedded): tool `comm-guard` (`permissions.deny`: `rig send`, `rig queue`, `rig broadcast`, `tmux send-keys`, `tmux paste-buffer`; `permissions.allow`: `seatcheck send`) and skill `comm-guard-skill` (the only way to message a seat is `seatcheck send --to <seat> --intent <intent> -- <text>`; exit 3 = denied, do not try another way). `seedlibrary.Parse` now takes the shared modules; `seedmap.Spec.Shared` appends them and skips tool modules for a codex seat type (tool modules are Claude settings fragments), so a codex seat type is NOT deny-guarded at L2, it only gets the skill.
+- `seat_management/domain/seatrenderer/renderer.go` `mergeToolModules`: `permissions.deny/allow/ask` are now the deduplicated union across tool modules (before: a later module with a `permissions` key replaced the whole object and dropped comm-guard's deny); other keys stay later-wins; a non-array or non-string list is an error naming the module.
+- `seedVersion` 1.0.0 -> 1.1.0 (`seedmap.go`): a stored seat type version is immutable, so re-seeding a tenant with the new module set needs a new version. Existing tenants gain `1.1.0` on the next `POST /seat-types/seed`; no old-version path. `healthVersion` 0.0.10 -> 0.0.11. Not deployed.
+
+### Fixed
+
+**TestToolConfigParity expected the Python tool list without manage_seat** (2026-10-03)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/configuration/testdata/tool_cases.json`: the recorded Python output has no `manage_seat`, which is an intentional Go addition (`tool_config.go:23`, env `TOOL_MANAGE_SEAT`, default enabled). The expected `enabled_tools` and `tools` maps now carry `"manage_seat": true` after `call_agent` in all 400 cases (412 occurrences). No production code changed; the rest of the Python parity is untouched.
+
+### Fixed
+
+**Secret scanners: empty-user URL credentials and whitespace parity** (2026-10-03)
+
+- `secretscan.go`, `openrig_scrub.py`: the URL-credentials user part may be empty, so the standard Redis form `redis://:password@host` is detected and redacted (found by the reviewer in 9468eb28). An empty password (`ftp://user:@host`) is deliberately not flagged: nothing to leak.
+- `openrig_scrub.py`: Go `\s` is ASCII-only `[\t\n\f\r ]` while Python `\s` is Unicode, so `http://u:pass<NBSP>word@db` was redacted by the server scan but not by the bridge scrubber. The bearer, URL and password/token patterns now spell the Go class out (`_WS`/`_NOT_WS`); `re.ASCII` was not used because it also treats the vertical tab as whitespace, which Go does not.
+- Known gap (fixture case `known-gap-url-slash-in-password`): a raw `/` inside a URL password (`postgres://user:pa/ssword99@db/app`) is not detected, since `/` ends the userinfo; widening it would flag ordinary URLs.
+
+### Changed
+
+**`seatcheck send` takes its identity from `rig whoami`** (2026-10-03)
+
+- `agenthub_go/cmd/seatcheck/main.go`: `seatcheck send --to <seat> --intent <intent> -- <words>`. Rig and member come from `rig whoami --json` (single source); the seat directory is `<pins>/<rig>/<member>` with `policy.json` and an append-only `audit.jsonl` (0600, written before delivery). `--pins` (default `~/.openrig/agenthub-seats`, constant `defaultPinsDir`) is the only path flag. Delivery is `rig send <seat>@<rig> "<words>"`; its exit code passes through. Removed: `--policy`, `--audit`, `--deliver-cmd`. A missing or corrupt policy, a failed identity lookup and usage errors exit 2 with nothing delivered or audited; denied exits 3; audit write failure exits 1.
+- Breaking for anything calling the old flags (none in the repository).
+
+### Fixed
+
+**openrig_team_setup.py apply failed with 404 seat type not found on a fresh database** (2026-10-03)
+
+- `scripts/openrig_team_setup.py`: `apply` now starts with `POST /api/v2/openrig/seat-types/seed` (idempotent; the server needs `AGENTHUB_PUBLIC_URL`), because the team's seats name seat types that exist only after seeding. Before, a fresh database failed at the first seat with `HTTP 404 seat type "lead" not found` and the docstring did not mention the step. A failing seed stops the run before any other call.
+
+**`AddVersion` lost-race re-read was too broad and hid its own error** (2026-10-03)
+
+- `seat_management/infrastructure/repositories/orm/seat_type_repository.go` `AddVersion`: the winner is re-read only after a unique violation (SQLSTATE 23505), not after any integrity error (a foreign key violation is returned as it is), and a failing re-read is returned (wrapped) instead of being discarded.
+
+**POST /rooms silently returned an existing room** (2026-10-03)
+
+- `server/httpapp/seat_admin_mount.go` `handleCreateRoom`: an existing slug now returns 409 `room "x" already exists` (before: 200 with the stored room, the posted name silently discarded), the same convention as `POST .../seats`. This makes the `(409 exists: ok)` branch of `openrig_team_setup.py` for rooms live instead of dead.
+- `seat_management/domain/repositories/names.go`: `ValidateRoomName`, 1 to `MaxRoomNameLength` (200) characters. The ORM column `rooms.name` is unbounded `TEXT`, so there was no ORM limit; 200 is a new domain rule. Before: a 5000-character name was accepted.
+- Client note: the frontend `createRoom` now gets a 409 for an existing slug.
+
+**Seat occupant accepted a Claude model on the codex runtime** (2026-10-03)
+
+- `seat_management/domain/repositories/names.go`: new `ValidateOccupant(runtime, model)` (runtime, model pattern, and `claude-*` models only on `claude-code`); `SeatAdminService.SetOccupant` uses it, so `PUT .../occupant`, MCP `manage_seat set_occupant` and `openrig_seat_sync.py switch` get a 400 `invalid occupant: model "claude-..." is a Claude model and cannot run on the codex runtime`. The check is one-directional because claude-code also takes aliases such as `sonnet`.
+
+**`TestFindProjectRootEnvAndUpward` failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `tools/tool_path_test.go`: the upward search tries `.git` before the other markers (documented order in Python `tool_path.py`), so the repository's own `.git` above the temp dir won over the fixture's `pyproject.toml`. The fixture now has its own `.git` directory. No production code changed.
+
+**`TestFindProjectRootParity` failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `utilities/directory_utils_test.go`: case 2 returned the real repository root instead of `<R>/data`. `FindProjectRoot` (matches Python `_find_project_root`) walks up from the anchor and the real `agenthub_main` above the temp tree was found. The test now injects `Env.Exists` that only reports paths under the fixture root. No production code changed.
+
+**Parser tests failed under a TMPDIR inside the repository** (2026-10-03)
+
+- `parsers/rule_content_parser_test.go`: `TestParseMarkdownSections` and `TestParseJSON` expected `general` but got `agent`. `classifyRuleType` (a port of Python `_classify_rule_type`, unchanged) classifies on the lowercase absolute path, and the temp file lived under `agenthub_go/.gotmp`, whose name contains "agent". The two tests now use a relative file name (`writeRelTemp`, working directory = temp dir). No production code changed.
+
+**Secret scanners miss URL credentials** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/secretscan.go`, `scripts/openrig_scrub.py`: new pattern `://user:password@` (greedy to the last `@`, so a password containing `@` is covered). Before, `postgres://agent:pass@db/app` in a seat `detail` passed the server scan (200) and the bridge scrubber left it unredacted.
+- Shared fixture `secretscan/testdata/scan_cases.json`: `url-credentials`, `url-at-in-password`, `url-plain` (no credentials, not flagged).
+- Known limits: empty user or empty password (`://:pass@host`) is not detected; the Python `\s` is Unicode while Go's is ASCII, so exotic whitespace inside the userinfo can differ.
+
+**Concurrent seat-type version creation returns 409, not 500** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/seat_type_repository.go`: when the insert of a seat type version hits the unique constraint because another writer took the same version, `AddVersion` re-reads the winner's row. Identical runtime and module refs return that row; anything else is `ErrSeatTypeVersionConflict` (HTTP 409).
+
+### Fixed
+
+**Deleting a room deletes its seat status** (2026-10-03)
+
+- `DELETE /api/v2/openrig/rooms/{room}` also removes the room's `seat_status` rows (every machine, this user only) in the same transaction (`MachineStatusRepository.DeleteSeatStatusForRoom`, `RoomDeletionService`). Before, they stayed until the bridge replaced the machine snapshot.
+
+### Changed
+
+**`NEXT_GEN.md` records team progress and open work** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: new section with the local commits, seven open defects, the planner's T1 to T10 plan and the pending decisions D1 to D3 and G1a. Documentation only, no tests run.
+
+**`NEXT_GEN.md` matches the owner decisions** (2026-10-03)
+
+- `agenthub_go/NEXT_GEN.md`: F0b to F0d, F2 and F3 marked superseded; F1 and F4 marked implemented; one open item F0e (retire `call_agent` and `agenthub_main/agent-library`) and G1a (production schema change for `961e1da1`) added; G1, G2, G6 and Requests 12 to 16 status updated; standing owner permissions, deploy loop and production facts recorded. Documentation only, no tests run.
+
+**`default_runtime` is versioned** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management`: `default_runtime` moved from `seat_types` to the immutable `seat_type_versions` (ORM structs, `seat_tables.go`, `seat_management_postgresql.sql`). A version is written in one insert, `SeatTypeRepository.SetDefaultRuntime` is gone, and `AddVersion` takes the runtime; the same version with another runtime or module refs is `ErrSeatTypeVersionConflict`. `SeatResolutionService` takes the runtime of a seat that sets none from its pinned version, so a new version never changes a pinned seat. The seed library writes its runtime on the version.
+- `GET /api/v2/openrig/seat-types`: `default_runtime` is the latest version's runtime, `null` when the seat type has no version.
+- `POST /api/v2/openrig/seat-types/{slug}/versions`: logic moved from the handler to `SeatAdminService.CreateSeatTypeVersion`; errors map by type: 400 invalid input or unknown module ref, 404 unknown seat type, 409 a concurrent writer took the version with different content, 500 anything else.
+- Production note: tables created by the earlier DDL still have `seat_types.default_runtime` and no `seat_type_versions.default_runtime`; the new schema is not applied over them by `CREATE TABLE IF NOT EXISTS`.
+
+### Added
+
+**Per-machine tokens for the bridge** (2026-10-03)
+
+- `POST /api/v2/openrig/machines` `{machine_id}` (user token) registers a machine and returns its token once (`mt_` plus 256 random bits, `Cache-Control: no-store`); 409 while the machine has an active token, 400 for an invalid id. `DELETE /api/v2/openrig/machines/{machine}/token` revokes it (404 when this user has no active token for that machine, so another user's machine looks absent).
+- `POST /api/v2/openrig/seat-status` now takes only a machine token, no longer a user token: 403 without a header, 401 for an unknown, revoked or malformed token, 403 when the report's `machine_id` is not the token's machine. The report is stored under the token's user and machine. A machine token is rejected everywhere else. `GET /api/v2/openrig/machines` still takes the user token. Breaking for existing bridges: register the machine and set `AGENTHUB_TOKEN` to the new token.
+- `agenthub_go/fastmcp/server/httpapp/machine_token_mount.go`, `seat_management/application/services/machine_token_service.go`, `infrastructure/repositories/orm/machine_token_repository.go`; table `machine_tokens` (`token_hash` SHA-256 hex only, `revoked_at`, partial unique index on `(user_id, machine_id) WHERE revoked_at IS NULL`) in the ORM structs, `seat_tables.go` and `seat_management_postgresql.sql`. The token is never stored, logged or returned again.
+- Production note: `machine_tokens` is a new table; apply the DDL there before deploying, or the bridge cannot authenticate.
+- `scripts/openrig_bridge.py`: docstring describes the machine token.
+
+**Delete a seat link and delete a room** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` removes one link (404 unknown room, seat or link; 400 bad kind; the target may be a removed seat). `DELETE /api/v2/openrig/rooms/{room}` hard-deletes the room.
+- `agenthub_go/fastmcp/seat_management/application/services/room_deletion_service.go`: application-layer cascade in one transaction, in dependency order: per seat (including removed ones) its links, overlay, resolved snapshots, then the seat; then the room overlay and the room. No foreign-key cascade. Company overlay and other rooms are untouched. The rendered rigspec no longer contains deleted links.
+- Repositories: `Delete`/`DeleteBySeat` (links), `DeleteForRoom`/`DeleteForSeat` (overlays), `DeleteBySeat` (resolved seats), `Delete` (seats, rooms); every statement filters `user_id`, so another user's request deletes nothing (404 at the API).
+- Not cleaned: `seat_status` rows of a deleted room (reported names, replaced by the next bridge report).
+
+**Module list and seat-type versions API** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `GET /api/v2/openrig/modules` lists the latest version of each module (`slug`, `kind`, `version`, `sha256`, no content). `POST /api/v2/openrig/seat-types/{slug}/versions` with `{module_refs: ["slug@version"], default_runtime}` appends the next patch version (`1.0.0` when none); 404 unknown seat type, 400 malformed, duplicate or unknown module refs and invalid runtime.
+- `seat_management`: `ModuleRepository.ListLatest`, `SeatTypeRepository.SetDefaultRuntime`, `ParseModuleRef`, `NextPatchVersion`.
+- Note: `default_runtime` is a column of `seat_types`, not of a version, so the POST updates it on the seat type for every version.
+
+**Switch a seat's LLM, Claude bypass policy, delegation rule** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`, `seat_management/application/services/seat_admin_service.go`: `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` changes a seat's runtime (`claude-code`, `codex`) and model; one `SeatAdminService` serves REST and MCP.
+- `agenthub_go/fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`: MCP tool `manage_seat` (`list`, `get`, `set_occupant`).
+- `scripts/openrig_seat_sync.py`: `switch ROOM SEAT [--runtime] [--model] [--apply none|set-model|restart]` records the change in 4genthub and applies a model change with `rig seat set-model` (runtime changes need `rig down`/`rig up`, printed as manual steps); `rig ROOM --permission-policy locked|standard|open|yolo|none`.
+- `GET /api/v2/openrig/rooms/{room}/rigspec?permission_policy=...` renders a rig-level `permission_policy: builtin:<name>`; `yolo` makes OpenRig launch Claude with `--dangerously-skip-permissions` (verified: `rig spec preflight` reports `launch_posture=full_bypass`).
+- `scripts/team/4genthub/delegate-deepseek.txt`: company-wide rule to delegate parallel work to deepseek-offload workers.
+- Frontend: "LLM" tab on the seat page, see `agenthub-frontend/CHANGELOG.md`.
+- `/health` reports `0.0.10`.
+- Production note: the `seat_links` check constraint `ck_seat_links_kind` created by the first seat deploy still lists the old kinds; `collaborates_with`, `spawned_by` and `can_observe` links fail there until the constraint is replaced by hand.
+
+### Added
+
+**Module authoring and the 4genthub development team** (2026-10-03)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_mount.go`: `PUT /api/v2/openrig/modules/{slug}/versions/{version}` creates a module version (immutable; identical content is a no-op, different content for the same version is 409, secrets are rejected with 422); sentinel errors `ErrModuleKindConflict` and `ErrModuleVersionConflict` in `repositories.go`; validators in `names.go`; `resolver.ValidKind`.
+- `scripts/openrig_team_setup.py`, `scripts/team/4genthub/`: idempotent setup of the OpenRig room `4genthub-dev` (nine seats, links, project, area and mission modules, company and seat overlays) through the API. The brain stays in 4genthub; OpenRig runs the room.
+- `/health` reports `0.0.9`.
+
+### Changed
+
+**Generic seat library embedded in the binary** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/` (new): nine generic, project-agnostic seat types (`lead`, `planner`, `architect`, `developer`, `reviewer`, `tester`, `debugger`, `researcher`, `writer`) written for OpenRig seats, embedded with `go:embed`; strict YAML loader.
+- `agenthub_go/fastmcp/seat_management/domain/seedmap/seedmap.go`: `FromSpec` replaces `Map`/`MapAll` (no more `AgentTemplate` input).
+- `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `POST /api/v2/openrig/seat-types/seed` no longer reads `AGENT_LIBRARY_DIR_PATH`, so it works in the distroless production image.
+- `/health` reports `0.0.8`.
+- Seat types seeded from the old `agenthub_main/agent-library` (32 types, for example `coding-agent`) are not removed from databases that already hold them; `call_agent` and the AgentSpec route still use that library.
+
+### Changed
+
+- `agenthub_go/fastmcp/server/httpapp/http.go`: `/health` reports version `0.0.7` (was `0.0.6`) so a deploy of the seat, rigspec and bridge work can be confirmed live; bump it with each release (the Docker context has no `.git`).
+
+### Fixed
+
+- `scripts/openrig_bridge.py`: seat name is the part of OpenRig `logicalId` after the first dot (`rig ps` has no `podId`); found by running the stack against a real `rig` daemon.
+
+### Added
+
+**Bridge v1: OpenRig and herdr status to 4genthub** (2026-10-03)
+
+- `scripts/openrig_bridge.py`, `scripts/openrig_scrub.py`: background bridge (allow-list payload, secret scrubber, heartbeat, printed systemd unit).
+- `agenthub_go/fastmcp/seat_management/domain/secretscan/`, `server/httpapp/seat_status_mount.go`, `infrastructure/repositories/orm/machine_status_repository.go`, tables `machines` and `seat_status` in `seat_management_postgresql.sql`: `POST /api/v2/openrig/seat-status`, `GET /api/v2/openrig/machines`; bodies containing secrets are rejected with 422.
+- `.gitignore`: exception for the `secretscan` directory (the `*secret*` rule hid it).
+- Frontend: machines panel, see `agenthub-frontend/CHANGELOG.md`.
+
+### Changed
+
+**Seat model coherent with OpenRig** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/commpolicy/policy.go`, `infrastructure/schema/seat_management_postgresql.sql`, `infrastructure/database/seat_tables.go`: link kinds are now OpenRig's five (`delegates_to`, `spawned_by`, `can_observe`, `collaborates_with`, `escalates_to`); `reports_to`, `consults`, `notifies` removed; intent-to-kind mapping documented in `agenthub_go/NEXT_GEN.md`.
+- `agenthub_go/fastmcp/seat_management/domain/repositories/names.go`, `server/httpapp/seat_admin_mount.go`: room slugs and seat keys validated with OpenRig's id rule (no dots or spaces).
+- `scripts/openrig_seat_sync.py`: safe-name rule relaxed to the OpenRig rule (uppercase allowed).
+
+### Added
+
+- `agenthub_go/fastmcp/seat_management/domain/rigspec/`, `server/httpapp/seat_rigspec_mount.go`: `GET /api/v2/openrig/rooms/{room}/rigspec` renders a room as RigSpec 0.2 (validated with real `rig spec validate` and `rig spec preflight`).
+- `scripts/openrig_seat_sync.py`: `rig ROOM` subcommand builds a launchable `rig.yaml` plus pinned `agents/<seat>` links.
+
+### Added
+
+**Go port of the server (`agenthub_go/`) - HTTP composition root with projects, branches, tasks and subtasks live** (2026-10-02)
+
+- `agenthub_go/fastmcp/server/httpapp/*` + `agenthub_go/cmd/agenthub/main.go`: `net/http` composition root serving `/health`, `/api/v2/projects`, `/api/v2/branches`, `/api/v2/tasks`, `/api/v2/subtasks` with the Python JSON shapes; Python sources untouched.
+- `task_application_facade.go` fully ported; `subtask_application_facade.go` wired (context sync, parent-task progress via new `TaskProgressStore`).
+- Parity fixes found by differential testing: Python slice semantics in `ListTasksSummary`, `ORMTaskRepository.GetTask` swallows query errors, typed-nil `OrderedMap` serialises as `null`, `/mcp` scope user (`email` null, `auth_type` method), non-UUID project ids compared as text in git-branch repo.
+- Progress and ownership tracked in `agenthub_go/MIGRATION.md` and `agenthub_go/TEAM_SPLIT.md`.
+
+**OpenRig client / 4genthub cloud: agents served as OpenRig AgentSpecs** (2026-10-02)
+
+OpenRig `agent_ref` accepts only `local:`/`path:` (remote refs rejected), so the cloud renders AgentSpec directories and the client writes them to disk.
+
+- `agent_management/application/services/openrig_spec_renderer.go`: template + instance config -> `agent.yaml`, `guidance/role.md` (prompt, rules, output format; delivered via `send_text`), `runtime/claude-mcp.fragment.json` (`agenthub_http`, `Bearer ${AGENTHUB_TOKEN}`; no secret in the spec).
+- `server/httpapp/openrig_mount.go`: `GET /api/v2/openrig/agents[/{slug}]`, rendered from the caller's agent instance. Requires `AGENTHUB_PUBLIC_URL`.
+- `scripts/openrig_sync.py`: downloads the specs (`AGENTHUB_URL`, `AGENTHUB_TOKEN`) for `agent_ref: "path:<dir>/<slug>"`.
+- `cmd/agenthub -seed-agents` + `agent_template_seeder.go`: upserts `agent_templates` by slug from `AGENT_LIBRARY_DIR_PATH`; fails if any agent directory does not load.
+- Tested (local Postgres, throwaway): seed 32 templates twice -> 32 rows; endpoint, 404 and 403 paths; all 32 specs pass `rig agent validate`; a rig using `path:` refs passes `rig spec validate` and `rig spec preflight`. Go unit tests for the renderer are pending a valid test path (pre-tool hook).
+- `agenthub_go/MIGRATION.md` split: it keeps only the Python → Go port (slices, groups A–B, Request 5) and can be closed at `Final`; new work moved to `agenthub_go/NEXT_GEN.md` (groups C–F, Requests 1–4 and 6–10). Group F was rewritten from "full OpenRig runtime in Go (`rigd`)" to "OpenRig is the client, 4genthub is cloud data". Request 11 (company-workplace model: seats, rooms, occupants, modules) recorded with the owner's four decisions (enforced communication, offline mode via OpenRig bundles, pin by default, Jev as an optional completion gate) and planned as group G (G1 to G7).
+
+**Seat management building blocks (company-workplace model, group G)** (2026-10-03)
+
+- `agenthub_go/fastmcp/seat_management/domain/resolver`: pure resolver (company, room, seat overlays; add/remove/override/pin; follow-latest resolved to concrete versions; deterministic sha256).
+- `seat_management/domain/seatrenderer`: renders a resolved seat as an OpenRig AgentSpec for `claude-code` and `codex`; validated with `rig agent validate`.
+- `seat_management/domain/commpolicy`: default-deny communication policy (L2 guarded enforcement), policy hash, audit record, bypass detection.
+- `seat_management/infrastructure/schema/seat_management_postgresql.sql` and `.../database/seat_orm.go`: draft tables and ORM structs (not applied to a database yet).
+- `agent_management/application/services/openrig_spec_renderer_test.go`: renderer and seeder tests; `.claude/hooks/config/__claude_hook__valid_test_paths` now allows `agenthub_go`.
+- `seat_management/infrastructure/repositories/orm`, `application/services` (`SeatResolutionService`, `SeedSeatTypes`), `domain/seedmap`: repositories over the seat tables, resolve-render-store use case, and the 32 agents as seat types. Verified on a real Postgres 18 (integration test and an end-to-end run of the real server over HTTP).
+- `server/httpapp/seat_mount.go`, `seat_admin_mount.go`: `GET /api/v2/openrig/seats/{room}/{seat}`, `POST /api/v2/openrig/seat-types/seed`, and the rooms/seats/overlays/links admin API (pin by default).
+- `cmd/seatcheck`: local L2 communication checker with audit log and bypass scan.
+- `scripts/openrig_seat_sync.py`: pulls a resolved seat, keeps a pin lock, builds an offline `.rigbundle` on explicit request.
+- `seat_settings` table and `GET|PUT /api/v2/openrig/settings` (company `follow_latest`, default off); read API for the composer: `GET /api/v2/openrig/seat-types`, `/modules/{slug}/versions/{version}`, `/overlay`, `/rooms/{room}/overlay`, `/rooms/{room}/seats/{seat}/overlay`. Verified live over HTTP on a real Postgres.
+- `agenthub-frontend`: Seats pages (`/seats`, `/seats/:room/:seat`) to create rooms and seats, edit overlays, set links, preview the resolved seat and toggle company follow-latest (details in `agenthub-frontend/CHANGELOG.md`). Seat bodies now include the `seat_type` slug.
+- Fixed before release: a seat-scoped overlay was written with a room id and violated `ck_overlays_scope_target`; `Overlay.ValidateTarget` now guards it.
+- Finding: production `call_agent` fails because the 32 templates and 58 instances store `rules` in the Python format; see `NEXT_GEN.md` F0b. No production change was made.
+
+### Fixed
+
+**`call_agent` returned "Agent not found" for every agent on the Go backend** (2026-10-02)
+
+- Cause: nothing in the Go backend populated `agent_templates` (`YAMLAgentTemplateLoader.LoadAllAgents` had no callers). Fix: run `agenthub -seed-agents` against the database.
 
 **Fixed Task Deletion Not Updating Branch & Project Counters - Preventing Project Deletion** (2025-11-22)
 

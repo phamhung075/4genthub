@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from './../../test-utils';
-import { BrowserRouter } from 'react-router-dom';
 import { LoginForm } from '../../../components/auth/LoginForm';
 import { useAuth } from '../../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -8,29 +7,29 @@ import userEvent from '@testing-library/user-event';
 
 // Mock dependencies
 vi.mock('../../../hooks/useAuth');
-vi.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useNavigate: vi.fn(),
-  Link: ({ children, to, ...props }: any) => <a href={to} {...props}>{children}</a>,
-}));
+// Partial mock: keep the real router exports so the BrowserRouter wrapper in
+// test-utils still works. Only useNavigate is replaced.
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return {
+    ...actual,
+    useNavigate: vi.fn(),
+  };
+});
 
 vi.mock('../../../components/ThemeToggle', () => ({
   ThemeToggle: () => <div data-testid="theme-toggle">Theme Toggle</div>,
 }));
 
 const renderLoginForm = () => {
-  return render(
-    <BrowserRouter>
-      <LoginForm />
-    </BrowserRouter>
-  );
+  return render(<LoginForm />);
 };
 
 describe('LoginForm', () => {
   const mockLogin = vi.fn();
   const mockNavigate = vi.fn();
-  const user = userEvent.setup();
+  // user-event v13 exposes the API directly (no setup()).
+  const user = userEvent;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -44,7 +43,7 @@ describe('LoginForm', () => {
     expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByText(/welcome back! please sign in to continue/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: /remember me/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByText(/forgot password\?/i)).toBeInTheDocument();
@@ -81,7 +80,7 @@ describe('LoginForm', () => {
   it('displays validation error for short password', async () => {
     renderLoginForm();
 
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     await user.type(passwordInput, 'short');
 
     const submitButton = screen.getByRole('button', { name: /sign in/i });
@@ -95,7 +94,7 @@ describe('LoginForm', () => {
   it('toggles password visibility', async () => {
     renderLoginForm();
 
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const toggleButton = screen.getByLabelText(/toggle password visibility/i);
 
     // Initially password should be hidden
@@ -115,7 +114,7 @@ describe('LoginForm', () => {
     renderLoginForm();
 
     const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const rememberMeCheckbox = screen.getByRole('checkbox', { name: /remember me/i });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
@@ -136,7 +135,7 @@ describe('LoginForm', () => {
     renderLoginForm();
 
     const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     await user.type(emailInput, 'test@example.com');
@@ -153,7 +152,7 @@ describe('LoginForm', () => {
     renderLoginForm();
 
     const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     await user.type(emailInput, 'test@example.com');
@@ -170,14 +169,16 @@ describe('LoginForm', () => {
     renderLoginForm();
 
     const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'password123');
     await user.click(submitButton);
 
-    expect(submitButton).toBeDisabled();
+    await waitFor(() => {
+      expect(submitButton).toBeDisabled();
+    });
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
 
     await waitFor(() => {
@@ -190,7 +191,7 @@ describe('LoginForm', () => {
     renderLoginForm();
 
     const emailInput = screen.getByLabelText(/email address/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     await user.type(emailInput, 'test@example.com');

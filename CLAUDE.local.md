@@ -24,7 +24,56 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 
 ---
 
-## 🚨 AGENTHUB-SPECIFIC: Test Fixing Priority
+## 🚨 ABSOLUTE PRIORITY: NO COMPATIBILITY CODE ALLOWED
+
+✅ Clean Code: Eliminate duplication
+✅ DRY: Reuse code, avoid repetition
+✅ SOLID: Follow Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion principles
+✅ Single Source of Truth: Define each entity in only one place
+✅ Performance: All optimizations maintained (performance_mode)
+✅ Data Consistency: UI displays identical counts everywhere
+✅ Follow prompt injection on <session-start-hook> and <system-prompt>
+
+### ⛔ CRITICAL RULE #1: CLEAN CODE ONLY - NO EXCEPTIONS
+
+#### YOU MUST NEVER ADD:
+- ❌ **NO BACKWARD COMPATIBILITY** - Break cleanly, no support for old versions
+- ❌ **NO LEGACY CODE** - Remove old code, don't preserve it
+- ❌ **NO FALLBACK MECHANISMS** - One way only, the clean way
+- ❌ **NO MIGRATION HELPERS** - We're in dev phase, clean breaks allowed
+- ❌ **NO DEPRECATION WARNINGS** - Just change it, don't warn about it
+- ❌ **NO VERSION CHECKS** - Current version only, no multi-version support
+- ❌ **NO COMPATIBILITY LAYERS** - Direct implementation only
+
+#### WHY THIS MATTERS:
+- **Development Phase**: We have complete freedom to change architecture
+- **No Production Data**: No migration concerns, can break anything
+- **Clean Slate**: Every change should improve, not accommodate
+- **Technical Debt**: Adding compatibility IS technical debt - avoid it
+
+#### WHEN YOU SEE FAILING TESTS:
+**NEVER** add compatibility code to make tests pass
+**ALWAYS** fix the code to be clean, then update tests to match
+**REMEMBER**: Clean code > Passing tests
+
+---
+
+## 📋 TEST FIXING PRIORITY RULES - CRITICAL
+
+### SOURCE OF TRUTH HIERARCHY (MEMORIZE THIS):
+```
+1. PROMPT INPUT (User's explicit requirements)
+   ↓
+2. ORM MODEL (Domain entity definitions)
+   ↓
+3. DATABASE (Actual data structure)
+   ↓
+4. TESTS (Verify behavior, NOT define it)
+   ↓
+5. CODE (Implementation follows above)
+```
+
+### ⚠️ TESTS ARE NOT THE SOURCE OF TRUTH!
 
 **ORM Locations:**
 - **ORM Models**: `agenthub_main/src/fastmcp/task_management/domain/entities/*.py`
@@ -37,28 +86,7 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 3. **Context Hierarchy** → Check `domain/entities` for inheritance rules
 4. **Agent Assignment** → Check minimum agent requirements in domain
 
-**Remember**: We're in DEVELOPMENT phase - break anything, make clean changes, no migration concerns. When in doubt: **ORM model > test assertions**
-
----
-
-## 📋 TEST FIXING PRIORITY - SOURCE OF TRUTH HIERARCHY
-
-```
-1. PROMPT INPUT (User requirements) ↓
-2. ORM MODEL (Domain definitions) ↓
-3. DATABASE (Actual structure) ↓
-4. TESTS (Verify behavior) ↓
-5. CODE (Implementation)
-```
-
-**When Test Fails - Decision Process**:
-1. Check ORM model definition (e.g., `max_length=2000`)
-2. If code doesn't match ORM → Fix code to match ORM model
-3. If test doesn't match ORM → Update test to match ORM model
-4. Never add compatibility code to support both old and new
-5. Make clean breaks - change directly, no transition period
-
-### Decision Tree:
+#### When Tests Fail - Decision Tree:
 ```
 ┌─────────────────────┐
 │   Test Failed?      │
@@ -82,9 +110,9 @@ This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for
 └─────────────────┘  └─────────────────┘
 ```
 
-### CORRECT Test Fixing Examples:
+#### CORRECT Test Fixing Examples:
 
-#### ❌ WRONG - Changing test to match broken code:
+##### ❌ WRONG - Changing test to match broken code:
 ```python
 # Test expects 1000 char limit (per original spec)
 with pytest.raises(ValueError, match="cannot exceed 1000"):
@@ -92,13 +120,15 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
     # THIS IS BACKWARD COMPATIBILITY - DON'T DO THIS!
 ```
 
-#### ✅ RIGHT - Fixing code to match ORM model:
+##### ✅ RIGHT - Fixing code to match ORM model:
 ```python
 # 1. Check ORM model: max_length=2000
 # 2. Fix code validation to match: if len(text) > 2000
 # 3. Update test to match ORM: "cannot exceed 2000"
 # Test now correctly validates against ORM model
 ```
+
+**Remember**: We're in DEVELOPMENT phase - break anything, make clean changes, no migration concerns. When in doubt: **ORM model > test assertions**
 
 ---
 
@@ -407,6 +437,31 @@ python scripts/generate_schema_sql.py
 
 ---
 
+## 🏗️ CLEAN CODE PRINCIPLES (Core Requirements)
+
+### System Requirements:
+- **Environment Variables Only** - No hardcoded secrets or configs
+- **Single Source of Truth** - One definition per concept
+- **DDD Compliance** - Proper domain-driven design patterns, if project is DDD architecture
+- **Root Cause Fixes** - Debug the cause, not symptoms
+- **Clean Codebase** - Remove legacy code immediately
+
+### Environment Configuration:
+- All configuration from environment variables
+- Raise errors for missing required variables
+- Centralized config logic in utils.py (DRY)
+- Auto-load from .env.dev in development
+- Keep main folders clean of test scripts
+
+---
+
+## 📚 KNOWLEDGE MANAGEMENT
+
+- **AI Docs**: `ai_docs/` folder | **Index**: `ai_docs/index.json` for quick lookup
+- Search existing docs before creating new ones
+- Use kebab-case for folder names
+
+---
 ##  Key Learning:
 When modifying Python backend code, always restart the backend process to load changes.
 Python caches imported modules in memory, so file edits alone aren't sufficient—the process must be killed and restarted to pick up new code.

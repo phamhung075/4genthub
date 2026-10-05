@@ -32,7 +32,7 @@ const getAuthHeaders = (noCacheBypass: boolean = false): HeadersInit => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    logger.debug('API V2: Adding auth header with token starting:', token.substring(0, 50) + '...');
+    logger.debug('API V2: Adding auth header');
   } else {
     logger.warn('API V2: No auth token found in cookies!');
   }
@@ -46,7 +46,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
   if (response.status === 204) {
     return { success: true, message: 'Operation completed successfully' } as T;
   }
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
 
@@ -61,8 +61,8 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
         if (originalUrl && originalInit) {
           const newToken = Cookies.get('access_token');
           if (newToken) {
-            const newHeaders: Record<string, string> = { ...originalInit.headers } as Record<string, string>;
-            newHeaders['Authorization'] = `Bearer ${newToken}`;
+            const newHeaders = new Headers(originalInit.headers);
+            newHeaders.set('Authorization', `Bearer ${newToken}`);
 
             const retryResponse = await fetch(originalUrl, {
               ...originalInit,
@@ -107,7 +107,10 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
       const resourceId = url.substring(url.lastIndexOf('/') + 1);
 
       // Create a structured 404 error with context
-      const notFoundError = new Error(`${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`) as any;
+      const serverDetail = typeof error.detail === 'string' && error.detail !== '' ? error.detail : undefined;
+      const notFoundError = new Error(
+        serverDetail ?? `${resourceType.charAt(0).toUpperCase() + resourceType.slice(1)} not found`
+      ) as any;
       notFoundError.name = 'NotFoundError';
       notFoundError.status = 404;
       notFoundError.resourceType = resourceType;
@@ -239,7 +242,7 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
 // Token refresh function
 const refreshTokenAndRetry = async (): Promise<void> => {
   const refresh_token = Cookies.get('refresh_token');
-  
+
   if (!refresh_token) {
     throw new Error('No refresh token available');
   }
@@ -266,17 +269,17 @@ const refreshTokenAndRetry = async (): Promise<void> => {
   }
 
   const data = await response.json();
-  
+
   // Update cookies with new tokens
-  Cookies.set('access_token', data.access_token, { 
+  Cookies.set('access_token', data.access_token, {
     expires: 7,
     sameSite: 'strict',
     secure: import.meta.env.MODE === 'production'
   });
-  
+
   // Only update refresh token if a new one is provided
   if (data.refresh_token) {
-    Cookies.set('refresh_token', data.refresh_token, { 
+    Cookies.set('refresh_token', data.refresh_token, {
       expires: 30,
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
@@ -306,6 +309,14 @@ const fetchWithRetry = async (url: string, init?: RequestInit) => {
     });
     return handleResponse(response, url, init);
   });
+};
+
+// Generic authenticated JSON request over the shared V2 client: the Bearer token from the
+// access_token cookie is always sent; headers in init override the defaults.
+export const apiRequest = <T>(path: string, init?: RequestInit): Promise<T> => {
+  const headers = new Headers(getAuthHeaders());
+  new Headers(init?.headers).forEach((value, key) => headers.set(key, value));
+  return fetchWithRetry(`${API_BASE_URL}${path}`, { ...init, headers }) as Promise<T>;
 };
 
 // Task API V2 - User-isolated endpoints
@@ -695,16 +706,6 @@ export const contextApiV2 = {
 
 // Branch API V2 - User-isolated endpoints
 export const branchApiV2 = {
-  // List branches for a project
-  getBranches: async (projectId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/project/${projectId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
   // Get a specific branch
   getBranch: async (branchId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
@@ -727,32 +728,11 @@ export const branchApiV2 = {
       formData.append('description', branchData.description);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches`, {
+    // The collection route is mounted with a trailing slash (POST /api/v2/branches/).
+    // Without it Go's ServeMux answers 301 and fetch downgrades POST to GET, so the
+    // request silently becomes a list-branches call.
+    const response = await fetch(`${API_BASE_URL}/api/v2/branches/`, {
       method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
-    return handleResponse(response);
-  },
-
-  // Update a branch
-  updateBranch: async (branchId: string, updates: {
-    git_branch_name?: string;
-    description?: string;
-    is_active?: boolean;
-  }) => {
-    const formData = new URLSearchParams();
-    if (updates.git_branch_name) formData.append('git_branch_name', updates.git_branch_name);
-    if (updates.description) formData.append('description', updates.description);
-    if (updates.is_active !== undefined) {
-      formData.append('is_active', updates.is_active.toString());
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
-      method: 'PUT',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -766,32 +746,6 @@ export const branchApiV2 = {
   deleteBranch: async (branchId: string) => {
     const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Assign agent to branch
-  assignAgent: async (branchId: string, agentId: string) => {
-    const formData = new URLSearchParams();
-    formData.append('agent_id', agentId);
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/assign-agent`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
-    return handleResponse(response);
-  },
-
-  // Get branch health
-  getBranchHealth: async (branchId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/branches/${branchId}/health`, {
-      method: 'GET',
       headers: getAuthHeaders(),
       credentials: 'include',
     });
@@ -866,331 +820,6 @@ export const connectionApiV2 = {
     });
     return handleResponse(response);
   },
-
-  // Test connection
-  testConnection: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/connections/test`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-};
-
-// Agent API V2 - User-isolated endpoints
-export const agentApiV2 = {
-  // Get metadata for all agents
-  getAgentsMetadata: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/metadata`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get metadata for a specific agent
-  getAgentMetadata: async (agentName: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/${agentName}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Assign agent to branch
-  assignAgentToBranch: async (branchId: string, agentId: string) => {
-    const formData = new URLSearchParams();
-    formData.append('branch_id', branchId);
-    formData.append('agent_id', agentId);
-
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/assign`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
-    return handleResponse(response);
-  },
-
-  // Unassign agent from branch
-  unassignAgentFromBranch: async (branchId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/unassign/${branchId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get branch agent assignment
-  getBranchAgentAssignment: async (branchId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/branch/${branchId}/assignment`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get project agent assignments
-  getProjectAgentAssignments: async (projectId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/project/${projectId}/assignments`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get agent capabilities
-  getAgentCapabilities: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/capabilities`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Call an agent
-  callAgent: async (agentName: string, params?: any) => {
-    // Normalize agent name: remove @ prefix and ensure kebab-case
-    let normalizedName = agentName.startsWith('@') ? agentName.slice(1) : agentName;
-    normalizedName = normalizedName.replace(/_/g, '-').toLowerCase();
-    
-    const response = await fetch(`${API_BASE_URL}/api/v2/agents/call`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        agent_name: normalizedName,
-        params: params || {}
-      }),
-    });
-    return handleResponse(response);
-  },
-};
-
-// ============================================
-// AGENT MANAGEMENT API (User-Specific Agent System)
-// ============================================
-
-export const agentManagementApiV2 = {
-  // List all agent templates from agent-library
-  listTemplates: async (): Promise<import('../types/agentTypes').AgentTemplateListResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get specific template by slug
-  getTemplate: async (slug: string): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/templates/${slug}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // List user's agent instances
-  listUserInstances: async (): Promise<import('../types/agentTypes').UserAgentInstanceListResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get specific user agent instance
-  getUserInstance: async (instanceId: string): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Create/customize agent instance from template
-  createInstance: async (data: import('../types/agentTypes').ApiCreateInstanceInput): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  // Bulk create agent instances for all available templates
-  bulkCreateInstances: async (): Promise<import('../types/agentTypes').ApiBulkCreateResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/bulk-create`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Update agent instance
-  updateInstance: async (instanceId: string, data: import('../types/agentTypes').ApiUpdateInstanceInput): Promise<import('../types/agentTypes').ApiInstanceResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  // Delete agent instance
-  deleteInstance: async (instanceId: string): Promise<import('../types/agentTypes').ApiDeleteResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get agent configuration (merged template + customizations)
-  getConfiguration: async (templateSlug: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/configuration/${templateSlug}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Update agent configuration
-  updateConfiguration: async (instanceId: string, data: {
-    system_prompt?: string;
-    tools?: string[];
-    capabilities?: Record<string, any>;
-    rules?: string[];
-    output_format?: string;
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/configuration`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  // Share agent (make public and get share token)
-  shareAgent: async (instanceId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/share`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Unshare agent (make private)
-  unshareAgent: async (instanceId: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/instances/${instanceId}/unshare`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Import shared agent by token
-  importAgent: async (shareToken: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/import`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ share_token: shareToken }),
-    });
-    return handleResponse(response);
-  },
-
-  // Browse marketplace (public shared agents)
-  browseMarketplace: async (filters?: {
-    category?: string;
-    search?: string;
-    sort?: 'recent' | 'popular';
-    page?: number;
-    page_size?: number;
-  }) => {
-    const params = new URLSearchParams();
-    if (filters?.category) params.append('category', filters.category);
-    if (filters?.search) params.append('search', filters.search);
-    if (filters?.sort) params.append('sort', filters.sort);
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.page_size) params.append('page_size', filters.page_size.toString());
-
-    const url = `${API_BASE_URL}/api/v2/agent-management/marketplace${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Preview shared agent before importing
-  previewSharedAgent: async (shareToken: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/marketplace/${shareToken}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get user usage statistics
-  getUserStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/analytics/user-stats`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
-
-  // Get popular agents statistics
-  getPopularAgents: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/v2/agent-management/analytics/popular-agents`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-      credentials: 'include',
-    });
-    return handleResponse(response);
-  },
 };
 
 // Export a function to check if user is authenticated
@@ -1202,12 +831,12 @@ export const isAuthenticated = (): boolean => {
 export const getCurrentUserId = (): string | null => {
   const token = getAuthToken();
   if (!token) return null;
-  
+
   try {
     // Decode JWT token (basic base64 decode of payload)
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     const payload = JSON.parse(atob(parts[1]));
     return payload.sub || payload.user_id || null;
   } catch (error) {

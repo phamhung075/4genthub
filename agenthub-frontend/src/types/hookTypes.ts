@@ -99,43 +99,6 @@ export interface UsePermissionsReturn {
 }
 
 // =============================================================================
-// Task Data Hook Types
-// =============================================================================
-
-/**
- * Options for useTaskData hook
- */
-export interface UseTaskDataOptions {
-  taskTreeId: string;
-  onTasksChanged?: () => void;
-}
-
-/**
- * Return type for useTaskData hook
- * Manages task summaries and full task data with loading states
- */
-export interface UseTaskDataReturn {
-  // State
-  taskSummaries: TaskSummary[];
-  fullTasks: Map<string, any>; // Using 'any' for Task type to avoid circular dependencies
-  totalTasks: number;
-  loading: boolean;
-  error: string | null;
-  loadingTasks: Set<string>;
-
-  // Actions
-  loadTaskSummaries: (page?: number) => Promise<void>;
-  loadFullTask: (taskId: string) => Promise<any | null>;
-  updateTaskFromData: (taskData: any) => void;
-  addNewTask: (taskData: any) => void;
-  removeTask: (taskId: string) => void;
-  setTotalTasks: React.Dispatch<React.SetStateAction<number>>;
-
-  // Utilities
-  convertToTaskSummary: (task: any) => TaskSummary;
-}
-
-// =============================================================================
 // Dialog Manager Hook Types
 // =============================================================================
 

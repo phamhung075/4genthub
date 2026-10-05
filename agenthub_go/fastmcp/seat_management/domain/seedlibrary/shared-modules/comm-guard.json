@@ -1,0 +1,1 @@
+{"permissions":{"deny":["Bash(rig send:*)","Bash(rig queue:*)","Bash(rig broadcast:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(seatcheck send:*)","Bash(rig whoami:*)"]}}

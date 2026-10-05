@@ -1,0 +1,18 @@
+GO BACKEND. The server is in agenthub_go and uses Postgres only.
+
+Conventions:
+- Packages under agenthub_go/fastmcp/* follow DDD layers: domain, application, infrastructure and interface (task_management has all four; seat_management has domain, application and infrastructure, and its HTTP routes are mounted in fastmcp/server/httpapp).
+- Tests are colocated *_test.go files. Dependencies that tests replace are package-level seams (variables), not interfaces added only for testing.
+- Foreign keys use no CASCADE by design; the application layer cascades deletions.
+- Schema SQL lives in infrastructure/schema, for example fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql. The ORM structs are the source of truth; update the SQL to match them.
+- Every table carries user_id and repositories filter by it.
+
+Seat management:
+- fastmcp/seat_management/domain holds commpolicy, resolver, rigspec, seatrenderer, secretscan, seedlibrary and seedmap.
+- Admin HTTP routes: fastmcp/server/httpapp/seat_admin_mount.go. Resolved-seat and rigspec routes: seat_mount.go and seat_rigspec_mount.go.
+
+Commands, from agenthub_go with GOCACHE and TMPDIR inside .gocache and .gotmp:
+- go vet ./fastmcp/<package>/...
+- go test ./fastmcp/<package>/... (run by package, not one large ./...)
+
+Check NEXT_GEN.md for current state before starting. Bump healthVersion in fastmcp/server/httpapp/http.go with each release, but never deploy.

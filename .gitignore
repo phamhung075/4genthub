@@ -67,6 +67,8 @@ agenthub_main/.claude/
 *secret*
 !*secret*.md
 !*secret*.test.*
+!agenthub_go/fastmcp/seat_management/domain/secretscan/
+!agenthub_go/fastmcp/seat_management/domain/secretscan/**
 
 # =============================================================================
 # BUILD OUTPUTS AND DEPENDENCIES
@@ -546,3 +548,25 @@ scripts/diagnose_*.py
 scripts/find-*.sh
 
 .gemini/settings.json
+
+# Swarm runtime state
+.swarm/
+
+# Go build caches, binaries, and local scratch
+.gocache/
+.gomodcache/
+.gotmp/
+agenthub_go/.gocache/
+agenthub_go/.gomodcache/
+agenthub_go/.gotmp/
+agenthub_go/agenthub
+agenthub_go/seatcheck
+agenthub_go/scratch/
+testground/
+
+# OpenRig runtime and orchestration files
+.openrig/
+.agents/
+AGENTS.md
+CULTURE.md
+rig.yaml

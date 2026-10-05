@@ -1,0 +1,725 @@
+{
+ "contexts": [
+  {
+   "id": "c1",
+   "context_type": "task",
+   "title": "Fix login bug",
+   "description": "oauth redirect fails",
+   "metadata": {
+    "a": "short",
+    "b": "long enough value",
+    "n": 5
+   }
+  },
+  {
+   "id": "c2",
+   "context_type": "branch",
+   "git_branch_name": "feature/login",
+   "details": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+   "context_id": "c3",
+   "context_type": "project",
+   "name": "Gamma project"
+  },
+  {
+   "id": "predicted_task",
+   "context_type": "task",
+   "title": "login flow task",
+   "description": "fix the login bug now"
+  },
+  {
+   "id": "predicted_file",
+   "title": "file ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctx"
+  },
+  {
+   "id": "zz",
+   "title": "zzz"
+  }
+ ],
+ "end_tools": [
+  "manage_task",
+  "Read",
+  "Edit",
+  "Bash"
+ ],
+ "end_ctx": [
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2",
+  "c1",
+  "c2"
+ ],
+ "end_none": {},
+ "ops": [
+  [
+   "select",
+   "login bug",
+   2000,
+   null
+  ],
+  [
+   "select",
+   "login bug",
+   2000,
+   null
+  ],
+  [
+   "select",
+   "login bug",
+   2000,
+   null
+  ],
+  [
+   "select",
+   "login bug",
+   2000,
+   null
+  ],
+  [
+   "start",
+   "sess",
+   "u1"
+  ],
+  [
+   "tool",
+   "manage_task",
+   "c1"
+  ],
+  [
+   "tool",
+   "Read",
+   ""
+  ],
+  [
+   "tool",
+   "Edit",
+   "c2"
+  ],
+  [
+   "tool",
+   "Bash",
+   ""
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "access",
+   "c1",
+   "task"
+  ],
+  [
+   "access",
+   "c2",
+   "task"
+  ],
+  [
+   "select",
+   "login bug",
+   2000,
+   {
+    "id": "c1"
+   }
+  ],
+  [
+   "select",
+   "login fix",
+   50,
+   {
+    "id": "c1"
+   }
+  ],
+  [
+   "select",
+   "zebra",
+   2000,
+   {
+    "id": "c2"
+   }
+  ],
+  [
+   "select",
+   "login bug flow",
+   5,
+   {
+    "id": "c2"
+   }
+  ],
+  [
+   "select",
+   "q",
+   100,
+   {
+    "context_id": "c1"
+   }
+  ],
+  [
+   "end"
+  ]
+ ],
+ "res": [
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login fix"
+    ],
+    [
+     "max_tokens",
+     50
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [
+    "c1"
+   ],
+   "tokens": 40,
+   "hit": 0.0,
+   "red": 0.8840579710144928,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "zebra"
+    ],
+    [
+     "max_tokens",
+     2000
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     1
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "login bug flow"
+    ],
+    [
+     "max_tokens",
+     5
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  },
+  {
+   "ids": [],
+   "tokens": 0,
+   "hit": 0.0,
+   "red": 1.0,
+   "time": 0.0,
+   "md": [
+    [
+     "query",
+     "q"
+    ],
+    [
+     "max_tokens",
+     100
+    ],
+    [
+     "contexts_considered",
+     6
+    ],
+    [
+     "contexts_selected",
+     0
+    ],
+    [
+     "semantic_matches",
+     0
+    ],
+    [
+     "expansion_path",
+     []
+    ],
+    [
+     "cache_used",
+     false
+    ]
+   ]
+  }
+ ],
+ "stats": {
+  "total_selections": 6,
+  "avg_selection_time_ms": 0.0,
+  "avg_hit_rate": 0.0,
+  "avg_size_reduction": 0.45916769565217397,
+  "cache_hit_rate": 0.271,
+  "time_target_achievement": 1.0,
+  "hit_rate_target_achievement": 0.0,
+  "size_reduction_target_achievement": 0.9183353913043479,
+  "available_contexts": 6,
+  "cached_results": 5
+ },
+ "stats_pred_total": 6,
+ "stats_prior": 2,
+ "stats_exp": {},
+ "hist_len": 6,
+ "opt": [
+  {
+   "in": [
+    0,
+    0.9,
+    0.5,
+    0
+   ],
+   "actions": [],
+   "thr": 0.5,
+   "cur": {
+    "avg_selection_time_ms": 0,
+    "avg_hit_rate": 0.9,
+    "avg_size_reduction": 0.45916769565217397
+   },
+   "tg": {
+    "max_selection_time_ms": 200.0,
+    "target_hit_rate": 0.9,
+    "target_size_reduction": 0.5
+   }
+  },
+  {
+   "in": [
+    190,
+    0.1,
+    0.0,
+    0
+   ],
+   "actions": [
+    "Increased similarity threshold: 0.50 \u2192 0.55",
+    "Reduced expansion candidates for faster selection",
+    "Decreased similarity threshold: 0.55 \u2192 0.50"
+   ],
+   "thr": 0.5,
+   "cur": {
+    "avg_selection_time_ms": 190,
+    "avg_hit_rate": 0.1,
+    "avg_size_reduction": 0.45916769565217397
+   },
+   "tg": {
+    "max_selection_time_ms": 200.0,
+    "target_hit_rate": 0.9,
+    "target_size_reduction": 0.5
+   }
+  },
+  {
+   "in": [
+    10,
+    0.1,
+    0.05,
+    11
+   ],
+   "actions": [
+    "Decreased similarity threshold: 0.50 \u2192 0.45",
+    "Cleared result cache to improve freshness"
+   ],
+   "thr": 0.45,
+   "cur": {
+    "avg_selection_time_ms": 10,
+    "avg_hit_rate": 0.1,
+    "avg_size_reduction": 0.45916769565217397
+   },
+   "tg": {
+    "max_selection_time_ms": 200.0,
+    "target_hit_rate": 0.9,
+    "target_size_reduction": 0.5
+   }
+  },
+  {
+   "in": [
+    0,
+    0.9,
+    0.5,
+    0
+   ],
+   "actions": [],
+   "thr": 0.45,
+   "cur": {
+    "avg_selection_time_ms": 0,
+    "avg_hit_rate": 0.9,
+    "avg_size_reduction": 0.45916769565217397
+   },
+   "tg": {
+    "max_selection_time_ms": 200.0,
+    "target_hit_rate": 0.9,
+    "target_size_reduction": 0.5
+   }
+  }
+ ],
+ "fb": {
+  "ids": [
+   "c1",
+   "c3",
+   "predicted_task",
+   "zz"
+  ],
+  "tokens": 94,
+  "t": 10.0,
+  "h": 0.5,
+  "s": 0.3,
+  "md": [
+   [
+    "fallback",
+    true
+   ]
+  ]
+ },
+ "evict_len": 84,
+ "evict_keys_tokens": [
+  121,
+  122,
+  123
+ ],
+ "content": [
+  "Fix login bug oauth redirect fails long enough value",
+  "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx feature/login",
+  "Gamma project",
+  "login flow task fix the login bug now",
+  "file ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctxfile ctx",
+  "zzz"
+ ],
+ "find": [
+  [
+   "c1",
+   "c1"
+  ],
+  [
+   "c3",
+   "c3"
+  ],
+  [
+   "None",
+   "c1"
+  ],
+  [
+   "zz",
+   "zz"
+  ],
+  [
+   "nope",
+   null
+  ]
+ ]
+}

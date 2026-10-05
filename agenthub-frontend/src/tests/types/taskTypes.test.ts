@@ -28,7 +28,7 @@ describe('taskTypes', () => {
           'done',
           'cancelled'
         ];
-        
+
         validStatuses.forEach(status => {
           const testStatus: TaskStatus = status;
           expect(testStatus).toBe(status);
@@ -51,7 +51,7 @@ describe('taskTypes', () => {
           'urgent',
           'critical'
         ];
-        
+
         validPriorities.forEach(priority => {
           const testPriority: TaskPriority = priority;
           expect(testPriority).toBe(priority);
@@ -79,7 +79,7 @@ describe('taskTypes', () => {
           'subtask-edit',
           'subtask-complete'
         ];
-        
+
         validDialogTypes.forEach(dialogType => {
           const testDialogType: DialogType = dialogType;
           expect(testDialogType).toBe(dialogType);
@@ -266,7 +266,7 @@ describe('taskTypes', () => {
         };
 
         expect(props.onTasksChanged).toBe(mockCallback);
-        
+
         // Test callback functionality
         props.onTasksChanged!();
         expect(mockCallback).toHaveBeenCalledTimes(1);
@@ -396,7 +396,7 @@ describe('taskTypes', () => {
 
         props.onHover('task-001');
         expect(mockHover).toHaveBeenCalledWith('task-001');
-        
+
         props.onHover(null);
         expect(mockHover).toHaveBeenCalledWith(null);
       });
@@ -548,7 +548,7 @@ describe('taskTypes', () => {
       it('should create valid TaskRowDesktopProps with table row element', () => {
         const tableRow = document.createElement('tr');
         const mockRef = { current: tableRow };
-        
+
         const props: TaskRowDesktopProps = {
           summary: {
             id: 'task-desk-002',
@@ -660,8 +660,7 @@ describe('taskTypes', () => {
         id: 'subtask-edge-001',
         title: 'Minimal Subtask',
         status: 'todo',
-        priority: 'low',
-        assignees: []
+        priority: 'low'
       };
 
       expect(subtask.assignees).toBeUndefined();

@@ -13,7 +13,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from './../../test-utils';
-import { BrowserRouter } from 'react-router-dom';
 import SubtaskRowRefactored from '../../../components/SubtaskRow/SubtaskRowRefactored';
 import type { SubtaskSummary } from '../../../types/subtaskTypes';
 
@@ -34,8 +33,8 @@ vi.mock('../../../components/ui/CopyableId', () => ({
 }));
 
 vi.mock('../../../components/ui/ParentTaskReference', () => ({
-  ParentTaskReference: ({ taskId }: any) => (
-    <div data-testid="parent-task-ref">Parent: {taskId}</div>
+  ParentTaskReference: ({ parentTaskId }: any) => (
+    <div data-testid="parent-task-ref">Parent: {parentTaskId}</div>
   )
 }));
 
@@ -77,13 +76,11 @@ vi.mock('../../../components/SubtaskRow/components/SubtaskRowActions', () => ({
 }));
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
-  <BrowserRouter>
-    <table>
-      <tbody>
-        {children}
-      </tbody>
-    </table>
-  </BrowserRouter>
+  <table>
+    <tbody>
+      {children}
+    </tbody>
+  </table>
 );
 
 describe('SubtaskRowRefactored - Phase 1 Assignees Count', () => {

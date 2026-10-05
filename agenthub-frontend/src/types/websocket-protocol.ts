@@ -216,6 +216,7 @@ export interface WSMetadata {
   project_id?: string;
   git_branch_id?: string;
   task_id?: string;
+  agent_name?: string;
 
   // Display metadata (for toasts)
   project_name?: string;

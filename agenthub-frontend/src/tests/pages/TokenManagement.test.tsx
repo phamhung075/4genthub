@@ -1,11 +1,13 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from './../test-utils';
 import { vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { TokenManagement } from '../../pages/TokenManagement';
 import { tokenService } from '../../services/tokenService';
 import { format } from 'date-fns';
-import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../../contexts/AuthContext';
+import { ThemeProvider } from '../../contexts/ThemeContext';
+import logger from '../../utils/logger';
 
 // Mock dependencies
 vi.mock('../../services/tokenService');
@@ -60,41 +62,61 @@ const mockTokens: APIToken[] = [
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
-    <BrowserRouter>
+    <ThemeProvider>
       <AuthProvider>
         {component}
       </AuthProvider>
-    </BrowserRouter>
+    </ThemeProvider>
   );
 };
 
 describe('TokenManagement', () => {
+  // Scope cards render a resource span ("Tasks") and a verb badge ("Read").
+  // Find the card that matches a specific resource/verb pair.
+  const getScopeCard = (resource: string, verb: string) => {
+    const cards = screen.getAllByText(resource)
+      .map((el) => el.closest('.cursor-pointer'))
+      .filter((card): card is HTMLElement => card instanceof HTMLElement);
+
+    const match = cards.find((card) => within(card).queryByText(verb));
+    if (!match) {
+      throw new Error(`Scope card "${resource} / ${verb}" not found`);
+    }
+    return match;
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset the service mocks (clears any queued once-implementations) without
+    // touching the global mocks installed by src/setupTests.ts.
+    mockTokenService.listTokens.mockReset();
+    mockTokenService.generateToken.mockReset();
+    mockTokenService.revokeToken.mockReset();
+    vi.mocked(format).mockImplementation(() => 'formatted-date');
     mockTokenService.listTokens.mockResolvedValue({ data: mockTokens, total: mockTokens.length });
   });
 
   describe('Tab functionality', () => {
     it('should display Generate Token tab by default', () => {
       renderWithProviders(<TokenManagement />);
-      
+
       // Check that Generate Token tab content is visible
       expect(screen.getByText('Generate New API Token')).toBeInTheDocument();
-      expect(screen.getByLabelText('Token Name')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Production API/)).toBeInTheDocument();
     });
 
     it('should switch to Active Tokens tab and fetch tokens', async () => {
       renderWithProviders(<TokenManagement />);
-      
-      // Click on Active Tokens tab
+
+      // Click on Active Tokens tab (Radix activates on mousedown/pointer events)
       const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-      fireEvent.click(activeTokensTab);
-      
+      await userEvent.click(activeTokensTab);
+
       // Wait for tokens to be fetched
       await waitFor(() => {
         expect(mockTokenService.listTokens).toHaveBeenCalled();
       });
-      
+
       // Check that tokens are displayed
       await waitFor(() => {
         expect(screen.getByText('Test Token 1')).toBeInTheDocument();
@@ -102,13 +124,13 @@ describe('TokenManagement', () => {
       });
     });
 
-    it('should show Settings tab with info message', () => {
+    it('should show Settings tab with info message', async () => {
       renderWithProviders(<TokenManagement />);
-      
+
       // Click on Settings tab
       const settingsTab = screen.getByRole('tab', { name: /settings/i });
-      fireEvent.click(settingsTab);
-      
+      await userEvent.click(settingsTab);
+
       expect(screen.getByText('Token Settings')).toBeInTheDocument();
       expect(screen.getByText(/Token settings configuration will be available in a future update/i)).toBeInTheDocument();
     });
@@ -116,30 +138,27 @@ describe('TokenManagement', () => {
 
   it('renders the page title and description', () => {
     renderWithProviders(<TokenManagement />);
-    
+
     expect(screen.getByText('API Token Management')).toBeInTheDocument();
-    expect(screen.getByText(/Generate and manage API tokens for MCP authentication/i)).toBeInTheDocument();
+    expect(screen.getByText(/Generate and manage secure API tokens for MCP authentication/i)).toBeInTheDocument();
   });
 
   describe('Scope selection', () => {
     it('should have correct available scopes', () => {
       renderWithProviders(<TokenManagement />);
-      
-      // Check for scope checkboxes
-      const scopeCheckboxes = screen.getAllByRole('checkbox');
-      
-      // Get all chip labels which represent scopes
-      const chipElements = screen.getAllByText(/Read|Write|Execute/i);
-      const scopeNames = chipElements.map(el => el.textContent);
-      
-      expect(scopeNames).toContain('Read Tasks');
-      expect(scopeNames).toContain('Write Tasks');
-      expect(scopeNames).toContain('Read Context');
-      expect(scopeNames).toContain('Write Context');
-      expect(scopeNames).toContain('Read Agents');
-      expect(scopeNames).toContain('Write Agents');
-      expect(scopeNames).toContain('Execute MCP');
-      expect(scopeNames).not.toContain('Admin');
+
+      // Scopes are grouped by category headings
+      const categories = ['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute'];
+      categories.forEach((category) => {
+        expect(screen.getByText(`${category} Permissions`)).toBeInTheDocument();
+      });
+
+      // The four Tasks CRUD scopes render as four "Tasks" scope cards
+      expect(screen.getAllByText('Tasks')).toHaveLength(4);
+      // Execute MCP is represented by the "Execute" verb badge
+      expect(screen.getAllByText('Execute').length).toBeGreaterThanOrEqual(1);
+      // Admin is not an available scope
+      expect(screen.queryByText('Admin')).not.toBeInTheDocument();
     });
   });
 
@@ -147,7 +166,7 @@ describe('TokenManagement', () => {
     const newToken: APIToken = {
       id: '3',
       name: 'New Token',
-      scopes: ['read:tasks', 'write:tasks'],
+      scopes: ['tasks:read', 'tasks:update'],
       token: 'generated-token-value',
       is_active: true,
       rate_limit: 200,
@@ -156,48 +175,40 @@ describe('TokenManagement', () => {
       last_used_at: undefined,
       usage_count: 0,
     };
-    
+
     mockTokenService.generateToken.mockResolvedValue({ data: newToken });
-    mockTokenService.listTokens
-      .mockResolvedValueOnce({ data: mockTokens, total: mockTokens.length })
-      .mockResolvedValueOnce({ data: [...mockTokens, newToken], total: mockTokens.length + 1 });
-    
+
     renderWithProviders(<TokenManagement />);
-    
+
     // Fill form
-    const nameInput = screen.getByLabelText(/Token Name/i);
+    const nameInput = screen.getByPlaceholderText(/Production API/);
     fireEvent.change(nameInput, { target: { value: 'New Token' } });
-    
+
     // Select scopes
-    const readTasksCheckbox = screen.getByRole('checkbox', { name: /read tasks/i });
-    const writeTasksCheckbox = screen.getByRole('checkbox', { name: /write tasks/i });
-    fireEvent.click(readTasksCheckbox);
-    fireEvent.click(writeTasksCheckbox);
-    
-    // Set expiry days
-    const expiryInput = screen.getByLabelText(/Expiry \(days\)/i);
+    fireEvent.click(getScopeCard('Tasks', 'Read'));
+    fireEvent.click(getScopeCard('Tasks', 'Update'));
+
+    // Set expiry days and rate limit (the two number inputs)
+    const [expiryInput, rateLimitInput] = screen.getAllByRole('spinbutton');
     fireEvent.change(expiryInput, { target: { value: '30' } });
-    
-    // Set rate limit
-    const rateLimitInput = screen.getByLabelText(/Rate Limit/i);
     fireEvent.change(rateLimitInput, { target: { value: '200' } });
 
     // Submit form
-    const submitButton = screen.getByRole('button', { name: /Generate Token/i });
+    const submitButton = screen.getByRole('button', { name: /Generate API Token/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
       expect(mockTokenService.generateToken).toHaveBeenCalledWith({
         name: 'New Token',
-        scopes: ['read:tasks', 'write:tasks'],
+        scopes: ['tasks:read', 'tasks:update'],
         expires_in_days: 30,
         rate_limit: 200,
       });
     });
 
-    // Check if token display dialog is shown
+    // Check if the generated token dialog is shown
     await waitFor(() => {
-      expect(screen.getByText(/Token Generated Successfully/i)).toBeInTheDocument();
+      expect(screen.getByText(/MCP Configuration Generated/i)).toBeInTheDocument();
       expect(screen.getByText('generated-token-value')).toBeInTheDocument();
     });
   });
@@ -212,27 +223,26 @@ describe('TokenManagement', () => {
       id: '3',
       name: 'New Token',
       token: 'test-token-to-copy',
-      scopes: ['read:tasks'],
+      scopes: ['tasks:read'],
       is_active: true,
       rate_limit: 100,
       created_at: '2024-01-04T00:00:00Z',
       expires_at: '2024-02-04T00:00:00Z',
       usage_count: 0,
     };
-    
+
     mockTokenService.generateToken.mockResolvedValue({ data: newToken });
-    
+
     renderWithProviders(<TokenManagement />);
-    
+
     // Create a token
-    const nameInput = screen.getByLabelText(/Token Name/i);
+    const nameInput = screen.getByPlaceholderText(/Production API/);
     fireEvent.change(nameInput, { target: { value: 'New Token' } });
-    
+
     // Select at least one scope
-    const readTasksCheckbox = screen.getByRole('checkbox', { name: /read tasks/i });
-    fireEvent.click(readTasksCheckbox);
-    
-    const submitButton = screen.getByRole('button', { name: /Generate Token/i });
+    fireEvent.click(getScopeCard('Tasks', 'Read'));
+
+    const submitButton = screen.getByRole('button', { name: /Generate API Token/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -244,7 +254,7 @@ describe('TokenManagement', () => {
     fireEvent.click(copyButton);
 
     expect(mockClipboard.writeText).toHaveBeenCalledWith('test-token-to-copy');
-    
+
     await waitFor(() => {
       expect(screen.getByText(/Copied to clipboard/i)).toBeInTheDocument();
     });
@@ -255,30 +265,28 @@ describe('TokenManagement', () => {
     mockTokenService.listTokens
       .mockResolvedValueOnce({ data: mockTokens, total: mockTokens.length })
       .mockResolvedValueOnce({ data: [mockTokens[1]], total: 1 });
-    
+
     renderWithProviders(<TokenManagement />);
-    
+
     // Switch to Active Tokens tab
     const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-    fireEvent.click(activeTokensTab);
-    
+    await userEvent.click(activeTokensTab);
+
     await waitFor(() => {
       expect(screen.getByText('Test Token 1')).toBeInTheDocument();
     });
 
-    // Find delete button for first token
-    const firstTokenRow = screen.getByText('Test Token 1').closest('tr')!;
-    const deleteButton = within(firstTokenRow).getByRole('button');
-    
-    fireEvent.click(deleteButton);
+    // Find revoke button for first token and open the dialog
+    const revokeButtons = screen.getAllByRole('button', { name: /Revoke Token/i });
+    fireEvent.click(revokeButtons[0]);
 
     // Confirm deletion
     await waitFor(() => {
       expect(screen.getByText(/Revoke API Token/i)).toBeInTheDocument();
     });
-    
-    const confirmButton = screen.getByRole('button', { name: /Revoke Token/i });
-    fireEvent.click(confirmButton);
+
+    const dialog = screen.getByText('Revoke API Token').closest('.theme-modal')!;
+    fireEvent.click(within(dialog).getByRole('button', { name: /Revoke Token/i }));
 
     await waitFor(() => {
       expect(mockTokenService.revokeToken).toHaveBeenCalledWith('1');
@@ -292,28 +300,26 @@ describe('TokenManagement', () => {
 
   it('cancels token revocation when cancel is clicked', async () => {
     renderWithProviders(<TokenManagement />);
-    
+
     // Switch to Active Tokens tab
     const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-    fireEvent.click(activeTokensTab);
-    
+    await userEvent.click(activeTokensTab);
+
     await waitFor(() => {
       expect(screen.getByText('Test Token 1')).toBeInTheDocument();
     });
 
-    // Find delete button for first token
-    const firstTokenRow = screen.getByText('Test Token 1').closest('tr')!;
-    const deleteButton = within(firstTokenRow).getByRole('button');
-    
-    fireEvent.click(deleteButton);
+    // Find revoke button for first token and open the dialog
+    const revokeButtons = screen.getAllByRole('button', { name: /Revoke Token/i });
+    fireEvent.click(revokeButtons[0]);
 
     // Cancel deletion
     await waitFor(() => {
       expect(screen.getByText(/Revoke API Token/i)).toBeInTheDocument();
     });
-    
-    const cancelButton = screen.getByRole('button', { name: /cancel/i });
-    fireEvent.click(cancelButton);
+
+    const dialog = screen.getByText('Revoke API Token').closest('.theme-modal')!;
+    fireEvent.click(within(dialog).getByRole('button', { name: /cancel/i }));
 
     await waitFor(() => {
       expect(screen.queryByText(/Revoke API Token/i)).not.toBeInTheDocument();
@@ -323,24 +329,23 @@ describe('TokenManagement', () => {
   });
 
   it('displays error message when token generation fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
     mockTokenService.generateToken.mockRejectedValue(new Error('Generation failed'));
-    
+
     renderWithProviders(<TokenManagement />);
-    
+
     // Fill and submit form
-    const nameInput = screen.getByLabelText(/Token Name/i);
+    const nameInput = screen.getByPlaceholderText(/Production API/);
     fireEvent.change(nameInput, { target: { value: 'New Token' } });
-    
+
     // Select at least one scope
-    const readTasksCheckbox = screen.getByRole('checkbox', { name: /read tasks/i });
-    fireEvent.click(readTasksCheckbox);
-    
-    const submitButton = screen.getByRole('button', { name: /Generate Token/i });
+    fireEvent.click(getScopeCard('Tasks', 'Read'));
+
+    const submitButton = screen.getByRole('button', { name: /Generate API Token/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error generating token:', expect.any(Error));
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error generating token:', expect.any(Error));
     });
 
     // Should show error alert
@@ -348,21 +353,21 @@ describe('TokenManagement', () => {
       expect(screen.getByText('Generation failed')).toBeInTheDocument();
     });
 
-    consoleErrorSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 
   it('displays error message when loading tokens fails', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
     mockTokenService.listTokens.mockRejectedValue(new Error('Load failed'));
-    
+
     renderWithProviders(<TokenManagement />);
-    
+
     // Switch to Active Tokens tab to trigger loading
     const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-    fireEvent.click(activeTokensTab);
+    await userEvent.click(activeTokensTab);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching tokens:', expect.any(Error));
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Error fetching tokens:', expect.any(Error));
     });
 
     // Should show error alert
@@ -370,16 +375,16 @@ describe('TokenManagement', () => {
       expect(screen.getByText('Load failed')).toBeInTheDocument();
     });
 
-    consoleErrorSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 
   it('formats dates correctly', async () => {
     renderWithProviders(<TokenManagement />);
-    
+
     // Switch to Active Tokens tab
     const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-    fireEvent.click(activeTokensTab);
-    
+    await userEvent.click(activeTokensTab);
+
     await waitFor(() => {
       expect(screen.getByText('Test Token 1')).toBeInTheDocument();
     });
@@ -390,39 +395,37 @@ describe('TokenManagement', () => {
 
   it('displays usage count and last used information', async () => {
     renderWithProviders(<TokenManagement />);
-    
+
     // Switch to Active Tokens tab
     const activeTokensTab = screen.getByRole('tab', { name: /active tokens/i });
-    fireEvent.click(activeTokensTab);
-    
+    await userEvent.click(activeTokensTab);
+
     await waitFor(() => {
       expect(screen.getByText('Test Token 1')).toBeInTheDocument();
     });
 
     // Check usage count
-    expect(screen.getByText('42 requests')).toBeInTheDocument();
-    expect(screen.getByText('0 requests')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText(/Last used:/)).toBeInTheDocument();
   });
 
-  it('validates form fields before submission', async () => {
+  it('should require a token name and at least one scope before submission', async () => {
     renderWithProviders(<TokenManagement />);
-    
-    // Try to submit with empty name
-    const submitButton = screen.getByRole('button', { name: /Generate Token/i });
-    fireEvent.click(submitButton);
 
-    // Should show error
-    await waitFor(() => {
-      expect(screen.getByText('Token name is required')).toBeInTheDocument();
-    });
+    // Button starts disabled with an empty form
+    const submitButton = screen.getByRole('button', { name: /Generate API Token/i });
+    expect(submitButton).toBeDisabled();
 
     // Fill name but no scopes
-    const nameInput = screen.getByLabelText(/Token Name/i);
+    const nameInput = screen.getByPlaceholderText(/Production API/);
     fireEvent.change(nameInput, { target: { value: 'Test' } });
-    fireEvent.click(submitButton);
+    expect(submitButton).toBeDisabled();
 
+    // Select a scope -> now the button is enabled
+    fireEvent.click(getScopeCard('Tasks', 'Read'));
     await waitFor(() => {
-      expect(screen.getByText('At least one scope must be selected')).toBeInTheDocument();
+      expect(submitButton).not.toBeDisabled();
     });
 
     expect(mockTokenService.generateToken).not.toHaveBeenCalled();

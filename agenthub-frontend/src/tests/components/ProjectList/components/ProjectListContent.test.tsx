@@ -41,12 +41,12 @@ describe('ProjectListContent', () => {
       'branch-1': {
         id: 'branch-1',
         git_branch_name: 'main',
-        tasks: ['task-1', 'task-2', 'task-3'],
+        task_count: 3,
       },
       'branch-2': {
         id: 'branch-2',
         git_branch_name: 'feature/test',
-        tasks: ['task-1', 'task-2', 'task-3', 'task-4', 'task-5'],
+        task_count: 5,
       },
     },
   };
@@ -58,7 +58,7 @@ describe('ProjectListContent', () => {
       'branch-3': {
         id: 'branch-3',
         git_branch_name: 'develop',
-        tasks: ['task-1', 'task-2'],
+        task_count: 2,
       },
     },
   };
@@ -131,7 +131,7 @@ describe('ProjectListContent', () => {
       id: 'project-3',
       name: 'Single Branch Project',
       git_branchs: {
-        'branch-4': { id: 'branch-4', tasks: ['task-1'] },
+        'branch-4': { id: 'branch-4', task_count: 1 },
       },
     };
 
@@ -155,31 +155,32 @@ describe('ProjectListContent', () => {
 
   it('hides branches when project is closed', () => {
     render(<ProjectListContent {...defaultProps} />);
-    // Project 2 is closed by default
-    expect(screen.queryByTestId('branch-branch-3')).toHaveStyle({ display: 'none' });
+    // Project 2 is closed by default: its branch list stays in the DOM, hidden
+    expect(screen.getByTestId('branch-branch-3').closest('ul')).toHaveStyle({ display: 'none' });
+    expect(screen.getByTestId('branch-branch-1').closest('ul')).toHaveStyle({ display: 'flex' });
   });
 
   it('calls action handlers for project buttons', () => {
     render(<ProjectListContent {...defaultProps} />);
-    
+
     // Find buttons for Project One
     const buttons = screen.getAllByRole('button');
-    
+
     // View project details
     const viewButton = buttons.find(btn => btn.getAttribute('aria-label') === 'View Project Details');
     fireEvent.click(viewButton!);
     expect(defaultProps.onShowProjectDetails).toHaveBeenCalledWith(mockProject1);
-    
+
     // Create branch
     const createBranchButton = buttons.find(btn => btn.getAttribute('aria-label') === 'Create Branch');
     fireEvent.click(createBranchButton!);
     expect(defaultProps.onCreateBranch).toHaveBeenCalledWith(mockProject1);
-    
+
     // Edit project
     const editButton = buttons.find(btn => btn.getAttribute('aria-label') === 'Edit');
     fireEvent.click(editButton!);
     expect(defaultProps.onEditProject).toHaveBeenCalledWith(mockProject1);
-    
+
     // Delete project
     const deleteButton = buttons.find(btn => btn.getAttribute('aria-label') === 'Delete');
     fireEvent.click(deleteButton!);
@@ -209,7 +210,7 @@ describe('ProjectListContent', () => {
       id: 'project-empty',
       name: 'Empty Project',
     };
-    
+
     render(<ProjectListContent {...defaultProps} projects={[projectWithoutBranches]} />);
     expect(screen.getByText('Empty Project')).toBeInTheDocument();
     // Should not show branch badge
@@ -218,11 +219,11 @@ describe('ProjectListContent', () => {
 
   it('applies correct chevron icon based on project open state', () => {
     render(<ProjectListContent {...defaultProps} />);
-    
+
     // Project 1 is open - should have ChevronDown
     const project1Container = screen.getByText('Project One').closest('.group');
     expect(project1Container?.querySelector('svg')).toBeInTheDocument();
-    
+
     // Project 2 is closed - should have ChevronRight
     const project2Container = screen.getByText('Project Two').closest('.group');
     expect(project2Container?.querySelector('svg')).toBeInTheDocument();
@@ -241,7 +242,7 @@ describe('ProjectListContent', () => {
     const animatingCounts = new Map([['branch-1', 'up' as const]]);
     const newBranches = new Set(['branch-2']);
     const fadingOutBranches = new Set(['branch-3']);
-    
+
     render(
       <ProjectListContent
         {...defaultProps}
@@ -250,7 +251,7 @@ describe('ProjectListContent', () => {
         fadingOutBranches={fadingOutBranches}
       />
     );
-    
+
     // BranchItem mock should receive these props
     expect(screen.getByTestId('branch-branch-1')).toBeInTheDocument();
     expect(screen.getByTestId('branch-branch-2')).toBeInTheDocument();
@@ -264,7 +265,7 @@ describe('ProjectListContent', () => {
         'branch-4': {
           id: 'branch-4',
           git_branch_name: 'main',
-          tasks: [],
+          task_count: 0,
         },
       },
     };
@@ -277,23 +278,17 @@ describe('ProjectListContent', () => {
       />
     );
 
-    // Should use tasks array length
+    // task_count 0 shows 0
     expect(screen.getByText('main (0)')).toBeInTheDocument();
   });
 
-  it('handles optional callback functions being undefined', () => {
-    const propsWithUndefinedCallbacks = {
-      ...defaultProps,
-      onShowProjectDetails: undefined,
-      onShowBranchDetails: undefined,
-    };
-    
-    render(<ProjectListContent {...propsWithUndefinedCallbacks} />);
-    
-    const buttons = screen.getAllByRole('button');
-    const viewButton = buttons.find(btn => btn.getAttribute('aria-label') === 'View Project Details');
-    
-    // Should not throw when clicking with undefined handler
-    expect(() => fireEvent.click(viewButton!)).not.toThrow();
+  it('omits the project details button without onShowProjectDetails', () => {
+    render(<ProjectListContent {...defaultProps} onShowProjectDetails={undefined} onShowBranchDetails={undefined} />);
+
+    expect(screen.queryByRole('button', { name: 'View Project Details' })).not.toBeInTheDocument();
+    // The other project actions are unaffected
+    expect(screen.getAllByRole('button', { name: 'Create Branch' })).toHaveLength(2);
+    // Branches still render without onShowBranchDetails
+    expect(screen.getByTestId('branch-branch-1')).toBeInTheDocument();
   });
 });

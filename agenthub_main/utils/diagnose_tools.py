@@ -107,7 +107,6 @@ def diagnose_server_creation():
                 "manage_task",
                 "manage_subtask",
                 "manage_agent",
-                "call_agent",
             ]
         ]
         core_tools = [

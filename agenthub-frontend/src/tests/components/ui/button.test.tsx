@@ -18,7 +18,7 @@ describe('Button', () => {
 
   it('renders with default props', () => {
     render(<Button>Click me</Button>);
-    
+
     const button = screen.getByRole('button', { name: /click me/i });
     expect(button).toBeInTheDocument();
     // Check that the button's className contains the expected classes
@@ -31,7 +31,7 @@ describe('Button', () => {
   describe('variants', () => {
     it('renders default variant', () => {
       render(<Button variant="default">Default</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('theme-btn-primary');
     });
@@ -54,14 +54,14 @@ describe('Button', () => {
 
     it('renders ghost variant', () => {
       render(<Button variant="ghost">Ghost</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('theme-btn-ghost');
     });
 
     it('renders link variant', () => {
       render(<Button variant="link">Link</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('underline-offset-4');
       expect(button.className).toContain('hover:underline');
@@ -72,7 +72,7 @@ describe('Button', () => {
   describe('sizes', () => {
     it('renders default size', () => {
       render(<Button size="default">Default</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('h-10');
       expect(button.className).toContain('px-4');
@@ -81,7 +81,7 @@ describe('Button', () => {
 
     it('renders small size', () => {
       render(<Button size="sm">Small</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('h-9');
       expect(button.className).toContain('px-3');
@@ -89,7 +89,7 @@ describe('Button', () => {
 
     it('renders large size', () => {
       render(<Button size="lg">Large</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('h-11');
       expect(button.className).toContain('px-8');
@@ -97,7 +97,7 @@ describe('Button', () => {
 
     it('renders icon size', () => {
       render(<Button size="icon">🔥</Button>);
-      
+
       const button = screen.getByRole('button');
       expect(button.className).toContain('h-10');
       expect(button.className).toContain('w-10');
@@ -110,7 +110,7 @@ describe('Button', () => {
 
   it('applies custom className', () => {
     render(<Button className="custom-class">Custom</Button>);
-    
+
     const button = screen.getByRole('button');
     expect(button.className).toContain('custom-class');
   });
@@ -118,7 +118,7 @@ describe('Button', () => {
   it('forwards ref correctly', () => {
     const ref = React.createRef<HTMLButtonElement>();
     render(<Button ref={ref}>Ref Button</Button>);
-    
+
     expect(ref.current).toBeInstanceOf(HTMLButtonElement);
     expect(ref.current?.textContent).toBe('Ref Button');
   });
@@ -126,29 +126,29 @@ describe('Button', () => {
   it('handles click events', () => {
     const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
-    
+
     const button = screen.getByRole('button');
     fireEvent.click(button);
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
   it('respects disabled state', () => {
     const handleClick = vi.fn();
     render(<Button disabled onClick={handleClick}>Disabled</Button>);
-    
+
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
     expect(button.className).toContain('disabled:opacity-50');
     expect(button.className).toContain('disabled:pointer-events-none');
-    
+
     fireEvent.click(button);
     expect(handleClick).not.toHaveBeenCalled();
   });
 
   it('applies all base classes', () => {
     render(<Button>Base Classes</Button>);
-    
+
     const button = screen.getByRole('button');
     expect(button.className).toContain('inline-flex');
     expect(button.className).toContain('items-center');
@@ -176,7 +176,7 @@ describe('Button', () => {
         HTML Attributes
       </Button>
     );
-    
+
     const button = screen.getByRole('button');
     expect(button).toHaveAttribute('type', 'submit');
     expect(button).toHaveAttribute('name', 'test-button');
@@ -187,9 +187,9 @@ describe('Button', () => {
 
   it('combines variant and size classes correctly', () => {
     render(<Button variant="outline" size="lg">Combined</Button>);
-    
+
     const button = screen.getByRole('button');
-    expect(button.className).toContain('theme-btn-outline');
+    expect(button.className).toContain('border-gray-200');
     expect(button.className).toContain('h-11');
     expect(button.className).toContain('px-8');
   });
@@ -197,10 +197,10 @@ describe('Button', () => {
   it('calls cn utility with correct arguments', () => {
     const customClass = 'my-custom-class';
     render(<Button variant="secondary" size="sm" className={customClass}>CN Test</Button>);
-    
+
     expect(cn).toHaveBeenCalledWith(
       expect.stringContaining('inline-flex'),
-      'theme-btn-secondary',
+      expect.stringMatching(/(^|\s)bg-gray-50(\s|$)/),
       'h-9 px-3',
       customClass
     );
@@ -213,7 +213,7 @@ describe('Button', () => {
         <span>Text</span>
       </Button>
     );
-    
+
     expect(screen.getByText('Icon')).toBeInTheDocument();
     expect(screen.getByText('Text')).toBeInTheDocument();
   });

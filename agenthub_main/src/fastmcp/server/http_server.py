@@ -383,6 +383,18 @@ def _register_websocket_lifecycle(v2_app) -> None:
         v2_app.include_router(websocket_router)
         logger.info("✅ WebSocket routes registered at /ws/realtime")
 
+        # Isolated: a failure here must not skip the retry-queue/cleanup
+        # startup hooks registered below for the existing /ws/realtime route.
+        try:
+            from .routes.session_stream_routes import router as session_stream_router
+
+            v2_app.include_router(session_stream_router)
+            logger.info(
+                "✅ Session stream routes registered (/ws/connector, /ws/sessions)"
+            )
+        except Exception as e:
+            logger.error(f"Session stream routes not registered: {e}")
+
         # Start the WebSocket message retry queue processor on startup
         @v2_app.on_event("startup")
         async def startup_websocket_retry_queue():
@@ -474,8 +486,6 @@ def create_sse_app(
     try:
         from fastapi import FastAPI
 
-        from ..agent_management.interface.rest import router as agent_management_router
-        from .routes.agent_routes import router as agent_router
         from .routes.branch_routes import router as branch_router
         from .routes.connection_routes import router as connection_router
         from .routes.project_routes import router as project_router
@@ -489,10 +499,8 @@ def create_sse_app(
         v2_app.include_router(task_router)
         v2_app.include_router(task_summary_router)
         v2_app.include_router(branch_router)
-        v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
-        v2_app.include_router(agent_management_router)
 
         # Unified authentication routes removed - using Keycloak/Supabase directly
         # Authentication is handled through middleware and fastapi_auth.py
@@ -603,9 +611,6 @@ def create_sse_app(
     # Store the FastMCP server instance on the Starlette app state
     app.state.fastmcp_server = server
     app.state.path = sse_path
-
-    # Agent metadata routes are now part of the FastAPI v2 routes at /api/v2/agents
-    # Legacy agent_metadata registration removed
 
     return app
 
@@ -786,8 +791,6 @@ def create_streamable_http_app(
     try:
         from fastapi import FastAPI
 
-        from ..agent_management.interface.rest import router as agent_management_router
-        from .routes.agent_routes import router as agent_router
         from .routes.branch_routes import router as branch_router
         from .routes.connection_routes import router as connection_router
         from .routes.project_routes import router as project_router
@@ -801,10 +804,8 @@ def create_streamable_http_app(
         v2_app.include_router(task_router)
         v2_app.include_router(task_summary_router)
         v2_app.include_router(branch_router)
-        v2_app.include_router(agent_router)
         v2_app.include_router(subtask_router)
         v2_app.include_router(connection_router)
-        v2_app.include_router(agent_management_router)
 
         # Token management routes are now handled by /api/v2/tokens router
 

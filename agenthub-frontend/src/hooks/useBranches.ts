@@ -1,32 +1,8 @@
 // Custom hook for branch management with React Query
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createBranch, deleteBranch, listBranches, updateBranch } from '../api';
+import { createBranch, deleteBranch } from '../api';
 import type { Branch } from '../types/api.types';
 import logger from '../utils/logger';
-
-/**
- * Hook to fetch all branches for a project with caching
- * @param projectId Project ID to fetch branches for
- * @returns Query result with branches list, loading state, and error
- */
-export const useBranches = (projectId: string | undefined) => {
-  return useQuery({
-    queryKey: ['branches', projectId],
-    queryFn: async () => {
-      if (!projectId) return [];
-
-      logger.debug('[useBranches] Fetching branches for project:', projectId);
-      const branches = await listBranches(projectId);
-      logger.debug('[useBranches] Fetched branches:', branches.length);
-      return branches;
-    },
-    enabled: !!projectId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2,
-    refetchOnWindowFocus: false
-  });
-};
 
 /**
  * Hook to fetch a single branch by ID
@@ -63,8 +39,8 @@ export const useBranch = (branchId: string | undefined) => {
 };
 
 /**
- * Hook providing mutations for branch CRUD operations with optimistic updates
- * @returns Object with create, update, and delete mutation functions
+ * Hook providing mutations for branch create and delete operations with optimistic updates
+ * @returns Object with create and delete mutation functions
  */
 export const useBranchMutations = () => {
   const queryClient = useQueryClient();
@@ -119,65 +95,6 @@ export const useBranchMutations = () => {
       // Also invalidate parent project to update branch count
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-    }
-  });
-
-  // Update branch mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ branchId, updates }: { branchId: string; updates: Partial<Branch> }) => {
-      logger.debug('[useBranchMutations] Updating branch', { branchId, updates });
-      return await updateBranch(branchId, updates);
-    },
-    onMutate: async ({ branchId, updates }) => {
-      // Find the project_id from existing cache
-      let projectId: string | undefined;
-      const allBranchesQueries = queryClient.getQueriesData<Branch[]>({ queryKey: ['branches'] });
-
-      for (const [, branches] of allBranchesQueries) {
-        if (branches) {
-          const branch = branches.find(b => b.id === branchId);
-          if (branch) {
-            projectId = branch.project_id;
-            break;
-          }
-        }
-      }
-
-      if (projectId) {
-        await queryClient.cancelQueries({ queryKey: ['branches', projectId] });
-      }
-
-      const previousBranches = projectId
-        ? queryClient.getQueryData<Branch[]>(['branches', projectId])
-        : undefined;
-
-      // Optimistically update branches list
-      if (previousBranches && projectId) {
-        queryClient.setQueryData<Branch[]>(
-          ['branches', projectId],
-          previousBranches.map(b =>
-            b.id === branchId ? { ...b, ...updates, updated_at: new Date().toISOString() } : b
-          )
-        );
-      }
-
-      return { previousBranches, projectId };
-    },
-    onError: (err, _, context: any) => {
-      logger.error('[useBranchMutations] Update failed:', err);
-      if (context?.previousBranches && context?.projectId) {
-        queryClient.setQueryData(['branches', context.projectId], context.previousBranches);
-      }
-    },
-    onSuccess: (data) => {
-      logger.debug('[useBranchMutations] Branch updated:', data);
-      const projectId = data.project_id;
-
-      if (projectId) {
-        queryClient.invalidateQueries({ queryKey: ['branches', projectId] });
-        queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
-      }
     }
   });
 
@@ -246,12 +163,6 @@ export const useBranchMutations = () => {
     createBranchAsync: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     createError: createMutation.error,
-
-    // Update
-    updateBranch: updateMutation.mutate,
-    updateBranchAsync: updateMutation.mutateAsync,
-    isUpdating: updateMutation.isPending,
-    updateError: updateMutation.error,
 
     // Delete
     deleteBranch: deleteMutation.mutate,

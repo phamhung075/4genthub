@@ -4,7 +4,6 @@
  */
 
 import { LoggerConfig, LogLevel } from '../types/logger.types';
-import { API_BASE_URL } from './environment';
 
 /**
  * Safe access to environment variables that works in both build time and runtime
@@ -81,8 +80,11 @@ export const loggerConfig: LoggerConfig = {
   batchSize: getEnvInteger('VITE_LOG_BATCH_SIZE', 10),
   batchInterval: getEnvInteger('VITE_LOG_BATCH_INTERVAL', 5000), // 5 seconds
 
-  // Remote logging endpoint
-  remoteEndpoint: getEnvVar('VITE_LOG_REMOTE_ENDPOINT') || `${API_BASE_URL}/api/logs/frontend`
+  // Remote logging endpoint. No implicit default: no backend has ever served
+  // /api/logs/frontend and remote logging is off by default (VITE_LOG_TO_REMOTE), so the
+  // fallback was a call that could never work. Set VITE_LOG_REMOTE_ENDPOINT to a real
+  // collector to enable remote logging.
+  remoteEndpoint: getEnvVar('VITE_LOG_REMOTE_ENDPOINT') || ''
 };
 
 /**

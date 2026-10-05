@@ -25,7 +25,7 @@ from ...domain.interfaces.notification_service import (
     INotificationService,
     NotificationType,
 )
-from ...domain.interfaces.utility_service import IAgentDocGenerator, IPathResolver
+from ...domain.interfaces.utility_service import IPathResolver
 from ...domain.interfaces.validation_service import (
     IDocumentValidator,
     IValidationResult,
@@ -401,24 +401,3 @@ class PlaceholderPathResolver(IPathResolver):
         for path in paths[1:]:
             result = result / path
         return result
-
-
-class PlaceholderAgentDocGenerator(IAgentDocGenerator):
-    """Placeholder agent doc generator"""
-
-    def generate_documentation(
-        self, agent_id: str, agent_config: dict[str, Any]
-    ) -> str:
-        return f"Documentation for agent {agent_id}"
-
-    def generate_api_docs(self, agent_id: str) -> dict[str, Any]:
-        return {"agent_id": agent_id, "api_version": "1.0", "endpoints": []}
-
-    def validate_agent_config(self, config: dict[str, Any]) -> bool:
-        return True
-
-    def get_agent_capabilities(self, agent_id: str) -> list[str]:
-        return ["basic_capability"]
-
-    def format_agent_response(self, response: dict[str, Any]) -> str:
-        return str(response)

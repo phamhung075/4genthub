@@ -6,12 +6,12 @@
  */
 
 import type {
+  AnimatedEntityType,
   AnimationDefinition,
   AnimationSource,
   AnimationState,
   AnimationType,
-  ElementRegistration,
-  EntityType
+  ElementRegistration
 } from '../types/animationTypes';
 import logger from '../utils/logger';
 
@@ -57,7 +57,7 @@ class AnimationFactory {
   registerElement(
     elementId: string,
     element: HTMLElement,
-    entityType: EntityType,
+    entityType: AnimatedEntityType,
     callbacks?: {
       onAnimationStart?: (type: AnimationType) => void;
       onAnimationEnd?: (type: AnimationType) => void;
@@ -146,7 +146,7 @@ class AnimationFactory {
    * - buildCssClass('subtask', 'delete') → 'subtaskRowDeleteAnimation'
    * - buildCssClass('branch', 'create') → 'branchRowCreateAnimation'
    */
-  private buildCssClass(entityType: EntityType, animationType: AnimationType): string {
+  private buildCssClass(entityType: AnimatedEntityType, animationType: AnimationType): string {
     // Capitalize first letter of animation type (delete → Delete)
     const capitalizedType = animationType.charAt(0).toUpperCase() + animationType.slice(1);
 
@@ -265,7 +265,7 @@ class AnimationFactory {
   getDebugInfo(): {
     registeredElements: string[];
     activeAnimations: Array<{elementId: string; state: AnimationState}>;
-    animationDefinitions: Record<AnimationType, AnimationDefinition>;
+    animationDefinitions: Record<AnimationType, Omit<AnimationDefinition, 'cssClass'>>;
   } {
     return {
       registeredElements: Array.from(this.elementRegistry.keys()),

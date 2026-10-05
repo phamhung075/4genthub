@@ -1,4 +1,4 @@
-import { HelpCircle, Home, Key, Menu, Moon, Settings, Sun, X, Store, Users } from 'lucide-react';
+import { Armchair, HelpCircle, Home, Key, Menu, Moon, Settings, Sun, X } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
@@ -7,7 +7,6 @@ import { Brand } from './ui/Brand';
 import { MenuBar } from './ui/glow-menu';
 import UserProfileDropdown from './UserProfileDropdown';
 import { WebSocketStatus } from './WebSocketStatus';
-import { ENABLE_MARKETPLACE } from '../config/environment';
 
 export const Header: React.FC = () => {
   const authContext = useContext(AuthContext);
@@ -39,26 +38,18 @@ export const Header: React.FC = () => {
     //  iconColor: "text-pink-500",
     //},
     {
-      icon: Store,
-      label: "Agent Marketplace",
-      href: "/agents/marketplace",
-      gradient: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.06) 50%, rgba(190,24,93,0) 100%)",
-      iconColor: "text-pink-500",
-      enabled: ENABLE_MARKETPLACE, // Conditionally enabled based on environment
-    },
-    {
-      icon: Users,
-      label: "My Agents",
-      href: "/agents/my-agents",
-      gradient: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(79,70,229,0.06) 50%, rgba(67,56,202,0) 100%)",
-      iconColor: "text-indigo-500",
-    },
-    {
       icon: Key,
       label: "Tokens",
       href: "/tokens",
       gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",
+    },
+    {
+      icon: Armchair,
+      label: "Seats",
+      href: "/seats",
+      gradient: "radial-gradient(circle, rgba(20,184,166,0.15) 0%, rgba(13,148,136,0.06) 50%, rgba(15,118,110,0) 100%)",
+      iconColor: "text-teal-500",
     },
     {
       icon: HelpCircle,
@@ -83,8 +74,7 @@ export const Header: React.FC = () => {
     },
   ];
 
-  // Filter menu items based on environment flags
-  const menuItems = allMenuItems.filter(item => item.enabled !== false);
+  const menuItems = allMenuItems;
 
   // Get the current active item based on the current route
   const getActiveItem = () => {
@@ -147,28 +137,19 @@ export const Header: React.FC = () => {
                   >
                     <Home className="h-5 w-5" />
                   </Link>
-                  {ENABLE_MARKETPLACE && (
-                    <Link
-                      to="/agents/marketplace"
-                      className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-                      title="Agent Marketplace"
-                    >
-                      <Store className="h-5 w-5" />
-                    </Link>
-                  )}
-                  <Link
-                    to="/agents/my-agents"
-                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
-                    title="My Agents"
-                  >
-                    <Users className="h-5 w-5" />
-                  </Link>
                   <Link
                     to="/tokens"
                     className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
                     title="Tokens"
                   >
                     <Key className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    to="/seats"
+                    className="flex items-center p-2 rounded-lg theme-nav-item transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+                    title="Seats"
+                  >
+                    <Armchair className="h-5 w-5" />
                   </Link>
                   <Link
                     to="/help-setup"

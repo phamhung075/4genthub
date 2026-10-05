@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Welcome to {{ company_name or "Oracle Server" }}!</h2>
+
+<p>Hello {{ user_name or "there" }},</p>
+
+<p>Your email has been successfully verified and your account is now active!</p>
+
+<p>Here are some things you can do to get started:</p>
+<ul>
+    <li>Complete your profile setup</li>
+    <li>Explore the available features</li>
+    <li>Join our community</li>
+    <li>Contact support if you need help</li>
+</ul>
+
+<p style="text-align: center;">
+    <a href="{{ dashboard_url or '#' }}" class="button">Get Started</a>
+</p>
+
+<p>If you have any questions, don't hesitate to reach out to our support team.</p>
+
+<p>Welcome aboard!<br>The {{ company_name or "Oracle Server" }} Team</p>
+{% endblock %}

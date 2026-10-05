@@ -3,22 +3,46 @@ import { render, screen, waitFor, fireEvent, act } from './test-utils';
 import { vi } from 'vitest';
 import App from '../App';
 
-// Mock react-router-dom
-vi.mock('react-router-dom', () => ({
-  ...vi.importActual('react-router-dom'),
-  BrowserRouter: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Routes: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Route: ({ element }: { element: React.ReactNode }) => <>{element}</>,
-  Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
-  useNavigate: () => vi.fn(),
-  useLocation: () => ({ pathname: '/' }),
-  useParams: () => ({})
+// Note: react-router-dom is intentionally not mocked. test-utils wraps the tree in a
+// real BrowserRouter so path-based Routes resolve to a single matching route.
+
+// Authenticated auth context so route guards/home behave as a logged-in user.
+// The value is created once: a new object or new functions on every render would
+// re-trigger any effect that depends on them and loop forever.
+const authValue = vi.hoisted(() => ({
+  user: { id: 'user-1', email: 'test@example.com', username: 'test', roles: ['user'] },
+  tokens: { access_token: 'access-token', refresh_token: 'refresh-token' },
+  isAuthenticated: true,
+  isLoading: false,
+  login: vi.fn(),
+  signup: vi.fn(),
+  logout: vi.fn(),
+  refreshToken: vi.fn(),
+  setTokens: vi.fn(),
+}));
+
+vi.mock('../contexts/AuthContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../contexts/AuthContext')>();
+  return { ...actual, useAuth: () => authValue };
+});
+
+// Avoid connecting real realtime widgets for the authenticated state.
+vi.mock('../components/WebSocketStatusBadge', () => ({
+  WebSocketStatusBadge: () => <div data-testid="websocket-status-badge" />,
 }));
 
 // Mock the theme context
-vi.mock('../contexts/ThemeContext', () => ({
-  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
-}));
+// Keep the real module shape (ThemeContext, types) but replace ThemeProvider with a
+// pass-through and expose a useTheme hook so consumers never fall back to the real
+// implementation that requires a mounted provider.
+vi.mock('../contexts/ThemeContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../contexts/ThemeContext')>();
+  return {
+    ...actual,
+    ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+    useTheme: () => ({ theme: 'light' as const, toggleTheme: vi.fn(), setTheme: vi.fn() }),
+  };
+});
 
 // Mock the toast provider
 vi.mock('../components/ui/toast', () => ({
@@ -89,7 +113,7 @@ vi.mock('../components/LazyTaskList', () => ({
   default: ({ projectId, taskTreeId, onTasksChanged }: any) => (
     <div data-testid="task-list">
       Task List for {projectId} - {taskTreeId}
-      <button onClick={() => onTasksChanged()}>Trigger Task Change</button>
+      <button onClick={() => onTasksChanged?.()}>Trigger Task Change</button>
     </div>
   )
 }));
@@ -103,90 +127,91 @@ describe('App', () => {
     global.dispatchEvent(new Event('resize'));
   });
 
-  it('renders without crashing', () => {
+  it('renders without crashing', async () => {
     render(<App />);
+    expect(await screen.findByTestId('project-list')).toBeInTheDocument();
   });
 
   it('redirects to dashboard from root path', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('Navigate to /dashboard')).toBeInTheDocument();
+      expect(screen.getByTestId('project-list')).toBeInTheDocument();
     });
   });
 
-  it('renders login form on /login route', () => {
+  it('renders login form on /login route', async () => {
     window.history.pushState({}, '', '/login');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Login Form')).toBeInTheDocument();
+    expect(await screen.findByText('Login Form')).toBeInTheDocument();
   });
 
-  it('renders signup form on /signup route', () => {
+  it('renders signup form on /signup route', async () => {
     window.history.pushState({}, '', '/signup');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Signup Form')).toBeInTheDocument();
+    expect(await screen.findByText('Signup Form')).toBeInTheDocument();
   });
 
-  it('renders email verification on /auth/verify route', () => {
+  it('renders email verification on /auth/verify route', async () => {
     window.history.pushState({}, '', '/auth/verify');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Email Verification')).toBeInTheDocument();
+    expect(await screen.findByText('Email Verification')).toBeInTheDocument();
   });
 
-  it('renders dashboard with header and project list on /dashboard route', () => {
+  it('renders dashboard with header and project list on /dashboard route', async () => {
     window.history.pushState({}, '', '/dashboard');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Test Header')).toBeInTheDocument();
+    expect(await screen.findByText('Test Header')).toBeInTheDocument();
     expect(screen.getByTestId('project-list')).toBeInTheDocument();
     expect(screen.getByText('Choose a workspace')).toBeInTheDocument();
     expect(screen.getByText('Select a project and branch from the sidebar to start viewing and managing your tasks.')).toBeInTheDocument();
   });
 
-  it('renders registration success on /registration-success route', () => {
+  it('renders registration success on /registration-success route', async () => {
     window.history.pushState({}, '', '/registration-success');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Registration Success')).toBeInTheDocument();
+    expect(await screen.findByText('Registration Success')).toBeInTheDocument();
   });
 
-  it('renders profile page with AppLayout on /profile route', () => {
+  it('renders profile page with AppLayout on /profile route', async () => {
     window.history.pushState({}, '', '/profile');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByTestId('app-layout')).toBeInTheDocument();
+    expect(await screen.findByTestId('app-layout')).toBeInTheDocument();
     expect(screen.getByText('Profile Page')).toBeInTheDocument();
   });
 
-  it('renders token management page on /tokens route', () => {
+  it('renders token management page on /tokens route', async () => {
     window.history.pushState({}, '', '/tokens');
-    
+
     render(
       <App />
     );
 
-    expect(screen.getByText('Token Management Page')).toBeInTheDocument();
+    expect(await screen.findByText('Token Management Page')).toBeInTheDocument();
   });
 });
 
@@ -197,10 +222,10 @@ describe('Dashboard', () => {
 
   it('shows task list when project is selected', async () => {
     render(<App />);
-    
-    const selectButton = screen.getByText('Select Project');
+
+    const selectButton = await screen.findByText('Select Project');
     fireEvent.click(selectButton);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('task-list')).toBeInTheDocument();
       expect(screen.getByText('Task List for project1 - branch1')).toBeInTheDocument();
@@ -209,10 +234,10 @@ describe('Dashboard', () => {
 
   it('shows global context dialog when button is clicked', async () => {
     render(<App />);
-    
-    const showGlobalContextButton = screen.getByText('Show Global Context');
+
+    const showGlobalContextButton = await screen.findByText('Show Global Context');
     fireEvent.click(showGlobalContextButton);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('global-context-dialog')).toBeInTheDocument();
     });
@@ -220,10 +245,10 @@ describe('Dashboard', () => {
 
   it('shows project details dialog when button is clicked', async () => {
     render(<App />);
-    
-    const showProjectDetailsButton = screen.getByText('Show Project Details');
+
+    const showProjectDetailsButton = await screen.findByText('Show Project Details');
     fireEvent.click(showProjectDetailsButton);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('project-details-dialog')).toBeInTheDocument();
       expect(screen.getByText('Project Details Dialog for Test Project')).toBeInTheDocument();
@@ -232,10 +257,10 @@ describe('Dashboard', () => {
 
   it('shows branch details dialog when button is clicked', async () => {
     render(<App />);
-    
-    const showBranchDetailsButton = screen.getByText('Show Branch Details');
+
+    const showBranchDetailsButton = await screen.findByText('Show Branch Details');
     fireEvent.click(showBranchDetailsButton);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('branch-details-dialog')).toBeInTheDocument();
       expect(screen.getByText('Branch Details Dialog for Test Project - main')).toBeInTheDocument();
@@ -244,19 +269,19 @@ describe('Dashboard', () => {
 
   it('refreshes project list when tasks change', async () => {
     render(<App />);
-    
+
     // Select a project first
-    const selectButton = screen.getByText('Select Project');
+    const selectButton = await screen.findByText('Select Project');
     fireEvent.click(selectButton);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('task-list')).toBeInTheDocument();
     });
-    
+
     // Trigger task change
     const taskChangeButton = screen.getByText('Trigger Task Change');
     fireEvent.click(taskChangeButton);
-    
+
     // Verify console.log was called (in real app, this would trigger refresh)
     // Since we can't directly test the refresh key increment, we just verify the button works
     expect(taskChangeButton).toBeInTheDocument();
@@ -266,16 +291,16 @@ describe('Dashboard', () => {
     // Simulate mobile screen
     global.innerWidth = 500;
     global.dispatchEvent(new Event('resize'));
-    
+
     render(<App />);
-    
+
     // The mobile menu button should be visible
     const toggleButton = screen.getByLabelText('Open sidebar');
     expect(toggleButton).toBeInTheDocument();
-    
+
     // Click to open
     fireEvent.click(toggleButton);
-    
+
     // The close button should now be visible
     await waitFor(() => {
       const closeButton = screen.getByLabelText('Close sidebar');
@@ -287,9 +312,9 @@ describe('Dashboard', () => {
     // Simulate large screen
     global.innerWidth = 1200;
     global.dispatchEvent(new Event('resize'));
-    
+
     render(<App />);
-    
+
     // The mobile toggle button should not be visible on large screens
     const toggleButton = screen.queryByLabelText('Open sidebar');
     expect(toggleButton).not.toBeInTheDocument();
@@ -297,14 +322,14 @@ describe('Dashboard', () => {
 
   it('shows loading state for lazy-loaded task list', async () => {
     render(<App />);
-    
-    const selectButton = screen.getByText('Select Project');
-    
+
+    const selectButton = await screen.findByText('Select Project');
+
     // Mock the lazy loading to show loading state
     await act(async () => {
       fireEvent.click(selectButton);
     });
-    
+
     // The actual task list should eventually appear
     await waitFor(() => {
       expect(screen.getByTestId('task-list')).toBeInTheDocument();

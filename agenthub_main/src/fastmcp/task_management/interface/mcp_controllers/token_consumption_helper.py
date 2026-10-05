@@ -60,7 +60,7 @@ class TokenConsumptionHelper:
         Consume tokens for an MCP operation
 
         Args:
-            operation: Operation name (e.g., 'create_project', 'call_agent')
+            operation: Operation name (e.g., 'create_project', 'manage_task')
             user_id: Optional user ID (will be extracted from auth context if not provided)
             custom_cost: Optional custom token cost (overrides default from config)
 

@@ -4,15 +4,19 @@ import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { TaskSearch } from '../../components/TaskSearch';
 import * as api from '../../api';
+import logger from '../../utils/logger';
 
 // Mock the api module
 vi.mock('../../api');
 
-// Mock debounce to execute immediately in tests
-vi.mock('../../lib/utils', () => ({
-  ...vi.importActual('../../lib/utils'),
-  debounce: (fn: any) => fn
-}));
+// Mock debounce to execute immediately in tests, keeping the real cn() helper
+vi.mock('../../lib/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/utils')>();
+  return {
+    ...actual,
+    debounce: (fn: any) => fn
+  };
+});
 
 describe('TaskSearch', () => {
   const mockProjectId = 'project-123';
@@ -54,6 +58,7 @@ describe('TaskSearch', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   describe('Component Rendering', () => {
@@ -67,7 +72,7 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
       expect(searchInput).toBeInTheDocument();
       expect(searchInput).toHaveAttribute('type', 'text');
     });
@@ -115,8 +120,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'auth');
 
       await waitFor(() => {
@@ -140,8 +145,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'login');
 
       await waitFor(() => {
@@ -165,8 +170,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'nonexistent');
 
       await waitFor(() => {
@@ -184,8 +189,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       // Type and then clear
       await userEvent.type(searchInput, 'test');
       await userEvent.clear(searchInput);
@@ -215,8 +220,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'loading');
 
       await waitFor(() => {
@@ -235,7 +240,7 @@ describe('TaskSearch', () => {
       (api.searchTasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Search failed'));
       (api.listTasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('List failed'));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+      const loggerSpy = vi.spyOn(logger, 'error').mockImplementation();
 
       render(
         <TaskSearch
@@ -246,16 +251,19 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'error');
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Search error:', expect.any(Error));
+        expect(loggerSpy).toHaveBeenCalledWith(
+          'Task search operation failed',
+          expect.objectContaining({ error: expect.any(Error), query: 'error' })
+        );
         expect(screen.getByText('No results found for "error"')).toBeInTheDocument();
       });
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
@@ -270,8 +278,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       // Initially no clear button
       expect(screen.queryByRole('button', { name: '' })).not.toBeInTheDocument();
 
@@ -295,8 +303,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'test');
 
       await waitFor(() => {
@@ -328,15 +336,15 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'auth');
 
       await waitFor(() => {
         expect(screen.getByText('Implement authentication')).toBeInTheDocument();
       });
 
-      const taskItem = screen.getByText('Implement authentication').closest('.hover\\:bg-gray-100');
+      const taskItem = screen.getByText('Implement authentication').closest('li');
       fireEvent.click(taskItem!);
 
       expect(mockOnTaskSelect).toHaveBeenCalledWith(mockTasks[0]);
@@ -354,14 +362,14 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'auth');
 
       await waitFor(() => {
         expect(screen.getByText('Implement authentication')).toBeInTheDocument();
-        expect(screen.getByText('ID: task-1')).toBeInTheDocument();
-        expect(screen.getByText('in_progress')).toBeInTheDocument();
+        expect(screen.getByText('ID: task-1...')).toBeInTheDocument();
+        expect(screen.getByText('in progress')).toBeInTheDocument();
         expect(screen.getByText('high')).toBeInTheDocument();
       });
     });
@@ -384,15 +392,15 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'login');
 
       await waitFor(() => {
         expect(screen.getByText('Create login form')).toBeInTheDocument();
       });
 
-      const subtaskItem = screen.getByText('Create login form').closest('.hover\\:bg-gray-100');
+      const subtaskItem = screen.getByText('Create login form').closest('li');
       fireEvent.click(subtaskItem!);
 
       expect(mockOnSubtaskSelect).toHaveBeenCalledWith(mockSubtasks[0], mockTasks[0]);
@@ -410,14 +418,13 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'login');
 
       await waitFor(() => {
         expect(screen.getByText('Create login form')).toBeInTheDocument();
         expect(screen.getByText('Parent: Implement authentication')).toBeInTheDocument();
-        expect(screen.getByText('ID: sub-1')).toBeInTheDocument();
         expect(screen.getByText('done')).toBeInTheDocument();
         expect(screen.getByText('medium')).toBeInTheDocument();
       });
@@ -426,7 +433,7 @@ describe('TaskSearch', () => {
     it('should handle subtask loading errors', async () => {
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Failed to load subtasks'));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+      const loggerSpy = vi.spyOn(logger, 'error').mockImplementation();
 
       render(
         <TaskSearch
@@ -437,18 +444,18 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'login');
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith(
-          'Error fetching subtasks for task task-1:', 
-          expect.any(Error)
+        expect(loggerSpy).toHaveBeenCalledWith(
+          'Failed to fetch subtasks for task',
+          expect.objectContaining({ taskId: 'task-1', error: expect.any(Error) })
         );
       });
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
@@ -463,8 +470,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       // Blur the input first
       searchInput.blur();
       expect(document.activeElement).not.toBe(searchInput);
@@ -485,8 +492,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       searchInput.blur();
 
       // Press Cmd+K
@@ -508,8 +515,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'test');
 
       await waitFor(() => {
@@ -533,7 +540,7 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
       searchInput.focus();
 
       // Press Escape without search results
@@ -545,15 +552,14 @@ describe('TaskSearch', () => {
   });
 
   describe('Debounced Search', () => {
-    it('should search case-insensitively', async () => {
-      const tasksWithMixedCase = [
-        { ...mockTasks[0], title: 'IMPLEMENT AUTHENTICATION' },
-        { ...mockTasks[1], title: 'fix Login BUG' }
+    it('should search subtasks case-insensitively', async () => {
+      const mixedCaseSubtasks = [
+        { id: 'sub-1', title: 'CREATE LOGIN FORM', status: 'done', priority: 'medium', description: 'Design and implement login form' }
       ];
 
       (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(tasksWithMixedCase);
-      (api.listSubtasks as ReturnType<typeof vi.fn>).mockImplementation(() => Promise.resolve([]));
+      (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([mockTasks[0]]);
+      (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mixedCaseSubtasks);
 
       render(
         <TaskSearch
@@ -564,17 +570,19 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'login');
 
       await waitFor(() => {
-        expect(screen.getByText('fix Login BUG')).toBeInTheDocument();
+        expect(screen.getByText('CREATE LOGIN FORM')).toBeInTheDocument();
       });
     });
 
     it('should search by ID', async () => {
-      (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      (api.searchTasks as ReturnType<typeof vi.fn>).mockImplementation((query: string) =>
+        Promise.resolve(query === 'task-1' ? [mockTasks[0]] : [])
+      );
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
       (api.listSubtasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockSubtasks);
 
@@ -587,8 +595,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'task-1');
 
       await waitFor(() => {
@@ -617,8 +625,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'Design');
 
       await waitFor(() => {
@@ -642,8 +650,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'a'); // Will match both tasks and subtasks
 
       await waitFor(() => {
@@ -652,7 +660,7 @@ describe('TaskSearch', () => {
       });
     });
 
-    it('should maintain result panel position', async () => {
+    it('should render results inside the search panel', async () => {
       (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue(mockTasks);
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -665,20 +673,19 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'test');
 
       await waitFor(() => {
-        const resultsCard = screen.getByText('Tasks (2)').closest('.card');
-        expect(resultsCard).toHaveClass('absolute');
-        expect(resultsCard).toHaveClass('z-50');
-        expect(resultsCard).toHaveClass('shadow-lg');
+        const resultsPanel = screen.getByText('Tasks (2)').closest('.rounded-3xl');
+        expect(resultsPanel).toBeInTheDocument();
+        expect(resultsPanel).toHaveClass('shadow-lg');
       });
     });
 
-    it('should limit result panel height with scroll', async () => {
-      // Create many tasks to test scrolling
+    it('should render all results without a fixed height cap', async () => {
+      // Create many tasks to test that every result is rendered
       const manyTasks = Array.from({ length: 20 }, (_, i) => ({
         id: `task-${i}`,
         title: `Task ${i}`,
@@ -698,14 +705,15 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'task');
 
       await waitFor(() => {
-        const resultsCard = screen.getByText('Tasks (20)').closest('.card');
-        expect(resultsCard).toHaveClass('max-h-96');
-        expect(resultsCard).toHaveClass('overflow-y-auto');
+        const resultsPanel = screen.getByText('Tasks (20)').closest('.rounded-3xl');
+        expect(resultsPanel).toBeInTheDocument();
+        expect(resultsPanel).not.toHaveClass('max-h-96');
+        expect(screen.getAllByText(/^Task \d+$/)).toHaveLength(20);
       });
     });
   });
@@ -713,8 +721,8 @@ describe('TaskSearch', () => {
   describe('Edge Cases', () => {
     it('should handle tasks without subtasks', async () => {
       const taskWithoutSubtasks = { ...mockTasks[1], subtasks: undefined };
-      
-      (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([taskWithoutSubtasks]);
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([taskWithoutSubtasks]);
 
       render(
@@ -726,20 +734,20 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'fix');
 
       await waitFor(() => {
         expect(screen.getByText('Fix login bug')).toBeInTheDocument();
-        expect(screen.queryByText('Subtasks')).not.toBeInTheDocument();
+        expect(screen.queryByText(/^Subtasks \(/)).not.toBeInTheDocument();
       });
     });
 
     it('should handle empty subtask array', async () => {
       const taskWithEmptySubtasks = { ...mockTasks[0], subtasks: [] };
-      
-      (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+      (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([taskWithEmptySubtasks]);
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([taskWithEmptySubtasks]);
 
       render(
@@ -751,13 +759,13 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, 'auth');
 
       await waitFor(() => {
         expect(screen.getByText('Implement authentication')).toBeInTheDocument();
-        expect(screen.queryByText('Subtasks')).not.toBeInTheDocument();
+        expect(screen.queryByText(/^Subtasks \(/)).not.toBeInTheDocument();
       });
     });
 
@@ -774,8 +782,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, '!@#$%^&*()');
 
       await waitFor(() => {
@@ -785,7 +793,7 @@ describe('TaskSearch', () => {
 
     it('should handle very long search queries', async () => {
       const longQuery = 'a'.repeat(100);
-      
+
       (api.searchTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       (api.listTasks as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
@@ -798,8 +806,8 @@ describe('TaskSearch', () => {
         />
       );
 
-      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name... (Ctrl+K)');
-      
+      const searchInput = screen.getByPlaceholderText('Search tasks and subtasks by ID or name...');
+
       await userEvent.type(searchInput, longQuery);
 
       await waitFor(() => {

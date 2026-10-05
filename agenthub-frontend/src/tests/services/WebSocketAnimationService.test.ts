@@ -25,7 +25,7 @@ describe('WebSocketAnimationService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Save original functions
     animateSpyOriginal = animationFactory.animate;
 
@@ -37,11 +37,14 @@ describe('WebSocketAnimationService', () => {
       on: vi.fn()
     };
 
+    // Install fake timers first: useFakeTimers() replaces the global
+    // requestAnimationFrame, so the synchronous stub must be applied AFTER it.
+    vi.useFakeTimers();
+
     // Mock requestAnimationFrame and setTimeout
     vi.stubGlobal('requestAnimationFrame', (cb: Function) => {
       cb();
     });
-    vi.useFakeTimers();
   });
 
   afterEach(() => {
@@ -55,16 +58,15 @@ describe('WebSocketAnimationService', () => {
   describe('init', () => {
     it('should register WebSocket update listener', () => {
       webSocketAnimationService.init(mockWebSocketClient);
-      
+
       expect(mockWebSocketClient.on).toHaveBeenCalledWith('update', expect.any(Function));
     });
 
     it('should handle update messages when received', () => {
+      // init() is idempotent: the previous test already registered the handler,
+      // so reaching the service through its public message API is what matters here.
       webSocketAnimationService.init(mockWebSocketClient);
-      
-      // Get the registered callback
-      const updateCallback = mockWebSocketClient.on.mock.calls[0][1];
-      
+
       // Create test message
       const testMessage: WSMessage = {
         id: 'test-123',
@@ -87,14 +89,23 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      // Trigger the callback
-      updateCallback(testMessage);
-      
+      // Trigger message handling
+      webSocketAnimationService.handleWebSocketMessage(testMessage);
+
       // Fast-forward timers to trigger deferred animation
       vi.advanceTimersByTime(150);
-      
+
       // Verify animation was triggered
       expect(animationFactory.animate).toHaveBeenCalledWith('task-123', 'create', 'websocket');
+    });
+
+    it('should not register a second listener on duplicate init', () => {
+      webSocketAnimationService.init(mockWebSocketClient);
+      const otherClient = { on: vi.fn() };
+
+      webSocketAnimationService.init(otherClient);
+
+      expect(otherClient.on).not.toHaveBeenCalled();
     });
   });
 
@@ -203,7 +214,7 @@ describe('WebSocketAnimationService', () => {
     });
 
     describe('subtask animations', () => {
-      it('should trigger animations for subtask operations', () => {
+      it('should skip create animation for subtask created (mount animation handles it)', () => {
         const message: WSMessage = {
           id: 'msg-5',
           type: 'update',
@@ -228,12 +239,12 @@ describe('WebSocketAnimationService', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).toHaveBeenCalledWith('subtask-123', 'create', 'websocket');
+        expect(animationFactory.animate).not.toHaveBeenCalled();
       });
     });
 
     describe('branch animations', () => {
-      it('should trigger animations for branch operations', () => {
+      it('should skip create animation for branch created (mount animation handles it)', () => {
         const message: WSMessage = {
           id: 'msg-6',
           type: 'update',
@@ -257,7 +268,7 @@ describe('WebSocketAnimationService', () => {
         webSocketAnimationService.handleWebSocketMessage(message);
         vi.advanceTimersByTime(150);
 
-        expect(animationFactory.animate).toHaveBeenCalledWith('branch-123', 'create', 'websocket');
+        expect(animationFactory.animate).not.toHaveBeenCalled();
       });
     });
 
@@ -441,7 +452,7 @@ describe('WebSocketAnimationService', () => {
       // Test unsubscribe
       unsubscribe();
       listener.mockClear();
-      
+
       webSocketAnimationService.handleWebSocketMessage(message);
       expect(listener).not.toHaveBeenCalled();
     });
@@ -450,25 +461,25 @@ describe('WebSocketAnimationService', () => {
   describe('triggerTestAnimation', () => {
     it('should trigger test animations for created', () => {
       webSocketAnimationService.triggerTestAnimation('created', 'task', 'test-element-1');
-      
+
       expect(animationFactory.animate).toHaveBeenCalledWith('test-element-1', 'create', 'websocket');
     });
 
     it('should trigger test animations for updated', () => {
       webSocketAnimationService.triggerTestAnimation('updated', 'subtask', 'test-element-2');
-      
+
       expect(animationFactory.animate).toHaveBeenCalledWith('test-element-2', 'update', 'websocket');
     });
 
     it('should trigger test animations for completed', () => {
       webSocketAnimationService.triggerTestAnimation('completed', 'task', 'test-element-3');
-      
+
       expect(animationFactory.animate).toHaveBeenCalledWith('test-element-3', 'complete', 'websocket');
     });
 
     it('should trigger test animations for deleted', () => {
       webSocketAnimationService.triggerTestAnimation('deleted', 'branch', 'test-element-4');
-      
+
       expect(animationFactory.animate).toHaveBeenCalledWith('test-element-4', 'delete', 'websocket');
     });
 
@@ -477,7 +488,7 @@ describe('WebSocketAnimationService', () => {
       webSocketAnimationService.on('task-created', listener);
 
       webSocketAnimationService.triggerTestAnimation('created', 'task', 'test-element-5');
-      
+
       expect(listener).toHaveBeenCalledWith({
         action: 'created',
         message: expect.objectContaining({
@@ -508,17 +519,37 @@ describe('WebSocketAnimationService', () => {
       };
 
       webSocketAnimationService.handleWebSocketMessage(message);
-      
+
       // Animation should not be triggered immediately
       expect(animationFactory.animate).not.toHaveBeenCalled();
-      
+
       // Advance timers by less than 150ms
       vi.advanceTimersByTime(100);
       expect(animationFactory.animate).not.toHaveBeenCalled();
-      
+
       // Advance to exactly 150ms
       vi.advanceTimersByTime(50);
       expect(animationFactory.animate).toHaveBeenCalledWith('task-timing-test', 'create', 'websocket');
+    });
+  });
+
+  describe('message bursts', () => {
+    it('should animate every message of a rapid burst', () => {
+      for (let i = 0; i < 100; i++) {
+        webSocketAnimationService.handleWebSocketMessage({
+          id: `burst-${i}`,
+          type: 'update',
+          source: 'backend',
+          timestamp: new Date().toISOString(),
+          priority: 'normal',
+          payload: { entity: 'task', action: 'updated', data: { id: `task-${i}` } },
+          metadata: { entity_id: `task-${i}` },
+          aiProcessed: false
+        } as WSMessage);
+      }
+      vi.advanceTimersByTime(200);
+
+      expect(animationFactory.animate).toHaveBeenCalledTimes(100);
     });
   });
 

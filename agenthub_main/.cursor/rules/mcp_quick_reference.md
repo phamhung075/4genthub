@@ -11,8 +11,8 @@
 
 ### Session Startup (Every Time)
 ```python
-# 1. Switch to orchestrator
-call_agent(name_agent="master-orchestrator-agent")
+# 1. Establish your seat (rig whoami --json)
+call_seat(room="<room>", seat="<orchestrator-seat>")
 
 # 2. Health check
 manage_connection(action="health_check")
@@ -20,16 +20,16 @@ manage_connection(action="health_check")
 # 3. Find work
 next_task = manage_task(action="next", git_branch_id=branch_id, include_context=True)
 
-# 4. Switch to specialist
-call_agent(name_agent=next_task.recommended_agent)
+# 4. Resolve the specialist seat
+call_seat(room="<room>", seat="<specialist-seat>")
 ```
 
 ### Context Resolution Pattern
 ```python
 # Get full inherited context
 context = manage_context(
-    action="resolve", 
-    level="task", 
+    action="resolve",
+    level="task",
     context_id=task_id
 )
 
@@ -37,7 +37,7 @@ context = manage_context(
 manage_context(
     action="update",
     level="task",
-    context_id=task_id, 
+    context_id=task_id,
     data={"insights": ["discovery"]},
     propagate_changes=True
 )
@@ -55,7 +55,7 @@ manage_subtask(action="create", task_id=task_id, title="Component A")
 manage_subtask(action="update", subtask_id=subtask_id, progress_percentage=50)
 
 # 4. Complete with summary
-manage_task(action="complete", task_id=task_id, 
+manage_task(action="complete", task_id=task_id,
            completion_summary="Detailed description of what was accomplished")
 ```
 
@@ -82,15 +82,15 @@ manage_task(action="complete", task_id=task_id,
 manage_task(action="next", git_branch_id=branch_id, include_context=True)
 
 # Create new task
-manage_task(action="create", git_branch_id=branch_id, title="Task Title", 
+manage_task(action="create", git_branch_id=branch_id, title="Task Title",
            description="Detailed description", priority="high")
 
 # Update progress
-manage_task(action="update", task_id=task_id, status="in_progress", 
+manage_task(action="update", task_id=task_id, status="in_progress",
            details="Current progress")
 
 # Complete task
-manage_task(action="complete", task_id=task_id, 
+manage_task(action="complete", task_id=task_id,
            completion_summary="What was accomplished",
            testing_notes="Tests performed")
 ```
@@ -145,8 +145,8 @@ manage_project(action="project_health_check", project_id=project_id)
 manage_git_branch(action="list", project_id=project_id)
 
 # Create new task tree
-manage_git_branch(action="create", project_id=project_id, 
-                 git_branch_name="feature-auth", 
+manage_git_branch(action="create", project_id=project_id,
+                 git_branch_name="feature-auth",
                  git_branch_description="Authentication system")
 ```
 
@@ -159,16 +159,16 @@ manage_agent(action="list", project_id=project_id)
 manage_agent(action="register", project_id=project_id, name="Claude_Assistant")
 
 # Assign to branch
-manage_agent(action="assign", project_id=project_id, agent_id=agent_id, 
+manage_agent(action="assign", project_id=project_id, agent_id=agent_id,
             git_branch_id=branch_id)
 ```
 
-### call_agent
+### call_seat
 ```python
-# Switch to specialist agent
-call_agent(name_agent="@coding_agent")
-call_agent(name_agent="@debugger_agent") 
-call_agent(name_agent="@test_orchestrator_agent")
+# Resolve a seat from the seat model
+call_seat(room="<room>", seat="<dev-seat>")
+call_seat(room="<room>", seat="<debugger-seat>")
+call_seat(room="<room>", seat="<test-seat>")
 ```
 
 ## 🏗️ Context Hierarchy Schema
@@ -183,11 +183,11 @@ Global Context (Singleton)
 │   }
 └── inheritance: none
 
-Project Context 
+Project Context
 ├── id: project_id
 ├── data: {
 │   ├── project_goals: {...}
-│   ├── team_preferences: {...}  
+│   ├── team_preferences: {...}
 │   └── architecture_decisions: {...}
 │   }
 └── inheritance: Global
@@ -267,7 +267,7 @@ manage_task(action="complete", task_id=task_id,
            - Refresh token mechanism for session persistence
            - Password hashing with bcrypt
            - Session management with Redis cache
-           
+
            Architecture decisions:
            - Used industry-standard JWT library
            - Implemented proper error handling for invalid credentials
@@ -289,7 +289,7 @@ manage_context(
     action="delegate",
     level="task",
     context_id=task_id,
-    delegate_to="project", 
+    delegate_to="project",
     delegate_data={
         "reusable_pattern": "jwt_authentication_implementation",
         "code_template": jwt_service_code,

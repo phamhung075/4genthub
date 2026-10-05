@@ -13,7 +13,7 @@ from .pagination import PaginationRequest, PaginationResult
 from .progress_percentage import ProgressPercentage
 
 # Enum imports (moved from domain/enums/)
-from .agent_roles import AgentRole, get_role_metadata_from_yaml, resolve_legacy_role
+from .agent_roles import AgentRole, resolve_legacy_role
 from .common_labels import CommonLabel, LabelValidator
 from .compliance_enums import (
     ComplianceLevel,
@@ -62,7 +62,6 @@ __all__ = [
     "ProgressPercentage",
     # Agent Roles
     "AgentRole",
-    "get_role_metadata_from_yaml",
     "resolve_legacy_role",
     # Common Labels
     "CommonLabel",

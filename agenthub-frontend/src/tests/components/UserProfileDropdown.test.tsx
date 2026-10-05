@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from './../test-utils';
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import UserProfileDropdown from '../../components/UserProfileDropdown';
 import { AuthContext } from '../../contexts/AuthContext';
@@ -40,18 +39,16 @@ describe('UserProfileDropdown', () => {
 
   const renderWithAuth = (user = mockUser) => {
     return render(
-      <BrowserRouter>
-        <AuthContext.Provider value={{
-          user,
-          isAuthenticated: !!user,
-          login: vi.fn(),
-          logout: mockLogout,
-          loading: false,
-          refreshUser: vi.fn(),
-        }}>
-          <UserProfileDropdown />
-        </AuthContext.Provider>
-      </BrowserRouter>
+      <AuthContext.Provider value={{
+        user,
+        isAuthenticated: !!user,
+        login: vi.fn(),
+        logout: mockLogout,
+        loading: false,
+        refreshUser: vi.fn(),
+      }}>
+        <UserProfileDropdown />
+      </AuthContext.Provider>
     );
   };
 
@@ -91,18 +88,16 @@ describe('UserProfileDropdown', () => {
 
   it('returns null when user is not authenticated', () => {
     render(
-      <BrowserRouter>
-        <AuthContext.Provider value={{
-          user: null,
-          isAuthenticated: false,
-          login: vi.fn(),
-          logout: mockLogout,
-          loading: false,
-          refreshUser: vi.fn(),
-        }}>
-          <UserProfileDropdown />
-        </AuthContext.Provider>
-      </BrowserRouter>
+      <AuthContext.Provider value={{
+        user: null,
+        isAuthenticated: false,
+        login: vi.fn(),
+        logout: mockLogout,
+        loading: false,
+        refreshUser: vi.fn(),
+      }}>
+        <UserProfileDropdown />
+      </AuthContext.Provider>
     );
 
     // Should render nothing when user is null

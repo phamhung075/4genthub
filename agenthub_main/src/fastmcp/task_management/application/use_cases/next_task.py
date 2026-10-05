@@ -9,7 +9,6 @@ from typing import Any
 from ...domain import TaskRepository
 from ...domain.value_objects.priority import Priority
 from ...domain.value_objects.task_status import TaskStatus
-from ...infrastructure.services.agent_doc_generator import generate_docs_for_assignees
 
 logger = logging.getLogger(__name__)
 
@@ -183,12 +182,6 @@ class NextTaskUseCase:
             # Check if task has incomplete subtasks
             next_subtask = self._find_next_subtask(task)
             if next_subtask:
-                # Generate agent documentation for all unique assignees (task and subtask)
-                generate_docs_for_assignees(task.assignees, clear_all=False)
-                if "assignees" in next_subtask and next_subtask["assignees"]:
-                    generate_docs_for_assignees(
-                        next_subtask["assignees"], clear_all=False
-                    )
                 return NextTaskResponse(
                     has_next=True,
                     next_item={
@@ -201,9 +194,6 @@ class NextTaskUseCase:
                 )
             else:
                 # Task itself is the next item to work on
-                # Generate agent documentation for all unique assignees
-                generate_docs_for_assignees(task.assignees, clear_all=False)
-
                 # Generate context_info only if conditions are met (JSON-based context)
                 context_info = None
                 if self._should_generate_context_info(task):
@@ -347,7 +337,7 @@ class NextTaskUseCase:
                 for task in filtered_tasks
                 if hasattr(task, "assignees")
                 and task.assignees
-                and isinstance(task.assignees, (list, tuple))
+                and isinstance(task.assignees, list | tuple)
                 and assignee in task.assignees
             ]
 
@@ -356,7 +346,7 @@ class NextTaskUseCase:
             # The repository should already be scoped to the correct project via context
             pass
 
-        if labels and labels is not None and isinstance(labels, (list, tuple)):
+        if labels and labels is not None and isinstance(labels, list | tuple):
             # Null safety: check if labels exists and is a proper list/iterable
             # Also ensure labels parameter itself is a valid list/tuple to avoid "NoneType is not iterable" error
             filtered_tasks = [
@@ -364,7 +354,7 @@ class NextTaskUseCase:
                 for task in filtered_tasks
                 if hasattr(task, "labels")
                 and task.labels is not None
-                and isinstance(task.labels, (list, tuple))
+                and isinstance(task.labels, list | tuple)
                 and any(label in task.labels for label in labels)
             ]
 

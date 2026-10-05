@@ -6,6 +6,7 @@ import { Textarea } from "./ui/textarea";
 import Select from "./ui/select-simple";
 import { Task, getAvailableAgents } from "../api";
 import { X } from "lucide-react";
+import logger from "../utils/logger";
 
 interface TaskEditDialogProps {
   open: boolean;
@@ -36,15 +37,19 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
     progress_notes: ""  // New field for progress updates
   });
   const [availableAgents, setAvailableAgents] = React.useState<string[]>([]);
+  const [availableAgentsError, setAvailableAgentsError] = React.useState(false);
   const [showAgentDropdown, setShowAgentDropdown] = React.useState(false);
   const [agentSearch, setAgentSearch] = React.useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load available agents on mount
   React.useEffect(() => {
-    getAvailableAgents().then(agents => {
-      setAvailableAgents(agents);
-    });
+    getAvailableAgents()
+      .then(setAvailableAgents)
+      .catch(error => {
+        logger.error('Error loading seats for the assignee picker:', error);
+        setAvailableAgentsError(true);
+      });
   }, []);
 
   // Handle click outside to close dropdown
@@ -351,7 +356,7 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
             {/* Agent search input */}
             <div className="relative" ref={dropdownRef}>
               <Input
-                placeholder="Search and select agents..."
+                placeholder="Search and select seats..."
                 value={agentSearch}
                 onChange={(e) => setAgentSearch(e.target.value)}
                 onFocus={() => setShowAgentDropdown(true)}
@@ -377,8 +382,15 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
                       </div>
                     ))
                   ) : (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      No agents found
+                    <div
+                      className={`px-3 py-2 text-sm ${availableAgentsError ? "text-destructive" : "text-muted-foreground"}`}
+                      role={availableAgentsError ? "alert" : undefined}
+                    >
+                      {availableAgentsError
+                        ? "Could not load your seats. Close this dialog and open it again to retry."
+                        : availableAgents.length === 0
+                          ? "You have no seats yet. Seats are created on the Seats page."
+                          : "No seats found"}
                     </div>
                   )}
                   <div className="px-3 py-2 border-t border-border">

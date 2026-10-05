@@ -26,7 +26,12 @@ function createTestQueryClient() {
     defaultOptions: {
       queries: {
         retry: false, // Disable retries in tests
-        gcTime: 0, // Disable garbage collection
+        // Disable garbage collection. In React Query v5 gcTime: 0 does the opposite:
+        // it collects an unobserved entry immediately, so a delayed write (for example
+        // a WebSocket handler that updates the cache after ~150ms) races the assertion.
+        // Infinity is what actually disables collection; a fresh QueryClient per test
+        // still isolates the cache between tests.
+        gcTime: Infinity,
         staleTime: 0, // Data always stale in tests
       },
       mutations: {

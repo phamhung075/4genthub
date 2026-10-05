@@ -2,6 +2,7 @@ import { tokenService } from '../../services/tokenService';
 import { authenticatedFetch } from '../../hooks/useAuthenticatedFetch';
 import { API_BASE_URL, DEBUG_MODE } from '../../config/environment';
 import { vi } from 'vitest';
+import logger from '../../utils/logger';
 
 // Mock the authenticated fetch function
 vi.mock('../../hooks/useAuthenticatedFetch', () => ({
@@ -14,6 +15,10 @@ vi.mock('../../config/environment', () => ({
   DEBUG_MODE: false, // Set to false to avoid console logs in tests
 }));
 
+vi.mock('../../utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
 const mockAuthenticatedFetch = vi.mocked(authenticatedFetch);
 
 describe('tokenService', () => {
@@ -21,9 +26,6 @@ describe('tokenService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock console methods to avoid noise in tests
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -31,10 +33,13 @@ describe('tokenService', () => {
   });
 
   describe('initialization', () => {
-    it('logs initialization with correct baseUrl', () => {
-      // The tokenService is already instantiated when the module loads
-      // We can verify the console.log was called during module import
-      expect(console.log).toHaveBeenCalledWith('TokenService initialized with baseUrl:', baseUrl);
+    it('logs initialization with correct baseUrl', async () => {
+      // The singleton logs in its constructor, so load a fresh module instance
+      vi.resetModules();
+      const { default: freshLogger } = await import('../../utils/logger');
+      await import('../../services/tokenService');
+
+      expect(freshLogger.debug).toHaveBeenCalledWith('TokenService initialized with baseUrl:', baseUrl);
     });
 
     it('uses correct v2 API endpoint', () => {
@@ -53,13 +58,13 @@ describe('tokenService', () => {
         ],
         total: 2
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(mockTokensResponse),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.listTokens();
@@ -68,11 +73,11 @@ describe('tokenService', () => {
         method: 'GET',
       });
       expect(result).toEqual(mockTokensResponse);
-      
-      // Verify console.log calls
-      expect(console.log).toHaveBeenCalledWith('Fetching tokens from:', baseUrl);
-      expect(console.log).toHaveBeenCalledWith('Response status:', 200);
-      expect(console.log).toHaveBeenCalledWith('Token list response:', mockTokensResponse);
+
+      // Verify debug logging
+      expect(logger.debug).toHaveBeenCalledWith('Fetching tokens from:', baseUrl);
+      expect(logger.debug).toHaveBeenCalledWith('Response status:', 200);
+      expect(logger.debug).toHaveBeenCalledWith('Token list response:', mockTokensResponse);
     });
 
     it('handles empty token list', async () => {
@@ -82,7 +87,7 @@ describe('tokenService', () => {
         status: 200,
         json: vi.fn().mockResolvedValue(emptyResponse),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.listTokens();
@@ -96,11 +101,11 @@ describe('tokenService', () => {
         status: 500,
         json: vi.fn().mockResolvedValue({ message: 'Server error' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Server error');
-      expect(console.error).toHaveBeenCalledWith('Token fetch error:', { message: 'Server error' });
+      expect(logger.error).toHaveBeenCalledWith('Token fetch error:', { message: 'Server error' });
     });
 
     it('handles fetch error with error field', async () => {
@@ -109,28 +114,28 @@ describe('tokenService', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({ error: 'Bad request' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Bad request');
-      expect(console.error).toHaveBeenCalledWith('Token fetch error:', { error: 'Bad request' });
+      expect(logger.error).toHaveBeenCalledWith('Token fetch error:', { error: 'Bad request' });
     });
   });
 
   describe('getTokenDetails', () => {
     it('fetches a specific token by id', async () => {
-      const mockToken = { 
-        id: '123', 
+      const mockToken = {
+        id: '123',
         name: 'Test Token',
         scopes: ['read:tasks'],
-        is_active: true 
+        is_active: true
       };
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(mockToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.getTokenDetails('123');
@@ -147,7 +152,7 @@ describe('tokenService', () => {
         status: 404,
         json: vi.fn().mockResolvedValue({ message: 'Token not found' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.getTokenDetails('999')).rejects.toThrow('Token not found');
@@ -162,7 +167,7 @@ describe('tokenService', () => {
         expires_in_days: 30,
         rate_limit: 100,
       };
-      
+
       const createdToken = {
         id: '456',
         name: 'New Token',
@@ -174,13 +179,13 @@ describe('tokenService', () => {
         usage_count: 0,
         rate_limit: 100,
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.generateToken(newTokenData);
@@ -193,9 +198,9 @@ describe('tokenService', () => {
         body: JSON.stringify(newTokenData),
       });
       expect(result).toEqual({ data: createdToken });
-      
-      // Verify console.log call
-      expect(console.log).toHaveBeenCalledWith('TokenService.generateToken - calling:', `${baseUrl}/generate`);
+
+      // Verify debug logging
+      expect(logger.debug).toHaveBeenCalledWith('TokenService.generateToken - calling:', `${baseUrl}/generate`);
     });
 
     it('handles validation error', async () => {
@@ -204,13 +209,13 @@ describe('tokenService', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({ message: 'Validation failed' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
-      await expect(tokenService.generateToken({ 
-        name: '', 
-        scopes: [], 
-        expires_in_days: 30 
+      await expect(tokenService.generateToken({
+        name: '',
+        scopes: [],
+        expires_in_days: 30
       })).rejects.toThrow('Validation failed');
     });
   });
@@ -218,20 +223,20 @@ describe('tokenService', () => {
   describe('updateTokenScopes', () => {
     it('updates token scopes', async () => {
       const newScopes = ['read:tasks', 'write:tasks', 'execute:mcp'];
-      
+
       const updatedToken = {
         id: '123',
         name: 'Test Token',
         scopes: newScopes,
         is_active: true,
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(updatedToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.updateTokenScopes('123', newScopes);
@@ -252,7 +257,7 @@ describe('tokenService', () => {
         status: 403,
         json: vi.fn().mockResolvedValue({ message: 'Forbidden' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.updateTokenScopes('123', ['admin'])).rejects.toThrow('Forbidden');
@@ -266,7 +271,7 @@ describe('tokenService', () => {
         status: 200,
         json: vi.fn().mockResolvedValue({ success: true }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await tokenService.revokeToken('123');
@@ -282,7 +287,7 @@ describe('tokenService', () => {
         status: 500,
         json: vi.fn().mockResolvedValue({ message: 'Revocation failed' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.revokeToken('123')).rejects.toThrow('Revocation failed');
@@ -301,13 +306,13 @@ describe('tokenService', () => {
         expires_at: '2024-01-31T00:00:00Z',
         usage_count: 0,
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(rotatedToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.rotateToken('123');
@@ -325,7 +330,7 @@ describe('tokenService', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({ message: 'Rotation failed' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.rotateToken('123')).rejects.toThrow('Rotation failed');
@@ -339,13 +344,13 @@ describe('tokenService', () => {
         scopes: ['read:tasks', 'write:tasks'],
         user_id: 'user-123',
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(validationResult),
       } as unknown as Response;
-      
+
       // Mock fetch directly for validateToken as it doesn't use authenticatedFetch
       global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
@@ -367,7 +372,7 @@ describe('tokenService', () => {
         status: 401,
         json: vi.fn().mockResolvedValue({ error: 'Invalid token' }),
       } as unknown as Response;
-      
+
       global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await tokenService.validateToken('invalid-token');
@@ -388,13 +393,13 @@ describe('tokenService', () => {
           { date: '2023-12-31', count: 45 }
         ]
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(stats),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.getTokenUsageStats('123');
@@ -411,7 +416,7 @@ describe('tokenService', () => {
         status: 404,
         json: vi.fn().mockResolvedValue({ message: 'Stats not found' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.getTokenUsageStats('123')).rejects.toThrow('Stats not found');
@@ -425,7 +430,7 @@ describe('tokenService', () => {
         status: 500,
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Failed to fetch tokens');
@@ -437,7 +442,7 @@ describe('tokenService', () => {
         status: 401,
         json: vi.fn().mockResolvedValue({ error: 'Unauthorized' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Unauthorized');
@@ -449,13 +454,13 @@ describe('tokenService', () => {
         status: 403,
         json: vi.fn().mockResolvedValue({ message: 'Forbidden' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
-      await expect(tokenService.generateToken({ 
-        name: 'Test', 
+      await expect(tokenService.generateToken({
+        name: 'Test',
         scopes: ['admin'],
-        expires_in_days: 30 
+        expires_in_days: 30
       })).rejects.toThrow('Forbidden');
     });
 
@@ -465,7 +470,7 @@ describe('tokenService', () => {
         status: 500,
         json: vi.fn().mockResolvedValue({ message: 'Internal Server Error' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       await expect(tokenService.listTokens()).rejects.toThrow('Internal Server Error');
@@ -479,26 +484,26 @@ describe('tokenService', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({ message: 'Name is required' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
-      await expect(tokenService.generateToken({ 
-        name: '', 
+      await expect(tokenService.generateToken({
+        name: '',
         scopes: ['read:tasks'],
-        expires_in_days: 30 
+        expires_in_days: 30
       })).rejects.toThrow('Name is required');
     });
 
     it('handles very long token names', async () => {
       const longName = 'a'.repeat(256);
-      const tokenData = { 
+      const tokenData = {
         name: longName,
         scopes: ['read:tasks'],
         expires_in_days: 30,
         rate_limit: 100
       };
-      const createdToken = { 
-        id: '123', 
+      const createdToken = {
+        id: '123',
         name: longName,
         token: 'test-token',
         scopes: ['read:tasks'],
@@ -508,13 +513,13 @@ describe('tokenService', () => {
         usage_count: 0,
         rate_limit: 100
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.generateToken(tokenData);
@@ -524,13 +529,13 @@ describe('tokenService', () => {
 
     it('handles special characters in token names', async () => {
       const specialName = 'Test!@#$%^&*()';
-      const tokenData = { 
+      const tokenData = {
         name: specialName,
         scopes: ['read:tasks'],
         expires_in_days: 30
       };
-      const createdToken = { 
-        id: '123', 
+      const createdToken = {
+        id: '123',
         name: specialName,
         token: 'test-token',
         scopes: ['read:tasks'],
@@ -539,13 +544,13 @@ describe('tokenService', () => {
         expires_at: '2024-01-31T00:00:00Z',
         usage_count: 0
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.generateToken(tokenData);
@@ -559,26 +564,26 @@ describe('tokenService', () => {
         status: 400,
         json: vi.fn().mockResolvedValue({ message: 'Rate limit must be positive' }),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
-      await expect(tokenService.generateToken({ 
-        name: 'Test', 
+      await expect(tokenService.generateToken({
+        name: 'Test',
         scopes: ['read:tasks'],
         expires_in_days: 30,
-        rate_limit: -1 
+        rate_limit: -1
       })).rejects.toThrow('Rate limit must be positive');
     });
 
     it('handles very large rate limits', async () => {
       const largeRateLimit = 1000000;
-      const tokenData = { 
-        name: 'Test', 
+      const tokenData = {
+        name: 'Test',
         scopes: ['read:tasks'],
         expires_in_days: 30,
-        rate_limit: largeRateLimit 
+        rate_limit: largeRateLimit
       };
-      const createdToken = { 
+      const createdToken = {
         id: '123',
         name: 'Test',
         token: 'test-token',
@@ -589,13 +594,13 @@ describe('tokenService', () => {
         usage_count: 0,
         rate_limit: largeRateLimit
       };
-      
+
       const mockResponse = {
         ok: true,
         status: 200,
         json: vi.fn().mockResolvedValue(createdToken),
       } as unknown as Response;
-      
+
       mockAuthenticatedFetch.mockResolvedValue(mockResponse);
 
       const result = await tokenService.generateToken(tokenData);

@@ -104,6 +104,61 @@ class MissedNotification(Base):
     )
 
 
+class AgentSession(Base):
+    """A terminal/agent session streamed from a user's own machine by a connector.
+
+    The id is deterministic (see session_stream.repository.session_id_for) so a
+    reconnecting connector resumes the same row. Every read path filters on
+    user_id; it is the tenant boundary.
+    """
+
+    __tablename__ = "agent_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    connector_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    session_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    project: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    last_seq: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "connector_id", "session_key", name="uq_agent_sessions_key"
+        ),
+    )
+
+
+class AgentSessionEvent(Base):
+    """One ordered event (message, tool call, output chunk) of an AgentSession."""
+
+    __tablename__ = "agent_session_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("agent_sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    ts: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("session_id", "seq", name="uq_agent_session_events_seq"),
+        Index("idx_agent_session_events_user_session", "user_id", "session_id", "seq"),
+    )
+
+
 class Project(Base):
     """Project model - Core organizational structure
 

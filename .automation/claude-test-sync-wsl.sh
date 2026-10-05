@@ -41,7 +41,7 @@ get_git_timestamp() {
 # Function to find corresponding test file
 find_test_file() {
     local source_file="$1"
-    
+
     # Define mapping patterns for agenthub project structure
     if [[ "$source_file" =~ ^agenthub_main/src/fastmcp/.*\.py$ ]]; then
         # Map src files to tests directory
@@ -83,7 +83,7 @@ if [[ "$DRY_RUN_MODE" == true ]]; then
     unstaged_files=$(git diff --name-only 2>/dev/null)
     untracked_files=$(git ls-files --others --exclude-standard 2>/dev/null | grep -E '\.(js|ts|jsx|tsx|py|vue)$' || true)
     changed_files=$(echo -e "$staged_files\n$unstaged_files\n$untracked_files" | sort -u | grep -v '^$')
-    
+
     if [[ -z "$changed_files" ]]; then
         log "💡 No uncommitted changes found. Analyzing last commit instead..."
         changed_files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD)
@@ -107,23 +107,23 @@ for file in $changed_files; do
     if [[ ! "$file" =~ \.(js|ts|jsx|tsx|py|vue)$ ]] || [[ "$file" =~ ^tests/ ]] || [[ "$file" =~ \.test\. ]] || [[ "$file" =~ \.spec\. ]] || [[ "$file" =~ _test\.py$ ]]; then
         continue
     fi
-    
+
     log "🔍 Checking $file..."
     total_processed=$((total_processed + 1))
-    
+
     test_file=$(find_test_file "$file")
     if [[ -z "$test_file" ]]; then
         log "⚠️  No test pattern found for $file"
         continue
     fi
-    
+
     if [[ ! -f "$test_file" ]]; then
         log "📝 Missing test file: $test_file"
         new_files+=("$file:$test_file:missing")
     else
         source_time=$(get_git_timestamp "$file")
         test_time=$(get_git_timestamp "$test_file")
-        
+
         if [[ $source_time -gt $test_time ]]; then
             days_stale=$(( (source_time - test_time) / 86400 ))
             log "⏰ Stale test: $test_file ($days_stale days old)"
@@ -157,7 +157,7 @@ if [[ $total_issues -gt 3 ]] || [[ $(echo "$changed_files" | wc -l) -gt 5 ]]; th
 ❗ START EXECUTING IMMEDIATELY ❗
 
 FIRST ACTION: Execute this command RIGHT NOW:
-mcp__agenthub_http__call_agent(name_agent="@test_orchestrator_agent")
+rig whoami --json
 
 You are in MANDATORY BACKGROUND AUTOMATION MODE.
 Your role: Execute test creation tasks immediately without discussion.
@@ -177,7 +177,7 @@ REQUIRED BEHAVIORS:
 
 ## Missing Test Files - CREATE IMMEDIATELY:
 EOF
-    
+
     # Add stale files
     if [[ ${#stale_files[@]} -gt 0 ]]; then
         echo "" >> "$TEMP_PROMPT"
@@ -190,7 +190,7 @@ EOF
             echo "" >> "$TEMP_PROMPT"
         done
     fi
-    
+
     # Add missing files
     if [[ ${#new_files[@]} -gt 0 ]]; then
         echo "" >> "$TEMP_PROMPT"
@@ -202,12 +202,12 @@ EOF
             echo "" >> "$TEMP_PROMPT"
         done
     fi
-    
+
     cat >> "$TEMP_PROMPT" << 'EOF'
 
 ## EXECUTION COMMANDS - DO NOW:
 
-STEP 1: mcp__agenthub_http__call_agent(name_agent="@test_orchestrator_agent")
+STEP 1: rig whoami --json
 STEP 2: Get last commit changes and analyze modified/added/deleted code files
 STEP 3: Identify functions, classes, and methods requiring test coverage
 STEP 4: Delete tests for removed code and verify/clean up imports
@@ -237,7 +237,7 @@ else
 ❗ START EXECUTING IMMEDIATELY ❗
 
 FIRST ACTION: Execute this command RIGHT NOW:
-mcp__agenthub_http__call_agent(name_agent="@test_orchestrator_agent")
+rig whoami --json
 
 You are in MANDATORY BACKGROUND AUTOMATION MODE.
 Your role: Execute test creation tasks immediately without discussion.
@@ -317,13 +317,13 @@ EOF
         echo "- **Test File:** \`$test_file\`" >> "$TEMP_PROMPT"
         echo "- **Staleness:** $days_stale days" >> "$TEMP_PROMPT"
         echo "- **Priority:** HIGH" >> "$TEMP_PROMPT"
-        
+
         # Add file size and complexity info
         if [[ -f "$source_file" ]]; then
             lines=$(wc -l < "$source_file")
             echo "- **Source Lines:** $lines" >> "$TEMP_PROMPT"
         fi
-        
+
         if [[ -f "$test_file" ]]; then
             test_lines=$(wc -l < "$test_file")
             echo "- **Test Lines:** $test_lines" >> "$TEMP_PROMPT"
@@ -344,7 +344,7 @@ EOF
         echo "- **Missing Test:** \`$test_file\`" >> "$TEMP_PROMPT"
         echo "- **Reason:** $reason" >> "$TEMP_PROMPT"
         echo "- **Priority:** HIGH" >> "$TEMP_PROMPT"
-        
+
         if [[ -f "$source_file" ]]; then
             lines=$(wc -l < "$source_file")
             echo "- **Source Lines:** $lines" >> "$TEMP_PROMPT"
@@ -358,7 +358,7 @@ cat >> "$TEMP_PROMPT" << 'EOF'
 
 ### Phase 0: MANDATORY Agent Assignment
 **EXECUTE IMMEDIATELY - NO CONFIRMATION:**
-Use this exact command: `mcp__agenthub_http__call_agent(name_agent="@test_orchestrator_agent")`
+Use this exact command: `rig whoami --json`
 
 **DO NOT:**
 - Ask which agent to use
@@ -432,7 +432,7 @@ Use this exact command: `mcp__agenthub_http__call_agent(name_agent="@test_orches
 ---
 
 ## FINAL COMMAND:
-EXECUTE: mcp__agenthub_http__call_agent(name_agent="@test_orchestrator_agent")
+EXECUTE: rig whoami --json
 THEN: Create all missing test files
 NO TALKING - JUST DO IT
 EOF
@@ -446,7 +446,7 @@ log ""
 # WSL-specific terminal handling with forced popup windows
 open_claude_terminal() {
     log "🖥️  Opening popup terminal for Claude Code..."
-    
+
     # Check if Claude is available (try different command names)
     CLAUDE_CMD=""
     CLAUDE_FLAGS="--dangerously-skip-permissions"
@@ -465,12 +465,12 @@ open_claude_terminal() {
         echo "   Copy the prompt content and paste into Claude"
         return 0
     fi
-    
+
     log "✅ Found Claude command: $CLAUDE_CMD"
-    
+
     # Force GUI terminal usage - try all available options
     GUI_TERMINAL_FOUND=false
-    
+
     # Try GNOME Terminal first (most common in WSL with X11)
     if command -v gnome-terminal >/dev/null 2>&1; then
         log "🖥️  Using GNOME Terminal for popup window"
@@ -506,7 +506,7 @@ open_claude_terminal() {
             read
         " &
         GUI_TERMINAL_FOUND=true
-        
+
     # Try Windows Terminal through WSL interop
     elif command -v wsl.exe >/dev/null 2>&1 && command -v wt.exe >/dev/null 2>&1; then
         log "🖥️  Using Windows Terminal for popup window"
@@ -538,7 +538,7 @@ open_claude_terminal() {
             read
         " &
         GUI_TERMINAL_FOUND=true
-        
+
     # Try Terminator
     elif command -v terminator >/dev/null 2>&1; then
         log "🖥️  Using Terminator for popup window"
@@ -546,7 +546,7 @@ open_claude_terminal() {
             echo \"🤖 Claude Code Test Synchronization (WSL Ubuntu)\"
             echo \"═══════════════════════════════════════════════\"
             echo \"📁 Repository: $REPO_ROOT\"
-            echo \"🐧 WSL Environment: $WSL_DISTRO_NAME\"  
+            echo \"🐧 WSL Environment: $WSL_DISTRO_NAME\"
             echo \"📝 Processing $total_issues files\"
             echo \"\"
             echo \"⚡ Starting Claude Code with forced execution...\"
@@ -569,7 +569,7 @@ open_claude_terminal() {
             read
         '" &
         GUI_TERMINAL_FOUND=true
-        
+
     # Try xterm as fallback
     elif command -v xterm >/dev/null 2>&1; then
         log "🖥️  Using xterm for popup window"
@@ -600,7 +600,7 @@ open_claude_terminal() {
             read
         " &
         GUI_TERMINAL_FOUND=true
-        
+
     # Try WSL + PowerShell popup
     elif command -v powershell.exe >/dev/null 2>&1; then
         log "🖥️  Using PowerShell popup window"
@@ -623,7 +623,7 @@ open_claude_terminal() {
         " &
         GUI_TERMINAL_FOUND=true
     fi
-    
+
     # If no GUI terminal found, show error and provide manual instructions
     if [[ "$GUI_TERMINAL_FOUND" == false ]]; then
         log "❌ No GUI terminal available for popup windows!"
@@ -647,7 +647,7 @@ open_claude_terminal() {
         echo ""
         echo "📁 Prompt file saved at: $TEMP_PROMPT"
         echo ""
-        
+
         # Send Windows notification about the issue
         if command -v powershell.exe >/dev/null 2>&1; then
             powershell.exe -Command "
@@ -660,7 +660,7 @@ open_claude_terminal() {
                 )
             " 2>/dev/null || true
         fi
-        
+
         return 1
     else
         log "✅ Claude Code launched in popup terminal window"
@@ -669,7 +669,7 @@ open_claude_terminal() {
         echo "👀 Check the new terminal window to follow progress"
         echo "📊 Log file: $LOG_FILE"
         echo ""
-        
+
         # Send success notification
         if command -v powershell.exe >/dev/null 2>&1; then
             powershell.exe -Command "
@@ -682,7 +682,7 @@ open_claude_terminal() {
                 \$notification.ShowBalloonTip(5000)
             " 2>/dev/null || true
         fi
-        
+
         log "✅ Popup terminal window opened successfully"
     fi
 }

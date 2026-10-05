@@ -1,10 +1,16 @@
-import { createTheme } from '@mui/material/styles';
 import { lightTheme, darkTheme, getTheme } from '../../theme/muiTheme';
 import { themeConfig } from '../../theme/themeConfig';
 
 // Mock dependencies
+// The module calls createTheme at import time, before beforeEach clears the spy,
+// so the options it was called with are recorded separately.
+const createThemeOptions = vi.hoisted(() => [] as any[]);
+
 vi.mock('@mui/material/styles', () => ({
-  createTheme: vi.fn((options) => ({ ...options, isTheme: true })),
+  createTheme: vi.fn((options) => {
+    createThemeOptions.push(options);
+    return { ...options, isTheme: true };
+  }),
 }));
 
 vi.mock('../../theme/themeConfig', () => ({
@@ -94,8 +100,6 @@ vi.mock('../../theme/themeConfig', () => ({
 }));
 
 describe('muiTheme', () => {
-  const mockCreateTheme = createTheme as anyedFunction<typeof createTheme>;
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -257,20 +261,23 @@ describe('muiTheme', () => {
   });
 
   describe('createTheme calls', () => {
-    it('calls createTheme for both themes', () => {
-      // The themes are created when the module is imported
-      // Since we import at the top, they should already be created
-      expect(mockCreateTheme).toHaveBeenCalledTimes(2);
+    it('calls createTheme once for each theme', () => {
+      expect(createThemeOptions).toHaveLength(2);
+      expect(lightTheme).toMatchObject({ isTheme: true });
+      expect(darkTheme).toMatchObject({ isTheme: true });
+      expect(lightTheme).not.toBe(darkTheme);
     });
 
     it('passes ThemeOptions type to createTheme', () => {
-      expect(mockCreateTheme).toHaveBeenCalledWith(
-        expect.objectContaining({
-          palette: expect.any(Object),
-          components: expect.any(Object),
-          typography: expect.any(Object),
-        })
-      );
+      for (const options of createThemeOptions) {
+        expect(options).toEqual(
+          expect.objectContaining({
+            palette: expect.any(Object),
+            components: expect.any(Object),
+            typography: expect.any(Object),
+          })
+        );
+      }
     });
   });
 
@@ -301,7 +308,7 @@ describe('muiTheme', () => {
 
     it('has consistent typography configuration', () => {
       const typographyKeys = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
-      
+
       typographyKeys.forEach(key => {
         expect(lightTheme.typography[key]).toBeDefined();
         expect(darkTheme.typography[key]).toBeDefined();

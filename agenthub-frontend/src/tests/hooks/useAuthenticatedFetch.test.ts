@@ -46,7 +46,7 @@ describe('useAuthenticatedFetch', () => {
     mockFetch.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     await act(async () => {
       const response = await result.current('/api/test', {
         method: 'GET',
@@ -71,7 +71,7 @@ describe('useAuthenticatedFetch', () => {
     mockFetch.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     let response: Response;
     await act(async () => {
       response = await result.current('/api/test', {
@@ -111,7 +111,7 @@ describe('useAuthenticatedFetch', () => {
     mockFetch.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     let response: Response;
     await act(async () => {
       response = await result.current('/api/public');
@@ -122,14 +122,15 @@ describe('useAuthenticatedFetch', () => {
   });
 
   it('handles non-JSON responses', async () => {
-    mockFetch.mockResolvedValueOnce({
+    const mockResponse = {
       ok: true,
       json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
       text: async () => 'Plain text response',
-    } as unknown as Response);
+    } as unknown as Response;
+    mockFetch.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     await act(async () => {
       const response = await result.current('/api/text');
       expect(response).toBe(mockResponse);
@@ -141,7 +142,7 @@ describe('useAuthenticatedFetch', () => {
     mockFetch.mockRejectedValueOnce(networkError);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     await expect(act(async () => {
       await result.current('/api/error');
     })).rejects.toThrow('Network error');
@@ -170,26 +171,9 @@ describe('useAuthenticatedFetch', () => {
     expect(mockCookies.get).toHaveBeenCalledWith('access_token');
   });
 
-  it('handles 401 unauthorized responses', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-      statusText: 'Unauthorized',
-      json: async () => ({ error: 'Unauthorized' }),
-    } as Response);
-
-    const { result } = renderHook(() => useAuthenticatedFetch());
-    
-    await act(async () => {
-      const response = await result.current('/api/protected');
-      expect(response).toBe(mockResponse);
-      expect(mockResponse.status).toBe(401);
-    });
-  });
-
   it('handles 401 responses by refreshing token and retrying', async () => {
     const refreshToken = vi.fn().mockResolvedValue(undefined);
-    
+
     mockUseAuth.mockReturnValue({
       tokens: mockTokens,
       refreshToken,
@@ -212,7 +196,7 @@ describe('useAuthenticatedFetch', () => {
       .mockResolvedValueOnce(mockSuccessResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     let response: Response;
     await act(async () => {
       response = await result.current('/api/test');
@@ -225,7 +209,7 @@ describe('useAuthenticatedFetch', () => {
 
   it('supports all HTTP methods', async () => {
     const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-    
+
     for (const method of methods) {
       const mockResponse = {
         ok: true,
@@ -235,7 +219,7 @@ describe('useAuthenticatedFetch', () => {
       mockFetch.mockResolvedValueOnce(mockResponse);
 
       const { result } = renderHook(() => useAuthenticatedFetch());
-      
+
       let response: Response;
       await act(async () => {
         response = await result.current('/api/test', { method });
@@ -260,7 +244,7 @@ describe('useAuthenticatedFetch', () => {
     mockFetch.mockResolvedValueOnce(mockResponse);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
+
     let response: Response;
     await act(async () => {
       response = await result.current('/api/public', { skipAuth: true });
@@ -273,7 +257,7 @@ describe('useAuthenticatedFetch', () => {
   it('handles refresh token failure by logging out', async () => {
     const refreshToken = vi.fn().mockRejectedValue(new Error('Refresh failed'));
     const logout = vi.fn();
-    
+
     mockUseAuth.mockReturnValue({
       tokens: mockTokens,
       refreshToken,
@@ -288,10 +272,10 @@ describe('useAuthenticatedFetch', () => {
     } as Response);
 
     const { result } = renderHook(() => useAuthenticatedFetch());
-    
-    await expect(act(async () => {
-      await result.current('/api/test');
-    })).rejects.toThrow('Session expired. Please login again.');
+
+    await act(async () => {
+      await expect(result.current('/api/test')).rejects.toThrow('Session expired. Please login again.');
+    });
 
     expect(refreshToken).toHaveBeenCalled();
     expect(logout).toHaveBeenCalled();
@@ -365,7 +349,7 @@ describe('authenticatedFetch (standalone)', () => {
       status: 401,
       statusText: 'Unauthorized',
     } as Response;
-    
+
     mockFetch.mockResolvedValueOnce(unauthorizedResponse);
 
     const response = await authenticatedFetch('/api/protected');

@@ -14,9 +14,6 @@ import { ThemeProvider } from './contexts/ThemeContext';
 // WebSocket is now handled in AuthContext, no need to import here
 import { useAuth } from './contexts/AuthContext';
 
-// Import WebSocket test utility for debugging
-import './utils/testWebSocket';
-
 // Lazy load heavy components for better code splitting
 const AppLayout = lazy(() => import('./components/AppLayout').then(m => ({ default: m.AppLayout })));
 const AuthWrapper = lazy(() => import('./components/auth').then(m => ({ default: m.AuthWrapper })));
@@ -36,8 +33,9 @@ const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Pro
 const RegistrationSuccess = lazy(() => import('./pages/RegistrationSuccess'));
 const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => ({ default: m.TokenManagement })));
 const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
-const MarketplacePage = lazy(() => import('./pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
-const MyAgentsPage = lazy(() => import('./pages/MyAgentsPage').then(m => ({ default: m.MyAgentsPage })));
+const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
+const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
+const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
@@ -95,7 +93,7 @@ function Dashboard() {
     <div className="flex flex-col h-screen bg-gradient-to-br from-base via-base-secondary to-base-tertiary text-base-primary transition-theme">
       {/* Header */}
       <Header />
-      
+
       {/* Main content area */}
       <div className="flex flex-1 relative overflow-hidden">
         {/* Modern Sidebar */}
@@ -172,14 +170,14 @@ function Dashboard() {
           </div>
         </main>
       </div>
-      
+
       {/* Global Context Dialog - rendered outside all containers */}
       <GlobalContextDialog
         open={showGlobalContext}
         onOpenChange={setShowGlobalContext}
         onClose={() => setShowGlobalContext(false)}
       />
-      
+
       {/* Project Details Dialog - rendered outside all containers */}
       <ProjectDetailsDialog
         open={!!showProjectDetails}
@@ -187,7 +185,7 @@ function Dashboard() {
         project={showProjectDetails}
         onClose={() => setShowProjectDetails(null)}
       />
-      
+
       {/* Branch Details Dialog - rendered outside all containers */}
       <BranchDetailsDialog
         open={!!showBranchDetails}
@@ -346,24 +344,36 @@ function App() {
             }
           />
           <Route
-            path="/agents/marketplace"
+            path="/seats"
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <ProtectedRoute>
                   <AppLayout>
-                    <MarketplacePage />
+                    <SeatsPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>
             }
           />
           <Route
-            path="/agents/my-agents"
+            path="/seats/authoring"
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <ProtectedRoute>
                   <AppLayout>
-                    <MyAgentsPage />
+                    <SeatAuthoringPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/seats/:room/:seat"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SeatDetailPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>
@@ -396,4 +406,3 @@ function App() {
 }
 
 export default App;
-

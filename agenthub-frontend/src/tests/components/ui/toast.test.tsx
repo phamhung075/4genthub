@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from './../../test-utils';
+import { render, screen, fireEvent, waitFor, act } from './../../test-utils';
 import { ToastProvider, useToast, useSuccessToast, useErrorToast } from '../../../components/ui/toast';
 
 // Test component that uses toast hooks
@@ -56,9 +56,9 @@ describe('Toast Component', () => {
 
   it('renders success toast correctly', async () => {
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-success'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Success!')).toBeInTheDocument();
       expect(screen.getByText('Everything worked perfectly')).toBeInTheDocument();
@@ -67,9 +67,9 @@ describe('Toast Component', () => {
 
   it('renders error toast correctly', async () => {
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-error'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Error!')).toBeInTheDocument();
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -79,9 +79,9 @@ describe('Toast Component', () => {
   it('renders toast with action button', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-info'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Info Message')).toBeInTheDocument();
       expect(screen.getByText('This is information')).toBeInTheDocument();
@@ -91,15 +91,15 @@ describe('Toast Component', () => {
     // Click the action button
     fireEvent.click(screen.getByText('Action'));
     expect(consoleSpy).toHaveBeenCalledWith('Action clicked');
-    
+
     consoleSpy.mockRestore();
   });
 
   it('allows dismissing individual toasts', async () => {
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-success'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Success!')).toBeInTheDocument();
     });
@@ -115,10 +115,10 @@ describe('Toast Component', () => {
 
   it('dismisses all toasts when dismissAll is called', async () => {
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-success'));
     fireEvent.click(screen.getByTestId('show-error'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Success!')).toBeInTheDocument();
       expect(screen.getByText('Error!')).toBeInTheDocument();
@@ -133,38 +133,36 @@ describe('Toast Component', () => {
   });
 
   it('auto-dismisses toasts after specified duration', async () => {
-    jest.useFakeTimers();
-    
-    render(<WrappedTestComponent />);
-    
-    fireEvent.click(screen.getByTestId('show-success'));
-    
-    await waitFor(() => {
+    vi.useFakeTimers();
+    try {
+      render(<WrappedTestComponent />);
+
+      fireEvent.click(screen.getByTestId('show-success'));
       expect(screen.getByText('Success!')).toBeInTheDocument();
-    });
 
-    // Fast-forward time by 5 seconds (default duration)
-    jest.advanceTimersByTime(5000);
+      // Fast-forward time by 5 seconds (default duration)
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
 
-    await waitFor(() => {
       expect(screen.queryByText('Success!')).not.toBeInTheDocument();
-    });
-    
-    jest.useRealTimers();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('applies correct styles for different toast types', async () => {
     render(<WrappedTestComponent />);
-    
+
     fireEvent.click(screen.getByTestId('show-success'));
     fireEvent.click(screen.getByTestId('show-error'));
-    
+
     await waitFor(() => {
       const successToast = screen.getByText('Success!').closest('[role="alert"]');
       const errorToast = screen.getByText('Error!').closest('[role="alert"]');
-      
-      expect(successToast).toHaveClass('border-green-500');
-      expect(errorToast).toHaveClass('border-red-500');
+
+      expect(successToast).toHaveClass('border-success');
+      expect(errorToast).toHaveClass('border-error');
     });
   });
 });

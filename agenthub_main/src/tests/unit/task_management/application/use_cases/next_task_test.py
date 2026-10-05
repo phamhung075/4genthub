@@ -276,13 +276,8 @@ class TestNextTaskUseCaseExecute:
         }
         return task
 
-    @patch(
-        "fastmcp.task_management.application.use_cases.next_task.generate_docs_for_assignees"
-    )
     @pytest.mark.asyncio
-    async def test_execute_no_tasks(
-        self, mock_generate_docs, use_case, mock_task_repository
-    ):
+    async def test_execute_no_tasks(self, use_case, mock_task_repository):
         """Test execute when no tasks are found"""
         mock_task_repository.find_all.return_value = []
 
@@ -291,14 +286,10 @@ class TestNextTaskUseCaseExecute:
         assert isinstance(result, NextTaskResponse)
         assert result.has_next is False
         assert "No tasks found" in result.message
-        mock_generate_docs.assert_not_called()
 
-    @patch(
-        "fastmcp.task_management.application.use_cases.next_task.generate_docs_for_assignees"
-    )
     @pytest.mark.asyncio
     async def test_execute_single_task_success(
-        self, mock_generate_docs, use_case, mock_task_repository, mock_task_entity
+        self, use_case, mock_task_repository, mock_task_entity
     ):
         """Test execute with single actionable task"""
         mock_task_repository.find_all.return_value = [mock_task_entity]
@@ -310,14 +301,10 @@ class TestNextTaskUseCaseExecute:
         assert result.next_item["type"] == "task"
         assert result.next_item["task"]["id"] == "550e8400-e29b-41d4-a716-446655440123"
         assert "Work on task 'Test Task'" in result.message
-        mock_generate_docs.assert_called_once_with(["user-1"], clear_all=False)
 
-    @patch(
-        "fastmcp.task_management.application.use_cases.next_task.generate_docs_for_assignees"
-    )
     @pytest.mark.asyncio
     async def test_execute_with_subtasks(
-        self, mock_generate_docs, use_case, mock_task_repository, mock_task_entity
+        self, use_case, mock_task_repository, mock_task_entity
     ):
         """Test execute with task containing incomplete subtasks"""
         # Add incomplete subtask
@@ -339,9 +326,6 @@ class TestNextTaskUseCaseExecute:
         assert result.next_item["type"] == "subtask"
         assert result.next_item["subtask"]["title"] == "Subtask 1"
         assert "Work on subtask 'Subtask 1'" in result.message
-
-        # Should generate ai_docs for both task and subtask assignees
-        assert mock_generate_docs.call_count == 2
 
     @pytest.mark.asyncio
     async def test_execute_all_tasks_completed(
@@ -1026,12 +1010,9 @@ class TestNextTaskUseCaseContextIntegration:
         assert "status_mismatch" in result.context["error_type"]
         assert len(result.context["mismatches"]) == 1
 
-    @patch(
-        "fastmcp.task_management.application.use_cases.next_task.generate_docs_for_assignees"
-    )
     @pytest.mark.asyncio
     async def test_execute_with_context_generation(
-        self, mock_generate_docs, use_case, mock_task_repository, mock_context_service
+        self, use_case, mock_task_repository, mock_context_service
     ):
         """Test execute with context generation for todo task"""
         # Create mock task
@@ -1071,12 +1052,9 @@ class TestNextTaskUseCaseContextIntegration:
         assert result.context_info is not None
         assert "context" in result.context_info
 
-    @patch(
-        "fastmcp.task_management.application.use_cases.next_task.generate_docs_for_assignees"
-    )
     @pytest.mark.asyncio
     async def test_execute_with_context_creation_error(
-        self, mock_generate_docs, use_case, mock_task_repository, mock_context_service
+        self, use_case, mock_task_repository, mock_context_service
     ):
         """Test execute when context creation fails"""
         # Create mock task

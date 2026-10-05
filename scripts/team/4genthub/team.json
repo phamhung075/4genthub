@@ -1,0 +1,249 @@
+{
+  "room": {
+    "slug": "4genthub-dev",
+    "name": "4genthub development"
+  },
+  "modules": [
+    {
+      "slug": "project-4genthub",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "project-4genthub.txt"
+    },
+    {
+      "slug": "area-go-backend",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "area-go-backend.txt"
+    },
+    {
+      "slug": "area-web-frontend",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "area-web-frontend.txt"
+    },
+    {
+      "slug": "area-quality",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "area-quality.txt"
+    },
+    {
+      "slug": "area-docs",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "area-docs.txt"
+    },
+    {
+      "slug": "mission-4genthub",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "mission.md"
+    },
+    {
+      "slug": "delegate-deepseek",
+      "version": "1.1.0",
+      "kind": "instruction",
+      "file": "delegate-deepseek.txt"
+    }
+  ],
+  "seats": [
+    {
+      "seat_key": "lead",
+      "seat_type": "lead",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "planner",
+      "seat_type": "planner",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "architect",
+      "seat_type": "architect",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "go-dev",
+      "seat_type": "developer",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "web-dev",
+      "seat_type": "developer",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "reviewer",
+      "seat_type": "reviewer",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "tester",
+      "seat_type": "tester",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "debugger",
+      "seat_type": "debugger",
+      "runtime": "claude-code",
+      "model": ""
+    },
+    {
+      "seat_key": "writer",
+      "seat_type": "writer",
+      "runtime": "claude-code",
+      "model": ""
+    }
+  ],
+  "links": [
+    {
+      "from": "lead",
+      "to": "planner",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "architect",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "go-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "web-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "reviewer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "tester",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "debugger",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "writer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "planner",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "architect",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "web-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "reviewer",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "tester",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "debugger",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "writer",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "go-dev",
+      "to": "tester",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "web-dev",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "web-dev",
+      "to": "tester",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "reviewer",
+      "to": "tester",
+      "kind": "collaborates_with"
+    }
+  ],
+  "company_overlay": [
+    "project-4genthub",
+    "delegate-deepseek"
+  ],
+  "seat_overlays": {
+    "lead": [
+      "mission-4genthub"
+    ],
+    "go-dev": [
+      "area-go-backend"
+    ],
+    "web-dev": [
+      "area-web-frontend"
+    ],
+    "tester": [
+      "area-quality"
+    ],
+    "reviewer": [
+      "area-quality"
+    ],
+    "debugger": [
+      "area-quality"
+    ],
+    "writer": [
+      "area-docs"
+    ],
+    "planner": [
+      "area-go-backend",
+      "area-web-frontend",
+      "mission-4genthub"
+    ],
+    "architect": [
+      "area-go-backend",
+      "area-web-frontend"
+    ]
+  }
+}

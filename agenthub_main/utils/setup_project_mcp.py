@@ -83,7 +83,6 @@ This project uses the agenthub task management system.
 - `manage_project` - Project lifecycle management
 - `manage_agent` - Multi-agent coordination
 - `manage_subtask` - Subtask management
-- `call_agent` - Agent role switching
 """,
         }
 
@@ -194,11 +193,8 @@ def create_mcp_config(project_path: Path, agenthub_path: Path | None = None) -> 
                         "TASKS_JSON_PATH": ".cursor/rules/tasks/tasks.json",
                         "TASK_JSON_BACKUP_PATH": ".cursor/rules/tasks/backup",
                         "MCP_TOOL_CONFIG": ".cursor/tool_config.json",
-                        "AGENTS_OUTPUT_DIR": ".cursor/rules/agents",
-                        "AUTO_RULE_PATH": ".cursor/rules/auto_rule.mdc",
                         "BRAIN_DIR_PATH": ".cursor/rules/brain",
                         "PROJECTS_FILE_PATH": ".cursor/rules/brain/projects.json",
-                        "AGENT_LIBRARY_DIR_PATH": str(agenthub_path / "agent-library"),
                     },
                     "transport": "stdio",
                     "debug": True,
@@ -252,7 +248,6 @@ def create_tool_config(project_path: Path) -> bool:
                 "manage_task": True,
                 "manage_subtask": True,
                 "manage_agent": True,
-                "call_agent": True,
                 "update_auto_rule": True,
                 "validate_rules": True,
                 "manage_rule": True,
@@ -319,7 +314,6 @@ def main():
     print("- manage_task - Create and manage tasks")
     print("- manage_project - Project lifecycle management")
     print("- manage_agent - Multi-agent coordination")
-    print("- call_agent - Switch AI agent roles")
     print("\n📁 Project structure created:")
     print(f"- {project_path}/.cursor/rules/tasks/tasks.json")
     print(f"- {project_path}/.cursor/rules/brain/projects.json")

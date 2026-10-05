@@ -1,292 +1,290 @@
 /**
  * @fileoverview Test suite for SubtaskRowRefactored component
- * Tests the refactored subtask row display with simplified subtask count handling
+ *
+ * The component exposes a default export and takes the current `SubtaskRowProps`
+ * shape (`summary`, `parentTaskId`, action callbacks). It renders the status and
+ * priority via SubtaskRowBadges, the assignees via SubtaskRowAssignees (count is
+ * derived from `summary.assignees?.length`) and the action buttons via
+ * SubtaskRowActions.
  */
 
-import { render, screen } from './../../test-utils';
-import { SubtaskRowRefactored } from '../../../components/SubtaskRow/SubtaskRowRefactored';
-import { Subtask } from '../../../types/taskTypes';
-import { MemoryRouter } from 'react-router-dom';
+import { render, screen, fireEvent } from './../../test-utils';
+import SubtaskRowRefactored from '../../../components/SubtaskRow/SubtaskRowRefactored';
+import type { SubtaskSummary } from '../../../types/taskTypes';
 
-// Mock the status emoji util
-vi.mock('../../../utils/statusEmojis', () => ({
-  getStatusEmoji: (status: string) => {
-    const emojis: Record<string, string> = {
-      'todo': '📋',
-      'in_progress': '⏳',
-      'done': '✅',
-      'cancelled': '❌',
-      'blocked': '🚫'
-    };
-    return emojis[status] || '❓';
-  }
+// ParentTaskReference performs its own data fetch; stub it so the row test stays isolated.
+vi.mock('../../../components/ui/ParentTaskReference', () => ({
+  ParentTaskReference: ({ parentTaskId }: any) => (
+    <div data-testid="parent-task-ref">Parent: {parentTaskId}</div>
+  )
+}));
+
+// The animation hook talks to AnimationFactory and timers; stub it to a visible, non-animated row.
+vi.mock('../../../components/SubtaskRow/hooks/useSubtaskAnimation', () => ({
+  useSubtaskAnimation: () => ({
+    animationState: 'none',
+    isVisible: true,
+    animationClass: '',
+    elementRef: { current: null }
+  })
 }));
 
 describe('SubtaskRowRefactored', () => {
-  const mockSubtask: Subtask = {
+  const mockSummary: SubtaskSummary = {
     id: 'sub-123',
     title: 'Test Subtask',
     status: 'in_progress',
     priority: 'high',
     assignees: ['user-1', 'user-2'],
-    labels: ['frontend', 'bug'],
-    created_at: '2025-01-01T00:00:00Z',
-    updated_at: '2025-01-02T00:00:00Z',
     progress_percentage: 50
   };
 
   const defaultProps = {
-    subtask: mockSubtask,
-    projectId: 'proj-123',
-    branchId: 'branch-456',
-    taskId: 'task-789',
-    onUpdate: vi.fn()
+    summary: mockSummary,
+    fullSubtask: null,
+    isLoading: false,
+    showDetails: false,
+    parentTaskId: 'parent-task-456',
+    onSubtaskAction: vi.fn(),
+    onAgentInfoClick: vi.fn(),
+    onDeleteSubtask: vi.fn(),
+    onRegisterCallbacks: vi.fn(),
+    onUnregisterCallbacks: vi.fn()
   };
 
-  const renderComponent = (props = {}) => {
-    return render(
-      <MemoryRouter>
-        <SubtaskRowRefactored {...defaultProps} {...props} />
-      </MemoryRouter>
+  const renderRow = (props: Partial<typeof defaultProps> = {}) =>
+    render(
+      <table>
+        <tbody>
+          <SubtaskRowRefactored {...defaultProps} {...props} />
+        </tbody>
+      </table>
     );
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Basic Rendering', () => {
-    it('should render subtask title and status', () => {
-      renderComponent();
+    it('should render subtask title', () => {
+      renderRow();
 
       expect(screen.getByText('Test Subtask')).toBeInTheDocument();
-      expect(screen.getByText('⏳')).toBeInTheDocument(); // in_progress emoji
     });
 
-    it('should render priority badge', () => {
-      renderComponent();
+    it('should render the status badge for in_progress', () => {
+      renderRow();
 
-      const priorityBadge = screen.getByText('high');
-      expect(priorityBadge).toBeInTheDocument();
-      expect(priorityBadge.className).toContain('text-red-700');
+      expect(screen.getByText('In Progress')).toBeInTheDocument();
     });
 
-    it('should render assignee count', () => {
-      renderComponent();
+    it('should render the priority badge for high', () => {
+      renderRow();
 
-      expect(screen.getByText('2 assignees')).toBeInTheDocument();
+      expect(screen.getByText('High')).toBeInTheDocument();
     });
 
-    it('should render label badges', () => {
-      renderComponent();
+    it('should render the abbreviated copyable id with the S label', () => {
+      renderRow();
 
-      expect(screen.getByText('frontend')).toBeInTheDocument();
-      expect(screen.getByText('bug')).toBeInTheDocument();
+      expect(screen.getByText('S sub-123')).toBeInTheDocument();
+    });
+
+    it('should render the parent task reference', () => {
+      renderRow();
+
+      expect(screen.getByTestId('parent-task-ref')).toHaveTextContent('Parent: parent-task-456');
     });
 
     it('should render progress percentage when available', () => {
-      renderComponent();
+      renderRow();
 
       expect(screen.getByText('50%')).toBeInTheDocument();
     });
   });
 
-  describe('Different Status Rendering', () => {
-    it('should render correct emoji for todo status', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, status: 'todo' }
-      });
+  describe('Status Rendering', () => {
+    const statuses: Array<[string, string]> = [
+      ['todo', 'To Do'],
+      ['in_progress', 'In Progress'],
+      ['done', 'Done'],
+      ['blocked', 'Blocked'],
+      ['review', 'Review'],
+      ['testing', 'Testing'],
+      ['cancelled', 'Cancelled']
+    ];
 
-      expect(screen.getByText('📋')).toBeInTheDocument();
-    });
+    statuses.forEach(([status, label]) => {
+      it(`should render the ${status} status badge`, () => {
+        renderRow({ summary: { ...mockSummary, status } });
 
-    it('should render correct emoji for done status', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, status: 'done' }
-      });
-
-      expect(screen.getByText('✅')).toBeInTheDocument();
-    });
-
-    it('should render correct emoji for blocked status', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, status: 'blocked' }
-      });
-
-      expect(screen.getByText('🚫')).toBeInTheDocument();
-    });
-  });
-
-  describe('Priority Variations', () => {
-    it('should render low priority with correct styling', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, priority: 'low' }
-      });
-
-      const priorityBadge = screen.getByText('low');
-      expect(priorityBadge.className).toContain('text-gray-600');
-    });
-
-    it('should render medium priority with correct styling', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, priority: 'medium' }
-      });
-
-      const priorityBadge = screen.getByText('medium');
-      expect(priorityBadge.className).toContain('text-yellow-600');
-    });
-
-    it('should render urgent priority with correct styling', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, priority: 'urgent' }
-      });
-
-      const priorityBadge = screen.getByText('urgent');
-      expect(priorityBadge.className).toContain('text-orange-600');
-    });
-
-    it('should render critical priority with correct styling', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, priority: 'critical' }
-      });
-
-      const priorityBadge = screen.getByText('critical');
-      expect(priorityBadge.className).toContain('text-red-900');
-    });
-  });
-
-  describe('Assignee Display', () => {
-    it('should handle single assignee', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, assignees: ['user-1'] }
-      });
-
-      expect(screen.getByText('1 assignee')).toBeInTheDocument();
-    });
-
-    it('should handle no assignees', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, assignees: [] }
-      });
-
-      expect(screen.getByText('0 assignees')).toBeInTheDocument();
-    });
-
-    it('should handle many assignees', () => {
-      renderComponent({
-        subtask: { 
-          ...mockSubtask, 
-          assignees: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'] 
-        }
-      });
-
-      expect(screen.getByText('5 assignees')).toBeInTheDocument();
-    });
-  });
-
-  describe('Label Display', () => {
-    it('should handle no labels', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, labels: [] }
-      });
-
-      // Should not find any label badges
-      expect(screen.queryByText('frontend')).not.toBeInTheDocument();
-      expect(screen.queryByText('bug')).not.toBeInTheDocument();
-    });
-
-    it('should handle many labels', () => {
-      const manyLabels = ['frontend', 'backend', 'bug', 'feature', 'urgent'];
-      renderComponent({
-        subtask: { ...mockSubtask, labels: manyLabels }
-      });
-
-      manyLabels.forEach(label => {
         expect(screen.getByText(label)).toBeInTheDocument();
       });
     });
   });
 
-  describe('Progress Display', () => {
-    it('should not show progress when not provided', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, progress_percentage: undefined }
+  describe('Priority Variations', () => {
+    const priorities: Array<[string, string]> = [
+      ['low', 'Low'],
+      ['medium', 'Medium'],
+      ['high', 'High'],
+      ['urgent', 'Urgent'],
+      ['critical', 'Critical']
+    ];
+
+    priorities.forEach(([priority, label]) => {
+      it(`should render the ${priority} priority badge`, () => {
+        renderRow({ summary: { ...mockSummary, priority } });
+
+        expect(screen.getByText(label)).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Assignee Display', () => {
+    it('should render both badges for two assignees', () => {
+      renderRow();
+
+      expect(screen.getByText('user-1')).toBeInTheDocument();
+      expect(screen.getByText('user-2')).toBeInTheDocument();
+      expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
+    });
+
+    it('should handle a single assignee', () => {
+      renderRow({ summary: { ...mockSummary, assignees: ['user-1'] } });
+
+      expect(screen.getByText('user-1')).toBeInTheDocument();
+    });
+
+    it('should show "No assignees" when the assignees array is empty', () => {
+      renderRow({ summary: { ...mockSummary, assignees: [] } });
+
+      expect(screen.getByText('No assignees')).toBeInTheDocument();
+    });
+
+    it('should show "No assignees" when assignees is undefined', () => {
+      renderRow({ summary: { ...mockSummary, assignees: undefined } });
+
+      expect(screen.getByText('No assignees')).toBeInTheDocument();
+    });
+
+    it('should cap visible assignees at two and show the overflow count', () => {
+      renderRow({
+        summary: {
+          ...mockSummary,
+          assignees: ['user-1', 'user-2', 'user-3', 'user-4', 'user-5']
+        }
+      });
+
+      expect(screen.getByText('user-1')).toBeInTheDocument();
+      expect(screen.getByText('user-2')).toBeInTheDocument();
+      expect(screen.queryByText('user-3')).not.toBeInTheDocument();
+      expect(screen.getByText('+3')).toBeInTheDocument();
+    });
+
+    it('should call onAgentInfoClick with the assignee name', () => {
+      renderRow();
+
+      fireEvent.click(screen.getByText('user-1'));
+
+      expect(defaultProps.onAgentInfoClick).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('Progress Display', () => {
+    it('should not render a progress badge when progress is undefined', () => {
+      renderRow({ summary: { ...mockSummary, progress_percentage: undefined } });
 
       expect(screen.queryByText('%')).not.toBeInTheDocument();
     });
 
-    it('should show 0% progress', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, progress_percentage: 0 }
-      });
+    it('should not render a progress badge for 0%', () => {
+      renderRow({ summary: { ...mockSummary, progress_percentage: 0 } });
 
-      expect(screen.getByText('0%')).toBeInTheDocument();
+      expect(screen.queryByText('0%')).not.toBeInTheDocument();
     });
 
-    it('should show 100% progress', () => {
-      renderComponent({
-        subtask: { ...mockSubtask, progress_percentage: 100 }
-      });
+    it('should render 100% progress', () => {
+      renderRow({ summary: { ...mockSummary, progress_percentage: 100 } });
 
       expect(screen.getByText('100%')).toBeInTheDocument();
     });
   });
 
-  describe('Row Layout', () => {
-    it('should have correct flex layout structure', () => {
-      const { container } = renderComponent();
+  describe('Action Callbacks', () => {
+    it('should dispatch details action', () => {
+      renderRow();
 
-      const rowElement = container.firstChild;
-      expect(rowElement).toHaveClass('flex', 'items-center', 'justify-between');
+      fireEvent.click(screen.getByTitle('View details'));
+
+      expect(defaultProps.onSubtaskAction).toHaveBeenCalledWith('details', 'sub-123');
     });
 
-    it('should have hover effect', () => {
-      const { container } = renderComponent();
+    it('should dispatch edit action', () => {
+      renderRow();
 
-      const rowElement = container.firstChild;
-      expect(rowElement).toHaveClass('hover:bg-gray-50');
+      fireEvent.click(screen.getByTitle('Edit subtask'));
+
+      expect(defaultProps.onSubtaskAction).toHaveBeenCalledWith('edit', 'sub-123');
+    });
+
+    it('should dispatch complete action', () => {
+      renderRow();
+
+      fireEvent.click(screen.getByTitle('Complete subtask'));
+
+      expect(defaultProps.onSubtaskAction).toHaveBeenCalledWith('complete', 'sub-123');
+    });
+
+    it('should dispatch delete action', () => {
+      renderRow();
+
+      fireEvent.click(screen.getByTitle('Delete subtask'));
+
+      expect(defaultProps.onDeleteSubtask).toHaveBeenCalledWith('sub-123');
+    });
+  });
+
+  describe('Loading State', () => {
+    it('should add the loading class to the row when isLoading is true', () => {
+      const { container } = renderRow({ isLoading: true });
+
+      expect(container.querySelector('tr')).toHaveClass('loading');
+    });
+
+    it('should not add the loading class when isLoading is false', () => {
+      const { container } = renderRow({ isLoading: false });
+
+      expect(container.querySelector('tr')).not.toHaveClass('loading');
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle subtask with minimal data', () => {
-      const minimalSubtask: Subtask = {
+      const minimalSubtask: SubtaskSummary = {
         id: 'sub-minimal',
         title: 'Minimal',
         status: 'todo',
         priority: 'medium',
         assignees: [],
-        labels: [],
-        created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-01T00:00:00Z'
+        progress_percentage: undefined
       };
 
-      renderComponent({ subtask: minimalSubtask });
+      renderRow({ summary: minimalSubtask });
 
       expect(screen.getByText('Minimal')).toBeInTheDocument();
-      expect(screen.getByText('📋')).toBeInTheDocument();
-      expect(screen.getByText('medium')).toBeInTheDocument();
-      expect(screen.getByText('0 assignees')).toBeInTheDocument();
+      expect(screen.getByText('To Do')).toBeInTheDocument();
+      expect(screen.getByText('Medium')).toBeInTheDocument();
+      expect(screen.getByText('No assignees')).toBeInTheDocument();
     });
 
-    it('should handle very long title', () => {
-      const longTitle = 'This is a very long subtask title that should be handled properly by the component and not break the layout';
-      renderComponent({
-        subtask: { ...mockSubtask, title: longTitle }
-      });
+    it('should handle a very long title', () => {
+      const longTitle =
+        'This is a very long subtask title that should be handled properly by the component and not break the layout';
+
+      renderRow({ summary: { ...mockSummary, title: longTitle } });
 
       expect(screen.getByText(longTitle)).toBeInTheDocument();
-    });
-  });
-
-  describe('Update Callback', () => {
-    it('should be ready to handle updates', () => {
-      renderComponent();
-
-      // Verify onUpdate callback is provided
-      expect(defaultProps.onUpdate).toBeDefined();
-      expect(typeof defaultProps.onUpdate).toBe('function');
     });
   });
 });

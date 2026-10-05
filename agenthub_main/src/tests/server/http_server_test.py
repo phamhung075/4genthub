@@ -1317,7 +1317,6 @@ class TestCreateSSEApp:
                 "fastmcp.server.routes.task_user_routes": None,
                 "fastmcp.server.routes.task_routes": None,
                 "fastmcp.server.routes.branch_routes": None,
-                "fastmcp.server.routes.agent_routes": None,
                 "fastmcp.server.routes.subtask_routes": None,
             },
         ):

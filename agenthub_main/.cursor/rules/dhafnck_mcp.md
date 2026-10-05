@@ -25,10 +25,10 @@ Organization (Global Context)
 
 ## 🚀 SESSION STARTUP PROTOCOL (MANDATORY)
 
-### Step 1: ALWAYS Switch to Orchestrator First
+### Step 1: ALWAYS Establish Your Seat First
 ```python
-# NEVER work without an agent role active
-call_agent(name_agent="master-orchestrator-agent")
+# NEVER work without knowing your seat (rig whoami --json)
+call_seat(room="<room>", seat="<orchestrator-seat>")
 ```
 
 ### Step 2: System Health Check
@@ -65,7 +65,7 @@ You have **70+ specialized agents** available. You MUST switch to the appropriat
 # Task Types and Required Agents:
 WORK_TYPE_TO_AGENT = {
     "planning": "@task_planning_agent",
-    "coding": "@coding_agent", 
+    "coding": "@coding_agent",
     "debugging": "@debugger_agent",
     "testing": "@test_orchestrator_agent",
     "security": "@security_auditor_agent",
@@ -80,11 +80,11 @@ WORK_TYPE_TO_AGENT = {
 ### Role Switching Examples:
 ```python
 # Example: Implementing a new feature
-call_agent(name_agent="@task_planning_agent")    # Break down requirements
-call_agent(name_agent="@coding_agent")           # Implement code
-call_agent(name_agent="@test_orchestrator_agent") # Create tests
-call_agent(name_agent="@code_reviewer_agent")    # Review quality
-call_agent(name_agent="@documentation_agent")    # Update ai_docs
+call_seat(room="<room>", seat="<planning-seat>")    # Break down requirements
+call_seat(room="<room>", seat="<dev-seat>")           # Implement code
+call_seat(room="<room>", seat="<test-seat>") # Create tests
+call_seat(room="<room>", seat="<reviewer-seat>")    # Review quality
+call_seat(room="<room>", seat="<docs-seat>")    # Update ai_docs
 ```
 
 ## 📊 HIERARCHICAL CONTEXT MANAGEMENT
@@ -96,8 +96,8 @@ call_agent(name_agent="@documentation_agent")    # Update ai_docs
 ```python
 # 1. ALWAYS resolve full context before working
 context = manage_context(
-    action="resolve", 
-    level="task", 
+    action="resolve",
+    level="task",
     context_id=task_id,
     force_refresh=False
 )
@@ -138,10 +138,10 @@ manage_context(
 next_task = manage_task(action="next", git_branch_id=branch_id, include_context=True)
 
 # 2. Switch to appropriate specialist
-call_agent(name_agent=next_task.workflow_guidance.recommended_agent)
+call_seat(room="<room>", seat="<seat>")
 
 # 3. Start work and update status
-manage_task(action="update", task_id=task_id, status="in_progress", 
+manage_task(action="update", task_id=task_id, status="in_progress",
            details="Starting implementation of X feature")
 
 # 4. Break complex tasks into subtasks
@@ -183,7 +183,7 @@ for project in projects:
     for branch in branches:
         # Get next priority work per branch
         next_task = manage_task(action="next", git_branch_id=branch.id, include_context=True)
-        
+
         # Check agent assignments
         agents = manage_agent(action="list", project_id=project.id)
 
@@ -212,7 +212,7 @@ task_context = manage_context(action="resolve", level="task", context_id=task_id
 
 ```python
 # 1. Register yourself as an available agent
-manage_agent(action="register", project_id=project_id, name="Claude_Assistant", 
+manage_agent(action="register", project_id=project_id, name="Claude_Assistant",
             call_agent="Advanced AI assistant with multi-domain expertise")
 
 # 2. Check agent assignments and workload
@@ -251,7 +251,7 @@ response = manage_task(action="next", git_branch_id=branch_id, include_context=T
 
 # Response includes:
 # - workflow_guidance: AI-generated next steps
-# - vision_insights: Strategic recommendations  
+# - vision_insights: Strategic recommendations
 # - agent_suggestions: Recommended specialist agents
 # - progress_indicators: Milestone tracking
 # - blocker_analysis: Potential impediments
@@ -270,8 +270,8 @@ response = manage_task(action="next", git_branch_id=branch_id, include_context=T
 
 ```python
 # All operations are automatically audited, but ensure compliance
-manage_compliance(action="validate_compliance", 
-                 operation="create_file", 
+manage_compliance(action="validate_compliance",
+                 operation="create_file",
                  file_path="/path/to/file",
                  security_level="internal")
 
@@ -296,7 +296,7 @@ audit_trail = manage_compliance(action="get_audit_trail", limit=50)
 # Task-level insight → Project-level pattern
 manage_context(
     action="delegate",
-    level="task", 
+    level="task",
     context_id=task_id,
     delegate_to="project",
     delegate_data={
@@ -308,11 +308,11 @@ manage_context(
     delegation_reason="Reusable authentication pattern for other features"
 )
 
-# Project-level insight → Global organizational knowledge  
+# Project-level insight → Global organizational knowledge
 manage_context(
     action="delegate",
     level="project",
-    context_id=project_id, 
+    context_id=project_id,
     delegate_to="global",
     delegate_data={
         "best_practice": "microservice_communication_pattern",
@@ -329,8 +329,8 @@ manage_context(
 
 ```python
 # When errors occur:
-# 1. Switch to debugger agent
-call_agent(name_agent="@debugger_agent")
+# 1. Resolve the debugger seat
+call_seat(room="<room>", seat="<debugger-seat>")
 
 # 2. Analyze the problem systematically
 manage_task(action="update", task_id=task_id, status="blocked",
@@ -347,8 +347,8 @@ if fixed:
                details="Issue resolved: [solution applied]")
 else:
     # Delegate to higher level for assistance
-    manage_context(action="delegate", level="task", 
-                               delegate_to="project", 
+    manage_context(action="delegate", level="task",
+                               delegate_to="project",
                                delegate_data={"blocker": error_details})
 ```
 
@@ -435,12 +435,12 @@ manage_context(action="add_insight", task_id=task_id,
 
 # 3. Consider delegation of patterns
 if insights.is_reusable():
-    manage_context(action="delegate", 
+    manage_context(action="delegate",
                                delegate_data=insights.to_pattern())
 
 # 4. Update agent capabilities if needed
 if new_capability_developed:
-    manage_agent(action="update", agent_id=agent_id, 
+    manage_agent(action="update", agent_id=agent_id,
                 capabilities=updated_capabilities)
 ```
 
@@ -449,7 +449,7 @@ if new_capability_developed:
 You are successfully operating as an autonomous AI agent when:
 
 1. **Context Awareness**: You consistently resolve and update hierarchical context
-2. **Role Specialization**: You switch to appropriate agents for different work types  
+2. **Role Specialization**: You switch to appropriate agents for different work types
 3. **Multi-Project Coordination**: You balance work across projects effectively
 4. **Knowledge Sharing**: You delegate insights and patterns for organizational learning
 5. **Autonomous Operation**: You work independently with minimal human intervention
@@ -476,17 +476,17 @@ You are successfully operating as an autonomous AI agent when:
 ```python
 # When working on similar problems across projects:
 pattern = extract_common_pattern(project_a_solution, project_b_problem)
-manage_context(action="delegate", level="project", 
+manage_context(action="delegate", level="project",
                            delegate_to="global", delegate_data=pattern)
 ```
 
 ### Pattern 2: Intelligent Agent Orchestration
 ```python
 # For complex multi-step workflows:
-call_agent(name_agent="master-orchestrator-agent")
+call_seat(room="<room>", seat="<orchestrator-seat>")
 workflow = plan_multi_agent_workflow(requirements)
 for step in workflow.steps:
-    call_agent(name_agent=step.required_agent)
+    call_seat(room="<room>", seat=step.required_seat)
     execute_step(step)
     update_workflow_progress(step)
 ```
@@ -496,7 +496,7 @@ for step in workflow.steps:
 # Periodically check and maintain system health:
 health = manage_connection(action="health_check", include_details=True)
 if health.status != "healthy":
-    call_agent(name_agent="@system_health_agent")
+    call_seat(room="<room>", seat="<health-seat>")
     investigate_and_repair(health.issues)
 ```
 

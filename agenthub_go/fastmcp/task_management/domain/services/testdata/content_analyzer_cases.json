@@ -1,0 +1,3438 @@
+{
+ "features": [
+  {
+   "text": "This task requires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "database schema and depends on user model",
+     "conf": 0.9,
+     "pos": 10,
+     "ctx": "This task requires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.yaml, then u",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "requires the database schema and depends on user model"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "update docs",
+     "conf": 0.8,
+     "pos": 108,
+     "ctx": " Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+     "meta": {
+      "pattern": "\\b(?:then|next|followed\\s+by)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "then update docs"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "src/app/main.py",
+     "conf": 0.8,
+     "pos": 71,
+     "ctx": "d depends on User Model. Edit src/app/main.py and config/app.yaml, then upd",
+     "meta": {
+      "file_type": "source_code",
+      "extension": "py"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "config/app.yaml",
+     "conf": 0.8,
+     "pos": 91,
+     "ctx": "del. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+     "meta": {
+      "file_type": "config_files",
+      "extension": "yaml"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "docs/guide.md",
+     "conf": 0.6,
+     "pos": 120,
+     "ctx": " config/app.yaml, then update docs/guide.md.",
+     "meta": {
+      "file_type": "documentation",
+      "extension": "md"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Database Schema",
+     "conf": 0.6,
+     "pos": 23,
+     "ctx": "This task requires the Database Schema and depends on User Model. Edit src/app",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Database Schema"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "User Model",
+     "conf": 0.6,
+     "pos": 54,
+     "ctx": "ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "User Model"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 7,
+    "feature_types": {
+     "keyword": 2,
+     "file_reference": 3,
+     "entity_extraction": 2
+    },
+    "high_confidence_features": 4,
+    "avg_confidence": 0.7285714285714285,
+    "extracted_entities": [
+     "Database Schema",
+     "User Model"
+    ],
+    "file_references": [
+     "src/app/main.py",
+     "config/app.yaml",
+     "docs/guide.md"
+    ]
+   }
+  },
+  {
+   "text": "Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "auth service",
+     "conf": 1.0,
+     "pos": 0,
+     "ctx": "Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+     "meta": {
+      "pattern": "\\b(?:blocks?|blocked\\s+by)\\s+(?:the\\s+)?([A-Za-z][a-zA-Z]*(?:\\s+[a-zA-Z]+)*)\\b",
+      "full_match": "blocked by the auth service"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "oauth flow",
+     "conf": 0.7,
+     "pos": 29,
+     "ctx": "Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase ",
+     "meta": {
+      "pattern": "\\b(?:implements?|implementation\\s+of)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "implement 'oauth flow'"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "get ",
+     "conf": 0.5,
+     "pos": 103,
+     "ctx": "irst. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+     "meta": {
+      "pattern": "\\b(?:uses?|utilizes?)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "uses get "
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "user_accounts",
+     "conf": 0.9,
+     "pos": 74,
+     "ctx": "ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+     "meta": {
+      "entity_type": "database_objects",
+      "full_match": "table user_accounts"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "/api/users/{id}",
+     "conf": 0.8,
+     "pos": 108,
+     "ctx": "reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+     "meta": {
+      "entity_type": "api_endpoints",
+      "full_match": "GET /api/users/{id}"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Auth Service",
+     "conf": 0.6,
+     "pos": 15,
+     "ctx": "Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Auth Service"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "1",
+     "conf": 0.8,
+     "pos": 59,
+     "ctx": "implement 'OAuth flow' first. Step 1: create table user_accounts. ",
+     "meta": {
+      "pattern": "\\bstep\\s+(\\d+)",
+      "sequence_type": "ordered"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "2",
+     "conf": 0.7,
+     "pos": 95,
+     "ctx": ": create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+     "meta": {
+      "pattern": "\\bphase\\s+(\\d+)",
+      "sequence_type": "ordered"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 8,
+    "feature_types": {
+     "keyword": 3,
+     "entity_extraction": 3,
+     "temporal_pattern": 2
+    },
+    "high_confidence_features": 4,
+    "avg_confidence": 0.75,
+    "extracted_entities": [
+     "user_accounts",
+     "/api/users/{id}",
+     "Auth Service"
+    ],
+    "file_references": []
+   }
+  },
+  {
+   "text": "Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "basehandler",
+     "conf": 0.7,
+     "pos": 9,
+     "ctx": "Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+     "meta": {
+      "pattern": "\\b(?:extends?|extension\\s+of)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "extends basehandler"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "sequence",
+     "conf": 0.8,
+     "pos": 125,
+     "ctx": "os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+     "meta": {
+      "pattern": "\\b(?:then|next|followed\\s+by)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "then sequence"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "and",
+     "conf": 0.5,
+     "pos": 78,
+     "ctx": "erManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 t",
+     "meta": {
+      "entity_type": "api_routes",
+      "full_match": "path and"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "UserManager",
+     "conf": 0.7,
+     "pos": 30,
+     "ctx": "Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+     "meta": {
+      "entity_type": "class_references",
+      "full_match": "class UserManager"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "save_all",
+     "conf": 0.5,
+     "pos": 54,
+     "ctx": "ds BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tool",
+     "meta": {
+      "entity_type": "method_references",
+      "full_match": ".save_all("
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "os.path",
+     "conf": 0.8,
+     "pos": 68,
+     "ctx": ". class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+     "meta": {
+      "entity_type": "module_imports",
+      "full_match": "import os.path"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "fastmcp.tools",
+     "conf": 0.8,
+     "pos": 87,
+     "ctx": " calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+     "meta": {
+      "entity_type": "module_imports",
+      "full_match": "from fastmcp.tools"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "x.",
+     "conf": 0.8,
+     "pos": 106,
+     "ctx": ". import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+     "meta": {
+      "entity_type": "module_imports",
+      "full_match": "import x."
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "3",
+     "conf": 0.6,
+     "pos": 116,
+     "ctx": " from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+     "meta": {
+      "pattern": "\\border\\s*:\\s*(\\d+)",
+      "sequence_type": "ordered"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "12",
+     "conf": 0.6,
+     "pos": 130,
+     "ctx": "tools import x. Order: 3 then Sequence: 12.",
+     "meta": {
+      "pattern": "\\bsequence\\s*:\\s*(\\d+)",
+      "sequence_type": "ordered"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 10,
+    "feature_types": {
+     "keyword": 2,
+     "entity_extraction": 6,
+     "temporal_pattern": 2
+    },
+    "high_confidence_features": 4,
+    "avg_confidence": 0.6799999999999999,
+    "extracted_entities": [
+     "and",
+     "UserManager",
+     "save_all",
+     "os.path",
+     "fastmcp.tools",
+     "x."
+    ],
+    "file_references": []
+   }
+  },
+  {
+   "text": "The first step is migrations/001_init.sql; second step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "step is migrations",
+     "conf": 0.7,
+     "pos": 4,
+     "ctx": "The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+     "meta": {
+      "pattern": "\\b(?:first|initially|start\\s+with)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "first step is migrations"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "test.py",
+     "conf": 0.8,
+     "pos": 77,
+     "ctx": "nd step add tests/unit/test_a.test.py. LoginComponent and PaymentSe",
+     "meta": {
+      "file_type": "source_code",
+      "extension": "py"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "migrations/001_init.sql",
+     "conf": 0.8,
+     "pos": 18,
+     "ctx": "The first step is migrations/001_init.sql; second step add tests/unit/t",
+     "meta": {
+      "file_type": "database",
+      "extension": "sql"
+     }
+    },
+    {
+     "type": "file_reference",
+     "value": "tests/unit/test_a.test.py",
+     "conf": 0.7,
+     "pos": 59,
+     "ctx": "001_init.sql; second step add tests/unit/test_a.test.py. LoginComponent and PaymentSe",
+     "meta": {
+      "file_type": "tests",
+      "extension": "py"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "/v1/items",
+     "conf": 0.5,
+     "pos": 136,
+     "ctx": "nent and PaymentService and OrderModel. Route: /v1/items",
+     "meta": {
+      "entity_type": "api_routes",
+      "full_match": "Route: /v1/items"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "LoginComponent",
+     "conf": 0.7,
+     "pos": 86,
+     "ctx": "ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+     "meta": {
+      "entity_type": "component_names",
+      "full_match": "LoginComponent"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "PaymentService",
+     "conf": 0.7,
+     "pos": 105,
+     "ctx": "unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+     "meta": {
+      "entity_type": "service_names",
+      "full_match": "PaymentService"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "OrderModel",
+     "conf": 0.7,
+     "pos": 124,
+     "ctx": ". LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+     "meta": {
+      "entity_type": "model_names",
+      "full_match": "OrderModel"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "first",
+     "conf": 0.7,
+     "pos": 4,
+     "ctx": "The first step is migrations/001_init.sql; s",
+     "meta": {
+      "pattern": "\\b(first|second|third|fourth|fifth|last)\\s+step",
+      "sequence_type": "sequential"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "second",
+     "conf": 0.7,
+     "pos": 43,
+     "ctx": "p is migrations/001_init.sql; second step add tests/unit/test_a.test.py",
+     "meta": {
+      "pattern": "\\b(first|second|third|fourth|fifth|last)\\s+step",
+      "sequence_type": "sequential"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 10,
+    "feature_types": {
+     "keyword": 1,
+     "file_reference": 3,
+     "entity_extraction": 4,
+     "temporal_pattern": 2
+    },
+    "high_confidence_features": 2,
+    "avg_confidence": 0.7,
+    "extracted_entities": [
+     "/v1/items",
+     "LoginComponent",
+     "PaymentService",
+     "OrderModel"
+    ],
+    "file_references": [
+     "test.py",
+     "migrations/001_init.sql",
+     "tests/unit/test_a.test.py"
+    ]
+   }
+  },
+  {
+   "text": "Dépend de la Base Données — réutilise le module Café. Il faut: après le Déploiement; utilise été-2024 uses_café.",
+   "features": [],
+   "summary": {
+    "total_features": 0,
+    "feature_types": {},
+    "high_confidence_features": 0,
+    "avg_confidence": 0.0,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "Cần Phụ Thuộc vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße handling and the İstanbul Plan.",
+   "features": [
+    {
+     "type": "file_reference",
+     "value": "src/việt.py",
+     "conf": 0.8,
+     "pos": 44,
+     "ctx": "vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+     "meta": {
+      "file_type": "source_code",
+      "extension": "py"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 1,
+    "feature_types": {
+     "file_reference": 1
+    },
+    "high_confidence_features": 1,
+    "avg_confidence": 0.8,
+    "extracted_entities": [],
+    "file_references": [
+     "src/việt.py"
+    ]
+   }
+  },
+  {
+   "text": "Requires the Café Service and uses réutilisé thing; blocked by Émile Module",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "cafe",
+     "conf": 0.9,
+     "pos": 0,
+     "ctx": "Requires the Café Service and uses réutilisé thing; blocked by E",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "requires the cafe"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "e",
+     "conf": 1.0,
+     "pos": 55,
+     "ctx": "res the Café Service and uses réutilisé thing; blocked by Émile Module",
+     "meta": {
+      "pattern": "\\b(?:blocks?|blocked\\s+by)\\s+(?:the\\s+)?([A-Za-z][a-zA-Z]*(?:\\s+[a-zA-Z]+)*)\\b",
+      "full_match": "blocked by e"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "re",
+     "conf": 0.5,
+     "pos": 31,
+     "ctx": "Requires the Café Service and uses réutilisé thing; blocked by Émile Module",
+     "meta": {
+      "pattern": "\\b(?:uses?|utilizes?)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "uses re"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 3,
+    "feature_types": {
+     "keyword": 3
+    },
+    "high_confidence_features": 2,
+    "avg_confidence": 0.7999999999999999,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "kelvin table and",
+     "conf": 0.9,
+     "pos": 7,
+     "ctx": "KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "requires the kelvin table and"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "sharp service ſ",
+     "conf": 0.9,
+     "pos": 44,
+     "ctx": "KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "needs the sharp service ſ"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "and",
+     "conf": 0.9,
+     "pos": 27,
+     "ctx": "KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+     "meta": {
+      "entity_type": "database_objects",
+      "full_match": "Table and"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Sharp Service",
+     "conf": 0.6,
+     "pos": 54,
+     "ctx": "s the Kelvin Table and Straße needs the Sharp Service ſ",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Sharp Service"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 4,
+    "feature_types": {
+     "keyword": 2,
+     "entity_extraction": 2
+    },
+    "high_confidence_features": 3,
+    "avg_confidence": 0.825,
+    "extracted_entities": [
+     "and",
+     "Sharp Service"
+    ],
+    "file_references": []
+   }
+  },
+  {
+   "text": "uses    spaces  here and\u001cthere; implements \"quoted-name\" extends 'single' based on  x",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "quoted-name",
+     "conf": 0.7,
+     "pos": 32,
+     "ctx": "uses    spaces  here and\u001cthere; implements \"quoted-name\" extends 'single' based on  x",
+     "meta": {
+      "pattern": "\\b(?:implements?|implementation\\s+of)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "implements \"quoted-name\""
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "single",
+     "conf": 0.7,
+     "pos": 57,
+     "ctx": " spaces  here and\u001cthere; implements \"quoted-name\" extends 'single' based on  x",
+     "meta": {
+      "pattern": "\\b(?:extends?|extension\\s+of)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "extends 'single'"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "x",
+     "conf": 0.6,
+     "pos": 74,
+     "ctx": "\u001cthere; implements \"quoted-name\" extends 'single' based on  x",
+     "meta": {
+      "pattern": "\\b(?:inherits?\\s+from|based\\s+on)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "based on  x"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "spaces  here and\u001cthere",
+     "conf": 0.5,
+     "pos": 0,
+     "ctx": "uses    spaces  here and\u001cthere; implements \"quoted-name\" extends 'single' based ",
+     "meta": {
+      "pattern": "\\b(?:uses?|utilizes?)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "uses    spaces  here and\u001cthere"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 4,
+    "feature_types": {
+     "keyword": 4
+    },
+    "high_confidence_features": 0,
+    "avg_confidence": 0.625,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "",
+   "features": [],
+   "summary": {
+    "total_features": 0,
+    "feature_types": {},
+    "high_confidence_features": 0,
+    "avg_confidence": 0.0,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "no keywords at all here",
+   "features": [],
+   "summary": {
+    "total_features": 0,
+    "feature_types": {},
+    "high_confidence_features": 0,
+    "avg_confidence": 0.0,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "ٍStep ٣ and phase ٤ order : ٥ — arabic digits, stage ² and step 1²",
+   "features": [
+    {
+     "type": "temporal_pattern",
+     "value": "٣",
+     "conf": 0.8,
+     "pos": 1,
+     "ctx": "ٍStep ٣ and phase ٤ order : ٥ — arabi",
+     "meta": {
+      "pattern": "\\bstep\\s+(\\d+)",
+      "sequence_type": "ordered"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "1",
+     "conf": 0.8,
+     "pos": 59,
+     "ctx": " — arabic digits, stage ² and step 1²",
+     "meta": {
+      "pattern": "\\bstep\\s+(\\d+)",
+      "sequence_type": "ordered"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "٤",
+     "conf": 0.7,
+     "pos": 12,
+     "ctx": "ٍStep ٣ and phase ٤ order : ٥ — arabic digits, st",
+     "meta": {
+      "pattern": "\\bphase\\s+(\\d+)",
+      "sequence_type": "ordered"
+     }
+    },
+    {
+     "type": "temporal_pattern",
+     "value": "٥",
+     "conf": 0.6,
+     "pos": 20,
+     "ctx": "ٍStep ٣ and phase ٤ order : ٥ — arabic digits, stage ² and ",
+     "meta": {
+      "pattern": "\\border\\s*:\\s*(\\d+)",
+      "sequence_type": "ordered"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 4,
+    "feature_types": {
+     "temporal_pattern": 4
+    },
+    "high_confidence_features": 2,
+    "avg_confidence": 0.725,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  },
+  {
+   "text": "Requires THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "big thing",
+     "conf": 0.9,
+     "pos": 0,
+     "ctx": "Requires THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNex",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "requires the big thing"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "docs",
+     "conf": 0.9,
+     "pos": 57,
+     "ctx": "s THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "needs docs"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "tabs matter",
+     "conf": 0.9,
+     "pos": 80,
+     "ctx": " everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "depends   on\ttabs matter"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "everything",
+     "conf": 1.0,
+     "pos": 24,
+     "ctx": "Requires THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   o",
+     "meta": {
+      "pattern": "\\b(?:blocks?|blocked\\s+by)\\s+(?:the\\s+)?([A-Za-z][a-zA-Z]*(?:\\s+[a-zA-Z]+)*)\\b",
+      "full_match": "blocks everything"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "the end",
+     "conf": 0.8,
+     "pos": 43,
+     "ctx": "Requires THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "pattern": "\\b(?:then|next|followed\\s+by)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "then the end"
+     }
+    },
+    {
+     "type": "keyword",
+     "value": "line",
+     "conf": 0.8,
+     "pos": 69,
+     "ctx": "ing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "pattern": "\\b(?:then|next|followed\\s+by)\\s+([\"\\']?[\\w\\s\\-]+[\"\\']?)",
+      "full_match": "next line"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Requires THE Big Thing",
+     "conf": 0.6,
+     "pos": 0,
+     "ctx": "Requires THE Big Thing. BLOCKS everything. then THE END. Needs",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Requires THE Big Thing"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "THE END",
+     "conf": 0.6,
+     "pos": 48,
+     "ctx": " THE Big Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTa",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "THE END"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Needs Docs",
+     "conf": 0.6,
+     "pos": 57,
+     "ctx": "Thing. BLOCKS everything. then THE END. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Needs Docs"
+     }
+    },
+    {
+     "type": "entity_extraction",
+     "value": "Tabs Matter",
+     "conf": 0.6,
+     "pos": 93,
+     "ctx": "ND. Needs Docs.\nNext line: depends   on\tTabs Matter",
+     "meta": {
+      "entity_type": "entity_names",
+      "full_match": "Tabs Matter"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 10,
+    "feature_types": {
+     "keyword": 6,
+     "entity_extraction": 4
+    },
+    "high_confidence_features": 6,
+    "avg_confidence": 0.77,
+    "extracted_entities": [
+     "Requires THE Big Thing",
+     "THE END",
+     "Needs Docs",
+     "Tabs Matter"
+    ],
+    "file_references": []
+   }
+  },
+  {
+   "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx requires Foo yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+   "features": [
+    {
+     "type": "keyword",
+     "value": "foo yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "conf": 0.9,
+     "pos": 201,
+     "ctx": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx requires Foo yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+     "meta": {
+      "pattern": "\\b(?:requires?|needs?|depends?\\s+on)\\s+(?:the\\s+)?([A-Z][a-zA-Z]*(?:\\s+[A-Z][a-zA-Z]*)*)\\b",
+      "full_match": "requires foo yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+     }
+    }
+   ],
+   "summary": {
+    "total_features": 1,
+    "feature_types": {
+     "keyword": 1
+    },
+    "high_confidence_features": 1,
+    "avg_confidence": 0.9,
+    "extracted_entities": [],
+    "file_references": []
+   }
+  }
+ ],
+ "rel": {
+  "contents": {
+   "t0": "This task requires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+   "t1": "Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+   "t2": "Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+   "t3": "The first step is migrations/001_init.sql; second step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+   "t4": "Dépend de la Base Données — réutilise le module Café. Il faut: après le Déploiement; utilise été-2024 uses_café.",
+   "t5": "Cần Phụ Thuộc vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße handling and the İstanbul Plan.",
+   "t6": "Requires the Café Service and uses réutilisé thing; blocked by Émile Module",
+   "t7": "KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ"
+  },
+  "result": {
+   "t0": [
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.525,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.58"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.3409090909090909,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Similarity: 0.45"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.45769230769230773,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4083333333333333,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.58"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.6400000000000001,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.80"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3033333333333333,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.48,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.80"
+     ]
+    },
+    {
+     "entity": "User Model",
+     "src": "t0",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.4,
+     "ev": [
+      "Source: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "keyword_keyword",
+     "conf": 0.3409090909090909,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.45"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.36363636363636365,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Similarity: 0.45"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.36923076923076925,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.47666666666666657,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.73"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.38999999999999996,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3733333333333333,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "User Model",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3545454545454545,
+     "ev": [
+      "Source: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "User Model",
+     "src": "t0",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3545454545454545,
+     "ev": [
+      "Source: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3214285714285714,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.43"
+     ]
+    },
+    {
+     "entity": "src/app/main.py",
+     "src": "t0",
+     "tgt": "t3",
+     "type": "file_reference_file_reference",
+     "conf": 0.32000000000000006,
+     "ev": [
+      "Source: d depends on User Model. Edit src/app/main.py and config/app.yaml, then upd",
+      "Target: nd step add tests/unit/test_a.test.py. LoginComponent and PaymentSe",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3972222222222222,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.61"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.47666666666666657,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.73"
+     ]
+    },
+    {
+     "entity": "User Model",
+     "src": "t0",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4549999999999999,
+     "ev": [
+      "Source: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Target: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.70"
+     ]
+    },
+    {
+     "entity": "src/app/main.py",
+     "src": "t0",
+     "tgt": "t5",
+     "type": "file_reference_file_reference",
+     "conf": 0.5866666666666667,
+     "ev": [
+      "Source: d depends on User Model. Edit src/app/main.py and config/app.yaml, then upd",
+      "Target: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Similarity: 0.73"
+     ]
+    },
+    {
+     "entity": "config/app.yaml",
+     "src": "t0",
+     "tgt": "t5",
+     "type": "file_reference_file_reference",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source: del. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t6",
+     "type": "entity_extraction_keyword",
+     "conf": 0.35,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: Requires the Café Service and uses réutilisé thing; blocked by E",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.31875000000000003,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.38"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.3400000000000001,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "update docs",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3230769230769231,
+     "ev": [
+      "Source:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.46875,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5499999999999999,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.73"
+     ]
+    },
+    {
+     "entity": "Database Schema",
+     "src": "t0",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.43999999999999995,
+     "ev": [
+      "Source: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.73"
+     ]
+    }
+   ],
+   "t1": [
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.6,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4266666666666667,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "oauth flow",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.40909090909090906,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "oauth flow",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.653846153846154,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.77"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.4666666666666666,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.32,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_keyword",
+     "conf": 0.425,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_keyword",
+     "conf": 0.375,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.42"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.425,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3125,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: ds BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tool",
+      "Similarity: 0.42"
+     ]
+    },
+    {
+     "entity": "oauth flow",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.375,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Target: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "oauth flow",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.34615384615384615,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.36923076923076925,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5230769230769231,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.49230769230769234,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.326923076923077,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Similarity: 0.38"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.45769230769230773,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.30000000000000004,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.30000000000000004,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "1",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "temporal_pattern_temporal_pattern",
+     "conf": 0.35,
+     "ev": [
+      "Source: implement 'OAuth flow' first. Step 1: create table user_accounts. ",
+      "Target: tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "2",
+     "src": "t1",
+     "tgt": "t2",
+     "type": "temporal_pattern_temporal_pattern",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: : create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "keyword_keyword",
+     "conf": 0.37777777777777777,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.375,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: nent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.30357142857142855,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Similarity: 0.36"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.5464285714285715,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.35555555555555557,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.34285714285714286,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Similarity: 0.43"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5142857142857143,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3333333333333333,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3466666666666667,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: nent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4178571428571428,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t6",
+     "type": "keyword_keyword",
+     "conf": 0.31666666666666665,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: Requires the Café Service and uses réutilisé thing; blocked by E",
+      "Similarity: 0.33"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.41562499999999997,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "auth service",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.6333333333333333,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.42000000000000004,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "user_accounts",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.40384615384615385,
+     "ev": [
+      "Source: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.45333333333333337,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "/api/users/{id}",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3733333333333333,
+     "ev": [
+      "Source: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.328125,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "Auth Service",
+     "src": "t1",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5,
+     "ev": [
+      "Source: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.67"
+     ]
+    }
+   ],
+   "t2": [
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.40909090909090906,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3466666666666666,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3545454545454545,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.43636363636363634,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.40909090909090906,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4136363636363636,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "os.path",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.36363636363636365,
+     "ev": [
+      "Source: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.45"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5538461538461539,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.69"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.32666666666666666,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3230769230769231,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.49583333333333335,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.58"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4307692307692308,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.37916666666666665,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.58"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.45,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.45769230769230773,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5666666666666667,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5538461538461539,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.69"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.43333333333333324,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "save_all",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3125,
+     "ev": [
+      "Source: ds BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tool",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.42"
+     ]
+    },
+    {
+     "entity": "os.path",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.30000000000000004,
+     "ev": [
+      "Source: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.4153846153846154,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.40384615384615385,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5230769230769231,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3230769230769231,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "12",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "temporal_pattern_temporal_pattern",
+     "conf": 0.35,
+     "ev": [
+      "Source: tools import x. Order: 3 then Sequence: 12.",
+      "Target: implement 'OAuth flow' first. Step 1: create table user_accounts. ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "12",
+     "src": "t2",
+     "tgt": "t1",
+     "type": "temporal_pattern_temporal_pattern",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: tools import x. Order: 3 then Sequence: 12.",
+      "Target: : create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3181818181818182,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.45"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3214285714285714,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.43"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3888888888888889,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.45,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.375,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42857142857142855,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Similarity: 0.57"
+     ]
+    },
+    {
+     "entity": "fastmcp.tools",
+     "src": "t2",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42857142857142855,
+     "ev": [
+      "Source:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.57"
+     ]
+    },
+    {
+     "entity": "sequence",
+     "src": "t2",
+     "tgt": "t6",
+     "type": "keyword_keyword",
+     "conf": 0.42500000000000004,
+     "ev": [
+      "Source: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Target: Requires the Café Service and uses réutilisé thing; blocked by E",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.4,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "basehandler",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3499999999999999,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "and",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.84,
+     "ev": [
+      "Source: erManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 t",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 1.00"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "UserManager",
+     "src": "t2",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3499999999999999,
+     "ev": [
+      "Source: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.54"
+     ]
+    }
+   ],
+   "t3": [
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.45833333333333337,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.61"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3611111111111111,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.32499999999999996,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "LoginComponent",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.375,
+     "ev": [
+      "Source: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.42857142857142855,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.57"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3466666666666666,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "OrderModel",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.40909090909090906,
+     "ev": [
+      "Source: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "OrderModel",
+     "src": "t3",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.7799999999999999,
+     "ev": [
+      "Source: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 1.00"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.6138888888888888,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.72"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4444444444444445,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4166666666666667,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4694444444444444,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.72"
+     ]
+    },
+    {
+     "entity": "/v1/items",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3125,
+     "ev": [
+      "Source: nent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.42"
+     ]
+    },
+    {
+     "entity": "LoginComponent",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5142857142857143,
+     "ev": [
+      "Source: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_keyword",
+     "conf": 0.6071428571428571,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.71"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5142857142857143,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.46428571428571425,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.71"
+     ]
+    },
+    {
+     "entity": "OrderModel",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.36923076923076925,
+     "ev": [
+      "Source: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.46"
+     ]
+    },
+    {
+     "entity": "OrderModel",
+     "src": "t3",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.30000000000000004,
+     "ev": [
+      "Source: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.35,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.3333333333333333,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: . class UserManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order:",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.375,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "LoginComponent",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42857142857142855,
+     "ev": [
+      "Source: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.57"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.35,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3214285714285714,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.43"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.39999999999999997,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.57"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3214285714285714,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target:  calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 then Sequence: 12.",
+      "Similarity: 0.43"
+     ]
+    },
+    {
+     "entity": "OrderModel",
+     "src": "t3",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.44545454545454544,
+     "ev": [
+      "Source: . LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.64"
+     ]
+    },
+    {
+     "entity": "test.py",
+     "src": "t3",
+     "tgt": "t5",
+     "type": "file_reference_file_reference",
+     "conf": 0.43636363636363634,
+     "ev": [
+      "Source: nd step add tests/unit/test_a.test.py. LoginComponent and PaymentSe",
+      "Target: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Similarity: 0.55"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.4444444444444445,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "keyword_keyword",
+     "conf": 0.5333333333333333,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "step is migrations",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "keyword_entity_extraction",
+     "conf": 0.43333333333333324,
+     "ev": [
+      "Source: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "LoginComponent",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.35000000000000003,
+     "ev": [
+      "Source: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.4,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "entity_extraction_keyword",
+     "conf": 0.5333333333333333,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.67"
+     ]
+    },
+    {
+     "entity": "PaymentService",
+     "src": "t3",
+     "tgt": "t7",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.46428571428571425,
+     "ev": [
+      "Source: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Target: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Similarity: 0.71"
+     ]
+    }
+   ],
+   "t4": [],
+   "t5": [
+    {
+     "entity": "src/việt.py",
+     "src": "t5",
+     "tgt": "t0",
+     "type": "file_reference_file_reference",
+     "conf": 0.4266666666666667,
+     "ev": [
+      "Source: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Target: d depends on User Model. Edit src/app/main.py and config/app.yaml, then upd",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "src/việt.py",
+     "src": "t5",
+     "tgt": "t0",
+     "type": "file_reference_file_reference",
+     "conf": 0.32000000000000006,
+     "ev": [
+      "Source: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Target: del. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.40"
+     ]
+    },
+    {
+     "entity": "src/việt.py",
+     "src": "t5",
+     "tgt": "t3",
+     "type": "file_reference_file_reference",
+     "conf": 0.36363636363636365,
+     "ev": [
+      "Source: vào Hệ Thống; sử dụng tập tin src/việt.py. Requires Ünïcode Straße hand",
+      "Target: nd step add tests/unit/test_a.test.py. LoginComponent and PaymentSe",
+      "Similarity: 0.45"
+     ]
+    }
+   ],
+   "t6": [],
+   "t7": [
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.42500000000000004,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.421875,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.328125,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_keyword",
+     "conf": 0.51,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.44999999999999996,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "entity_extraction_keyword",
+     "conf": 0.4307692307692308,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target:  Model. Edit src/app/main.py and config/app.yaml, then update docs/guide.md.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.32,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: This task requires the Database Schema and depends on User Model. Edit src/app",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t0",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.32307692307692304,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ires the Database Schema and depends on User Model. Edit src/app/main.py and config/app.ya",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.5343749999999999,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.35000000000000003,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create table user_accounts. Phase",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.39375,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.31875000000000003,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.38"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.421875,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_keyword",
+     "conf": 0.8233333333333334,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: create tab",
+      "Similarity: 0.87"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.48,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.51,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "keyword_entity_extraction",
+     "conf": 0.65,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Blocked by the Auth Service; implement 'OAuth flow' first. Step 1: ",
+      "Similarity: 0.87"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.46153846153846156,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ment 'OAuth flow' first. Step 1: create table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t1",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.42,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: reate table user_accounts. Phase 2 uses GET /api/users/{id}.",
+      "Similarity: 0.60"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "keyword_keyword",
+     "conf": 0.5,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.30000000000000004,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.38"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.30624999999999997,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ds BaseHandler. class UserManager calls .save_all(x). import os.path and from fastmcp.tool",
+      "Similarity: 0.44"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "keyword_keyword",
+     "conf": 0.4266666666666667,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.53"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "keyword_entity_extraction",
+     "conf": 0.37333333333333335,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.47"
+     ]
+    },
+    {
+     "entity": "and",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.84,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: erManager calls .save_all(x). import os.path and from fastmcp.tools import x. Order: 3 t",
+      "Similarity: 1.00"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "entity_extraction_keyword",
+     "conf": 0.39999999999999997,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.",
+      "Similarity: 0.62"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t2",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.3499999999999999,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: Finally, extends BaseHandler. class UserManager calls .save_all(x). import os.path and ",
+      "Similarity: 0.54"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "keyword_keyword",
+     "conf": 0.4444444444444445,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.4,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: ond step add tests/unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Rout",
+      "Similarity: 0.50"
+     ]
+    },
+    {
+     "entity": "kelvin table and",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.45,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "keyword_keyword",
+     "conf": 0.48888888888888893,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.61"
+     ]
+    },
+    {
+     "entity": "sharp service ſ",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "keyword_entity_extraction",
+     "conf": 0.5866666666666667,
+     "ev": [
+      "Source: KELVIN requires the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.73"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "entity_extraction_keyword",
+     "conf": 0.3611111111111111,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: The first step is migrations/001_init.sql; second step add tests/unit/test_a.t",
+      "Similarity: 0.56"
+     ]
+    },
+    {
+     "entity": "Sharp Service",
+     "src": "t7",
+     "tgt": "t3",
+     "type": "entity_extraction_entity_extraction",
+     "conf": 0.5107142857142857,
+     "ev": [
+      "Source: s the Kelvin Table and Straße needs the Sharp Service ſ",
+      "Target: unit/test_a.test.py. LoginComponent and PaymentService and OrderModel. Route: /v1/items",
+      "Similarity: 0.79"
+     ]
+    }
+   ]
+  }
+ },
+ "summary": [],
+ "sim": [
+  [
+   "",
+   "a",
+   0.0
+  ],
+  [
+   "a",
+   "",
+   0.0
+  ],
+  [
+   "abc",
+   "abc",
+   1.0
+  ],
+  [
+   " ABC ",
+   "abc",
+   1.0
+  ],
+  [
+   "user model",
+   "model",
+   0.5
+  ],
+  [
+   "a_b-c",
+   "c b a",
+   1.0
+  ],
+  [
+   "database",
+   "databse",
+   1.0
+  ],
+  [
+   "xxxxxxxxxxxxxxxxxxxxxxxxx",
+   "yyyyyyyyyyyyyyyyyyyyyyyyy",
+   0.0
+  ],
+  [
+   "__a",
+   "a__",
+   1.0
+  ],
+  [
+   "é",
+   "e",
+   0.0
+  ],
+  [
+   "İ",
+   "i",
+   0.5
+  ],
+  [
+   "foo bar baz",
+   "bar qux baz",
+   0.5
+  ]
+ ]
+}
