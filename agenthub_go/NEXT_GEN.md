@@ -90,6 +90,26 @@ Four owner decisions resolve the open questions. They are the acceptance criteri
 3. **A second project must onboard without a code change.** Its own `.mcp.json` and its own `.claude/skills/*` become blocks through the same publish path the UI uses. Acceptance rests on that case, not on revisiting 4genthub's own blocks.
 4. **Import cannot be a server-side file read.** The Direction section above is explicit: *"the client initiates every exchange; the server never reaches into a user's machine."* The browser cannot read the user's disk either. So reading `.mcp.json` and `.claude/skills/*` is **client-side work** — a CLI step that pushes what it finds to `PUT /api/v2/openrig/modules/{slug}/versions/{version}` — with a UI paste or upload path as the manual fallback for one block at a time. A server-side read of a path on the user's machine would contradict the direction this file is built on, so it is not an option to weigh, only to avoid. The natural home for that client step is the same client-side scripts that already hold the token and push observations back (`scripts/openrig_seat_sync.py`, `openrig_bridge.py`) — the implementer verifies which one owns project-scoped reads before adding a third.
 
+**(E) A DOCUMENTATION PAGE IN THE FRONTEND (owner directive, 2026-10-05).** Owner's words: *"i want page Documentation represent like this page"*, with the pdf2w API reference pasted as the reference. That reference is a local repo, so its mechanism is readable rather than guessed: `~/__projects__/markdown-extract-service/app/web/src/pages/ApiDocs.jsx`, `src/components/Markdown.jsx`, `src/lib/markdownHtml.js`, `src/docs/api-reference.en.md`.
+
+What that page is, mechanically:
+
+- The markdown is imported **raw from the app's own source tree** (`src/docs/`), so what a reader sees is the file that gets reviewed — its own words: *"generated from the same file the repository ships, so what you read here is what the code reviews."*
+- `{{API_ORIGIN}}` and `{{MCP_URL}}` are substituted **at render time** from runtime config, so a self-hosted install documents itself instead of someone else's domain. This is the same genericity rule as (D), expressed in content.
+- Heading ids are assigned **at render** and the "On this page" list is built from the rendered `h2`/`h3`, so the TOC cannot drift from the file.
+- Rendering is `marked` (gfm) into `DOMPurify.sanitize` before `dangerouslySetInnerHTML` — two dependencies, one sanitizer policy in one module.
+- Language lives in the URL (`/docs/en|fr|vi`), and the footer carries `version (commit) • date`.
+
+**Build constraint that decides where the file lives — verified, not assumed.** `docker-system/docker/Dockerfile.frontend.production` builds with `COPY agenthub-frontend/ .`, so anything outside `agenthub-frontend/` does not exist at build time. The markdown therefore lives **inside the frontend tree**, exactly as the reference does; a source file under `ai_docs/` would render fine locally and then be absent from the image. This is a build input, not agent prose, so the "documents live in `ai_docs/`" convention is not bent by it — worth one line in the file's header so a reviewer does not file it as a violation.
+
+**4genthub's page needs what the reference has, plus our own truth source:** a `/docs` route, the same render pipeline, the same placeholder rule, and content covering the real route surface and the MCP tool surface — which is directive (A)'s deliverable, so the two converge: (A) writes the file, (E) gives it a page. Acceptance:
+
+- the page renders the reviewed file; there is no second copy to drift;
+- every endpoint named in the file greps to a real mount (directive A's rule, unchanged);
+- a second deployment with a different origin renders its own URLs and version with no code change.
+
+Split: a frontend seat builds the shell and the pipeline; the `writer` seat fills the markdown from the surface inventory. The shell must not wait on the inventory — it renders whatever the file contains, so an empty or partial document is a valid intermediate state, not a blocked one.
+
 **D1-D4 slice plan (2026-10-05).** The decisions above are the owner's wording; this is the pointer table to the work, so a reader can find it without the queue. Row ids are the durable addresses.
 
 | Slice | Seat | Row |
