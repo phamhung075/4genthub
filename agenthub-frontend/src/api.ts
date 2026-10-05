@@ -12,7 +12,6 @@ import {
 } from './services/apiV2';
 import { seatApi } from './services/seatApi';
 import type {
-    AgentsResponse,
     ApiResponse,
     Branch,
     BranchesResponse,
@@ -38,7 +37,7 @@ import type {
 import logger from './utils/logger';
 
 export type {
-    AgentsResponse, ApiResponse, Branch, BranchRequestOptions, BranchesResponse,
+    ApiResponse, Branch, BranchRequestOptions, BranchesResponse,
     BranchResponse,
     ContextResponse, DeleteResponse, HealthResponse, Project, ProjectRequestOptions, ProjectResponse, ProjectsResponse, Rule, Subtask, SubtaskRequestOptions, SubtaskResponse, SubtasksResponse, Task, TaskRequestOptions, TaskResponse, TasksResponse
 };

@@ -17,7 +17,6 @@ import type {
   ContextResponse,
   DeleteResponse,
   HealthResponse,
-  AgentsResponse,
   BulkSummaryRequest,
   BranchSummary,
   ProjectSummary,
@@ -526,19 +525,6 @@ describe('API Types', () => {
         expect(response.timestamp).toBe('2025-01-01T00:00:00Z');
       });
 
-      it('should support AgentsResponse', () => {
-        const response: AgentsResponse = {
-          success: true,
-          agents: [
-            { id: 'agent-1', name: 'Agent 1' },
-            { id: 'agent-2', name: 'Agent 2' }
-          ],
-          total: 2
-        };
-
-        expect(response.agents).toHaveLength(2);
-        expect(response.total).toBe(2);
-      });
     });
   });
 
@@ -790,15 +776,15 @@ describe('API Types', () => {
 
       // Type guard function
       const isSubtaskArray = (subtasks: Task['subtasks']): subtasks is Subtask[] => {
-        return Array.isArray(subtasks) && 
-          subtasks.length > 0 && 
-          typeof subtasks[0] === 'object' && 
+        return Array.isArray(subtasks) &&
+          subtasks.length > 0 &&
+          typeof subtasks[0] === 'object' &&
           'task_id' in subtasks[0];
       };
 
       const isStringArray = (subtasks: Task['subtasks']): subtasks is string[] => {
-        return Array.isArray(subtasks) && 
-          subtasks.length > 0 && 
+        return Array.isArray(subtasks) &&
+          subtasks.length > 0 &&
           typeof subtasks[0] === 'string';
       };
 

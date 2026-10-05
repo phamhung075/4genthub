@@ -155,7 +155,6 @@ export interface UsageStats {
   project_update?: number;
   branch_create?: number;
   branch_update?: number;
-  agent_call?: number;
   context_create?: number;
   context_update?: number;
   [key: string]: number | undefined; // Allow other operation types

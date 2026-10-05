@@ -242,8 +242,13 @@
   - `getAgentMetadata`, `assignAgentToBranch`, `unassignAgentFromBranch`, `getBranchAgentAssignment`,
     `getProjectAgentAssignments` and `getAgentCapabilities` in `src/services/apiV2.ts` had no caller in `src`, and
     their mock entries in `src/tests/api.test.ts` were the only reference. `getAgentsMetadata` and `callAgent` stay.
+    **Correction 2026-10-05:** they did not stay - `callAgent` was removed in `fa22c648` and the whole
+    `/api/v2/agents*` metadata surface went with T7 (`mountAgentRoutes` unwired; 0 registrations in the Go tree), so
+    this line described both as live for a day.
   - `getAvailableAgents` (`src/api.ts`) is deliberately left as is: the metadata endpoint serves only 4 static agents
     and the agent library is being retired, so no registry is a valid assignee source yet.
+    **Correction 2026-10-05:** the rationale is void and the function has since been rewritten - it reads the rooms
+    and their seats and returns `@<seat_key>`, so there is no hard-coded list and no library to be a registry.
 - **badge tests assert the palette the Badge uses** - 2026-10-04
   - `src/tests/components/ui/badge.test.tsx` (13 of 24 failing) expected shadcn tokens (`bg-primary`,
     `text-secondary-foreground`, `border-input`), but `src/components/ui/badge.tsx` uses explicit palette classes
@@ -263,12 +268,18 @@
     `toHaveLength(32)` plus category lists (development, testing/QA, architecture/design, project planning,
     security/compliance, marketing/growth, research/analysis) with `@`-prefixed names such as
     `@master-orchestrator-agent` and `@brainjs-ml-agent`, a third list that matches neither the code nor the library.
+    **Correction 2026-10-05:** they no longer fail, and the assertions described here are gone - no file under
+    `src/tests` asserts `toHaveLength(32)` or names `master-orchestrator-agent`, and the suite is green (91 files /
+    1654 tests, measured at `d656f2d5`).
   - Open gap: `getAvailableAgents` returns a hard-coded list of 42 names (its comment says 32). Against
     `agenthub_main/agent-library/agents` (32 agents, including `master-orchestrator-agent`) 14 of them are not in
     the library (for example `swarm-scaler-agent`, `seo-sem-agent`; the count is 15 against `.claude/agents`, which
     lacks `master-orchestrator-agent`) and 4 library agents are missing
     (`creative-ideation-agent`, `llm-ai-agents-research`, `ml-specialist-agent`, `ui-specialist-agent`), and
     `TaskEditDialog`, `SubtaskEditDialog` and `LazyTaskListRefactored` offer it as the assignee list.
+    **Correction 2026-10-05: this gap is closed.** `getAvailableAgents` (`src/api.ts:364-369`) reads the rooms and
+    their seats through `seatApi.listRooms()` + `seatApi.listSeats()` and returns `@<seat_key>` values; there is no
+    hard-coded name list, and no `agenthub_main/agent-library` for one to disagree with.
 - **logger tests: one misplaced duplicate removed, five tests fixed against the real behavior** - 2026-10-04
   - `src/utils/logger.test.ts` (29 tests, 22 failing) duplicated `src/tests/utils/logger.test.ts` outside the
     `src/tests` folder and built configs `LoggerConfig` does not have (`outputs: ['console']`, `localStorageMaxSize`),
