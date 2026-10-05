@@ -427,9 +427,10 @@ Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go`
 (`seatManagementDatabaseTables`); appended at `seat_tables.go:309`. The same 13 tables are
 declared as DDL in
 `fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql` (note for a
-reader counting statements: that file holds 14 `CREATE TABLE IF NOT EXISTS` statements for
-these 13 tables — one table is created twice, so a statement count of 14 is not a 14th
-table).
+reader counting statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **14** because
+the file's header COMMENT at line 6 contains that phrase; there are **13** statements, one
+per table, and no table is declared twice — `grep -cE '^CREATE TABLE IF NOT EXISTS'` ->
+13).
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
