@@ -346,6 +346,8 @@ func fakeResolutionService(fake *fakeSeatAdmin) *seatservices.SeatResolutionServ
 		Seats:      fakeResolutionSeats{fake: fake},
 		SeatTypes:  fakeResolutionSeatTypes{fake: fake},
 		Overlays:   fakeResolutionOverlays{fake: fake},
+		Links:      fakeResolutionLinks{fake: fake},
+		Resolved:   fakeResolutionResolved{fake: fake},
 		NewCatalog: func(string) seatservices.CheckedCatalog { return fakeResolutionCatalog{fake: fake} },
 	}
 }
@@ -359,6 +361,10 @@ func (r fakeResolutionRooms) List(ctx context.Context, userID string) ([]reposit
 	return r.fake.ListRooms(ctx, userID)
 }
 
+func (r fakeResolutionRooms) GetBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
+	return r.fake.GetRoomBySlug(ctx, userID, slug)
+}
+
 type fakeResolutionSeats struct {
 	repositories.SeatRepository
 	fake *fakeSeatAdmin
@@ -368,9 +374,31 @@ func (s fakeResolutionSeats) ListByRoom(ctx context.Context, userID, roomID stri
 	return s.fake.ListSeats(ctx, userID, roomID)
 }
 
+func (s fakeResolutionSeats) FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error) {
+	return s.fake.FindSeat(ctx, userID, roomID, seatKey)
+}
+
+func (s fakeResolutionSeats) GetByID(_ context.Context, _, seatID string) (*repositories.Seat, error) {
+	for _, seat := range s.fake.seats {
+		if seat.ID == seatID {
+			return seat, nil
+		}
+	}
+	return nil, nil
+}
+
 type fakeResolutionSeatTypes struct {
 	repositories.SeatTypeRepository
 	fake *fakeSeatAdmin
+}
+
+func (t fakeResolutionSeatTypes) GetByID(_ context.Context, _, seatTypeID string) (*repositories.SeatType, error) {
+	for _, seatType := range t.fake.seatTypeList {
+		if seatType.ID == seatTypeID {
+			return seatType, nil
+		}
+	}
+	return nil, nil
 }
 
 func (t fakeResolutionSeatTypes) List(ctx context.Context, userID string) ([]repositories.SeatType, error) {
@@ -392,6 +420,27 @@ type fakeResolutionOverlays struct {
 
 func (o fakeResolutionOverlays) Find(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error) {
 	return o.fake.FindOverlay(ctx, userID, scope, roomID, seatID)
+}
+
+// fakeResolutionLinks exposes the admin fake's seat_links rows to the resolution service, so a
+// test can prove the links the resolver consults are exactly the ones the admin routes leave
+// behind.
+type fakeResolutionLinks struct {
+	repositories.SeatLinkRepository
+	fake *fakeSeatAdmin
+}
+
+func (l fakeResolutionLinks) ListFrom(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error) {
+	return l.fake.ListSeatLinks(ctx, userID, seatID)
+}
+
+type fakeResolutionResolved struct {
+	repositories.ResolvedSeatRepository
+	fake *fakeSeatAdmin
+}
+
+func (r fakeResolutionResolved) Save(_ context.Context, _ string, seat repositories.ResolvedSeat) (*repositories.ResolvedSeat, error) {
+	return &seat, nil
 }
 
 type fakeResolutionCatalog struct{ fake *fakeSeatAdmin }
@@ -464,6 +513,7 @@ func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
 		{"occupant", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`, "seat", "updated", "dev/alice"},
 		{"settings", http.MethodPut, "/api/v2/openrig/settings", `{"follow_latest":true}`, "room", "updated", "company"},
 		{"seat delete", http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", "", "seat", "deleted", "dev/alice"},
+		{"seat delete bob", http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/bob", "", "seat", "deleted", "dev/bob"},
 		{"room delete", http.MethodDelete, "/api/v2/openrig/rooms/dev", "", "room", "deleted", "dev"},
 	}
 	for _, step := range steps {
@@ -1080,6 +1130,49 @@ func TestSeatAdminDeleteLink(t *testing.T) {
 	}
 }
 
+// Deleting a link removes it from the enforcing set the resolver consults, not merely from the
+// list view: the sending seat's resolved communication policy carried the link before the delete
+// and carries it no longer after, so a runtime's comm-guard would stop admitting the message.
+func TestSeatAdminDeleteLinkRemovesItFromTheResolvedPolicy(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	dev := fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	fake.seats = append(fake.seats,
+		&repositories.Seat{ID: "seat-a", RoomID: dev.ID, SeatKey: "alice", SeatTypeID: "st-coder", Runtime: "claude-code"},
+		&repositories.Seat{ID: "seat-b", RoomID: dev.ID, SeatKey: "bob", SeatTypeID: "st-coder", Runtime: "claude-code"},
+	)
+	mux := seatAdminTestMux(t, fake)
+	resolution := fakeResolutionService(fake)
+
+	policy := func() string {
+		t.Helper()
+		resolved, err := resolution.ResolveSeat(context.Background(), "u", "dev", "alice")
+		if err != nil {
+			t.Fatalf("ResolveSeat: %v", err)
+		}
+		encoded, err := json.Marshal(resolved.Policy)
+		if err != nil {
+			t.Fatalf("marshal policy: %v", err)
+		}
+		return string(encoded)
+	}
+
+	linkPath := "/api/v2/openrig/rooms/dev/seats/alice/links"
+	if rec := doTestRequest(t, mux, http.MethodPut, linkPath, `{"to_seat":"bob","kind":"delegates_to"}`); rec.Code != http.StatusOK {
+		t.Fatalf("upsert link: %d %s", rec.Code, rec.Body.String())
+	}
+	if got := policy(); !strings.Contains(got, `"To":"bob"`) || !strings.Contains(got, `"delegates_to"`) {
+		t.Fatalf("policy before delete lacks the enforcing link: %s", got)
+	}
+
+	if rec := doTestRequest(t, mux, http.MethodDelete, linkPath+"/bob/delegates_to", ""); rec.Code != http.StatusOK {
+		t.Fatalf("delete link: %d %s", rec.Code, rec.Body.String())
+	}
+	if got := policy(); strings.Contains(got, `"To":"bob"`) || strings.Contains(got, `"delegates_to"`) {
+		t.Errorf("policy after delete still enforces the deleted link: %s", got)
+	}
+}
+
 func TestSeatAdminDeleteRoom(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	dev := fake.seedRoom("dev")
@@ -1114,8 +1207,28 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	}
 	dev.UserID = ""
 
+	// A room that still holds seats is refused, naming the count, and nothing is deleted: the
+	// seats are never cascaded away.
+	rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", "")
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("delete room with seats: %d %s, want 409", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `still holds 2 seat(s)`) {
+		t.Errorf("refusal does not name the count: %s", rec.Body.String())
+	}
+	if len(fake.rooms) != 2 || len(fake.seats) != 3 || len(fake.links) != 2 || len(fake.overlays) != 3 {
+		t.Fatalf("a refused delete changed rows: %d rooms, %d seats, %d links, %d overlays",
+			len(fake.rooms), len(fake.seats), len(fake.links), len(fake.overlays))
+	}
+
+	// Removing the seats first empties the room, and then the room itself deletes.
+	for _, seat := range []string{"alice", "bob"} {
+		if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/"+seat, ""); rec.Code != http.StatusOK {
+			t.Fatalf("remove seat %s: %d %s", seat, rec.Code, rec.Body.String())
+		}
+	}
 	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusOK {
-		t.Fatalf("delete room: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("delete empty room: %d %s", rec.Code, rec.Body.String())
 	}
 	if len(fake.rooms) != 1 || fake.rooms[0].Slug != "other" {
 		t.Errorf("rooms left = %+v, want only other", fake.rooms)

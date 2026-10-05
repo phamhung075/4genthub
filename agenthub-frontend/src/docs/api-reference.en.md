@@ -161,7 +161,7 @@ or seat-type slug and `{version}` a concrete version.
 | :--- | :--- | :--- |
 | `POST` | `/api/v2/openrig/rooms` | Create a room. |
 | `GET` | `/api/v2/openrig/rooms` | List rooms. |
-| `DELETE` | `/api/v2/openrig/rooms/{room}` | Delete a room. |
+| `DELETE` | `/api/v2/openrig/rooms/{room}` | Delete an empty room; refused (409) while it still holds seats. |
 | `POST` | `/api/v2/openrig/rooms/{room}/seats` | Create a seat. |
 | `GET` | `/api/v2/openrig/rooms/{room}/seats` | List a room's seats. |
 | `DELETE` | `/api/v2/openrig/rooms/{room}/seats/{seat}` | Remove a seat (a hard delete). |

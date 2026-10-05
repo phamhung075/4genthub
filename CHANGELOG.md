@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`DELETE /rooms/{room}` refuses while the room holds seats, instead of cascading them away** (2026-10-05)
+
+- `RoomDeletionService.DeleteRoom` (`agenthub_go/fastmcp/seat_management/application/services/room_deletion_service.go`) listed the room's seats and hard-deleted each one — its links, overlay, resolved snapshot and seat row — before deleting the room. It now refuses with a new `ErrRoomNotEmpty` naming how many seats remain; the route answers `409` (`writeSeatAdminServiceError`, `seat_admin_mount.go`) and an emptied room still deletes. The removal shape is unchanged where it belongs: `RemoveSeat` stays a hard delete of one seat's rows, application-layer, no foreign-key cascade (commit `945648f5`). This was found confirming tonight's route inventory: the `DELETE /rooms/{room}` route (`seat_admin_mount.go:285`) and `DELETE .../seats/{seat}/links/{to}/{kind}` (`:345`) already existed, as did their frontend clients (`agenthub-frontend/src/services/seatApi.ts:77,150`).
+- The link delete was already correct and is now pinned to the enforcing set rather than the list view: the resolver's policy snapshot (`seat_resolution_service.go` `policy`) and the rigspec renderer (`seat_rigspec_mount.go` `roomRigSpecEdges`) both read `seat_links` live, and the route hard-deletes that row, so a new test resolves the sending seat's communication policy before and after the delete and asserts the link is gone.
+- `changelog` / API docs: `agenthub-frontend/src/docs/api-reference.en.md` now says the room delete is refused while seats remain.
+
 **The server describes itself with directive G's product line, from one constant** (2026-10-05)
 
 - `/health`'s `server` field reported `agenthub - Task Management & Agent Orchestration`, the pre-G description. It now reports `agenthub - AI Orchestration Platform` — the tagline the frontend landed with G (`agenthub-frontend/src/components/Header.tsx:125`, asserted at `Header.test.tsx:75`) — so the product has one description rather than a third phrasing invented in the Go tree.

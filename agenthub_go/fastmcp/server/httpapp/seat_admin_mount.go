@@ -1011,7 +1011,7 @@ func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 		writeDetail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, seatservices.ErrSeatTypeExists), errors.Is(err, repositories.ErrSeatTypeVersionConflict):
+	case errors.Is(err, seatservices.ErrSeatTypeExists), errors.Is(err, repositories.ErrSeatTypeVersionConflict), errors.Is(err, seatservices.ErrRoomNotEmpty):
 		writeDetail(w, http.StatusConflict, err.Error())
 	default:
 		writeDetail(w, http.StatusInternalServerError, err.Error())

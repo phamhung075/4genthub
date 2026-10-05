@@ -15,6 +15,7 @@ var (
 	ErrInvalidOccupant         = errors.New("invalid occupant")
 	ErrInvalidPermissionPolicy = errors.New("invalid permission policy")
 	ErrRoomNotFound            = errors.New("room not found")
+	ErrRoomNotEmpty            = errors.New("room not empty")
 	ErrSeatNotFound            = errors.New("seat not found")
 
 	ErrSeatTypeNotFound       = errors.New("seat type not found")
