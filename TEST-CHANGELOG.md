@@ -8,6 +8,11 @@ Track test suite changes, fixes, and improvements for agenthub.
 - The refusal mirrors the HTTP publish path (`seat_admin_service.go:212`), and the check relies on `ORMModuleRepository.GetVersion` returning `nil` when a version is absent (`module_repository.go:99`) — the same contract that path already relies on.
 - Commands: `gofmt -l` on the package -> empty; `go vet ./fastmcp/seat_management/application/services/` -> 0; `go test -count=1 -run TestSeedSeatTypes -v ./fastmcp/seat_management/application/services/` -> 3 passed; `go test -count=1 ./fastmcp/seat_management/...` -> all green.
 
+## 2026-10-06 — the missed third pin of the blank-clears rule (Go)
+
+- `fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller_test.go` pinned the OLD behaviour on the MCP manage-seat surface, which calls the same `SeatAdminService` as the HTTP route: `set_occupant` with an omitted model asserted the stored model was CLEARED. `cc4fcf25` moved that expectation in the HTTP surface and missed this one, leaving the `mcp_controllers` package red from that commit. The case now asserts an omitted model KEEPS the stored `gpt-5.1`, on both the rendered seat and the store.
+- Found while running `go test -count=1 ./fastmcp/seat_management/...` for the seeder row; not the seeder change's doing.
+
 ## 2026-10-06 - a token that cannot name a user is reported, not cleared (frontend)
 
 - `src/tests/contexts/AuthContext.test.tsx` adds a case for a stored token that decodes, is unexpired

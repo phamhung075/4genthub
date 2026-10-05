@@ -142,9 +142,12 @@ func TestManageSeatGetAndSetOccupant(t *testing.T) {
 		t.Errorf("stored seat = %+v", store.seats[0])
 	}
 
+	// The owner ruling: a blank field never clears a field (SetOccupant), so an omitted model
+	// keeps the stored one rather than clearing it.
 	resp = c.ManageSeat(ctx, "set_occupant", ptr("dev"), ptr("alice"), ptr("claude-code"), nil, nil)
-	if field(t, resp, "success") != true || store.seats[0].Model != "" {
-		t.Errorf("omitted model should clear it: %v %+v", resp, store.seats[0])
+	seat = field(t, resp, "seat").(*tmentities.OrderedMap[any])
+	if field(t, resp, "success") != true || field(t, seat, "model") != "gpt-5.1" || store.seats[0].Model != "gpt-5.1" {
+		t.Errorf("an omitted model must keep the stored one: %v %+v", resp, store.seats[0])
 	}
 }
 
