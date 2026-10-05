@@ -48,6 +48,13 @@
     before `setTokens()`, so the previous identity's cached rows and inbox go with its tokens. `setTokens` is
     deliberately not the boundary: `refreshToken` calls it too, and clearing there would drop the whole cache on every
     token refresh.
+  - Fourth identity writer closed: `refreshToken()` writes identity as well, and its tokens are plain same-origin
+    document cookies shared by every tab - so when another tab logged out and signed in as B, this tab's next refresh
+    returned B's tokens and this tab rendered as B with the previous identity's cached rows still present. It now
+    compares the decoded identity with `userRef.current` and calls `discardPreviousIdentity()` only when they differ, so
+    an ordinary same-identity refresh keeps the cache: the guard is identity inequality, not the refresh itself. Its new
+    dependency is `discardPreviousIdentity` (a `useCallback` whose only dep is `useQueryClient()`, which is
+    provider-stable), asserted stable by a test rather than asserted in prose.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
   - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
     `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through

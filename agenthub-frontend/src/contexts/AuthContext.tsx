@@ -288,10 +288,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         refresh_token: data.refresh_token || refresh_token  // Use existing if not provided
       };
 
+      const userData = decodeToken(data.access_token);
+
+      // A refresh can come back with a DIFFERENT identity: these are plain same-origin document
+      // cookies shared by every tab, so if another tab logged out and signed in as someone else,
+      // this tab's refresh picks that identity up. That is an identity replacement like login, so
+      // the previous identity's cache and inbox must go - while the ordinary same-identity refresh,
+      // which is the common case, must not drop the cache.
+      if (userData && userRef.current && userData.id !== userRef.current.id) {
+        discardPreviousIdentity();
+      }
+
       setTokens(newTokens);
 
       // Update user info from new access token
-      const userData = decodeToken(data.access_token);
       if (userData) {
         setUser(userData);
 
@@ -314,7 +324,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       logout();
       throw error;
     }
-  }, [disconnectWebSocket, isWebSocketConnected, logout, setTokens]);
+  }, [disconnectWebSocket, isWebSocketConnected, logout, setTokens, discardPreviousIdentity]);
 
   // Check for existing tokens on mount and establish WebSocket connection
   useEffect(() => {

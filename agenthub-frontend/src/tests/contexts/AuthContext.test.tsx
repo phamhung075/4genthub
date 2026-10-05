@@ -567,6 +567,183 @@ describe('AuthContext', () => {
       expect(useNotificationStore.getState().notifications).toEqual([]);
     });
 
+    it('clears the cache and inbox when signup establishes a new identity', async () => {
+      // /signup is public and auto-logs-in, so it reaches the same boundary as login.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token'
+          ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
+          : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Signup').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
+    it('clears the cache and inbox when a refresh returns another identity', async () => {
+      // The tokens are plain same-origin document cookies shared by every tab, so a refresh fired in
+      // this tab after another tab signed in as B hands this tab B's identity.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockImplementation((token: string) =>
+        token === 'b-access-token'
+          ? { ...mockDecodedToken, sub: 'user-b', email: 'b@example.com' }
+          : mockDecodedToken
+      );
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'b-access-token',
+          refresh_token: 'b-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('b@example.com');
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      expect(useNotificationStore.getState().notifications).toEqual([]);
+    });
+
+    it('keeps the cache when a refresh returns the same identity', async () => {
+      // The guard must not fire on the ordinary refresh: dropping the cache every refresh window
+      // would be worse than the leak it closes.
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+      useNotificationStore.getState().add({ id: 'n1', message: 'A private message', from: 'agent' });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: mockTokens.access_token,
+          refresh_token: mockTokens.refresh_token
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          'http://test-api.com/api/auth/refresh',
+          expect.objectContaining({ method: 'POST' })
+        );
+      });
+
+      expect(queryClient.getQueryData(['seatRooms'])).toEqual([
+        { id: 'r1', slug: 'a-private-room', name: 'A room' }
+      ]);
+      expect(useNotificationStore.getState().notifications).toHaveLength(1);
+    });
+
+    it('keeps refreshToken stable across a token change', async () => {
+      // The guard's dependency must not churn this callback: the mount and refresh-timer effects list
+      // refreshToken, and a new identity each render re-runs them (that shape already ended in a 4GB
+      // heap once, via logout's deps). discardPreviousIdentity is a useCallback with only
+      // useQueryClient() in it, which is provider-stable, so the array addition must be inert.
+      (Cookies.get as any).mockReturnValue(null);
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      const before = authContext!.refreshToken;
+
+      await act(async () => {
+        getByText('Set Tokens').click();
+      });
+
+      expect(authContext!.refreshToken).toBe(before);
+    });
+
     it('should disconnect WebSocket on logout', async () => {
       // Mock WebSocket as connected
       mockUseWebSocket.mockReturnValue({
