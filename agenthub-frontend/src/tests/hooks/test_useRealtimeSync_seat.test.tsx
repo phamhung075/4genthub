@@ -193,6 +193,14 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved'] });
     // Deliberate: a company-scoped change moves settings and overlays, not the
     // rooms/seats/links the topology query holds, so it must NOT refresh the graph.
+    // WHICH DOOR THIS GUARDS, so the next person leans on the right test (the
+    // claim that this assertion alone forces the re-check was overstated):
+    //  - handler door = this assertion: fires when someone adds the company-room
+    //    invalidation to handleRoomUpdate.
+    //  - query door = useTopology.test.tsx's fold test: its mock of seatApi
+    //    expects exactly listRooms/listSeats/listLinks, so it fires when
+    //    fetchTopology starts reading more through seatApi - a read through a
+    //    different module would not be caught by either test.
     expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
   });
 });
