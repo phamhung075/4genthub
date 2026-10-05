@@ -55,16 +55,16 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
           <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 mb-4">
             <h5 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center mb-2">
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Agent Not Responding
+              Seat Not Responding
             </h5>
             <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
-              <p><strong>Problem:</strong> AI agents don't respond or give errors</p>
+              <p><strong>Problem:</strong> A seat's occupant doesn't respond or gives errors</p>
               <p><strong>Solutions:</strong></p>
               <ul className="list-disc list-inside ml-4 space-y-1">
                 <li>Check MCP server is running: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">curl http://localhost:8000/health</code></li>
-                <li>Check agent tools are available (Dynamic Tool Enforcement v2.0)</li>
+                <li>Check the seat's modules and links are resolved</li>
                 <li>Restart Claude Code application</li>
-                <li>Check system resources (RAM/CPU) - agents need minimum 4GB RAM</li>
+                <li>Check system resources (RAM/CPU) - each occupant needs minimum 4GB RAM</li>
                 <li>Review backend logs: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">docker logs agenthub-backend</code></li>
               </ul>
             </div>
@@ -319,10 +319,10 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
         <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 mb-4">
           <h5 className="font-semibold text-blue-900 dark:text-blue-100 flex items-center mb-2">
             <AlertTriangle className="h-4 w-4 mr-2" />
-            Agent Not Responding
+            Seat Not Responding
           </h5>
           <div className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
-            <p><strong>Problem:</strong> AI agents don't respond or give timeout errors</p>
+            <p><strong>Problem:</strong> A seat's occupant doesn't respond or gives timeout errors</p>
             <p><strong>Solutions:</strong></p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li>Check your internet connection stability</li>

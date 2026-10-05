@@ -36,8 +36,8 @@ const WhatIs4genthub = ({ expandedSections, toggleSection, deploymentMode }: Wha
       <div className="space-y-6">
         <p className="text-base leading-relaxed">
           4genthub is a revolutionary enterprise MCP (Model Context Protocol) platform that enables seamless
-          collaboration between AI agents and developers. It provides a structured way to manage tasks, contexts,
-          and agent interactions in software development projects with 32 specialized agents.
+          collaboration between developers and the seats that work their projects. It provides a structured way to
+          manage tasks and contexts, and to define rooms, seats, occupants and the links between them.
         </p>
 
         {/* Community Links as Prominent Cards */}
@@ -91,10 +91,10 @@ const WhatIs4genthub = ({ expandedSections, toggleSection, deploymentMode }: Wha
               Key Features
             </h4>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• 32 specialized AI agents</li>
+              <li>• Rooms, seats and occupant runtimes</li>
               <li>• Intelligent task management</li>
               <li>• 4-tier context hierarchy</li>
-              <li>• Enterprise orchestration</li>
+              <li>• Versioned seat types and modules</li>
               <li>• Vision System capabilities</li>
             </ul>
           </Card>
@@ -106,7 +106,7 @@ const WhatIs4genthub = ({ expandedSections, toggleSection, deploymentMode }: Wha
             <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
               <li>• Accelerated development</li>
               <li>• Improved code quality</li>
-              <li>• Parallel agent coordination</li>
+              <li>• Parallel seat coordination</li>
               <li>• Enhanced documentation</li>
               <li>• Real-time collaboration</li>
             </ul>

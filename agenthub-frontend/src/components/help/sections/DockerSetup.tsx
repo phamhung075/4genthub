@@ -267,7 +267,7 @@ const DockerSetup = ({ expandedSections, toggleSection, deploymentMode = 'cloud'
             <li>Sign up for an account (free tier available)</li>
             <li>Get your API credentials from the dashboard</li>
             <li>Configure your MCP client with the cloud endpoint</li>
-            <li>Start using 32+ AI agents immediately!</li>
+            <li>Start building with rooms, seats and occupants immediately!</li>
           </ol>
         </Card>
       </div>
