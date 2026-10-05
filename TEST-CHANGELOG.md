@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — frontend test runs bounded (worker + heap caps)
+
+- `agenthub-frontend/vite.config.ts`: the `test` block now caps the pool (`maxWorkers: 2`, `minWorkers: 1`) and each
+  fork's heap (`poolOptions.forks.execArgv: ['--max-old-space-size=2048']`). The block carried no cap before, so Vitest
+  sized its pool from the CPU count (12); four orphaned workers reached 12.1 GB RSS and left the box at 564 MB
+  available with ~6 GB of swap used — which also surfaced as `socket connection closed unexpectedly` in unrelated agent
+  sessions. Override per run on a free box: `npx vitest run --maxWorkers=6`.
+- `agenthub-frontend/package.json`: `"test": "vitest"` (watch mode — never exits) is now `"test": "vitest run"`, with
+  `"test:watch": "vitest"` keeping the interactive path.
+
 ## 2026-10-05 — offline notifications persisted and replayed (Go)
 
 - `fastmcp/task_management/infrastructure/repositories/orm/missed_notification_repository_test.go`: `TestMissedNotificationRepositoryStoreFetchDeliverCleanup` against a real throwaway PostgreSQL — Store/Fetch round trip, the stored message byte-equal to `PyJSONDumpsCompact` output (key order and compact `(",", ":")` separators, the B1 defect), per-user scoping (another user gets nothing), oldest-first ordering, limit, `MarkDelivered` moving a row between the delivered/undelivered sets, `IncrementDeliveryAttempts` stamping `last_attempt_at`, `CleanupExpired` deleting exactly the row older than the window.

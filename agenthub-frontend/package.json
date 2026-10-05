@@ -40,7 +40,8 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "benchmark:phase1": "cd .. && tsx scripts/benchmark-phase1.ts",
     "benchmark:phase2": "cd .. && tsx scripts/benchmark-phase2.ts"
   },
