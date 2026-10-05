@@ -8,7 +8,7 @@
 | **cclaude (async)** | Fire-and-forget parallel execution | cclaude command | Non-blocking, terminal visibility |
 | **cclaude-wait (sync)** | Single task with result capture | cclaude-wait command | Blocking, returns JSON |
 | **cclaude-wait-parallel** | Multiple subtasks in parallel | cclaude-wait-parallel command | Blocking, aggregated results, WebSocket monitoring |
-| **Agent Switching** | Token-efficient sequential work | call_agent() | 70% token savings, no terminals |
+| **Seat resolution (call_seat)** | Load a seat's runtime/context in one session | `call_seat` | In-session, no terminals |
 
 ---
 
@@ -38,7 +38,7 @@ parent_task = manage_task(
     - JWT token generation (RS256)
     - Bcrypt password hashing (12+ salt rounds)
     - Auth middleware for route protection
-    - Endpoints: /auth/login, /auth/register, /auth/refresh, /auth/logout
+    - Endpoints: /api/auth/login, /api/auth/register, /api/auth/refresh, /api/auth/logout
     - Security audit (OWASP Top 10)
     - Test suite (95%+ coverage)
     - API documentation
@@ -146,21 +146,19 @@ echo "$result" | jq '.subtasks[0].completion_data.completion_summary'  # JWT sub
 echo "$result" | jq '.subtasks[1].completion_data.completion_summary'  # Password subtask
 ```
 
-**Option C: Token-Efficient Sequential (Agent Switching)**:
+**Option C: Token-Efficient Sequential (Seat resolution)**:
 ```python
-# Switch to coding agent
-call_agent(name_agent="coding-agent")
-# Now YOU ARE coding-agent - do work
-# Update progress
+# Resolve the coding seat (returns runtime + rendered context files)
+call_seat(room="<room>", seat="coding-agent")
+# Do the work in-session, using the returned context/runtime
 manage_subtask(action="update", task_id=parent_task_id, subtask_id=subtask_jwt_id,
     progress_percentage=100, progress_notes="JWT service implemented")
 
-# Switch to security auditor
-call_agent(name_agent="security-auditor-agent")
-# Now YOU ARE security-auditor - do work
+# Resolve the security-auditor seat
+call_seat(room="<room>", seat="security-auditor-agent")
 
-# Switch back to orchestrator
-call_agent(name_agent="master-orchestrator-agent")
+# Resolve the orchestrator seat
+call_seat(room="<room>", seat="master-orchestrator-agent")
 ```
 
 ### Phase 3: Review and Complete
@@ -194,7 +192,7 @@ else:
 | **cclaude (async)** | ~20k per agent | Non-blocking, parallel | No | ✅ Separate terminals | Fire-and-forget, parallel work |
 | **cclaude-wait (sync)** | ~20k per agent | Blocking, sequential | ✅ JSON | ✅ Separate terminal | Single task + results needed |
 | **cclaude-wait-parallel** | ~20k total | Blocking, parallel | ✅ Aggregated JSON | ✅ Multi-terminal + WebSocket | Multiple subtasks + all results |
-| **Agent Switching** | ~1200 total | Sequential | ✅ Yes | ❌ Same session | Token efficiency, automation |
+| **Seat resolution (call_seat)** | n/a | In-session | ✅ Yes | ❌ Same session | Load seat context, automation |
 
 ### cclaude (Asynchronous)
 
@@ -319,35 +317,35 @@ echo "$result" | jq '.overall_status'
 - WebSocket monitoring for real-time progress
 - Aggregated results in single JSON response
 
-### Agent Switching (Token Efficient)
+### Seat Resolution (Token Efficient)
+
+> **Status:** the `call_agent()` MCP tool described in earlier revisions of this guide was
+> **retired**. Agent registration and assignment use the `manage_agent` tool, whose
+> optional `call_agent` field (the agent's `@handle`) remains live. To load a seat's
+> runtime and context in-session, resolve it with the separate `call_seat` tool.
 
 **Syntax**:
 ```python
-call_agent(name_agent="agent-name")
+call_seat(room="<room>", seat="<seat-slug>")
 ```
 
 **Workflow**:
 ```python
-# 1. Start as orchestrator
-call_agent(name_agent="master-orchestrator-agent")
-# Returns: system_prompt (read it), tools array (check permissions)
+# 1. Resolve the orchestrator seat
+call_seat(room="<room>", seat="master-orchestrator-agent")
+# Returns: runtime, permission policy, resolved snapshot hash, rendered context files
 
-# 2. Switch to specialist
-call_agent(name_agent="coding-agent")
-# NOW YOU ARE coding-agent - do coding work
-# Write files, edit code, run commands
+# 2. Resolve a specialist seat
+call_seat(room="<room>", seat="coding-agent")
+# Use the returned context/runtime to do the work in-session
 manage_task(action="update", task_id="...", status="in_progress")
 
-# 3. Switch to another specialist
-call_agent(name_agent="test-orchestrator-agent")
-# NOW YOU ARE test-orchestrator - write tests
+# 3. Resolve another specialist seat
+call_seat(room="<room>", seat="test-orchestrator-agent")
 
-# 4. Switch back to orchestrator
-call_agent(name_agent="master-orchestrator-agent")
-# NOW YOU ARE orchestrator - review and complete
+# 4. Resolve the orchestrator seat again to review and complete
+call_seat(room="<room>", seat="master-orchestrator-agent")
 ```
-
-**Token Savings**: ~1200 tokens total vs ~20k per cclaude session (70% reduction)
 
 ---
 
@@ -450,7 +448,7 @@ User Request
     ▼
 Is it complex (>3 steps)?
     │
-    ├─ NO → Agent Switching (token efficient)
+    ├─ NO → Seat resolution (call_seat)
     │
     └─ YES → Need parallel execution?
             │
@@ -465,7 +463,7 @@ Is it complex (>3 steps)?
 
 ### When to Use Each Model
 
-**Use Agent Switching when**:
+**Use seat resolution (`call_seat`) when**:
 - Token efficiency is priority
 - Work is sequential (no parallelization needed)
 - Production automation

@@ -1,3 +1,5 @@
+> **Historical artifact — retired model.** This before/after of `CLAUDE.md` documents the retired `call_agent` MCP tool and the Python agent library's role-switching model. The live model is the seat model (`manage_seat` / `call_seat`) plus the `agents` registry via `manage_agent` (`ai_docs/api-integration/surface-inventory.md` §2). Kept as history only.
+
 # Token Optimization: CLAUDE.md Before & After
 
 ## Executive Summary

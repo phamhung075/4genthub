@@ -12,7 +12,7 @@ What clean means here, as checks anyone can run:
 Backlog: agenthub_go/NEXT_GEN.md is the single backlog and decision record. Take items in this order unless the owner says otherwise:
 1. Defects found by running the real stack (server on Postgres, a real OpenRig rig, the bridge). Reproduce first, then fix the cause.
 2. The seat model: authoring screens for modules and seat types in the frontend, link deletion, room deletion, changing a seat's runtime or model, connecting the local send guard (seatcheck) to seats, per-machine tokens for the bridge, recording the pinned hash in the bridge status.
-3. Retire the old agenthub_main/agent-library and the call_agent path that depends on it, replacing it with the seat model (in flight as T7/T8; the Python call_agent tool and its traces are already removed by the principal session).
+3. ~~Retire the old agenthub_main/agent-library and the call_agent path~~ **DONE** — the `agent-library`, the `call_agent` tool and its routes are removed on both the Go and Python sides; the seat model (`manage_seat` / `call_seat`) replaced them (`call_agent` survives only as a field of `manage_agent`).
 4. Remaining Go port items in NEXT_GEN.md, and the known cleanups: the 23 TypeScript errors, the gofmt finding in the subtask controller.
 Do not work on the GitHub pipeline test job; the owner decided against it.
 

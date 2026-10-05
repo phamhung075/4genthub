@@ -39,7 +39,7 @@ manage_context(
 | Tool | Parameters Accepting JSON Strings |
 |------|-----------------------------------|
 | `manage_context` | `data`, `delegate_data`, `filters` |
-| `manage_connection` | `client_info` |
+| `manage_connection` | none — its live schema is `include_details` (boolean) and `user_id` (string) only |
 | All MCP tools | Any dictionary-type parameter |
 
 ---
@@ -159,8 +159,9 @@ manage_task(limit="abc")  # Cannot convert to integer
 | Git Branch | ✅ | ✅ | ✅ | Framework-level |
 | Agent | ✅ | ✅ | ✅ | Framework-level |
 | Connection | ✅ | ✅ | ✅ | JSONParameterMixin |
+| Seat (`manage_seat`, `call_seat`) | n/a | n/a | n/a | Plain string parameters only; no JSON/coercion layer |
 
-**All controllers** support automatic type coercion via FastMCP framework or explicit implementation.
+**All controllers** support automatic type coercion via FastMCP framework or explicit implementation, except the two seat tools, whose schemas are flat strings (`action`, `room`, `seat`, `runtime`, `model`).
 
 ---
 

@@ -7,7 +7,7 @@
 | **Domain** | Entities, Value Objects, Domain Services, Events | Business logic lives here | `domain/entities/`, `domain/value_objects/`, `domain/services/` |
 | **Application** | Facades, Use Cases, DTOs | Orchestration, transactions | `application/facades/`, `application/use_cases/`, `application/dtos/` |
 | **Infrastructure** | Repositories, Database, Event Bus | Persistence, external integrations | `infrastructure/repositories/`, `infrastructure/database/` |
-| **Interface** | MCP Controllers, API Endpoints | Protocol handling, validation | `interface/mcp_controllers/`, `interface/rest/` |
+| **Interface** | MCP Controllers, HTTP/REST API | Protocol handling, validation | `interface/mcp_controllers/`, `fastmcp/server/httpapp/` |
 
 **Flow**: Client → Interface → Application → Domain → Infrastructure → Response
 
@@ -418,57 +418,41 @@ class TaskRepository(ABC):
 ```
 
 **Implementation** (in Infrastructure):
-```python
-class SQLAlchemyTaskRepository(TaskRepository):
-    """SQLAlchemy implementation of task repository."""
+```go
+// ORMTaskRepository (fastmcp/task_management/infrastructure/repositories/task_repository.go)
+// implements the domain TaskRepository over database/sql + pgx. PostgreSQL only.
+type ORMTaskRepository struct {
+    *UserScopedORMRepository[database.Task]
+    EventPublishingMixin
+}
 
-    def __init__(self, session: Session):
-        self.session = session
+func (r *ORMTaskRepository) CreateTask(ctx context.Context, title, description, priority string,
+    assigneeIDs, labelNames []string, kwargs Kwargs) (*entities.Task, error) { ... }
 
-    def save(self, task: Task) -> None:
-        """Save task to database."""
-        model = self._to_model(task)
-        self.session.merge(model)  # INSERT or UPDATE
+func (r *ORMTaskRepository) GetTask(ctx context.Context, taskID string) (*entities.Task, error) { ... }
 
-    def find_by_id(self, task_id: TaskId) -> Optional[Task]:
-        """Find task by ID."""
-        model = self.session.query(TaskModel).filter_by(id=str(task_id)).first()
-        return self._to_entity(model) if model else None
+func (r *ORMTaskRepository) UpdateTask(ctx context.Context, taskID string, updates Kwargs) (*entities.Task, error) { ... }
 
-    def _to_entity(self, model: TaskModel) -> Task:
-        """Convert ORM model to domain entity."""
-        return Task(
-            id=TaskId.from_string(model.id),
-            title=model.title,
-            description=model.description,
-            status=TaskStatus(model.status),
-            priority=Priority(model.priority),
-            assignees=json.loads(model.assignees),
-            created_at=model.created_at
-        )
+func (r *ORMTaskRepository) DeleteTask(ctx context.Context, taskID string) (bool, error) { ... }
 
-    def _to_model(self, task: Task) -> TaskModel:
-        """Convert domain entity to ORM model."""
-        return TaskModel(
-            id=str(task.id),
-            title=task.title,
-            description=task.description,
-            status=task.status.value,
-            priority=task.priority.value,
-            assignees=json.dumps(task.assignees),
-            created_at=task.created_at
-        )
+func (r *ORMTaskRepository) ListTasks(ctx context.Context, status, priority, assigneeID *string,
+    limit, offset int) ([]*entities.Task, error) { ... }
 ```
+
+Table-row ↔ entity conversion is done by `taskRepoModelToEntity` (a `database.Task` row into
+a domain `entities.Task`) and `taskRepoEntityToModelDict` (the reverse); there is no ORM
+session. Schema metadata is the generated `TableDef` registry in
+`fastmcp/task_management/infrastructure/database/models.go`.
 
 ### Repository Best Practices
 
 | Practice | Example | Benefit |
 |----------|---------|---------|
-| **Interface in Domain** | `TaskRepository(ABC)` in domain | Domain doesn't depend on infrastructure |
-| **Implementation in Infrastructure** | `SQLAlchemyTaskRepository` in infra | Swappable implementations |
-| **Entity conversion** | `_to_entity()`, `_to_model()` methods | Clean separation ORM ↔ Domain |
-| **Query methods** | `find_by_status()`, `find_by_assignee()` | Encapsulate database queries |
-| **Transaction management** | `begin_transaction()`, `commit()`, `rollback()` | Consistent transaction handling |
+| **Interface in Domain** | `TaskRepository` interface in domain | Domain doesn't depend on infrastructure |
+| **Implementation in Infrastructure** | `ORMTaskRepository` in infra | Swappable implementations |
+| **Entity conversion** | `taskRepoModelToEntity()`, `taskRepoEntityToModelDict()` | Clean separation table rows ↔ Domain |
+| **Query methods** | `ListTasks()`, `GetTaskCount()` | Encapsulate database queries |
+| **Transaction management** | `Transaction(ctx, fn)` (base ORM repository) | Consistent transaction handling |
 
 ---
 

@@ -86,19 +86,26 @@ WHERE state = 'idle in transaction'
 ```
 
 **2. Fix Application Code**:
-```python
-# ❌ WRONG - Nested transactions cause deadlocks
-def bad_example():
-    with session.begin():
-        # Outer transaction
-        with session.begin():  # Nested - BAD!
-            session.add(obj)
+```go
+// The Go repositories use database/sql via repositories.ORMRepository[M].Transaction
+// (fastmcp/task_management/infrastructure/repositories/base_orm_repository.go).
 
-# ✅ CORRECT - Single transaction
-def good_example():
-    with session.begin():
-        session.add(obj)
-        session.commit()
+// ❌ WRONG - Nested transactions cause deadlocks
+func badExample(ctx context.Context, repo *ORMRepository[database.Task]) error {
+    return repo.Transaction(ctx, func(ctx context.Context) error {
+        return repo.Transaction(ctx, func(ctx context.Context) error { // Nested - BAD!
+            return nil
+        })
+    })
+}
+
+// ✅ CORRECT - Single transaction
+func goodExample(ctx context.Context, repo *ORMRepository[database.Task]) error {
+    return repo.Transaction(ctx, func(ctx context.Context) error {
+        // do all work in one transaction
+        return nil
+    })
+}
 ```
 
 **3. Restart Database**:
@@ -210,7 +217,7 @@ netstat -an | grep 8000
 
 | Issue | Solution |
 |-------|----------|
-| Server not started | `python -m fastmcp.server.mcp_entry_point` |
+| Server not started | `go run ./cmd/agenthub` (from `agenthub_go/`) |
 | Port conflict | Change `BACKEND_PORT` in `.env` |
 | Firewall blocking | Allow port 8000 |
 | Authentication failed | Check JWT token validity |
@@ -454,36 +461,35 @@ server {
 
 **Symptoms**:
 ```
-alembic.util.exc.CommandError: Target database is not up to date
-IntegrityError: duplicate key value violates unique constraint
+ERROR: relation "tasks" does not exist
+ERROR: column "progress_state" does not exist
 ```
+
+The Go server is PostgreSQL-only and has no Alembic. DDL runs only when
+`AUTO_MIGRATE=true`; a normal boot leaves an existing schema untouched and logs the tables
+it is missing.
 
 **Solutions**:
 
 **1. Check Migration Status**:
 ```bash
-alembic current
-alembic history
+grep AUTO_MIGRATE .env
+./agenthub | grep -i "missing table"
 ```
 
 **2. Manual Migration**:
 ```bash
-# Upgrade to latest
-alembic upgrade head
-
-# Downgrade if needed
-alembic downgrade -1
+# Create/update the schema at startup (CreateTables + auto_migration.go)
+AUTO_MIGRATE=true ./agenthub
 ```
 
 **3. Fix Conflicts**:
-```python
-# If duplicate data issue
-# Option 1: Clean database
+```bash
+# If duplicate data is the issue, reset a development database and let the Go server
+# recreate the schema
 docker-compose down -v
 docker-compose up -d
-
-# Option 2: Manual fix
-# Connect to database and resolve conflicts
+AUTO_MIGRATE=true ./agenthub
 ```
 
 ---
@@ -496,13 +502,9 @@ docker-compose up -d
 
 **Solution**:
 ```python
-# Verify task exists
-from utils.mcp_client import get_default_client
-client = get_default_client()
-
-try:
-    task = client.query_task_get(task_id=uuid)
-except ResourceNotFoundError:
+# Verify task exists via the manage_task MCP tool
+result = manage_task(action="get", task_id=uuid)
+if not result.get("success"):
     print("Task does not exist")
 ```
 
@@ -525,14 +527,11 @@ roles = payload.get("realm_access", {}).get("roles", [])
 **Cause**: Too many database connections
 
 **Solution**:
-```python
-# Increase pool size
-# SQLAlchemy engine
-engine = create_engine(
-    DATABASE_URL,
-    pool_size=20,  # Increase from default 5
-    max_overflow=40
-)
+```
+# The Go server manages its PostgreSQL pool through database/sql
+# (fastmcp/task_management/infrastructure/database/connection_pool.go; Supabase defaults
+# pool_size=3, max_overflow=7). Raise the pool size / max_overflow for the pool in use and
+# restart the backend.
 ```
 
 ---
@@ -593,8 +592,8 @@ docker volume prune -f
 docker-compose build --no-cache
 docker-compose up -d
 
-# Initialize database
-python scripts/init_database.py
+# Initialize database (creates the schema, then serves)
+AUTO_MIGRATE=true ./agenthub
 ```
 
 ### Database Backup/Restore

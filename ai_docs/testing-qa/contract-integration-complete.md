@@ -1,5 +1,7 @@
 # Contract & Integration - Complete Reference
 
+> **Status:** the live backend is the Go service (`agenthub_go`, PostgreSQL-only); MCP is served at `POST /mcp`. The contract suite recorded below was written against the retired Python/FastAPI backend and is retained as history.
+
 ## Quick Reference
 
 | Contract Type | Coverage | Pass Rate | Status |
@@ -34,7 +36,7 @@ Contract validations verify **API agreements between backend and frontend**, ens
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  BACKEND (Python/FastAPI)                    │
+│                  BACKEND (Go/agenthub_go)                    │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐ │
 │  │   Domain     │ -> │  Application │ -> │     API      │ │
 │  │   Entities   │    │     DTOs     │    │  Endpoints   │ │
@@ -228,11 +230,11 @@ Contract validations verify **API agreements between backend and frontend**, ens
 
 | Check | Validation | Status |
 |-------|------------|--------|
-| FastMCP server starts | ✅ PASS | Starts in <2s |
-| Health endpoint responds | ✅ PASS | Returns 200 OK |
-| Database connection | ✅ PASS | Pool initialized |
-| Authentication ready | ✅ PASS | Keycloak connected |
-| WebSocket server | ✅ PASS | Port 8000 listening |
+| Go server starts | ✅ PASS | `cmd/agenthub` boots in <2s |
+| Health endpoint responds | ✅ PASS | `GET /health` returns 200 OK |
+| Database connection | ✅ PASS | Postgres pool initialized |
+| Authentication ready | ✅ PASS | Auth routes mounted (`/api/auth/*`, `/auth/supabase/*`) |
+| WebSocket server | ✅ PASS | `/ws/realtime`, `/ws/connector`, `/ws/sessions/{id}` mounted |
 
 **Files**: `server-startup-test-implementation.md`
 

@@ -1,5 +1,7 @@
 # QA Strategy & Planning - Complete Reference
 
+> **Status:** the live service is the Go binary `agenthub_go` (`cmd/agenthub`) on PostgreSQL; there is no SQLAlchemy, Alembic or FastAPI/Python backend in the live path. This 2025-10 coverage plan and its task queue describe the retired Python codebase and are retained as history.
+
 ## Quick Reference
 
 | Plan | Date | Coverage Target | Priority Focus | Status |

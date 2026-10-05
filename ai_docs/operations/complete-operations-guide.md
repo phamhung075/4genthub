@@ -7,8 +7,8 @@
 | **Deploy production** | `./scripts/deployment/deploy-production.sh --environment production` | Full production deployment |
 | **Health check** | `./scripts/deployment/health-checks/comprehensive-health-check.sh` | Verify system health |
 | **Rollback** | `./scripts/deployment/rollback/rollback-production.sh --environment production` | Revert failed deployment |
-| **Apply migration** | `python scripts/migrate.py upgrade head` | Update database schema |
-| **Database reset** | `python scripts/reset_database.py` | Fresh local development |
+| **Apply migration** | `AUTO_MIGRATE=true ./agenthub` (Go `CreateTables` + startup auto-migrations) | Update database schema |
+| **Database reset** | Drop/recreate the database, then boot with `AUTO_MIGRATE=true` | Fresh local development |
 | **Monitor metrics** | http://localhost:9090 (Prometheus) | Track system performance |
 
 ---
@@ -60,7 +60,7 @@ docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
 |-----------|---------|------|--------------|
 | PostgreSQL | Primary database | 5432 | `pg_isready` |
 | Redis | Cache & sessions | 6379 | `redis-cli ping` |
-| MCP Backend | API server | 8000 | `/api/v2/health` |
+| MCP Backend | API server | 8000 | `/health` |
 | Frontend | Web interface | 3000 | `/health` |
 | Nginx | Reverse proxy | 80/443 | `/health` |
 | Prometheus | Metrics collection | 9090 | `/-/healthy` |
@@ -199,96 +199,73 @@ fi
 
 ## Database Migrations
 
-### Migration Strategies
+The live backend is the Go service (`agenthub_go`), which is PostgreSQL-only and creates
+its schema from Go table metadata (`database.Tables`,
+`fastmcp/task_management/infrastructure/database/models.go`). There is **no Alembic, no
+SQLAlchemy and no `scripts/migrate.py`**; the Python migration tooling described in earlier
+revisions of this guide was retired with the Python backend.
 
-| Strategy | Use When | Advantages |
-|----------|----------|------------|
-| **Alembic Migrations** ⭐ | Production, staging, team collaboration | Version controlled, rollback support, auto-detection, industry standard |
-| **Raw SQL Migrations** | Quick local fixes, testing | Simple, fast, direct SQL control |
-| **Database Reset** | Fresh local development, schema redesign | Guaranteed clean state, ORM = truth, fastest approach |
+### Schema Creation and Startup Migrations
 
-### Alembic Workflow
+All DDL is opt-in via `AUTO_MIGRATE=true`. On startup the Go binary (`cmd/agenthub`) calls
+`database.InitDatabase`, which:
 
-**Quick Reference**:
-```bash
-# Create manual migration
-python scripts/migrate.py create "remove subtask_count column"
-
-# Auto-generate migration (recommended)
-python scripts/migrate.py auto "detected changes"
-
-# Apply all pending
-python scripts/migrate.py upgrade head
-
-# Rollback one
-python scripts/migrate.py downgrade -1
-
-# View history
-python scripts/migrate.py history
-```
-
-**Auto-Generate Workflow**:
-```bash
-# 1. Update ORM models first (e.g., remove field from models.py)
-# 2. Auto-generate migration
-python scripts/migrate.py auto "remove subtask_count column"
-
-# 3. Review generated file in alembic/versions/
-# 4. Apply migration
-python scripts/migrate.py upgrade head
-```
-
-**Migration File Example**:
-```python
-def upgrade() -> None:
-    op.drop_column('tasks', 'subtask_count')
-
-def downgrade() -> None:
-    op.add_column('tasks',
-        sa.Column('subtask_count', sa.Integer(), nullable=False, server_default='0')
-    )
-```
-
-### Raw SQL Migration
+- without `AUTO_MIGRATE=true` validates the connection, leaves the existing schema
+  untouched, and logs the tables it is missing;
+- with `AUTO_MIGRATE=true` calls `CreateTables` (creates the registered tables) and runs
+  the automatic startup migrations in `auto_migration.go`.
 
 ```bash
-# Create SQL file
-nano migrations/remove_subtask_count_column.sql
+# Create/update the schema at startup
+AUTO_MIGRATE=true ./agenthub
 
-# Apply migration (tracks in schema_migrations table)
-python scripts/apply_migration.py migrations/remove_subtask_count_column.sql
+# Normal boot (no DDL; missing tables are logged)
+./agenthub
+```
 
-# List applied migrations
-python scripts/apply_migration.py --list
+### Adding a Table or Column
+
+1. Update the Go model/TableDef metadata (`models.go`, `models_prod.go`,
+   `seat_tables.go`) or the seat DDL
+   (`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`).
+2. Add any backfill/rename step to the Go auto-migration runner (`auto_migration.go`).
+3. Boot once with `AUTO_MIGRATE=true` and verify with `\dt` or the verification queries.
+
+### Raw SQL
+
+One-off changes can be applied directly with `psql`, but they live outside the Go metadata
+and must be reflected in the models afterwards so `CreateTables` and the runtime agree.
+
+```bash
+psql "$DATABASE_URL" -f migrations/your_change.sql
 ```
 
 ### Database Reset (Development Only)
 
 ```bash
-# Complete fresh start (ALL DATA LOST)
-python scripts/reset_database.py
-# Type RESET to confirm
+# Drop and recreate the database, then let the Go server create the schema
+dropdb agenthub && createdb agenthub
+AUTO_MIGRATE=true ./agenthub
 ```
 
 **When to Reset vs Migrate**:
 - Local development solo: Reset ✅
-- Shared development: Migrate ✅
-- Staging/Production: Migrate ✅ Required
-- Need preserve data: Migrate ✅
+- Shared development: `AUTO_MIGRATE=true` boot ✅
+- Staging/Production: `AUTO_MIGRATE=true` boot ✅ Required
+- Need preserve data: apply DDL with a backup in place ✅
 
 ### Best Practices
 
 **✅ DO**:
-1. Review auto-generated migrations before applying
-2. Test migrations locally first (upgrade + downgrade + re-upgrade)
-3. Write descriptive messages: `"add user_preferences table with jsonb column"`
-4. Always include downgrade logic
-5. Commit migrations to git
+1. Keep Go table metadata and any raw SQL change in sync
+2. Test a fresh `AUTO_MIGRATE=true` boot and a boot against an existing database
+3. Back up production before applying DDL: `pg_dump agenthub > backup_before_migration.sql`
+4. Commit schema changes together with the Go metadata that defines them
 
 **❌ DON'T**:
-1. Edit applied migrations (create new one instead)
-2. Skip migration testing
-3. Trust auto-generate blindly
+1. Run DDL in production without a tested backup
+2. Assume a default boot changes the schema — it does not without `AUTO_MIGRATE=true`
+3. Leave raw SQL changes that the Go metadata does not know about
 4. Forget backups in production: `pg_dump agenthub > backup_before_migration.sql`
 
 ---
@@ -352,20 +329,17 @@ max_connections = 200
 ```
 
 **Connection Pool Optimization**:
-```python
-# Database connection pool settings
-DATABASE_POOL_SIZE = 20
-DATABASE_MAX_OVERFLOW = 30
-DATABASE_POOL_TIMEOUT = 30
-DATABASE_POOL_RECYCLE = 3600
-```
+The Go server manages its PostgreSQL pool through `database/sql`; the Supabase pool defaults
+are `pool_size=3`, `max_overflow=7`, `pool_recycle=300s`, `pool_timeout=10s`
+(`fastmcp/task_management/infrastructure/database/connection_pool.go`). Tune the pool in use
+and restart the backend; there is no SQLAlchemy engine to configure.
 
 **Indexing Strategy**:
 ```sql
 -- Create indexes for common query patterns
 CREATE INDEX CONCURRENTLY idx_tasks_user_id_status ON tasks(user_id, status);
 CREATE INDEX CONCURRENTLY idx_projects_user_id_created_at ON projects(user_id, created_at);
-CREATE INDEX CONCURRENTLY idx_git_branches_project_id ON git_branches(project_id);
+CREATE INDEX CONCURRENTLY idx_project_git_branchs_project_id ON project_git_branchs(project_id);
 
 -- Composite indexes for complex queries
 CREATE INDEX CONCURRENTLY idx_tasks_complex ON tasks(project_id, status, priority, created_at);
@@ -560,16 +534,14 @@ DATABASE_HOST=srv-captain--postgres
 
 **Migration Issues**:
 ```bash
-# Check current version
-python scripts/migrate.py current
+# Was DDL enabled? The schema is only created/altered with AUTO_MIGRATE=true
+grep AUTO_MIGRATE .env
 
-# Apply pending migrations
-python scripts/migrate.py upgrade head
+# A normal boot logs the tables the schema is missing
+./agenthub | grep -i "missing table"
 
-# Migration failed mid-way
-python scripts/migrate.py downgrade -1
-# Fix migration file
-python scripts/migrate.py upgrade head
+# Re-run schema creation/migrations at startup
+AUTO_MIGRATE=true ./agenthub
 ```
 
 **High Memory Usage**:
@@ -621,7 +593,8 @@ docker-compose down -v
 docker volume prune -f
 docker-compose build --no-cache
 docker-compose up -d
-python scripts/init_database.py
+# Create the Postgres schema, then serve (from agenthub_go/)
+AUTO_MIGRATE=true ./agenthub
 ```
 
 ### Log Locations

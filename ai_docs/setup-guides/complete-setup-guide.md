@@ -24,7 +24,7 @@
 | Docker Compose | 1.29+ | Multi-container apps |
 | PostgreSQL | 14+ | Primary database |
 | Node.js | 18+ | Frontend development |
-| Python | 3.14+ | Backend services |
+| Go | 1.23+ | Backend services (`agenthub_go`) |
 
 ### Optional
 
@@ -315,37 +315,29 @@ git push -u origin feature/my-feature
 
 ### 5.2 Register Branch in MCP
 
-**Using MCP Tool**:
+**Using MCP Tools** (live tool names: `manage_project`, `manage_git_branch`):
 ```python
-from utils.mcp_client import get_default_client
-
-client = get_default_client()
-
 # Create project (if not exists)
-project = client.query_project_create(
-    name="My Project",
-    description="Project description"
-)
+manage_project(action="create", name="My Project", description="Project description")
 
 # Create branch
-branch = client.query_branch_create(
-    project_id=project["id"],
+manage_git_branch(
+    action="create",
+    project_id="<project-uuid>",
     git_branch_name="feature/my-feature",
     git_branch_description="Feature description"
 )
-
-print(f"Branch ID: {branch['id']}")
 ```
 
-**Using API**:
+**Using API** (`POST /api/v2/branches/`):
 ```bash
-curl -X POST http://localhost:8000/api/git-branch \
+curl -X POST http://localhost:8000/api/v2/branches/ \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
     "project_id": "uuid",
     "git_branch_name": "feature/my-feature",
-    "git_branch_description": "Description"
+    "description": "Feature description"
   }'
 ```
 
@@ -353,16 +345,14 @@ curl -X POST http://localhost:8000/api/git-branch \
 
 ```python
 # Register agent (if not exists)
-agent = client.query_agent_register(
-    project_id=project["id"],
-    name="coding-agent",
-    description="Primary coding agent"
-)
+manage_agent(action="register", project_id="<project-uuid>", name="coding-agent")
 
 # Assign to branch
-client.query_branch_assign_agent(
-    git_branch_id=branch["id"],
-    agent_id=agent["id"]
+manage_agent(
+    action="assign",
+    project_id="<project-uuid>",
+    agent_id="<agent-uuid>",
+    git_branch_id="<branch-uuid>"
 )
 ```
 
@@ -441,7 +431,7 @@ openssl rand -base64 24
 
 ### Application
 
-- [ ] Backend starts: `python -m fastmcp.server.mcp_entry_point`
+- [ ] Backend starts: `go run ./cmd/agenthub` from `agenthub_go/` (or the built `agenthub` binary)
 - [ ] Frontend starts: `npm run dev`
 - [ ] Health check: `curl http://localhost:8000/health`
 - [ ] Can authenticate via Keycloak
@@ -523,14 +513,11 @@ docker-compose restart postgres  # Restart if needed
 
 **Health Checks**:
 ```bash
-# Database
-curl http://localhost:8000/health/db
+# Application
+curl http://localhost:8000/health
 
 # Keycloak
 curl http://localhost:8080/health
-
-# Application
-curl http://localhost:8000/health
 ```
 
 **Logging**:
@@ -545,19 +532,20 @@ curl http://localhost:8000/health
 ```bash
 # Complete setup from scratch
 docker-compose up -d
-python scripts/init_database.py
 npm install && npm run dev
+
+# Create the Postgres schema and start the backend (from agenthub_go/)
+AUTO_MIGRATE=true go run ./cmd/agenthub
 
 # Verify setup
 curl http://localhost:8000/health
 curl http://localhost:8080
 
 # Create first project
-python scripts/create_project.py --name "My Project"
-
-# Run application
-python -m fastmcp.server.mcp_entry_point  # Backend
-npm run dev  # Frontend
+# manage_project(action="create", name="My Project")
+curl -X POST http://localhost:8000/api/v2/projects/ \
+  -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" \
+  -d '{"name": "My Project"}'
 ```
 
 ---

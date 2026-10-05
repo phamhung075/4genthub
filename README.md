@@ -5,13 +5,13 @@ Dai Hung PHAM
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/agenthub/agenthub)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2.1.0-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
-[![AI Agents](https://img.shields.io/badge/AI%20Agents-32%20Core%20Agents-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-9%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
 
 **The Future of Human-AI Collaboration in Software Development**
 
-*Orchestrate 32 specialized AI agents through an intuitive web interface designed for humans who want to harness the power of AI without complexity. Recently optimized from 69 agents to 32 core agents for better maintainability and clearer specialization.*
+*Orchestrate human and AI work through a Model Context Protocol (MCP) native platform. The Python agent library's 32 role templates were retired; agents are now registry rows managed through the `manage_agent` MCP tool.*
 
-[☁️ Cloud Platform](https://www.4genthub.com/) • [🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Gallery](#-agent-gallery) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
+[☁️ Cloud Platform](https://www.4genthub.com/) • [🎯 Quick Start](#-quick-start) • [🌟 Live Demo](#-live-demo) • [🤖 Agent Registry](#-agent-registry--seat-model) • [📚 Documentation](#-documentation) • [📋 Version History](#-version-history) • [💬 Community](#-community)
 
 </div>
 
@@ -19,15 +19,15 @@ Dai Hung PHAM
 
 ## ✨ **What Makes agenthub Special?**
 
-🎭 **Human-First AI Orchestration** — Control 32 specialized AI agents through a beautiful web interface
+🎭 **Human-First AI Orchestration** — Drive human and AI work through a beautiful web interface
 🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions
 🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration
 🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard
-🚀 **Multi-Agent Workflows** — Chain specialized agents for complex development workflows
+🚀 **Multi-Agent Workflows** — Chain agent registry entries for complex development workflows
 🌐 **Web-First Experience** — Designed for humans who prefer web interfaces over command lines
-🧹 **Optimized Agent Library** — Streamlined from 69 to 32 agents for better maintainability and clearer specialization
-🛍️ **Agent Marketplace** — Browse, customize, and share AI agents with your team and community
-🎨 **Personal Agent Instances** — Create customized versions of agents tailored to your workflow
+🧹 **Agent Registry** — Register, assign and update agents through the `manage_agent` MCP tool
+🪑 **Seat Model** — The durable seat (room + seat key) is resolved with `manage_seat` / `call_seat`
+🎨 **Per-Seat Tool Scope** — Each seat's tools and permissions are scoped to its role
 
 ## 🎯 **Perfect For Teams Who Want To...**
 
@@ -37,8 +37,8 @@ Dai Hung PHAM
 - 🎭 **Specialize AI agents** for different development roles
 - 🌟 **Scale development** without losing quality or oversight
 - 📈 **Track progress** of both human and AI contributions
-- 🛍️ **Share and discover** customized AI agents through the marketplace
-- 🎨 **Customize agent behavior** to match their team's unique workflow
+- 🎭 **Assign agent registry entries** to tasks and branches
+- 🎨 **Scope tools per seat** to match each role's workflow
 
 ---
 
@@ -57,9 +57,9 @@ http://localhost:3800
 - 🔄 **Context flow visualization**
 - 👥 **Multi-agent coordination**
 - 📈 **Progress tracking**
-- 🛍️ **Agent marketplace** — Browse & import community agents
-- 🎨 **My Agents** — Manage personal agent instances
-- 📚 **Agent templates** — 60+ pre-configured agents
+- 🎭 **Seat management** — List seats and switch occupants
+- 🧠 **4-tier context** — Global → project → branch → task
+- 🔍 **Health & status** — MCP registrations and metrics
 
 </td>
 <td width="50%">
@@ -68,11 +68,11 @@ http://localhost:3800
 ```
 http://localhost:8000
 ```
-- 🤖 **32 specialized AI agents**
-- 🛠️ **15+ MCP tool categories**
+- 🤖 **9 published MCP tools**
+- 🛠️ **Task, project, branch, context, agent, seat tools**
 - 📋 **4-tier context hierarchy**
-- 🔌 **RESTful API endpoints**
-- 🔍 **Health monitoring**
+- 🔌 **`POST /mcp` JSON-RPC + `GET /mcp` SSE**
+- 🔍 **Health monitoring (`GET /health`)**
 
 </td>
 </tr>
@@ -85,9 +85,9 @@ http://localhost:8000
 🧠 **Context Streams** — See how context flows between agents and sessions
 🎯 **One-Click Orchestration** — Deploy complex multi-agent workflows with simple clicks
 ⚡ **Instant Feedback** — Real-time updates as agents complete tasks and make decisions
-🛍️ **Community Marketplace** — Discover, share, and import customized agents from your team
-🎨 **Personal Workspaces** — Create and manage your own agent instances with custom configurations
-✨ **Smart Templates** — Browse 60+ ready-to-use agent templates across all specializations
+🎭 **Seat Management** — List seats, resolve one, and switch its occupant
+🧠 **4-Tier Context** — Global → project → branch → task inheritance
+✨ **Agent Registry** — Register, assign and update agents through `manage_agent`
 
 ---
 
@@ -103,24 +103,18 @@ graph TD
     B --> E[📚 Documentation<br/>ai_docs/ + index.json]
     B --> F[⏱️ Session Tracking<br/>2-hour Work Sessions]
 
-    C --> G[🔗 MCP Server<br/>FastMCP + Python]
-    G --> H[🤖 Agent Orchestra<br/>60+ Specialized Agents]
+    C --> G[🔗 MCP Server<br/>Go (agenthub_go)]
+    G --> H[🤖 Agent Registry<br/>manage_agent]
     G --> I[📊 4-Tier Context<br/>Global→Project→Branch→Task]
     G --> J[🗄️ Database Layer<br/>PostgreSQL + Redis]
-
-    H --> K[🎭 Task Planning Agent]
-    H --> L[💻 Coding Agent]
-    H --> M[🔍 Debugger Agent]
-    H --> N[🎨 UI Designer Agent]
-    H --> O[🛡️ Security Auditor]
-    H --> P[📚 Documentation Agent]
-    H --> Q[🚀 And 54 More...]
+    G --> R[🪑 Seat Model<br/>manage_seat / call_seat]
 
     style A fill:#e1f5fe
     style B fill:#ffe0b2
     style C fill:#f3e5f5
     style G fill:#e8f5e8
     style H fill:#fff3e0
+    style R fill:#fff3e0
 ```
 
 </div>
@@ -128,93 +122,21 @@ graph TD
 ### 🧩 **Core Components**
 
 - 🪝 **Claude Hook Client**: Python-based enforcement system with pre-tool file system protection, post-tool documentation indexing, and 2-hour session tracking. Located in `.claude/hooks/`, it provides selective documentation enforcement, automatic index.json generation, root directory restrictions, kebab-case folder validation, and non-disruptive workflow protection
-- 🔗 **MCP Server**: FastMCP-based server with streamable HTTP transport and RESTful APIs
+- 🔗 **MCP Server**: Go server (`agenthub_go`) with `POST /mcp` (JSON-RPC) and `GET /mcp` (SSE)
 - 🎯 **Task Management**: Comprehensive DDD-compliant lifecycle management with visual tracking
-- 🤖 **Agent Orchestration**: Multi-agent coordination with intelligent role-based switching
-- 🛍️ **Agent Management**: Complete agent lifecycle — browse templates, create instances, customize, share via marketplace
+- 🤖 **Agent Registry**: Register, assign and update agents through the `manage_agent` tool
+- 🪑 **Seat Management**: Seats (room + seat key) resolved with `manage_seat` / `call_seat`
 - 📋 **Project Management**: Hierarchical organization with automatic context inheritance
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
 
-## 🤖 **Agent Gallery - Meet Your Optimized AI Team**
+## 🤖 **Agent Registry & Seat Model**
 
-> **✨ Recently optimized from 69 to 32 agents** for better maintainability and clearer specialization. All 32 agent templates load successfully with the new agent management system, enabling instant agent instance creation and customization.
+> **The Python agent library is retired.** The 32 agent templates, the `agent_templates` / `user_agent_instances` tables that backed them, and the `call_agent` MCP tool were removed. The live surface is the `agents` registry table plus the `manage_agent` MCP tool (register, assign, get, list, update, unassign, unregister, rebalance), which keeps `call_agent` only as an optional data field.
+>
+> The durable role is now the **seat** (a room + seat key), managed with `manage_seat` (list, get, set_occupant) and resolved with `call_seat`. A seat's occupant is a runtime (`claude-code`, `codex`, `agy`, `omp`) plus a model.
 
-<table>
-<tr>
-<td width="33%">
-
-### 🎭 **Creative & Design** (2 agents)
-- `@ui_designer_expert_shadcn_agent` - UI/UX with shadcn/ui
-- `@design_system_agent` - Design systems & consistency
-- `@branding_agent` - Brand strategy
-- ~~`@graphic_design_agent`~~ - *Merged into branding*
-
-</td>
-<td width="33%">
-
-### 💻 **Development & Engineering** (8 agents)
-- `@coding_agent` - Implementation
-- `@debugger_agent` - Bug hunting
-- `@system_architect_agent` - System design
-- `@devops_agent` - Infrastructure
-- `@code_reviewer_agent` - Code quality
-- `@tech_spec_agent` - Technical specifications
-- `@technology_advisor_agent` - Tech stack decisions
-- `@prototyping_agent` - Interactive prototypes
-
-</td>
-<td width="33%">
-
-### 🔍 **Analysis & Planning** (7 agents)
-- `@task_planning_agent` - Project planning
-- `@deep_research_agent` - Investigation
-- `@root_cause_analysis_agent` - Problem solving
-- `master-orchestrator-agent` - Coordination
-- `@project_initiator_agent` - Project setup
-- `@elicitation_agent` - Requirements gathering
-- `@prd_architect_agent` - Product requirements
-
-</td>
-</tr>
-<tr>
-<td width="33%">
-
-### 🛡️ **Security & Compliance** (2 agents)
-- `@security_auditor_agent` - Security review
-- `@compliance_scope_agent` - Regulatory compliance
-- ~~`@security_penetration_tester_agent`~~ - *Merged into security_auditor*
-
-</td>
-<td width="33%">
-
-### 🧪 **Quality & Testing** (2 agents)
-- `@test_orchestrator_agent` - Comprehensive QA coordination
-- `@performance_load_tester_agent` - Performance testing
-- ~~`@lead_testing_agent`~~ - *Merged into test_orchestrator*
-- ~~`@functional_tester_agent`~~ - *Merged into test_orchestrator*
-
-</td>
-<td width="33%">
-
-### 📈 **Business & Marketing** (2 agents)
-- `@marketing_strategy_orchestrator_agent` - Marketing strategy
-- `@content_strategy_agent` - Content planning
-- ~~`@campaign_manager_agent`~~ - *Merged into marketing_strategy*
-- ~~`@market_research_agent`~~ - *Merged into deep_research*
-
-</td>
-</tr>
-</table>
-
-**🎯 Agent Highlights:**
-- **Smart Context Sharing** — Agents inherit knowledge from previous work
-- **Role Specialization** — Each agent excels in their specific domain
-- **Collaborative Workflows** — Agents work together seamlessly on complex tasks
-- **Dynamic Assignment** — System automatically selects the best agent for each task
-- **Personal Instances** — Create customized versions of any agent with your preferred settings
-- **Community Sharing** — Share your customized agents with team via marketplace
-- **Instant Access** — One-click bulk creation of all 32 agent instances
+See `ai_docs/api-integration/surface-inventory.md` §2 for the full MCP surface.
 
 ---
 
@@ -327,18 +249,18 @@ Optional: Python 3.8+, Node.js 18+, WSL2 (Windows)
 1. **Open dashboard** → http://localhost:3800
 2. **Create project** → "User Authentication"
 3. **Click "New Task"** → "Implement login system"
-4. **Assign agents** → Select `@task_planning_agent`
-5. **Watch magic happen** → Agents collaborate automatically
+4. **Assign a seat** → `call_seat(room="my-room", seat="lead")`
+5. **Watch magic happen** → work proceeds automatically
 
 </td>
 <td width="40%">
 
-#### 🤖 **What AI Agents Do** (Behind the Scenes)
-1. `@task_planning_agent` → Breaks down requirements
-2. `@system_architect_agent` → Designs architecture
-3. `@coding_agent` → Implements code
-4. `@test_orchestrator_agent` → Creates tests
-5. `@documentation_agent` → Writes ai_docs
+#### 🤖 **What the seat's occupant does** (Behind the Scenes)
+1. Planning → Breaks down requirements
+2. Architecture → Designs architecture
+3. Implementation → Writes the code
+4. Testing → Creates tests
+5. Documentation → Writes ai_docs
 
 </td>
 </tr>
@@ -434,13 +356,13 @@ mcp__agenthub_http__manage_context(
 ```
 Human: Define requirements
   ↓
-@task_planning_agent: Break down tasks
+Planning: Break down tasks
   ↓
-@system_architect_agent: Design system
+Architecture: Design system
   ↓
-@coding_agent: Implement code
+Implementation: Write code
   ↓
-@test_orchestrator_agent: Create tests
+Testing: Create tests
   ↓
 Human: Review and approve
 ```
@@ -452,13 +374,13 @@ Human: Review and approve
 ```
 Human: Report issue
   ↓
-@debugger_agent: Investigate problem
+Debugging: Investigate problem
   ↓
-@root_cause_analysis_agent: Find cause
+Root cause: Find cause
   ↓
-@coding_agent: Implement fix
+Implementation: Write fix
   ↓
-@test_orchestrator_agent: Verify fix
+Testing: Verify fix
   ↓
 Human: Validate solution
 ```
@@ -482,7 +404,7 @@ Human: Validate solution
 
 <div align="center">
 
-### **15+ Tool Categories • 50+ Individual Tools • Endless Possibilities**
+### **9 Published MCP Tools • JSON-RPC + SSE • Endless Possibilities**
 
 </div>
 
@@ -500,13 +422,10 @@ Human: Validate solution
 </td>
 <td width="33%">
 
-#### 🤖 **Agent Orchestration**
-- Dynamic agent role switching
-- Multi-agent collaboration
-- Agent registration & management
-- Personal agent instances
-- Agent marketplace with sharing
-- Bulk agent creation
+#### 🤖 **Agent & Seat Orchestration**
+- Agent registration & management (`manage_agent`)
+- Seat list/get/set_occupant (`manage_seat`)
+- Seat resolution (`call_seat`)
 - Workflow coordination
 - Context sharing between agents
 
@@ -546,7 +465,7 @@ Human: Validate solution
 <td width="33%">
 
 #### 🔧 **Developer Tools**
-- Rule management
+- Token management
 - Configuration handling
 - Debugging utilities
 - Testing frameworks
@@ -608,10 +527,9 @@ Track all changes, releases, and improvements to the agenthub platform through o
   - 107 consecutive perfect iterations achieved
   - Self-healing system with zero maintenance required
 
-- **Agent Library Optimization** - Streamlined from 69 to 32 specialized agents
-  - Better maintainability and clearer role specialization
-  - Enhanced performance and reduced complexity
-  - Comprehensive cleanup with maintained functionality
+- **Agent Library Retirement** - Removed the Python agent library (32 templates), the `agent_templates` / `user_agent_instances` tables and the `call_agent` MCP tool
+  - Replaced by the seat model (`manage_seat` / `call_seat`) and the `agents` registry via `manage_agent`
+  - Reduced complexity with no lost user workflow
 
 ### 📈 **Version Migration Guides**
 
@@ -619,7 +537,7 @@ When upgrading between versions, refer to our migration documentation:
 
 - **Breaking Changes** - Documented in each release with migration steps
 - **API Updates** - Version-specific changes to MCP protocol integration
-- **Agent Changes** - Updates to agent capabilities and tool permissions
+- **Agent Changes** - Updates to the agent registry and the seat tool surface (`manage_seat` / `call_seat`)
 - **Configuration Updates** - Environment and setup requirement changes
 
 ### 🔄 **Release Process**
@@ -672,14 +590,14 @@ Our release process follows industry best practices:
 <td width="50%">
 
 #### 🚀 **With agenthub**
-- One platform, 32 optimized + 60+ customizable agents
+- One platform for tasks, context and agent coordination
 - Persistent context across all sessions
 - Agents remember your preferences
 - Visual dashboard shows everything
 - Track AI work like team members
 - Collaborative AI workflows
-- Personal agent instances with custom configs
-- Community marketplace for sharing agents
+- Seat management with per-seat tool scope
+- Agent registry for register/assign/update
 
 </td>
 </tr>
@@ -691,10 +609,10 @@ Our release process follows industry best practices:
 
 ✅ **Context that Never Dies** — Agents remember everything, forever
 ✅ **Visual AI Collaboration** — See your AI team working in real-time
-✅ **Specialized AI Experts** — 32 core agents + 60+ customizable instances, each mastering their craft
+✅ **Agent Registry & Seats** — Manage agents via `manage_agent` and durable seats via `manage_seat` / `call_seat`
 ✅ **Human-First Design** — Built for people who love web interfaces
-✅ **Personal Agent Workspaces** — Create, customize, and manage your own agent instances
-✅ **Community Marketplace** — Share and discover agents customized by your team
+✅ **Per-Seat Tool Scope** — Each seat's tools and permissions match its role
+✅ **9 MCP Tools** — A small, stable MCP surface (`POST /mcp` + `GET /mcp` SSE)
 ✅ **Enterprise Ready** — Scales from solo dev to global teams
 
 ---

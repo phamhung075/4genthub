@@ -1,5 +1,7 @@
 # MCP Comprehensive Test Report - 2025-11-29
 
+> **Status:** dated report from the retired Python stack. The files it references (`agenthub_main/src/fastmcp/task_management/domain/value_objects/agent_role.py`, `.../entities/task.py`) no longer exist, so the recommended `AgentRole` enum fix is moot — `agenthub_main/agent-library` was removed (commit `60bcdb68`). The live surface is the Go server at `POST /mcp`, which publishes `manage_task` and `manage_agent`; `call_agent` is a live field of `manage_agent`, while the `call_agent` tool is retired.
+
 ## Executive Summary
 
 **Test Date**: 2025-11-29

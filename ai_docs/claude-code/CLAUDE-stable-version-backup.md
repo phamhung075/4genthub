@@ -1,3 +1,5 @@
+> **Historical artifact — retired model.** This is a saved version of `CLAUDE.md`. Its `call_agent` role-switching instructions describe the retired Python agent library (`agenthub_main/agent-library`) and the retired `call_agent` MCP tool. The live model is the seat model (`manage_seat` / `call_seat`) plus the `agents` registry via `manage_agent`; the authoritative MCP surface is `ai_docs/api-integration/surface-inventory.md` §2. Kept as history only.
+
 # 🚨 ABSOLUTE PRIORITY: NO COMPATIBILITY CODE ALLOWED 🚨
 
 ✅ Clean Code: Eliminate duplication | DRY | SOLID | Single Source of Truth | Performance optimized | Data consistency

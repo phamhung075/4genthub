@@ -2,8 +2,10 @@
 
 **Version**: 1.0.0
 **Date**: 2025-11-13
-**Status**: Design Phase
+**Status**: Design Phase (not implemented)
 **Scope**: Full System (Phases 1-4)
+
+> **Status note (2026-10-05):** Design proposal only — none of the skill/knowledge tools or endpoints below is implemented or mounted in the live Go server; the authoritative surface is `ai_docs/api-integration/surface-inventory.md`. The proposal extends `call_agent()`, but the `call_agent` tool and `agenthub_main/agent-library` are retired, so that premise is moot.
 
 ---
 
@@ -952,9 +954,11 @@ Similar to `manage_skill` (see section 4.1)
 
 ---
 
-### 4.4 Tool: `call_agent` (Enhanced)
+### 4.4 Tool: `call_agent` (Enhanced) — retired premise
 
-**Current Behavior:**
+> The `call_agent` **tool** is retired and no `/mcp/call_agent` route is mounted (MCP calls go to `POST /mcp` with `tools/call`); the seat model (`call_seat`, `manage_seat`) is the live replacement. The `call_agent` **field/param** on the `manage_agent` tool still exists. The enhancement below is kept for traceability only.
+
+**Assumed baseline (tool now retired):**
 
 ```json
 {
@@ -2215,7 +2219,7 @@ docker exec agenthub-postgres pg_dump -U agenthub_user -d agenthub \
 
 | Component | Integration Point | Changes Required |
 |-----------|------------------|------------------|
-| **Agent Management** | `call_agent()` endpoint | Add skills to response payload |
+| **Agent Management** | Seat model (`call_seat`/`manage_seat`); the `call_agent` tool is retired | Add skills to response payload |
 | **MCP Tools** | Add 3 new tools | `manage_skill`, `manage_knowledge`, `search_skills` |
 | **Database** | PostgreSQL | Add 4 new tables, install pgvector extension |
 | **Frontend** | React app | Add 2 new pages, update Agent Dashboard |
@@ -2229,7 +2233,7 @@ docker exec agenthub-postgres pg_dump -U agenthub_user -d agenthub \
 1. **API Endpoints**:
    - All new endpoints (manage_skill, etc.) are additions
    - Existing endpoints unchanged
-   - `call_agent()` adds optional `skills` field (clients can ignore)
+   - The `call_agent` tool is retired; if the seat-model response is extended it would add an optional `skills` field (clients can ignore)
 
 2. **Database**:
    - New tables don't affect existing tables

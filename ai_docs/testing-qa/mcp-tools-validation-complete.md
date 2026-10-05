@@ -1,5 +1,7 @@
 # MCP Tools Validation - Complete Reference
 
+> **Status:** the live MCP surface is the Go server at `POST /mcp` (`handleJSONRPC`); `tools/list` publishes nine tools — `manage_task`, `manage_subtask`, `manage_context`, `manage_project`, `manage_git_branch`, `manage_agent`, `manage_seat`, `call_seat`, `manage_connection` — and is not gated by any `TOOL_*` environment variable. The dated records below cover a smaller, earlier tool set and the retired Python FastMCP/Keycloak stack; they are retained as history.
+
 ## Quick Reference
 
 | Date | Scope | Tools Tested | Pass Rate | Critical Issues |

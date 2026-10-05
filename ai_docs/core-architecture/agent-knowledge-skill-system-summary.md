@@ -2,7 +2,9 @@
 
 **Document**: `agent-knowledge-skill-system-specs.md`
 **Date**: 2025-11-13
-**Status**: ✅ Planning Complete - Ready for Implementation
+**Status**: Design Phase — planning complete, not implemented
+
+> **Status note (2026-10-05):** Design proposal only — none of the skill/knowledge tools or endpoints described here is implemented or mounted in the live Go server; the authoritative surface is `ai_docs/api-integration/surface-inventory.md`. The proposal extends `call_agent()`, but the `call_agent` tool and `agenthub_main/agent-library` are retired, so that premise is moot.
 
 ---
 
@@ -58,7 +60,7 @@ User → call_agent("coding-agent")
 | **Vector DB** | PostgreSQL + pgvector | Integrated, no external deps |
 | **Caching** | None (MVP) | Simplicity over optimization |
 | **RAG Framework** | Direct pgvector (MVP) → LlamaIndex (later) | Simple first, advanced later |
-| **Backend** | FastAPI | Existing stack |
+| **Backend (proposal)** | FastAPI RAG service | New service; the live backend is the Go `agenthub_go` server |
 | **Frontend** | React + TypeScript | Existing stack |
 
 ---
@@ -130,9 +132,11 @@ manage_knowledge(
 
 Lightweight wrapper for quick searches.
 
-### 4. Enhanced `call_agent`
+### 4. Enhanced `call_agent` — retired premise
 
-**Before:**
+> The `call_agent` **tool** is retired (no `/mcp/call_agent` route; MCP calls go to `POST /mcp` with `tools/call`); the seat model (`call_seat`, `manage_seat`) replaces it. The `call_agent` **field/param** on `manage_agent` remains. Shown for traceability.
+
+**Assumed baseline (tool now retired):**
 ```json
 {
   "name": "coding-agent",
@@ -378,4 +382,4 @@ All specs located in: `ai_docs/core-architecture/`
 
 **Prepared by**: Master Orchestrator Agent
 **Date**: 2025-11-13
-**Status**: ✅ Planning Phase Complete
+**Status**: Design Phase — planning complete, not implemented
