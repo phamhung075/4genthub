@@ -974,6 +974,7 @@ export const useRealtimeSync = (
       switch (action) {
         case 'created':
           queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           showToastOnce(`room-created-${roomSlug}`, () => {
             showSuccess(`Room "${roomName}" created`);
           });
@@ -982,6 +983,7 @@ export const useRealtimeSync = (
         case 'deleted':
           queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
           queryClient.removeQueries({ queryKey: seatKeys.seats(roomSlug) });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           showToastOnce(`room-deleted-${roomSlug}`, () => {
             showWarning(`Room "${roomName}" deleted`);
           });
@@ -990,6 +992,7 @@ export const useRealtimeSync = (
         default:
           queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
           queryClient.invalidateQueries({ queryKey: seatKeys.seats(roomSlug) });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           showToastOnce(`room-updated-${roomSlug}`, () => {
             showInfo(`Room "${roomName}" updated`);
           });

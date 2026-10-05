@@ -160,6 +160,27 @@ describe('useRealtimeSync - seat/room events', () => {
     send(roomMessage('created', { id: 'dev', room: 'dev', name: 'Dev' }));
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+  });
+
+  it('invalidates the room and seat keys and the topology on a room updated event', () => {
+    const send = renderAndCapture();
+
+    send(roomMessage('updated', { id: 'dev', room: 'dev', name: 'Dev' }));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+  });
+
+  it('invalidates the topology and drops the room seats on a room deleted event', () => {
+    const send = renderAndCapture();
+
+    send(roomMessage('deleted', { id: 'dev', room: 'dev', name: 'Dev' }));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+    expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
   });
 
   it('treats a company room updated event as a settings and overlay refresh', () => {
@@ -170,5 +191,8 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSettings'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved'] });
+    // Deliberate: a company-scoped change moves settings and overlays, not the
+    // rooms/seats/links the topology query holds, so it must NOT refresh the graph.
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
   });
 });
