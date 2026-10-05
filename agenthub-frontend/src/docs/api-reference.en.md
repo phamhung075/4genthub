@@ -68,7 +68,7 @@ The request and response fields for these calls are defined by the handlers unde
 
 ## Route reference
 
-The server mounts **132** route registrations: 112 in the HTTP app (`fastmcp/server/httpapp`)
+The server mounts **140** route registrations: 120 in the HTTP app (`fastmcp/server/httpapp`)
 and 20 in the auth package (`fastmcp/auth`). They are grouped below by family; paths are the
 resolved paths.
 
@@ -195,6 +195,21 @@ or seat-type slug and `{version}` a concrete version.
 | `GET` | `/api/v2/openrig/machines` | List the caller's machines and their sync state. |
 | `DELETE` | `/api/v2/openrig/machines/{machine}/token` | Revoke a machine token. |
 | `POST` | `/api/v2/openrig/seat-status` | Report a seat's observed status (machine-authenticated). |
+
+### Teams
+
+| Method | Path | Purpose |
+| :--- | :--- | :--- |
+| `POST` | `/api/v2/openrig/teams` | Create a team. |
+| `GET` | `/api/v2/openrig/teams` | List teams. |
+| `GET` | `/api/v2/openrig/teams/{team}` | Get one team. |
+| `DELETE` | `/api/v2/openrig/teams/{team}` | Delete a team. |
+| `GET` | `/api/v2/openrig/teams/{team}/members` | List a team's members. |
+| `POST` | `/api/v2/openrig/teams/{team}/members` | Add a member. |
+| `PATCH` | `/api/v2/openrig/teams/{team}/members/{user}` | Update a member's role. |
+| `DELETE` | `/api/v2/openrig/teams/{team}/members/{user}` | Remove a member. |
+
+A team groups members under one owner; a member's role distinguishes the owner from the others.
 
 ### Task and performance summary routes
 
