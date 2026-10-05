@@ -137,8 +137,9 @@ def test_payload_shape_state_and_runtime_mapping(tmp_path):
             },
             "stopped",
         ),
-        # A just-launched seat has no activity signal yet (reason null), so it must NOT be called
-        # dead: the no_runtime_hook reason is the discriminator.
+        # An omp-style runtime with no activity signal yet reports reason null, so it must NOT be
+        # called dead: the no_runtime_hook reason is the discriminator. (An agy seat in the same
+        # cold-start window does report it - that is what the respawn hold covers.)
         (
             {
                 "sessionStatus": "running",

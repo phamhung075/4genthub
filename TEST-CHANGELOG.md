@@ -36,7 +36,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-05 — dead seat reads stopped and can be respawned (Python)
 
-- `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; a just-launched node (`unknown`, reason absent) still expects `unknown`.
+- `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; an omp-style just-launched node (`unknown`, reason absent) still expects `unknown` (an agy node in the same window reports `no_runtime_hook` and reads `stopped` - that is the cold-start overlap the 30s respawn hold covers).
 - `src/tests/scripts/test_openrig_seat_sync.py`: six new `respawn` cases — launches only on the dead reading for the whole wait; refuses a live seat (exit 2); refuses a seat OpenRig does not list; reports success (exit 0, caveat on stderr) when `rig seat launch` warned but the seat came up; fails (exit 1) when the seat is still dead after the launch; surfaces `rig seat launch`'s own message instead of a traceback.
 - Commands: bridge file -> 41 passed; seat-sync file -> 88 passed.
 
