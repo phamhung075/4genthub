@@ -76,6 +76,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`.gitignore` `lib/` no longer swallows source `lib/` directories; the pattern is root-anchored** (2026-10-05)
+
+- The Python block carried `lib/` and `lib64/` unanchored, so any directory named `lib` anywhere in the tree was
+  excluded, source included. A test written under `agenthub-frontend/src/tests/lib/` never appeared in `git status` and
+  would never have been committed (found while delivering owner directive 2). Two source directories escaped only
+  because a hand-maintained "PROTECTED DIRECTORIES" list re-included them by name (`!docker-system/lib/`,
+  `!agenthub-frontend/src/lib/`) - the next `lib/` directory had no such luck and was invisible until someone noticed.
+- Sweep before the change. `git ls-files --others --ignored --exclude-standard | git check-ignore -v --stdin` matched
+  **0** paths against rules 138/139: every `lib` directory in the tree is either tracked (`docker-system/lib`, 13 files;
+  `agenthub-frontend/src/lib`, 5 - both kept visible by the re-includes) or ignored by a different rule
+  (`.swarm/agenthub-frontend/src/lib`, by `.swarm/` at line 553). `agenthub_main/yaml-lib/**` is a different component
+  name (`yaml-lib` is not `lib`) and is untouched. No root `lib/` or `lib64/` exists, and every virtualenv directory
+  (`.venv/`, `env/`, `venv/`, `ENV/`, `env.bak/`, `venv.bak/`) is ignored by its own rule, so the unanchored `lib/` was
+  never what kept venv artifacts out. Nothing currently ignored looks like source, so nothing real was un-ignored.
+- Change: `lib/` -> `/lib/` and `lib64/` -> `/lib64/`, anchored to the repository root, which is what the entry is for
+  (buildout and `setup.py develop` artifacts land at the root); the two now-dead re-includes and their comment are
+  removed rather than left as a whitelist to maintain.
+- Verified: `git check-ignore -v --no-index` reports not-ignored for a would-be new file in `docker-system/lib`,
+  `agenthub-frontend/src/lib` and `agenthub-frontend/src/tests/lib`; a probe file created under
+  `agenthub-frontend/src/tests/lib/` shows in `git status` as untracked instead of invisible; and the tree's
+  ignored/visible counts are identical before and after (257861 ignored / 0 untracked-visible), so no path that was
+  meant to be ignored became visible. The moved test (`src/tests/utils/blockComposition.test.ts`) is tracked in
+  `0e0a4eeb`.
+- Trade-off, stated: a nested Python artifact such as `agenthub_main/lib/` from a local `setup.py develop` is no longer
+  ignored and will show as untracked. That is the intended direction - a visible artifact is recoverable, a silently
+  excluded source file is not.
+
 **Overlay PUT runs the resolver fold: a write that would break seat resolution is refused, and the failing op is named** (2026-10-05)
 
 - The company/room/seat overlay `PUT` validated only that each op's `slug@version` exists in the module library and then stored it (`fastmcp/server/httpapp/seat_admin_mount.go`), so a write could store a stack the resolver cannot resolve and the failure appeared later, at read: `ResolveSeat` runs the fold (`seat_resolution_service.go:76`) and the resolver error comes back from `handleResolveSeat` (`seat_mount.go:129-135`) — no partial, no fallback — the write-succeeds-then-read-fails half of that class, a hard read error rather than a silently different composition.
