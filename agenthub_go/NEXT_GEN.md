@@ -147,6 +147,29 @@ The owner chose **the cloud always wins**: on any disagreement a seat abandons i
 
 **F4 — usage samples and permission policies (queued).** `domain/usage-samples-store.ts` (**advance-only**: a byte-identical sample in the same lane is refused, so an idle seat adds zero rows), `domain/usage-series.ts` (over-time query and burn projection; it serves facts and leaves thresholds at the edge), `domain/model-divergence/*` (runtime-versus-declared model). Policies are data: `packages/daemon/policies/builtin/{locked,standard,open,yolo}.policy.md`, parsed by `domain/permission-policy/policy-spec.ts` — a Markdown plus YAML-frontmatter contract that is **advisory and fail-open, never enforcement**. That stance is worth copying deliberately, not accidentally: it decides what a seat does with a policy it cannot parse.
 
+**(G) THE HOME PAGE MATCHES THE PRODUCT (owner directive, 2026-10-05).** Owner's words: *"https://www.4genthub.com/ home page, need rewite content, match all NEXT-GEN for promotion"*. The page is `agenthub-frontend/src/pages/LandingPage.tsx`, rendered at `/` for anonymous visitors (`App.tsx:221`), plus the static head in `index.html`.
+
+Read at 22:22 on 2026-10-05, the copy is a mixture, and the stale parts are specific:
+
+| Claim on the page today | What is true |
+|---|---|
+| `index.html:14` title **"Agenthub Task Manager"** | The deployed title. The React page sets its own title at runtime, so the static head is what a crawler, a link preview and the pre-hydration view show. |
+| Feature **"4-Tier Context System"** — *Global -> Project -> Branch -> Task* | The retired Python-era hierarchy. The live model is company -> room -> seat overlays, plus context packs (F2). |
+| Feature **"Claude Code Integration ... via MCP protocol"** | Narrows the product to one runtime. The direction is OpenRig as client *and* runtime, with Claude Code, `omp` and codex as runtimes, and 4genthub as the cloud data for orchestration. |
+| Feature **"Lightning Fast Development ... 10x faster than manual work"** | No measurement exists behind the number. |
+| Feature **"Enterprise Security ... every message is audited against your team policy"** | Overstates enforcement. The policy layer is **advisory and fail-open** by design (F4). What is actually enforced is seat links and the permission fragments rendered into a seat. |
+| "Rooms, Seats and Modules", step 3 "Compose Your Rooms" | Correct and current — keep them. |
+
+Two structural gaps beyond the copy: `index.html` carries **no `og:` tags at all**, so a shared link previews as nothing, and there is no description meta.
+
+**The discipline is directive (A)'s rule, applied to marketing: the page may claim only what ships and greps.** The queue ledger (F3), the context-pack algebra (F2) and teams/sharing (D5) are **not built** and must not appear as live features; roadmap material stays out of promotion. Acceptance:
+
+- every claim maps to a capability a reviewer can point at in the code or the API;
+- the static head describes the same product as the page body;
+- no number appears without a measurement behind it.
+
+One seat owns both `LandingPage.tsx` and `index.html`; the `writer` seat reviews the copy before it lands rather than editing the same file.
+
 **Never moved, whatever else changes.** All of `adapters/` (tmux plus the five runtime adapters), `terminal/TerminalSessionBroker.ts`, the `daemon-lifecycle*` scripts, `restore-packet/*` transcript parsers, and the vendor-local readers (`claude-usage-reader`, `codex-auth-reader`). These are this machine's processes, and the Direction above already assigns them to the client. Do not port the 92 SQLite migrations either: the cloud schema already exists as Postgres DDL and is re-derived, not translated.
 
 **D1-D4 slice plan (2026-10-05).** The decisions above are the owner's wording; this is the pointer table to the work, so a reader can find it without the queue. Row ids are the durable addresses.
