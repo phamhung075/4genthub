@@ -172,6 +172,10 @@
     backend's attention, not fixed here: the scope string still exists in the Go Keycloak role map
     (`fastmcp/auth/mcp_keycloak_auth.go:124` grants `agents:*` to `mcp-developer`) while every route it gated is
     unmounted, so that mapping is a go-dev decision flagged rather than silently rewritten.
+  - Kept, with the condition attached so the two stay tied: the `BranchDetailsDialog` agent-assignment panels render
+    `assigned_agents` and `agent_assignments`, which the Go API still serves (`git_branch_service.go:146`;
+    `branch_context_repository.go:107,342`). If that backend retires those fields - the same change that would revoke
+    the stale `agents:*` grant above - the panels and their tests go with it, not before and not independently.
 - **Orphaned MCP-token surface removed** - 2026-10-05
   - Deleted `src/services/mcpTokenService.ts`, the unmounted `src/components/MCPTokenManager.tsx`, and their tests. The
     service called `POST /api/v2/mcp-tokens/generate|revoke|stats`, which exist only in the Python server and were never
