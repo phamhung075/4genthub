@@ -1219,6 +1219,23 @@ func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if req.Allow != nil {
 		allow = *req.Allow
 	}
+	// Owner decision (G3): an ALLOWING communication link is restricted to `claude-code` seats
+	// while codex has no verified deny path — a link into or out of a runtime without the
+	// comm-guard deny rules would be an unenforced message channel. A deny link (allow=false)
+	// only removes a channel, so it stays legal for any runtime.
+	if allow {
+		for _, seat := range []*repositories.Seat{from, to} {
+			// An empty runtime is a seat record that never went through seat creation (which
+			// validates the runtime); every real seat carries one, so only a known other
+			// runtime is refused here.
+			if seat.Runtime != "" && seat.Runtime != "claude-code" {
+				writeDetail(w, http.StatusBadRequest,
+					"allowing communication links are restricted to claude-code seats: runtime \""+
+						seat.Runtime+"\" has no verified deny path")
+				return
+			}
+		}
+	}
 	link, err := seatservices.NewSeatLinkService(source).UpsertSeatLink(r.Context(), userID(u), room.ID, repositories.SeatLink{
 		FromSeatID: from.ID, ToSeatID: to.ID, Kind: req.Kind, Allow: allow,
 	})

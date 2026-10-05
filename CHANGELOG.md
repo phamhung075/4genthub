@@ -28,6 +28,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Allowing seat links are restricted to `claude-code` seats** (2026-10-05, G3 owner decision)
+
+- `fastmcp/server/httpapp/seat_admin_mount.go`: `handleUpsertSeatLink` refuses an ALLOWING link (allow true or omitted) when either seat's runtime is a known other runtime — codex has no verified deny path, so such a link would be an unenforced message channel. The refusal is a 400 naming the runtime. A DENY link (`allow: false`) stays legal for any runtime because it only removes a channel, and a seat record with no runtime is not judged (seat creation validates the runtime, so production cannot create one).
+
 **Seat admin mutations now broadcast a seat-domain frame** (2026-10-05)
 
 - `fastmcp/server/httpapp/seat_admin_mount.go`: every seat admin mutation emits one frame on the existing WS v2 envelope (`BroadcastDataChange`, the same path task/project/branch events use): payload entity `seat`|`room`, action `created`|`updated`|`deleted`, and `data.primary` = `{id, room, seat_key}` (seat events), `{id, room}` (room events) or `{id:"company"}` for the company-scoped routes. Covered: room create/delete, seat create/delete, occupant, permission policy, room/company/seat overlay, link upsert/delete, and settings. A rejected mutation emits nothing. Deliberately NOT covered: `POST /seat-types/{slug}/versions` and `PUT /modules/{slug}/versions/{version}` — they change the catalog, not a room or a seat, and the dashboard's seat surface reads resolved seats.

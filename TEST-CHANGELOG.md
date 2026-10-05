@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — allowing seat links restricted to claude-code (Go, G3)
+
+- `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminLinkRestrictedToClaudeCodeSeats` (a codex target is refused with the runtime named; a DENY link to codex is accepted; a claude-code pair is accepted) and the cycle test's four fixture seats now carry a `claude-code` runtime, since production cannot create a seat without a validated runtime.
+- Command: `go test -count=1 ./fastmcp/server/httpapp/` -> ok; `gofmt -l` empty.
+
 ## 2026-10-05 — Legacy Python auth tests run again (5 real failures fixed, principal)
 
 - The "hang" was the conftest's autouse DB fixture demanding a local PostgreSQL at localhost:5432 as role postgres (6 retries, ~2.4 min per test); database_config loads env files with override=True so a CLI DATABASE_HOST/PORT cannot redirect it. Both files are mock-based and now carry `pytestmark = pytest.mark.unit` (the conftest's documented escape).
