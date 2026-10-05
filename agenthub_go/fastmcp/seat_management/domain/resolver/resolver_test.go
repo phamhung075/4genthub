@@ -367,6 +367,30 @@ func TestResolveHashDeterministic(t *testing.T) {
 	}
 }
 
+func TestResolveIsDeterministic(t *testing.T) {
+	overlays := []Overlay{{
+		Scope: scopeCompany,
+		Ops: []Op{
+			{Kind: OpAdd, Slug: "tool.new", Version: "1.0.0"},
+			{Kind: OpOverride, Slug: "doc.guide", Content: "company override"},
+		},
+	}}
+	first, err := Resolve(testCatalog(), baseSeatType(), overlays)
+	if err != nil {
+		t.Fatalf("first Resolve: %v", err)
+	}
+	second, err := Resolve(testCatalog(), baseSeatType(), overlays)
+	if err != nil {
+		t.Fatalf("second Resolve: %v", err)
+	}
+	if first.Hash == "" {
+		t.Fatal("resolved hash is empty")
+	}
+	if first.Hash != second.Hash {
+		t.Fatalf("hash differs across identical calls: %s != %s", first.Hash, second.Hash)
+	}
+}
+
 func TestResolveHashChangesWithContent(t *testing.T) {
 	base, err := Resolve(testCatalog(), baseSeatType(), nil)
 	if err != nil {
