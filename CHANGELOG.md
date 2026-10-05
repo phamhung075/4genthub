@@ -22,6 +22,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Removed
 
+**Dead `yaml-lib` negation removed from `.gitignore`** (2026-10-05)
+
+- `.gitignore` re-included `agenthub_main/yaml-lib/**` under a "PROTECTED DIRECTORIES" banner, but nothing excludes that path: a scratch
+  repository carrying the whole file *minus* that line reports no match for a probe under it (`git check-ignore -v --no-index` -> exit 1, no
+  pattern printed), while with the line present the same probe is visible in `git status` (`?? agenthub_main/yaml-lib/`) and the ignored-untracked
+  listing is empty. The negation therefore reads as protection and changes nothing. `agenthub_main/yaml-lib` does not exist on disk, has no
+  tracked file and no history, and no `yaml*` ignore rule exists to fight. The banner, its comment and the negation are removed rather than left
+  as a rule whose intent and effect differ.
+- Counts are unchanged by the removal (257861 untracked-ignored / 0 untracked-visible, identical to the reading taken for the `lib/` fix), and
+  the probe path stays visible.
+- Related, and not ours to fix: `.claude/.gitignore:115` carries the same unanchored `lib/` inside the hooks submodule
+  (`git@github.com:phamhung075/4genthub-hooks.git`), where it can still hide a file written under `.claude/` and cannot be corrected from this
+  repository.
+
 **Three orphaned Go branch routes deleted** (2026-10-04)
 
 - `POST /api/v2/branches/{id}/assign-agent`, `PUT /api/v2/branches/{id}` and `GET /api/v2/branches/` (`fastmcp/server/httpapp/branch_routes.go`) had no caller left after the dead frontend callers went in `c7e65486`: the live frontend calls only `GET /{id}`, `POST /` and `DELETE /{id}` plus the POST summaries routes, and nothing in the Go tests, `scripts` or `ai_docs` used them (`.swarm/` is gitignored, not part of the repo); they were not a documented contract. Their route handlers, the `BranchController` methods and the adapter methods went with them (`routes/branch_routes.go`, `httpapp/branch_wiring.go`).
