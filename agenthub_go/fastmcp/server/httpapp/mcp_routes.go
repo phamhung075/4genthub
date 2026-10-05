@@ -291,6 +291,10 @@ func plainJSON(v any) (any, error) {
 }
 
 func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string, args map[string]any) (any, bool) {
+	// Tools that render a seat's MCP fragment (call_seat) have no request of their own, so
+	// carry the caller's public origin the way the REST seat routes derive it.
+	ctx = withRequestPublicOrigin(ctx, r)
+
 	// Extract session ID and user ID if available
 	sessionID := r.Header.Get("X-Session-ID")
 	reqID := r.Header.Get("X-Request-ID")

@@ -24,8 +24,81 @@ import (
 )
 
 // publicURLEnv names the externally reachable base URL of this server. Rendered specs and
-// resolved-seat snapshots rewrite the MCP server URL to it.
+// resolved-seat snapshots rewrite the MCP server URL to it. It is an override: when it is set
+// the deployment's pinned value wins, and when it is not the caller's own request supplies the
+// origin (see seatMCPURL).
 const publicURLEnv = "AGENTHUB_PUBLIC_URL"
+
+// seatMCPURL is the MCP server URL rendered into a seat's spec and resolved snapshot.
+//
+// Precedence: AGENTHUB_PUBLIC_URL when the deployment pinned it; otherwise the origin the
+// caller actually reached this server by. A caller reaching the API at its own public host
+// supplies exactly the URL a rendered seat needs, which is why the request is the truth only
+// in the absence of an override - a deployment that pins the value must not be silently
+// overridden by a Host header. The REST routes carry the request; the MCP tool dispatch
+// carries the same origin in ctx (withRequestPublicOrigin), because a tool call has no
+// *http.Request of its own.
+func seatMCPURL(r *http.Request, ctx context.Context) string {
+	base := strings.TrimRight(os.Getenv(publicURLEnv), "/")
+	if base == "" {
+		if r != nil {
+			base = strings.TrimRight(requestPublicOrigin(r), "/")
+		} else if ctx != nil {
+			base = strings.TrimRight(requestPublicOriginFromContext(ctx), "/")
+		}
+	}
+	if base == "" {
+		return ""
+	}
+	return base + "/mcp"
+}
+
+// requestPublicOrigin is the origin the caller reached this server by, as scheme://host. It
+// follows the reverse-proxy trust this server already ports from the Python
+// HTTPSRedirectMiddleware: X-Forwarded-Proto decides the scheme and X-Forwarded-Host the host
+// when a proxy set them; absent those, the connection decides (https when the listener
+// terminated TLS, else http) and r.Host names the host.
+func requestPublicOrigin(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if proto := firstForwardedValue(r.Header.Get("X-Forwarded-Proto")); proto == "http" || proto == "https" {
+		scheme = proto
+	}
+	host := firstForwardedValue(r.Header.Get("X-Forwarded-Host"))
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		return ""
+	}
+	return scheme + "://" + host
+}
+
+// firstForwardedValue returns the client-facing value of a forwarding header. A proxy chain
+// appends to the right, so the leftmost element is the origin the browser used.
+func firstForwardedValue(value string) string {
+	if comma := strings.IndexByte(value, ','); comma >= 0 {
+		value = value[:comma]
+	}
+	return strings.TrimSpace(value)
+}
+
+// requestPublicOriginKey carries requestPublicOrigin through a context for the MCP tool
+// dispatch, which has no request of its own.
+type requestPublicOriginKey struct{}
+
+// withRequestPublicOrigin stores the caller's public origin on ctx.
+func withRequestPublicOrigin(ctx context.Context, r *http.Request) context.Context {
+	return context.WithValue(ctx, requestPublicOriginKey{}, requestPublicOrigin(r))
+}
+
+// requestPublicOriginFromContext returns the origin withRequestPublicOrigin stored, or "".
+func requestPublicOriginFromContext(ctx context.Context) string {
+	origin, _ := ctx.Value(requestPublicOriginKey{}).(string)
+	return origin
+}
 
 // seatSource is what the seat routes need from the seat_management use cases.
 type seatSource interface {
@@ -116,12 +189,8 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	}))
 }
 
-func seatSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (seatSource, bool) {
-	var mcpURL string
-	if publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/"); publicURL != "" {
-		mcpURL = publicURL + "/mcp"
-	}
-	source, err := newSeatSource(sessions, mcpURL)
+func seatSourceFor(w http.ResponseWriter, r *http.Request, sessions *database.SessionManager) (seatSource, bool) {
+	source, err := newSeatSource(sessions, seatMCPURL(r, r.Context()))
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return nil, false
@@ -130,11 +199,7 @@ func seatSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (se
 }
 
 func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
-	if publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/"); publicURL == "" {
-		writeDetail(w, http.StatusInternalServerError, publicURLEnv+" is not set")
-		return
-	}
-	source, ok := seatSourceFor(w, sessions)
+	source, ok := seatSourceFor(w, r, sessions)
 	if !ok {
 		return
 	}
@@ -169,7 +234,7 @@ func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 }
 
 func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
-	source, ok := seatSourceFor(w, sessions)
+	source, ok := seatSourceFor(w, r, sessions)
 	if !ok {
 		return
 	}

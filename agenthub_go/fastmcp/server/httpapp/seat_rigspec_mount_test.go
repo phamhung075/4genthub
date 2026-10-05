@@ -230,14 +230,42 @@ func TestRoomRigSpecAbsentRoomAndNoActiveSeats(t *testing.T) {
 	}
 }
 
-func TestRoomRigSpecNeedsPublicURLAndAuth(t *testing.T) {
+func TestRoomRigSpecDerivesPublicURLFromRequest(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
-	mux := seatRigSpecTestMux(t, &fakeSeatRigSpec{})
-	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", ""); rec.Code != http.StatusInternalServerError {
-		t.Errorf("without %s: status = %d", publicURLEnv, rec.Code)
+	room := &repositories.Room{ID: "room-dev", Slug: "dev", Name: "Development"}
+	fake := &fakeSeatRigSpec{
+		rooms:    map[string]*repositories.Room{"dev": room},
+		seats:    []*repositories.Seat{{ID: "seat-lead", RoomID: "room-dev", SeatKey: "lead", Runtime: "claude-code", PermissionPolicy: "standard"}},
+		resolved: map[string]*repositories.ResolvedSeat{"lead": {SeatID: "seat-lead", Hash: "h-lead", Runtime: "claude-code"}},
 	}
+	var mcpURL string
+	previous := newSeatRigSpecSource
+	newSeatRigSpecSource = func(_ *database.SessionManager, u string) (seatRigSpecSource, error) {
+		mcpURL = u
+		return fake, nil
+	}
+	t.Cleanup(func() { newSeatRigSpecSource = previous })
+	authenticateTestUser(t)
+	mux := http.NewServeMux()
+	mountSeatRigSpecRoutes(mux, nil)
 
-	t.Setenv(publicURLEnv, "https://api.example.test")
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/openrig/rooms/dev/rigspec", nil)
+	req.Host = "internal:8000"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "public.example.test")
+	req.Header.Set("Authorization", "Bearer test-token")
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("without %s: status = %d, want 200: %s", publicURLEnv, rec.Code, rec.Body.String())
+	}
+	if mcpURL != "https://public.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the forwarded origin", mcpURL)
+	}
+}
+
+func TestRoomRigSpecNeedsAuth(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
 	bare := http.NewServeMux()
 	mountSeatRigSpecRoutes(bare, nil)
 	rec := httptest.NewRecorder()
