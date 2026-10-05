@@ -10,9 +10,10 @@
   - Contract, captured from the server rather than invented: `POST /api/v2/broadcast/notify` with
     `event_type`/`entity_type` `notification` produces `type: 'update'`, `payload.entity: 'notification'`,
     `action: 'notification'`, `data.primary` copied from the request and `metadata.entity_id` carrying the message id.
-    The client half must match it. Routing uses the top-level `user_id` on the broadcast target, not the metadata:
-    `BroadcastDataChange` (websocket_routes.go:552-555) adds the target `userID` to the set before it consults
-    `metadata`, so `metadata.user_id` is not required and this file used to claim it was.
+    The client half must match it. Routing uses the top-level `user_id` on the broadcast target; metadata is an extra
+    source, not a requirement: `BroadcastDataChange` (websocket_routes.go) puts the target `userID` into
+    `targetUserIDs` first and only then reads `metadata.user_ids` (list), falling back to `metadata.user_id` when the
+    list is absent - so a frame routes without any metadata user id, and this file used to claim otherwise.
   - Server-side gap CLOSED 2026-10-05 (go-dev): `routes.MissedStore` is wired now - `b907a574` adds
     `MissedNotificationRepository` (Postgres, over the existing `missed_notifications` row) and `NewApp` assigns it
     through `wireMissedNotificationStore`, with `0a8a6cb8` correcting the cleanup windows to Python's two cutoffs
@@ -32,10 +33,11 @@
     a `userRef` rather than `user` itself, so `logout`'s identity does not change when `user` does): its keys carry no
     user id, so with the client alive above the router the next user in the tab would render the previous user's tasks,
     seats and projects, and the 5-minute `staleTime` means the stale rows are not even replaced for a while. Every
-    authentication-loss path reaches `logout`, so the clear inherits that coverage - five call sites in `AuthContext.tsx`
-    (:258 refresh 401, :294 refresh catch, :314 the mount path when a cookie exists but does not decode, :340
-    refresh-timer catch, :378 the `auth-logout` listener) plus one external emitter (`services/apiV2.ts:91` dispatches
-    `auth-logout` on a 401). The gate is what keeps the mount path honest: it runs before any session exists and a fresh
+    authentication-loss path reaches `logout`, so the clear inherits that coverage: the refresh-401 branch, the refresh
+    catch, the mount path when a cookie exists but does not decode, the refresh-timer catch, and the `auth-logout`
+    listener in `AuthContext.tsx`, plus one external emitter (`services/apiV2.ts:91` dispatches `auth-logout` on a
+    401) - cited by call site rather than line number because the numbers move with every edit above them. The gate is
+    what keeps the mount path honest: it runs before any session exists and a fresh
     load starts with an empty cache, so skipping the clear there loses nothing and avoids wiping a cache the caller has
     already primed. Tests cover the explicit logout button with a live session for both the inbox and the cache; the other
     paths reach the same code rather than being covered individually.
