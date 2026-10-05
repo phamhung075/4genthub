@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — occupant PUT keeps the runtime when it is blank (Go)
+
+- `fastmcp/server/httpapp/seat_occupant_runtime_test.go` (new): five handler cases over the seat-admin mux. A BLANK runtime keeps the seat's runtime while the model still changes (this is the case that fails if blank goes back to a 400); an OMITTED runtime does the same; an explicit runtime wins; an explicit bogus runtime is still 400; and a blank runtime never inherits the seat type version's default (the seat runs claude-code while its type version default is codex, and it stays claude-code). Service-level companion: `TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt` in `seat_admin_service_test.go`.
+- Two obsolete expectations moved with the contract, named because a test change is a finding: `TestSeatAdminSetOccupantRejectsInvalidInput` dropped `{"runtime":""}` and `{"model":"sonnet"}`, and `TestSeatAdminServiceSetOccupantErrors` dropped `{"", ""}` — all three were valid only under the old 400, so leaving them would have encoded a contradiction. Each removal carries a comment naming the ruling and the test that now pins the behaviour.
+- Commands: `gofmt -l` clean; `go vet ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` exit 0; `go test -count=1` on both packages ok (services 0.006s, httpapp 0.904s).
+
 ## 2026-10-06 — Wildcard+credentials CORS combination removed (local-stack fallback)
 
 - `cors_test.go`: `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (which pinned `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) is replaced by `TestWithCORSSimpleRequestDefaultWildcardEchoesOrigin`: with `CORS_ORIGINS` unset and credentials on, the actual response echoes the concrete origin, sets `Access-Control-Allow-Credentials: true` and `Vary: Origin`, and never `*`. New `TestWithCORSSimpleRequestDisallowedOrigin`: an explicit allowlist that omits the origin yields no `Access-Control-Allow-Origin`, no `Access-Control-Allow-Credentials` and no `Access-Control-Expose-Headers`, while the handler still runs (204). `TestWithCORSSimpleRequestAllowedOrigin` and `TestWithCORSPreflightAllowedOrigin` gained `Vary: Origin` and never-`*` assertions; both preflight cases are otherwise unchanged.
