@@ -6,6 +6,7 @@ package httpapp
 //	GET    /api/v2/openrig/rooms
 //	DELETE /api/v2/openrig/rooms/{room}
 //	GET    /api/v2/openrig/seat-types
+//	POST   /api/v2/openrig/seat-types
 //	POST   /api/v2/openrig/seat-types/{slug}/versions
 //	GET    /api/v2/openrig/modules
 //	GET    /api/v2/openrig/modules/{slug}/versions/{version}
@@ -55,6 +56,7 @@ type seatAdminSource interface {
 	ListRooms(ctx context.Context, userID string) ([]repositories.Room, error)
 	GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
 	ListSeatTypes(ctx context.Context, userID string) ([]repositories.SeatType, error)
+	SaveSeatType(ctx context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error)
 	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
 	GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error)
 	GetModuleVersion(ctx context.Context, userID, slug, version string) (*repositories.ModuleVersion, error)
@@ -159,6 +161,10 @@ func (s *seatAdminRepos) LatestSeatTypeVersion(ctx context.Context, userID, slug
 
 func (s *seatAdminRepos) ListSeatTypes(ctx context.Context, userID string) ([]repositories.SeatType, error) {
 	return s.seatTypes.List(ctx, userID)
+}
+
+func (s *seatAdminRepos) SaveSeatType(ctx context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error) {
+	return s.seatTypes.Save(ctx, userID, seatType)
 }
 
 func (s *seatAdminRepos) GetSeatTypeVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error) {
@@ -281,6 +287,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	})))
 	mux.HandleFunc("GET /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatTypes(w, r, u, sessions)
+	}))
+	mux.HandleFunc("POST /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleCreateSeatType(w, r, u, sessions)
 	}))
 	mux.HandleFunc("POST /api/v2/openrig/seat-types/{slug}/versions", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCreateSeatTypeVersion(w, r, u, sessions)
@@ -420,6 +429,12 @@ type seatAdminSeatRequest struct {
 	FollowLatest  *bool   `json:"follow_latest"`
 	// PermissionPolicy defaults to resolver.DefaultPermissionPolicy when omitted.
 	PermissionPolicy string `json:"permission_policy"`
+}
+
+type seatAdminSeatTypeRequest struct {
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type seatAdminSeatTypeVersionRequest struct {
@@ -565,6 +580,32 @@ func handleListRooms(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("rooms", out)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleCreateSeatType creates a seat type with no version: the caller adds the first version
+// through POST /seat-types/{slug}/versions, exactly as the seeder writes Save then AddVersion.
+func handleCreateSeatType(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminSeatTypeRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	saved, err := seatservices.NewSeatAdminService(source).CreateSeatType(r.Context(), userID(u), req.Slug, req.Name, req.Description)
+	if err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	entry := entities.NewOrderedMap[any]()
+	entry.Set("slug", saved.Slug)
+	entry.Set("name", saved.Name)
+	entry.Set("description", saved.Description)
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("seat_type", entry)
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -966,11 +1007,11 @@ func handleSetSeatPermissionPolicy(w http.ResponseWriter, r *http.Request, u *au
 
 func writeSeatAdminServiceError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidPermissionPolicy), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion), errors.Is(err, seatservices.ErrLinkCycle):
+	case errors.Is(err, seatservices.ErrInvalidOccupant), errors.Is(err, seatservices.ErrInvalidPermissionPolicy), errors.Is(err, seatservices.ErrInvalidSeatTypeVersion), errors.Is(err, seatservices.ErrInvalidSeatType), errors.Is(err, seatservices.ErrLinkCycle):
 		writeDetail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, seatservices.ErrRoomNotFound), errors.Is(err, seatservices.ErrSeatNotFound), errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		writeDetail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, repositories.ErrSeatTypeVersionConflict):
+	case errors.Is(err, seatservices.ErrSeatTypeExists), errors.Is(err, repositories.ErrSeatTypeVersionConflict):
 		writeDetail(w, http.StatusConflict, err.Error())
 	default:
 		writeDetail(w, http.StatusInternalServerError, err.Error())

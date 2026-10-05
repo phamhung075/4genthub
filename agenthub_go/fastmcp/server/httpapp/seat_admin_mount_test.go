@@ -109,6 +109,15 @@ func (f *fakeSeatAdmin) ListSeatTypes(_ context.Context, _ string) ([]repositori
 	return out, nil
 }
 
+func (f *fakeSeatAdmin) SaveSeatType(_ context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error) {
+	saved := &repositories.SeatType{ID: "st-" + seatType.Slug, UserID: userID, Slug: seatType.Slug, Name: seatType.Name, Description: seatType.Description}
+	f.seatTypeList = append(f.seatTypeList, saved)
+	if f.seatVersions[seatType.Slug] == nil {
+		f.seatVersions[seatType.Slug] = map[string]*repositories.SeatTypeVersion{}
+	}
+	return saved, nil
+}
+
 func (f *fakeSeatAdmin) GetSeatTypeVersion(_ context.Context, _, slug, version string) (*repositories.SeatTypeVersion, error) {
 	return f.seatVersions[slug][version], nil
 }
@@ -1754,4 +1763,249 @@ func TestSeatAdminCreateSeatValidatesOccupant(t *testing.T) {
 			t.Errorf("%s: status = %d, want 200: %s", body, rec.Code, rec.Body.String())
 		}
 	}
+}
+
+func TestSeatAdminCreateSeatType(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	mux := seatAdminTestMux(t, fake)
+
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types",
+		`{"slug":"custom-coder","name":"Custom Coder","description":"A user seat type"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+	}
+	want := `{"success":true,"seat_type":{"slug":"custom-coder","name":"Custom Coder","description":"A user seat type"}}`
+	if strings.TrimSpace(rec.Body.String()) != want {
+		t.Errorf("create body = %s, want %s", rec.Body.String(), want)
+	}
+	// The created type is listed, with no version yet (the version route adds the first one).
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list: %d %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"slug":"custom-coder","name":"Custom Coder","description":"A user seat type","default_runtime":null,"latest_version":null,"module_refs":[]`) {
+		t.Errorf("listing does not show the created, versionless type: %s", rec.Body.String())
+	}
+
+	// A duplicate slug is a conflict: the store's Save is a get-or-create, so the service
+	// refuses the duplicate rather than silently return the existing type with a 200.
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Again"}`)
+	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "already exists") {
+		t.Fatalf("duplicate: %d %s, want 409", rec.Code, rec.Body.String())
+	}
+	if len(fake.seatTypeList) != 1 || fake.seatTypeList[0].Name != "Custom Coder" {
+		t.Errorf("a rejected duplicate changed the stored type: %+v", fake.seatTypeList)
+	}
+}
+
+func TestSeatAdminCreateSeatTypeRejectsInput(t *testing.T) {
+	mux := seatAdminTestMux(t, newFakeSeatAdmin())
+	cases := []struct {
+		name, body string
+		status     int
+	}{
+		{"uppercase slug", `{"slug":"Custom","name":"N"}`, http.StatusBadRequest},
+		{"underscore slug", `{"slug":"custom_coder","name":"N"}`, http.StatusBadRequest},
+		{"empty slug", `{"slug":"","name":"N"}`, http.StatusBadRequest},
+		{"leading hyphen", `{"slug":"-custom","name":"N"}`, http.StatusBadRequest},
+		{"dot slug", `{"slug":"custom.coder","name":"N"}`, http.StatusBadRequest},
+		{"empty name", `{"slug":"custom","name":""}`, http.StatusBadRequest},
+		{"blank name", `{"slug":"custom","name":"   "}`, http.StatusBadRequest},
+		{"missing name", `{"slug":"custom"}`, http.StatusBadRequest},
+		{"unknown field", `{"slug":"custom","name":"N","x":1}`, http.StatusBadRequest},
+	}
+	for _, c := range cases {
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", c.body)
+		if rec.Code != c.status {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.status, rec.Body.String())
+		}
+	}
+}
+
+// The version route gates on the seat type existing (it lists the types before writing), so a
+// type created through the new route no longer 404s; its first version is 1.0.0 and it lists as
+// the latest version.
+func TestSeatAdminCreatedSeatTypeVersionRouteAcceptsTheSlug(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	mux := seatAdminTestMux(t, fake)
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Custom Coder"}`); rec.Code != http.StatusOK {
+		t.Fatalf("create type: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
+	}
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/custom-coder/versions",
+		`{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("first version of a created type: %d %s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`"slug":"custom-coder"`, `"version":"1.0.0"`, `"default_runtime":"claude-code"`, `"module_refs":[{"slug":"custom-role","version":"1.0.0"}]`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("version body missing %s: %s", want, rec.Body.String())
+		}
+	}
+	rec = doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seat-types", "")
+	if !strings.Contains(rec.Body.String(), `"slug":"custom-coder","name":"Custom Coder","description":"","default_runtime":"claude-code","latest_version":"1.0.0"`) {
+		t.Errorf("listing does not show the created type's first version: %s", rec.Body.String())
+	}
+}
+
+// KEY ACCEPTANCE: a seat type a user creates through the new route renders exactly like a
+// seeded one. The type is created, its role is authored as an instruction module, the version
+// is added through the existing version route, a seat is created and resolved through the real
+// resolver and renderer; the rendered guidance/role.md must carry the authored role text.
+func TestSeatAdminCreatedSeatTypeResolvesAndRenders(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	const roleText = "You are the custom coder: keep the acceptance test honest."
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	mux := seatAdminTestMux(t, fake)
+	mountSeatRoutes(mux, nil)
+	previousSource := newSeatSource
+	newSeatSource = func(*database.SessionManager, string) (seatSource, error) {
+		return createdTypeSeatSource{resolution: createdSeatTypeResolution(fake)}, nil
+	}
+	t.Cleanup(func() { newSeatSource = previousSource })
+
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types", `{"slug":"custom-coder","name":"Custom Coder","description":"Made by a user"}`); rec.Code != http.StatusOK {
+		t.Fatalf("create type: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/custom-role/versions/1.0.0", `{"kind":"instruction","content":"`+roleText+`"}`); rec.Code != http.StatusOK {
+		t.Fatalf("author role module: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seat-types/custom-coder/versions", `{"module_refs":["custom-role@1.0.0"],"default_runtime":"claude-code"}`); rec.Code != http.StatusOK {
+		t.Fatalf("add version: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"custom-coder","runtime":"claude-code"}`); rec.Code != http.StatusOK {
+		t.Fatalf("create seat on the created type: %d %s", rec.Code, rec.Body.String())
+	}
+
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/alice", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("resolve seat: %d %s", rec.Code, rec.Body.String())
+	}
+	var wire struct {
+		ResolvedSeat struct {
+			Runtime string `json:"runtime"`
+			Files   []struct {
+				Path    string `json:"path"`
+				Content string `json:"content"`
+			} `json:"files"`
+		} `json:"resolved_seat"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &wire); err != nil {
+		t.Fatalf("decode resolve: %v: %s", err, rec.Body.String())
+	}
+	if wire.ResolvedSeat.Runtime != "claude-code" {
+		t.Errorf("resolved runtime = %q", wire.ResolvedSeat.Runtime)
+	}
+	var guidance string
+	for _, f := range wire.ResolvedSeat.Files {
+		if f.Path == "guidance/role.md" {
+			guidance = f.Content
+		}
+	}
+	if guidance == "" {
+		t.Fatalf("render has no guidance/role.md: %s", rec.Body.String())
+	}
+	if !strings.Contains(guidance, roleText) {
+		t.Errorf("rendered guidance/role.md does not carry the created role text:\n%s", guidance)
+	}
+	if !strings.Contains(guidance, "## custom-role") {
+		t.Errorf("the created instruction module is not under its own heading:\n%s", guidance)
+	}
+}
+
+// createdTypeSeatSource is the seatSource the resolve route uses: the real resolution service
+// over the admin fake, so only persistence is in-memory.
+type createdTypeSeatSource struct {
+	resolution *seatservices.SeatResolutionService
+}
+
+func (s createdTypeSeatSource) ResolveSeat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.ResolvedSeat, error) {
+	return s.resolution.ResolveSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (createdTypeSeatSource) SeedSeatTypes(context.Context, string) (int, error) { return 0, nil }
+
+// createdSeatTypeResolution builds the real SeatResolutionService (resolver + renderer) over
+// the admin fake, so the KEY test renders through the production path with a fake store.
+func createdSeatTypeResolution(fake *fakeSeatAdmin) *seatservices.SeatResolutionService {
+	return &seatservices.SeatResolutionService{
+		SeatTypes:  createdTypeSeatTypes{fake: fake},
+		Rooms:      createdTypeRooms{fake: fake},
+		Seats:      createdTypeSeats{fake: fake},
+		Overlays:   createdTypeOverlays{fake: fake},
+		Links:      createdTypeLinks{fake: fake},
+		Resolved:   createdTypeSnapshots{},
+		NewCatalog: func(string) seatservices.CheckedCatalog { return fakeResolutionCatalog{fake: fake} },
+		MCPURL:     "https://api.example.test/mcp",
+	}
+}
+
+type createdTypeRooms struct {
+	repositories.RoomRepository
+	fake *fakeSeatAdmin
+}
+
+func (r createdTypeRooms) GetBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
+	return r.fake.GetRoomBySlug(ctx, userID, slug)
+}
+
+type createdTypeSeatTypes struct {
+	repositories.SeatTypeRepository
+	fake *fakeSeatAdmin
+}
+
+func (t createdTypeSeatTypes) GetByID(_ context.Context, _, seatTypeID string) (*repositories.SeatType, error) {
+	for _, st := range t.fake.seatTypeList {
+		if st.ID == seatTypeID {
+			copied := *st
+			return &copied, nil
+		}
+	}
+	return nil, nil
+}
+
+func (t createdTypeSeatTypes) GetVersion(ctx context.Context, userID, slug, version string) (*repositories.SeatTypeVersion, error) {
+	return t.fake.GetSeatTypeVersion(ctx, userID, slug, version)
+}
+
+func (t createdTypeSeatTypes) LatestVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error) {
+	return t.fake.LatestSeatTypeVersion(ctx, userID, slug)
+}
+
+type createdTypeSeats struct {
+	repositories.SeatRepository
+	fake *fakeSeatAdmin
+}
+
+func (s createdTypeSeats) FindByRoomAndKey(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error) {
+	return s.fake.FindSeat(ctx, userID, roomID, seatKey)
+}
+
+type createdTypeOverlays struct {
+	repositories.OverlayRepository
+	fake *fakeSeatAdmin
+}
+
+func (o createdTypeOverlays) Find(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error) {
+	return o.fake.FindOverlay(ctx, userID, scope, roomID, seatID)
+}
+
+type createdTypeLinks struct {
+	repositories.SeatLinkRepository
+	fake *fakeSeatAdmin
+}
+
+func (l createdTypeLinks) ListFrom(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error) {
+	return l.fake.ListSeatLinks(ctx, userID, seatID)
+}
+
+type createdTypeSnapshots struct {
+	repositories.ResolvedSeatRepository
+}
+
+func (createdTypeSnapshots) Save(_ context.Context, _ string, seat repositories.ResolvedSeat) (*repositories.ResolvedSeat, error) {
+	return &seat, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
@@ -18,6 +19,8 @@ var (
 
 	ErrSeatTypeNotFound       = errors.New("seat type not found")
 	ErrInvalidSeatTypeVersion = errors.New("invalid seat type version")
+	ErrInvalidSeatType        = errors.New("invalid seat type")
+	ErrSeatTypeExists         = errors.New("seat type already exists")
 )
 
 // SeatAdminStore is the persistence surface SeatAdminService reads and writes.
@@ -25,6 +28,7 @@ type SeatAdminStore interface {
 	ListRooms(ctx context.Context, userID string) ([]repositories.Room, error)
 	GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
 	ListSeatTypes(ctx context.Context, userID string) ([]repositories.SeatType, error)
+	SaveSeatType(ctx context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error)
 	FindSeat(ctx context.Context, userID, roomID, seatKey string) (*repositories.Seat, error)
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
@@ -125,6 +129,30 @@ func (s *SeatAdminService) SetPermissionPolicy(ctx context.Context, userID, room
 	}
 	seat.PermissionPolicy = permissionPolicy
 	return s.view(ctx, userID, room, seat)
+}
+
+// CreateSeatType creates a seat type with no version through the same write path the seeder
+// uses (the store's Save). A slug that already exists is ErrSeatTypeExists rather than the
+// store's silent get-or-create, and a bad slug or an empty name is ErrInvalidSeatType. The
+// caller adds the first version with CreateSeatTypeVersion, exactly as the seeder does, so
+// the existing POST /seat-types/{slug}/versions accepts the slug immediately afterwards.
+func (s *SeatAdminService) CreateSeatType(ctx context.Context, userID, slug, name, description string) (*repositories.SeatType, error) {
+	if err := repositories.ValidateSeatTypeSlug(slug); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidSeatType, err)
+	}
+	if strings.TrimSpace(name) == "" {
+		return nil, fmt.Errorf("%w: name is required", ErrInvalidSeatType)
+	}
+	existing, err := s.store.ListSeatTypes(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range existing {
+		if existing[i].Slug == slug {
+			return nil, fmt.Errorf("%w: %q", ErrSeatTypeExists, slug)
+		}
+	}
+	return s.store.SaveSeatType(ctx, userID, repositories.SeatType{Slug: slug, Name: name, Description: description})
 }
 
 // CreateSeatTypeVersion appends the next patch version (1.0.0 when none) of a seat type with

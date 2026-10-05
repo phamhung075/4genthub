@@ -66,6 +66,15 @@ func ValidateModuleSlug(slug string) error {
 	return nil
 }
 
+// ValidateSeatTypeSlug checks slug against the seat type slug rule: the same lowercase
+// hyphenated rule the embedded seat types and module slugs use.
+func ValidateSeatTypeSlug(slug string) error {
+	if !moduleSlugPattern.MatchString(slug) {
+		return fmt.Errorf("seat type slug %q must match %s", slug, moduleSlugPattern)
+	}
+	return nil
+}
+
 // ValidateConcreteVersion requires a concrete semver x.y.z; aliases such as "latest" are rejected.
 func ValidateConcreteVersion(version string) error {
 	if !semverPattern.MatchString(version) {
