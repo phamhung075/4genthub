@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the seeder verifies the refs it writes (Go)
+
+- `fastmcp/seat_management/application/services/seat_seeder_test.go` (new) pins both directions with in-memory `ModuleRepository`/`SeatTypeRepository` fakes: a seed carrying a curated ref the catalog lacks is refused with the ref and the seat type named, and writes no seat type or version; the identical seed succeeds once the catalog holds the refs, with all three refs on the version; and a seed whose refs are exactly its own authored modules seeds against an empty catalog.
+- The refusal mirrors the HTTP publish path (`seat_admin_service.go:212`), and the check relies on `ORMModuleRepository.GetVersion` returning `nil` when a version is absent (`module_repository.go:99`) — the same contract that path already relies on.
+- Commands: `gofmt -l` on the package -> empty; `go vet ./fastmcp/seat_management/application/services/` -> 0; `go test -count=1 -run TestSeedSeatTypes -v ./fastmcp/seat_management/application/services/` -> 3 passed; `go test -count=1 ./fastmcp/seat_management/...` -> all green.
+
 ## 2026-10-06 - a token that cannot name a user is reported, not cleared (frontend)
 
 - `src/tests/contexts/AuthContext.test.tsx` adds a case for a stored token that decodes, is unexpired

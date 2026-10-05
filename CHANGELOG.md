@@ -8,6 +8,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The seeder verifies the module refs it writes, so a seed run can no longer produce types that 404 at resolve** (2026-10-06)
+
+- `SeedSeatTypes` (`agenthub_go/fastmcp/seat_management/application/services/seat_seeder.go`) stored each seed's own authored modules (role, one per rule, output-format, shared, blocks) and then appended the curated refs `seedmap` adds as `ExtraRefs` to the seat type version **without checking they exist** — unlike the HTTP publish path, whose service validates every ref (`seat_admin_service.go:212`, "module ref X@Y does not exist"). So `POST /seat-types/seed` returned success, the types carried refs to modules absent from the catalog, and every seat created from one failed later on a different route: resolve returned 404 module not found, which is why fe-dev's database showed an empty `resolved_seats`.
+- The seeder now verifies every ref of the version it is about to write, in the same shape as the publish path, and refuses with the missing module named ("seed developer: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types"). The seed's own modules are stored first, so the check catches exactly the curated refs nothing here authors: `publish-skills` runs before the seed.
+- Tests: `seat_seeder_test.go` pins both directions with in-memory repositories — a curated ref absent from the catalog refuses the seed, names the ref and the type, and writes neither a seat type nor a version; the same seed succeeds once the catalog holds the refs; and a seed whose refs are only its own authored modules still seeds against an empty catalog, the regression guard for the ordering the check must not break.
+- Not changed: `publish-skills` (it covers all 26 refs, measured) and `resolved_seats`, which only the resolve path writes (`seat_resolution_service.go:98`).
+
 **A blank field never clears a field on the occupant PUT** (2026-10-05)
 
 - fe-dev measured the mirror of the runtime asymmetry on the real stack: `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` with the runtime set and the MODEL blank returned 200 and CLEARED the model (the seat then read `runtime=codex, model=""`), while omitting the runtime still 400'd — so on one request a field was required and another optional-but-destructive, and any client that PUT a runtime wiped the model. The dashboard guard (Save disabled while the model is blank) was the only protection.
