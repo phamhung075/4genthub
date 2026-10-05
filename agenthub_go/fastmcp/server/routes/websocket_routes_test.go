@@ -188,6 +188,39 @@ func TestBroadcastDataChangeSystemSourceForUnknownEvent(t *testing.T) {
 	}
 }
 
+// The registry is the fan-out snapshot's only source; nothing but tests ever wrote it before the
+// realtime handler registered its sockets, so pin both directions and the idempotent removal.
+func TestRegisterAndUnregisterConnection(t *testing.T) {
+	ws := &fakeWS{}
+	user := &authdomain.User{ID: strPtr("u-reg")}
+
+	RegisterConnection(ws, user, "c-reg")
+	connectionsMu.Lock()
+	registered, ok := connections[ws]
+	connectionsMu.Unlock()
+	if !ok {
+		t.Fatal("RegisterConnection did not add the socket to the registry")
+	}
+	if registered.User == nil || wrUserID(registered.User) != "u-reg" || registered.ClientID != "c-reg" {
+		t.Fatalf("registered connection = %+v", registered)
+	}
+	if registered.ConnectedAt.IsZero() || registered.Subscription == nil {
+		t.Fatalf("registered connection is missing the fields the broadcast reads: %+v", registered)
+	}
+
+	UnregisterConnection(ws)
+	UnregisterConnection(ws) // the broadcast's own cleanup can delete the same key: a no-op
+	UnregisterConnection(nil)
+	RegisterConnection(nil, user, "c")
+	RegisterConnection(ws, nil, "c")
+	connectionsMu.Lock()
+	_, ok = connections[ws]
+	connectionsMu.Unlock()
+	if ok {
+		t.Fatal("UnregisterConnection left the socket registered")
+	}
+}
+
 func TestIsUserAuthorizedForMessageNoConnection(t *testing.T) {
 	ws := &fakeWS{}
 	if IsUserAuthorizedForMessage(context.Background(), ws, "task", "t1", "u1", nil) {

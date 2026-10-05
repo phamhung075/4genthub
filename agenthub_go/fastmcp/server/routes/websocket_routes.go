@@ -67,6 +67,38 @@ var (
 	userMessageQueues = map[string][]*QueuedMessage{}
 )
 
+// RegisterConnection adds an accepted realtime socket to the broadcast registry. Without this the
+// fan-out snapshot is always empty and every broadcast goes nowhere: the registry was previously
+// written only by tests. The key is the socket itself, which is exactly what
+// IsUserAuthorizedForMessage and the broadcast loop look up.
+func RegisterConnection(ws wslib.WebSocket, user *authdomain.User, clientID string) {
+	if ws == nil || user == nil {
+		return
+	}
+	now := time.Now().UTC()
+	connectionsMu.Lock()
+	connections[ws] = &WebSocketConnection{
+		Websocket:    ws,
+		User:         user,
+		ClientID:     clientID,
+		Subscription: entities.NewOrderedMap[any](),
+		ConnectedAt:  now,
+		LastActivity: now,
+	}
+	connectionsMu.Unlock()
+}
+
+// UnregisterConnection removes a socket on every exit path. Deleting an unknown key is a no-op, so
+// this cannot conflict with the broadcast's own cleanup of disconnected clients.
+func UnregisterConnection(ws wslib.WebSocket) {
+	if ws == nil {
+		return
+	}
+	connectionsMu.Lock()
+	delete(connections, ws)
+	connectionsMu.Unlock()
+}
+
 // MissedNotification is the persisted replay record shape used by the helpers.
 type MissedNotification struct {
 	ID               string

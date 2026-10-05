@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — realtime connection registry populated (Go)
+
+- `websocket_routes_test.go`: `TestRegisterAndUnregisterConnection` pins the fields the broadcast reads after a register (`User`, `ClientID`, `ConnectedAt`, `Subscription`), the keyed delete, the idempotent double delete (the broadcast's cleanup can remove the same key) and that a nil socket or nil user is ignored.
+- End-to-end evidence is the raw WS probe (before: welcome only after a real mutation; after: the real room frame; a different user still gets only denial frames). `TestSeatBroadcastReachesOnlyTheOwningUsersSocket` still passes.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/httpapp/ ./fastmcp/server/` -> all ok; `go build ./fastmcp/...` and `go vet ./fastmcp/server/...` clean.
+
 ## 2026-10-05 — allowing seat links restricted to claude-code (Go, G3)
 
 - `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminLinkRestrictedToClaudeCodeSeats` (a codex target is refused with the runtime named; a DENY link to codex is accepted; a claude-code pair is accepted) and the cycle test's four fixture seats now carry a `claude-code` runtime, since production cannot create a seat without a validated runtime.

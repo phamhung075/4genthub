@@ -39,6 +39,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**Live updates reach clients again: the realtime registry is populated** (2026-10-05)
+
+- `fastmcp/server/ws_mount.go`: `handleRealtime` accepted a socket and answered it directly, but never added it to `routes.connections` — the registry `BroadcastDataChange` and `IsUserAuthorizedForMessage` read — and nothing but tests ever wrote it. The fan-out snapshot was therefore always empty and EVERY broadcast went nowhere: seats, tasks, subtasks, projects, branches and contexts. The handler now registers the accepted socket (`routes.RegisterConnection`, new in `fastmcp/server/routes/websocket_routes.go`) right after the upgrade and removes it on every exit path via `defer routes.UnregisterConnection` (normal close, read error, panic); removal is a keyed delete, so it cannot conflict with the broadcast's own cleanup of disconnected clients.
+- Reproduced and proven on a local stack with a raw WebSocket probe: before, a connected client received the welcome frame and then NOTHING after a real room-create (200) — no data frame and no denial frame; after, the same probe receives `{type: update, payload.entity: room, action: created}`, and a second user still receives only the documented denial frames (the tenant boundary is unchanged).
+- Present in production 0.0.15: live updates on the shipped dashboard were dead for every entity, not only seats.
+
 **A dead seat now reads `stopped` and can be respawned** (2026-10-05, owner decision)
 
 - `scripts/openrig_bridge.py`: a live session whose `agentActivity.state` is `unknown` with reason `no_runtime_hook` — an agent that died outside `rig seat stop` — now maps to `stopped` instead of `unknown` (the owner's decision, superseding the earlier `unknown` reading). `attention_required` alone still never means blocked, and a live busy seat still reads `running`. Measured cold-start overlap: a just-launched seat produces the same reading until its runtime hook attaches (~15s), so nothing may act on a single sample.
