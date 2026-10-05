@@ -386,7 +386,33 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		t.Fatalf("claude-code settings fragment should carry the 5 denies and the 2 allows:\n%s", settings)
 	}
 
-	for _, runtime := range []string{"codex", "agy", "omp"} {
+	codex, err := RenderSeat(withModules(seatFixture("codex"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("codex: %v", err)
+	}
+	rules := fileContent(t, codex, codexRulesPath)
+	for _, want := range []string{
+		`pattern = ["rig", "send"]`,
+		`pattern = ["rig", "queue"]`,
+		`pattern = ["rig", "broadcast"]`,
+		`pattern = ["tmux", "send-keys"]`,
+		`pattern = ["tmux", "paste-buffer"]`,
+	} {
+		if !strings.Contains(rules, want) {
+			t.Fatalf("codex rules missing %s:\n%s", want, rules)
+		}
+	}
+	if got := strings.Count(rules, `decision = "forbidden"`); got != 5 {
+		t.Fatalf("codex rules carry %d forbidden rules, want the 5 denies:\n%s", got, rules)
+	}
+	if strings.Contains(rules, "claude") {
+		t.Fatalf("codex rules mention claude:\n%s", rules)
+	}
+	if skill := fileContent(t, codex, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+		t.Fatalf("codex skill does not name seatcheck send:\n%s", skill)
+	}
+
+	for _, runtime := range []string{"agy", "omp"} {
 		spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
 		if err != nil {
 			t.Fatalf("%s: %v", runtime, err)
@@ -398,6 +424,60 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		}
 		if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
 			t.Fatalf("%s skill does not name seatcheck send:\n%s", runtime, skill)
+		}
+	}
+}
+
+func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
+	guard := resolver.ResolvedModule{
+		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
+		Content: `{"permissions":{"deny":["Bash(rig send:*)","Bash(rig queue:*)","Bash(rig broadcast:*)","Bash(tmux send-keys:*)","Bash(tmux paste-buffer:*)"],"allow":["Bash(seatcheck send:*)","Bash(rig whoami:*)"]}}`,
+	}
+
+	codex, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{guard}), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(codex): %v", err)
+	}
+	rules := fileContent(t, codex, codexRulesPath)
+	for _, want := range []string{`pattern = ["rig", "send"]`, `pattern = ["tmux", "paste-buffer"]`} {
+		if !strings.Contains(rules, want) {
+			t.Fatalf("rules missing %s:\n%s", want, rules)
+		}
+	}
+	// Deny-only on purpose: an `allow` prefix rule would widen what runs outside the sandbox
+	// without prompting, which is not what this artefact is for. The justification may still
+	// *recommend* the audited path; what must not appear is an allow rule for it.
+	if strings.Contains(rules, `decision = "allow"`) || strings.Contains(rules, `pattern = ["seatcheck", "send"]`) {
+		t.Fatalf("codex rules widen execution instead of only denying:\n%s", rules)
+	}
+	for _, path := range filePaths(codex) {
+		if strings.Contains(path, "claude") {
+			t.Fatalf("codex seat rendered a claude artefact %q", path)
+		}
+	}
+
+	// The Claude path is untouched and does not gain the codex artefact.
+	claude, err := RenderSeat(withModules(seatFixture("claude-code"), []resolver.ResolvedModule{guard}), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(claude-code): %v", err)
+	}
+	for _, path := range filePaths(claude) {
+		if path == codexRulesPath {
+			t.Fatalf("claude-code seat rendered the codex rules file")
+		}
+	}
+	if settings := fileContent(t, claude, settingsFragmentPath); !strings.Contains(settings, "Bash(rig send:*)") {
+		t.Fatalf("claude-code settings fragment lost the deny list:\n%s", settings)
+	}
+
+	// No tool module means no deny list, so no codex rules file either.
+	plain, err := RenderSeat(seatFixture("codex"), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(codex, no tools): %v", err)
+	}
+	for _, path := range filePaths(plain) {
+		if path == codexRulesPath {
+			t.Fatalf("codex seat without tool modules rendered %q", codexRulesPath)
 		}
 	}
 }
@@ -436,9 +516,17 @@ func TestRenderSeatRigValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OPENRIG_TEST_AGENT_VALIDATE=1 but the rig binary is not on PATH: %v", err)
 	}
+	seeds, seedErr := seedlibrary.Load()
+	if seedErr != nil {
+		t.Fatal(seedErr)
+	}
+	var modules []resolver.ResolvedModule
+	for _, m := range seeds[0].Modules {
+		modules = append(modules, resolver.ResolvedModule{Slug: m.Slug, Version: m.Version, Kind: m.Kind, Content: m.Content})
+	}
 	for _, runtime := range []string{"claude-code", "codex", "omp"} {
 		t.Run(runtime, func(t *testing.T) {
-			spec, err := RenderSeat(seatFixture(runtime), testMCPURL)
+			spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
 			if err != nil {
 				t.Fatalf("RenderSeat: %v", err)
 			}

@@ -20,6 +20,7 @@ const (
 	skillFileName        = "SKILL.md"
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
+	codexRulesPath       = "runtime/codex.rules"
 	roleResourceID       = "role"
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
@@ -133,6 +134,20 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		}
 	}
 
+	// A codex seat gets the seat's Bash deny list as a codex execpolicy rules file. OpenRig has no
+	// codex rules runtime-resource type to install it (its only codex fragment type merges a TOML
+	// fragment into ~/.codex/config.toml, and config.toml cannot express a per-command deny), so
+	// the file travels with the render and the client installs it into a rules/ folder of an
+	// active codex config layer. See NEXT_GEN (G3, owner decision 2026-10-05).
+	var codexRules string
+	if seat.Runtime == resolver.RuntimeCodex && len(toolModules) > 0 {
+		merged, err := mergeToolModules(toolModules)
+		if err != nil {
+			return nil, err
+		}
+		codexRules = renderCodexRules(merged)
+	}
+
 	agentYAML, err := renderAgentYAML(seat, runtimeResources)
 	if err != nil {
 		return nil, err
@@ -153,6 +168,12 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		if settingsFragment != "" {
 			files = append(files, OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
 		}
+	}
+	if codexRules != "" {
+		// Deliberately a plain file and NOT a runtime resource: OpenRig has no codex resource type
+		// that installs rules, and declaring an invented type would be a format the platform does
+		// not understand. The client installs this file; see the G3 note.
+		files = append(files, OpenRigSpecFile{Path: codexRulesPath, Content: codexRules})
 	}
 
 	return &OpenRigSpec{
@@ -247,6 +268,82 @@ func writeGuidanceSection(b *strings.Builder, heading, content string) {
 // permissionListKeys are the permissions lists that tool modules add to rather than replace,
 // so a later module cannot drop another module's deny rule.
 var permissionListKeys = []string{"deny", "allow", "ask"}
+
+// renderCodexRules renders the seat's Bash deny list as a codex execpolicy file (Starlark).
+// Codex reads `prefix_rule` entries from a `.rules` file in a `rules/` folder of an active config
+// layer and applies the most restrictive decision, so `forbidden` blocks a matching command
+// without prompting (https://developers.openai.com/codex/exec-policy, "Rules"). The pattern is
+// matched against the command's argument list, so a command hidden inside a shell wrapper is a
+// limitation of the documented mechanism itself, not of this file.
+func renderCodexRules(merged map[string]any) string {
+	patterns, skipped := codexBashDenyPatterns(merged)
+	var b strings.Builder
+	b.WriteString("# OpenRig comm-guard for codex (execpolicy). Generated from the seat's tool modules.\n")
+	b.WriteString("# Codex loads this file only when it sits in `rules/` inside an active config layer, for\n")
+	b.WriteString("# example ~/.codex/rules/ or a trusted project's .codex/rules/. Rules are experimental.\n")
+	b.WriteString("# The most restrictive decision wins: forbidden > prompt > allow.\n")
+	for _, pattern := range patterns {
+		b.WriteString("\nprefix_rule(\n")
+		b.WriteString("    pattern = [" + quotedPattern(pattern) + "],\n")
+		b.WriteString("    decision = \"forbidden\",\n")
+		b.WriteString("    justification = \"Use `seatcheck send`, the audited send path, instead of a direct command.\",\n")
+		b.WriteString(")\n")
+	}
+	if len(skipped) > 0 {
+		b.WriteString("\n# Not expressible as a command-prefix rule; listed rather than dropped:\n")
+		for _, entry := range skipped {
+			b.WriteString("#   " + entry + "\n")
+		}
+	}
+	return b.String()
+}
+
+// codexBashDenyPatterns turns the merged `permissions.deny` entries into codex command prefixes.
+// Only `Bash(<command>:*)` can be expressed; anything else comes back as skipped so the caller
+// keeps it visible instead of silently dropping a policy the seat believes it carries.
+func codexBashDenyPatterns(merged map[string]any) (patterns [][]string, skipped []string) {
+	permissions, _ := merged["permissions"].(map[string]any)
+	deny, _ := permissions["deny"].([]any)
+	seen := make(map[string]bool, len(deny))
+	for _, raw := range deny {
+		entry, ok := raw.(string)
+		if !ok || seen[entry] {
+			continue
+		}
+		seen[entry] = true
+		pattern, ok := codexPatternFromBashEntry(entry)
+		if !ok {
+			skipped = append(skipped, entry)
+			continue
+		}
+		patterns = append(patterns, pattern)
+	}
+	return patterns, skipped
+}
+
+// codexPatternFromBashEntry converts `Bash(rig send:*)` to ["rig", "send"]. The `:*` suffix means
+// "any arguments", which is what a codex prefix rule matches.
+func codexPatternFromBashEntry(entry string) ([]string, bool) {
+	const prefix = "Bash("
+	if !strings.HasPrefix(entry, prefix) || !strings.HasSuffix(entry, ")") {
+		return nil, false
+	}
+	command := strings.TrimSuffix(strings.TrimPrefix(entry, prefix), ")")
+	command = strings.TrimSuffix(command, ":*")
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return nil, false
+	}
+	return fields, true
+}
+
+func quotedPattern(fields []string) string {
+	quoted := make([]string, len(fields))
+	for i, field := range fields {
+		quoted[i] = fmt.Sprintf("%q", field)
+	}
+	return strings.Join(quoted, ", ")
+}
 
 // mergeToolModules merges tool module JSON objects in module order. A top-level key present
 // in several modules takes the later value, except `permissions`: its deny, allow and ask lists

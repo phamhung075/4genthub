@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — codex execpolicy artefact rendered (Go, G3)
+
+- `fastmcp/seat_management/domain/seatrenderer/renderer_test.go`: new `TestRenderSeatCodexRulesDenyTheDirectSendSurface` — a codex seat carrying the comm-guard tool module renders `runtime/codex.rules` with the five `forbidden` prefixes and no `allow` rule; a claude-code seat with the same module renders no codex file and keeps its settings fragment; a codex seat with no tool module renders no rules file.
+- `TestRenderSeatSameModulesOnBothRuntimes` restated (the contract genuinely changed): codex now expects the rules file and checks its five `decision = "forbidden"` entries; agy and omp still render no runtime file.
+- `TestRenderSeatRigValidate` now renders each seat with the seed library's real modules — before, the fixture carried no tool module, so the new artefact was not covered by the real validator. `OPENRIG_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate ./fastmcp/seat_management/domain/seatrenderer/` -> PASS for claude-code, codex and omp, each printing `Agent spec valid`.
+- Commands: `gofmt -l fastmcp/seat_management/domain/seatrenderer/` clean; `go vet ./fastmcp/seat_management/domain/seatrenderer/` clean; `go test -count=1 ./fastmcp/seat_management/domain/seatrenderer/` ok.
+
 ## 2026-10-05 — dashboard push: notification consumer (frontend, D3)
 
 - `src/tests/hooks/test_useRealtimeSync_notification.test.tsx`: stores a frame and counts it unread; ignores a frame without a message; dedupes a replayed frame by id. Mutation proof: removing the `notification` case from the dispatcher fails 2 of the 3 (the negative guard passes either way); restoring gives 3 passed.
