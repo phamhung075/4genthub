@@ -67,6 +67,9 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 		return nil, err
 	}
 	a.mcpTools = mcpTools
+	if err := wireMissedNotificationStore(sessions); err != nil {
+		return nil, err
+	}
 	return a, nil
 }
 
