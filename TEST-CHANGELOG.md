@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — a blank field never clears a field on the occupant PUT (Go)
+
+- `fastmcp/server/httpapp/seat_occupant_runtime_test.go` gains the case fe-dev measured on the real stack: a runtime-only PUT changes the runtime and KEEPS the model. Plus an explicit-empty-model case (indistinguishable from an omission, so it keeps too), an all-blank no-op case, and an explicit-model case. `fastmcp/seat_management/application/services/seat_admin_service_test.go` gains `TestSeatAdminServiceSetOccupantBlankModelKeepsIt`.
+- One obsolete expectation moved with the ruling, named because a test change is a finding: `TestSeatAdminSetOccupant` asserted a blank model CLEARS to `""`; it now asserts the model is kept, with the ruling and the new pin in the comment.
+- Commands: `gofmt -l` clean on both packages; `go vet ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` exit 0; `go test -count=1 ./fastmcp/seat_management/application/services/` ok; the eleven occupant cases in httpapp all PASS when selected. NOTE: the full httpapp package currently fails `TestRoomRigSpecDerivesPublicURLFromRequest` from another seat's uncommitted rigspec edits in the same package — the case passes at HEAD and when run alone, so it is not this change.
+
 ## 2026-10-06 — the link delete asks first (frontend)
 
 - `src/tests/pages/SeatDetailPage.test.tsx` updates the two existing delete tests to the confirmed flow - they still

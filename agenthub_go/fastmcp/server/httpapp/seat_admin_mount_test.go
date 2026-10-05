@@ -1484,9 +1484,12 @@ func TestSeatAdminSetOccupant(t *testing.T) {
 		t.Errorf("stored seat = %+v", got)
 	}
 
+	// A blank model now KEEPS the seat's model (owner ruling, 2026-10-05: a blank field never
+	// clears a field), so the runtime still changes and the model stays gpt-5.1:high from the
+	// call above. Pinned by TestSeatAdminSetOccupantBlankModelKeepsIt.
 	rec = doTestRequest(t, mux, http.MethodPut, path, `{"runtime":"claude-code","model":""}`)
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"model":""`) {
-		t.Errorf("empty model: %d %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"model":"gpt-5.1:high"`) {
+		t.Errorf("blank model did not keep the model: %d %s", rec.Code, rec.Body.String())
 	}
 }
 

@@ -189,6 +189,21 @@ func TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt(t *testing.T) {
 	}
 }
 
+// A blank field never clears a field: a runtime-only change leaves the model alone.
+func TestSeatAdminServiceSetOccupantBlankModelKeepsIt(t *testing.T) {
+	service, store := newSeatAdminFixture()
+	view, err := service.SetOccupant(context.Background(), "u", "dev", "alice", "codex", "")
+	if err != nil {
+		t.Fatalf("runtime-only change: %v", err)
+	}
+	if view.Seat.Runtime != "codex" || view.Seat.Model != "sonnet" {
+		t.Fatalf("runtime-only change = %+v, want runtime codex and the model kept", view.Seat)
+	}
+	if got := store.seats[0]; got.Runtime != "codex" || got.Model != "sonnet" {
+		t.Fatalf("stored seat = %+v", got)
+	}
+}
+
 func TestSeatAdminServiceSetOccupantErrors(t *testing.T) {
 	service, store := newSeatAdminFixture()
 	ctx := context.Background()

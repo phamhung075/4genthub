@@ -59,6 +59,44 @@ func TestSeatAdminSetOccupantOmittedRuntimeKeepsTheRuntime(t *testing.T) {
 	}
 }
 
+// The case fe-dev measured on the real stack: a runtime-only PUT must not clear the model.
+func TestSeatAdminSetOccupantBlankModelKeepsIt(t *testing.T) {
+	fake, mux := occupantFixture(t, "claude-code")
+	rec := doTestRequest(t, mux, http.MethodPut, occupantPath, `{"runtime":"codex"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("runtime-only PUT: status = %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"runtime":"codex"`) || !strings.Contains(rec.Body.String(), `"model":"sonnet"`) {
+		t.Errorf("runtime-only PUT changed the wrong field: %s", rec.Body.String())
+	}
+	if got := fake.seats[0]; got.Runtime != "codex" || got.Model != "sonnet" {
+		t.Errorf("stored seat = %+v (the runtime must change and the model must be kept)", got)
+	}
+
+	// An explicit empty model is indistinguishable from an omission, so it keeps the model too.
+	rec = doTestRequest(t, mux, http.MethodPut, occupantPath, `{"runtime":"codex","model":""}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"model":"sonnet"`) {
+		t.Fatalf("explicit empty model: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Every field blank is a no-op, not a clear.
+	rec = doTestRequest(t, mux, http.MethodPut, occupantPath, `{}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"runtime":"codex"`) || !strings.Contains(rec.Body.String(), `"model":"sonnet"`) {
+		t.Fatalf("all-blank PUT: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSeatAdminSetOccupantExplicitModelSetsIt(t *testing.T) {
+	fake, mux := occupantFixture(t, "claude-code")
+	rec := doTestRequest(t, mux, http.MethodPut, occupantPath, `{"runtime":"codex","model":"gpt-5.1:high"}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"model":"gpt-5.1:high"`) {
+		t.Fatalf("explicit model: %d %s", rec.Code, rec.Body.String())
+	}
+	if got := fake.seats[0]; got.Model != "gpt-5.1:high" {
+		t.Errorf("stored seat = %+v", got)
+	}
+}
+
 func TestSeatAdminSetOccupantExplicitRuntimeWins(t *testing.T) {
 	fake, mux := occupantFixture(t, "claude-code")
 	rec := doTestRequest(t, mux, http.MethodPut, occupantPath, `{"runtime":"codex","model":"gpt-5.1:high"}`)

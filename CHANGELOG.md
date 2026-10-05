@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**A blank field never clears a field on the occupant PUT** (2026-10-05)
+
+- fe-dev measured the mirror of the runtime asymmetry on the real stack: `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant` with the runtime set and the MODEL blank returned 200 and CLEARED the model (the seat then read `runtime=codex, model=""`), while omitting the runtime still 400'd — so on one request a field was required and another optional-but-destructive, and any client that PUT a runtime wiped the model. The dashboard guard (Save disabled while the model is blank) was the only protection.
+- The owner ruling generalises the runtime fix: **a blank field never clears a field**, stated once for the payload rather than per field, so the next field added to this route inherits it. `SetOccupant` now keeps the seat's model when the model is blank (and keeps the runtime when the runtime is blank, `63c2cbc6`); an explicit model still sets it; the runtime behaviour is unchanged. An explicit empty string is indistinguishable from an omission, so a "clear the model" operation would need its own way to say so rather than reusing blank.
+- Tests: `seat_occupant_runtime_test.go` gains the case fe-dev measured (a runtime-only PUT changes the runtime and keeps the model), the explicit-empty-model and all-blank no-op cases, and an explicit-model case; `seat_admin_service_test.go` gains the service-level companion; and `TestSeatAdminSetOccupant`'s blank-model expectation moved from "clears to empty" to "keeps `gpt-5.1:high`", named as an obsolete expectation moving with the contract. The dashboard guard is untouched.
+
 **The status bridge authenticates with its own machine token, and `register` issues it** (2026-10-05)
 
 - `scripts/openrig_bridge.py` read its bearer from `AGENTHUB_TOKEN` — the SAME variable `scripts/openrig_seat_sync.py` uses as the USER token (`require_env` at :500, :569, :940) — while `POST /api/v2/openrig/seat-status` accepts only a machine token (`machineAuthed`; an unknown, revoked or malformed token is 401). Nothing ever called `POST /api/v2/openrig/machines` (the only mention was this script's own docstring), so per-machine authentication was nominal: an operator following the sync client's docs set `AGENTHUB_TOKEN` to the user token, and the bridge then answered 401 forever. One environment variable must never mean two credentials.

@@ -105,11 +105,16 @@ func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, se
 	if err != nil {
 		return nil, err
 	}
-	// A blank runtime never changes the runtime: keep what the seat already runs, because the
-	// caller is changing the model, not the runtime. The type-default inheritance is CREATE-only
-	// (handleCreateSeat) so a change can never silently reset a live seat runtime.
+	// A BLANK FIELD NEVER CLEARS A FIELD (owner ruling, 2026-10-05), stated once for the payload
+	// rather than per field so the next field added here inherits the rule: a blank runtime keeps
+	// the runtime and a blank model keeps the model, so a runtime-only PUT cannot wipe the model.
+	// The type-default inheritance is CREATE-only (handleCreateSeat), so a change can never
+	// silently reset a live seat runtime either.
 	if strings.TrimSpace(runtime) == "" {
 		runtime = seat.Runtime
+	}
+	if strings.TrimSpace(model) == "" {
+		model = seat.Model
 	}
 	if err := repositories.ValidateOccupant(runtime, model); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
