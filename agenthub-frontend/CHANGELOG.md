@@ -91,6 +91,19 @@
     that one case.
 
 ### Changed
+- **The frontend speaks the seat model, not the retired agent library (owner directive C)** - 2026-10-05
+  - Read-only inventory first: every claim the frontend makes about the API it calls and about the agent model, with
+    file:line and a class (matches / stale / retired-as-live). Result: no retired-as-live HTTP call survived - the
+    retired literal set has 0 matches under `src/` and the Go backend mounts 0 of those routes - so the residue was
+    copy, types and one rendered dialog.
+  - Copy: the assignee pickers (`AgentAssignmentDialog`, `TaskEditDialog`, `SubtaskEditDialog`) say seats and seat keys;
+    the help and setup pages (`UsingMCPTools`, `WhatIs4genthub`, `GettingStartedGuide`, `DockerSetup`, `Troubleshooting`,
+    `ClaudeHooks`) describe rooms, seats and occupants instead of "32 specialized agents", and the hard-coded
+    six-category grid of library agent names is replaced by a Room / Seat / Occupant panel.
+  - Types: `AgentsResponse`, the `'agent'` member of `EntityType` and of `WSPayload.entity`, `agent_name`, `agent_call`
+    and the `agents` role scope are gone.
+  - No call path changed. The banked 35-expression call-site baseline is byte-identical after every commit in this row,
+    so the API surface the frontend targets is exactly what it targeted before the alignment.
 - **Assignee pickers take their names from the user's seats (D6)** - 2026-10-04
   - `getAvailableAgents` (`src/api.ts`) no longer returns a fixed list of 32 library agents. It reads the rooms and the
     seats of each room through `seatApi.listRooms`/`listSeats` (the calls behind the Seats page) and returns the seat
@@ -108,6 +121,15 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **Runaway frontend test run drained the machine** - 2026-10-05
+  - `package.json` declared `"test": "vitest"`, which starts Vitest in **watch mode** — a plain `npm test` never exits,
+    so a forgotten run keeps its jsdom workers alive. It is now `"test": "vitest run"`, with `"test:watch": "vitest"`
+    preserving the interactive path.
+  - `vite.config.ts` carried no worker cap, so Vitest sized its pool from the CPU count (12 here). Four orphaned
+    workers reached 12.1 GB RSS and left the machine at 564 MB available with ~6 GB of swap in use, which also
+    surfaced as `socket connection closed unexpectedly` in unrelated agent sessions. The `test` block now sets
+    `maxWorkers: 2`, `minWorkers: 1` and `poolOptions.forks.execArgv: ['--max-old-space-size=2048']`, bounding peak
+    memory for every future run. Override per run when the box is free: `npx vitest run --maxWorkers=6`.
 - **Flaky `websocket-protocol-v2` task CRUD test** - 2026-10-04
   - `src/tests/e2e/websocket-protocol-v2.test.tsx` and `src/tests/test-utils.tsx` created their QueryClient with
     `gcTime: 0` (test-utils labelled it "Disable garbage collection"). In React Query v5 `gcTime: 0` does the opposite:
@@ -138,6 +160,18 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **The retired agent dialogs and the agent token scopes** - 2026-10-05
+  - Deleted `src/components/AgentInfoDialog.tsx` - a 306-line hard-coded catalogue of the 32 retired library agents that
+    was still RENDERED, opened by clicking an assignee - and with it the whole agent-info dialog chain (the task and
+    subtask dialog types, the state in `useSubtaskDialogs`, the props through `SubtaskListContent`, `SubtaskRow`,
+    `LazySubtaskListRefactored` and `DialogSection`). Assignee chips whose only click opened it are now non-interactive
+    rather than carrying a handler that does nothing.
+  - Deleted `src/components/AgentResponseDialog.tsx`, which modelled the removed `call_agent` response and had no
+    importer.
+  - The token picker no longer offers `agents:create|read|update|delete` and the 'Agents' category is gone. For the
+    backend's attention, not fixed here: the scope string still exists in the Go Keycloak role map
+    (`fastmcp/auth/mcp_keycloak_auth.go:124` grants `agents:*` to `mcp-developer`) while every route it gated is
+    unmounted, so that mapping is a go-dev decision flagged rather than silently rewritten.
 - **Orphaned MCP-token surface removed** - 2026-10-05
   - Deleted `src/services/mcpTokenService.ts`, the unmounted `src/components/MCPTokenManager.tsx`, and their tests. The
     service called `POST /api/v2/mcp-tokens/generate|revoke|stats`, which exist only in the Python server and were never
