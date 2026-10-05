@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — offline bundle carries the pinned policy (Python seat sync)
+
+- `src/tests/scripts/test_openrig_seat_sync.py`: four rig tests moved from the old symlink contract to the materialized one (`agents/<seat>` is now a real directory carrying the rendered files plus the seat's `policy.json`/`pinned.json`); two new tests for `offline-install` (it writes `<home>/.openrig/agenthub-seats/<rig>/<member>/` and skips a policy that names another seat; it fails loudly with exit 2 when the bundle carries no policy).
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q` -> 82 passed; whole scripts suite -> 174 passed.
+
 ## 2026-10-04 — branch collection POST exact match (Go)
 
 - New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` drives the mount with a stub `BranchController`, so it proves the collection POST still reaches CreateBranch and answers 200 (`createCalls==1`, project/name recorded) while `POST /api/v2/branches/x/y` -> 404 and `POST /api/v2/branches/abc` -> 405 with the same complete body and with `createCalls` still 1 - the refusal is routing, not validation. `TestBranchCollectionPostKeepsTheMissingFieldShape` pins the unchanged 422 missing-field body (`project_id`, `git_branch_name`). Before the change both unknown paths matched the collection POST's subtree and reached CreateBranch.

@@ -515,6 +515,24 @@ def place_agent(source: Path, target: Path) -> None:
     os.replace(temporary, target)
 
 
+def materialize_agent(source: Path, seat_dir: Path, target: Path) -> None:
+    """Materialize the seat's agent directory at ``target`` from the pinned snapshot.
+
+    The snapshot (``source``) holds only the rendered files. A bundle built from this rig
+    root copies what sits here, so the seat's ``policy.json`` and ``pinned.json`` are
+    copied in from ``seat_dir``: ``policy.json`` is the file ``seatcheck`` reads at runtime
+    (``<pins>/<rig>/<member>/policy.json``), and without it an offline bundle seat cannot
+    decide or audit (G4).
+    """
+    remove_path(target)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(source, target, symlinks=False)
+    for name in ("policy.json", "pinned.json"):
+        candidate = seat_dir / name
+        if candidate.is_file():
+            shutil.copy2(candidate, target / name)
+
+
 def swap_dir(staging: Path, target: Path) -> None:
     """Move ``staging`` onto ``target``, restoring ``target`` if the move fails."""
     backup = None
@@ -579,7 +597,7 @@ def cmd_rig(args: argparse.Namespace) -> None:
         agents = staging / "agents"
         agents.mkdir()
         for seat in seats:
-            place_agent(pinned[seat], agents / seat)
+            materialize_agent(pinned[seat], out / room / seat, agents / seat)
         swap_dir(staging, room_dir / "rig")
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
@@ -631,6 +649,85 @@ def cmd_bundle(args: argparse.Namespace) -> None:
             f"rig bundle create failed with exit code {err.returncode}", EXIT_REMOTE
         )
     print(str(bundle_path))
+
+
+def cmd_offline_install(args: argparse.Namespace) -> None:
+    """Install a materialized bundle's pinned policy into the seat store.
+
+    ``seatcheck`` resolves its policy as
+    ``<home>/.openrig/agenthub-seats/<rig>/<member>/policy.json`` (it is deliberately not a
+    flag, so the guard cannot choose where its policy and audit live). A bundle
+    materializes to ``<target>/agents/<agent>/``, so this copies the pinned
+    ``policy.json``/``pinned.json`` that travel inside the bundle into that store path —
+    without it an offline seat's allowed path cannot decide or audit (G4).
+    """
+    try:
+        import yaml  # lazy: the other subcommands stay dependency-free
+    except ImportError as err:  # pragma: no cover - environment dependent
+        raise SyncError(f"PyYAML is required for offline-install: {err}", EXIT_USAGE)
+
+    target = Path(args.target).expanduser().resolve()
+    spec_path = target / "rig.yaml"
+    try:
+        spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
+    except OSError as err:
+        raise SyncError(f"cannot read {spec_path}: {err}", EXIT_USAGE) from err
+    except yaml.YAMLError as err:
+        raise SyncError(f"{spec_path} is not valid YAML: {err}", EXIT_USAGE) from err
+    if not isinstance(spec, dict):
+        raise SyncError(f"{spec_path} is not a rig spec", EXIT_USAGE)
+    rig = validate_name("room", str(spec.get("name") or ""))
+    home = Path(args.home).expanduser().resolve() if args.home else Path.home()
+    store = home / ".openrig" / "agenthub-seats"
+
+    installed: list[str] = []
+    for pod in spec.get("pods") or []:
+        for member in (pod or {}).get("members") or []:
+            seat = validate_name("seat", str((member or {}).get("id") or ""))
+            ref = str((member or {}).get("agent_ref") or "")
+            agent = ref.partition("local:agents/")[2]
+            if not agent or not safe_relative(agent):
+                print(f"skipped {rig}/{seat}: no local agent ref", file=sys.stderr)
+                continue
+            agent_dir = target / "agents" / agent
+            policy = agent_dir / "policy.json"
+            if not policy.is_file():
+                print(
+                    f"skipped {rig}/{seat}: no pinned policy in the bundle "
+                    f"({policy} is missing)",
+                    file=sys.stderr,
+                )
+                continue
+            # Two members that share one seat type share one agent directory in the bundle,
+            # so only one of their policies can ride there. Refuse to install a policy that
+            # names a different seat instead of silently giving this seat the wrong links.
+            try:
+                claimed = json.loads(policy.read_text(encoding="utf-8")).get("Seat")
+            except (OSError, ValueError) as err:
+                raise SyncError(f"cannot read {policy}: {err}", EXIT_USAGE) from err
+            if isinstance(claimed, str) and claimed != seat:
+                print(
+                    f"skipped {rig}/{seat}: the bundle's {agent} policy belongs to seat "
+                    f"{claimed!r} (members sharing one seat type share one agent directory "
+                    "in a bundle; per-seat policy needs distinct seat types)",
+                    file=sys.stderr,
+                )
+                continue
+            seat_dir = store / rig / seat
+            seat_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(policy, seat_dir / "policy.json")
+            pinned = agent_dir / "pinned.json"
+            if pinned.is_file():
+                shutil.copy2(pinned, seat_dir / "pinned.json")
+            installed.append(f"{rig}/{seat}")
+    if not installed:
+        raise SyncError(
+            f"no pinned policy found under {target}/agents; build the bundle from a rig "
+            "root that carries it (openrig_seat_sync.py rig / bundle does since 2026-10-05)",
+            EXIT_USAGE,
+        )
+    for name in installed:
+        print(f"installed {name} -> {store / name}")
 
 
 def validate_choice(
@@ -840,6 +937,21 @@ def main(argv: list[str] | None = None) -> int:
         help="where to write the .rigbundle (default: current directory)",
     )
     bundle.set_defaults(func=cmd_bundle)
+
+    offline = subparsers.add_parser(
+        "offline-install",
+        help="install a materialized bundle's pinned policy into the seat store",
+    )
+    offline.add_argument(
+        "target", type=Path, help="the directory a .rigbundle was materialized into"
+    )
+    offline.add_argument(
+        "--home",
+        type=Path,
+        default=None,
+        help="home whose .openrig/agenthub-seats is written (default: the real home)",
+    )
+    offline.set_defaults(func=cmd_offline_install)
 
     install = subparsers.add_parser(
         "install-checker",

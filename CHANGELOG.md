@@ -23,6 +23,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**An offline bundle now carries the seat's pinned policy** (2026-10-05)
+
+- `scripts/openrig_seat_sync.py`: the rig root a bundle is built from materialized each seat's agent directory as a symlink to the pinned snapshot, which holds the rendered files only — so `policy.json`, the file `seatcheck` reads at runtime, never travelled, and an offline seat could not decide or audit. `materialize_agent()` now writes a copy of the snapshot plus the seat's `policy.json`/`pinned.json` (`cmd_rig`), and the new `offline-install <target> [--home <home>]` copies the bundled policy into `<home>/.openrig/agenthub-seats/<rig>/<member>/`, which is where `seatcheck` resolves it. Proven offline with the local server stopped: the allowed path delivered and audited (`Sent to …`, `Allowed:true`, `Outcome:"delivered"`), the disallowed path refused and audited (`denied: no link`, exit 3, `Allowed:false`, `Reason:"no link"`). It refuses to install a policy that names another seat, because members sharing one seat type share one agent directory inside a bundle.
+
 **The branch collection POST is an exact match** (2026-10-04)
 
 - `POST /api/v2/branches/` was a trailing-slash subtree pattern, so a POST to an unknown subpath (`/api/v2/branches/x/y`) matched CreateBranch and only the missing form fields stopped it; a caller posting a complete body to a wrong path would have created a branch at a path that does not exist. It is now `POST /api/v2/branches/{$}` (Go 1.22 exact match). The collection POST itself is unchanged (same 422 missing-field shape for an empty body); `POST /api/v2/branches/x/y` is 404 and `POST /api/v2/branches/abc` is 405 (the path matches the GET-only `/{id}` pattern). Covered by `TestBranchCollectionPostMatchesOnlyTheCollectionPath` (`fastmcp/server/httpapp/branch_routes_test.go`).
