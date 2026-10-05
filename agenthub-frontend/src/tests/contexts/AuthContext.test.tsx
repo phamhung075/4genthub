@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, act, waitFor } from './../test-utils';
 import { render as rtlRender } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
+import type { JWTPayload } from '../../types/authTypes';
 import { API_BASE_URL } from '../../config/environment';
 import Cookies from 'js-cookie';
 import * as jwtDecode from 'jwt-decode';
@@ -138,25 +139,21 @@ describe('AuthContext', () => {
       });
     });
 
-    // MEASURED DEFECT (dashboard-token row): a token minted by POST /api/v2/tokens decodes but has
-    // no `email` claim, so building a username threw; the mount path fell through to refreshToken
-    // and its failure called logout() - both cookies cleared, every request afterwards 403, and the
-    // user told nothing. The guard: the token is classified as unusable, the reason is reported, and
-    // the stored credentials are left alone. This fails if the silent logout path returns, because
-    // that path removes both cookies and POSTs /api/auth/refresh.
-    it('reports a stored token with no email claim instead of clearing the session', async () => {
+    // MEASURED DEFECT (dashboard-token row): a minted API token decodes, so the app built a username
+    // from its email claim, threw, and returned null exactly like an expired token; the mount path
+    // then refreshed, the refresh failed, and logout() cleared both cookies - every request after
+    // that 403 and the user told nothing. The guard reports the refusal and leaves the credentials
+    // alone. Both cases also fail if the silent logout path returns, because that path removes both
+    // cookies and POSTs /api/auth/refresh.
+    const expectStoredTokenRefused = async (claims: Record<string, unknown>, reason: RegExp) => {
       vi.mocked(Cookies.get).mockImplementation((key?: string) => {
-        if (key === 'access_token') return 'minted-api-token';
+        if (key === 'access_token') return 'stored-token';
         if (key === 'refresh_token') return mockTokens.refresh_token;
         return undefined;
       });
-
-      vi.mocked(jwtDecode.jwtDecode).mockReturnValue({
-        sub: 'user-123',
-        scopes: ['read'],
-        type: 'api',
-        exp: Math.floor(Date.now() / 1000) + 3600
-      });
+      // These payloads deliberately step outside JWTPayload: what a token the declared shape does not
+      // describe does at runtime is the subject of the case.
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(claims as unknown as JWTPayload);
 
       render(
         <AuthProvider>
@@ -180,7 +177,30 @@ describe('AuthContext', () => {
       );
       // Not signed in, and told why rather than logged out with no reason.
       expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
-      expect(authContext!.authError).toMatch(/cannot start a session/i);
+      expect(authContext!.authError).toMatch(reason);
+    };
+
+    // The DECLARATION path: the mint endpoint writes type "api_token" (jwt_service.go GenerateToken),
+    // so the refusal names what the token says it is instead of inferring from a missing claim.
+    it('refuses a token that declares type api_token and names the declaration', async () => {
+      await expectStoredTokenRefused(
+        {
+          sub: 'user-123',
+          scopes: ['read'],
+          type: 'api_token',
+          exp: Math.floor(Date.now() / 1000) + 3600
+        },
+        /declares type "api_token"/i
+      );
+    });
+
+    // The INFERENCE path: no declaration and no identity claim either, so the wording must say it
+    // reasoned from absence rather than naming a token type it was never told.
+    it('refuses a token with neither a declared type nor an email claim', async () => {
+      await expectStoredTokenRefused(
+        { sub: 'user-123', exp: Math.floor(Date.now() / 1000) + 3600 },
+        /carries no email claim and declares no type/i
+      );
     });
 
     it('should handle expired token on mount', async () => {

@@ -217,11 +217,16 @@
  path read that as expiry: it refreshed, the refresh failed, and logout cleared both cookies. The user
  landed on the login screen with no explanation, and the measured end state was an empty session whose
  every request returned 403.
- - The decoder is now `classifyToken`, returning `undecodable`, `expired` or `no-identity` instead of a
- bare null, so three outcomes are no longer one. `no-identity` is not a dead session: the mount path
- reports it through the new `authError` field on the context and leaves the stored credentials alone -
- no refresh, no cookie removal - while `expired` and `undecodable` keep the existing refresh path. A
- username is never invented from a missing claim.
+ - The decoder is now `classifyToken`, which reads what the token SAYS IT IS before looking at what it
+ carries: a token whose `type` claim is not `access` is refused because it declares itself something
+ else - `api_token` is what `POST /api/v2/tokens` mints (`jwt_service.go` `GenerateToken`), while a
+ login's session token declares `access` - and only an `access` token that then lacks an email claim
+ is treated as malformed. It returns `undecodable`, `expired` or `not-a-session-token` instead of a
+ bare null, so outcomes that were one are no longer one. A token that cannot start a session is not a
+ dead session: the mount path reports it through the new `authError` field on the context and leaves
+ the stored credentials alone - no refresh, no cookie removal - while `expired` and `undecodable` keep
+ the existing refresh path. A username is never invented from a missing claim, and the refusal names
+ the declared type when the token declares one.
  - The login screen renders `authError` above the form, so someone who lands there holding an unusable
  token is told why rather than seeing a logout nobody asked for.
 - **Deleting a link now says what it removes before it removes it** - 2026-10-06

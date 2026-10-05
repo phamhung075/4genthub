@@ -22,15 +22,21 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-06 - a token that cannot name a user is reported, not cleared (frontend)
 
-- `src/tests/contexts/AuthContext.test.tsx` adds a case for a stored token that decodes, is unexpired
-  and carries no `email` claim: with the guard in place no cookie is removed, no `POST /api/auth/refresh`
-  is sent, and `authError` names the reason. Proved as a guard by deleting the guard branch and re-running
-  it: the test then fails at `Cookies.remove` (called 8 times, the refresh/logout loop) - the measured
-  behaviour it exists to catch - and passes again once the branch is restored.
+- `src/tests/contexts/AuthContext.test.tsx` adds two cases for a stored token that decodes, is unexpired
+  and cannot start a session: one declaring `type: "api_token"` (what `POST /api/v2/tokens` mints) and
+  one with neither a declared type nor an `email` claim. Each asserts no cookie is removed, no
+  `POST /api/auth/refresh` is sent, `isAuthenticated` stays false, and `authError` names the reason.
+- The api_token case pins the ORDER of the classification, measured rather than argued: with the type
+  check moved after the email check it fails, because the refusal then reasons from absence ("carries no
+  email claim and declares no type") where the token's own declaration ("declares type \"api_token\"")
+  is the true cause. The order was restored and it passes - a later token class that happens to lack
+  email will not inherit this reason.
+- The non-destructive half was proved the same way first: with the guard branch deleted, the older case
+  failed at `Cookies.remove` (called 8 times - the refresh/logout loop) and passed once it was restored.
 - `src/tests/components/auth/LoginForm.test.tsx` adds a case that the reason on the context is rendered
   on the form a user lands on, mocking the full context value rather than a partial one.
 - Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/contexts/AuthContext.test.tsx
-  src/tests/components/auth/LoginForm.test.tsx` -> 48 passed; `npx vitest run` -> 102 files / 1748 tests
+  src/tests/components/auth/LoginForm.test.tsx` -> 49 passed; `npx vitest run` -> 102 files / 1749 tests
   passed; `npx vite build` -> ok.
 
 ## 2026-10-05 — a blank field never clears a field on the occupant PUT (Go)

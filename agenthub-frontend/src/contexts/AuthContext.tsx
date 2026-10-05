@@ -10,17 +10,28 @@ import type { AuthContextType } from '../types/componentTypes';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/** What a token can and cannot become. `no-identity` decodes but cannot name a user. */
+/** What a token can and cannot become. `not-a-session-token` decodes but is not a session access token. */
 type TokenIdentity =
   | { ok: true; user: User }
-  | { ok: false; reason: 'undecodable' | 'expired' | 'no-identity' };
+  | { ok: false; reason: 'undecodable' | 'expired' }
+  | { ok: false; reason: 'not-a-session-token'; declaredType: string | null };
 
-/** The reason shown when a stored token cannot form a session; see classifyToken. */
-const NOT_A_SESSION_TOKEN =
-  'The token stored for this browser cannot start a session: it carries no email claim. Sign in again, or use an API token against the API instead of as a session token.';
-
-const identityError = (identity: TokenIdentity): string | null =>
-  !identity.ok && identity.reason === 'no-identity' ? NOT_A_SESSION_TOKEN : null;
+/**
+ * The user-facing reason a stored token cannot start a session, or null when there is nothing to say.
+ * The token's own `type` claim is a DECLARATION of what it is - the mint endpoint writes `api_token`,
+ * a login writes `access` - so when it is present the refusal names it. When it is absent the refusal
+ * is an INFERENCE from the absent identity claim instead, and the wording says that rather than
+ * claiming to know what the token is.
+ */
+const sessionRefusal = (identity: TokenIdentity): string | null => {
+  if (identity.ok || identity.reason !== 'not-a-session-token') {
+    return null;
+  }
+  if (identity.declaredType) {
+    return `The token stored for this browser is not a session token: it declares type "${identity.declaredType}". Sign in again, or use it against the API instead of as a session token.`;
+  }
+  return 'The token stored for this browser cannot start a session: it carries no email claim and declares no type. Sign in again, or use it against the API instead of as a session token.';
+};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -56,10 +67,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokens?.access_token || ''
   );
 
-  // A session is built from the token's claims: `sub` is the identity and `email` names it. A token
-  // that DECODES but carries no email is not an expired session - it cannot form one at all
-  // (POST /api/v2/tokens mints API tokens carrying scopes and sub and NO email, measured), so it is
-  // classified as its own case instead of being folded into "invalid" and having its owner cleared.
+  // A session is built from the token's claims: `sub` is the identity and `email` names it. The token
+  // also declares what it IS in its `type` claim, which is the honest thing to read first: a token
+  // minted by POST /api/v2/tokens says `type: api_token` while a login's token says `type: access`.
+  // Only when there is no declaration does this fall back to the absent claim.
   const classifyToken = (token: string): TokenIdentity => {
     let decoded: JWTPayload;
     try {
@@ -74,8 +85,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { ok: false, reason: 'expired' };
     }
 
+    if (decoded.type && decoded.type !== 'access') {
+      return { ok: false, reason: 'not-a-session-token', declaredType: decoded.type };
+    }
+
+    // No declaration says otherwise, so this is an INFERENCE FROM ABSENCE: the app builds a username
+    // from the email claim, and a token without one cannot name a user. It is not evidence of what
+    // the token is - only the `type` check above reads that.
     if (typeof decoded.email !== 'string' || decoded.email === '') {
-      return { ok: false, reason: 'no-identity' };
+      return { ok: false, reason: 'not-a-session-token', declaredType: null };
     }
 
     return {
@@ -109,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Classify and set user
     const identity = classifyToken(tokens.access_token);
     setUser(identity.ok ? identity.user : null);
-    setAuthError(identityError(identity));
+    setAuthError(sessionRefusal(identity));
   }, []);
 
   // An identity boundary: a new identity's tokens are arriving, so anything cached for the previous
@@ -158,7 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         // Decode and set user from token
         const identity = classifyToken(data.access_token);
-        setAuthError(identityError(identity));
+        setAuthError(sessionRefusal(identity));
         if (identity.ok) {
           setUser(identity.user);
 
@@ -218,7 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         // Decode and set user from token
         const identity = classifyToken(data.access_token);
-        setAuthError(identityError(identity));
+        setAuthError(sessionRefusal(identity));
         if (identity.ok) {
           setUser(identity.user);
         }
@@ -319,7 +337,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       const identity = classifyToken(data.access_token);
-      setAuthError(identityError(identity));
+      setAuthError(sessionRefusal(identity));
       const userData = identity.ok ? identity.user : null;
 
       // A refresh can come back with a DIFFERENT identity: these are plain same-origin document
@@ -373,12 +391,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(identity.user);
         setTokensState({ access_token, refresh_token });
         setAuthError(null);
-      } else if (identity.reason === 'no-identity') {
+      } else if (identity.reason === 'not-a-session-token') {
         // NON-DESTRUCTIVE by design: a token that cannot form a session is not a dead session.
         // Report why and leave the stored credentials alone - refreshing and then logging out turns
         // "this token is unusable" into a silent logout that clears the cookies and every call 403.
-        setAuthError(NOT_A_SESSION_TOKEN);
-        logger.warn('Stored token carries no email claim; leaving the stored credentials alone');
+        setAuthError(sessionRefusal(identity));
+        logger.warn('Stored token is not a session token; leaving the stored credentials alone');
       } else {
         // Expired or undecodable: the ordinary expiry path, try the refresh token.
         refreshToken().catch(() => {
