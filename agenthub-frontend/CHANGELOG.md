@@ -211,6 +211,31 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The home page's remaining claim classes are gone, and the guard is a class rather than a list** - 2026-10-06
+  - Directive (G) was delivered and pinned by a deny-list, and a deny-list only catches what someone listed: five claims
+    of the same class survived it. The band framed 4genthub as "AI-agnostic and compatible with any AI client that
+    supports MCP" with vendor cards for Claude Code, Cursor IDE and OpenAI Codex; a box promised "any AI model" support
+    ("GPT-4, Claude 3.5, Gemini, Llama 3, Mistral, Qwen, and more. If your AI can use tools, it can use 4genthub!");
+    the CTA said "Join thousands of developers using 4genthub to build faster and smarter"; the hero and footer carried
+    "Enterprise-grade MCP platform" and "Enterprise AI platform"; the features heading said "Everything You Need to
+    Build Faster" over "Professional-grade tools trusted by developers worldwide"; the community line said "developers
+    worldwide".
+  - Replaced with what ships and greps: the band says 4genthub keeps the seat model in the cloud and OpenRig is the
+    client that launches and supervises each seat, with the runtime a seat runs on being one of the four occupant
+    runtimes, and its three cards state what lives in the cloud, what runs locally and the runtime list (runtime.go:16-19);
+    the model-support box is deleted; the CTA names the first steps; the hero reads "Cloud state for your rooms, seats and
+    modules"; the footer "Rooms, seats and modules for modern development teams, kept in the cloud"; the features heading
+    "Compose Rooms, Staff Seats" over "Building blocks for rooms, seats and modules"; the community line "collaborate with
+    other developers."
+  - The guard is now a class: `LandingPage.head.test.tsx` gains four rules (no unmeasured quantifier, multiplier,
+    percentage or comparative; no third-party product name; no unearned positioning adjective; no compatibility claim
+    about unnamed third parties), and they read the body through a `pageText()` helper that joins text NODES with a
+    separator - because `document.body.textContent` glues adjacent elements together ("Build Faster" followed by
+    "Professional-grade" reads as "Build FasterPr"), so a word-boundary rule silently missed the claims it was written
+    for. That defect bit the check rather than the copy, and it was measured before it was fixed.
+  - Mutation proof both ways: against the pre-fix copy the new rules fail (rule 1 on `worldwide` and `faster`, rule 3 on
+    `professional-grade`) while the OLD deny-list test still passes on that same copy; re-injecting the removed wording
+    fails exactly the four rules and nothing else. Found by the writer's copy review.
 - **The mcp parse mirror tests non-emptiness, as Go does** - 2026-10-05
   - `src/lib/mcpBlock.ts` refused two blocks the server accepts: it tested PRESENCE (`raw.command !== undefined` on an
     http block, `raw.url !== undefined` on a stdio block) where `mcpblock.Parse` tests NON-EMPTINESS

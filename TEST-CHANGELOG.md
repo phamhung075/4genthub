@@ -2,6 +2,30 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the home page's claim rules are a class, not a list (frontend)
+
+- `src/tests/pages/LandingPage.head.test.tsx` gains four class rules BESIDE the existing removed list: no unmeasured
+  quantifier, multiplier, percentage or comparative (`thousands`, `worldwide`, `globally`, `\d+x`, `%`, `faster`); no
+  third-party product name (`Cursor`, `GPT-4`, `o1`, `Gemini`, `Llama`, `Mistral`, `Qwen`, `OpenAI`, `Anthropic`,
+  `Copilot`); no unearned positioning adjective (`enterprise`, `professional-grade`, `battle-tested`,
+  `industrial-strength`); and no compatibility claim about unnamed third parties (`compatible with any`,
+  `any AI client|model|tool`, `AI-agnostic`).
+- The rules read the page through a new `pageText()` helper that joins the body's text NODES with a separator instead of
+  reading `textContent`: adjacent elements are glued together ("Build Faster" followed by "Professional-grade" reads as
+  "Build FasterPr"), so a word-boundary-anchored rule silently missed the claims it was written for. Measured with a
+  temporary diagnostic that printed the slice and `false` from the same regex against text containing the phrase.
+- Mutation proof, both directions: against the pre-fix copy the new rules fail (rule 1 on `worldwide` and `faster`, rule 3
+  on `professional-grade`) while the OLD deny-list test still passes on that same copy; re-injecting the removed wording
+  fails exactly those four rules and nothing else.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/LandingPage.head.test.tsx` -> 12 passed;
+  `npx vitest run` -> 102 files / 1744 tests passed; `npx vite build` -> ok.
+
+## 2026-10-06 — seatcheck acceptance end-to-end against a pulled seat (scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gains three cases that run the REAL binary `install-checker` builds and links (`<store>/bin/seatcheck` via `~/.local/bin`) against a seat `pull` materialized, so the pinned policy and the guard are exercised together rather than stubbed: `test_linked_guard_delivers_to_an_allowed_peer` (PERMITTED — exit 0, `rig send` argv carries the message, audit decision line plus `delivered` outcome); `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` (REFUSED with an audit row — exit 3, `denied: no link`, nothing sent, exactly one denied record); `test_audit_scan_detects_a_forged_direct_rig_send` (DETECTED, not prevented — a direct `rig send` writes no audit row, so `audit-scan` flags the observed line and exits 4 while a `seatcheck send` line stays clean). The fixture skips when `go` is absent, since the binary is the artifact under test.
+- This completes, at the connection level, the coverage that existed only as units: `test_pull_and_rig_fail_loudly_without_the_link` (a) and the Go cases `TestSendAllowedDelivers`, `TestSendDeniedWritesAuditAndSkipsDelivery`, `TestAuditScanFindsBypassAndSkipsKnownWrapper`.
+- Commands: `python3 -m py_compile agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 205 passed; `go test -count=1 ./cmd/seatcheck ./fastmcp/seat_management/domain/commpolicy` -> ok (unchanged).
+
 ## 2026-10-05 — context-pack algebra (Go, NEXT_GEN F2)
 
 - New `fastmcp/seat_management/domain/contextpacks/` with 24 tests over six files. Acceptance clauses: each of the three modes composed from a real markdown fixture (`TestComposeProfileThreeModes`, which also pins the full-span rule — `alpha`'s piece carries its H3 child and stops before the next H2); determinism (`TestComposeProfileIsDeterministic`: two composes deep-equal, and the walk is ordered by `Order`); the token estimate is monotonic in content (`TestEstimateTokensIsMonotonicInContent`, over 200 growing inputs) and is a byte projection, not a rune count; and a dangling address is rejected rather than dropped (`TestComposeRejectsDanglingAddress` at the compose, `TestAssertSafePackRefRejectsRatherThanDrops` at the ref gate).
