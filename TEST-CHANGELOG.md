@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — import-project (scripts, client-side module import)
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains four cases for the new `import-project` subcommand, reusing the file's recording HTTP server: a tmp project root with one http and one stdio `.mcp.json` server and two `.claude/skills/*` dirs, asserting the exact `mcp` block payloads (`name`/`type`/`url`/`command`/`args`; `headers`/`env` values kept verbatim as `${VAR}` references) and `skill` modules (`kind: skill`, content = `SKILL.md`); a credential-shaped literal (`Bearer sk-...`) refused with exit 2, a message naming the server and `${ENV_VAR}`, and zero requests; a dry run that sends nothing; and `test_import_project_uses_the_hooks_project_root_derivation` asserting `team_setup.get_project_root is utils.env_loader.get_project_root` — one derivation, not a copy.
+- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 184 passed, 1 pre-existing failure (`mission-4genthub: 522 words, expected 350-520`; committed content, not touched by this change).
+
 ## 2026-10-05 — overlay PUT fold guard (Go, seat management)
 
 - New `TestSeatAdminOverlayPutRefusesUnresolvableStack` (`fastmcp/server/httpapp/seat_admin_mount_test.go`): a room overlay `add m@1` where that room's seat type already carries `m@1` is rejected with `400`, the detail names the scope and the op (`overlay room: add "m": module already present`), and the store stays empty — the reachable sequence, exercised through the real HTTP handler and the production fold logic rather than a reimplementation.

@@ -6,6 +6,7 @@ real 4genthub server is needed.
 
 import importlib.util
 import json
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -384,3 +385,120 @@ def test_project_brief_starts_with_the_safety_rule():
     text = (TEAM_DIR / "project-4genthub.txt").read_text(encoding="utf-8")
     assert text.startswith("SAFETY.")
     assert "Never git push" in text.split("\n")[0]
+
+
+# --- import-project: local .mcp.json and .claude/skills -> module versions ---------------
+
+HOOKS_DIR = REPO_ROOT / ".claude" / "hooks"
+MCP_CONFIG = {
+    "mcpServers": {
+        "weather": {
+            "type": "http",
+            "url": "https://mcp.example.com/mcp",
+            "headers": {"Authorization": "Bearer ${WEATHER_TOKEN}"},
+        },
+        "filesystem": {
+            "command": "npx",
+            "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+            "env": {"FS_ROOT": "${FS_ROOT}"},
+        },
+    }
+}
+SKILLS = {"alpha-skill": "# Alpha\nbody\n", "beta-skill": "# Beta\nbody\n"}
+
+
+@pytest.fixture
+def project_root(tmp_path):
+    (tmp_path / ".mcp.json").write_text(json.dumps(MCP_CONFIG), encoding="utf-8")
+    for slug, text in SKILLS.items():
+        skill_dir = tmp_path / ".claude" / "skills" / slug
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text(text, encoding="utf-8")
+    return tmp_path
+
+
+def _import(monkeypatch, capsys, project_root, *extra):
+    monkeypatch.setattr(team_setup, "get_project_root", lambda: project_root)
+    code = team_setup.main(["import-project", *extra])
+    out = capsys.readouterr()
+    return code, out.out, out.err
+
+
+def test_import_project_pushes_mcp_blocks_and_skills(
+    server, env, monkeypatch, capsys, project_root
+):
+    code, out, _ = _import(monkeypatch, capsys, project_root)
+    assert code == 0
+    assert server.requests and all(r["method"] == "PUT" for r in server.requests)
+    puts = {r["path"].split("/")[5]: r["body"] for r in server.requests}
+    assert set(puts) == {"weather", "filesystem", "alpha-skill", "beta-skill"}
+    # an http server keeps its ${ENV_VAR} header reference verbatim
+    assert json.loads(puts["weather"]["content"]) == {
+        "name": "weather",
+        "type": "http",
+        "url": "https://mcp.example.com/mcp",
+        "headers": {"Authorization": "Bearer ${WEATHER_TOKEN}"},
+    }
+    assert puts["weather"]["kind"] == "mcp"
+    # a command entry with no explicit type is a stdio server, env references kept
+    assert json.loads(puts["filesystem"]["content"]) == {
+        "name": "filesystem",
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+        "env": {"FS_ROOT": "${FS_ROOT}"},
+    }
+    assert puts["filesystem"]["kind"] == "mcp"
+    assert puts["alpha-skill"]["kind"] == "skill"
+    assert puts["alpha-skill"]["content"] == SKILLS["alpha-skill"]
+    assert puts["beta-skill"]["kind"] == "skill"
+    assert puts["beta-skill"]["content"] == SKILLS["beta-skill"]
+    for slug in puts:
+        assert f"/api/v2/openrig/modules/{slug}/versions/1.0.0" in {
+            r["path"] for r in server.requests
+        }
+    assert "module weather@1.0.0: applied" in out
+
+
+def test_import_project_refuses_a_secret_literal(
+    server, monkeypatch, capsys, project_root
+):
+    leaky = {
+        "mcpServers": {
+            "leaky": {
+                "type": "http",
+                "url": "https://mcp.example.com/mcp",
+                "headers": {
+                    "Authorization": "Bearer sk-abcdefghijklmnopqrstuvwxyz012345"
+                },
+            }
+        }
+    }
+    (project_root / ".mcp.json").write_text(json.dumps(leaky), encoding="utf-8")
+    code, _, err = _import(monkeypatch, capsys, project_root)
+    assert code == 2
+    assert "leaky" in err
+    assert "ENV_VAR" in err
+    assert server.requests == []
+
+
+def test_import_project_dry_run_makes_no_requests(
+    server, monkeypatch, capsys, project_root
+):
+    monkeypatch.delenv("AGENTHUB_URL", raising=False)
+    monkeypatch.delenv("AGENTHUB_TOKEN", raising=False)
+    code, out, _ = _import(monkeypatch, capsys, project_root, "--dry-run")
+    assert code == 0
+    assert server.requests == []
+    assert (
+        "plan: module weather@1.0.0 (PUT /api/v2/openrig/modules/weather/versions/1.0.0)"
+        in out
+    )
+
+
+def test_import_project_uses_the_hooks_project_root_derivation():
+    if str(HOOKS_DIR) not in sys.path:
+        sys.path.insert(0, str(HOOKS_DIR))
+    from utils.env_loader import get_project_root as hooks_get_project_root
+
+    assert team_setup.get_project_root is hooks_get_project_root
