@@ -18,6 +18,15 @@
   - Tests: `src/tests/hooks/test_useRealtimeSync_seat.test.tsx` (5 of its 6 cases fail without the seat dispatcher
     cases) and a synthetic seat event in `src/tests/pages/SeatsPage.test.tsx` asserting the list refetches and the row
     registers.
+- **Connector scope in the token UI (C2)** - 2026-10-05
+  - The Tokens page now offers the session-stream connector's scope (`sessions:write`) under a Sessions category, with a
+    label and description naming the connector it is for. `AVAILABLE_SCOPES` had no sessions entry and no `sessions:`
+    scope string existed anywhere in `src`, so a user could not mint a connector token from the dashboard at all - the
+    backend already accepts arbitrary scopes (`routes_mount.go`, `GenerateAPIToken`) and the connector authorizes with
+    `sessions:write` (`session_stream_routes.go`, consumed by the scope check in `ws_mount.go`).
+  - `src/pages/TokenManagement.tsx` also lists Sessions in the category render order so the picker shows it.
+  - Tests: a new case selects the Sessions/Write card and asserts the create payload carries `sessions:write`; it fails
+    when the entry is missing (verified by removing it, seeing two failures, restoring).
 
 ### Changed
 - **Assignee pickers take their names from the user's seats (D6)** - 2026-10-04

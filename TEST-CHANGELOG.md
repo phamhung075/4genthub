@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — connector scope offered in the token UI (frontend, C2)
+
+- `src/tests/pages/TokenManagement.test.tsx`: new case `offers the session-stream connector scope and sends it with the token` selects the `Sessions / Write` card and asserts `generateToken` is called with `scopes: ['sessions:write']`; the existing `should have correct available scopes` case gains `Sessions` in its category list. Mutation proof: removing the `sessions:write` entry from `AVAILABLE_SCOPES` fails exactly those two cases (13 passed, 2 failed), restoring it goes back to 15 passed.
+- Live proof on the local build (no production touched): a token created through the page carries `scopes: ['sessions:write']` in the create response and in `GET /api/v2/tokens`; the connector handshake with that token returns `101 Switching Protocols`, and a token minted with `scopes: ['read']` is refused with `403 Missing scope sessions:write`.
+- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 89 files / 1640 tests passed (was 1639; +1 case).
+
 ## 2026-10-05 — realtime connection registry populated (Go)
 
 - `websocket_routes_test.go`: `TestRegisterAndUnregisterConnection` pins the fields the broadcast reads after a register (`User`, `ClientID`, `ConnectedAt`, `Subscription`), the keyed delete, the idempotent double delete (the broadcast's cleanup can remove the same key) and that a nil socket or nil user is ignored.
