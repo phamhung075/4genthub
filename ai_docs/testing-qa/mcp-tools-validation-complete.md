@@ -84,7 +84,7 @@
 | `resolve` | ✅ PASS | Full chain resolution |
 | `delegate` | ✅ PASS | Move between hierarchy levels |
 
-### 6. Agent Management ✅
+### 6. Agent Management ✅ *(historical: the Python `manage_agent` surface — the `call_agent` tool and `agenthub_main/agent-library` are retired; see the status note at the top)*
 
 | Action | Status | Validation Notes |
 |--------|--------|------------------|
