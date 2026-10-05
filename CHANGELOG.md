@@ -36,6 +36,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Untouched: the claude-code path and its fragments are unchanged (the renderer diff is additions only) and the existing fragment tests pass unmodified.
 - Runtime refusal is UNVERIFIED: codex is not installed on this host, so no refusal was observed. To verify once it is installed: put the file in a rules folder and run `codex execpolicy check --rules <file> -- rig send <args>`; the strictest decision must come back `forbidden`.
 - The G3(b) API restriction on allowing links for codex stays in place until that verification exists; removing it is the next step, not this change.
+- One behaviour asymmetry between the runtimes, recorded rather than left implicit: this artefact is DENY-ONLY, so on codex the audited path is NOT pre-approved — `seatcheck send` may prompt, or be refused by the seat's `approval_policy`/`sandbox_mode` — where the claude-code fragment explicitly allows it. Mirroring the two Claude `allow` rules would widen execution outside the sandbox without prompting, which is the opposite of what this change is for, so the asymmetry is the conservative side of the trade rather than a defect.
 
 **Allowing seat links are restricted to `claude-code` seats** (2026-10-05, G3 owner decision)
 

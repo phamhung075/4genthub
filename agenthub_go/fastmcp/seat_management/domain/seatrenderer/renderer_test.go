@@ -480,6 +480,24 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 			t.Fatalf("codex seat without tool modules rendered %q", codexRulesPath)
 		}
 	}
+
+	// An entry that cannot be a command prefix must be LISTED, never silently dropped: the branch
+	// exists so a policy the seat believes it carries is visible in the artefact.
+	mixed := resolver.ResolvedModule{
+		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
+		Content: `{"permissions":{"deny":["Bash(rig send:*)","Read(/etc/shadow)"]}}`,
+	}
+	spec, err := RenderSeat(withModules(seatFixture("codex"), []resolver.ResolvedModule{mixed}), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(codex, mixed denies): %v", err)
+	}
+	mixedRules := fileContent(t, spec, codexRulesPath)
+	if strings.Count(mixedRules, `decision = "forbidden"`) != 1 {
+		t.Fatalf("only the Bash entry is a prefix rule, got:\n%s", mixedRules)
+	}
+	if !strings.Contains(mixedRules, "#   Read(/etc/shadow)") {
+		t.Fatalf("the non-Bash deny entry was dropped instead of listed:\n%s", mixedRules)
+	}
 }
 
 func TestRenderSeatUnsupportedMCPURL(t *testing.T) {
