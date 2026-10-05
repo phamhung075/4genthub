@@ -147,7 +147,10 @@ func authenticateUser(ctx context.Context, r *http.Request) (*authdomain.User, e
 }
 
 // healthServerName is the FastMCP server name (mcp_entry_point.py server = FastMCP(name=...)).
-const healthServerName = "agenthub - Task Management & Agent Orchestration"
+// The description after the dash is the one-line product description the frontend
+// landed with directive G (agenthub-frontend/src/components/Header.tsx:125); keep the
+// two in step rather than phrasing a third one here.
+const healthServerName = "agenthub - AI Orchestration Platform"
 
 // healthVersion is the release the server reports on /health. Bump it with every
 // change that must be confirmable after a deploy: the Docker build context has

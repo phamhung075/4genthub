@@ -164,7 +164,7 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 				"prompts":   map[string]any{"listChanged": false},
 			},
 			"serverInfo": map[string]any{
-				"name":    "agenthub - Task Management & Agent Orchestration",
+				"name":    healthServerName,
 				"version": "2.1.0",
 			},
 		}
