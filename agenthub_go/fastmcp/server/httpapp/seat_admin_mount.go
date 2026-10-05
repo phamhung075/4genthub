@@ -824,9 +824,13 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := repositories.ValidateOccupant(req.Runtime, req.Model); err != nil {
-		writeDetail(w, http.StatusBadRequest, err.Error())
-		return
+	// An explicit runtime is validated here, exactly as before. An omitted one is inherited from
+	// the chosen version further down (the version is not resolved yet) and validated there.
+	if strings.TrimSpace(req.Runtime) != "" {
+		if err := repositories.ValidateOccupant(req.Runtime, req.Model); err != nil {
+			writeDetail(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 	if req.PermissionPolicy == "" {
 		req.PermissionPolicy = resolver.DefaultPermissionPolicy
@@ -847,6 +851,17 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	if latest == nil {
 		writeDetail(w, http.StatusNotFound, "seat type \""+req.SeatType+"\" not found")
 		return
+	}
+	// A seat that sets no runtime uses the chosen version's default_runtime: the schema documents
+	// default_runtime as "the runtime of a seat that sets none". An explicit runtime wins and was
+	// validated above. With no version resolved there is nothing to inherit, and the request is
+	// refused by the check above rather than by inventing a default.
+	if strings.TrimSpace(req.Runtime) == "" {
+		req.Runtime = latest.DefaultRuntime
+		if err := repositories.ValidateOccupant(req.Runtime, req.Model); err != nil {
+			writeDetail(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 	var pinned *string
 	switch {

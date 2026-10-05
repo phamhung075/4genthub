@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — seat creation inherits the version's default runtime (Go)
+
+- `fastmcp/server/httpapp/seat_create_runtime_fallback_test.go` (new): six route tests over the seat-admin mux and its fake source. Omitting `runtime` creates the seat with the chosen version's `default_runtime`; an explicit `runtime` wins over that default; an invalid explicit runtime still 400s; a version whose default is empty and no explicit runtime still 400s; an omitted runtime with an unknown seat type is still 404 (no invented default); and an inherited runtime still validates the model (codex with a `claude-` model is 400).
+- Before-evidence is a live observation rather than a claimed mutation: on the real server over the throwaway PostgreSQL, the omitted-`runtime` request returned `400 unsupported runtime ""` before this change (recorded in `D3-CUSTOM-SEAT-VERIFICATION-2026-10-05.md`) and creates the seat after it.
+- Commands: `gofmt -l` on the touched files clean; `go vet ./fastmcp/server/httpapp/` exit 0; `go build ./...` exit 0; `go test -count=1 ./fastmcp/server/httpapp/` ok (0.951s); `-run TestSeatAdminCreateSeat -v` all PASS, including the six new cases.
+
 ## 2026-10-05 — the TS mcp parse mirror matches Go on emptiness (frontend)
 
 - `src/tests/utils/mcpBlock.test.ts` gains two cases pinned to the authority's rule: an EMPTY string on the transport a
