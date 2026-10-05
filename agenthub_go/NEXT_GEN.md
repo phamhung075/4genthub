@@ -12,6 +12,35 @@ Split out of `MIGRATION.md` on 2026-10-02 (Request 10). `MIGRATION.md` tracks on
 - OpenRig `agent_ref` accepts only `local:` and `path:` (`openrig/packages/daemon/src/domain/rigspec-schema.ts:545`, `agent-resolver.ts:203`). So the cloud renders AgentSpec/RigSpec files and the client writes them to disk.
 - Supersedes the earlier "full OpenRig runtime in Go (`rigd`)" plan: the earlier plan's Go-runtime items (`rigd`, tmux adapter, restore, `cmd/rig`, WSL2 spike) are dropped. The F items below are their client-side replacements.
 
+## How the project and its seats work together (recorded 2026-10-05, owner request)
+
+The concrete mechanism behind the direction above, written from what was operated and read, not from an OpenRig source read. Anything not verified first-hand is flagged.
+
+**Physical layers, in order:**
+
+```
+owner / principal session          <- what the owner talks to (this repo's Claude session)
+  |  rig send | rig up | rig terminal
+  v
+OpenRig daemon   pid in ~/.openrig/daemon.json, 127.0.0.1:7433, db ~/.openrig/openrig.sqlite
+  |  creates and supervises
+  v
+tmux sessions named  <rig>-<seat>@<rig>
+  |  run
+  v
+runtime processes  omp (DeepSeek) | claude-code | codex | agy
+```
+
+The daemon's database holds rig topology (`rigs`, `pods`, `nodes`), `snapshots`, `sessions`, the work ledger (`queue_items`, `queue_transitions`) and `usage_samples`. That is why a seat can die and resume with its queue intact, and why "down" is a lifecycle state rather than data loss: `rig up <rig> --existing` restores from a snapshot and each seat resumes its own session file.
+
+**What a seat is — two halves.** The *position* (durable) is the key in the rig spec plus its edges and permission policy, e.g. `4genthub-min.go-dev2`. The *occupant* is runtime + model, e.g. `omp` + `deepseek/deepseek-flash`. The seat's behaviour comes from `agents/<seat>/agent.yaml` and `agents/<seat>/guidance/role.md`, which OpenRig delivers as startup text; the role file is the unit of work, which is why an unguided seat flails and a Claude-flavoured role on `omp` misroutes (it looks for MCP tools that runtime does not have).
+
+**How work moves.** owner -> lead seat -> dev seats -> reviewer -> lead -> owner approves the push. The `queue_items` ledger carries owner and state (`pending`, `claimed`, `handed-off`, `blocked`, `done`). Seats commit locally, stage by explicit path, and never push; the reviewer is the gate, so "done" means a second seat verified it.
+
+**Where the two halves talk.** Only through client-side scripts holding `AGENTHUB_TOKEN` (`scripts/openrig_seat_sync.py`, `openrig_bridge.py`, `openrig_team_setup.py`): they pull seat and room definitions from the cloud, render rig spec plus seat files to disk (the daemon then launches them), and push back what the client observed (seat status, sessions, usage). Verified consequence: the seats read `AGENTHUB_TOKEN` from their inherited environment at call time, so rotating the token requires updating the config, the daemon, the tmux server environment and then reseating - a config-only rotation leaves the seats on the old credential (2026-10-05).
+
+**Not verified by us:** OpenRig's internal reconciliation logic and how `resolved_spec_hash` is computed; we have only its CLI behaviour and its database.
+
 ## Gate and rules
 
 Items that need the Go server wait for the matching `MIGRATION.md` slice. Owner-directed exception: F0 was built first on the existing Go server (Request 9).
