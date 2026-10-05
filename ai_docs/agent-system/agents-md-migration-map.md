@@ -43,7 +43,7 @@ following the old structure finds the new home here.
 |---|---|
 | `# agenthub Agent System - CLAUDE AS ENTERPRISE EMPLOYEE` and `## YOUR PROFESSIONAL IDENTITY` ("You are Claude, a professional employee", "No YOLO Mode", "No Silent Work") | Retired framing. Roles are seats now (`rig whoami` + `manage_seat`); the enterprise-employee / role-switching model it described was replaced with the seat model (Request 14). |
 | `## MCP TOOL PERMISSIONS` — the "only the principal session has MCP access; team agents have NO MCP access" model | Superseded: each seat receives its own role file at launch and reaches the agenthub MCP tools itself. Only the tool-name list was moved. |
-| `## PROXY PATTERN (Tier 3 - Team Agent Config Injection)` | Retired with the sub-agent team model. The `.claude/agents/` library, `TeamCreate` and `subagent_type` are gone; OpenRig seats replace sub-agent teams. |
+| `## PROXY PATTERN (Tier 3 - Team Agent Config Injection)` | Retired with the sub-agent team model. The `.claude/agents/` library exists only under the uncommitted `.claude` submodule (not in the repo), and the `TeamCreate`/`subagent_type` team mechanism is retired; OpenRig seats replace sub-agent teams. |
 | `## TIERED TASK WORKFLOW` Tier 3 team mechanics (`TeamCreate`, spawn, monitor, `TeamDelete`) | Same retirement. Tier 1 and Tier 2 (do the work yourself with MCP tracking) were moved; the team-spawn mechanics were not. |
 | `## QUICK REFERENCE` | Superseded by the slim AGENTS.md itself (it was a summary of the legacy tier workflow). |
 | `**ORM Locations:** agenthub_main/src/.../*.py` | Not dropped, but corrected: the live ORM/entity path is `agenthub_go/fastmcp/task_management/domain/entities/` (see `repo-agent-rules.md`). The Python backend is retired. |
