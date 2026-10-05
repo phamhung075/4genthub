@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the gated real-PostgreSQL seat suite, and the trap a reused test database sets (Go)
+
+- Ran the whole `./fastmcp/seat_management/...` tree WITH `SEAT_TEST_DATABASE_URL` set, which the ungated runs never exercise: on a fresh database exactly one test fails, `TestSeatResolutionEndToEnd`, at the seed, naming the cause — `seed architect: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types`. Everything else, including `TestSeatRepositoriesIntegration` in the orm package, passes against the real database.
+- That test was ALREADY RED before this change; the change moved the failure to the point of cause. Swapping only `seat_seeder.go` back to its parent and re-running on the same fresh database: the seed succeeds (silently, as designed then) and the FIRST resolve fails at `seat_resolution_integration_test.go:81` with `module test-driven-development@1.0.0 not found in catalog` — the 404 three steps downstream that the seeder check now reports up front. The test needs the curated catalog published before seeding before it can be green, which is a decision about how a repository test obtains those modules, not a defect in the check.
+- TRAP, worth knowing before running these tests: they apply their schema with `CREATE TABLE IF NOT EXISTS`, so a test database created before `ck_modules_kind` gained `'mcp'` keeps the old constraint and rejects an mcp block with `violates check constraint "ck_modules_kind"` — a failure that looks like bad seed data but is a stale table. Use a fresh database per run (or drop the stale tables first).
+
 ## 2026-10-06 — the seeder verifies the refs it writes (Go)
 
 - `fastmcp/seat_management/application/services/seat_seeder_test.go` (new) pins both directions with in-memory `ModuleRepository`/`SeatTypeRepository` fakes: a seed carrying a curated ref the catalog lacks is refused with the ref and the seat type named, and writes no seat type or version; the identical seed succeeds once the catalog holds the refs, with all three refs on the version; and a seed whose refs are exactly its own authored modules seeds against an empty catalog.
