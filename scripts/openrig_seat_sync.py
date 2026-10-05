@@ -77,6 +77,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path, PurePosixPath
@@ -96,6 +97,11 @@ MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
 RUNTIMES = ("claude-code", "codex", "agy", "omp")
 APPLY_MODES = ("none", "set-model", "restart")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# How often `respawn` re-reads the seat while waiting for the dead reading to hold.
+RESPAWN_POLL_SECONDS = 5.0
+# Default hold before respawning: a just-launched seat reads exactly like a dead one until its
+# runtime hook attaches (observed ~15s), so one reading is never enough.
+DEFAULT_RESPAWN_AFTER_SECONDS = 30.0
 
 
 class SyncError(Exception):
@@ -730,6 +736,86 @@ def cmd_offline_install(args: argparse.Namespace) -> None:
         print(f"installed {name} -> {store / name}")
 
 
+def _seat_node(room: str, seat: str) -> dict | None:
+    """The ``rig ps`` node for ``room.seat``, or None when OpenRig does not list it."""
+    result = run_rig(["rig", "ps", "--json", "--nodes", "--rig", room])
+    try:
+        nodes = json.loads(result.stdout)
+    except json.JSONDecodeError as err:
+        raise SyncError(f"rig ps returned invalid JSON: {err}", EXIT_REMOTE)
+    if isinstance(nodes, dict):
+        nodes = nodes.get("items")
+    for node in nodes if isinstance(nodes, list) else []:
+        if isinstance(node, dict) and (node.get("logicalId") or "").partition(".")[2] == seat:
+            return node
+    return None
+
+
+def _agent_is_gone(node: dict) -> bool:
+    """The reading a dead agent leaves: the tmux session is up, the runtime hook is not."""
+    activity = node.get("agentActivity") or {}
+    return (
+        node.get("sessionStatus") not in ("stopped", "exited")
+        and activity.get("state") == "unknown"
+        and activity.get("reason") == "no_runtime_hook"
+    )
+
+
+def cmd_respawn(args: argparse.Namespace) -> None:
+    """Respawn a seat whose agent died outside `rig seat stop`.
+
+    OpenRig has no automatic trigger for this: its installed CLI carries no respawn or
+    auto-restart path (grep over `@openrig/cli/dist` for respawn/autoRestart/restartPolicy is
+    empty); it offers only the deliberate primitive `rig seat launch <seat> [--fresh] [--stop]
+    --reason <text>` (registered at `@openrig/cli/dist/commands/seat.js:419`), which creates a
+    blank native occupant with a new session id and generation. This runs that primitive, and
+    only for a seat that really reads dead: a just-launched seat produces the SAME reading
+    (`agentActivity` unknown + `no_runtime_hook`) until its runtime hook attaches, so the
+    reading must hold for `--after-seconds` before anything is launched.
+    """
+    room = validate_name("room", args.room)
+    seat = validate_name("seat", args.seat)
+    deadline = time.monotonic() + args.after_seconds
+    while True:
+        node = _seat_node(room, seat)
+        if node is None:
+            raise SyncError(f"OpenRig lists no node {room}.{seat}", EXIT_USAGE)
+        if not _agent_is_gone(node):
+            raise SyncError(
+                f"{room}.{seat} is not in the dead-agent state "
+                f"(sessionStatus={node.get('sessionStatus')!r}, "
+                f"agentActivity={node.get('agentActivity')!r}); refusing to respawn",
+                EXIT_USAGE,
+            )
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(RESPAWN_POLL_SECONDS)
+    session = canonical_session(room, seat) or f"{room}.{seat}"
+    command = [
+        "rig",
+        "seat",
+        "launch",
+        session,
+        "--fresh",
+        "--stop",
+        "--reason",
+        args.reason,
+    ]
+    try:
+        result = run_rig(command)
+    except subprocess.CalledProcessError as err:
+        # `rig seat launch` can start the occupant and still exit 1 (for example "Fresh occupant
+        # started but runtime identity requires attention"), so surface its own words rather than
+        # a traceback: the operator decides whether the caveat matters.
+        detail = (err.stderr or err.stdout or "").strip().splitlines()
+        raise SyncError(
+            "rig seat launch reported: " + (detail[-1] if detail else f"exit {err.returncode}"),
+            EXIT_REMOTE,
+        ) from err
+    if result.stdout.strip():
+        print(result.stdout.strip())
+
+
 def validate_choice(
     kind: str, value: str, pattern: re.Pattern | None, allowed=None
 ) -> str:
@@ -952,6 +1038,28 @@ def main(argv: list[str] | None = None) -> int:
         help="home whose .openrig/agenthub-seats is written (default: the real home)",
     )
     offline.set_defaults(func=cmd_offline_install)
+
+    respawn = subparsers.add_parser(
+        "respawn",
+        help="respawn a seat whose agent died outside `rig seat stop`",
+    )
+    respawn.add_argument("room")
+    respawn.add_argument("seat")
+    respawn.add_argument(
+        "--after-seconds",
+        type=float,
+        default=DEFAULT_RESPAWN_AFTER_SECONDS,
+        help=(
+            "how long the dead reading must hold before launching "
+            f"(default {DEFAULT_RESPAWN_AFTER_SECONDS:g}s: a just-launched seat reads the same)"
+        ),
+    )
+    respawn.add_argument(
+        "--reason",
+        default="agent died outside `rig seat stop` (respawn)",
+        help="audit reason recorded on the seat.fresh_launched event",
+    )
+    respawn.set_defaults(func=cmd_respawn)
 
     install = subparsers.add_parser(
         "install-checker",

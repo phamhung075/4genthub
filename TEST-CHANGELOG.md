@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — dead seat reads stopped and can be respawned (Python)
+
+- `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; a just-launched node (`unknown`, reason absent) still expects `unknown`.
+- `src/tests/scripts/test_openrig_seat_sync.py`: four new `respawn` cases — it launches only on the dead reading for the whole wait, refuses a live seat (exit 2), refuses a seat OpenRig does not list, and surfaces `rig seat launch`'s own message instead of a traceback (exit 1).
+- Commands: bridge file -> 41 passed; seat-sync file -> 86 passed.
+
 ## 2026-10-05 — offline bundle carries the pinned policy (Python seat sync)
 
 - `src/tests/scripts/test_openrig_seat_sync.py`: four rig tests moved from the old symlink contract to the materialized one (`agents/<seat>` is now a real directory carrying the rendered files plus the seat's `policy.json`/`pinned.json`); two new tests for `offline-install` (it writes `<home>/.openrig/agenthub-seats/<rig>/<member>/` and skips a policy that names another seat; it fails loudly with exit 2 when the bundle carries no policy).

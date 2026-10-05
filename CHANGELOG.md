@@ -23,6 +23,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**A dead seat now reads `stopped` and can be respawned** (2026-10-05, owner decision)
+
+- `scripts/openrig_bridge.py`: a live session whose `agentActivity.state` is `unknown` with reason `no_runtime_hook` — an agent that died outside `rig seat stop` — now maps to `stopped` instead of `unknown` (the owner's decision, superseding the earlier `unknown` reading). `attention_required` alone still never means blocked, and a live busy seat still reads `running`. Measured cold-start overlap: a just-launched seat produces the same reading until its runtime hook attaches (~15s), so nothing may act on a single sample.
+- `scripts/openrig_seat_sync.py`: new `respawn <room> <seat> [--after-seconds N] [--reason …]`. OpenRig has no automatic trigger; it owns the primitive `rig seat launch <seat> [--fresh] [--stop] --reason <text>` (`@openrig/cli/dist/commands/seat.js:419`), which this calls only after the dead reading has held for the whole wait (default 30s), so it cannot fire at a starting seat. Proven live on a scratch rig: kill the agent -> bridge reports `stopped` -> respawn -> the seat is back (`agentActivity running`).
+
 **An offline bundle now carries the seat's pinned policy** (2026-10-05)
 
 - `scripts/openrig_seat_sync.py`: the rig root a bundle is built from materialized each seat's agent directory as a symlink to the pinned snapshot, which holds the rendered files only — so `policy.json`, the file `seatcheck` reads at runtime, never travelled, and an offline seat could not decide or audit. `materialize_agent()` now writes a copy of the snapshot plus the seat's `policy.json`/`pinned.json` (`cmd_rig`), and the new `offline-install <target> [--home <home>]` copies the bundled policy into `<home>/.openrig/agenthub-seats/<rig>/<member>/`, which is where `seatcheck` resolves it. Proven offline with the local server stopped: the allowed path delivered and audited (`Sent to …`, `Allowed:true`, `Outcome:"delivered"`), the disallowed path refused and audited (`denied: no link`, exit 3, `Allowed:false`, `Reason:"no link"`). It refuses to install a policy that names another seat, because members sharing one seat type share one agent directory inside a bundle.

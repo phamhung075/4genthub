@@ -1280,6 +1280,109 @@ def test_path_limit_says_only_the_default_tmux_socket_is_queried():
     assert "default tmux socket" in seat_sync.PATH_LIMIT
 
 
+def _ps_node(**overrides):
+    node = {
+        "logicalId": "room1.alpha",
+        "canonicalSessionName": "room1-alpha@room1",
+        "sessionStatus": "running",
+        "lifecycleState": "attention_required",
+        "agentActivity": {"state": "unknown", "reason": "no_runtime_hook"},
+    }
+    node.update(overrides)
+    return node
+
+
+def test_respawn_launches_only_when_the_seat_reads_dead(monkeypatch, capsys):
+    calls = []
+
+    def fake_rig(command):
+        calls.append(command)
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        return subprocess.CompletedProcess(command, 0, "launched", "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(
+        ["respawn", "room1", "alpha", "--after-seconds", "0", "--reason", "agent died"]
+    )
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert err == ""
+    assert out.strip() == "launched"
+    assert [
+        "rig",
+        "seat",
+        "launch",
+        "room1-alpha@room1",
+        "--fresh",
+        "--stop",
+        "--reason",
+        "agent died",
+    ] in calls
+
+
+def test_respawn_refuses_a_live_seat(monkeypatch, capsys):
+    """A just-launched seat reads exactly like a dead one until its runtime hook attaches, so
+    anything that is not the dead reading must stop the command before it launches."""
+    calls = []
+
+    def fake_rig(command):
+        calls.append(command)
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            json.dumps(
+                [_ps_node(agentActivity={"state": "idle"}, lifecycleState="running")]
+            ),
+            "",
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+
+    assert code == 2
+    assert "not in the dead-agent state" in err
+    assert not any(command[:3] == ["rig", "seat", "launch"] for command in calls)
+
+
+def test_respawn_refuses_an_unknown_seat(monkeypatch, capsys):
+    def fake_rig(command):
+        return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "beta", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "lists no node room1.beta" in err
+
+
+def test_respawn_surfaces_the_launch_message_instead_of_a_traceback(
+    monkeypatch, capsys
+):
+    """`rig seat launch` can start the occupant and still exit 1 (runtime identity notice), so
+    its own words must reach the operator."""
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        if command[:3] == ["rig", "seat", "launch"]:
+            raise subprocess.CalledProcessError(
+                1,
+                command,
+                output="",
+                stderr="Fresh occupant started but runtime identity requires attention\n",
+            )
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert "rig seat launch reported: Fresh occupant started" in err
+
+
 def _offline_target(tmp_path: Path) -> Path:
     """A materialized-bundle shape: two members share agent dev, one uses agent rev."""
     target = tmp_path / "mat"
