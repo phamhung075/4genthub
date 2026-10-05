@@ -28,6 +28,11 @@ outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
 
+Path convention for the Registration column: paths are relative to `agenthub_go/`; from
+§1.2 on, the column gives the BASENAME (`branch_routes.go:61`) because the section header
+already names the full file, while §1.1 and §1.6–§1.12 give the path from `agenthub_go/`.
+Both forms point at the same kind of thing — the line that registers the route.
+
 ### 1.1 Server-level and `app.go`
 
 | Method | Path | Handler | Registration |
@@ -421,7 +426,10 @@ it in `init()`; `ProductionTables` is deliberately separate.
 Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go`
 (`seatManagementDatabaseTables`); appended at `seat_tables.go:309`. The same 13 tables are
 declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`.
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql` (note for a
+reader counting statements: that file holds 14 `CREATE TABLE IF NOT EXISTS` statements for
+these 13 tables — one table is created twice, so a statement count of 14 is not a 14th
+table).
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
