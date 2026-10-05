@@ -17,6 +17,10 @@
     replayed frame identically, which the tests inject directly.
   - Tests: `test_useRealtimeSync_notification.test.tsx` (2 of its 3 cases fail without the dispatcher case) and
     `NotificationBell.test.tsx` - 91 files / 1646 tests, up from 89 / 1641.
+  - Follow-up from review: the inbox is cleared on logout (`AuthContext` calls the store's reset before it clears the
+    cookies), because notifications are addressed to an identity and a user switch in the same tab must not leave the
+    previous user's message text on screen; `clearAll` and `reset` were two names for one action and are now one, and
+    the payload doc records that `metadata.entity_id` is the dedupe key, so it must be unique per notification.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
   - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
     `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through

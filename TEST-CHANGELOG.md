@@ -14,7 +14,8 @@ Track test suite changes, fixes, and improvements for agenthub.
 - `src/tests/hooks/test_useRealtimeSync_notification.test.tsx`: stores a frame and counts it unread; ignores a frame without a message; dedupes a replayed frame by id. Mutation proof: removing the `notification` case from the dispatcher fails 2 of the 3 (the negative guard passes either way); restoring gives 3 passed.
 - `src/tests/components/NotificationBell.test.tsx`: the badge shows the unread count, opening the inbox acks and lists the message, and dismissing removes it.
 - The frame fixture is the shape a local server produced for `POST /api/v2/broadcast/notify` (entity and action `notification`, `data.primary` copied through, `metadata.entity_id` the message id) - captured from the running server, not written from imagination.
-- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 91 files / 1646 tests passed (was 89 / 1641; +2 files, +5 cases).
+- `src/tests/contexts/AuthContext.test.tsx` gains `clears the notification inbox on logout`: seeds the store, signs out through the provider, and requires it empty. Mutation proof: removing the reset from `AuthContext.logout` fails exactly this case (`expected [ { id: 'n1', …(3) } ] to have a length of +0 but got 1`), restoring gives 27 passed in that file.
+- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 91 files / 1647 tests passed (was 91 / 1646; +1 case).
 
 ## 2026-10-05 — connector scope offered in the token UI (frontend, C2)
 

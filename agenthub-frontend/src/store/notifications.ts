@@ -30,14 +30,13 @@ interface NotificationState {
   ack: (id: string) => void;
   ackAll: () => void;
   dismiss: (id: string) => void;
-  clearAll: () => void;
+  /** Clear the inbox: the UI's Clear all, and the seam tests use to reset the module-global store. */
   reset: () => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
-
   add: (notification) =>
     set((state) => {
       if (state.notifications.some((n) => n.id === notification.id)) {
@@ -77,8 +76,6 @@ export const useNotificationStore = create<NotificationState>((set) => ({
         unreadCount: target && !target.read ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
       };
     }),
-
-  clearAll: () => set({ notifications: [], unreadCount: 0 }),
 
   reset: () => set({ notifications: [], unreadCount: 0 }),
 }));

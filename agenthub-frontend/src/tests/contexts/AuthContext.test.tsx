@@ -33,6 +33,7 @@ vi.mock('../../config/environment', () => ({
 
 // Import useWebSocket mock after mocking
 import { useWebSocket } from '../../hooks/useWebSocketV2';
+import { useNotificationStore } from '../../store/notifications';
 (useWebSocket as any).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
@@ -85,6 +86,7 @@ describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     authContext = null;
+    useNotificationStore.getState().reset();
     mockDisconnect.mockClear();
     mockUseWebSocket.mockClear();
     (Cookies.get as any).mockReset();
@@ -447,6 +449,37 @@ describe('AuthContext', () => {
 
       expect(Cookies.remove).toHaveBeenCalledWith('access_token');
       expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+    });
+
+    it('clears the notification inbox on logout', async () => {
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const { getByText } = render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+
+      // Notifications are addressed to an identity; a sign-out must not leave them on screen.
+      useNotificationStore.getState().add({ id: 'n1', message: 'meant for this user' });
+      expect(useNotificationStore.getState().notifications).toHaveLength(1);
+
+      act(() => {
+        getByText('Logout').click();
+      });
+
+      expect(useNotificationStore.getState().notifications).toHaveLength(0);
+      expect(useNotificationStore.getState().unreadCount).toBe(0);
     });
 
     it('should disconnect WebSocket on logout', async () => {

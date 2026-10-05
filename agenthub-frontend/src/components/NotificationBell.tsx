@@ -16,7 +16,7 @@ export const NotificationBell: React.FC = () => {
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const ackAll = useNotificationStore((state) => state.ackAll);
   const dismiss = useNotificationStore((state) => state.dismiss);
-  const clearAll = useNotificationStore((state) => state.clearAll);
+  const reset = useNotificationStore((state) => state.reset);
 
   const toggle = () => {
     const next = !open;
@@ -53,7 +53,7 @@ export const NotificationBell: React.FC = () => {
         >
           <div className="flex items-center justify-between px-3 py-2 border-b border-surface-border">
             <span className="font-medium text-sm">Notifications</span>
-            <button onClick={clearAll} className="text-xs underline" disabled={notifications.length === 0}>
+            <button onClick={reset} className="text-xs underline" disabled={notifications.length === 0}>
               Clear all
             </button>
           </div>

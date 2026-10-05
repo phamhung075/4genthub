@@ -243,6 +243,10 @@ export interface NotificationEventPayload {
   kind?: string;
 }
 
+// The frame carries metadata.entity_id, which the client uses as the dedupe key: it must be
+// unique per notification, because two notifications posted with the same entity_id collapse
+// into one inbox row (that is the idempotency the reconnect replay relies on).
+
 // =============================================================================
 // WEBSOCKET MESSAGE STRUCTURE (v2.0)
 // =============================================================================

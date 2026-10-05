@@ -15,6 +15,7 @@ interface AuthProviderProps {
 }
 
 import { API_BASE_URL } from '../config/environment';
+import { useNotificationStore } from '../store/notifications';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const decodeToken = (token: string): User | null => {
     try {
       const decoded = jwtDecode<JWTPayload>(token);
-      
+
       // Check if token is expired
       if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         return null;
@@ -59,15 +60,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Set tokens and update user state
   const setTokens = useCallback((tokens: AuthTokens) => {
     setTokensState(tokens);
-    
+
     // Store tokens in cookies
-    Cookies.set('access_token', tokens.access_token, { 
+    Cookies.set('access_token', tokens.access_token, {
       expires: 7, // 7 days - longer storage for better UX
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
     });
-    
-    Cookies.set('refresh_token', tokens.refresh_token, { 
+
+    Cookies.set('refresh_token', tokens.refresh_token, {
       expires: 30, // 30 days
       sameSite: 'strict',
       secure: import.meta.env.MODE === 'production'
@@ -101,12 +102,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Check if email verification is required
       if (data.requires_email_verification) {
         throw new Error('Please verify your email before signing in. Check your inbox for the verification link.');
       }
-      
+
       if (data.access_token && data.refresh_token) {
         setTokens({
           access_token: data.access_token,
@@ -139,8 +140,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           'Accept': 'application/json',
         },
         credentials: 'include', // Include cookies for CORS
-        body: JSON.stringify({ 
-          email, 
+        body: JSON.stringify({
+          email,
           password,
           username,  // Will be stored in user metadata
           full_name: username  // Optional: can be different from username
@@ -153,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Check if email verification is required
       if (data.requires_email_verification) {
         // Don't auto-login, user needs to verify email first
@@ -163,7 +164,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           message: data.message || 'Please check your email to verify your account'
         };
       }
-      
+
       // If email verification is not required (unlikely with Supabase)
       if (data.success && data.access_token) {
         setTokens({
@@ -176,7 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
         }
       }
-      
+
       return data;
     } catch (error) {
       logger.error('Signup error:', error);
@@ -204,6 +205,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Cookies.remove('access_token');
     Cookies.remove('refresh_token');
 
+    // Notifications are addressed to an identity, so they must not survive a user switch in the
+    // same tab (the query cache is not cleared, but it holds no other identity's message text).
+    useNotificationStore.getState().reset();
+
     logger.info('Logout complete - user session cleared');
   }, [disconnectWebSocket, isWebSocketConnected]);
 
@@ -211,7 +216,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const refreshToken = useCallback(async () => {
     try {
       const refresh_token = Cookies.get('refresh_token');
-      
+
       if (!refresh_token) {
         throw new Error('No refresh token available');
       }
@@ -250,15 +255,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      
+
       // Update tokens - refresh_token might not always be returned
       const newTokens = {
         access_token: data.access_token,
         refresh_token: data.refresh_token || refresh_token  // Use existing if not provided
       };
-      
+
       setTokens(newTokens);
-      
+
       // Update user info from new access token
       const userData = decodeToken(data.access_token);
       if (userData) {
