@@ -2,6 +2,129 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — publish-skills + skill blocks (scripts + Go seeds/renderer)
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains six cases for `publish-skills` over a fixture library (a canonical-only skill, a plugin-only skill, and a canonical/plugin overlap), reusing the file's recording HTTP server: one block per skill with the exact provenance dict; the plugin-only skill sources from the plugin path with no mirror; the overlap is ONE module carrying canonical `source_path`/`sha256` plus `mirror_path`/`mirror_sha256` (three PUTs, not four); a re-run skips all three with no request; changed content lands at the next patch; a credential-shaped literal is refused with exit 2 and zero requests; a source file that no longer matches the inventory digest is refused as stale; a missing `--source-root`/`OPENRIG_SKILLS_ROOT` is a usage error. The two `import-project` skill assertions now check the block shape and its computed digest.
+- Go: `domain/skillblock/skillblock_test.go` (valid block, mirror block, nine refusal cases, credential refusal, `Marshal` keeps the text readable and round-trips); `seatrenderer` gains `TestRenderSeatSkillBlockInvalidError` (plain text, bad digest, missing content, unknown field each name the module) and asserts the block's text is what lands in `skills/skill.alpha/SKILL.md`; `seedlibrary` asserts every type's `comm-guard-skill` is a block whose digest matches its committed source and `TestLoadEmbeddedSeedsCarryCuratedSkillRefs` checks the SHIPPED seeds against `ai_docs/agent-system/skill-library.json` (each seat carries exactly its curation, every ref is in the inventory, `unused_by_default` is wired nowhere); `seedmap` asserts extra refs append after the authored module refs.
+- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 200 passed / 0 failed; `gofmt -l fastmcp/seat_management/` -> empty; `go vet ./fastmcp/seat_management/...`, `go build ./...`, `go test -count=1 ./fastmcp/seat_management/...` -> green (15 packages).
+
+## 2026-10-05 — drift-check (scripts, stored skill provenance vs disk)
+
+- Home, and why it is `openrig_team_setup.py`: a check belongs with the contract it checks. That script already holds BOTH halves of this one - the module-version PUT that creates the blocks and the path-plus-sha data that describes them - so the check and the publisher share the provenance key names as constants instead of as a convention between two files. `openrig_seat_sync.py` has the checking habit but not the subject; the reviewer ruled the same way (ownership over habit) after weighing the alternative.
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains eight cases for the new `drift-check` subcommand, reusing the file's recording HTTP server and its `project_root` fixture: a clean tree (both digest pairs of a canonical/plugin overlap match, an `mcp` block is not a skill block, exit 0, no output, only GETs recorded); a MISMATCH whose only finding line names the skill, the path, the resolving root and both hashes, asserted exactly; a `missing-source` path naming every root tried; a `no-provenance` block (raw `SKILL.md` text, the pre-provenance shape); a divergent `mirror_path`/`mirror_sha256` reported as its own `mirror` line with the primary pair clean; mismatch + no-provenance together proving the categories stay separate; a library path (`skills/_canonical/...`) resolved under `--library-root` and named in the line; and the env default `$OPENRIG_SKILLS_ROOT` resolving a library path cleanly with no flag. The helper passes an empty `--library-root` by default so the cases stay hermetic.
+- Real-data check (read-only) against `ai_docs/agent-system/skill-library.json` and the OpenRig checkout: 52 blocks (2 mirror pairs, 54 paths) -> 0 findings with both roots, 54 `missing-source` with only `--root`.
+- Mutation proof (one byte, `body` -> `BODY` in the fixture skill file): clean -> exit 0, no output; flipped -> exit 1 with `  alpha-skill: .claude/skills/alpha-skill/SKILL.md (digest @ /tmp/drift-proof) stored 803fdad58b5902a8d1976652f0e07d6199519452c9ca03eb98d0ede4fd15481f computed 89ddc1b8940d74024887ef4f426b60bf62ba7c64fb719520b8c4d381b453cff5`; restored -> exit 0, no output.
+- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_team_setup.py -q -k drift_check` -> 8 passed; the full `src/tests/scripts` suite -> 202 passed, 0 failed.
+
+## 2026-10-05 — mcp block kind in the palette (frontend, D1/D2/D4)
+
+- `src/tests/utils/mcpBlock.test.ts` (25 tests): mirrors the Go contract - both seed blocks parse (http with a `${AGENTHUB_MCP_URL}` url
+  and a `${VAR}` header; stdio with command+args); ten refusal cases (not JSON, an array, an unknown field, a missing name, a bad type,
+  http without a url, http with a command, stdio without a command, stdio with a url, a non-http(s) url) each assert the reason; the eight
+  credential shapes are flagged and an environment reference is not; `serializeMcpBlock` writes the seed key order and round-trips;
+  `mcpServerLabel` names the server and its transport.
+- `src/tests/components/McpBlockForm.test.tsx` (5 tests): an http server publishes as kind mcp with the secret left as `${A_TOKEN}`; a
+  credential literal in a header keeps Publish off and names the reason; a pasted stdio block fills the fields and publishes; an invalid
+  paste is refused with the reason; a rejected publish surfaces the server error.
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains three mcp cases: the palette option is named by server and transport (the server name
+  differs from the slug, which proves the label comes from the content); two mcp blocks render two rows with their inheritance labels and a
+  removal writes one remove op; the module kind select offers mcp.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 99 files / 1722 tests passed; `npx vite build` ok. Browser drive of
+  the production bundle (one local Bun stub, stateful) over `/seats/authoring`: the palette listed `agenthub-http — agenthub_http · http`
+  and `sequential-thinking — sequential-thinking · stdio`; two mcp blocks inherited from company and room rendered two rows with their
+  labels; removing the company-inherited one wrote `seat ops [{kind:remove,slug:agenthub-http}]` and the row then showed the refusal with
+  a Restore; a literal bearer kept Publish off, `${PROBE_TOKEN}` published `kind: mcp` through PUT /modules/{slug}/versions/{version}, and
+  the palette then offered `my-probe-server — probe_server · http`.
+
+## 2026-10-05 — import-project (scripts, client-side module import)
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains four cases for the new `import-project` subcommand, reusing the file's recording HTTP server: a tmp project root with one http and one stdio `.mcp.json` server and two `.claude/skills/*` dirs, asserting the exact `mcp` block payloads (`name`/`type`/`url`/`command`/`args`; `headers`/`env` values kept verbatim as `${VAR}` references) and `skill` modules (`kind: skill`, content = `SKILL.md`); a credential-shaped literal (`Bearer sk-...`) refused with exit 2, a message naming the server and `${ENV_VAR}`, and zero requests; a dry run that sends nothing; and `test_import_project_uses_the_hooks_project_root_derivation` asserting `team_setup.get_project_root is utils.env_loader.get_project_root` — one derivation, not a copy.
+- Commands: `python3 -m py_compile scripts/openrig_team_setup.py` -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 184 passed, 1 pre-existing failure (`mission-4genthub: 522 words, expected 350-520`; committed content, not touched by this change).
+
+## 2026-10-05 — overlay PUT fold guard (Go, seat management)
+
+- New `TestSeatAdminOverlayPutRefusesUnresolvableStack` (`fastmcp/server/httpapp/seat_admin_mount_test.go`): a room overlay `add m@1` where that room's seat type already carries `m@1` is rejected with `400`, the detail names the scope and the op (`overlay room: add "m": module already present`), and the store stays empty — the reachable sequence, exercised through the real HTTP handler and the production fold logic rather than a reimplementation.
+- New `TestSeatAdminOverlayPutStoresResolvingStack`: a company overlay `add n@1` (`n@1` in the catalog, absent from the seat type) is accepted with `200` and stored — the legal write still succeeds.
+- New `TestValidateOverlayResolution` (`fastmcp/seat_management/application/services/seat_resolution_service_test.go`): the service entry point refuses the breaking candidate and accepts the resolving one.
+- Existing fixture tests updated, none deleted: the overlay fixtures in `seat_admin_mount_test.go` stored stacks the resolver cannot resolve (they only required the module version to exist), so they now use legal stacks (`add n@1` room, `pin m@2` company, `override m` seat; distinct slugs per scope where one slug was added twice); no assertion was weakened.
+- Mutation proof, and the rule it produced (proposed by the reviewer, kept here beside the proofs so the next mutation is written the same way): **a mutant must compile, must fail the TEST rather than the BUILD, and should fail the smallest set of tests that identifies the site under review.** Removing the validator call from `handleRoomOverlay` failed exactly one test — `TestSeatAdminOverlayPutRefusesUnresolvableStack`, `status = 200, want 400`, the accepted room overlay printed — reproduced byte-for-byte by the review seat, `4genthub-min-reviewer`, running the same mutation in its own variant (making the room-site guard unreachable) rather than my call-site removal; restored -> PASS. **Fourth requirement, from the same loop: a claim of independent reproduction names the independent party AND the run it performed** — an unnamed runner is a citation nobody can ask, and an unnamed run is still unstated ("the review seat reproduced it" leaves the command to guess), which is why the clause above names both. Two traps, both hit: (a) a call-site removal leaves the receiver declared-and-unused, so the mutant must be written to build (make the guard unreachable, or keep the value used) or the red result proves nothing — a build failure looks like a red log line and establishes nothing; (b) disabling the validator itself fails three refusal tests at once, red but uncountable, so mutate ONE SITE and let the failure identify it.
+- Commands: `gofmt -l` empty on the four touched files; `go vet ./fastmcp/server/httpapp/... ./fastmcp/seat_management/...` clean; `go build ./...` ok; `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/seat_management/application/services/` -> both ok.
+
+## 2026-10-05 — seat block composition (frontend, owner directive 2)
+
+- `src/tests/utils/blockComposition.test.ts` (18 tests): the fold matches the Go resolver - a block added at a scope is
+  inherited by the more specific scopes; a remove at a scope is recorded there and drops the block from the final set;
+  a re-add after a remove is owned by the scope that re-added it; `pin` records the version and the pinning scope;
+  `override` marks the block without changing presence or version; a slug only an op names is still known, so an
+  impossible removal stays visible. Outcomes: an inherited removal says `removed at seat · still defined at company`;
+  a removal of a block this level added says it is the only definition; a removal that cannot apply is refused with the
+  resolver's reason; and a PINNED block is still removable (the resolver has no pin lock - `resolver.go:191-199`),
+  pinned by a test so a future client-side lock cannot appear silently. `additionOutcome` refuses a block already in
+  effect. The op helpers: add appends; removing an add undoes it rather than writing a second op; removing an inherited
+  block appends a `remove`; restore drops the `remove`.
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains six composer cases: origin labels for the seat type, company and
+  room with the per-level removal text; a removal writes exactly one `remove` op via `putOverlay`; an add writes
+  exactly one `add` op; an already-in-effect block cannot be added (disabled option, Add off); a block removed at this
+  level shows the resolver's refusal and offers Restore; a pinned block is labelled and still removable. The composer
+  list carries `aria-label="Composed blocks"` so the assertions scope to it (the seat-type section also renders the
+  same `slug@version` badge).
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 97 files / 1689 tests passed; `npx vite build` ok.
+  Browser drive of the production bundle served by one local Bun stub (stateful: PUT replaces the scope's ops) over
+  `/seats/authoring`: the page rendered all three origins - `rules@1.0.0 inherited from the seat type`,
+  `style@2.0.0 inherited from company`, `policy@1.0.0 inherited from room` - each with its own "Removing here" text;
+  clicking Remove wrote `seat ops [{kind:remove,slug:style}]`, after which the block showed the refusal reason and a
+  Restore control; adding `tool.new@1.0.0` wrote `seat ops [remove style, add tool.new]` and the block showed
+  `added at seat`.
+
+## 2026-10-05 — /health live-registry test (Go, health seam fix)
+
+- `fastmcp/server/httpapp/http_health_test.go` rewritten: the old `fakeHealthStatusProvider`/`swapHealthStatusProvider` cases injected the deleted seam and asserted the nil-provider error path — they passed while production's reading stayed permanently wrong. The new `TestHealthReportsTheLiveRegistry` registers real sockets through `routes.RegisterConnection` (the same entry point `ws_mount.go` uses) and asserts `connections.active_connections` and `status_broadcasting.registered_clients` equal the live registry count (baseline, baseline+1, baseline+2, then back to baseline after unregister), `uptime_seconds` is a non-negative number, and the dropped keys (`server_restart_count`, `recommended_action`, `last_broadcast`, `last_broadcast_time`) are absent. The fake socket carries an `id` field so two instances are distinct map keys (zero-size struct pointers alias to `runtime.zerobase`).
+- Mutation proof: `routes.ConnectionCount` changed to `return 0` -> `TestHealthReportsTheLiveRegistry` FAILS (`connections.active_connections = 0, want 1 (registry count after one registration)`); restored -> PASS.
+- Commands: `gofmt -l` empty on the three touched files; `go vet ./fastmcp/server/httpapp/... ./fastmcp/server/routes/...` clean; `go build ./...` ok; `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/server/routes/` -> both ok.
+
+## 2026-10-05 — topology graph (frontend, F6)
+
+- `src/tests/hooks/useTopology.test.tsx`: the composite query issues exactly one links call per seat (`dev/alice`,
+  `dev/bob`, `ops/carol`), each room entry carries its own seats and links, and `topologyKeys.all` is `['seatTopology']`
+  - the key identity the realtime handler matches by reference, so the test pins the contract fe-dev's invalidation
+  depends on. Mocks `seatApi` and uses a real `QueryClient`.
+- `src/tests/pages/TopologyPage.test.tsx`: a room renders as a group with its seats and one `line[data-link-kind]` per
+  link (kind and `allow` read off the SVG attributes), the legend names every kind, the Seats tab shows one row per seat
+  with room/type/runtime/model/version/policy, and zero rooms shows the empty state. The Seats tab is activated with
+  `user-event`, not `fireEvent.click`, because Radix Tabs activates on a real pointer event.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 96 files / 1663 tests passed; `npx vite build` ok.
+  Browser smoke of the production bundle served by one local Bun stub (the three openrig seat routes): `/topology`
+  rendered the summary `2 rooms · 3 seats · 2 links`, both room groups with their nodes, two edges by kind
+  (`delegates_to`, `escalates_to`) and the legend; the Seats tab rendered the three-row table with `follows latest` and
+  `locked` intact.
+
+## 2026-10-05 — teams/sharing domain (Go, NEXT_GEN D5 slice 1)
+
+- `fastmcp/team_management/application/services/team_service_test.go`: `fakeTeamRepo` (in-memory `TeamRepository`) plus four cases over the membership rules: validation and creator-is-owner; a viewer is refused for every mutation (`ErrNotTeamOwner`) but can list members; a non-member sees no team (404) for both a real team and a missing slug; the single-owner rules (`ErrSecondOwner` for a second owner or a promotion, `ErrLastOwner` for demoting or removing the owner, an invalid role rejected); and the owner can add a viewer, hit `ErrMemberExists` on a duplicate, remove the viewer and delete the team.
+- `fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go`: `TestTeamRepositoryIntegration` against a throwaway PostgreSQL (`AGENTHUB_TEST_PG_URL`) with the schema created through the runtime path (`cfg.CreateTables`, i.e. the TableDef DDL production runs, not the `.sql` mirror). Proves: `Create` writes the team and its owner membership in one transaction; a duplicate `(user_id, slug)` is `ErrTeamExists`; `FindForMember` returns the team for a member and nil for a non-member; `ListForMember` is empty for a non-member; two owners may hold the same slug and each `FindForMember` returns their own team; `AddMember`/`ErrMemberExists`; `ListMembers` keeps the owner first; `UpdateRole`, and `ErrTeamNotFound` for an unknown member; `RemoveMember` reports whether it removed anything; and `Delete` leaves neither the team (`FindForMember` nil) nor its member rows (`Membership` nil) — the application-layer cascade.
+- `fastmcp/server/httpapp/team_mount_test.go`: the HTTP surface over a `teamSource` fake — every route requires auth (403 without a bearer); create returns the team and `role: owner`; list returns the memberships; every service and repository error maps to its status (404 `ErrTeamNotFound`, 409 `ErrTeamExists`/`ErrMemberExists`/`ErrSecondOwner`/`ErrLastOwner`, 403 `ErrNotTeamOwner`, 400 `ValidationError`, 500 otherwise); PATCH/DELETE pass the acting user id and the `{team}`/`{user}` path values through; an unknown body field is 400.
+- `fastmcp/seat_management/infrastructure/database/seat_orm_test.go`: `seatTableTypes` gains `teams` -> `TeamORM` and `team_members` -> `TeamMemberORM`, which the guard requires (`TestSeatORMMatchesDDL` asserts the DDL table count equals the registered struct count), so the new SQL section and the `db` tags are checked against each other.
+- Commands: `gofmt -l` empty on the touched packages; `go vet ./fastmcp/team_management/...` clean; `go build ./...` ok; `AGENTHUB_TEST_PG_URL=… go test -count=1 ./fastmcp/team_management/... ./fastmcp/seat_management/... ./fastmcp/server/httpapp/... ./fastmcp/` all ok.
+- Live smoke (real `cmd/agenthub` on :8098 against the throwaway PostgreSQL, `AUTO_MIGRATE=true`, `AUTH_ENABLED=false`): create 200, duplicate 409, bad slug 400, list 200, get 200, unknown 404, add viewer 200, duplicate member 409, second owner 409, members 200 (owner first), patch viewer 200, demote owner 409, remove viewer 200, remove owner 409, unknown field 400, delete 200, get-after-delete 404, no bearer 403. The smoke caught the first design defect: paths used the slug while the service looked the team up by id, so every `{team}` route 404'd — fixed by the membership-scoped `FindForMember` slug lookup.
+- `fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go` (D5 follow-up, gate MAJOR): `TestTeamRepositoryIntegration` gains the second-owner refusal. `AddMember(team, <fresh user>, owner)` must fail with `ErrTeamHasOwner`, an error only the partial unique index `uq_team_members_one_owner` can produce (a fresh user rules out the `(team_id, user_id)` key, so the assertion cannot pass for the wrong reason), and the following `ListMembers` length-2 assertion proves the refused row left nothing behind. This closes the `ErrLastOwner` trap: with exactly one owner row, refusing to demote "the" owner is sufficient. Commands: `AGENTHUB_TEST_PG_URL=… go test -count=1 ./fastmcp/team_management/...` -> ok (ORM integration 0.536s); `-run TestTeamRepositoryIntegration -v` -> PASS (1.27s, not skipped).
+
+## 2026-10-05 — sessions dashboard (frontend, C3)
+
+- `src/tests/services/sessionApi.test.ts`: `listSessions` issues `GET /api/v2/sessions` (no query string) and returns
+  the parsed body.
+- `src/tests/hooks/useSessionStream.test.tsx`: opens `/ws/sessions/{id}` with the URL-encoded id and token and the
+  `after_seq` cursor; marks live on open and appends replayed frames once (a repeated `seq` from a reconnect is
+  dropped); treats close 4004 as terminal (not-found, no reconnect); reconnects from the last `seq` after an abnormal
+  close; resets to idle when the session id clears. Stubs `WebSocket` and `config/environment`, so the reconnect delay
+  and the socket are deterministic rather than real.
+- `src/tests/pages/SessionsPage.test.tsx`: renders the session list and follows the route's session id; clicking a row
+  navigates and renders that session's streamed events; a terminal not-found stream shows its error. Mocks
+  `useSessions`/`useSessionStream` and `AuthContext`, real router.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 94 files / 1658 tests passed; `npx vite build` ok.
+  Browser smoke of the production bundle served by one local Bun stub (list JSON + `/ws/sessions/{id}`): `/sessions/s1`
+  rendered the list (alpha active, beta offline), the live badge and frames `#1` message and `#2` command.
+
 ## 2026-10-05 — frontend test runs bounded (worker + heap caps)
 
 - `agenthub-frontend/vite.config.ts`: the `test` block now caps the pool (`maxWorkers: 2`, `minWorkers: 1`) and each

@@ -1,6 +1,8 @@
 package seatrenderer
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -17,6 +19,21 @@ import (
 
 const testMCPURL = "https://mcp.4genthub.test/mcp"
 
+// skillBlock builds the content of one skill module: the SKILL.md text plus its source
+// provenance, the block shape the renderer unwraps.
+func skillBlock(text, sourcePath string) string {
+	sum := sha256.Sum256([]byte(text))
+	encoded, err := json.Marshal(map[string]string{
+		"content":     text,
+		"source_path": sourcePath,
+		"sha256":      hex.EncodeToString(sum[:]),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(encoded)
+}
+
 func seatFixture(runtime string) resolver.ResolvedSeat {
 	return resolver.ResolvedSeat{
 		SeatType:        "seat.standard",
@@ -25,7 +42,7 @@ func seatFixture(runtime string) resolver.ResolvedSeat {
 		Modules: []resolver.ResolvedModule{
 			{Slug: "instr.base", Version: "1.0.0", Kind: resolver.KindInstruction, Content: "Base instruction."},
 			{Slug: "doc.guide", Version: "2.0.0", Kind: resolver.KindDocument, Content: "Guide document."},
-			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: "# Alpha skill\n"},
+			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: skillBlock("# Alpha skill\n", "skills/_canonical/process/alpha-skill/SKILL.md")},
 			{Slug: "mem.gamma", Version: "1.0.0", Kind: resolver.KindMemory, Content: "Gamma memory."},
 		},
 		Hash: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
@@ -35,6 +52,69 @@ func seatFixture(runtime string) resolver.ResolvedSeat {
 func withModules(seat resolver.ResolvedSeat, modules []resolver.ResolvedModule) resolver.ResolvedSeat {
 	seat.Modules = modules
 	return seat
+}
+
+// mcpPlatformModule is the platform's own server block: the same payload the seed library
+// publishes as `agenthub-http`, with its url resolved by the renderer from the seat's mcp url.
+func mcpPlatformModule() resolver.ResolvedModule {
+	return resolver.ResolvedModule{
+		Slug: "agenthub-http", Version: "1.2.0", Kind: resolver.KindMCP,
+		Content: `{"name":"agenthub_http","type":"http","url":"${AGENTHUB_MCP_URL}","headers":{"Accept":"application/json, text/event-stream","Authorization":"Bearer ${AGENTHUB_TOKEN}"}}`,
+	}
+}
+
+func sequentialThinkingModule() resolver.ResolvedModule {
+	return resolver.ResolvedModule{
+		Slug: "sequential-thinking", Version: "1.2.0", Kind: resolver.KindMCP,
+		Content: `{"name":"sequential-thinking","type":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-sequential-thinking"]}`,
+	}
+}
+
+// withMCP appends mounted mcp blocks to a seat copy.
+func withMCP(seat resolver.ResolvedSeat, blocks ...resolver.ResolvedModule) resolver.ResolvedSeat {
+	modules := append([]resolver.ResolvedModule{}, seat.Modules...)
+	seat.Modules = append(modules, blocks...)
+	return seat
+}
+
+// seedModules renders a seeded seat type's modules as if the resolver had produced them.
+func seedModules(t *testing.T, slug string) []resolver.ResolvedModule {
+	t.Helper()
+	seeds, err := seedlibrary.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, seed := range seeds {
+		if seed.SeatTypeSlug != slug {
+			continue
+		}
+		modules := make([]resolver.ResolvedModule, len(seed.Modules))
+		for i, m := range seed.Modules {
+			modules[i] = resolver.ResolvedModule{Slug: m.Slug, Version: m.Version, Kind: m.Kind, Content: m.Content}
+		}
+		return modules
+	}
+	t.Fatalf("seed %q not found", slug)
+	return nil
+}
+
+type mcpServerJSON struct {
+	Type    string            `json:"type"`
+	URL     string            `json:"url"`
+	Command string            `json:"command"`
+	Args    []string          `json:"args"`
+	Headers map[string]string `json:"headers"`
+}
+
+func mcpServers(t *testing.T, spec *OpenRigSpec) map[string]mcpServerJSON {
+	t.Helper()
+	var doc struct {
+		MCPServers map[string]mcpServerJSON `json:"mcpServers"`
+	}
+	if err := json.Unmarshal([]byte(fileContent(t, spec, mcpFragmentPath)), &doc); err != nil {
+		t.Fatalf("parse mcp fragment: %v", err)
+	}
+	return doc.MCPServers
 }
 
 func filePaths(spec *OpenRigSpec) []string {
@@ -114,7 +194,7 @@ func assertNoSecret(t *testing.T, spec *OpenRigSpec) {
 }
 
 func TestRenderSeatClaudeCode(t *testing.T) {
-	seat := seatFixture("claude-code")
+	seat := withMCP(seatFixture("claude-code"), mcpPlatformModule())
 	spec, err := RenderSeat(seat, testMCPURL)
 	if err != nil {
 		t.Fatalf("RenderSeat: %v", err)
@@ -130,6 +210,10 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 	}
 	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
 		t.Fatalf("file paths = %v, want %v", got, wantPaths)
+	}
+	// A skill module's content is a block; the renderer writes only its text to SKILL.md.
+	if got := fileContent(t, spec, "skills/skill.alpha/SKILL.md"); got != "# Alpha skill\n" {
+		t.Fatalf("skill file = %q, want the block's content", got)
 	}
 
 	guidance := fileContent(t, spec, guidancePath)
@@ -152,6 +236,9 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 	mcp := fileContent(t, spec, mcpFragmentPath)
 	if !strings.Contains(mcp, "Bearer ${"+OpenRigTokenEnvVar+"}") {
 		t.Fatalf("mcp fragment missing token indirection:\n%s", mcp)
+	}
+	if !strings.Contains(mcp, `"url": "`+testMCPURL+`"`) {
+		t.Fatalf("mcp fragment missing the resolved platform url:\n%s", mcp)
 	}
 	var mcpDoc map[string]any
 	if err := json.Unmarshal([]byte(mcp), &mcpDoc); err != nil {
@@ -243,6 +330,7 @@ func TestRenderSeatDeterministic(t *testing.T) {
 func TestRenderSeatToolModulesMerge(t *testing.T) {
 	seat := withModules(seatFixture("claude-code"), []resolver.ResolvedModule{
 		{Slug: "instr.base", Version: "1.0.0", Kind: resolver.KindInstruction, Content: "Base instruction."},
+		mcpPlatformModule(),
 		{Slug: "tool.alpha", Version: "1.0.0", Kind: resolver.KindTool, Content: `{"b":1,"a":2}`},
 		{Slug: "tool.zeta", Version: "1.0.0", Kind: resolver.KindTool, Content: `{"a":3}`},
 	})
@@ -501,8 +589,172 @@ func TestRenderSeatCodexRulesDenyTheDirectSendSurface(t *testing.T) {
 }
 
 func TestRenderSeatUnsupportedMCPURL(t *testing.T) {
-	if _, err := RenderSeat(seatFixture("claude-code"), "ftp://mcp.example"); err == nil || !strings.Contains(err.Error(), "http") {
+	seat := withMCP(seatFixture("claude-code"), mcpPlatformModule())
+	if _, err := RenderSeat(seat, "ftp://mcp.example"); err == nil || !strings.Contains(err.Error(), "http") {
 		t.Fatalf("error = %v, want mcp url error", err)
+	}
+}
+
+// One mcp block is one whole server: the seat's blocks decide which servers mount, and the
+// built-in server travels through the same merge rather than around it.
+func TestRenderSeatMCPBlocksMountEveryServer(t *testing.T) {
+	spec, err := RenderSeat(withMCP(seatFixture("claude-code"), mcpPlatformModule(), sequentialThinkingModule()), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat([A,B]): %v", err)
+	}
+	servers := mcpServers(t, spec)
+	if len(servers) != 2 || servers["agenthub_http"].URL != testMCPURL || servers["sequential-thinking"].Command != "npx" {
+		t.Fatalf("servers from [A,B] = %+v", servers)
+	}
+	if servers["agenthub_http"].Headers["Authorization"] != "Bearer ${"+OpenRigTokenEnvVar+"}" {
+		t.Fatalf("platform headers = %v", servers["agenthub_http"].Headers)
+	}
+	assertNoSecret(t, spec)
+
+	single, err := RenderSeat(withMCP(seatFixture("claude-code"), mcpPlatformModule()), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat([A]): %v", err)
+	}
+	if got := mcpServers(t, single); len(got) != 1 {
+		t.Fatalf("servers from [A] = %+v, want only agenthub_http", got)
+	}
+}
+
+// No mcp block mounts NO server: no fragment file, no claude_mcp runtime resource, and no
+// dependency on the mcp url at all. A hidden default is exactly what this pins against.
+func TestRenderSeatWithoutMCPBlocksMountsNoServer(t *testing.T) {
+	spec, err := RenderSeat(seatFixture("claude-code"), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(no mcp blocks): %v", err)
+	}
+	for _, path := range filePaths(spec) {
+		if path == mcpFragmentPath {
+			t.Fatalf("a seat with no mcp block rendered %q", path)
+		}
+	}
+	parsed := parseAgentYAML(t, spec)
+	if len(parsed.Resources.RuntimeResources) != 0 || len(parsed.Profiles["default"].Uses.RuntimeResources) != 0 {
+		t.Fatalf("a seat with no mcp block declared runtime resources: %+v", parsed.Resources.RuntimeResources)
+	}
+	if _, err := RenderSeat(seatFixture("claude-code"), ""); err != nil {
+		t.Fatalf("no mcp block must not need an mcp url: %v", err)
+	}
+}
+
+// One server mounted twice would be a block that silently does nothing, so it is an error.
+func TestRenderSeatMCPDuplicateServerError(t *testing.T) {
+	duplicate := resolver.ResolvedModule{
+		Slug: "mcp.other", Version: "1.0.0", Kind: resolver.KindMCP,
+		Content: `{"name":"agenthub_http","type":"http","url":"https://other.example.test/mcp"}`,
+	}
+	seat := withMCP(seatFixture("claude-code"), mcpPlatformModule(), duplicate)
+	if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "already mounted") {
+		t.Fatalf("error = %v, want a duplicate server error naming the block", err)
+	}
+}
+
+// An mcp block's content is validated at render time, which also covers an overlay override:
+// override content never passes the module publish path's secret scan.
+func TestRenderSeatMCPBlockInvalidError(t *testing.T) {
+	cases := map[string]struct{ content, want string }{
+		"secret": {`{"name":"leaky","type":"http","url":"http://x","headers":{"Authorization":"Bearer tok_0123456789abcdefghij"}}`, "credential-shaped"},
+		"shape":  {`{"name":"broken","type":"http","command":"npx"}`, "field url is required"},
+		"json":   {`[1,2,3]`, "not a server object"},
+	}
+	for name, c := range cases {
+		seat := withMCP(seatFixture("claude-code"), resolver.ResolvedModule{
+			Slug: "mcp.bad", Version: "1.0.0", Kind: resolver.KindMCP, Content: c.content,
+		})
+		if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "mcp.bad") || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want mcp.bad and %q", name, err, c.want)
+		}
+	}
+}
+
+// A skill module's content is validated at render time, which also covers an overlay override:
+// a plain-text or malformed block fails naming the module rather than writing it into SKILL.md.
+func TestRenderSeatSkillBlockInvalidError(t *testing.T) {
+	cases := map[string]struct{ content, want string }{
+		"plain text":         {`# Alpha skill` + "\n", "not one JSON value"},
+		"missing provenance": {`{"content":"# Alpha skill\n","source_path":"skills/x","sha256":"not-a-digest"}`, "sha256"},
+		"no content":         {`{"source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `"}`, "field content is required"},
+		"unknown field":      {`{"content":"x","source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `","extra":1}`, "unknown field"},
+	}
+	for name, c := range cases {
+		seat := withMCP(seatFixture("claude-code"), resolver.ResolvedModule{
+			Slug: "skill.bad", Version: "1.0.0", Kind: resolver.KindSkill, Content: c.content,
+		})
+		if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "skill.bad") || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want skill.bad and %q", name, err, c.want)
+		}
+	}
+}
+
+// A tool module narrows permissions inside a mounted server and never mounts one: its JSON
+// goes only into the settings fragment, so a server it names cannot reappear through it.
+func TestRenderSeatPermissionNarrowsWithinMountedServerOnly(t *testing.T) {
+	guard := resolver.ResolvedModule{
+		Slug: "comm-guard", Version: "1.1.1", Kind: resolver.KindTool,
+		Content: `{"permissions":{"deny":["Bash(rig send:*)"],"allow":["Bash(seatcheck send:*)"]},"mcpServers":{"filesystem":{"type":"stdio","command":"npx"}}}`,
+	}
+
+	mounted := withMCP(seatFixture("claude-code"), mcpPlatformModule(), guard)
+	spec, err := RenderSeat(mounted, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(mounted): %v", err)
+	}
+	servers := mcpServers(t, spec)
+	if len(servers) != 1 || servers["agenthub_http"].URL != testMCPURL {
+		t.Fatalf("a tool module changed the mounted server set: %+v", servers)
+	}
+	if _, resurrected := servers["filesystem"]; resurrected {
+		t.Fatalf("a tool module mounted a server: %+v", servers)
+	}
+	settings := fileContent(t, spec, settingsFragmentPath)
+	if !strings.Contains(settings, "Bash(rig send:*)") || !strings.Contains(settings, "Bash(seatcheck send:*)") {
+		t.Fatalf("permission narrowing missing from the settings fragment:\n%s", settings)
+	}
+
+	unmounted := withModules(seatFixture("claude-code"), []resolver.ResolvedModule{guard})
+	plain, err := RenderSeat(unmounted, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(unmounted): %v", err)
+	}
+	for _, path := range filePaths(plain) {
+		if path == mcpFragmentPath {
+			t.Fatalf("a permission fragment resurrected an unmounted server (rendered %q)", path)
+		}
+	}
+}
+
+// The nine seeded seat types ship real server sets: a preconfigured seat for default team
+// creation mounts its servers, and role-appropriate types mount more than one. This asserts
+// the shipped seeds, not a fixture copy.
+func TestRenderSeatSeededTypesMountDifferentServerSets(t *testing.T) {
+	lead := withModules(seatFixture("claude-code"), seedModules(t, "lead"))
+	developer := withModules(seatFixture("claude-code"), seedModules(t, "developer"))
+
+	leadSpec, err := RenderSeat(lead, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(lead): %v", err)
+	}
+	developerSpec, err := RenderSeat(developer, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(developer): %v", err)
+	}
+	t.Logf("lead (mcp_blocks: agenthub-http, sequential-thinking) renders:\n%s", fileContent(t, leadSpec, mcpFragmentPath))
+	t.Logf("developer (mcp_blocks: agenthub-http) renders:\n%s", fileContent(t, developerSpec, mcpFragmentPath))
+
+	leadServers := mcpServers(t, leadSpec)
+	if len(leadServers) != 2 || leadServers["agenthub_http"].URL != testMCPURL || leadServers["sequential-thinking"].Type != "stdio" {
+		t.Fatalf("lead servers = %+v", leadServers)
+	}
+	developerServers := mcpServers(t, developerSpec)
+	if len(developerServers) != 1 {
+		t.Fatalf("developer servers = %+v, want only agenthub_http", developerServers)
+	}
+	if _, ok := developerServers["sequential-thinking"]; ok {
+		t.Fatalf("developer mounted a block it does not declare: %+v", developerServers)
 	}
 }
 

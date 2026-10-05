@@ -378,4 +378,3 @@ User → Keycloak SSO → JWT Token → API Gateway → Validation → MCP Serve
 - [Complete Setup Guide](../setup-guides/complete-setup-guide.md)
 - [Complete Authentication Guide](../authentication/complete-authentication-guide.md)
 - [Development Infrastructure Complete](../development-guides/development-infrastructure-complete.md)
-- [Primary System Architecture](../core-architecture/agenthub-system-architecture.md)

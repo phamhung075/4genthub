@@ -11,6 +11,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { seatApi } from '../services/seatApi';
 import { useSuccessToast } from '../components/ui/toast';
+import { parseMcpBlock, type McpBlockParse } from '../lib/mcpBlock';
 import type {
   CreateSeatTypeVersionRequest,
   ModuleSummary,
@@ -140,6 +141,39 @@ export function useModules() {
     },
   });
   return { modules: query.data ?? [], isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+}
+
+export interface McpServerEntry {
+  slug: string;
+  version: string;
+  parse: McpBlockParse;
+}
+
+/**
+ * One entry per mcp module, parsed from its content so the palette can name the
+ * server and its transport. The module list carries no content, so this reads
+ * the version route for mcp modules only; the query key holds every slug@version,
+ * so publishing a block refetches.
+ */
+export function useMcpServers(modules: ModuleSummary[]) {
+  const mcpModules = modules.filter((module) => module.kind === 'mcp');
+  const query = useQuery({
+    queryKey: ['seatMcpServers', mcpModules.map((module) => `${module.slug}@${module.version}`).join(',')],
+    enabled: mcpModules.length > 0,
+    queryFn: async (): Promise<Record<string, McpServerEntry>> => {
+      const entries = await Promise.all(
+        mcpModules.map(async (module): Promise<[string, McpServerEntry]> => {
+          const response = await seatApi.getModuleVersion(module.slug, module.version);
+          return [
+            module.slug,
+            { slug: module.slug, version: module.version, parse: parseMcpBlock(response.module?.content ?? '') },
+          ];
+        })
+      );
+      return Object.fromEntries(entries);
+    },
+  });
+  return query.data ?? {};
 }
 
 export function usePublishModuleVersion() {

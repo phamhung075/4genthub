@@ -55,6 +55,13 @@ func (f *fakeStore) ListSeats(context.Context, string, string) ([]repositories.S
 	return out, nil
 }
 
+func (f *fakeStore) SaveSeatType(_ context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error) {
+	saved := seatType
+	saved.ID = "st-" + seatType.Slug
+	saved.UserID = userID
+	return &saved, nil
+}
+
 func (f *fakeStore) GetModuleVersion(context.Context, string, string, string) (*repositories.ModuleVersion, error) {
 	return nil, nil
 }

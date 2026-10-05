@@ -18,13 +18,16 @@ const (
 	KindDocument    ModuleKind = "document"
 	KindSkill       ModuleKind = "skill"
 	KindTool        ModuleKind = "tool"
-	KindMemory      ModuleKind = "memory"
+	// KindMCP is one whole MCP server to mount for the seat; KindTool only narrows
+	// permissions within a server that a KindMCP block mounted.
+	KindMCP    ModuleKind = "mcp"
+	KindMemory ModuleKind = "memory"
 )
 
 // ValidKind reports whether kind is one of the module kinds.
 func ValidKind(kind ModuleKind) bool {
 	switch kind {
-	case KindInstruction, KindDocument, KindSkill, KindTool, KindMemory:
+	case KindInstruction, KindDocument, KindSkill, KindTool, KindMCP, KindMemory:
 		return true
 	}
 	return false
@@ -246,10 +249,14 @@ func kindRank(kind ModuleKind) int {
 		return 2
 	case KindTool:
 		return 3
-	case KindMemory:
+	// mcp sits between tool and memory: both tool and mcp are runtime configuration, and
+	// memory stays the last guidance section.
+	case KindMCP:
 		return 4
-	default:
+	case KindMemory:
 		return 5
+	default:
+		return 6
 	}
 }
 

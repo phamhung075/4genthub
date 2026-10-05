@@ -1,13 +1,21 @@
 # https://www.robotstxt.org/robotstxt.html
-# 4genthub - AI Development Platform
+# 4genthub - AI development platform
 
 # Allow all search engines
 User-agent: *
 Allow: /
+
+# Signed-in pages stay out of the index.
 Disallow: /dashboard/
 Disallow: /profile
 Disallow: /tokens
-Disallow: /agents/my-agents
 
-# Sitemap
-Sitemap: https://www.4genthub.com/sitemap.xml
+# No Sitemap line on purpose. It must be an absolute URL per the sitemap protocol,
+# and this file ships to every deployment without knowing the host it will be
+# served from - a hardcoded one would point every self-hosted install's crawlers
+# at someone else's domain. A deployment that knows its own host should add:
+#   Sitemap: https://<your-host>/sitemap.xml
+#
+# Removed: 'Disallow: /agents/my-agents'. There is no /agents/* route left in
+# src/App.tsx (the agent pages went with T7), so it denied a page that cannot be
+# requested.

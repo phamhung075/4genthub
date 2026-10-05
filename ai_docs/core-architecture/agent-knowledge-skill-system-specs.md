@@ -5,7 +5,14 @@
 **Status**: Design Phase (not implemented)
 **Scope**: Full System (Phases 1-4)
 
-> **Status note (2026-10-05):** Design proposal only — none of the skill/knowledge tools or endpoints below is implemented or mounted in the live Go server; the authoritative surface is `ai_docs/api-integration/surface-inventory.md`. The proposal extends `call_agent()`, but the `call_agent` tool and `agenthub_main/agent-library` are retired, so that premise is moot.
+> **Status note (2026-10-05):** Design proposal only — **not implemented, not mounted.** Nothing in this
+> document is part of the live Go server. Specifically: `/mcp/manage_skill`, `/mcp/manage_knowledge`,
+> `/mcp/call_agent` and `/mcp/user/*` are **not routes** (the MCP surface is a single `POST /mcp` with a
+> `tools/call` JSON-RPC envelope); the `manage_skill`, `manage_knowledge` and `search_skills` tools are
+> **not published** in `tools/list`; the proposed tables (`agent_skills`, `agent_knowledge`,
+> `skill_assignments`, `knowledge_access_log`) are **not created** by the Go server; and the proposal
+> extends the retired `call_agent` tool and `agenthub_main/agent-library`, both removed. The authoritative
+> surface is `ai_docs/api-integration/surface-inventory.md`.
 
 ---
 

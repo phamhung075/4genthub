@@ -1,6 +1,7 @@
 package use_cases
 
 import (
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/connection_management/application/dtos"
 	"agenthub/fastmcp/connection_management/domain/repositories"
 	"agenthub/fastmcp/connection_management/domain/services"
@@ -52,7 +53,7 @@ func (u *GetServerStatusUseCase) Execute(request *dtos.ServerStatusRequest) (res
 		authentication := connOrderedFromMap(u.healthService.GetAuthenticationStatus(), connAuthKeys)
 		taskManagement := connOrderedFromMap(u.healthService.GetTaskManagementInfo(), connTaskManagementKeys)
 		server = u.serverRepository.CreateServer(
-			"agenthub - Task Management & Agent Orchestration", "2.1.0",
+			config.ServerName, "2.1.0",
 			environment, authentication, taskManagement,
 		)
 	}

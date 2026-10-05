@@ -33,8 +33,11 @@ type seatSource interface {
 	SeedSeatTypes(ctx context.Context, userID string) (int, error)
 }
 
-// newSeatSource is a package variable so tests can substitute a fake without a database.
-var newSeatSource = func(sessions *database.SessionManager, mcpURL string) (seatSource, error) {
+// newSeatResolution is a package variable so tests can substitute a fake without a database. It
+// is the single construction of the resolution service, shared by the seat routes (which
+// resolve seats through it) and the overlay PUT routes (which validate candidate overlays
+// through it).
+var newSeatResolution = func(sessions *database.SessionManager, mcpURL string) (*seatservices.SeatResolutionService, error) {
 	modules, err := seatorm.NewORMModuleRepository(sessions)
 	if err != nil {
 		return nil, err
@@ -63,14 +66,24 @@ var newSeatSource = func(sessions *database.SessionManager, mcpURL string) (seat
 	if err != nil {
 		return nil, err
 	}
-	return &seatUseCases{
-		modules: modules, seatTypes: seatTypes,
-		resolution: &seatservices.SeatResolutionService{
-			SeatTypes: seatTypes, Rooms: rooms, Seats: seats, Overlays: overlays, Links: links, Resolved: resolved,
-			NewCatalog: func(userID string) seatservices.CheckedCatalog { return seatorm.NewDBCatalog(modules, userID) },
-			MCPURL:     mcpURL,
-		},
+	return &seatservices.SeatResolutionService{
+		SeatTypes: seatTypes, Rooms: rooms, Seats: seats, Overlays: overlays, Links: links, Resolved: resolved,
+		NewCatalog: func(userID string) seatservices.CheckedCatalog { return seatorm.NewDBCatalog(modules, userID) },
+		MCPURL:     mcpURL,
 	}, nil
+}
+
+// newSeatSource is a package variable so tests can substitute a fake without a database.
+var newSeatSource = func(sessions *database.SessionManager, mcpURL string) (seatSource, error) {
+	resolution, err := newSeatResolution(sessions, mcpURL)
+	if err != nil {
+		return nil, err
+	}
+	modules, err := seatorm.NewORMModuleRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatUseCases{modules: modules, seatTypes: resolution.SeatTypes, resolution: resolution}, nil
 }
 
 type seatUseCases struct {

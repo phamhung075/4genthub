@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
 
@@ -84,7 +85,7 @@ func TestAdminResponseShape(t *testing.T) {
 	if got := strings.Join(keysOf(out), ","); got != strings.Join(wantKeys, ",") {
 		t.Fatalf("keys = %v, want %v", keysOf(out), wantKeys)
 	}
-	if v, _ := out.Get("server_name"); v != "agenthub Server" {
+	if v, _ := out.Get("server_name"); v != config.ServerName {
 		t.Errorf("server_name = %v", v)
 	}
 	if v, _ := out.Get("version"); v != "2.1.0" {

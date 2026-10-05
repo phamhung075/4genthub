@@ -9,14 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-const (
-	mcpServerName    = "agenthub - Task Management & Agent Orchestration"
-	mcpServerVersion = "2.1.0"
-)
+const mcpServerVersion = "2.1.0"
 
 func mcpStatusNow() float64 { return float64(time.Now().UnixNano()) / 1e9 }
 
@@ -118,7 +116,7 @@ func GetMCPStatus(ctx *Context, includeDetails bool, cm *ConnectionManager, sb *
 	status.Set("iso_timestamp", value_objects.IsoFormatNaive(time.Now()))
 	status.Set("session_id", mcpCtxSessionID(ctx))
 	serverInfo := entities.NewOrderedMap[any]()
-	serverInfo.Set("name", mcpServerName)
+	serverInfo.Set("name", config.ServerName)
 	serverInfo.Set("version", mcpServerVersion)
 	serverInfo.Set("status", "healthy")
 	status.Set("server_info", serverInfo)

@@ -37,6 +37,14 @@ func (f *fakeSeatAdminStore) ListSeatTypes(context.Context, string) ([]repositor
 	return f.seatTypes, nil
 }
 
+func (f *fakeSeatAdminStore) SaveSeatType(_ context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error) {
+	saved := seatType
+	saved.ID = "st-" + seatType.Slug
+	saved.UserID = userID
+	f.seatTypes = append(f.seatTypes, saved)
+	return &saved, nil
+}
+
 func (f *fakeSeatAdminStore) FindSeat(_ context.Context, _, roomID, seatKey string) (*repositories.Seat, error) {
 	for _, s := range f.seats {
 		if s.RoomID == roomID && s.SeatKey == seatKey {
@@ -268,5 +276,48 @@ func TestSeatAdminServiceSetPermissionPolicy(t *testing.T) {
 	}
 	if store.seats[0].PermissionPolicy != "locked" {
 		t.Errorf("a rejected call changed the seat: %+v", store.seats[0])
+	}
+}
+
+func TestCreateSeatType(t *testing.T) {
+	svc, store := newSeatAdminFixture()
+	ctx := context.Background()
+
+	created, err := svc.CreateSeatType(ctx, "u", "custom-coder", "Custom Coder", "A user seat type")
+	if err != nil || created.Slug != "custom-coder" || created.Name != "Custom Coder" || created.Description != "A user seat type" {
+		t.Fatalf("CreateSeatType = %+v, %v", created, err)
+	}
+	if len(store.seatTypes) != 2 {
+		t.Fatalf("stored seat types = %+v, want the created one appended", store.seatTypes)
+	}
+	// With the type present, the version write path it feeds accepts the slug.
+	store.modules = map[string]bool{"role@1.0.0": true}
+	if _, err := svc.CreateSeatTypeVersion(ctx, "u", "custom-coder", []string{"role@1.0.0"}, "claude-code"); err != nil {
+		t.Fatalf("CreateSeatTypeVersion after create = %v", err)
+	}
+}
+
+func TestCreateSeatTypeRejects(t *testing.T) {
+	svc, store := newSeatAdminFixture()
+	ctx := context.Background()
+	cases := []struct {
+		name, slug, sname string
+		want              error
+	}{
+		{"uppercase slug", "Custom", "N", ErrInvalidSeatType},
+		{"underscore slug", "custom_coder", "N", ErrInvalidSeatType},
+		{"empty slug", "", "N", ErrInvalidSeatType},
+		{"leading hyphen", "-custom", "N", ErrInvalidSeatType},
+		{"empty name", "custom", "", ErrInvalidSeatType},
+		{"blank name", "custom", "   ", ErrInvalidSeatType},
+		{"existing slug", "coder", "N", ErrSeatTypeExists},
+	}
+	for _, c := range cases {
+		if _, err := svc.CreateSeatType(ctx, "u", c.slug, c.sname, "d"); !errors.Is(err, c.want) {
+			t.Errorf("%s: err = %v, want %v", c.name, err, c.want)
+		}
+	}
+	if len(store.seatTypes) != 1 {
+		t.Errorf("a rejected create stored a seat type: %+v", store.seatTypes)
 	}
 }

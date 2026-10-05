@@ -27,12 +27,22 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
+// One description for the static head (index.html) and the runtime meta tags, so
+// the two cannot describe different products. The static copy lives in index.html
+// and cannot import from here, so a test compares the two by reading that file
+// (src/tests/pages/LandingPage.head.test.tsx) rather than trusting them to stay in
+// step by hand.
+export const PAGE_TITLE = '4genthub - rooms, seats and modules for AI development teams';
+export const PAGE_DESCRIPTION =
+  '4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp.';
+
 export const LandingPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   // Comprehensive SEO optimization
   useEffect(() => {
-    // Title
-    document.title = '4genthub - AI Development Platform | Rooms, Seats and Modules for Development Teams';
+    // Title - the same words as the static head in index.html, so a crawler and a
+    // reader see one product rather than two.
+    document.title = '4genthub - rooms, seats and modules for AI development teams';
 
     // Helper function to update or create meta tags
     const updateMeta = (name: string, content: string, property?: boolean) => {
@@ -51,73 +61,78 @@ export const LandingPage: React.FC = () => {
     };
 
     // Basic SEO Meta Tags
-    updateMeta('description', 'Transform your development workflow with 4genthub - an enterprise-grade MCP platform for AI development teams. Compose rooms, seats and modules, staff each seat with an occupant runtime and model, and keep every seat versioned and reproducible. Start free today.');
-    updateMeta('keywords', 'AI development teams, MCP platform, seat management, room topology, seat types, modules, development tools, code generation, AI coding assistant, Claude integration, enterprise AI, developer productivity, DevOps automation, CI/CD, code review');
+    updateMeta('description', PAGE_DESCRIPTION);
+    updateMeta('keywords', 'AI development teams, room topology, seat management, seat types, modules, occupant runtimes, AI coding assistant, Claude Code, codex, omp, MCP');
     updateMeta('author', '4genthub');
     updateMeta('robots', 'index, follow');
 
+    // The deployment's own origin. Nothing here names this deployment: og:url,
+    // the canonical link and the absolute image URLs are all derived at runtime,
+    // so a self-hosted install previews as itself rather than as someone else's
+    // domain. /logo192.png is the asset that actually ships - the previous
+    // og-image.png, twitter-card.png and screenshot.png do not exist in public/.
+    const origin = window.location.origin;
+
     // Open Graph Meta Tags (Facebook, LinkedIn)
-    updateMeta('og:title', '4genthub - Rooms, Seats and Modules for Modern Development', true);
-    updateMeta('og:description', 'Enterprise-grade MCP platform for composing rooms, seats and modules. Staff each seat with an occupant runtime and model, pin versions, and run cloud or self-hosted. Setup in 2 minutes.', true);
+    updateMeta('og:title', PAGE_TITLE, true);
+    updateMeta('og:description', PAGE_DESCRIPTION, true);
     updateMeta('og:type', 'website', true);
-    updateMeta('og:url', 'https://www.4genthub.com', true);
-    updateMeta('og:image', 'https://www.4genthub.com/og-image.png', true);
+    updateMeta('og:url', origin, true);
+    updateMeta('og:image', `${origin}/logo192.png`, true);
     updateMeta('og:site_name', '4genthub', true);
     updateMeta('og:locale', 'en_US', true);
 
     // Twitter Card Meta Tags
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', '4genthub - AI Development Platform with Rooms, Seats and Modules');
-    updateMeta('twitter:description', 'Enterprise MCP platform where rooms hold seats and each seat carries a versioned seat type, an occupant runtime and model, and modules. Cloud or self-hosted. Free during beta.');
-    updateMeta('twitter:image', 'https://www.4genthub.com/twitter-card.png');
+    updateMeta('twitter:title', PAGE_TITLE);
+    updateMeta('twitter:description', PAGE_DESCRIPTION);
+    updateMeta('twitter:image', `${origin}/logo192.png`);
     updateMeta('twitter:site', '@4genthub');
 
     // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
     if (canonical) {
-      canonical.href = 'https://www.4genthub.com';
+      canonical.href = origin;
     } else {
       canonical = document.createElement('link');
       canonical.rel = 'canonical';
-      canonical.href = 'https://www.4genthub.com';
+      canonical.href = origin;
       document.head.appendChild(canonical);
     }
 
-    // Structured Data (JSON-LD) for Google Rich Results
+    // Structured Data (JSON-LD) for Google Rich Results.
+    //
+    // Removed here because nothing behind them exists: an aggregateRating of 4.8
+    // from 127 reviews (there are no reviews), a softwareVersion of "2.0" (the
+    // real version comes from /health at runtime) and a screenshot URL pointing at
+    // a file that is not in public/. A rich result built on invented values is a
+    // claim with nothing behind it.
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "4genthub",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Web, Cloud, Linux, macOS, Windows",
+      "url": origin,
       "offers": {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD",
-        "description": "Free trial available"
+        "description": "Free during beta"
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "127"
-      },
-      "description": "Enterprise-grade MCP platform for composing AI development teams: rooms, seats and occupants, versioned seat types and modules, and enforced seat links. Integrates with Claude Code for AI-powered development workflows.",
+      "description": PAGE_DESCRIPTION,
       "featureList": [
-        "Rooms, Seats and Occupants",
-        "Versioned Seat Types and Modules",
-        "Claude Code Integration",
-        "Seat Links and Communication Policy",
-        "DevOps Automation",
-        "Cloud or Self-Hosted Deployment",
-        "4-Tier Context Management",
-        "Real-time Collaboration"
+        "Rooms, Seats and Modules",
+        "Runtimes: Claude Code, codex, agy, omp",
+        "Company, room and seat overlays",
+        "Seat links and a pinned permission policy",
+        "Cloud state with a local runtime",
+        "Managed or self-hosted"
       ],
-      "screenshot": "https://www.4genthub.com/screenshot.png",
-      "softwareVersion": "2.0",
       "author": {
         "@type": "Organization",
         "name": "4genthub",
-        "url": "https://www.4genthub.com"
+        "url": origin
       }
     };
 
@@ -137,6 +152,11 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
+  // Every claim here maps to something a reviewer can open. The runtime list is
+  // the registry's own list (runtime.go:16-19) and is named in full so the "4
+  // occupant runtimes" stat below and this card describe the same set; which of
+  // them a provider currently has capacity for is an ops fact that changes, so
+  // the page does not carry it.
   const features = [
     {
       icon: <Brain className="h-8 w-8 text-purple-500" />,
@@ -144,55 +164,55 @@ export const LandingPage: React.FC = () => {
       description: 'Model your team as rooms and seats. Each seat is a durable position with a versioned seat type, an occupant runtime and model, and modules you can add or remove.'
     },
     {
+      icon: <Cpu className="h-8 w-8 text-red-500" />,
+      title: 'Any runtime, one seat',
+      description: 'Staff a seat with Claude Code, codex, agy or omp, and change the occupant runtime or model without renaming the seat.'
+    },
+    {
       icon: <Zap className="h-8 w-8 text-yellow-500" />,
-      title: 'Lightning Fast Development',
-      description: 'Automate repetitive tasks, generate code, write tests, and debug issues 10x faster than manual work.'
+      title: 'Customize at three scopes',
+      description: 'Company, room and seat overlays add, remove, override or pin modules, so one seat type can serve many teams without being edited.'
     },
     {
       icon: <Shield className="h-8 w-8 text-green-500" />,
-      title: 'Enterprise Security',
-      description: 'Seat links are enforced, each occupant runs under a pinned permission policy, and every message is audited against your team policy.'
+      title: 'What a seat carries',
+      description: "Each seat's settings carry its communication links and a pinned permission policy, rendered into the seat."
     },
     {
       icon: <Globe className="h-8 w-8 text-blue-500" />,
-      title: 'Cloud or Self-Hosted',
-      description: 'Deploy on our managed cloud infrastructure or run on your own servers for complete data control.'
+      title: 'Cloud state, local runtime',
+      description: '4genthub keeps the state in the cloud. OpenRig launches and supervises the seats on your machine, and pulls its configuration from here.'
     },
     {
-      icon: <Code className="h-8 w-8 text-orange-500" />,
-      title: 'Claude Code Integration',
-      description: 'Seamlessly integrates with Claude Code via MCP protocol for natural AI-powered development workflows.'
-    },
-    {
-      icon: <Cpu className="h-8 w-8 text-red-500" />,
-      title: '4-Tier Context System',
-      description: 'Intelligent context management across Global → Project → Branch → Task levels for optimal AI performance.'
+      icon: <Server className="h-8 w-8 text-orange-500" />,
+      title: 'Managed or self-hosted',
+      description: 'Run on the managed deployment, or bring the same stack up yourself - the deployment definitions are in the repository.'
     }
   ];
 
   const howItWorks = [
     {
       step: '1',
-      title: 'Sign Up & Get API Key',
-      description: 'Create your account and get instant access to your API credentials.',
+      title: 'Create an account and a token',
+      description: 'Sign up, then mint an API token with the scopes you need from the Tokens page.',
       icon: <Users className="h-6 w-6" />
     },
     {
       step: '2',
-      title: 'Configure MCP Client',
-      description: 'Add your API key to Claude Code configuration - takes less than 2 minutes.',
-      icon: <Server className="h-6 w-6" />
-    },
-    {
-      step: '3',
       title: 'Compose Your Rooms',
       description: 'Create rooms and seats from your dashboard, start from the built-in seat types, and customize them with overlays.',
       icon: <Brain className="h-6 w-6" />
     },
     {
+      step: '3',
+      title: 'Launch the seats with OpenRig',
+      description: 'Pull the rig and start the seats on your machine with OpenRig, the client that runs them.',
+      icon: <Server className="h-6 w-6" />
+    },
+    {
       step: '4',
-      title: 'Start Building',
-      description: 'Interact naturally with Claude Code - your seats handle the rest automatically.',
+      title: 'Watch them in the dashboard',
+      description: 'Seats, rooms and their links appear live as the seats connect, with each seat’s resolved state and any drift.',
       icon: <Sparkles className="h-6 w-6" />
     }
   ];
@@ -285,7 +305,7 @@ export const LandingPage: React.FC = () => {
             <div className="mt-6 space-y-2">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 <Clock className="inline h-4 w-4 mr-1" />
-                Setup in under 2 minutes • No credit card required
+                Free during beta • No credit card required
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 Already have an account?{' '}
@@ -427,7 +447,7 @@ export const LandingPage: React.FC = () => {
               🚀 Join Our Beta Testing Program
             </h2>
             <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-              We're in beta and welcome all developers to test <strong>100% free</strong> and help us build the future of AI-powered development!
+              We're in beta and welcome all developers to test it <strong>free</strong> and help us build the future of AI-powered development!
             </p>
           </div>
 
@@ -437,7 +457,7 @@ export const LandingPage: React.FC = () => {
                 <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
                   <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">100% Free Access</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Free during beta</h3>
               </div>
               <p className="text-gray-600 dark:text-gray-300">
                 Full access to every seat, module and feature during beta. No hidden costs, no credit card required.
@@ -542,19 +562,19 @@ export const LandingPage: React.FC = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">Setup in under 2 minutes</span>
+                  <span className="text-gray-700 dark:text-gray-300">Managed deployment - nothing to run yourself</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">Automatic updates & scaling</span>
+                  <span className="text-gray-700 dark:text-gray-300">Deployed from the repository's own definitions</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">24/7 enterprise support</span>
+                  <span className="text-gray-700 dark:text-gray-300">API tokens scoped per client</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">99.9% uptime SLA</span>
+                  <span className="text-gray-700 dark:text-gray-300">Seats run on your machine, not ours</span>
                 </li>
               </ul>
               <Link to="/register">
@@ -576,15 +596,15 @@ export const LandingPage: React.FC = () => {
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">No internet dependency</span>
+                  <span className="text-gray-700 dark:text-gray-300">Offline launch from a synced bundle</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">Customize everything</span>
+                  <span className="text-gray-700 dark:text-gray-300">Every deployment value comes from configuration</span>
                 </li>
                 <li className="flex items-start">
                   <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-700 dark:text-gray-300">One-time setup</span>
+                  <span className="text-gray-700 dark:text-gray-300">The same definitions as the managed path</span>
                 </li>
               </ul>
               <Link to="/help-setup">
@@ -609,7 +629,7 @@ export const LandingPage: React.FC = () => {
               💝 Help Us Keep 4genthub Free for Everyone
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6">
-              4genthub is <strong>100% free</strong> and will always be. Help us cover server costs and keep developing amazing features for the community!
+              4genthub is <strong>free during beta</strong>. Help us cover server costs and keep developing amazing features for the community!
             </p>
 
             {/* Personal Story */}
@@ -670,7 +690,7 @@ export const LandingPage: React.FC = () => {
                     🎯 Current Server Status
                   </p>
                   <p className="text-xs text-purple-800 dark:text-purple-200">
-                    Running on volunteer resources • All donations go directly to infrastructure costs • 100% transparent usage reports
+                    Running on volunteer resources • All donations go directly to infrastructure costs • Public usage reports
                   </p>
                 </div>
 
@@ -704,7 +724,7 @@ export const LandingPage: React.FC = () => {
                   🚀 Contribute Code
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Help improve 4genthub! The codebase is <strong>100% open source</strong> and publicly accessible. All skill levels welcome!
+                  Help improve 4genthub! The codebase is <strong>open source</strong> (the repository carries its LICENSE) and publicly accessible. All skill levels welcome!
                 </p>
 
                 <div className="space-y-3 mb-6 text-left">
@@ -772,8 +792,8 @@ export const LandingPage: React.FC = () => {
             </p>
             <div className="flex flex-wrap justify-center gap-8 text-sm">
               <div>
-                <p className="text-3xl font-bold text-white">100%</p>
-                <p className="text-purple-100">Free Forever</p>
+                <p className="text-3xl font-bold text-white">Free</p>
+                <p className="text-purple-100">During beta</p>
               </div>
               <div>
                 <p className="text-3xl font-bold text-white">4</p>

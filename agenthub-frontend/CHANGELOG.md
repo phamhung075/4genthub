@@ -3,6 +3,96 @@
 ## [Unreleased]
 
 ### Added
+- **API reference documentation page (owner directive E)** - 2026-10-05
+  - `src/docs/api-reference.en.md` is the API reference the `/docs` page renders: authentication and the token flow, the mounted route
+    families with method and path, the MCP surface (the nine published tools and how a client calls them), the seat-composition model, and
+    an errors/status section grounded in the handlers. It lives in the frontend tree because the production build copies only
+    `agenthub-frontend`; an `ai_docs` file would render locally and be absent from the deployed page.
+  - Deployment-specific values are placeholders — `{{API_ORIGIN}}`, `{{MCP_URL}}`, `{{VERSION}}` — substituted at render time; no
+    deployment name, hostname or version literal is in the file. Source of truth: `ai_docs/api-integration/surface-inventory.md`.
+- **The mcp block kind in the palette, one whole server per block (D1/D2/D4 frontend)** - 2026-10-05
+  - `src/types/seatTypes.ts` gains `mcp` in the module-kind union (`SEAT_MODULE_KINDS`, the single source of truth the backend row also
+    touches) plus `McpServerBlock`, field for field with the Go `mcpblock.Server`.
+  - `src/lib/mcpBlock.ts` mirrors the Go contract rather than inventing one: `parseMcpBlock` applies the same rules as
+    `mcpblock.Parse` (`name` and `type` required; `http` takes `url` and `headers` only; `stdio` takes `command`, `args` and `env` only;
+    an unknown field, a contradictory field, and a url that is neither http(s) nor a `${VAR}` reference are all refused), and
+    `carriesCredentialShape` is the same eight patterns as `domain/secretscan/secretscan.go`, so a credential literal is refused in the
+    form with the server's own message. The server remains the authority; this only fails sooner.
+  - The palette (`SeatComposer`) gains mcp entries named by their SERVER name and transport, read from the block content - not by the
+    module slug, and never by a list of tools. A row carries the same label, so a block reads "agenthub_http · http" even when its slug
+    differs. mcp blocks add and remove exactly like every other kind, with the same inheritance labels and the same two outcome classes.
+  - `src/components/seats/McpBlockForm.tsx` is D4's manual fallback: publish ONE server as a module version from fields (name, type, url
+    or command+args, headers, env) or from a pasted or opened `.json` block. The secret rule holds in the form: a header value shaped like
+    a credential keeps Publish off until it references `${VAR}`, and `${AGENTHUB_MCP_URL}` is shown as the one platform placeholder. The
+    file is read in the browser from the user's own picker - no fetch and no path input, so nothing implies a server-side read of a local
+    path (that is a separate client-side row).
+  - Tests: `src/tests/utils/mcpBlock.test.ts` (25), `src/tests/components/McpBlockForm.test.tsx` (5) and three mcp cases in the authoring
+    page test - 99 files / 1722 tests, up from 97 / 1689.
+
+- **Seat authoring rebuilt as block composition (owner directive 2)** - 2026-10-05
+  - `src/pages/SeatAuthoringPage.tsx` now headlines a composition surface for one seat: pick a room and a seat and a
+    level (company / room / seat) and add or remove ONE block at a time. `src/components/seats/SeatComposer.tsx` renders
+    every block with the scope it is inherited from and what removing it here does; `src/lib/blockComposition.ts`
+    folds the overlays exactly as the Go resolver does (company -> room -> seat over one state map) and answers per
+    level. `ModulePublishForm` and `SeatTypeVersionForm` stay below the composer, because a block must be publishable
+    before it can be composed.
+  - Vocabulary mapped from OpenRig's composition model, studied read-only: atom -> module (`slug@version`); pack -> seat
+    type version; profile/phases -> the overlay stack; source label ("every assembled piece names its source") -> the
+    overlay scope a block originates from; order -> the ops order inside an overlay plus the fixed company/room/seat
+    order. OpenRig has no remove/shadow operation at all and our modules carry no `requires[]` edges - both recorded as
+    deliberate gaps, so the outcome vocabulary comes from OUR resolver, not theirs.
+  - The two outcomes do not collapse. An applying removal says `removed at seat · still defined at <origin>` ("the seat
+    type"/company/room), or "this level is the only definition" when the block was added here. A removal that cannot
+    apply is refused with the resolver's reason - `already removed at seat: the resolver refuses a second remove`, or
+    `not in effect at <level>: there is nothing to remove here` - instead of silently doing nothing, and it offers
+    Restore wherever this level wrote the remove. An `add` of a block already in effect is refused the same way (its
+    option is disabled and the Add button stays off).
+  - No invented pin lock: a `pin` op marks a block `pinned at <scope>` and a removal is still offered, because
+    `OpPin` only sets the version and a later `remove` still wins (`seat_management/domain/resolver/resolver.go:191-199`).
+    The underlying question (a real lock vs a version selector) is an owner decision, filed by the lead.
+  - Tests: `src/tests/utils/blockComposition.test.ts` (fold, origins, both refusal modes, the pinned-removal rule, the op
+    helpers) and six composer cases in `src/tests/pages/SeatAuthoringPage.test.tsx` - 97 files / 1689 tests, up from
+    96 / 1663.
+
+- **Topology graph: rooms, seats and links (F6)** - 2026-10-05
+  - `src/pages/TopologyPage.tsx` (`/topology`) renders the workspace as a graph - rooms are the groups ("pods" in
+    F6's wording), seats are the nodes and seat links are the edges drawn by kind - plus a seats table. Components in
+    `src/components/topology/`: `TopologyGraph.tsx` (hand-rolled SVG, deterministic grid per room, one colour and dash
+    per kind, a `Denied` dash for `allow: false`, and a legend), `TopologySeatsTable.tsx` and `linkStyles.ts` (labels
+    reused from `SEAT_LINK_KINDS`). Nav item in `src/components/Header.tsx`; route in `src/App.tsx`.
+  - Data: `src/hooks/useTopology.ts` folds three existing routes into one `['seatTopology']` query - `GET
+    /api/v2/openrig/rooms`, `/rooms/{room}/seats` and `/rooms/{room}/seats/{seat}/links` (the links route returns the
+    links FROM a seat, so one call per seat covers every edge). No new backend route, no new dependency: the app
+    carries no graph-layout library and the SVG is written directly rather than adding one for a single view.
+  - Live through the same realtime socket the seat pages use (`useWebSocket` + `useRealtimeSync`), not the session
+    stream: F6's "live via /ws/sessions" predates the seat model, and the topology IS seat data. The seat handler in
+    `useRealtimeSync.ts` must also invalidate `topologyKeys.all` for the view to update; that edit belongs to the
+    file's owner (fe-dev) and was handed over as three lines rather than applied by another seat.
+  - Tests: `useTopology.test.tsx` (one links call per seat, rooms fold their own nodes/edges, key identity) and
+    `TopologyPage.test.tsx` (room groups with seats and an edge per link, legend, seats table, empty state) - 96 files
+    / 1663 tests, up from 94 / 1658.
+
+- **Sessions dashboard: session list and live stream (C3)** - 2026-10-05
+  - `src/pages/SessionsPage.tsx` with `src/components/sessions/SessionList.tsx` and `SessionLiveView.tsx` render the
+    signed-in user's sessions and the selected one's live event stream; `src/hooks/useSessions.ts` holds `useSessions`
+    (React Query over the list) and `useSessionStream`; `src/services/sessionApi.ts` and `src/types/sessionTypes.ts`
+    own the route and the DTOs. Routes `/sessions` and `/sessions/:sessionId`, plus a nav item in
+    `src/components/Header.tsx`.
+  - Contract, read from the Go source rather than invented: `GET /api/v2/sessions` returns
+    `{sessions: [{id,name,project,status,connector_id,last_seq,created_at,last_seen}]}` - `sessionRow`
+    (`fastmcp/session_stream/repository.go:93`) deliberately omits `session_key` and `user_id`; the list is
+    user-filtered and ordered `last_seen DESC`. The live view uses only `GET /ws/sessions/{id}?token=&after_seq=`
+    (`fastmcp/server/httpapp/ws_mount.go:63`), which replays every stored event and then follows the live ones; a
+    dropped or too-slow socket reconnects from the last `seq` with exponential backoff, and the server's 4004 close
+    (identical for a session that is missing and one that is not yours) is terminal.
+  - `GET /api/v2/sessions/{id}/events` is not called: it pages oldest-first (`ListEvents` clamps to 1000 with
+    `ORDER BY seq`), while the socket replay already yields the full backlog, so a REST call would add a second path
+    to the same data.
+  - The xterm.js raw-terminal tab C3 marks optional is not built: it would add an `xterm` dependency the app does not
+    carry, and the event list is the live view.
+  - Tests: `sessionApi.test.ts`, `useSessionStream.test.tsx` and `SessionsPage.test.tsx` - 94 files / 1658 tests, up
+    from 91 / 1649.
+
 - **Dashboard push: agent-to-human notifications (D3 frontend half)** - 2026-10-05
   - `src/store/notifications.ts` holds the inbox (add with dedupe by frame id, ack, ackAll, dismiss, clearAll);
     `useRealtimeSync` gained a `notification` case that stores the frame and shows a toast; `NotificationBell` (mounted

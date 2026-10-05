@@ -135,8 +135,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -415,15 +415,6 @@ CV-Developer-AI-Automation.md
 .hgsubstate
 
 # =============================================================================
-# PROTECTED DIRECTORIES
-# =============================================================================
-# Protect yaml-lib directory
-!agenthub_main/yaml-lib/**
-!docker-system/lib/
-# Allow frontend lib directory
-!agenthub-frontend/src/lib/
-
-# =============================================================================
 # BACKUPS AND ARCHIVES
 # =============================================================================
 # Backup files
@@ -567,6 +558,5 @@ testground/
 # OpenRig runtime and orchestration files
 .openrig/
 .agents/
-AGENTS.md
 CULTURE.md
 rig.yaml

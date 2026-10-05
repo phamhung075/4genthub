@@ -63,7 +63,7 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 	if err != nil {
 		return nil, err
 	}
-	overlays, err := s.overlays(ctx, userID, room.ID, seat.ID)
+	overlays, err := s.overlayStack(ctx, userID, room.ID, seat.ID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,11 @@ func (s *SeatResolutionService) seatTypeVersion(ctx context.Context, userID, slu
 	return version, nil
 }
 
-func (s *SeatResolutionService) overlays(ctx context.Context, userID, roomID, seatID string) ([]resolver.Overlay, error) {
+// overlayStack assembles the seat's three overlays in scope order (company, then room, then
+// seat), appending the ones that exist. candidate, when not nil, is the overlay a write
+// proposes: it replaces any overlay already stored at its own scope while the other scopes
+// stay as stored. Resolving a seat and validating a candidate overlay fold this one stack.
+func (s *SeatResolutionService) overlayStack(ctx context.Context, userID, roomID, seatID string, candidate *repositories.Overlay) ([]resolver.Overlay, error) {
 	targets := []struct{ scope, roomID, seatID string }{
 		{repositories.ScopeCompany, "", ""},
 		{repositories.ScopeRoom, roomID, ""},
@@ -130,15 +134,99 @@ func (s *SeatResolutionService) overlays(ctx context.Context, userID, roomID, se
 	}
 	var out []resolver.Overlay
 	for _, t := range targets {
-		overlay, err := s.Overlays.Find(ctx, userID, t.scope, t.roomID, t.seatID)
-		if err != nil {
-			return nil, err
+		var overlay *repositories.Overlay
+		if candidate != nil && candidate.Scope == t.scope && candidate.RoomID == t.roomID && candidate.SeatID == t.seatID {
+			overlay = candidate
+		} else {
+			found, err := s.Overlays.Find(ctx, userID, t.scope, t.roomID, t.seatID)
+			if err != nil {
+				return nil, err
+			}
+			overlay = found
 		}
 		if overlay != nil {
 			out = append(out, resolver.Overlay{Scope: t.scope, Ops: overlay.Ops})
 		}
 	}
 	return out, nil
+}
+
+// ValidateOverlayResolution resolves every seat the candidate overlay would affect as if the
+// overlay were already stored: the candidate replaces any overlay stored at its own scope and
+// the other scopes stay as they are. It returns the resolver's error, prefixed with the scope,
+// as soon as one affected seat would no longer resolve, so the write can be refused before it
+// is stored. A scope that reaches no seat cannot break one and always succeeds.
+func (s *SeatResolutionService) ValidateOverlayResolution(ctx context.Context, userID string, candidate repositories.Overlay) error {
+	seats, err := s.overlayAffectedSeats(ctx, userID, candidate)
+	if err != nil {
+		return err
+	}
+	if len(seats) == 0 {
+		return nil
+	}
+	types, err := s.SeatTypes.List(ctx, userID)
+	if err != nil {
+		return err
+	}
+	byID := make(map[string]repositories.SeatType, len(types))
+	for _, seatType := range types {
+		byID[seatType.ID] = seatType
+	}
+	for i := range seats {
+		seat := seats[i]
+		seatType, ok := byID[seat.SeatTypeID]
+		if !ok {
+			return fmt.Errorf("overlay %s: seat %q: seat type %q not found", candidate.Scope, seat.SeatKey, seat.SeatTypeID)
+		}
+		version, err := s.seatTypeVersion(ctx, userID, seatType.Slug, &seat)
+		if err != nil {
+			return err
+		}
+		overlays, err := s.overlayStack(ctx, userID, seat.RoomID, seat.ID, &candidate)
+		if err != nil {
+			return err
+		}
+		runtime := seat.Runtime
+		if runtime == "" {
+			runtime = version.DefaultRuntime
+		}
+		catalog := s.NewCatalog(userID)
+		if _, err := resolver.Resolve(catalog, resolver.SeatTypeVersion{
+			Slug: seatType.Slug, Version: version.Version, Runtime: runtime, Modules: version.ModuleRefs,
+		}, overlays); err != nil {
+			return fmt.Errorf("overlay %s: %w", candidate.Scope, err)
+		}
+		if err := catalog.Err(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// overlayAffectedSeats lists the seats a candidate overlay would reach: every seat for a
+// company overlay, the room's seats for a room overlay and the one seat for a seat overlay.
+func (s *SeatResolutionService) overlayAffectedSeats(ctx context.Context, userID string, candidate repositories.Overlay) ([]repositories.Seat, error) {
+	rooms, err := s.Rooms.List(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var seats []repositories.Seat
+	for _, room := range rooms {
+		if candidate.Scope == repositories.ScopeRoom && room.ID != candidate.RoomID {
+			continue
+		}
+		found, err := s.Seats.ListByRoom(ctx, userID, room.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, seat := range found {
+			if candidate.Scope == repositories.ScopeSeat && seat.ID != candidate.SeatID {
+				continue
+			}
+			seats = append(seats, seat)
+		}
+	}
+	return seats, nil
 }
 
 // policy builds the sending seat's communication policy snapshot from its outgoing links.

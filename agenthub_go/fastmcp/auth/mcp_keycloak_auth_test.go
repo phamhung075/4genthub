@@ -22,7 +22,7 @@ func TestBuildMCPPermissions(t *testing.T) {
 	}{
 		{[]string{"mcp-admin"}, []string{"*"}},
 		{[]string{"mcp-user"}, []string{"tools:list", "tools:describe", "context:read"}},
-		{[]string{"mcp-developer"}, []string{"tools:*", "context:*", "agents:*", "projects:*"}},
+		{[]string{"mcp-developer"}, []string{"tools:*", "context:*", "projects:*"}},
 		{[]string{"nobody"}, nil},
 	}
 	for _, c := range cases {

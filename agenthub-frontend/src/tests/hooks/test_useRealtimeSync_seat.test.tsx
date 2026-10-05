@@ -106,6 +106,7 @@ describe('useRealtimeSync - seat/room events', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'create', 'websocket');
   });
 
@@ -118,6 +119,7 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays', 'dev', 'alice'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatLinks', 'dev', 'alice'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved', 'dev', 'alice'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'update', 'websocket');
   });
 
@@ -130,6 +132,7 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays', 'dev', 'alice'] });
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatLinks', 'dev', 'alice'] });
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved', 'dev', 'alice'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'delete', 'websocket');
   });
 
@@ -157,6 +160,27 @@ describe('useRealtimeSync - seat/room events', () => {
     send(roomMessage('created', { id: 'dev', room: 'dev', name: 'Dev' }));
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+  });
+
+  it('invalidates the room and seat keys and the topology on a room updated event', () => {
+    const send = renderAndCapture();
+
+    send(roomMessage('updated', { id: 'dev', room: 'dev', name: 'Dev' }));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+  });
+
+  it('invalidates the topology and drops the room seats on a room deleted event', () => {
+    const send = renderAndCapture();
+
+    send(roomMessage('deleted', { id: 'dev', room: 'dev', name: 'Dev' }));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
+    expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
   });
 
   it('treats a company room updated event as a settings and overlay refresh', () => {
@@ -167,5 +191,16 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSettings'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved'] });
+    // Deliberate: a company-scoped change moves settings and overlays, not the
+    // rooms/seats/links the topology query holds, so it must NOT refresh the graph.
+    // WHICH DOOR THIS GUARDS, so the next person leans on the right test (the
+    // claim that this assertion alone forces the re-check was overstated):
+    //  - handler door = this assertion: fires when someone adds the company-room
+    //    invalidation to handleRoomUpdate.
+    //  - query door = useTopology.test.tsx's fold test: its mock of seatApi
+    //    expects exactly listRooms/listSeats/listLinks, so it fires when
+    //    fetchTopology starts reading more through seatApi - a read through a
+    //    different module would not be caught by either test.
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
   });
 });

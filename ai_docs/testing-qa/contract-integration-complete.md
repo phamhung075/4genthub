@@ -367,5 +367,4 @@ def create(task_id: UUID, **kwargs) -> TaskContext:
 ## Related Documentation
 - [MCP Validation Complete](./mcp-tools-validation-complete.md)
 - [QA Strategy & Planning](./qa-strategy-planning-complete.md)
-- [WebSocket Protocol v2.0](../core-architecture/agenthub-system-architecture.md#websocket)
 - [API Integration Guide](../api-integration/)

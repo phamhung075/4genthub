@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
@@ -64,7 +65,7 @@ type SecureHealthChecker struct {
 // NewSecureHealthChecker mirrors SecureHealthChecker.__init__.
 func NewSecureHealthChecker() *SecureHealthChecker {
 	return &SecureHealthChecker{
-		ServerName: "agenthub Server",
+		ServerName: config.ServerName,
 		Version:    "2.1.0",
 	}
 }

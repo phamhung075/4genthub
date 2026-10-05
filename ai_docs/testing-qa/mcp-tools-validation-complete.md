@@ -232,6 +232,5 @@ python scripts/validate_mcp_tools.py --verbose
 ---
 
 ## Related Documentation
-- [MCP Tools Reference](../claude-code/tools-and-mcp-reference.md)
 - [API Integration Guide](../api-integration/)
 - [Contract Integration Guide](./contract-integration-complete.md)

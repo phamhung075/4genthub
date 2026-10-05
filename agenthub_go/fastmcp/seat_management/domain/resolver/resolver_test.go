@@ -390,6 +390,7 @@ func TestResolveSortOrder(t *testing.T) {
 		Modules: []ModuleRef{
 			{Slug: "tool.zeta", Version: "1.0.0"},
 			{Slug: "memory.zeta", Version: "1.0.0"},
+			{Slug: "mcp.alpha", Version: "1.0.0"},
 			{Slug: "tool.alpha", Version: "1.0.0"},
 			{Slug: "memory.alpha", Version: "1.0.0"},
 		},
@@ -398,6 +399,7 @@ func TestResolveSortOrder(t *testing.T) {
 		versions: map[string]ModuleVersion{
 			"tool.zeta@1.0.0":    {Slug: "tool.zeta", Version: "1.0.0", Kind: KindTool, Content: "z"},
 			"memory.zeta@1.0.0":  {Slug: "memory.zeta", Version: "1.0.0", Kind: KindMemory, Content: "z"},
+			"mcp.alpha@1.0.0":    {Slug: "mcp.alpha", Version: "1.0.0", Kind: KindMCP, Content: "{}"},
 			"tool.alpha@1.0.0":   {Slug: "tool.alpha", Version: "1.0.0", Kind: KindTool, Content: "a"},
 			"memory.alpha@1.0.0": {Slug: "memory.alpha", Version: "1.0.0", Kind: KindMemory, Content: "a"},
 		},
@@ -406,8 +408,22 @@ func TestResolveSortOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
-	want := []string{"tool.alpha", "tool.zeta", "memory.alpha", "memory.zeta"}
+	// mcp sorts after every tool block and before memory, which stays the last guidance section.
+	want := []string{"tool.alpha", "tool.zeta", "mcp.alpha", "memory.alpha", "memory.zeta"}
 	if got := slugs(seat.Modules); !reflect.DeepEqual(got, want) {
 		t.Fatalf("module order = %v, want %v", got, want)
+	}
+}
+
+func TestValidKind(t *testing.T) {
+	for _, kind := range []ModuleKind{KindInstruction, KindDocument, KindSkill, KindTool, KindMCP, KindMemory} {
+		if !ValidKind(kind) {
+			t.Errorf("ValidKind(%q) = false, want true", kind)
+		}
+	}
+	for _, kind := range []ModuleKind{"", "tools", "mcp-server", "server"} {
+		if ValidKind(kind) {
+			t.Errorf("ValidKind(%q) = true, want false", kind)
+		}
 	}
 }

@@ -34,9 +34,12 @@ const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Pro
 const RegistrationSuccess = lazy(() => import('./pages/RegistrationSuccess'));
 const TokenManagement = lazy(() => import('./pages/TokenManagement').then(m => ({ default: m.TokenManagement })));
 const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m.HelpSetup })));
+const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage').then(m => ({ default: m.ApiDocsPage })));
 const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
 const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
 const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
+const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })));
+const TopologyPage = lazy(() => import('./pages/TopologyPage').then(m => ({ default: m.TopologyPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
@@ -265,6 +268,13 @@ function App() {
               <HelpSetup />
             </Suspense>
           } />
+          {/* The API reference is public like the setup guide: it documents the
+              deployment and names nothing, so a reader needs no account. */}
+          <Route path="/docs" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ApiDocsPage />
+            </Suspense>
+          } />
           <Route path="/register" element={
             <Suspense fallback={<LoadingFallback />}>
               <SignupForm />
@@ -351,6 +361,42 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <SeatsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SessionsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions/:sessionId"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SessionsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/topology"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <TopologyPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>

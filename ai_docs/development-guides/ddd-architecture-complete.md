@@ -637,5 +637,4 @@ high_priority_tasks = [t for t in tasks if spec.is_satisfied_by(t)]
 
 ## Related Documentation
 - [Development Workflow Complete](./development-workflow-complete.md)
-- [Testing & Infrastructure Complete](./testing-infrastructure-complete.md)
 - [Complete Operations Guide](../operations/complete-operations-guide.md)

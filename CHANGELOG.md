@@ -6,7 +6,67 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**The server describes itself with directive G's product line, from one constant** (2026-10-05)
+
+- `/health`'s `server` field reported `agenthub - Task Management & Agent Orchestration`, the pre-G description. It now reports `agenthub - AI Orchestration Platform` — the tagline the frontend landed with G (`agenthub-frontend/src/components/Header.tsx:125`, asserted at `Header.test.tsx:75`) — so the product has one description rather than a third phrasing invented in the Go tree.
+- The same stale string was ALSO a second, independent literal in the same package: the MCP handshake's `serverInfo.name` (`mcp_routes.go:167`). Both sites now read the single `healthServerName` constant, so the server cannot describe itself two ways depending on which surface you ask; that second literal is why this is a constant rather than another string.
+- Established before the change, as the row required: the string was SET in two places and NOTHING asserted it — no Go test pins the constant or the literal, and the Python-side occurrences are the legacy backend's own server name, not consumers of this payload.
+
+### Changed
+
+**`scripts/openrig_team_setup.py publish-skills` + skill blocks: the library publishes as catalog blocks and the renderer reads them** (2026-10-05)
+
+- New `publish-skills` subcommand: reads the committed inventory `ai_docs/agent-system/skill-library.json` and pushes ONE `skill` block per skill through the same `module_step` PUT `apply`/`import-project` use (52 blocks; a skill committed on both edges is ONE block, with the canonical copy as `source_path`/`sha256` and the plugin copy as `mirror_path`/`mirror_sha256`). A block's content is JSON — `{"content": SKILL.md text, "source_path": <repo-relative>, "sha256": <inventory digest>[, "mirror_path", "mirror_sha256"]}` — never bare markdown. The inventory carries paths, not text, so `--source-root DIR` (or `OPENRIG_SKILLS_ROOT`) names the OpenRig checkout the paths are relative to, and the file read is verified against the inventory's digest: a stale inventory fails loudly instead of publishing a block whose provenance is already wrong. It shares `import-project`'s resolve-then-push idempotence (identical content is SKIP with no request; different content lands as the next patch).
+- `import-project`'s `.claude/skills/*` now emit the same block shape: `source_path` is project-root-relative (`.claude/skills/<dir>/SKILL.md`) and `sha256` is the digest of the file as read. Publish paths are therefore relative to different roots by design — the library to the OpenRig checkout, import-project to this project — and the drift check must resolve each against the root it belongs to.
+- A skill module is now a block kind: new `fastmcp/seat_management/domain/skillblock` parser (mirroring `mcpblock`), and `seatrenderer.RenderSeat` writes only the block's `content` to `skills/<slug>/SKILL.md`, failing with the module's slug and the reason when a skill module's content is not a valid block (no fallback, so a broken block cannot silently render as JSON). The seed library's in-tree `comm-guard-skill` is wrapped into a block at load from its committed `.md` source, recording that file's repo-relative path and digest.
+- Seeds: all nine seat types now carry their curated skill refs (`module_refs:` = `slug@version` from `seat_curation`), so a default team arrives with its skills attached; the `mcp_blocks:` entries from `7a5d792a` are unchanged and `seedVersion` moves `1.2.0` -> `1.3.0`. The 26 skills in no default set stay in the catalog and are wired nowhere.
+- MIGRATION (owner-approved step, not attempted here): a published module version is immutable, so an existing plain-text `skill` module — or a seat-type version pinned to one — FAILS VISIBLY at render after this change rather than silently rendering JSON. Production has one `skill` row (published by `import-project`); that module and every type version referencing it must be republished as blocks.
+
+**`scripts/openrig_team_setup.py drift-check`: stored skill provenance is reported against disk** (2026-10-05)
+
+- New read-only subcommand: it lists the stored modules (`GET /api/v2/openrig/modules`, latest version per module), reads every `skill` block's content, and checks each recorded digest pair against the files under the root that path belongs to. A block records `source_path` + `sha256`; the two canonical/plugin overlaps also record `mirror_path` + `mirror_sha256`, and that pair is checked independently. Two publishers use different path bases, so two roots resolve in order: `--root` (default: the Claude-code hooks' `get_project_root()`, never re-derived) holds `import-project`'s paths relative to THIS project (`.claude/skills/<dir>/SKILL.md`), `--library-root` (default: `$OPENRIG_SKILLS_ROOT`, the same knob `publish-skills` uses) holds `publish-skills`' paths relative to the OpenRig checkout (`skills/_canonical/...`, `packages/daemon/assets/plugins/...`); a path is tried under `--root` first, and the resolved root (or every root tried, for a missing file) is named in the line. It reports only: no write, no republish, no file touched. Findings go to stderr as a header plus one indented `<slug>: <path> (<reason> @ <root>)` line each, the same shape the OpenRig repo's `mirror-skills.mjs --check` (the checking path over `scripts/skill-edge-digests.generated.json`) prints, and any finding exits 1 (0 on a clean tree, printing nothing). Four separate reasons: `digest` (line names the skill, the path, the resolving root and both hashes), `missing-source` (the recorded path has no file under any tried root), `no-provenance` (an older block whose content is not JSON with both keys — reported apart from a mismatch), and `mirror` (the canonical/mirror copies diverged). Verified against the real library: all 52 inventory blocks (2 with mirror pairs, 54 paths) report clean with both roots, and all 54 report `missing-source` with only `--root` — the gap this two-root resolution closes.
+- `get_module_version` now shares a `_get_json` helper with the new listing GET; behaviour and messages are unchanged.
+
+**`mission.md` trimmed to restore the word-limit test** (2026-10-05)
+
+- `scripts/team/4genthub/mission.md` was 522 words against the test's 350–520 limit, red since the API-docs rewrite (`95ffca45`) — a commit that never meant to touch a limit. Four redundant words removed, meaning unchanged (516 words). Script suite now `185 passed, 0 failed` (`python3 -m pytest src/tests/scripts/ --noconftest -q`, from `agenthub_main/`).
+
+**`scripts/openrig_team_setup.py import-project`: a project's `.mcp.json` and `.claude/skills/` become module versions** (2026-10-05)
+
+- Idempotence is now content-driven rather than implicit, and it follows what the backend actually does (established from the repository, not from prose): `AddVersion` compares the stored `checksum` and returns the existing row unchanged for IDENTICAL content (a true no-op), while DIFFERENT content at an existing version is `ErrModuleVersionConflict` -> 409 — the versions are immutable in code, not only in prose, so "the PUT replaces it" was wrong. The client therefore classifies every module before sending: absent -> push at `--version`; present with identical content -> SKIP, no request; present with different content -> push the NEXT PATCH (mirroring the backend's own `NextPatchVersion` policy for seat-type versions), so a changed file lands as a new immutable version instead of an overwrite or a bare 409. `--dry-run` and the run summary report SKIP / PUSH / NEW-VERSION per module, so the behaviour is visible rather than inferred.
+
+- New subcommand `import-project` reads the current project's `.mcp.json` (one `mcp` module per `mcpServers` entry, in the block shape the backend's `mcpblock.Parse` accepts: `name`, `type` http|stdio, `url`, or `command` + `args`, plus `headers`/`env`) and `.claude/skills/*` (one `skill` module per directory, content = `SKILL.md`). It pushes them through the same `PUT /api/v2/openrig/modules/{slug}/versions/{version}` step `apply` uses — both paths build that step with `module_step`, so the call cannot drift. The backend's own behaviour for an existing version is stated above (identical content is a no-op; different content is a 409), and the client classifies each module against it before sending, so a re-run of unchanged material sends nothing at all.
+- The project root is the Claude-code hooks' `utils/env_loader.get_project_root()` (imported from `.claude/hooks`, never re-derived); the subcommand has no `--project-root`. A credential-shaped literal in a server field or skill file is refused before any request, with a message naming the field and telling the operator to reference `${ENV_VAR}` instead; a value that already names `${VAR}` is stored verbatim. `apply` is unchanged when the new subcommand is not used.
+
+**`AGENTS.md` slimmed; its detail moved into `ai_docs/agent-system/`** (2026-10-05)
+
+- The root `AGENTS.md` now carries only what a per-seat world needs: the hazard note, identity (`rig whoami --json`), where context lives (seat role files, the queue, `NEXT_GEN.md`), the five universal hard rules, and pointers — so it cannot go stale in every seat. The detail moved to `ai_docs/agent-system/repo-agent-rules.md`, `.../seat-model-and-mcp-surface.md` and `.../task-workflow-and-reporting.md`; `.../agents-md-migration-map.md` maps every old section to its new home, or records the reason it was dropped. Dropped as retired: the "Claude as enterprise employee" framing, the principal-only-MCP / Proxy-Pattern sub-agent team model, and the Tier-3 team mechanics (`TeamCreate`, `subagent_type`, and the `.claude/agents/` library, which now exists only under the uncommitted `.claude` submodule). No hard rule was weakened — before/after quoted in the map. The old "`CLAUDE.md` stays out of every commit" rule is superseded by its rename to `AGENTS.md` (`f7a809dc`); see `agenthub_go/NEXT_GEN.md`. Docs only; no code, no new root files.
+
+**Project documentation now documents the real Go surface** (2026-10-05)
+
+- `ai_docs/` and the root `README.md` were rewritten against the mounted Go server: `ai_docs/api-integration/surface-inventory.md` is the authoritative reference (132 route registrations, nine published MCP tools, 36 runtime tables), and stale legacy descriptions were replaced. Residual corrections in this pass: `agenthub_go/FIX_PLAN_BRIEF.md` WP3's requirement to model `agent_templates`/`user_agent_instances` is marked superseded (both tables were dropped; `models_prod.go` declares six `ProductionTables`); the two `ai_docs/core-architecture/agent-knowledge-skill-system-*` proposals carry an explicit not-implemented/not-mounted banner naming their fabricated `/mcp/manage_skill`, `/mcp/manage_knowledge` and `/mcp/call_agent` routes, their unpublished tools and their proposed tables; the dangling `mcp-client-integration-complete.md` link in `ai_docs/api-integration/mcp-tools-api-complete.md` now points at the surface inventory. Docs only; no code changed.
+
+**ai_docs broken relative links swept** (2026-10-05)
+
+- 21 site-absolute Anthropic references (`/en/ai_docs/...`) in `anthropic_custom_slash_commands.md`, `anthropic_docs_subagents.md`, `anthropic_output_styles.md` and `cc_hooks_docs.md` were repointed to their canonical hosts — `https://code.claude.com/docs/en/...` for the Claude Code pages and `https://platform.claude.com/docs/en/models/overview` for the model overview (all ten distinct targets serve `200` directly, no redirect after following the old `docs.claude.com` host's `301/302`). 12 dangling local links were removed — their targets were deleted (`dad51589 remove : all obsolete files`) or live only in the uncommitted `.claude/` submodule — and one was repointed (`../authentication/complete-authentication-system.md` → `complete-authentication-guide.md`). Relative-link check now reports 0 broken.
+
 ### Removed
+
+**Dead `yaml-lib` negation removed from `.gitignore`** (2026-10-05)
+
+- `.gitignore` re-included `agenthub_main/yaml-lib/**` under a "PROTECTED DIRECTORIES" banner, but nothing excludes that path: a scratch
+  repository carrying the whole file *minus* that line reports no match for a probe under it (`git check-ignore -v --no-index` -> exit 1, no
+  pattern printed), while with the line present the same probe is visible in `git status` (`?? agenthub_main/yaml-lib/`) and the ignored-untracked
+  listing is empty. The negation therefore reads as protection and changes nothing. `agenthub_main/yaml-lib` does not exist on disk, has no
+  tracked file and no history, and no `yaml*` ignore rule exists to fight. The banner, its comment and the negation are removed rather than left
+  as a rule whose intent and effect differ.
+- Counts are unchanged by the removal (257861 untracked-ignored / 0 untracked-visible, identical to the reading taken for the `lib/` fix), and
+  the probe path stays visible.
+- Related, and not ours to fix: `.claude/.gitignore:115` carries the same unanchored `lib/` inside the hooks submodule
+  (`git@github.com:phamhung075/4genthub-hooks.git`), where it can still hide a file written under `.claude/` and cannot be corrected from this
+  repository.
 
 **Three orphaned Go branch routes deleted** (2026-10-04)
 
@@ -28,6 +88,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**Teams and sharing: the account boundary with owner and viewer roles** (2026-10-05, NEXT_GEN D5, slice 1)
+
+- New `team_management` domain. Tables: `teams` (id, user_id, slug, name, created_at, updated_at; unique per owner) and `team_members` (id, team_id, user_id, role `owner` | `viewer`, created_at; unique per team). Declared as a TEAMS section in `fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql` and registered for creation in `fastmcp/seat_management/infrastructure/database/team_tables.go` (`teamManagementDatabaseTables`, appended to `Tables` after the seat tables so `team_members`' foreign key to `teams` resolves in creation order). No foreign key CASCADE: `ORMTeamRepository.Delete` removes the member rows and the team in one transaction (the application layer cascades).
+- Slice 1 is single-owner: the creator is the team's one owner, membership changes are owner-only, and every other member is a viewer with read access. The rule lives in `fastmcp/team_management/application/services/team_service.go`: adding a second owner is refused (`ErrSecondOwner`), and the owner cannot be demoted or removed (`ErrLastOwner`).
+- `{team}` in every path is the team SLUG, resolved within the caller's memberships (`TeamRepository.FindForMember`), because a slug is unique per owner and not globally; a non-member gets 404 rather than learning which teams exist.
+- Routes (`fastmcp/server/httpapp/team_mount.go`, mounted at `app.go:128`): `POST`/`GET /api/v2/openrig/teams`, `GET`/`DELETE /api/v2/openrig/teams/{team}`, `GET`/`POST /api/v2/openrig/teams/{team}/members`, `PATCH`/`DELETE /api/v2/openrig/teams/{team}/members/{user}`. Created teams are not yet wired to existing resources: making a viewer see the owner's rooms and seats is the follow-up (D5's `team_id` on account-scoped tables) and no existing seat or task table changed here.
+- `ai_docs/api-integration/surface-inventory.md` updated in the same commit: §1.20 (the 8 team routes), the two team rows of §3.3, and every count (registrations 132 -> **140**, runtime `Tables` 36 -> **38**).
+
+**Teams: the schema now enforces one owner per team** (2026-10-05, D5 follow-up, gate finding)
+
+- Finding on `681f7557`: the single-owner rule lived only in `TeamService` (`ErrSecondOwner` / `ErrLastOwner`). The DDL had `uq_team_members_team_user` and the role CHECK and nothing else, so two `role='owner'` rows were permitted, and `ErrLastOwner` checks that "this row is the owner" rather than "an owner remains" — two owner rows would have let both be demoted and left the team ownerless, on the table whose whole purpose is the account boundary.
+- The DB now holds the invariant: partial unique index `uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner'`, in both the schema SQL (`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`) and the runtime DDL (`team_tables.go`). `ORMTeamRepository.AddMember` maps that index's violation to the new `ErrTeamHasOwner` (distinguished from the per-team unique key by the index name, the same way `machine_tokens` distinguishes its active-token index) and the mount answers 409. The API could not create a second owner before or after this change; the schema now refuses one regardless of the caller.
+
 **Codex seats render an execpolicy deny list for the direct send surface** (2026-10-05, G3 owner decision (e)(i))
 
 - `fastmcp/seat_management/domain/seatrenderer`: a codex seat whose modules carry a `tool` module now renders `runtime/codex.rules`, a Starlark execpolicy file with one `prefix_rule(..., decision = "forbidden")` per `Bash(...)` deny entry the Claude settings fragment carries (`rig send`, `rig queue`, `rig broadcast`, `tmux send-keys`, `tmux paste-buffer`), each with a justification naming `seatcheck send` as the audited alternative. Deny-only by design: no `allow` rule is emitted, because an allow rule would widen what runs outside the sandbox without prompting. An entry that cannot be expressed as a command prefix is listed in a comment rather than dropped.
@@ -48,6 +121,46 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - The tenant boundary is the existing one: the frame is authorized by the same rules as every other entity (the acting user's own sockets; everyone else denied and told so), so a second user never receives another tenant's seat event.
 
 ### Fixed
+
+**`.gitignore` `lib/` no longer swallows source `lib/` directories; the pattern is root-anchored** (2026-10-05)
+
+- The Python block carried `lib/` and `lib64/` unanchored, so any directory named `lib` anywhere in the tree was
+  excluded, source included. A test written under `agenthub-frontend/src/tests/lib/` never appeared in `git status` and
+  would never have been committed (found while delivering owner directive 2). Two source directories escaped only
+  because a hand-maintained "PROTECTED DIRECTORIES" list re-included them by name (`!docker-system/lib/`,
+  `!agenthub-frontend/src/lib/`) - the next `lib/` directory had no such luck and was invisible until someone noticed.
+- Sweep before the change. `git ls-files --others --ignored --exclude-standard | git check-ignore -v --stdin` matched
+  **0** paths against rules 138/139: every `lib` directory in the tree is either tracked (`docker-system/lib`, 13 files;
+  `agenthub-frontend/src/lib`, 5 - both kept visible by the re-includes) or ignored by a different rule
+  (`.swarm/agenthub-frontend/src/lib`, by `.swarm/` at line 553). `agenthub_main/yaml-lib/**` is a different component
+  name (`yaml-lib` is not `lib`) and is untouched. No root `lib/` or `lib64/` exists, and every virtualenv directory
+  (`.venv/`, `env/`, `venv/`, `ENV/`, `env.bak/`, `venv.bak/`) is ignored by its own rule, so the unanchored `lib/` was
+  never what kept venv artifacts out. Nothing currently ignored looks like source, so nothing real was un-ignored.
+- Change: `lib/` -> `/lib/` and `lib64/` -> `/lib64/`, anchored to the repository root, which is what the entry is for
+  (buildout and `setup.py develop` artifacts land at the root); the two now-dead re-includes and their comment are
+  removed rather than left as a whitelist to maintain.
+- Verified: `git check-ignore -v --no-index` reports not-ignored for a would-be new file in `docker-system/lib`,
+  `agenthub-frontend/src/lib` and `agenthub-frontend/src/tests/lib`; a probe file created under
+  `agenthub-frontend/src/tests/lib/` shows in `git status` as untracked instead of invisible; and the tree's
+  ignored/visible counts are identical before and after (257861 ignored / 0 untracked-visible), so no path that was
+  meant to be ignored became visible. The moved test (`src/tests/utils/blockComposition.test.ts`) is tracked in
+  `0e0a4eeb`.
+- Trade-off, stated: a nested Python artifact such as `agenthub_main/lib/` from a local `setup.py develop` is no longer
+  ignored and will show as untracked. That is the intended direction - a visible artifact is recoverable, a silently
+  excluded source file is not.
+
+**Overlay PUT runs the resolver fold: a write that would break seat resolution is refused, and the failing op is named** (2026-10-05)
+
+- The company/room/seat overlay `PUT` validated only that each op's `slug@version` exists in the module library and then stored it (`fastmcp/server/httpapp/seat_admin_mount.go`), so a write could store a stack the resolver cannot resolve and the failure appeared later, at read: `ResolveSeat` runs the fold (`seat_resolution_service.go:76`) and the resolver error comes back from `handleResolveSeat` (`seat_mount.go:129-135`) — no partial, no fallback — the write-succeeds-then-read-fails half of that class, a hard read error rather than a silently different composition.
+- Each `PUT` now folds the seats the candidate overlay would reach against the stack as it would be *after* the write, before storing (`seatservices.ValidateOverlayResolution`): company scope folds every seat, room scope that room's seats, seat scope that one seat, with the candidate replacing any overlay already stored at its own scope. A fold failure refuses the write with `400` and names scope and op (for example `overlay room: add "m": module already present`) and nothing is stored; a scope that reaches no seat cannot break one and always passes. The fold is pure (`resolver.Resolve`, `resolver.go:116`), so the cost is one in-memory fold per affected seat per write.
+- Reachable before the fix with a single write, two ways: an op whose precondition fails against the seat type's own composition (an `add` of a module the type already carries, or a `remove`/`override`/`pin` of one it does not), and cross-scope — a seat-scope op that is valid only while a room-scope overlay supplies its module, which stops resolving once that room overlay is replaced.
+
+**`/health` reports the live connection registry instead of a never-assigned seam; two connection fields drop** (2026-10-05)
+
+- `GET /health` read `globalHealthStatusProvider`, a package seam with no non-test caller, so production always took the nil branch and printed `connections: {"error": "connection manager unavailable"}` and `status_broadcasting: {"active": false, ...}` even while realtime fan-out worked over the `routes` registry (`RegisterConnection` at `ws_mount.go:98`). The seam is deleted (`HealthStatusProvider`, `SetHealthStatusProvider`, `globalHealthStatusProvider`, and the `healthConnections`/`healthStatusBroadcasting`/error-map/field helpers); the handler now reads the same registry the fan-out uses through the new `routes.ConnectionCount()` accessor.
+- Payload shape change, field by field. `connections` was `{active_connections, server_restart_count, uptime_seconds, recommended_action}` and is now `{active_connections, uptime_seconds}`: `active_connections` is the real registry count, `uptime_seconds` comes from a process start time captured at package init. Dropped with no Go source: `server_restart_count` and `recommended_action` (the Go server has no restart counter or reconnection advisor; the removal is documented in `httpapp/http.go`). `status_broadcasting` was `{active, registered_clients, last_broadcast, last_broadcast_time}` and is now `{active: true, registered_clients}`: `registered_clients` is the same registry count, and `last_broadcast`/`last_broadcast_time` are dropped because the Python status broadcaster they described has no Go counterpart — `BroadcastDataChange` is data-change fan-out, so relabelling its timestamp would substitute a different measurement. `healthVersion` is untouched (0.0.17).
+- In-repo consumers: the only body-reading caller is `scripts/health-monitor.sh` (`.connections.uptime_seconds`, `.connections.active_connections`), both preserved; the frontend `PerformanceDashboard` reads `server_health.active_connections` from `/api/v1/performance/metrics/overview`, a different payload. Nothing parses the removed names.
+- Residual, for the edge-config owner: CapRover's edge config and any middleware healthcheck live outside this repo. A status-code-only probe is unaffected; a probe asserting a removed field name will start failing against a healthy server.
 
 **Deployment health checks and smoke tests point at real Go routes** (2026-10-05)
 

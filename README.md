@@ -560,7 +560,7 @@ Our release process follows industry best practices:
 
 🌟 **Star us on GitHub** • 🐛 **Report Issues** • 💡 **Suggest Features** • 📚 **Contribute Docs**
 
-[**GitHub Issues**](https://github.com/agenthub/agenthub/issues) • [**Discussions**](https://github.com/agenthub/agenthub/discussions) • [**Contributing Guide**](CONTRIBUTING.md)
+[**GitHub Issues**](https://github.com/agenthub/agenthub/issues) • [**Discussions**](https://github.com/agenthub/agenthub/discussions)
 
 </div>
 

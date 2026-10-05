@@ -571,6 +571,6 @@ All tools return consistent error format:
 ---
 
 ## Related Documentation
-- [MCP Client Integration Guide](./mcp-client-integration-complete.md)
+- [Go server surface inventory (authoritative)](./surface-inventory.md)
 - [Complete Setup Guide](../setup-guides/complete-setup-guide.md)
 - [Complete Authentication Guide](../authentication/complete-authentication-guide.md)

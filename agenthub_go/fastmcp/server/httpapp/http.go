@@ -16,6 +16,8 @@ import (
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
+	"agenthub/fastmcp/config"
+	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
@@ -146,30 +148,19 @@ func authenticateUser(ctx context.Context, r *http.Request) (*authdomain.User, e
 }
 
 // healthServerName is the FastMCP server name (mcp_entry_point.py server = FastMCP(name=...)).
-const healthServerName = "agenthub - Task Management & Agent Orchestration"
+// The description after the dash is the one-line product description the frontend
+// landed with directive G (agenthub-frontend/src/components/Header.tsx:125); keep the
+// two in step rather than phrasing a third one here.
+const healthServerName = config.ServerName
 
 // healthVersion is the release the server reports on /health. Bump it with every
 // change that must be confirmable after a deploy: the Docker build context has
 // no .git, so no commit id can be embedded.
-const healthVersion = "0.0.17"
+const healthVersion = "0.0.18"
 
-// HealthStatusProvider supplies the connection figures the Python /health
-// handler reads from get_connection_manager() and get_status_broadcaster(). The
-// server package registers an implementation; httpapp cannot import server
-// because server imports httpapp (mcp_entry_point.go).
-type HealthStatusProvider interface {
-	GetConnectionStats() *entities.OrderedMap[any]
-	GetReconnectionInfo() *entities.OrderedMap[any]
-	GetLastStatus() *entities.OrderedMap[any]
-	GetClientCount() int
-}
-
-var globalHealthStatusProvider HealthStatusProvider
-
-// SetHealthStatusProvider registers the provider used by GET /health.
-func SetHealthStatusProvider(p HealthStatusProvider) {
-	globalHealthStatusProvider = p
-}
+// healthProcessStart is the process start time captured at init; /health reports seconds since it.
+// The Python handler read uptime from the connection manager, an object the Go server never had.
+var healthProcessStart = time.Now()
 
 // handleHealth is GET /health, the custom route health_endpoint of
 // mcp_entry_point.py. JSONResponse defaults to 200.
@@ -181,15 +172,13 @@ func handleHealth(w http.ResponseWriter, _ *http.Request) {
 	body.Set("version", healthVersion)
 	body.Set("auth_enabled", healthAuthEnabled())
 
-	provider := globalHealthStatusProvider
-	if provider == nil {
-		// Python's except branch when get_connection_manager() raises.
-		body.Set("connections", healthErrorMap("connection manager unavailable"))
-		body.Set("status_broadcasting", healthBroadcastingErrorMap("connection manager unavailable"))
-	} else {
-		body.Set("connections", healthConnections(provider))
-		body.Set("status_broadcasting", healthStatusBroadcasting(provider))
-	}
+	// Read the live registry the realtime fan-out itself uses
+	// (server/routes/websocket_routes.go). There is no provider seam to leave
+	// unassigned: a seam that production never assigns reported a false
+	// "connection manager unavailable" while fan-out worked fine.
+	count := routes.ConnectionCount()
+	body.Set("connections", healthConnections(count))
+	body.Set("status_broadcasting", healthStatusBroadcasting(count))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -207,69 +196,27 @@ func healthAuthEnabled() bool {
 	return false
 }
 
-// healthConnections builds health_data["connections"].
-func healthConnections(p HealthStatusProvider) *entities.OrderedMap[any] {
-	stats := p.GetConnectionStats()
-	reconnection := p.GetReconnectionInfo()
-	connections := healthField(stats, "connections")
-	serverInfo := healthField(stats, "server_info")
+// healthConnections builds health_data["connections"] from the live registry.
+// Only figures the Go server actually measures are reported; the Python-era
+// server_restart_count and recommended_action had no Go source.
+func healthConnections(count int) *entities.OrderedMap[any] {
 	out := entities.NewOrderedMap[any]()
-	out.Set("active_connections", healthGet(connections, "active_connections"))
-	out.Set("server_restart_count", healthGet(serverInfo, "restart_count"))
-	out.Set("uptime_seconds", healthGet(serverInfo, "uptime_seconds"))
-	out.Set("recommended_action", healthGet(reconnection, "recommended_action"))
+	out.Set("active_connections", count)
+	out.Set("uptime_seconds", time.Since(healthProcessStart).Seconds())
 	return out
 }
 
-// healthStatusBroadcasting builds health_data["status_broadcasting"].
-func healthStatusBroadcasting(p HealthStatusProvider) *entities.OrderedMap[any] {
+// healthStatusBroadcasting builds health_data["status_broadcasting"]. active is
+// ASSERTED, not measured: the fan-out registry is package-level and lives exactly
+// as long as the process, so active is true by construction while the server
+// serves - deliberately NOT the old defect's shape, which asserted a false
+// UNAVAILABLE state while fan-out worked. If the fan-out ever becomes stoppable
+// while the server stays up, this field needs a real source instead of the
+// constant. registered_clients is the same registry count /health reports as
+// active_connections.
+func healthStatusBroadcasting(count int) *entities.OrderedMap[any] {
 	out := entities.NewOrderedMap[any]()
 	out.Set("active", true)
-	out.Set("registered_clients", p.GetClientCount())
-	lastStatus := p.GetLastStatus()
-	if lastStatus == nil {
-		out.Set("last_broadcast", any(nil))
-		out.Set("last_broadcast_time", any(nil))
-		return out
-	}
-	out.Set("last_broadcast", healthGet(lastStatus, "event_type"))
-	out.Set("last_broadcast_time", healthGet(lastStatus, "timestamp"))
+	out.Set("registered_clients", count)
 	return out
-}
-
-// healthErrorMap is Python's {"error": str(e)} connection fallback.
-func healthErrorMap(msg string) *entities.OrderedMap[any] {
-	out := entities.NewOrderedMap[any]()
-	out.Set("error", msg)
-	return out
-}
-
-// healthBroadcastingErrorMap is Python's {"active": False, "error": str(e)} fallback.
-func healthBroadcastingErrorMap(msg string) *entities.OrderedMap[any] {
-	out := entities.NewOrderedMap[any]()
-	out.Set("active", false)
-	out.Set("error", msg)
-	return out
-}
-
-// healthField returns the nested map at key, or nil when it is absent.
-func healthField(m *entities.OrderedMap[any], key string) *entities.OrderedMap[any] {
-	if m == nil {
-		return nil
-	}
-	v, ok := m.Get(key)
-	if !ok {
-		return nil
-	}
-	nested, _ := v.(*entities.OrderedMap[any])
-	return nested
-}
-
-// healthGet reads key from an optional map (None when the map or key is absent).
-func healthGet(m *entities.OrderedMap[any], key string) any {
-	if m == nil {
-		return nil
-	}
-	v, _ := m.Get(key)
-	return v
 }

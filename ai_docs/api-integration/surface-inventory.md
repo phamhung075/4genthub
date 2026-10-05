@@ -4,6 +4,11 @@
 `agenthub_go/`, not from another document. Dates/HEAD: generated at
 `c4ff8d4279971ce5794b9cdc3b469d363c7b19a3`.
 
+**Update 2026-10-05 (NEXT_GEN D5, teams/sharing).** §1.20 and the two team rows of §3.3
+were added and every count updated: registrations 132 -> **140**, runtime `Tables` 36 ->
+**38**. This delta was generated on top of `b0a1f510`; the rest of the file is unchanged
+from the `c4ff8d42` snapshot.
+
 **Scope:** the Go service (`agenthub_go`, `cmd/agenthub`) plus the auth route sets it
 mounts. `agenthub-frontend` and `agenthub_main` (Python) are out of scope and were not
 touched.
@@ -20,8 +25,8 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts:** **112** registrations in `fastmcp/server/httpapp/**` + **20** in
-`fastmcp/auth/{interface,api}` = **132 total registrations**. No routes are registered
+**Counts:** **120** registrations in `fastmcp/server/httpapp/**` + **20** in
+`fastmcp/auth/{interface,api}` = **140 total registrations**. No routes are registered
 outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls
 `app.Handler()` at `cmd/agenthub/main.go:52`).
 
@@ -267,6 +272,22 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 | GET | `/auth/supabase/me` | `SupabaseAuthController.VerifyToken` | `supabase_endpoints.go:463` |
 | GET | `/auth/supabase/health` | `SupabaseAuthController.HealthCheck` | `supabase_endpoints.go:477` |
 
+### 1.20 Teams — base `/api/v2/openrig/teams` (`team_mount.go`)
+
+Added by NEXT_GEN D5 (teams and sharing, slice 1). `{team}` is the team slug, looked up
+within the caller's memberships.
+
+| Method | Path | Handler | Registration |
+|---|---|---|---|
+| POST | `/api/v2/openrig/teams` | `handleCreateTeam` | `team_mount.go:72` |
+| GET | `/api/v2/openrig/teams` | `handleListTeams` | `team_mount.go:75` |
+| GET | `/api/v2/openrig/teams/{team}` | `handleGetTeam` | `team_mount.go:78` |
+| DELETE | `/api/v2/openrig/teams/{team}` | `handleDeleteTeam` | `team_mount.go:81` |
+| GET | `/api/v2/openrig/teams/{team}/members` | `handleListTeamMembers` | `team_mount.go:84` |
+| POST | `/api/v2/openrig/teams/{team}/members` | `handleAddTeamMember` | `team_mount.go:87` |
+| PATCH | `/api/v2/openrig/teams/{team}/members/{user}` | `handleUpdateTeamMember` | `team_mount.go:90` |
+| DELETE | `/api/v2/openrig/teams/{team}/members/{user}` | `handleRemoveTeamMember` | `team_mount.go:93` |
+
 ---
 
 ## 2. MCP tool surface
@@ -421,16 +442,17 @@ it in `init()`; `ProductionTables` is deliberately separate.
 | `user_token_balances` | `UserTokenBalance` | `models_auth.go:120` | `models_auth.go:155` |
 | `email_tokens` | `EmailTokenModel` | `fastmcp/auth/infrastructure/repositories/email_token_repository.go:53` | `email_token_repository.go:86` |
 
-### 3.3 Seat-management tables — appended to `Tables` via `init()`
+### 3.3 Seat-management and team tables — appended to `Tables` via `init()`
 
 Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go`
-(`seatManagementDatabaseTables`); appended at `seat_tables.go:309`. The same 13 tables are
-declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql` (note for a
-reader counting statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **14** because
-the file's header COMMENT at line 6 contains that phrase; there are **13** statements, one
-per table, and no table is declared twice — `grep -cE '^CREATE TABLE IF NOT EXISTS'` ->
-13).
+(`seatManagementDatabaseTables`, appended at `seat_tables.go:309`) and
+`team_tables.go` (`teamManagementDatabaseTables`, appended at `team_tables.go:56`). The
+same 15 tables are declared as DDL in
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: the 13
+seat tables plus the 2 team tables of the file's TEAMS section (note for a reader counting
+statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **16** because the file's header
+COMMENT at line 6 contains that phrase; there are **15** statements, one per table, and no
+table is declared twice — `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> 15).
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
@@ -447,6 +469,8 @@ per table, and no table is declared twice — `grep -cE '^CREATE TABLE IF NOT EX
 | `machines` | `MachineORM` | `seat_tables.go:247` | `:207` |
 | `machine_tokens` | `MachineTokenORM` | `seat_tables.go:261` | `:219` |
 | `seat_status` | `SeatStatusORM` | `seat_tables.go:281` | `:234` |
+| `teams` | `TeamORM` | `team_tables.go:14` | `:258` |
+| `team_members` | `TeamMemberORM` | `team_tables.go:34` | `:272` |
 
 ### 3.4 `ProductionTables` — declared but NOT appended to `Tables` (6)
 
@@ -466,7 +490,7 @@ auth `users` table and would mis-order DDL). They are therefore **not** created 
 
 ### 3.5 Totals
 
-- `database.Tables` at runtime: 20 (core) + 3 (auth) + 13 (seat) = **36 tables**.
+- `database.Tables` at runtime: 20 (core) + 3 (auth) + 13 (seat) + 2 (team) = **38 tables**.
 - Plus `ProductionTables`: **6** tables declared but not registered for creation.
 - Every table in §3.1–3.4 carries a `user_id` column except `applied_migrations`
   (a migration ledger; `models_prod.go:118`).
@@ -552,7 +576,7 @@ Run from `/home/daihu/__projects__/4genthub/agenthub_go` unless noted.
 # Every route registration (the source of §1)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go'
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go'
-# Counts: 112 httpapp + 20 auth = 132
+# Counts: 120 httpapp + 20 auth = 140
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go' | wc -l
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go' | wc -l
 
@@ -571,6 +595,7 @@ grep -rn 'const base' --include='*.go' fastmcp/server/httpapp | grep -v '_test.g
 grep -n '^\t{Name: "' fastmcp/task_management/infrastructure/database/models.go
 grep -n '^\t{Name: "' fastmcp/task_management/infrastructure/database/models_prod.go
 grep -n '^\t{Name: "' fastmcp/seat_management/infrastructure/database/seat_tables.go
+grep -n '^\t{Name: "' fastmcp/seat_management/infrastructure/database/team_tables.go
 grep -n '^\t{Name: "' fastmcp/auth/infrastructure/database/models_auth.go
 grep -n '^\t{Name: "' fastmcp/auth/infrastructure/repositories/email_token_repository.go
 
