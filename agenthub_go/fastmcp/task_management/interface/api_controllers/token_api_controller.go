@@ -16,7 +16,6 @@ type TokenFacadeProvider interface {
 
 // TokenManageFacade is the token application facade surface used here.
 type TokenManageFacade interface {
-	GenerateMCPTokenFromUser(ctx context.Context, userID, email string, expiresInHours int, metadata *entities.OrderedMap[any], session any) *entities.OrderedMap[any]
 	RevokeUserTokens(ctx context.Context, userID string) *entities.OrderedMap[any]
 	GetTokenStats() *entities.OrderedMap[any]
 	CleanupExpiredTokens(ctx context.Context) *entities.OrderedMap[any]
@@ -54,15 +53,6 @@ func (c *TokenAPIController) ensureFacade() (TokenManageFacade, error) {
 	facade, _ := raw.(TokenManageFacade)
 	c.tokenFacade = facade
 	return facade, nil
-}
-
-// GenerateMCPTokenFromUser mirrors generate_mcp_token_from_user.
-func (c *TokenAPIController) GenerateMCPTokenFromUser(ctx context.Context, userID, email string, expiresInHours int, metadata *entities.OrderedMap[any], session any) *entities.OrderedMap[any] {
-	facade, err := c.ensureFacade()
-	if err != nil || facade == nil {
-		return nil
-	}
-	return facade.GenerateMCPTokenFromUser(ctx, userID, email, expiresInHours, metadata, session)
 }
 
 // RevokeUserTokens mirrors revoke_user_tokens.

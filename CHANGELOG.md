@@ -21,7 +21,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `GET /api/v2/branches/{id}/task-counts` had no consumer outside `agenthub_go` (the only external reference is the Python mirror, `agenthub_main/src/fastmcp/server/routes/branch_routes.py:314`; no frontend, script or doc caller), the same criterion that removed its siblings. Deleted: the mount, `routes.GetBranchTaskCounts`, the `BranchController` method, the adapter method, `BranchAPIController.GetBranchTaskCounts` and the mount-inventory row. `GET /api/v2/branches/b1/task-counts` now 404s, pinned by `TestDeletedBranchTaskCountsRouteIsNotServed`.
 
+**The unreachable MCP-token chain is gone** (2026-10-05)
+
+- `TokenAPIController.GenerateMCPTokenFromUser` (interface member, controller method) and `TokenApplicationFacade.GenerateMCPTokenFromUser` had no mounted caller: verified by grep over the whole Go tree (only the interface declaration, the two methods, and the tests existed) and against the Python side, whose same chain also has no route caller. No mounted route reached it, so it was unreachable code rather than a served route — the same class the frontend cleanup removed, one layer down. The two tests that existed only for it went with it (the port-test fake method and the facade test's `generate_mcp_token_from_user` block).
+- Kept, deliberately: everything the mounted `/api/v2/tokens` routes still serve (`deps.tokens`, `TokenAPIController`'s other methods, the facade's other methods, and the shared `zpTokenFailure` helper) and `MCPTokenService.GenerateMCPTokenFromUserID` — see the handoff: nothing in production calls that one now either, but it is the auth domain's only minting API and the fixture its Validate/Revoke/Cleanup/Stats tests build on, so removing it would gut that coverage rather than remove a route.
+
+### Added
+
+**Allowing seat links are restricted to `claude-code` seats** (2026-10-05, G3 owner decision)
+
+- `fastmcp/server/httpapp/seat_admin_mount.go`: `handleUpsertSeatLink` refuses an ALLOWING link (allow true or omitted) when either seat's runtime is a known other runtime — codex has no verified deny path, so such a link would be an unenforced message channel. The refusal is a 400 naming the runtime. A DENY link (`allow: false`) stays legal for any runtime because it only removes a channel, and a seat record with no runtime is not judged (seat creation validates the runtime, so production cannot create one).
+
+**Seat admin mutations now broadcast a seat-domain frame** (2026-10-05)
+
+- `fastmcp/server/httpapp/seat_admin_mount.go`: every seat admin mutation emits one frame on the existing WS v2 envelope (`BroadcastDataChange`, the same path task/project/branch events use): payload entity `seat`|`room`, action `created`|`updated`|`deleted`, and `data.primary` = `{id, room, seat_key}` (seat events), `{id, room}` (room events) or `{id:"company"}` for the company-scoped routes. Covered: room create/delete, seat create/delete, occupant, permission policy, room/company/seat overlay, link upsert/delete, and settings. A rejected mutation emits nothing. Deliberately NOT covered: `POST /seat-types/{slug}/versions` and `PUT /modules/{slug}/versions/{version}` — they change the catalog, not a room or a seat, and the dashboard's seat surface reads resolved seats.
+- The tenant boundary is the existing one: the frame is authorized by the same rules as every other entity (the acting user's own sockets; everyone else denied and told so), so a second user never receives another tenant's seat event.
+
 ### Fixed
+
+**Live updates reach clients again: the realtime registry is populated** (2026-10-05)
+
+- `fastmcp/server/httpapp/ws_mount.go`: `handleRealtime` accepted a socket and answered it directly, but never added it to `routes.connections` — the registry `BroadcastDataChange` and `IsUserAuthorizedForMessage` read — and nothing but tests ever wrote it. The fan-out snapshot was therefore always empty and EVERY broadcast went nowhere: seats, tasks, subtasks, projects, branches and contexts. The handler now registers the accepted socket (`routes.RegisterConnection`, new in `fastmcp/server/routes/websocket_routes.go`) right after the upgrade and removes it on every exit path via `defer routes.UnregisterConnection` (normal close, read error, panic); removal is a keyed delete, so it cannot conflict with the broadcast's own cleanup of disconnected clients.
+- Reproduced and proven on a local stack with a raw WebSocket probe: before, a connected client received the welcome frame and then NOTHING after a real room-create (200) — no data frame and no denial frame; after, the same probe receives `{type: update, payload.entity: room, action: created}`, and a second user still receives only the documented denial frames (the tenant boundary is unchanged).
+- Present in production 0.0.15: live updates on the shipped dashboard were dead for every entity, not only seats.
+
+**A dead seat now reads `stopped` and can be respawned** (2026-10-05, owner decision)
+
+- `scripts/openrig_bridge.py`: a live session whose `agentActivity.state` is `unknown` with reason `no_runtime_hook` — an agent that died outside `rig seat stop` — now maps to `stopped` instead of `unknown` (the owner's decision, superseding the earlier `unknown` reading). `attention_required` alone still never means blocked, and a live busy seat still reads `running`. Measured cold-start overlap, and it is runtime-dependent: a just-launched agy seat produces the same reading until its runtime hook attaches (~15s), while an omp seat with no activity yet reports reason `null` and stays unknown, so nothing may act on a single sample and the 30s hold must not be shortened without re-measuring per runtime.
+- `scripts/openrig_seat_sync.py`: new `respawn <room> <seat> [--after-seconds N] [--reason …]`. OpenRig has no automatic trigger; it owns the primitive `rig seat launch <seat> [--fresh] [--stop] --reason <text>` (`@openrig/cli/dist/commands/seat.js:419`), which this calls only after the dead reading has held for the whole wait (default 30s), so it cannot fire at a starting seat. `rig seat launch` can start the occupant and still exit non-zero (a runtime-identity notice), so the command decides on the seat's own state: still dead -> error, running now -> exit 0 with the caveat on stderr, so an automated caller never reads a successful respawn as a failure. Proven live on a scratch rig: kill the agent -> bridge reports `stopped` -> respawn -> the seat is back (`agentActivity running`).
+
+**An offline bundle now carries the seat's pinned policy** (2026-10-05)
+
+- `scripts/openrig_seat_sync.py`: the rig root a bundle is built from materialized each seat's agent directory as a symlink to the pinned snapshot, which holds the rendered files only — so `policy.json`, the file `seatcheck` reads at runtime, never travelled, and an offline seat could not decide or audit. `materialize_agent()` now writes a copy of the snapshot plus the seat's `policy.json`/`pinned.json` (`cmd_rig`), and the new `offline-install <target> [--home <home>]` copies the bundled policy into `<home>/.openrig/agenthub-seats/<rig>/<member>/`, which is where `seatcheck` resolves it. Proven offline with the local server stopped: the allowed path delivered and audited (`Sent to …`, `Allowed:true`, `Outcome:"delivered"`), the disallowed path refused and audited (`denied: no link`, exit 3, `Allowed:false`, `Reason:"no link"`). It refuses to install a policy that names another seat, because members sharing one seat type share one agent directory inside a bundle.
 
 **The branch collection POST is an exact match** (2026-10-04)
 

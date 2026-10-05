@@ -18,9 +18,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { ModulePublishForm } from '../components/seats/ModulePublishForm';
 import { SeatTypeVersionForm } from '../components/seats/SeatTypeVersionForm';
 import { useModules, useSeatTypes } from '../hooks/useSeats';
+import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 export const SeatAuthoringPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Live seat sync: module and seat-type changes arrive over the same socket.
+  const { user, tokens } = useAuth();
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  useRealtimeSync(webSocketClient.client, true);
   const { seatTypes, isLoading, error, refetch } = useSeatTypes();
   const { modules, isLoading: modulesLoading, error: modulesError, refetch: refetchModules } = useModules();
 

@@ -148,7 +148,7 @@ describe('TokenManagement', () => {
       renderWithProviders(<TokenManagement />);
 
       // Scopes are grouped by category headings
-      const categories = ['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute'];
+      const categories = ['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute', 'Sessions'];
       categories.forEach((category) => {
         expect(screen.getByText(`${category} Permissions`)).toBeInTheDocument();
       });
@@ -159,6 +159,51 @@ describe('TokenManagement', () => {
       expect(screen.getAllByText('Execute').length).toBeGreaterThanOrEqual(1);
       // Admin is not an available scope
       expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+    });
+
+    it('offers the session-stream connector scope and sends it with the token', async () => {
+      renderWithProviders(<TokenManagement />);
+
+      const nameInput = screen.getByPlaceholderText(/Production API/);
+      fireEvent.change(nameInput, { target: { value: 'Connector Token' } });
+
+      // Fails when the connector scope is absent from the picker: getScopeCard throws.
+      fireEvent.click(getScopeCard('Sessions', 'Write'));
+
+      fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
+
+      await waitFor(() => {
+        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
+          expect.objectContaining({ name: 'Connector Token', scopes: ['sessions:write'] })
+        );
+      });
+    });
+
+    it('Full Access selects every scope except the connector scope (literal set)', async () => {
+      renderWithProviders(<TokenManagement />);
+
+      fireEvent.change(screen.getByPlaceholderText(/Production API/), { target: { value: 'Full Access Token' } });
+      fireEvent.click(screen.getByRole('button', { name: /Full Access/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
+
+      // Literal, never derived from AVAILABLE_SCOPES: adding any scope must turn this red so the
+      // Full Access decision is deliberate. The connector scope is deliberately absent.
+      const FULL_ACCESS_SCOPES = [
+        'openid', 'profile', 'email', 'offline_access', 'mcp-api', 'mcp-roles', 'mcp-profile',
+        'projects:create', 'projects:read', 'projects:update', 'projects:delete',
+        'tasks:create', 'tasks:read', 'tasks:update', 'tasks:delete',
+        'subtasks:create', 'subtasks:read', 'subtasks:update', 'subtasks:delete',
+        'contexts:create', 'contexts:read', 'contexts:update', 'contexts:delete',
+        'agents:create', 'agents:read', 'agents:update', 'agents:delete',
+        'branches:create', 'branches:read', 'branches:update', 'branches:delete',
+        'mcp:execute', 'mcp:delegate',
+      ];
+
+      await waitFor(() => {
+        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
+          expect.objectContaining({ scopes: FULL_ACCESS_SCOPES })
+        );
+      });
     });
   });
 

@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { SeatAuthoringPage } from '../../pages/SeatAuthoringPage';
 import { seatApi } from '../../services/seatApi';
+import { useWebSocket } from '../../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -13,6 +15,19 @@ vi.mock('../../services/seatApi', () => ({
     putModuleVersion: vi.fn(),
     createSeatTypeVersion: vi.fn(),
   },
+}));
+
+// The page mounts the live seat sync (item 16); stub the socket and the auth context.
+vi.mock('../../hooks/useWebSocketV2', () => ({
+  useWebSocket: vi.fn(() => ({ client: { on: vi.fn(), off: vi.fn() }, isConnected: false })),
+}));
+
+vi.mock('../../hooks/useRealtimeSync', () => ({
+  useRealtimeSync: vi.fn(),
+}));
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'test-user' }, tokens: { access_token: 'test-token' } }),
 }));
 
 const mockApi = vi.mocked(seatApi);
@@ -231,5 +246,12 @@ describe('SeatAuthoringPage', () => {
 
     expect(screen.getByLabelText('Default runtime')).toHaveValue('claude-code');
     expect(screen.getByLabelText('Module refs')).toHaveValue('');
+  });
+
+  it('mounts the live seat sync (useWebSocket + useRealtimeSync)', () => {
+    renderPage();
+
+    expect(vi.mocked(useWebSocket)).toHaveBeenCalledWith('test-user', 'test-token');
+    expect(vi.mocked(useRealtimeSync)).toHaveBeenCalled();
   });
 });

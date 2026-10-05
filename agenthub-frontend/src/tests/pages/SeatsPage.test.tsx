@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { SeatsPage } from '../../pages/SeatsPage';
 import { seatApi } from '../../services/seatApi';
+import { animationFactory } from '../../services/AnimationFactory';
 import { SEAT_MODEL_MESSAGE, SEAT_NAME_MESSAGE } from '../../lib/seatNames';
 
 vi.mock('../../services/seatApi', () => ({
@@ -26,6 +27,27 @@ vi.mock('../../services/seatApi', () => ({
     getResolvedSeat: vi.fn(),
     fetchMachines: vi.fn(),
   },
+}));
+
+const wsState = vi.hoisted(() => ({ handler: null as ((msg: unknown) => void) | null }));
+
+// The page mounts the live seat sync (item 16): give it a controllable socket client
+// and a test auth context. useRealtimeSync stays real, so the synthetic-event test at
+// the bottom exercises the actual seat handling rather than a stub.
+vi.mock('../../hooks/useWebSocketV2', () => ({
+  useWebSocket: () => ({
+    client: {
+      on: (event: string, handler: (msg: unknown) => void) => {
+        if (event === 'update') wsState.handler = handler;
+      },
+      off: vi.fn(),
+    },
+    isConnected: false,
+  }),
+}));
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 'test-user' }, tokens: { access_token: 'test-token' } }),
 }));
 
 const mockApi = vi.mocked(seatApi);
@@ -571,5 +593,41 @@ describe('SeatsPage', () => {
       expect(await within(dialog).findByText('seat "alice" not found')).toBeInTheDocument();
       expect(screen.getByText('Remove seat?')).toBeInTheDocument();
     });
+  });
+
+  it('refreshes the seat list and registers the row when a seat event arrives over the socket', async () => {
+    renderPage();
+    await screen.findByText('Development');
+    fireEvent.click(screen.getByRole('button', { name: /Development/ }));
+    await screen.findByText('alice');
+
+    expect(mockApi.listSeats).toHaveBeenCalledTimes(1);
+
+    // Synthetic seat event on the page's own socket. The real useRealtimeSync must
+    // invalidate ['seatSeats', 'dev'] so the list refetches without a manual refresh.
+    mockApi.listSeats.mockResolvedValue({
+      success: true,
+      seats: [seat, { ...seat, id: 'seat-2', seat_key: 'bob' }],
+    });
+    wsState.handler?.({
+      id: 'msg-seat-created',
+      version: '2.0',
+      type: 'update',
+      timestamp: new Date().toISOString(),
+      sequence: 1,
+      payload: {
+        entity: 'seat',
+        action: 'created',
+        data: { primary: { id: 'dev/bob', room: 'dev', seat_key: 'bob' } },
+      },
+      metadata: { source: 'user', userId: 'test-user' },
+    });
+
+    await waitFor(() => {
+      expect(mockApi.listSeats).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByText('bob')).toBeInTheDocument();
+    // The new row is registered for animation under its seat id.
+    expect(animationFactory.registerElement).toHaveBeenCalledWith('dev/bob', expect.anything(), 'seat');
   });
 });

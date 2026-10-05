@@ -51,6 +51,9 @@ import {
 import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
 import { SeatPermissionPolicyPanel } from '../components/seats/SeatPermissionPolicyPanel';
 import { computeEffectiveModules } from '../lib/seatModules';
+import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 import { SEAT_LINK_KINDS } from '../types/seatTypes';
 import type {
   EffectiveSeatModule,
@@ -663,6 +666,11 @@ const PreviewTab: React.FC = () => {
 export const SeatDetailPage: React.FC = () => {
   const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
   const navigate = useNavigate();
+
+  // Live seat sync: a seat event invalidates this page's seat keys.
+  const { user, tokens } = useAuth();
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  useRealtimeSync(webSocketClient.client, true);
   const { seats, isLoading, error, refetch } = useSeats(room);
   const { seatTypes } = useSeatTypes();
 

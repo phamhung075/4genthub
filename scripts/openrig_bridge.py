@@ -17,14 +17,17 @@ list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
   runtime                       -> runtime  (claude-code|codex|agy|terminal else unknown)
   state, first match wins:
     sessionStatus stopped|exited, or lifecycleState detached|recoverable -> stopped
+    agentActivity.state unknown with reason "no_runtime_hook"              -> stopped
+      (the agent process died outside `rig seat stop` while the tmux session stayed up;
+       owner decision 2026-10-05: report stopped and respawn. A just-launched seat carries
+       reason null, so it stays unknown rather than being called dead.)
     agentActivity.state needs_input, or startupStatus
       attention_required|failed                                         -> blocked
     agentActivity.state running                                          -> running
     agentActivity.state idle                                             -> idle
     anything else                                                        -> unknown
-  lifecycleState attention_required is not a blocked signal: OpenRig keeps it after the agent
-  process dies (agentActivity.state unknown, reason no_runtime_hook), so a dead agent reads
-  unknown, not blocked (see seat_state).
+  lifecycleState attention_required is not a blocked signal in either direction: OpenRig keeps
+  it for a dead agent and for a live busy seat, so it cannot decide on its own (see seat_state).
   The seat key is the member name only, so two pods of one rig with the same member name
   collide: the first node is sent, the others are skipped and named on stderr.
   detail  <- latestError, heldReason, agentActivity.reason (scrubbed, <=200)
@@ -125,10 +128,23 @@ def seat_state(node: dict) -> str:
     activity = _str(_dict(node.get("agentActivity")).get("state"))
     if session in ("stopped", "exited") or life in ("detached", "recoverable"):
         return "stopped"
-    # `lifecycleState: attention_required` is deliberately NOT a "blocked" signal. OpenRig keeps it
-    # after the agent process dies (agentActivity.state "unknown", reason "no_runtime_hook"), so it
-    # cannot tell a seat waiting on a human from one that is gone; the agent's own activity is the
-    # truth source and a node with no live activity falls through to "unknown".
+    # A live session whose runtime hook is gone is an agent that died outside `rig seat stop`
+    # (OpenRig reports agentActivity.state "unknown" with reason "no_runtime_hook" and keeps the
+    # tmux session). Owner decision 2026-10-05: that reads "stopped" and the seat is respawned.
+    # The reason is the only discriminator, and it is RUNTIME-DEPENDENT: measured 2026-10-05, a
+    # just-launched agy seat ALSO reports reason "no_runtime_hook" until its hook attaches (~15s),
+    # so it reads stopped for that window, while an omp seat with no activity yet reports reason
+    # null and stays unknown (live inventory, 4genthub-deepseek.supervisor). That is why `respawn`
+    # requires the dead reading to hold (default 30s) and why the hold must not be shortened
+    # without re-measuring per runtime.
+    if (
+        activity == "unknown"
+        and _str(_dict(node.get("agentActivity")).get("reason")) == "no_runtime_hook"
+    ):
+        return "stopped"
+    # `lifecycleState: attention_required` is deliberately NOT a "blocked" signal: OpenRig keeps it
+    # for a dead agent AND for a live busy seat, so it cannot tell a seat waiting on a human from
+    # one that is gone or working; the agent's own activity is the truth source.
     if (
         activity == "needs_input"
         or startup

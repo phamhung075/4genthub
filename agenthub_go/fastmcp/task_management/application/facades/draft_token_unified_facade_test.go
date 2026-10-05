@@ -170,17 +170,8 @@ func TestDraftTokenFacadeBranches(t *testing.T) {
 		t.Fatalf("NewTokenApplicationFacade: %v", err)
 	}
 
-	// generate_mcp_token_from_user quirk: MCPToken has no token_id.
-	res := facade.GenerateMCPTokenFromUser(context.Background(), "u1", "a@b.c", 1, nil, nil)
-	if v, _ := res.Get("success"); v != false {
-		t.Fatalf("success = %v", v)
-	}
-	if v, _ := res.Get("error"); v != "'MCPToken' object has no attribute 'token_id'" {
-		t.Fatalf("error = %v", v)
-	}
-
 	// validate_token quirk: JWTService has no decode_token.
-	res = facade.ValidateToken(context.Background(), "opaque", nil)
+	res := facade.ValidateToken(context.Background(), "opaque", nil)
 	if v, _ := res.Get("error"); v != "'JWTService' object has no attribute 'decode_token'" {
 		t.Fatalf("error = %v", v)
 	}

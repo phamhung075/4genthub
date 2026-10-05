@@ -339,6 +339,108 @@ func seatAdminTestMux(t *testing.T, source seatAdminSource) *http.ServeMux {
 	return mux
 }
 
+func TestSeatAdminMutationsBroadcastOneSeatFrame(t *testing.T) {
+	type frame struct{ action, entity, id, room, seatKey, userID string }
+	var frames []frame
+	previous := seatBroadcastFn
+	seatBroadcastFn = func(_ context.Context, action, entity, id, room, seatKey, userID string) error {
+		frames = append(frames, frame{action, entity, id, room, seatKey, userID})
+		return nil
+	}
+	defer func() { seatBroadcastFn = previous }()
+
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+	overlay := `{"ops":[{"kind":"add","slug":"instr","version":"1.0.0"}]}`
+	if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/instr/versions/1.0.0", `{"kind":"instruction","content":"c"}`); rec.Code != http.StatusOK {
+		t.Fatalf("seed module: %d %s", rec.Code, rec.Body.String())
+	}
+	frames = nil // the module PUT above is not a seat-domain mutation; start the observation here
+
+	steps := []struct {
+		name, method, path, body, entity, action, id string
+	}{
+		{"room create", http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"team","name":"Team"}`, "room", "created", "team"},
+		{"seat create", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"alice","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/alice"},
+		{"permission policy", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/permission-policy", `{"permission_policy":"yolo"}`, "seat", "updated", "dev/alice"},
+		{"room overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/overlay", overlay, "room", "updated", "dev"},
+		{"company overlay", http.MethodPut, "/api/v2/openrig/overlay", overlay, "room", "updated", "company"},
+		{"seat overlay", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/overlay", overlay, "seat", "updated", "dev/alice"},
+		{"seat create bob", http.MethodPost, "/api/v2/openrig/rooms/dev/seats", `{"seat_key":"bob","seat_type":"coder","runtime":"claude-code"}`, "seat", "created", "dev/bob"},
+		{"link upsert", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/links", `{"to_seat":"bob","kind":"delegates_to"}`, "seat", "updated", "dev/alice"},
+		{"occupant", http.MethodPut, "/api/v2/openrig/rooms/dev/seats/alice/occupant", `{"runtime":"omp","model":"deepseek/deepseek-flash"}`, "seat", "updated", "dev/alice"},
+		{"settings", http.MethodPut, "/api/v2/openrig/settings", `{"follow_latest":true}`, "room", "updated", "company"},
+		{"seat delete", http.MethodDelete, "/api/v2/openrig/rooms/dev/seats/alice", "", "seat", "deleted", "dev/alice"},
+		{"room delete", http.MethodDelete, "/api/v2/openrig/rooms/dev", "", "room", "deleted", "dev"},
+	}
+	for _, step := range steps {
+		before := len(frames)
+		rec := doTestRequest(t, mux, step.method, step.path, step.body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d: %s", step.name, rec.Code, rec.Body.String())
+		}
+		if len(frames) != before+1 {
+			t.Fatalf("%s: emitted %d frames, want exactly 1", step.name, len(frames)-before)
+		}
+		got := frames[len(frames)-1]
+		if got.entity != step.entity || got.action != step.action || got.id != step.id {
+			t.Fatalf("%s: frame = %+v, want %s/%s/%s", step.name, got, step.entity, step.action, step.id)
+		}
+		if got.userID == "" {
+			t.Fatalf("%s: frame carries no user id, so it cannot be tenant-scoped", step.name)
+		}
+		if step.entity == "seat" && (got.room == "" || got.seatKey == "") {
+			t.Fatalf("%s: seat frame is missing room/seat_key: %+v", step.name, got)
+		}
+	}
+
+	// A rejected mutation must not announce anything.
+	before := len(frames)
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"team","name":"Again"}`); rec.Code != http.StatusConflict {
+		t.Fatalf("duplicate room: status = %d, want 409", rec.Code)
+	}
+	if len(frames) != before {
+		t.Fatalf("a rejected mutation emitted %d frames", len(frames)-before)
+	}
+}
+
+func TestSeatAdminLinkRestrictedToClaudeCodeSeats(t *testing.T) {
+	fake := newFakeSeatAdmin()
+	fake.seedRoom("dev")
+	fake.seedSeatType("coder", "1.0.0")
+	mux := seatAdminTestMux(t, fake)
+
+	create := func(seatKey, runtime string) {
+		t.Helper()
+		body := `{"seat_key":"` + seatKey + `","seat_type":"coder","runtime":"` + runtime + `"}`
+		if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats", body); rec.Code != http.StatusOK {
+			t.Fatalf("create %s/%s: %d %s", seatKey, runtime, rec.Code, rec.Body.String())
+		}
+	}
+	create("alpha", "claude-code")
+	create("coderx", "codex")
+	create("gamma", "claude-code")
+
+	link := "/api/v2/openrig/rooms/dev/seats/alpha/links"
+	// An allowing link into a codex seat is refused: no verified deny path there (G3 owner decision).
+	rec := doTestRequest(t, mux, http.MethodPut, link, `{"to_seat":"coderx","kind":"delegates_to"}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "restricted to claude-code seats") {
+		t.Fatalf("allowing link to codex: %d %s", rec.Code, rec.Body.String())
+	}
+	// A deny link only removes a channel, so it stays legal for any runtime.
+	rec = doTestRequest(t, mux, http.MethodPut, link, `{"to_seat":"coderx","kind":"delegates_to","allow":false}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("deny link to codex: %d %s", rec.Code, rec.Body.String())
+	}
+	// Between two claude-code seats an allowing link still works.
+	rec = doTestRequest(t, mux, http.MethodPut, link, `{"to_seat":"gamma","kind":"delegates_to"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("allowing link between claude-code seats: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestSeatAdminRooms(t *testing.T) {
 	mux := seatAdminTestMux(t, newFakeSeatAdmin())
 	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"dev","name":"Development"}`)
@@ -1268,7 +1370,7 @@ func TestSeatAdminLinkRejectsLaunchCycles(t *testing.T) {
 		fake := newFakeSeatAdmin()
 		room := fake.seedRoom("dev")
 		for _, key := range []string{"a", "b", "c"} {
-			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-" + key, RoomID: room.ID, SeatKey: key})
+			fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-" + key, RoomID: room.ID, SeatKey: key, Runtime: "claude-code"})
 		}
 		return fake, seatAdminTestMux(t, fake)
 	}

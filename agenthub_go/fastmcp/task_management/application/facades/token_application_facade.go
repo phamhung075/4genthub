@@ -101,17 +101,6 @@ func zpTokenFailure(msg string) *entities.OrderedMap[any] {
 	return m
 }
 
-// GenerateMCPTokenFromUser mirrors generate_mcp_token_from_user. The Python body reads
-// mcp_token_obj.token_id, which does not exist, so the AttributeError is returned
-// instead. The service call runs first and stores the (unreachable) token, as in Python.
-func (f *TokenApplicationFacade) GenerateMCPTokenFromUser(ctx context.Context, userID, email string, expiresInHours int, metadata *entities.OrderedMap[any], session any) *entities.OrderedMap[any] {
-	if metadata == nil {
-		metadata = entities.NewOrderedMap[any]()
-	}
-	f.mcpTokenService.GenerateMCPTokenFromUserID(ctx, userID, &email, expiresInHours, metadata)
-	return zpTokenFailure("'MCPToken' object has no attribute 'token_id'")
-}
-
 // RevokeUserTokens mirrors revoke_user_tokens.
 func (f *TokenApplicationFacade) RevokeUserTokens(ctx context.Context, userID string) *entities.OrderedMap[any] {
 	success := f.mcpTokenService.RevokeUserTokens(ctx, userID)

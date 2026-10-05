@@ -42,6 +42,10 @@ import {
 } from '../hooks/useSeats';
 import { SEAT_RUNTIMES } from '../types/seatTypes';
 import type { Seat, SeatPinChoice, SeatRuntime } from '../types/seatTypes';
+import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
+import { animationFactory } from '../services/AnimationFactory';
 
 const pinLabel = (seat: Seat) =>
   seat.pinned_version ? `Pinned ${seat.pinned_version}` : 'Follows latest';
@@ -49,6 +53,14 @@ const pinLabel = (seat: Seat) =>
 
 export const SeatsPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Real-time seat sync, the same pattern the task pages use: one WebSocket
+  // client plus useRealtimeSync, which invalidates the seat query keys and
+  // animates the affected row when a seat event arrives.
+  const { user, tokens } = useAuth();
+  const webSocketClient = useWebSocket(user?.id || '', tokens?.access_token || '');
+  useRealtimeSync(webSocketClient.client, true);
+
   const { rooms, isLoading: roomsLoading, error: roomsError, refetch: refetchRooms } = useRooms();
   const { seatTypes, isLoading: seatTypesLoading } = useSeatTypes();
   const { settings, isLoading: settingsLoading, error: settingsError, refetch: refetchSettings } =
@@ -362,7 +374,16 @@ export const SeatsPage: React.FC = () => {
             {seats.map(seat => {
               const live = latestSeatStatus(machines, selectedRoom, seat.seat_key);
               return (
-              <Card key={seat.id}>
+              <Card
+                key={seat.id}
+                ref={(el) => {
+                  // Register the card so a seat WebSocket event can animate this row.
+                  const seatElementId = `${selectedRoom}/${seat.seat_key}`;
+                  if (!el) return;
+                  animationFactory.registerElement(seatElementId, el, 'seat');
+                  return () => animationFactory.unregisterElement(seatElementId);
+                }}
+              >
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center justify-between">
                     <span>{seat.seat_key}</span>

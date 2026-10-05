@@ -72,7 +72,7 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
     if (value === 'mcp-profile') return { resource: 'MCP Profile', verb: 'Access' };
     if (value === 'mcp:execute') return { resource: 'MCP', verb: 'Execute' };
     if (value === 'mcp:delegate') return { resource: 'MCP', verb: 'Delegate' };
-    
+
     // Parse standard format: resource:action
     if (value.includes(':')) {
       const [resource, action] = value.split(':');
@@ -80,7 +80,7 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
       const verbName = action.charAt(0).toUpperCase() + action.slice(1);
       return { resource: resourceName, verb: verbName };
     }
-    
+
     // Fallback for unknown formats
     return { resource: scope.label, verb: 'Access' };
   };
@@ -89,10 +89,10 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
 
   return (
     <div className="relative group">
-      <Card 
+      <Card
         className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-          isSelected 
-            ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10' 
+          isSelected
+            ? 'ring-2 ring-primary shadow-lg bg-gradient-to-br from-primary/10 to-secondary/10'
             : 'hover:shadow-md bg-gradient-to-br from-surface to-surface-secondary border-border hover:border-primary/20'
         }`}
         onClick={() => onToggle(scope.value)}
@@ -100,8 +100,8 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
         <CardContent className="p-3">
           <div className="flex items-center space-x-2">
             <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
-              isSelected 
-                ? 'bg-primary border-primary text-primary-foreground' 
+              isSelected
+                ? 'bg-primary border-primary text-primary-foreground'
                 : 'border-muted-foreground/30 hover:border-primary/50'
             }`}>
               {isSelected && (
@@ -121,7 +121,7 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Tooltip on hover */}
       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 max-w-xs whitespace-normal">
         <div className="text-center">
@@ -134,57 +134,64 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
   );
 }
 
+// The connector scope can open the connector socket and publish terminal sessions, so it is
+// deliberately excluded from the "Full Access" quick action and must be selected by hand.
+const CONNECTOR_SCOPE = 'sessions:write';
+
 const AVAILABLE_SCOPES = [
   // OpenID Connect Core Scopes
   { value: 'openid', label: 'OpenID', description: 'OpenID Connect authentication', category: 'Core' },
   { value: 'profile', label: 'Profile', description: 'User profile information', category: 'Core' },
   { value: 'email', label: 'Email', description: 'Email address access', category: 'Core' },
   { value: 'offline_access', label: 'Offline Access', description: 'Refresh token for offline access', category: 'Core' },
-  
+
   // MCP API Scopes
   { value: 'mcp-api', label: 'MCP API', description: 'Full MCP API access', category: 'API' },
   { value: 'mcp-roles', label: 'MCP Roles', description: 'Role-based access control', category: 'API' },
   { value: 'mcp-profile', label: 'MCP Profile', description: 'MCP user profile data', category: 'API' },
-  
+
   // Projects CRUD Scopes
   { value: 'projects:create', label: 'Create Projects', description: 'Create new projects', category: 'Projects' },
   { value: 'projects:read', label: 'Read Projects', description: 'View projects and details', category: 'Projects' },
   { value: 'projects:update', label: 'Update Projects', description: 'Modify existing projects', category: 'Projects' },
   { value: 'projects:delete', label: 'Delete Projects', description: 'Delete projects', category: 'Projects' },
-  
+
   // Tasks CRUD Scopes
   { value: 'tasks:create', label: 'Create Tasks', description: 'Create new tasks', category: 'Tasks' },
   { value: 'tasks:read', label: 'Read Tasks', description: 'View tasks and details', category: 'Tasks' },
   { value: 'tasks:update', label: 'Update Tasks', description: 'Modify existing tasks', category: 'Tasks' },
   { value: 'tasks:delete', label: 'Delete Tasks', description: 'Delete tasks', category: 'Tasks' },
-  
+
   // Subtasks CRUD Scopes
   { value: 'subtasks:create', label: 'Create Subtasks', description: 'Create new subtasks', category: 'Subtasks' },
   { value: 'subtasks:read', label: 'Read Subtasks', description: 'View subtasks and details', category: 'Subtasks' },
   { value: 'subtasks:update', label: 'Update Subtasks', description: 'Modify existing subtasks', category: 'Subtasks' },
   { value: 'subtasks:delete', label: 'Delete Subtasks', description: 'Delete subtasks', category: 'Subtasks' },
-  
+
   // Contexts CRUD Scopes
   { value: 'contexts:create', label: 'Create Contexts', description: 'Create new contexts', category: 'Contexts' },
   { value: 'contexts:read', label: 'Read Contexts', description: 'View contexts and data', category: 'Contexts' },
   { value: 'contexts:update', label: 'Update Contexts', description: 'Modify context data', category: 'Contexts' },
   { value: 'contexts:delete', label: 'Delete Contexts', description: 'Delete contexts', category: 'Contexts' },
-  
+
   // Agents CRUD Scopes
   { value: 'agents:create', label: 'Register Agents', description: 'Register new agents', category: 'Agents' },
   { value: 'agents:read', label: 'Read Agents', description: 'View agent configurations', category: 'Agents' },
   { value: 'agents:update', label: 'Update Agents', description: 'Modify agent settings', category: 'Agents' },
   { value: 'agents:delete', label: 'Unregister Agents', description: 'Remove agents', category: 'Agents' },
-  
+
   // Branches CRUD Scopes
   { value: 'branches:create', label: 'Create Branches', description: 'Create new git branches', category: 'Branches' },
   { value: 'branches:read', label: 'Read Branches', description: 'View branches and details', category: 'Branches' },
   { value: 'branches:update', label: 'Update Branches', description: 'Modify branch settings', category: 'Branches' },
   { value: 'branches:delete', label: 'Delete Branches', description: 'Delete branches', category: 'Branches' },
-  
+
   // MCP Execute Scopes
   { value: 'mcp:execute', label: 'Execute MCP', description: 'Run MCP commands and tools', category: 'Execute' },
-  { value: 'mcp:delegate', label: 'Delegate MCP', description: 'Delegate MCP operations', category: 'Execute' }
+  { value: 'mcp:delegate', label: 'Delegate MCP', description: 'Delegate MCP operations', category: 'Execute' },
+
+  // Session stream (local connector) scope - mint this only for a connector you run
+  { value: CONNECTOR_SCOPE, label: 'Publish Sessions', description: 'Required by the session-stream connector that runs on your machine: it may open the connector websocket and publish your terminal sessions here.', category: 'Sessions' }
 ];
 
 export function TokenManagement() {
@@ -194,7 +201,7 @@ export function TokenManagement() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Token generation form state
   const [tokenName, setTokenName] = useState('');
   const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
@@ -202,7 +209,7 @@ export function TokenManagement() {
   const [rateLimit, setRateLimit] = useState(1000);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
-  
+
   // Delete dialog state - using token ID as key for multiple dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<{[key: string]: boolean}>({});
 
@@ -227,7 +234,7 @@ export function TokenManagement() {
       logger.debug('Starting token fetch...');
       const response = await tokenService.listTokens();
       logger.debug('Fetched tokens response:', response);
-      
+
       if (response && response.data) {
         setTokens(response.data);
         logger.debug('Set tokens state with:', response.data);
@@ -262,24 +269,24 @@ export function TokenManagement() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await tokenService.generateToken({
         name: tokenName,
         scopes: selectedScopes,
         expires_in_days: expiryDays,
         rate_limit: rateLimit
       });
-      
+
       setGeneratedToken(response.data.token || null);
       setShowTokenDialog(true);
       setSuccess('Token generated successfully');
-      
+
       // Reset form
       setTokenName('');
       setSelectedScopes([]);
       setExpiryDays(30);
       setRateLimit(1000);
-      
+
       // Refresh token list
       await fetchTokens();
     } catch (err) {
@@ -314,8 +321,8 @@ export function TokenManagement() {
   };
 
   const handleScopeToggle = (scopeValue: string) => {
-    setSelectedScopes(prev => 
-      prev.includes(scopeValue) 
+    setSelectedScopes(prev =>
+      prev.includes(scopeValue)
         ? prev.filter(s => s !== scopeValue)
         : [...prev, scopeValue]
     );
@@ -344,8 +351,8 @@ export function TokenManagement() {
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Header Section */}
         <div className="mb-8">
-          <SparklesText 
-            as="h1" 
+          <SparklesText
+            as="h1"
             className="text-4xl font-bold text-foreground mb-4"
             sparkleCount={20}
             sparkleSize={14}
@@ -364,7 +371,7 @@ export function TokenManagement() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        
+
         {success && (
           <Alert className="mb-6 border-l-4 border-green-500 bg-green-50 dark:bg-green-950">
             <CheckCircle className="h-4 w-4" />
@@ -375,22 +382,22 @@ export function TokenManagement() {
         {/* Modern Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-lg h-12">
-            <TabsTrigger 
-              value="generate" 
+            <TabsTrigger
+              value="generate"
               className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Key size={18} />
               <span>Generate Token</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="tokens" 
+            <TabsTrigger
+              value="tokens"
               className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Shield size={18} />
               <span>Active Tokens</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
+            <TabsTrigger
+              value="settings"
               className="flex items-center justify-center space-x-2 font-medium h-full data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all rounded-md"
             >
               <Settings size={18} />
@@ -431,13 +438,13 @@ export function TokenManagement() {
                       {selectedScopes.length} selected
                     </Badge>
                   </div>
-                  
+
                   {/* Quick Actions */}
                   <div className="flex flex-wrap gap-2 p-4 bg-slate-100 dark:bg-slate-700 rounded-lg">
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.map(s => s.value))}
+                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.filter(s => s.value !== CONNECTOR_SCOPE).map(s => s.value))}
                       className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                     >
                       <Shield className="h-4 w-4 mr-1" />
@@ -493,11 +500,16 @@ export function TokenManagement() {
                     </Button>
                   </div>
 
+                  <p className="text-xs text-muted-foreground">
+                    Connector access (Publish Sessions) is not included in Full Access - select it explicitly to mint a
+                    connector token.
+                  </p>
+
                   {/* Improved Grid Layout for Scopes */}
-                  {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute'].map((category) => {
+                  {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute', 'Sessions'].map((category) => {
                     const categoryScopes = AVAILABLE_SCOPES.filter(s => s.category === category);
                     if (categoryScopes.length === 0) return null;
-                    
+
                     return (
                       <div key={category} className="space-y-3">
                         <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
@@ -611,7 +623,7 @@ export function TokenManagement() {
                 Refresh
               </Button>
             </div>
-            
+
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -640,10 +652,10 @@ export function TokenManagement() {
                 {tokens.map((token) => {
                   const isExpiringSoon = new Date(token.expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
                   const isExpired = new Date(token.expires_at) < new Date();
-                  
+
                   return (
-                    <Card 
-                      key={token.id} 
+                    <Card
+                      key={token.id}
                       className={`relative overflow-hidden bg-white dark:bg-slate-800 hover:shadow-lg transition-all duration-300 border ${
                         isExpired ? 'border-red-300 bg-red-50 dark:bg-red-950' : isExpiringSoon ? 'border-orange-300 bg-orange-50 dark:bg-orange-950' : 'border-slate-200 dark:border-slate-700'
                       }`}
@@ -655,11 +667,11 @@ export function TokenManagement() {
                               <span className="truncate">{token.name}</span>
                             </CardTitle>
                             <div className="flex items-center space-x-2">
-                              <Badge 
+                              <Badge
                                 variant={token.is_active && !isExpired ? "default" : "secondary"}
                                 className={`${
-                                  token.is_active && !isExpired 
-                                    ? "bg-green-500 hover:bg-green-600 text-white" 
+                                  token.is_active && !isExpired
+                                    ? "bg-green-500 hover:bg-green-600 text-white"
                                     : "bg-gray-500 text-white"
                                 }`}
                               >
@@ -674,7 +686,7 @@ export function TokenManagement() {
                           </div>
                         </div>
                       </CardHeader>
-                      
+
                       <CardContent className="space-y-4">
                         {/* Dates */}
                         <div className="grid grid-cols-1 gap-2 text-sm">
@@ -693,9 +705,9 @@ export function TokenManagement() {
                             </div>
                           )}
                         </div>
-                        
+
                         <Separator />
-                        
+
                         {/* Usage Stats */}
                         <div className="grid grid-cols-2 gap-4 text-center">
                           <div className="bg-background/50 rounded-lg p-3">
@@ -736,7 +748,7 @@ export function TokenManagement() {
                             </div>
                           </>
                         )}
-                        
+
                         {/* Action Buttons */}
                         <div className="pt-4 space-y-2">
                           <Button
@@ -757,9 +769,9 @@ export function TokenManagement() {
                             <XCircle className="h-4 w-4 mr-2" />
                             Revoke Token
                           </Button>
-                          
+
                           {/* Revoke Dialog - Separate from button */}
-                          <Dialog 
+                          <Dialog
                             open={deleteDialogOpen[token.id] || false}
                             onOpenChange={(open) => !open && closeDeleteDialog(token.id)}
                           >
@@ -831,7 +843,7 @@ export function TokenManagement() {
                 Your token has been generated and is ready for Claude Code MCP integration. Save this configuration securely.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               <Alert className="border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950">
                 <AlertCircle className="h-4 w-4" />
@@ -839,7 +851,7 @@ export function TokenManagement() {
                   <strong>Important:</strong> This token will only be shown once. Copy the configuration now and store it securely.
                 </AlertDescription>
               </Alert>
-              
+
               {/* MCP Configuration Display */}
               <MCPConfigProfile
                 configData={{
@@ -855,7 +867,7 @@ export function TokenManagement() {
                 }}
                 showToken={true}
               />
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold">Quick Actions</h4>
@@ -889,7 +901,7 @@ export function TokenManagement() {
                         </>
                       )}
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -910,7 +922,7 @@ export function TokenManagement() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <Card className="p-4">
                     <h5 className="font-medium mb-2 flex items-center">
@@ -924,7 +936,7 @@ export function TokenManagement() {
                       <p>4. Test connection with the health endpoint</p>
                     </div>
                   </Card>
-                  
+
                   <Card className="p-4">
                     <h5 className="font-medium mb-2 flex items-center">
                       <Shield className="h-4 w-4 mr-2" />
@@ -940,7 +952,7 @@ export function TokenManagement() {
                 </div>
               </div>
             </div>
-            
+
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setShowTokenDialog(false)}>
                 Close
@@ -948,7 +960,7 @@ export function TokenManagement() {
               <Button
                 onClick={() => {
                   const config = {
-                    type: "http", 
+                    type: "http",
                     url: `${API_BASE_URL}/mcp`,
                     headers: {
                       Accept: "application/json, text/event-stream",
@@ -958,7 +970,7 @@ export function TokenManagement() {
                   const configString = `"agenthub_http": ${JSON.stringify(config, null, 2)}`;
                   copyToClipboard(configString, 'complete-config');
                 }}
-                className={copiedButton === 'complete-config' 
+                className={copiedButton === 'complete-config'
                   ? "bg-green-600 hover:bg-green-700 text-white"
                   : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                 }

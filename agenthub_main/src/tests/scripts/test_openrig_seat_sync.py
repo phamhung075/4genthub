@@ -477,7 +477,9 @@ def test_invalid_json_exits_1(monkeypatch, tmp_path, capsys):
     assert "invalid JSON" in err
 
 
-def test_rig_writes_yaml_verbatim_and_links_every_seat(env, tmp_path, capsys):
+def test_rig_writes_yaml_verbatim_and_materializes_each_seat_with_its_policy(
+    env, tmp_path, capsys
+):
     yaml_text = (
         "name: room1\n"
         "pods:\n"
@@ -507,14 +509,16 @@ def test_rig_writes_yaml_verbatim_and_links_every_seat(env, tmp_path, capsys):
 
     coder = rig_dir / "agents" / "coder"
     checker = rig_dir / "agents" / "checker"
-    assert coder.is_symlink()
-    assert checker.is_symlink()
-    assert coder.resolve() == (tmp_path / "room1" / "coder" / HASH_A).resolve()
-    assert checker.resolve() == (tmp_path / "room1" / "checker" / HASH_B).resolve()
-    assert (
-        json.loads((tmp_path / "room1" / "coder" / "pinned.json").read_text())["hash"]
-        == HASH_A
-    )
+    # Materialized copies, not symlinks: a bundle built from this rig root copies what sits
+    # here, so the seat's pinned policy must travel next to the rendered files (G4 fix).
+    assert not coder.is_symlink() and coder.is_dir()
+    assert not checker.is_symlink() and checker.is_dir()
+    for seat, hash_value in (("coder", HASH_A), ("checker", HASH_B)):
+        agent = rig_dir / "agents" / seat
+        assert (agent / "docs/readme.md").read_text() == "hello"
+        assert (agent / "nested/deeper/notes.txt").read_text() == "notes"
+        assert json.loads((agent / "pinned.json").read_text())["hash"] == hash_value
+        assert json.loads((agent / "policy.json").read_text()) == POLICY
 
 
 def test_rig_accepts_uppercase_names(env, tmp_path, capsys):
@@ -528,9 +532,11 @@ def test_rig_accepts_uppercase_names(env, tmp_path, capsys):
     assert code == 0
     assert out.strip().splitlines() == [f"rig:{rig_dir / 'rig.yaml'}"]
     assert err == ""
-    assert (rig_dir / "agents" / "Coder").resolve() == (
-        tmp_path / "Room1" / "Coder" / HASH_A
-    ).resolve()
+    coder = rig_dir / "agents" / "Coder"
+    assert coder.is_dir() and not coder.is_symlink()
+    assert (coder / "docs/readme.md").read_text() == "hello"
+    assert json.loads((coder / "pinned.json").read_text())["hash"] == HASH_A
+    assert json.loads((coder / "policy.json").read_text()) == POLICY
 
 
 def test_rig_second_run_keeps_pin_and_prints_notice(env, tmp_path, capsys):
@@ -551,16 +557,17 @@ def test_rig_second_run_keeps_pin_and_prints_notice(env, tmp_path, capsys):
     assert out.strip().splitlines() == [f"rig:{rig_dir / 'rig.yaml'}"]
     assert f"newer snapshot available: {HASH_B} (run with --update to adopt)" in err
     assert json.loads((seat_dir / "pinned.json").read_text())["hash"] == HASH_A
-    # The link still points at the pinned directory, not the newer one.
-    link = rig_dir / "agents" / "seat1"
-    assert link.is_symlink()
-    assert link.resolve() == (seat_dir / HASH_A).resolve()
+    # The materialized agent still comes from the pinned directory, not the newer one.
+    agent = rig_dir / "agents" / "seat1"
+    assert agent.is_dir() and not agent.is_symlink()
+    assert json.loads((agent / "pinned.json").read_text())["hash"] == HASH_A
+    assert json.loads((agent / "policy.json").read_text()) == POLICY
     assert not (seat_dir / HASH_B).exists()
     # rig.yaml always comes from the current server response.
     assert (rig_dir / "rig.yaml").read_text() == shifted_yaml
 
 
-def test_rig_update_moves_pin_and_link(env, tmp_path, capsys):
+def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     env.set_seat(HASH_A)
     assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
@@ -576,7 +583,9 @@ def test_rig_update_moves_pin_and_link(env, tmp_path, capsys):
     assert code == 0
     assert err == ""
     assert json.loads((seat_dir / "pinned.json").read_text())["hash"] == HASH_B
-    assert (rig_dir / "agents" / "seat1").resolve() == (seat_dir / HASH_B).resolve()
+    agent = rig_dir / "agents" / "seat1"
+    assert (agent / "docs/readme.md").read_text() == "newer"
+    assert json.loads((agent / "pinned.json").read_text())["hash"] == HASH_B
     assert out.strip().splitlines() == [f"rig:{rig_dir / 'rig.yaml'}"]
 
 
@@ -655,9 +664,9 @@ def test_rig_failed_seat_pull_leaves_previous_rig_untouched(env, tmp_path, capsy
     assert "seat seat1 could not be pulled" in err
     # The previous rig directory was not touched or partially overwritten.
     assert (rig_dir / "rig.yaml").read_text() == old_yaml
-    assert (rig_dir / "agents" / "seat1").resolve() == (
-        tmp_path / "room1" / "seat1" / HASH_A
-    ).resolve()
+    agent = rig_dir / "agents" / "seat1"
+    assert agent.is_dir() and not agent.is_symlink()
+    assert json.loads((agent / "pinned.json").read_text())["hash"] == HASH_A
     leftovers = [
         p.name for p in (tmp_path / "room1").iterdir() if p.name.startswith(".rig.")
     ]
@@ -1269,3 +1278,240 @@ def test_shell_path_fallback_is_said_in_the_output(
 
 def test_path_limit_says_only_the_default_tmux_socket_is_queried():
     assert "default tmux socket" in seat_sync.PATH_LIMIT
+
+
+def _ps_node(**overrides):
+    node = {
+        "logicalId": "room1.alpha",
+        "canonicalSessionName": "room1-alpha@room1",
+        "sessionStatus": "running",
+        "lifecycleState": "attention_required",
+        "agentActivity": {"state": "unknown", "reason": "no_runtime_hook"},
+    }
+    node.update(overrides)
+    return node
+
+
+def test_respawn_launches_only_when_the_seat_reads_dead(monkeypatch, capsys):
+    calls = []
+
+    def fake_rig(command):
+        calls.append(command)
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        return subprocess.CompletedProcess(command, 0, "launched", "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(
+        ["respawn", "room1", "alpha", "--after-seconds", "0", "--reason", "agent died"]
+    )
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert err == ""
+    assert out.strip() == "launched"
+    assert [
+        "rig",
+        "seat",
+        "launch",
+        "room1-alpha@room1",
+        "--fresh",
+        "--stop",
+        "--reason",
+        "agent died",
+    ] in calls
+
+
+def test_respawn_reports_success_when_the_launch_warned_but_the_seat_came_up(
+    monkeypatch, capsys
+):
+    """An automated caller must not read a successful respawn as a failure: rig can start the
+    occupant and still exit non-zero (runtime identity notice), so the seat's own state decides."""
+    ps_calls = []
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            ps_calls.append(command)
+            node = (
+                _ps_node()
+                if len(ps_calls) == 1
+                else _ps_node(
+                    agentActivity={
+                        "state": "running",
+                        "reason": "window_activity_motion",
+                    }
+                )
+            )
+            return subprocess.CompletedProcess(command, 0, json.dumps([node]), "")
+        raise subprocess.CalledProcessError(
+            1,
+            command,
+            output="",
+            stderr="Fresh occupant started but runtime identity requires attention\n",
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    out, err = capsys.readouterr()
+    assert code == 0
+    assert "respawned room1.alpha" in err
+    assert "runtime identity requires attention" in err
+    assert out == ""
+
+
+def test_respawn_fails_when_the_seat_is_still_dead_after_the_launch(
+    monkeypatch, capsys
+):
+    """The other half: if the launch failed and the seat still reads dead, it is a failure."""
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        raise subprocess.CalledProcessError(
+            1, command, output="", stderr="launch refused\n"
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert "rig seat launch reported: launch refused" in err
+
+
+def test_respawn_refuses_a_live_seat(monkeypatch, capsys):
+    """On a runtime that behaves like agy a just-launched seat reads exactly like a dead one until
+    its runtime hook attaches (~15s), so anything that is not the dead reading must stop the
+    command before it launches."""
+    calls = []
+
+    def fake_rig(command):
+        calls.append(command)
+        return subprocess.CompletedProcess(
+            command,
+            0,
+            json.dumps(
+                [_ps_node(agentActivity={"state": "idle"}, lifecycleState="running")]
+            ),
+            "",
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+
+    assert code == 2
+    assert "not in the dead-agent state" in err
+    assert not any(command[:3] == ["rig", "seat", "launch"] for command in calls)
+
+
+def test_respawn_refuses_an_unknown_seat(monkeypatch, capsys):
+    def fake_rig(command):
+        return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "beta", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "lists no node room1.beta" in err
+
+
+def test_respawn_surfaces_the_launch_message_instead_of_a_traceback(
+    monkeypatch, capsys
+):
+    """`rig seat launch` can start the occupant and still exit 1 (runtime identity notice), so
+    its own words must reach the operator."""
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        if command[:3] == ["rig", "seat", "launch"]:
+            raise subprocess.CalledProcessError(
+                1,
+                command,
+                output="",
+                stderr="Fresh occupant started but runtime identity requires attention\n",
+            )
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert "rig seat launch reported: Fresh occupant started" in err
+
+
+def _offline_target(tmp_path: Path) -> Path:
+    """A materialized-bundle shape: two members share agent dev, one uses agent rev."""
+    target = tmp_path / "mat"
+    (target / "agents" / "dev").mkdir(parents=True)
+    (target / "agents" / "rev").mkdir(parents=True)
+    (target / "rig.yaml").write_text(
+        "name: room1\n"
+        "pods:\n"
+        "  - id: main\n"
+        "    members:\n"
+        "      - id: alpha\n"
+        "        agent_ref: local:agents/dev\n"
+        "      - id: beta\n"
+        "        agent_ref: local:agents/dev\n"
+        "      - id: gamma\n"
+        "        agent_ref: local:agents/rev\n"
+    )
+    (target / "agents" / "dev" / "policy.json").write_text(
+        json.dumps({"Seat": "alpha", "Links": [{"Allow": True, "From": "alpha"}]})
+    )
+    (target / "agents" / "dev" / "pinned.json").write_text(json.dumps({"hash": HASH_A}))
+    (target / "agents" / "rev" / "policy.json").write_text(
+        json.dumps({"Seat": "gamma", "Links": []})
+    )
+    return target
+
+
+def test_offline_install_writes_the_store_and_skips_a_foreign_policy(tmp_path, capsys):
+    """seatcheck reads <home>/.openrig/agenthub-seats/<rig>/<member>/policy.json, so this is
+    what makes a materialized bundle decidable offline. Members that share one seat type
+    share one agent directory, so only one of their policies can ride there: installing must
+    refuse a policy that names another seat instead of handing this seat the wrong links."""
+    target = _offline_target(tmp_path)
+    home = tmp_path / "home"
+
+    code = run_cli(["offline-install", str(target), "--home", str(home)])
+    out, err = capsys.readouterr()
+
+    store = home / ".openrig" / "agenthub-seats"
+    assert code == 0
+    assert out.strip().splitlines() == [
+        f"installed room1/alpha -> {store / 'room1' / 'alpha'}",
+        f"installed room1/gamma -> {store / 'room1' / 'gamma'}",
+    ]
+    assert (
+        json.loads((store / "room1" / "alpha" / "policy.json").read_text())["Seat"]
+        == "alpha"
+    )
+    assert (
+        json.loads((store / "room1" / "alpha" / "pinned.json").read_text())["hash"]
+        == HASH_A
+    )
+    assert (
+        json.loads((store / "room1" / "gamma" / "policy.json").read_text())["Seat"]
+        == "gamma"
+    )
+    assert not (store / "room1" / "beta").exists()
+    assert "skipped room1/beta" in err and "belongs to seat 'alpha'" in err
+
+
+def test_offline_install_without_any_policy_fails_loudly(tmp_path, capsys):
+    target = tmp_path / "mat"
+    (target / "agents" / "dev").mkdir(parents=True)
+    (target / "rig.yaml").write_text(
+        "name: room1\n"
+        "pods:\n"
+        "  - id: main\n"
+        "    members:\n"
+        "      - id: alpha\n"
+        "        agent_ref: local:agents/dev\n"
+    )
+    code = run_cli(["offline-install", str(target), "--home", str(tmp_path / "home")])
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "no pinned policy found" in err

@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+### Added
+- **The Seats page is live over WebSocket (item 16)** - 2026-10-05
+  - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
+    `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through
+    AnimationFactory; entity `room` events invalidate `seatRooms`/`seatSeats`, and a company-scoped overlay or settings
+    change (`id: 'company'`) invalidates `seatSettings` plus the overlay and resolved roots. The two dead post-T7 cases
+    (`agent`, `agent_instance`) and their handler are removed.
+  - `SeatsPage`, `SeatDetailPage` and `SeatAuthoringPage` mount `useWebSocket` + `useRealtimeSync`, the same pattern the
+    task pages use; each seat card registers itself with AnimationFactory (`entityType: 'seat'`), and
+    `src/styles/seat-animations.css` supplies `seatRow{Create,Update,Delete}Animation`.
+  - Protocol: `EntityType` and `WSPayload.entity` gain `seat`/`room`, with `SeatEventPayload`/`RoomEventPayload`
+    (`{ id: '<room>/<seat_key>', room, seat_key }` and `{ id, room }`). The Go half that emits these frames is go-dev's
+    row; until it lands the client half is proven with a synthetic socket event, not the two-browser demo.
+  - Tests: `src/tests/hooks/test_useRealtimeSync_seat.test.tsx` (5 of its 6 cases fail without the seat dispatcher
+    cases) and a synthetic seat event in `src/tests/pages/SeatsPage.test.tsx` asserting the list refetches and the row
+    registers.
+- **Connector scope in the token UI (C2)** - 2026-10-05
+  - The Tokens page now offers the session-stream connector's scope (`sessions:write`) under a Sessions category, with a
+    label and description naming the connector it is for. `AVAILABLE_SCOPES` had no sessions entry and no `sessions:`
+    scope string existed anywhere in `src`, so a user could not mint a connector token from the dashboard at all - the
+    backend already accepts arbitrary scopes (`routes_mount.go`, `GenerateAPIToken`) and the connector authorizes with
+    `sessions:write` (`session_stream_routes.go`, consumed by the scope check in `ws_mount.go`).
+  - `src/pages/TokenManagement.tsx` also lists Sessions in the category render order so the picker shows it.
+  - Tests: a new case selects the Sessions/Write card and asserts the create payload carries `sessions:write`; it fails
+    when the entry is missing (verified by removing it, seeing two failures, restoring).
+  - Full Access no longer includes the connector scope: it is filtered out of the quick action (`CONNECTOR_SCOPE`) and the
+    page states it ("Connector access (Publish Sessions) is not included in Full Access"), because a connector
+    credential can publish a terminal and should be minted deliberately. A literal-array test pins the Full Access set,
+    so any future scope that leaks in turns it red and forces the decision; adding a scope was shown to fail exactly
+    that one case.
+
 ### Changed
 - **Assignee pickers take their names from the user's seats (D6)** - 2026-10-04
   - `getAvailableAgents` (`src/api.ts`) no longer returns a fixed list of 32 library agents. It reads the rooms and the
@@ -50,6 +81,11 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **Orphaned MCP-token surface removed** - 2026-10-05
+  - Deleted `src/services/mcpTokenService.ts`, the unmounted `src/components/MCPTokenManager.tsx`, and their tests. The
+    service called `POST /api/v2/mcp-tokens/generate|revoke|stats`, which exist only in the Python server and were never
+    ported to Go, and the component was never mounted (no route, no importer). A repo-wide grep finds no reference to
+    either outside the deleted files. This settles the orphaned surface the frontend/backend sync sweep reported.
 - **Dead branch and connection callers, and the dead remote-logging default** - 2026-10-05
   - Deleted frontend callers that no mounted page uses and that could not work against the Go mounts:
     `branchApiV2.getBranches` (no such route; Go's `/api/v2/branches/` subtree ran ListBranches and returned every

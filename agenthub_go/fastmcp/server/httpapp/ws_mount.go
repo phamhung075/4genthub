@@ -27,6 +27,7 @@ import (
 	"unicode/utf8"
 
 	"agenthub/fastmcp/auth"
+	authdomain "agenthub/fastmcp/auth/domain/entities"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -89,6 +90,13 @@ func handleRealtime(w http.ResponseWriter, r *http.Request) {
 	}
 	connectionID := wsRandInt(100000, 999999)
 	clientID := "user_" + userID + "_" + value_objects.PyStr(connectionID)
+
+	// Register the accepted socket so broadcasts can reach it (the registry was previously only
+	// written by tests, so every fan-out was empty), and remove it on EVERY exit path - normal
+	// close, read error or panic - because a stale entry would leak and a double delete is a no-op.
+	user := &authdomain.User{ID: result.UserID, Username: userID, Email: email}
+	routes.RegisterConnection(conn, user, clientID)
+	defer routes.UnregisterConnection(conn)
 
 	primary := entities.NewOrderedMap[any]()
 	primary.Set("client_id", clientID)

@@ -2,6 +2,56 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — connector scope offered in the token UI (frontend, C2)
+
+- `src/tests/pages/TokenManagement.test.tsx`: new case `offers the session-stream connector scope and sends it with the token` selects the `Sessions / Write` card and asserts `generateToken` is called with `scopes: ['sessions:write']`; the existing `should have correct available scopes` case gains `Sessions` in its category list. Mutation proof: removing the `sessions:write` entry from `AVAILABLE_SCOPES` fails exactly those two cases (13 passed, 2 failed), restoring it goes back to 15 passed.
+- Live proof on the local build (no production touched): a token created through the page carries `scopes: ['sessions:write']` in the create response and in `GET /api/v2/tokens`; the connector handshake with that token returns `101 Switching Protocols`, and a token minted with `scopes: ['read']` is refused with `403 Missing scope sessions:write`.
+- New case `Full Access selects every scope except the connector scope (literal set)` pins the exact 33-scope array the Full Access quick action produces (literal, never derived from `AVAILABLE_SCOPES`, so the guard is not self-fulfilling). Mutation proof: adding a temporary scope to `AVAILABLE_SCOPES` fails exactly this one case (1 failed | 15 passed); removing it restores 16 passed.
+- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 89 files / 1641 tests passed (was 1640; +1 case).
+
+## 2026-10-05 — realtime connection registry populated (Go)
+
+- `websocket_routes_test.go`: `TestRegisterAndUnregisterConnection` pins the fields the broadcast reads after a register (`User`, `ClientID`, `ConnectedAt`, `Subscription`), the keyed delete, the idempotent double delete (the broadcast's cleanup can remove the same key) and that a nil socket or nil user is ignored.
+- End-to-end evidence is the raw WS probe (before: welcome only after a real mutation; after: the real room frame; a different user still gets only denial frames). `TestSeatBroadcastReachesOnlyTheOwningUsersSocket` still passes.
+- `ws_mount_test.go`: `TestMountWebSocketsRealtimeConnect` now pins the CALL SITE, not only the helper — after the welcome frame the test broadcasts to the connection's own user and requires the frame on that same socket. Mutation proof (reviewer finding): removing the two registration lines from `handleRealtime` leaves every other test green but this one fails with `read frame header: … i/o timeout`. Reproduce it by also replacing the now-unused `user` (it is the only use of the `authdomain` import in the file) with `_ = user`, or the package does not compile and no test runs. Measured with the mutation in place: `go test -count=1 -skip 'TestMountWebSocketsRealtimeConnect' ./fastmcp/server/httpapp/` passes, so no other test in the package catches the unregistered socket — the pre-existing helper test included.
+- `http_health_test.go`: `TestHealthPayloadSuccessShape` asserts `body["version"] == healthVersion` instead of a version literal, so a release bump no longer requires editing the assertion.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/httpapp/ ./fastmcp/server/` -> all ok; `go build ./fastmcp/...` and `go vet ./fastmcp/server/...` clean.
+
+## 2026-10-05 — allowing seat links restricted to claude-code (Go, G3)
+
+- `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminLinkRestrictedToClaudeCodeSeats` (a codex target is refused with the runtime named; a DENY link to codex is accepted; a claude-code pair is accepted) and the cycle test's four fixture seats now carry a `claude-code` runtime, since production cannot create a seat without a validated runtime.
+- Command: `go test -count=1 ./fastmcp/server/httpapp/` -> ok; `gofmt -l` empty.
+
+## 2026-10-05 — Legacy Python auth tests run again (5 real failures fixed, principal)
+
+- The "hang" was the conftest's autouse DB fixture demanding a local PostgreSQL at localhost:5432 as role postgres (6 retries, ~2.4 min per test); database_config loads env files with override=True so a CLI DATABASE_HOST/PORT cannot redirect it. Both files are mock-based and now carry `pytestmark = pytest.mark.unit` (the conftest's documented escape).
+- Five real failures fixed: four stale patch targets (`token_consumption_helper.get_operation_cost` is not a module attribute — the import is function-local; patch `fastmcp.auth.config.token_costs.get_operation_cost`) and one under-specified mock in `test_consume_tokens_for_operation_auto_create_balance` (second `get_balance` returned None; now `side_effect=[None, {"available_tokens": 995}]`).
+- Result: `pytest -q src/tests/auth/interface/test_token_consumption_helper.py src/tests/auth/application/test_token_consumption_service.py` -> **36 passed in 2.17s** (commit d40f2a8c). DB-bound and untouched: `test_token_balance_repository.py`, `test_database_connection_analysis.py`.
+
+## 2026-10-05 — unreachable MCP-token chain removed (Go)
+
+- `token_api_controller_port_test.go`: the `fakeTokenFacade` no longer implements `GenerateMCPTokenFromUser` (the interface member is gone).
+- `draft_token_unified_facade_test.go`: `TestDraftTokenFacadeBranches` drops the `generate_mcp_token_from_user` block; its `validate_token` / `revoke_user_tokens` / stats branches still run.
+- No new tests: this removes an unreachable path, and the packages that own the removed code (`api_controllers`, `facades`, `auth/services`, `server/routes`, `server/httpapp`) all pass unchanged.
+- Commands: `go test -count=1 ./fastmcp/task_management/interface/api_controllers/ ./fastmcp/task_management/application/facades/ ./fastmcp/auth/services/ ./fastmcp/server/routes/ ./fastmcp/server/httpapp/` -> all ok; `gofmt -l` empty, `go build ./fastmcp/...` and `go vet ./fastmcp/task_management/...` clean.
+
+## 2026-10-05 — seat-domain WS frames (Go)
+
+- `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminMutationsBroadcastOneSeatFrame` drives all twelve covered mutations through the mount with a recording seam and asserts exactly one frame each with the right entity/action/id, the room+seat_key on seat frames, a non-empty user id (without it the frame cannot be tenant-scoped), and no frame at all for a rejected mutation.
+- `fastmcp/server/routes/websocket_routes_test.go`: `TestSeatBroadcastReachesOnlyTheOwningUsersSocket` asserts a second logged-in user receives no seat frame at all (only the documented denial frames), and the owner's frame carries entity/action/id/room/seat_key.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/httpapp/` -> both ok; gofmt/vet clean.
+
+## 2026-10-05 — dead seat reads stopped and can be respawned (Python)
+
+- `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; an omp-style just-launched node (`unknown`, reason absent) still expects `unknown` (an agy node in the same window reports `no_runtime_hook` and reads `stopped` - that is the cold-start overlap the 30s respawn hold covers).
+- `src/tests/scripts/test_openrig_seat_sync.py`: six new `respawn` cases — launches only on the dead reading for the whole wait; refuses a live seat (exit 2); refuses a seat OpenRig does not list; reports success (exit 0, caveat on stderr) when `rig seat launch` warned but the seat came up; fails (exit 1) when the seat is still dead after the launch; surfaces `rig seat launch`'s own message instead of a traceback.
+- Commands: bridge file -> 41 passed; seat-sync file -> 88 passed.
+
+## 2026-10-05 — offline bundle carries the pinned policy (Python seat sync)
+
+- `src/tests/scripts/test_openrig_seat_sync.py`: four rig tests moved from the old symlink contract to the materialized one (`agents/<seat>` is now a real directory carrying the rendered files plus the seat's `policy.json`/`pinned.json`); two new tests for `offline-install` (it writes `<home>/.openrig/agenthub-seats/<rig>/<member>/` and skips a policy that names another seat; it fails loudly with exit 2 when the bundle carries no policy).
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py -q` -> 82 passed; whole scripts suite -> 174 passed.
+
 ## 2026-10-04 — branch collection POST exact match (Go)
 
 - New `fastmcp/server/httpapp/branch_routes_test.go`: `TestBranchCollectionPostMatchesOnlyTheCollectionPath` drives the mount with a stub `BranchController`, so it proves the collection POST still reaches CreateBranch and answers 200 (`createCalls==1`, project/name recorded) while `POST /api/v2/branches/x/y` -> 404 and `POST /api/v2/branches/abc` -> 405 with the same complete body and with `createCalls` still 1 - the refusal is routing, not validation. `TestBranchCollectionPostKeepsTheMissingFieldShape` pins the unchanged 422 missing-field body (`project_id`, `git_branch_name`). Before the change both unknown paths matched the collection POST's subtree and reached CreateBranch.

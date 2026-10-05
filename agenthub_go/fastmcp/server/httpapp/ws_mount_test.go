@@ -2,6 +2,7 @@ package httpapp
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -11,9 +12,11 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"agenthub/fastmcp/auth/domain/services"
 	"agenthub/fastmcp/server/routes"
+	"agenthub/fastmcp/task_management/domain/entities"
 )
 
 // wsTestToken mints a local JWT the unified validator accepts, with the given scopes.
@@ -213,6 +216,30 @@ func TestMountWebSocketsRealtimeConnect(t *testing.T) {
 	}
 	if primary["authenticated"] != true {
 		t.Fatalf("authenticated = %v, want true", primary["authenticated"])
+	}
+
+	// The defect this pins lived in the CALL SITE: the handler accepted the socket and never added
+	// it to routes.connections, so every broadcast went nowhere and no test noticed. A frame
+	// addressed to THIS connection's user must arrive on THIS socket.
+	roomData := entities.NewOrderedMap[any]()
+	roomData.Set("id", "dev/alice")
+	roomData.Set("room", "dev")
+	roomData.Set("seat_key", "alice")
+	if err := routes.BroadcastDataChange(context.Background(), "created", "seat", "dev/alice", "user-1", roomData, nil); err != nil {
+		t.Fatalf("BroadcastDataChange: %v", err)
+	}
+	_ = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	opcode, payload = wsTestReadFrame(t, br)
+	if opcode != wsOpText {
+		t.Fatalf("broadcast opcode = %d, want text", opcode)
+	}
+	broadcast := wsTestJSON(t, payload)
+	if broadcast["type"] != "update" {
+		t.Fatalf("broadcast type = %v, want update - the accepted socket was not registered", broadcast["type"])
+	}
+	body, _ = broadcast["payload"].(map[string]any)
+	if body["entity"] != "seat" || body["action"] != "created" {
+		t.Fatalf("broadcast payload = %v, want entity seat / action created", broadcast["payload"])
 	}
 }
 

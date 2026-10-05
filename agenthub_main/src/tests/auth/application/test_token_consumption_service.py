@@ -1,4 +1,5 @@
 """
+
 Unit tests for TokenConsumptionService
 
 Tests the application service layer for token consumption including:
@@ -19,6 +20,8 @@ import pytest
 from fastmcp.auth.application.services.token_consumption_service import (
     TokenConsumptionService,
 )
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
@@ -125,7 +128,7 @@ class TestTokenConsumptionService:
     ):
         """Test auto-creation of balance for new users"""
         # Setup - user has no balance
-        mock_repository.get_balance.return_value = None
+        mock_repository.get_balance.side_effect = [None, {"available_tokens": 995}]
         mock_repository.create_balance.return_value = None
         mock_repository.consume_tokens.return_value = True
 
