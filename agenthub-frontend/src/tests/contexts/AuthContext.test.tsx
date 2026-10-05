@@ -34,6 +34,7 @@ vi.mock('../../config/environment', () => ({
 // Import useWebSocket mock after mocking
 import { useWebSocket } from '../../hooks/useWebSocketV2';
 import { useNotificationStore } from '../../store/notifications';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 (useWebSocket as any).mockImplementation(mockUseWebSocket);
 
 describe('AuthContext', () => {
@@ -480,6 +481,39 @@ describe('AuthContext', () => {
 
       expect(useNotificationStore.getState().notifications).toHaveLength(0);
       expect(useNotificationStore.getState().unreadCount).toBe(0);
+    });
+
+    it('clears the query cache on logout', async () => {
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'secret', name: 'previous user room' }]);
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      });
+      expect(queryClient.getQueryData(['seatRooms'])).toBeDefined();
+
+      act(() => {
+        getByText('Logout').click();
+      });
+
+      // The keys carry no user id, so a cache left behind would render for the next identity.
+      expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
     });
 
     it('should disconnect WebSocket on logout', async () => {

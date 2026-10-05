@@ -10,17 +10,35 @@
   - Contract, captured from the server rather than invented: `POST /api/v2/broadcast/notify` with
     `event_type`/`entity_type` `notification` produces `type: 'update'`, `payload.entity: 'notification'`,
     `action: 'notification'`, `data.primary` copied from the request and `metadata.entity_id` carrying the message id.
-    The client half must match it, and must also set `metadata.user_id` (see the gap below).
-  - Known server-side gap, reported and not fixed here: `routes.MissedStore` is never wired (no production assignment
-    and no non-test implementation), so nothing is stored while a user is offline and `wsReplayMissedNotifications`
-    always fetches empty. The offline-replay half of this item cannot work until that is wired; the consumer handles a
-    replayed frame identically, which the tests inject directly.
+    The client half must match it. Routing uses the top-level `user_id` on the broadcast target, not the metadata:
+    `BroadcastDataChange` (websocket_routes.go:552-555) adds the target `userID` to the set before it consults
+    `metadata`, so `metadata.user_id` is not required and this file used to claim it was.
+  - Server-side gap CLOSED 2026-10-05 (go-dev): `routes.MissedStore` is wired now - `b907a574` adds
+    `MissedNotificationRepository` (Postgres, over the existing `missed_notifications` row) and `NewApp` assigns it
+    through `wireMissedNotificationStore`, with `0a8a6cb8` correcting the cleanup windows to Python's two cutoffs
+    (undelivered 24h, delivered 7 days). While it was unwired nothing was stored for an offline user and
+    `wsReplayMissedNotifications` always fetched empty; the messages posted in that window were recorded nowhere, so
+    they are lost rather than deferred - stated because the earlier wording here described the gap without saying
+    what happened to the messages that fell into it. The frontend is unchanged by the fix: the consumer already
+    handles a replayed frame identically, which its tests inject directly.
   - Tests: `test_useRealtimeSync_notification.test.tsx` (2 of its 3 cases fail without the dispatcher case) and
     `NotificationBell.test.tsx` - 91 files / 1646 tests, up from 89 / 1641.
-  - Follow-up from review: the inbox is cleared on logout (`AuthContext` calls the store's reset before it clears the
-    cookies), because notifications are addressed to an identity and a user switch in the same tab must not leave the
-    previous user's message text on screen; `clearAll` and `reset` were two names for one action and are now one, and
-    the payload doc records that `metadata.entity_id` is the dedupe key, so it must be unique per notification.
+  - Follow-up from review: the inbox is cleared on logout (`AuthContext` calls the store's reset after it clears the
+    auth state and cookies), because notifications are addressed to an identity and a user switch in the same tab must
+    not leave the previous user's message text on screen; `clearAll` and `reset` were two names for one action and are
+    now one, and the payload doc records that `metadata.entity_id` is the dedupe key, so it must be unique per
+    notification.
+  - The query cache is cleared on logout too (`queryClient.clear()`, in the same place, gated on a live session read from
+    a `userRef` rather than `user` itself, so `logout`'s identity does not change when `user` does): its keys carry no
+    user id, so with the client alive above the router the next user in the tab would render the previous user's tasks,
+    seats and projects, and the 5-minute `staleTime` means the stale rows are not even replaced for a while. Every
+    authentication-loss path reaches `logout`, so the clear inherits that coverage - five call sites in `AuthContext.tsx`
+    (:258 refresh 401, :294 refresh catch, :314 the mount path when a cookie exists but does not decode, :340
+    refresh-timer catch, :378 the `auth-logout` listener) plus one external emitter (`services/apiV2.ts:91` dispatches
+    `auth-logout` on a 401). The gate is what keeps the mount path honest: it runs before any session exists and a fresh
+    load starts with an empty cache, so skipping the clear there loses nothing and avoids wiping a cache the caller has
+    already primed. Tests cover the explicit logout button with a live session for both the inbox and the cache; the other
+    paths reach the same code rather than being covered individually.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
   - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
     `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through

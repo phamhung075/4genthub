@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useContext, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Cookies from 'js-cookie';
 import logger from '../utils/logger';
@@ -15,10 +15,16 @@ interface AuthProviderProps {
 }
 
 import { API_BASE_URL } from '../config/environment';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNotificationStore } from '../store/notifications';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
+  // `logout` must not change identity when `user` changes: the mount and refresh-token effects list
+  // it as a dependency, so a new identity re-runs them (a refresh/logout loop under test).
+  const userRef = useRef<User | null>(null);
+  userRef.current = user;
   const [tokens, setTokensState] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -209,8 +215,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // same tab (the query cache is not cleared, but it holds no other identity's message text).
     useNotificationStore.getState().reset();
 
+    // The query cache is the same hazard at list scale: its keys carry no user id, so the next
+    // user in this tab would render the previous user's tasks, seats and projects. Only a live
+    // session can have cached another identity's data: the mount path (a cookie that does not
+    // decode) has no session and starts with an empty cache on a fresh load, so it must not wipe
+    // a cache a caller has already primed.
+    if (userRef.current) {
+      queryClient.clear();
+    }
+
     logger.info('Logout complete - user session cleared');
-  }, [disconnectWebSocket, isWebSocketConnected]);
+  }, [disconnectWebSocket, isWebSocketConnected, queryClient]);
 
   // Refresh token function
   const refreshToken = useCallback(async () => {
