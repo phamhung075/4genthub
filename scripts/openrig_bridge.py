@@ -131,8 +131,12 @@ def seat_state(node: dict) -> str:
     # A live session whose runtime hook is gone is an agent that died outside `rig seat stop`
     # (OpenRig reports agentActivity.state "unknown" with reason "no_runtime_hook" and keeps the
     # tmux session). Owner decision 2026-10-05: that reads "stopped" and the seat is respawned.
-    # The reason is the discriminator: a just-launched seat with no activity signal yet reports
-    # reason null, so it stays "unknown" rather than being called dead.
+    # The reason is the only discriminator, and it is RUNTIME-DEPENDENT: measured 2026-10-05, a
+    # just-launched agy seat ALSO reports reason "no_runtime_hook" until its hook attaches (~15s),
+    # so it reads stopped for that window, while an omp seat with no activity yet reports reason
+    # null and stays unknown (live inventory, 4genthub-deepseek.supervisor). That is why `respawn`
+    # requires the dead reading to hold (default 30s) and why the hold must not be shortened
+    # without re-measuring per runtime.
     if (
         activity == "unknown"
         and _str(_dict(node.get("agentActivity")).get("reason")) == "no_runtime_hook"
