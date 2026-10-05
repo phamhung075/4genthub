@@ -1,4 +1,5 @@
 """
+
 Unit tests for TokenConsumptionHelper
 
 Tests the MCP controller integration helper including:
@@ -20,6 +21,8 @@ from fastmcp.task_management.interface.mcp_controllers.token_consumption_helper 
     TokenConsumptionHelper,
     consume_tokens_for_operation,
 )
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.fixture
@@ -249,9 +252,7 @@ class TestTokenConsumptionHelper:
     @patch(
         "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_authenticated_user_id"
     )
-    @patch(
-        "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_operation_cost"
-    )
+    @patch("fastmcp.auth.config.token_costs.get_operation_cost")
     async def test_get_token_info_success(
         self, mock_get_cost, mock_auth, helper, mock_token_service
     ):
@@ -278,9 +279,7 @@ class TestTokenConsumptionHelper:
     @patch(
         "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_authenticated_user_id"
     )
-    @patch(
-        "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_operation_cost"
-    )
+    @patch("fastmcp.auth.config.token_costs.get_operation_cost")
     async def test_get_token_info_balance_error(
         self, mock_get_cost, mock_auth, helper, mock_token_service
     ):
@@ -305,9 +304,7 @@ class TestTokenConsumptionHelper:
     @patch(
         "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_authenticated_user_id"
     )
-    @patch(
-        "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_operation_cost"
-    )
+    @patch("fastmcp.auth.config.token_costs.get_operation_cost")
     async def test_get_token_info_custom_cost(
         self, mock_get_cost, mock_auth, helper, mock_token_service
     ):
@@ -339,9 +336,7 @@ class TestTokenConsumptionHelper:
     @patch(
         "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_authenticated_user_id"
     )
-    @patch(
-        "fastmcp.task_management.interface.mcp_controllers.token_consumption_helper.get_operation_cost"
-    )
+    @patch("fastmcp.auth.config.token_costs.get_operation_cost")
     async def test_consume_and_add_info_success(
         self, mock_get_cost, mock_auth, helper, mock_token_service
     ):
