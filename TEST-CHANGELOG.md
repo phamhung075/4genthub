@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — dashboard push: notification consumer (frontend, D3)
+
+- `src/tests/hooks/test_useRealtimeSync_notification.test.tsx`: stores a frame and counts it unread; ignores a frame without a message; dedupes a replayed frame by id. Mutation proof: removing the `notification` case from the dispatcher fails 2 of the 3 (the negative guard passes either way); restoring gives 3 passed.
+- `src/tests/components/NotificationBell.test.tsx`: the badge shows the unread count, opening the inbox acks and lists the message, and dismissing removes it.
+- The frame fixture is the shape a local server produced for `POST /api/v2/broadcast/notify` (entity and action `notification`, `data.primary` copied through, `metadata.entity_id` the message id) - captured from the running server, not written from imagination.
+- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 91 files / 1646 tests passed (was 89 / 1641; +2 files, +5 cases).
+
 ## 2026-10-05 — connector scope offered in the token UI (frontend, C2)
 
 - `src/tests/pages/TokenManagement.test.tsx`: new case `offers the session-stream connector scope and sends it with the token` selects the `Sessions / Write` card and asserts `generateToken` is called with `scopes: ['sessions:write']`; the existing `should have correct available scopes` case gains `Sessions` in its category list. Mutation proof: removing the `sessions:write` entry from `AVAILABLE_SCOPES` fails exactly those two cases (13 passed, 2 failed), restoring it goes back to 15 passed.

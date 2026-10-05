@@ -7,6 +7,7 @@ import { Brand } from './ui/Brand';
 import { MenuBar } from './ui/glow-menu';
 import UserProfileDropdown from './UserProfileDropdown';
 import { WebSocketStatus } from './WebSocketStatus';
+import { NotificationBell } from './NotificationBell';
 
 export const Header: React.FC = () => {
   const authContext = useContext(AuthContext);
@@ -117,6 +118,9 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* WebSocket Status Indicator */}
               <WebSocketStatus />
+
+              {/* Dashboard push: notifications sent to this user */}
+              <NotificationBell />
 
               {/* Desktop/Tablet Glow Menu Navigation */}
               <div className="hidden lg:block">

@@ -3,6 +3,20 @@
 ## [Unreleased]
 
 ### Added
+- **Dashboard push: agent-to-human notifications (D3 frontend half)** - 2026-10-05
+  - `src/store/notifications.ts` holds the inbox (add with dedupe by frame id, ack, ackAll, dismiss, clearAll);
+    `useRealtimeSync` gained a `notification` case that stores the frame and shows a toast; `NotificationBell` (mounted
+    in `Header`) shows an unread badge and a panel that acks on open and dismisses per item.
+  - Contract, captured from the server rather than invented: `POST /api/v2/broadcast/notify` with
+    `event_type`/`entity_type` `notification` produces `type: 'update'`, `payload.entity: 'notification'`,
+    `action: 'notification'`, `data.primary` copied from the request and `metadata.entity_id` carrying the message id.
+    The client half must match it, and must also set `metadata.user_id` (see the gap below).
+  - Known server-side gap, reported and not fixed here: `routes.MissedStore` is never wired (no production assignment
+    and no non-test implementation), so nothing is stored while a user is offline and `wsReplayMissedNotifications`
+    always fetches empty. The offline-replay half of this item cannot work until that is wired; the consumer handles a
+    replayed frame identically, which the tests inject directly.
+  - Tests: `test_useRealtimeSync_notification.test.tsx` (2 of its 3 cases fail without the dispatcher case) and
+    `NotificationBell.test.tsx` - 91 files / 1646 tests, up from 89 / 1641.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
   - `useRealtimeSync` now handles the seat domain: entity `seat` events invalidate `seatSeats`, `seatOverlays`,
     `seatLinks` and `seatResolved` (plus `seatRooms` on create/delete) and animate the seat card through

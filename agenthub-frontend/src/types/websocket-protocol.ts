@@ -226,6 +226,23 @@ export interface RoomEventPayload {
   name?: string;
 }
 
+/**
+ * Notification payload. The client posts this through POST /api/v2/broadcast/notify; the server
+ * delivers it on the realtime socket as payload.entity 'notification' with action 'notification',
+ * live to a connected socket or replayed from the missed-notification store on reconnect. The
+ * server copies data.primary through unchanged and carries entity_id and kind in metadata.
+ */
+export interface NotificationEventPayload {
+  /** The message the human should see. */
+  message: string;
+  /** Who sent it: a seat key or an agent name. */
+  from?: string;
+  room?: string;
+  seat?: string;
+  /** Free-form kind, for example 'agent_message'. */
+  kind?: string;
+}
+
 // =============================================================================
 // WEBSOCKET MESSAGE STRUCTURE (v2.0)
 // =============================================================================
