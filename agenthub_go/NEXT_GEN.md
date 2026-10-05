@@ -22,6 +22,14 @@ Standing owner permissions (owner-stated 2026-10-03): a push to main deploys pro
 
 Deploy loop: bump `healthVersion` in `agenthub_go/fastmcp/server/httpapp/http.go` (and its test), push, then poll `/health` until it reports the new version. The GitHub pipeline test job is deliberately not fixed.
 
+## Owner directives (2026-10-05)
+
+**(A) DOCUMENTATION = THE REAL API AND MCP.** Rewrite the project documentation to document the Go server's actually mounted routes and the MCP tool surface as they exist today, replacing stale and legacy descriptions. The constraint is the acceptance rule, quoted so it survives this session: *every documented endpoint must grep to a real mount, and no document may describe a removed route, table or the retired agent library as live.* The reference for that rewrite is the authoritative surface inventory (owner directive B, step 1); the rewrite itself is step 2 and is GATED on that inventory - rewriting from memory would reproduce exactly the stale-doc problem the directive is about.
+
+**(B) DOCS AND FRONTEND ALIGN WITH THIS FILE.** Bring the documentation and the frontend in line with `NEXT_GEN.md`: the OpenRig client and cloud-data direction, the seat model, the retired agent library, the removed routes and tables. Constraint, quoted: *no document may describe a removed route, table or the retired agent library as live.* The frontend half belongs to its own seat; the documentation half is the same rewrite as (A).
+
+**Operational fact for readers - `AGENTHUB_TOKEN` rotation (2026-10-05).** The rotation for this rig is COMPLETE and verified across the daemon and all four seats, and the OLD token stays valid until the owner revokes it. A 401 on a production call during this switch is the rotation, not a code defect - check the token before debugging code.
+
 ## Checklist
 Legend: `[x]` done and its check met; `[ ]` open; `[~]` superseded by another item (not done as written; the original text is kept for traceability).
 
