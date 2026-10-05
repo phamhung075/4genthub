@@ -1,8 +1,12 @@
 package seedlibrary
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -10,6 +14,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
+	"agenthub/fastmcp/seat_management/domain/skillblock"
 )
 
 const validFile = `slug: developer
@@ -62,7 +67,8 @@ func TestParseErrorsNameFileAndField(t *testing.T) {
 		"empty rule":    {replace("content: Write a failing test first.", "content: ''"), "field rules[0].content"},
 		"duplicate rule": {replace("output_format", "  - name: test-first\n    content: again\noutput_format"),
 			"duplicate rule name"},
-		"empty file": {"", "file is empty"},
+		"bad module ref": {validFile + "module_refs:\n  - no-version\n", "field module_refs[0]"},
+		"empty file":     {"", "file is empty"},
 	}
 	for name, c := range cases {
 		_, err := Parse("seat-types/x.yaml", []byte(c.data), nil, nil)
@@ -151,6 +157,19 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 		if tool.kind != resolver.KindTool || skill.kind != resolver.KindSkill {
 			t.Fatalf("%s: comm-guard kind %q, comm-guard-skill kind %q", seed.SeatTypeSlug, tool.kind, skill.kind)
 		}
+		// A skill module is a block: the SKILL.md text plus its source provenance. The seed
+		// authors this skill in-tree, so its digest must match the committed source file.
+		skillContent, err := skillblock.Parse(skill.content)
+		if err != nil {
+			t.Fatalf("%s: comm-guard-skill is not a skill block: %v", seed.SeatTypeSlug, err)
+		}
+		source, err := fs.ReadFile(embedded, sharedModulesDir+"/comm-guard-skill.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if sum := sha256.Sum256(source); skillContent.SHA256 != hex.EncodeToString(sum[:]) {
+			t.Fatalf("%s: comm-guard-skill sha256 = %q, want the digest of its source file", seed.SeatTypeSlug, skillContent.SHA256)
+		}
 		var settings struct {
 			Permissions struct {
 				Deny  []string `json:"deny"`
@@ -165,12 +184,12 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 			t.Fatalf("%s: permissions = %+v", seed.SeatTypeSlug, settings.Permissions)
 		}
 		for _, code := range []string{"Exit code 2", "Exit code 3", "Exit code 5"} {
-			if !strings.Contains(skill.content, code) {
-				t.Fatalf("%s: skill does not explain %q:\n%s", seed.SeatTypeSlug, code, skill.content)
+			if !strings.Contains(skillContent.Content, code) {
+				t.Fatalf("%s: skill does not explain %q:\n%s", seed.SeatTypeSlug, code, skillContent.Content)
 			}
 		}
-		if !strings.Contains(skill.content, "seatcheck send --to <seat> --intent") {
-			t.Fatalf("%s: skill does not name seatcheck send:\n%s", seed.SeatTypeSlug, skill.content)
+		if !strings.Contains(skillContent.Content, "seatcheck send --to <seat> --intent") {
+			t.Fatalf("%s: skill does not name seatcheck send:\n%s", seed.SeatTypeSlug, skillContent.Content)
 		}
 		for _, ref := range seed.ModuleRefs {
 			if ref.Slug == "comm-guard" && ref.Version != seed.Version {
@@ -315,5 +334,104 @@ func TestLoadFSRejectsBadBlockFileName(t *testing.T) {
 	})
 	if _, err := LoadFS(fsys); err == nil || !strings.Contains(err.Error(), "block file name") {
 		t.Errorf("err = %v, want a block file name error", err)
+	}
+}
+
+// skillInventory is the slice of ai_docs/agent-system/skill-library.json this test consumes:
+// the skill rows, the per-seat curation and the skills no default set wires.
+type skillInventory struct {
+	Count  int `json:"count"`
+	Skills []struct {
+		Name string `json:"name"`
+	} `json:"skills"`
+	SeatCuration map[string][]struct {
+		Skill string `json:"skill"`
+	} `json:"seat_curation"`
+	UnusedByDefault []string `json:"unused_by_default"`
+}
+
+// loadSkillInventory reads the committed inventory the publish path consumes. The path is
+// relative to this package directory, which is the working directory `go test` uses.
+func loadSkillInventory(t *testing.T) skillInventory {
+	t.Helper()
+	path := filepath.Join("..", "..", "..", "..", "..", "ai_docs", "agent-system", "skill-library.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read skill inventory: %v", err)
+	}
+	var inventory skillInventory
+	if err := json.Unmarshal(data, &inventory); err != nil {
+		t.Fatalf("parse skill inventory: %v", err)
+	}
+	if inventory.Count != len(inventory.Skills) {
+		t.Fatalf("inventory count %d != %d skill rows", inventory.Count, len(inventory.Skills))
+	}
+	return inventory
+}
+
+// Every seeded seat type carries exactly its curated skill refs from the inventory, every ref
+// names a skill the inventory contains, and a skill in no default set stays unwired. The
+// curation is the same committed data the publish path consumes, so an edit that is not
+// mirrored into a seat YAML fails here.
+func TestLoadEmbeddedSeedsCarryCuratedSkillRefs(t *testing.T) {
+	inventory := loadSkillInventory(t)
+	seeds, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bySlug := make(map[string]seedmap.Seed, len(seeds))
+	for _, seed := range seeds {
+		bySlug[seed.SeatTypeSlug] = seed
+	}
+	if len(bySlug) != len(inventory.SeatCuration) {
+		t.Fatalf("seeds = %d, curation seats = %d", len(bySlug), len(inventory.SeatCuration))
+	}
+	inInventory := make(map[string]bool, len(inventory.Skills))
+	for _, row := range inventory.Skills {
+		inInventory[row.Name] = true
+	}
+
+	for seat, entries := range inventory.SeatCuration {
+		seed, ok := bySlug[seat]
+		if !ok {
+			t.Fatalf("seat %q has a curation but no seed", seat)
+		}
+		// The refs a seed carries beyond the modules it authors are its curated skills.
+		authored := make(map[string]bool, len(seed.Modules))
+		for _, module := range seed.Modules {
+			authored[module.Slug] = true
+		}
+		refs := make(map[string]bool)
+		for _, ref := range seed.ModuleRefs {
+			if !authored[ref.Slug] {
+				refs[ref.Slug] = true
+			}
+		}
+		want := make(map[string]bool, len(entries))
+		for _, entry := range entries {
+			if !inInventory[entry.Skill] {
+				t.Errorf("%s: curated skill %q is not in the inventory", seat, entry.Skill)
+			}
+			want[entry.Skill] = true
+			if !refs[entry.Skill] {
+				t.Errorf("%s: curated skill %q is not referenced by the seed", seat, entry.Skill)
+			}
+		}
+		for slug := range refs {
+			if !want[slug] {
+				t.Errorf("%s: seed references skill %q that its curation does not assign", seat, slug)
+			}
+		}
+	}
+
+	// A skill in no default set is available in the catalog but wired nowhere.
+	for _, name := range inventory.UnusedByDefault {
+		for seat, seed := range bySlug {
+			for _, ref := range seed.ModuleRefs {
+				if ref.Slug == name {
+					t.Errorf("%s: unused-by-default skill %q is wired into the seed", seat, name)
+				}
+			}
+		}
 	}
 }

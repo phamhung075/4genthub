@@ -11,6 +11,7 @@ import (
 
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/skillblock"
 
 	"gopkg.in/yaml.v3"
 )
@@ -161,9 +162,16 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		{Path: guidancePath, Content: renderGuidance(seat)},
 	}
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindSkill) {
+		// A skill module is a block carrying the SKILL.md text plus its source provenance; a
+		// module whose content is not a valid block fails here, naming it, rather than writing
+		// JSON or untraceable text into the seat's skill file.
+		block, err := skillblock.Parse(m.Content)
+		if err != nil {
+			return nil, fmt.Errorf("skill %q: %w", m.Slug, err)
+		}
 		files = append(files, OpenRigSpecFile{
 			Path:    "skills/" + m.Slug + "/" + skillFileName,
-			Content: m.Content,
+			Content: block.Content,
 		})
 	}
 	if receivesClaudeFragments(seat.Runtime) {

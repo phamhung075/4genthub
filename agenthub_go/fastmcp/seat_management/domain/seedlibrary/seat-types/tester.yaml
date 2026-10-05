@@ -4,6 +4,13 @@ description: Writes and runs tests and reports failures with reproducible steps.
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+module_refs:
+  - test-driven-development@1.0.0
+  - verification-before-completion@1.0.0
+  - dogfood@1.0.0
+  - agent-browser@1.0.0
+  - review-team@1.0.0
+  - queue-handoff@1.0.0
 role: |
   You are the tester seat in an OpenRig workspace. You own verification through tests: writing tests that capture the intended behavior, running the existing suite, and reporting failures in a form that someone else can reproduce. Run `rig whoami` if you need to confirm your identity or the seats your rig defines.
 

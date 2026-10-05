@@ -22,7 +22,8 @@ it as module versions through the same ``PUT`` call ``apply`` uses::
 
   1. .mcp.json         one ``mcp`` module per server entry (name, type http|stdio,
                        url, or command + args, headers/env)
-  2. .claude/skills/*  one ``skill`` module per directory, content = SKILL.md
+  2. .claude/skills/*  one ``skill`` block per directory: the SKILL.md text plus its
+                       source path and sha256
 
 The project root is the one the Claude-code hooks derive, imported from
 ``utils/env_loader.get_project_root`` (never re-derived here). A block never carries a
@@ -37,6 +38,37 @@ pushed as given (PUSH), and a stored version whose content differs moves to the 
 (NEW-VERSION, mirroring the backend's ``NextPatchVersion``) so a changed file lands as a
 new version instead of overwriting an immutable one or failing.
 
+``publish-skills`` pushes the skill library as catalog blocks: it reads the inventory
+``ai_docs/agent-system/skill-library.json`` (52 skills, each with the committed path and
+sha256 of its SKILL.md) and sends ONE ``skill`` block per skill through the same ``PUT``.
+A skill committed on two edges (canonical and plugin) is ONE block, with the canonical copy
+as ``source_path``/``sha256`` and the plugin copy as ``mirror_path``/``mirror_sha256``. The
+inventory carries paths, not text, so the OpenRig checkout they are relative to is named by
+``--source-root`` (or ``OPENRIG_SKILLS_ROOT``); the file read is verified against the
+inventory's digest, so a stale inventory fails loudly instead of publishing a block whose
+provenance is already wrong. It shares ``import-project``'s resolve-then-push idempotence.
+
+A published skill block records where it came from: its content JSON carries ``source_path``
+(the repo-relative path of the committed file) and ``sha256`` (the digest of that file's bytes
+as committed). The two canonical/plugin overlap blocks also carry ``mirror_path`` and
+``mirror_sha256`` for the copy they mirror. ``drift-check`` is the read-only counterpart of that
+provenance: it lists the stored modules (``GET /api/v2/openrig/modules``), reads every stored
+``skill`` block, and compares each recorded digest with the sha256 of the file at its path under
+the root that path is relative to.
+
+Two publishers write provenance with different path bases, so two roots are resolved in order.
+``--root`` (default: the hooks-derived project root) holds ``import-project``'s paths, relative
+to THIS project (``.claude/skills/<dir>/SKILL.md``). ``--library-root`` (default:
+``$OPENRIG_SKILLS_ROOT``) holds ``publish-skills``' paths, relative to the OpenRig checkout
+(``skills/_canonical/...``, ``packages/daemon/assets/plugins/...``). A path is tried under
+``--root`` first and falls back to ``--library-root``; the root a finding resolved against (or
+both roots, when the file is missing from either) is named in the line.
+
+It reports only: it sends no write, republishes nothing and touches no file. Each finding is one
+indented line; a stale digest naming the skill and both hashes, a source path whose file is gone,
+a divergent canonical/mirror pair, and a block that carries no provenance (an older skill) are
+separate categories, and any finding exits 1.
+
 Environment:
   AGENTHUB_URL    base URL of the 4genthub server, e.g. https://api.4genthub.com
   AGENTHUB_TOKEN  bearer token; sent as an Authorization header, never printed.
@@ -44,20 +76,26 @@ Environment:
 Usage:
   openrig_team_setup.py apply [--dry-run] [--team DIR]
   openrig_team_setup.py import-project [--dry-run] [--version X.Y.Z]
+  openrig_team_setup.py publish-skills [--dry-run] [--inventory FILE] [--source-root DIR] [--version X.Y.Z]
+  openrig_team_setup.py drift-check [--root DIR] [--library-root DIR]
 
 ``apply --dry-run`` prints the plan without calling the API and needs no environment.
 ``import-project --dry-run`` reports each module's SKIP / PUSH / NEW-VERSION outcome: it
 reads the stored versions (a read-only ``GET``) when ``AGENTHUB_URL`` and
 ``AGENTHUB_TOKEN`` are set, and otherwise prints each module's conditional outcome
 without any request.
+``drift-check`` needs ``AGENTHUB_URL`` and ``AGENTHUB_TOKEN`` and only reads; findings go
+to stderr, one indented line each. ``--root`` is where ``import-project``'s paths live and
+``--library-root`` where ``publish-skills``' paths live (see Environment).
 
 Exit codes:
-  0  success
-  1  network or HTTP error
+  0  success, and no drift found
+  1  network or HTTP error, or drift-check found at least one finding
   2  usage or configuration error
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -80,16 +118,48 @@ if str(_HOOKS_DIR) not in sys.path:
 from utils.env_loader import get_project_root  # noqa: E402
 
 DEFAULT_TEAM_DIR = Path(__file__).resolve().parent / "team" / "4genthub"
+# The skill library inventory (machine-readable twin of skill-library.md): 52 skills, each
+# with its committed path and the sha256 of its SKILL.md, plus the per-seat curation.
+DEFAULT_SKILL_INVENTORY = _SCRIPTS_DIR.parent / "ai_docs" / "agent-system" / "skill-library.json"
 API = "/api/v2/openrig"
 
 EXIT_OK = 0
 EXIT_REMOTE = 1
 EXIT_USAGE = 2
+# drift-check mirrors the digest check in the OpenRig repo's scripts/skill-edge-digests.generated.json
+# family (mirror-skills.mjs --check): a header, one indented "<key>: <path> (<reason>)" line per
+# finding, and a non-zero exit. A drifted tree is its own exit condition, separate from a network error.
+EXIT_DRIFT = 1
 
 IMPORT_VERSION = "1.0.0"
+# The version publish-skills pushes. A published version is immutable, so a changed block that
+# re-runs against what is stored lands as the next patch (NEW-VERSION), never an overwrite.
+PUBLISH_VERSION = "1.0.0"
 MCP_CONFIG = ".mcp.json"
 SKILLS_DIR = Path(".claude") / "skills"
 SKILL_FILE = "SKILL.md"
+SKILL_KIND = "skill"
+
+# A published skill block's provenance, carried in its content JSON (no schema change).
+PROVENANCE_SOURCE = "source_path"
+PROVENANCE_SHA256 = "sha256"
+# The two canonical/plugin overlaps also record the mirror copy's path and digest, checked as a pair.
+PROVENANCE_MIRROR_SOURCE = "mirror_path"
+PROVENANCE_MIRROR_SHA256 = "mirror_sha256"
+# The one reason token per finding, in the digest-check style: a stale digest, a source path
+# with no file under --root, an older stored block with no provenance, and a canonical/mirror
+# pair that diverged (a finding about the two copies, not about the stored-vs-source pair).
+DRIFT_DIGEST = "digest"
+DRIFT_MISSING = "missing-source"
+DRIFT_NO_PROVENANCE = "no-provenance"
+DRIFT_MIRROR = "mirror"
+DRIFT_HEADER = "stored skill provenance drifted from disk; nothing was written."
+# drift-check resolves each recorded path under the root its publisher wrote it against, in this
+# order: --root (default: the hooks' project root) holds import-project's paths, relative to THIS
+# project (``.claude/skills/<dir>/SKILL.md``); --library-root (default: ``$OPENRIG_SKILLS_ROOT``)
+# holds publish-skills' paths, relative to the OpenRig checkout (``skills/_canonical/...``,
+# ``packages/daemon/assets/plugins/...``). The root a finding resolved against is named in its line.
+LIBRARY_ROOT_ENV = "OPENRIG_SKILLS_ROOT"
 
 # A ${ENV_VAR} reference is expanded by the client runtime and is never a stored secret.
 _ENV_REFERENCE = re.compile(r"\$\{[A-Za-z_][A-Za-z0-9_]*\}")
@@ -173,34 +243,48 @@ def _optional_credentials() -> tuple:
     return (base_url, token) if base_url and token else ("", "")
 
 
-def get_module_version(base_url: str, token: str, slug: str, version: str):
-    """Return the stored module-version body, or None when the version does not exist."""
+def _get_json(base_url: str, token: str, path: str) -> tuple:
+    """GET ``path`` and return (status, decoded JSON body); raise SetupError on transport failure."""
     request = urllib.request.Request(
-        base_url.rstrip("/") + f"{API}/modules/{slug}/versions/{version}",
+        base_url.rstrip("/") + path,
         method="GET",
         headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
     )
     try:
         with urllib.request.urlopen(request, timeout=60) as response:
-            payload = json.loads(response.read().decode("utf-8", "replace"))
+            return response.status, json.loads(response.read().decode("utf-8", "replace"))
     except urllib.error.HTTPError as err:
-        if err.code == 404:
-            return None
-        raise SetupError(
-            f"GET {API}/modules/{slug}/versions/{version} failed: HTTP {err.code}", EXIT_REMOTE
-        )
+        return err.code, None
     except (urllib.error.URLError, OSError) as err:
         reason = getattr(err, "reason", err)
-        raise SetupError(
-            f"GET {API}/modules/{slug}/versions/{version} failed: {reason}", EXIT_REMOTE
-        )
+        raise SetupError(f"GET {path} failed: {reason}", EXIT_REMOTE)
+
+
+def get_module_version(base_url: str, token: str, slug: str, version: str):
+    """Return the stored module-version body, or None when the version does not exist."""
+    path = f"{API}/modules/{slug}/versions/{version}"
+    status, payload = _get_json(base_url, token, path)
+    if status == 404:
+        return None
+    if status != 200:
+        raise SetupError(f"GET {path} failed: HTTP {status}", EXIT_REMOTE)
     module = payload.get("module") if isinstance(payload, dict) else None
     if not isinstance(module, dict):
-        raise SetupError(
-            f"GET {API}/modules/{slug}/versions/{version} returned an unexpected body",
-            EXIT_REMOTE,
-        )
+        raise SetupError(f"GET {path} returned an unexpected body", EXIT_REMOTE)
     return module
+
+
+def list_module_versions(base_url: str, token: str) -> list:
+    """Return the newest stored version of every module (``GET /modules``)."""
+    path = f"{API}/modules"
+    status, payload = _get_json(base_url, token, path)
+    if status != 200:
+        raise SetupError(f"GET {path} failed: HTTP {status}", EXIT_REMOTE)
+    modules = payload.get("modules") if isinstance(payload, dict) else None
+    if not isinstance(modules, list) or not all(isinstance(m, dict) for m in modules):
+        raise SetupError(f"GET {path} returned an unexpected body", EXIT_REMOTE)
+    return modules
+
 
 
 def resolve_modules(modules: list, version: str, base_url: str, token: str) -> list:
@@ -371,8 +455,29 @@ def mcp_modules(project_root: Path) -> list:
     return modules
 
 
+def skill_block_content(content: str, source_path: str, sha256: str,
+                        mirror_path: str = None, mirror_sha256: str = None) -> str:
+    """One skill block's content JSON: the SKILL.md text plus its source provenance.
+
+    A skill module's content is a block, never raw markdown. The Go renderer parses it and
+    writes only ``content`` to skills/<slug>/SKILL.md, so a module that is not a valid block
+    fails visibly at render instead of writing JSON or untraceable text into a seat.
+    ``source_path`` is relative to the root its publisher used, and ``mirror_path`` /
+    ``mirror_sha256`` record the second committed copy of a skill that lives on two edges.
+    """
+    block = {"content": content, PROVENANCE_SOURCE: source_path, PROVENANCE_SHA256: sha256}
+    if mirror_path and mirror_sha256:
+        block[PROVENANCE_MIRROR_SOURCE] = mirror_path
+        block[PROVENANCE_MIRROR_SHA256] = mirror_sha256
+    return json.dumps(block)
+
+
 def skill_modules(project_root: Path) -> list:
-    """One skill module per .claude/skills directory, content = its SKILL.md."""
+    """One skill block per .claude/skills directory: the SKILL.md text plus its provenance.
+
+    import-project's paths are project-root-relative (the source is this project's own tree),
+    unlike publish-skills' library paths, which are relative to the OpenRig repository root.
+    """
     skills_dir = project_root / SKILLS_DIR
     if not skills_dir.is_dir():
         return []
@@ -384,14 +489,19 @@ def skill_modules(project_root: Path) -> list:
         if not skill_file.is_file():
             raise SetupError(f"skill {entry.name!r}: {skill_file} is missing", EXIT_USAGE)
         try:
-            content = skill_file.read_text(encoding="utf-8")
+            raw = skill_file.read_bytes()
         except OSError as err:
             raise SetupError(f"cannot read {skill_file}: {err}", EXIT_USAGE)
+        content = raw.decode("utf-8", "replace")
         _refuse_secret(f"skill {entry.name!r}", content)
         modules.append({
             "slug": _module_slug(entry.name, "skill"),
-            "kind": "skill",
-            "content": content,
+            "kind": SKILL_KIND,
+            "content": skill_block_content(
+                content,
+                skill_file.relative_to(project_root).as_posix(),
+                hashlib.sha256(raw).hexdigest(),
+            ),
         })
     return modules
 
@@ -515,6 +625,271 @@ def cmd_import_project(args) -> None:
     )
 
 
+def load_skill_inventory(path: Path) -> dict:
+    """Read the skill library inventory the publish consumes.
+
+    The inventory is the machine-readable twin of skill-library.md: the skill rows (each with
+    the committed path and sha256 of its SKILL.md) plus the per-seat curation. It is content
+    owned elsewhere; this publish path only consumes it and never edits it.
+    """
+    try:
+        inventory = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as err:
+        raise SetupError(f"cannot read skill inventory from {path}: {err}", EXIT_USAGE)
+    if not isinstance(inventory, dict) or not isinstance(inventory.get("skills"), list):
+        raise SetupError(f"{path}: inventory must be an object with a skills array", EXIT_USAGE)
+    return inventory
+
+
+def _inventory_edge(edge: str, row: dict, name: str) -> dict:
+    source = row.get(edge)
+    if not isinstance(source, dict) or not source.get("path") or not source.get("sha256"):
+        raise SetupError(
+            f"skill {name!r}: inventory entry {edge!r} needs a path and a sha256", EXIT_USAGE
+        )
+    return source
+
+
+def skill_library_modules(inventory: dict, source_root: Path) -> list:
+    """One skill block per inventory skill: the SKILL.md text plus its source provenance.
+
+    A skill committed on both edges is ONE module: the canonical copy is the source and the
+    plugin copy is its mirror, so the block records both digests and the drift check can see
+    either. Library paths are relative to the OpenRig repository root (``source_root``), not to
+    this project. The recorded sha256 is the inventory's, but the file read is verified against
+    it: publishing bytes the inventory does not describe would write a block whose provenance
+    is stale the moment it lands, which is exactly what the drift check exists to catch.
+    """
+    rows = {}
+    for row in inventory["skills"]:
+        if not isinstance(row, dict) or not row.get("name"):
+            raise SetupError("every skill row in the inventory needs a name", EXIT_USAGE)
+        name = row["name"]
+        merged = rows.setdefault(name, {})
+        for edge in ("canonical", "plugin"):
+            if edge in row:
+                merged[edge] = _inventory_edge(edge, row, name)
+    modules = []
+    for name in sorted(rows):
+        row = rows[name]
+        primary_edge = "canonical" if "canonical" in row else "plugin"
+        primary = row[primary_edge]
+        skill_file = source_root / primary["path"] / SKILL_FILE
+        try:
+            raw = skill_file.read_bytes()
+        except OSError as err:
+            raise SetupError(
+                f"skill {name!r}: cannot read {skill_file} under --source-root: {err}", EXIT_USAGE
+            )
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest != primary["sha256"]:
+            raise SetupError(
+                f"skill {name!r}: {skill_file} digests {digest}, but the inventory records "
+                f"{primary['sha256']}; the inventory is stale - regenerate it before publishing",
+                EXIT_USAGE,
+            )
+        content = raw.decode("utf-8", "replace")
+        _refuse_secret(f"skill {name!r}", content)
+        mirror = row.get("plugin") if primary_edge == "canonical" else None
+        modules.append({
+            "slug": _module_slug(name, "skill"),
+            "kind": SKILL_KIND,
+            "content": skill_block_content(
+                content,
+                primary["path"].rstrip("/") + "/" + SKILL_FILE,
+                primary["sha256"],
+                (mirror["path"].rstrip("/") + "/" + SKILL_FILE) if mirror else None,
+                mirror["sha256"] if mirror else None,
+            ),
+        })
+    return modules
+
+
+def cmd_publish_skills(args) -> None:
+    inventory = load_skill_inventory(args.inventory)
+    source_root = args.source_root
+    if source_root is None and os.environ.get("OPENRIG_SKILLS_ROOT"):
+        source_root = Path(os.environ["OPENRIG_SKILLS_ROOT"])
+    if source_root is None:
+        raise SetupError(
+            "publish-skills needs the OpenRig checkout the inventory paths are relative to: "
+            "pass --source-root DIR or set OPENRIG_SKILLS_ROOT",
+            EXIT_USAGE,
+        )
+    modules = skill_library_modules(inventory, source_root)
+    base_url, token = _optional_credentials()
+    if args.dry_run:
+        print(f"plan: publish-skills {len(modules)} skill block(s) from {args.inventory}")
+        if base_url:
+            for entry in resolve_modules(modules, args.version, base_url, token):
+                print(_plan_line(entry))
+        else:
+            for module in modules:
+                print(_unresolved_plan_line(module, args.version))
+        return
+    base_url, token = _credentials()
+    resolved = resolve_modules(modules, args.version, base_url, token)
+    counts = {action: sum(e["action"] == action for e in resolved) for action in (PUSH, NEW_VERSION, SKIP)}
+    print(f"publishing {len(modules)} skill block(s) from {args.inventory}")
+    run_steps(resolved_steps(resolved), args.dry_run)
+    print(
+        f"publish summary: {counts[PUSH]} pushed, {counts[NEW_VERSION]} new version(s), "
+        f"{counts[SKIP]} skipped"
+    )
+
+
+def _sha256_file(path: Path) -> str:
+    """The lowercase hex sha256 of the file's bytes."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _provenance_path(value) -> str:
+    """A recorded path/digest is provenance only when it is a non-empty string."""
+    return value if isinstance(value, str) and value else ""
+
+
+def stored_provenance(module: dict):
+    """The provenance a stored skill block records, or None when it carries none.
+
+    An older block published before provenance carries raw skill text, or JSON without both
+    ``source_path`` and ``sha256``; that is the no-provenance category, reported apart from a
+    digest mismatch. The canonical/plugin overlaps additionally record ``mirror_path`` and
+    ``mirror_sha256``; that pair is checked too only when both keys are present.
+    """
+    content = module.get("content")
+    if not isinstance(content, str):
+        return None
+    try:
+        parsed = json.loads(content)
+    except ValueError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    source_path = _provenance_path(parsed.get(PROVENANCE_SOURCE))
+    stored = _provenance_path(parsed.get(PROVENANCE_SHA256))
+    if not source_path or not stored:
+        return None
+    mirror_path = _provenance_path(parsed.get(PROVENANCE_MIRROR_SOURCE))
+    mirror_stored = _provenance_path(parsed.get(PROVENANCE_MIRROR_SHA256))
+    mirror = (mirror_path, mirror_stored) if mirror_path and mirror_stored else None
+    return {"source_path": source_path, "sha256": stored, "mirror": mirror}
+
+
+def stored_skill_blocks(base_url: str, token: str, summaries: list) -> list:
+    """The full body of every stored skill module in a listing; the listing itself has no content."""
+    blocks = []
+    for summary in summaries:
+        if summary.get("kind") != SKILL_KIND:
+            continue
+        slug, version = summary.get("slug", ""), summary.get("version", "")
+        module = get_module_version(base_url, token, slug, version)
+        if module is None:
+            raise SetupError(
+                f"stored module {slug}@{version} disappeared between listing and read", EXIT_REMOTE
+            )
+        blocks.append(module)
+    return blocks
+
+
+def _pair_finding(slug: str, path: str, stored: str, roots: list, mirror: bool):
+    """The finding for one recorded path/digest pair, or None when it matches a file under a root.
+
+    The path is tried under each root in order and the first file found decides the answer, so
+    with no match it is the missing-source finding for every root that was tried.
+    """
+    for root in roots:
+        target = root / path
+        if not target.is_file():
+            continue
+        computed = _sha256_file(target)
+        if computed == stored:
+            return None
+        return {
+            "slug": slug, "reason": DRIFT_MIRROR if mirror else DRIFT_DIGEST,
+            "source_path": path, "stored": stored, "computed": computed, "root": str(root),
+        }
+    return {"slug": slug, "reason": DRIFT_MISSING, "source_path": path, "stored": stored,
+            "roots": [str(root) for root in roots]}
+
+
+def drift_findings(blocks: list, roots: list) -> list:
+    """One finding per stored digest pair that drifted or lost its file, plus no-provenance blocks.
+
+    Read-only: it hashes each recorded path under the roots it may belong to and compares. The
+    primary ``source_path``/``sha256`` pair is always checked; a block that also records a
+    ``mirror_path``/``mirror_sha256`` pair has that pair checked too, independently, and a
+    divergent mirror is its own ``mirror`` finding rather than a stored-vs-source mismatch.
+    """
+    findings = []
+    for module in blocks:
+        slug = module.get("slug", "")
+        provenance = stored_provenance(module)
+        if provenance is None:
+            findings.append({
+                "slug": slug, "reason": DRIFT_NO_PROVENANCE, "version": module.get("version", ""),
+            })
+            continue
+        primary = _pair_finding(slug, provenance["source_path"], provenance["sha256"], roots, False)
+        if primary is not None:
+            findings.append(primary)
+        if provenance["mirror"] is not None:
+            mirror_path, mirror_stored = provenance["mirror"]
+            mirror_finding = _pair_finding(slug, mirror_path, mirror_stored, roots, True)
+            if mirror_finding is not None:
+                findings.append(mirror_finding)
+    return findings
+
+
+def _drift_line(finding: dict) -> str:
+    """One finding as the digest check prints them: indented ``<key>: <path> (<reason>)`` + detail.
+
+    A resolved path names the root it matched under; a missing one names every root tried.
+    """
+    reason, slug = finding["reason"], finding["slug"]
+    if reason == DRIFT_NO_PROVENANCE:
+        return f"  {slug}: stored {finding['version']} ({reason}) carries no source_path/sha256"
+    path = finding["source_path"]
+    if reason == DRIFT_MISSING:
+        roots = " or ".join(finding["roots"])
+        return f"  {slug}: {path} ({reason}) no file under {roots}"
+    return (
+        f"  {slug}: {path} ({reason} @ {finding['root']}) "
+        f"stored {finding['stored']} computed {finding['computed']}"
+    )
+
+
+def _drift_roots(args) -> list:
+    """The roots a recorded path may be relative to, in resolution order (see LIBRARY_ROOT_ENV)."""
+    roots = [Path(args.root) if args.root is not None else Path(get_project_root())]
+    library = args.library_root
+    if library is None and os.environ.get(LIBRARY_ROOT_ENV):
+        library = Path(os.environ[LIBRARY_ROOT_ENV])
+    if library is not None and Path(library) not in roots:
+        roots.append(Path(library))
+    return roots
+
+
+def cmd_drift_check(args) -> int:
+    """Report stored skill provenance against disk; it reads only and writes nothing.
+
+    Returns EXIT_DRIFT when there is at least one finding, EXIT_OK on a clean tree.
+    """
+    roots = _drift_roots(args)
+    base_url, token = _credentials()
+    blocks = stored_skill_blocks(base_url, token, list_module_versions(base_url, token))
+    findings = drift_findings(blocks, roots)
+    if not findings:
+        return EXIT_OK
+    print(DRIFT_HEADER, file=sys.stderr)
+    for finding in findings:
+        print(_drift_line(finding), file=sys.stderr)
+    return EXIT_DRIFT
+
+
 def main(argv: list = None) -> int:
     parser = argparse.ArgumentParser(
         prog="openrig_team_setup.py",
@@ -534,14 +909,47 @@ def main(argv: list = None) -> int:
         "--version", default=IMPORT_VERSION, help="module version to publish (default 1.0.0)"
     )
     import_project.set_defaults(func=cmd_import_project)
+    publish = subparsers.add_parser(
+        "publish-skills",
+        help="push the skill library inventory as kind=skill blocks with provenance",
+    )
+    publish.add_argument("--dry-run", action="store_true", help="print the plan, call nothing")
+    publish.add_argument(
+        "--inventory", type=Path, default=DEFAULT_SKILL_INVENTORY,
+        help="skill library inventory JSON (default: ai_docs/agent-system/skill-library.json)",
+    )
+    publish.add_argument(
+        "--source-root", type=Path, default=None,
+        help="OpenRig checkout the inventory paths are relative to "
+             "(default: $OPENRIG_SKILLS_ROOT)",
+    )
+    publish.add_argument(
+        "--version", default=PUBLISH_VERSION, help="module version to publish (default 1.0.0)"
+    )
+    publish.set_defaults(func=cmd_publish_skills)
+    drift = subparsers.add_parser(
+        "drift-check",
+        help="report stored skill provenance that no longer matches the files on disk",
+    )
+    drift.add_argument(
+        "--root", type=Path, default=None,
+        help="project root import-project's paths are relative to "
+             "(default: the hooks' project root)",
+    )
+    drift.add_argument(
+        "--library-root", type=Path, default=None,
+        help="OpenRig checkout publish-skills' paths are relative to "
+             "(default: $OPENRIG_SKILLS_ROOT)",
+    )
+    drift.set_defaults(func=cmd_drift_check)
 
     args = parser.parse_args(argv)
     try:
-        args.func(args)
+        result = args.func(args)
     except SetupError as err:
         print(f"error: {err}", file=sys.stderr)
         return err.code
-    return EXIT_OK
+    return EXIT_OK if result is None else result
 
 
 if __name__ == "__main__":

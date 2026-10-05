@@ -1,6 +1,8 @@
 package seatrenderer
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -17,6 +19,21 @@ import (
 
 const testMCPURL = "https://mcp.4genthub.test/mcp"
 
+// skillBlock builds the content of one skill module: the SKILL.md text plus its source
+// provenance, the block shape the renderer unwraps.
+func skillBlock(text, sourcePath string) string {
+	sum := sha256.Sum256([]byte(text))
+	encoded, err := json.Marshal(map[string]string{
+		"content":     text,
+		"source_path": sourcePath,
+		"sha256":      hex.EncodeToString(sum[:]),
+	})
+	if err != nil {
+		panic(err)
+	}
+	return string(encoded)
+}
+
 func seatFixture(runtime string) resolver.ResolvedSeat {
 	return resolver.ResolvedSeat{
 		SeatType:        "seat.standard",
@@ -25,7 +42,7 @@ func seatFixture(runtime string) resolver.ResolvedSeat {
 		Modules: []resolver.ResolvedModule{
 			{Slug: "instr.base", Version: "1.0.0", Kind: resolver.KindInstruction, Content: "Base instruction."},
 			{Slug: "doc.guide", Version: "2.0.0", Kind: resolver.KindDocument, Content: "Guide document."},
-			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: "# Alpha skill\n"},
+			{Slug: "skill.alpha", Version: "1.0.0", Kind: resolver.KindSkill, Content: skillBlock("# Alpha skill\n", "skills/_canonical/process/alpha-skill/SKILL.md")},
 			{Slug: "mem.gamma", Version: "1.0.0", Kind: resolver.KindMemory, Content: "Gamma memory."},
 		},
 		Hash: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90",
@@ -193,6 +210,10 @@ func TestRenderSeatClaudeCode(t *testing.T) {
 	}
 	if got := filePaths(spec); !reflect.DeepEqual(got, wantPaths) {
 		t.Fatalf("file paths = %v, want %v", got, wantPaths)
+	}
+	// A skill module's content is a block; the renderer writes only its text to SKILL.md.
+	if got := fileContent(t, spec, "skills/skill.alpha/SKILL.md"); got != "# Alpha skill\n" {
+		t.Fatalf("skill file = %q, want the block's content", got)
 	}
 
 	guidance := fileContent(t, spec, guidancePath)
@@ -646,6 +667,25 @@ func TestRenderSeatMCPBlockInvalidError(t *testing.T) {
 		})
 		if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "mcp.bad") || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: err = %v, want mcp.bad and %q", name, err, c.want)
+		}
+	}
+}
+
+// A skill module's content is validated at render time, which also covers an overlay override:
+// a plain-text or malformed block fails naming the module rather than writing it into SKILL.md.
+func TestRenderSeatSkillBlockInvalidError(t *testing.T) {
+	cases := map[string]struct{ content, want string }{
+		"plain text":         {`# Alpha skill` + "\n", "not one JSON value"},
+		"missing provenance": {`{"content":"# Alpha skill\n","source_path":"skills/x","sha256":"not-a-digest"}`, "sha256"},
+		"no content":         {`{"source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `"}`, "field content is required"},
+		"unknown field":      {`{"content":"x","source_path":"skills/x","sha256":"` + strings.Repeat("a", 64) + `","extra":1}`, "unknown field"},
+	}
+	for name, c := range cases {
+		seat := withMCP(seatFixture("claude-code"), resolver.ResolvedModule{
+			Slug: "skill.bad", Version: "1.0.0", Kind: resolver.KindSkill, Content: c.content,
+		})
+		if _, err := RenderSeat(seat, testMCPURL); err == nil || !strings.Contains(err.Error(), "skill.bad") || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want skill.bad and %q", name, err, c.want)
 		}
 	}
 }

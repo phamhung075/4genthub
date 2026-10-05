@@ -170,3 +170,23 @@ func TestFromSpecBlocks(t *testing.T) {
 		t.Fatalf("refs = %+v", seed.ModuleRefs)
 	}
 }
+
+// The curated catalog skills a seat is composed from travel as extra refs, after the refs of
+// the modules the seed authors, at the version the publish path pinned.
+func TestFromSpecExtraRefs(t *testing.T) {
+	extra := []resolver.ModuleRef{
+		{Slug: "queue-handoff", Version: "1.0.0"},
+		{Slug: "delegating-work", Version: "1.0.0"},
+	}
+	seed, err := FromSpec(Spec{Slug: "lead", Role: "Lead.", OutputFormat: "Out.", ExtraRefs: extra})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(seed.ModuleRefs) != len(seed.Modules)+len(extra) {
+		t.Fatalf("refs = %+v, want the module refs then the extras", seed.ModuleRefs)
+	}
+	tail := seed.ModuleRefs[len(seed.Modules):]
+	if !reflect.DeepEqual(tail, extra) {
+		t.Fatalf("extra refs = %+v, want %+v", tail, extra)
+	}
+}

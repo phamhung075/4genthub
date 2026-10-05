@@ -3,7 +3,9 @@ package seedlibrary
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -14,8 +16,10 @@ import (
 	"strings"
 
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
+	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
+	"agenthub/fastmcp/seat_management/domain/skillblock"
 
 	"gopkg.in/yaml.v3"
 )
@@ -32,13 +36,22 @@ const (
 // sharedModuleFiles lists the modules every seat type carries: slug, kind and the file in
 // shared-modules/ that holds the content. comm-guard is the Claude settings fragment that
 // denies direct messaging commands; comm-guard-skill tells the seat what to use instead.
+//
+// A skill module's content is a block, not raw markdown, so the file it is built from needs a
+// provenance path: the repository-relative path of that same file, which the drift check
+// re-reads and re-hashes. The path includes agenthub_go/ because the drift check resolves it
+// against the repository root, not the Go module root.
 var sharedModuleFiles = []struct {
-	slug string
-	kind resolver.ModuleKind
-	file string
+	slug       string
+	kind       resolver.ModuleKind
+	file       string
+	sourcePath string
 }{
-	{"comm-guard", resolver.KindTool, "comm-guard.json"},
-	{"comm-guard-skill", resolver.KindSkill, "comm-guard-skill.md"},
+	{"comm-guard", resolver.KindTool, "comm-guard.json", ""},
+	{
+		"comm-guard-skill", resolver.KindSkill, "comm-guard-skill.md",
+		"agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/comm-guard-skill.md",
+	},
 }
 
 var (
@@ -56,6 +69,7 @@ type seatTypeFile struct {
 	Description    string     `yaml:"description"`
 	DefaultRuntime string     `yaml:"default_runtime"`
 	MCPBlocks      []string   `yaml:"mcp_blocks"`
+	ModuleRefs     []string   `yaml:"module_refs"`
 	Role           string     `yaml:"role"`
 	Rules          []ruleFile `yaml:"rules"`
 	OutputFormat   string     `yaml:"output_format"`
@@ -109,9 +123,31 @@ func loadSharedModules(fsys fs.FS) ([]seedmap.SeedModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		modules = append(modules, seedmap.SeedModule{Slug: f.slug, Kind: f.kind, Content: string(data)})
+		content := string(data)
+		if f.kind == resolver.KindSkill {
+			// A skill module is a block, not raw markdown. This seed authors its skill in-tree,
+			// so the provenance is the committed file itself: its repository-relative path and
+			// the sha256 of the bytes just read. Marshalling here means the block's text and
+			// its digest come from one read and cannot drift apart in the repository.
+			block, err := skillblock.Marshal(skillblock.Block{
+				Content:    content,
+				SourcePath: f.sourcePath,
+				SHA256:     sha256Hex(data),
+			})
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", f.file, err)
+			}
+			content = block
+		}
+		modules = append(modules, seedmap.SeedModule{Slug: f.slug, Kind: f.kind, Content: content})
 	}
 	return modules, nil
+}
+
+// sha256Hex is the lowercase hex sha256 of data, the digest rule skill blocks record.
+func sha256Hex(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 // loadBlocks reads the library's published MCP blocks: one blocks/*.json file per block, the
@@ -182,6 +218,17 @@ func Parse(name string, data []byte, shared []seedmap.SeedModule, blocks map[str
 			return seedmap.Seed{}, fmt.Errorf("%s: field rules[%d].content is empty", name, i)
 		}
 		spec.Rules = append(spec.Rules, seedmap.Rule{Name: rule.Name, Content: rule.Content})
+	}
+
+	// module_refs are the curated catalog skills this seat type is composed from, carried as
+	// concrete slug@version refs; the seed authors their content elsewhere (the publish path
+	// pushes it), so here they only pin which versions the seat arrives with.
+	for i, ref := range file.ModuleRefs {
+		parsed, err := repositories.ParseModuleRef(ref)
+		if err != nil {
+			return seedmap.Seed{}, fmt.Errorf("%s: field module_refs[%d]: %w", name, i, err)
+		}
+		spec.ExtraRefs = append(spec.ExtraRefs, parsed)
 	}
 
 	// Each mcp_blocks entry mounts one whole server; a block is one of the files in blocks/.

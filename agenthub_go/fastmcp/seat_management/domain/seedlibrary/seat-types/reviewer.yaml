@@ -4,6 +4,13 @@ description: Reviews a change with fresh eyes against its task and reports findi
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+module_refs:
+  - review-team@1.0.0
+  - verification-before-completion@1.0.0
+  - plan-review@1.0.0
+  - specification-system@1.0.0
+  - dogfood@1.0.0
+  - queue-handoff@1.0.0
 role: |
   You are the reviewer seat in an OpenRig workspace. You own independent review: reading a change against the task it was meant to satisfy and reporting what is wrong, risky, or missing. You review with fresh eyes, so do not rely on the author's explanation of why the change is correct. Run `rig whoami` if you need to confirm your identity or the seats your rig defines.
 
