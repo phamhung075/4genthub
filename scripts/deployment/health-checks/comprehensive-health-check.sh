@@ -270,7 +270,8 @@ check_backend_health() {
                 return 1
                 ;;
             *)
-                log_warning "Endpoint returned unexpected status: $endpoint (HTTP $response_code)"
+                log_error "Endpoint returned unexpected status: $endpoint (HTTP $response_code)"
+                return 1
                 ;;
         esac
     done
@@ -317,7 +318,8 @@ check_keycloak_integration() {
             return 1
             ;;
         *)
-            log_warning "Keycloak health check returned HTTP $keycloak_health"
+            log_error "Keycloak health check returned unexpected status: HTTP $keycloak_health"
+            return 1
             ;;
     esac
 
@@ -350,15 +352,21 @@ check_mcp_server_functionality() {
     mcp_health=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H 'Content-Type: application/json' \
         -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' --max-time "$TIMEOUT" "$BACKEND_URL/mcp" 2>/dev/null || echo "000")
 
+    # Run both probes before deciding, so a ping failure does not hide the
+    # authentication check (and vice versa).
+    local mcp_ok=true
+
     case "$mcp_health" in
         200)
             log_success "MCP server is responding to JSON-RPC ping"
             ;;
         000)
-            log_warning "MCP server is not accessible"
+            log_error "MCP server is not accessible (connection failed)"
+            mcp_ok=false
             ;;
         *)
-            log_warning "MCP server returned HTTP $mcp_health"
+            log_error "MCP server returned unexpected HTTP $mcp_health"
+            mcp_ok=false
             ;;
     esac
 
@@ -369,21 +377,25 @@ check_mcp_server_functionality() {
     case "$task_endpoint" in
         401|403) # Expected - requires authentication
             log_success "MCP task endpoint is responding (requires auth as expected)"
-            return 0
             ;;
         200)
-            log_warning "MCP task endpoint accessible without auth (potential security issue)"
-            return 0
+            log_error "MCP task endpoint accessible without auth (security issue)"
+            mcp_ok=false
             ;;
         000)
             log_error "MCP task endpoint not accessible"
-            return 1
+            mcp_ok=false
             ;;
         *)
-            log_warning "MCP task endpoint returned unexpected status: HTTP $task_endpoint"
-            return 0
+            log_error "MCP task endpoint returned unexpected status: HTTP $task_endpoint"
+            mcp_ok=false
             ;;
     esac
+
+    if [[ "$mcp_ok" == "true" ]]; then
+        return 0
+    fi
+    return 1
 }
 
 check_ssl_tls_configuration() {
@@ -402,7 +414,8 @@ check_ssl_tls_configuration() {
                 if echo "$ssl_check" | grep -q "Verify return code: 0 (ok)"; then
                     log_success "SSL certificate is valid"
                 else
-                    log_warning "SSL certificate validation issues detected"
+                    log_error "SSL certificate validation issues detected"
+                    return 1
                 fi
             else
                 log_error "SSL connectivity test failed"

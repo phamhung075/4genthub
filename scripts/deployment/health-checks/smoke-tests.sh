@@ -29,6 +29,8 @@ TEST_PROJECT_NAME="smoke-test-project"
 # Test results tracking
 declare -a PASSED_TESTS=()
 declare -a FAILED_TESTS=()
+declare -a WARNING_TESTS=()
+declare -a SKIPPED_TESTS=()
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -41,6 +43,12 @@ log_success() {
 
 log_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
+    WARNING_TESTS+=("$1")
+}
+
+log_skip() {
+    echo -e "${BLUE}[SKIP]${NC} $1"
+    SKIPPED_TESTS+=("$1")
 }
 
 log_error() {
@@ -179,25 +187,45 @@ test_authentication_flow() {
         return 1
     fi
 
-    # Test rate limiting on auth endpoints
-    log_info "Testing rate limiting on authentication..."
-    local rate_limit_test_passed=true
-    for i in {1..15}; do
-        if ! make_api_request "POST" "/api/auth/login" '{"email":"test@example.com","password":"invalid"}' "400" > /dev/null; then
-            if [[ $i -gt 10 ]]; then
-                log_success "Rate limiting appears to be working (got rate limited)"
-                break
-            fi
-            rate_limit_test_passed=false
-        fi
-        sleep 0.1
-    done
+    # Credential rejection: an invalid login must be rejected. With a reachable
+    # identity provider the handler maps an upstream 401 (or a 400 "invalid_grant")
+    # to HTTP 401 "Invalid credentials"; with none reachable it answers 503. A 503
+    # is not a credential-rejection verdict, so it is recorded as not verified
+    # rather than passed. The old expectation of 400 was wrong on every path this
+    # JSON probe can take, so it failed on healthy deployments.
+    log_info "Testing credential rejection on authentication..."
+    local login_code
+    login_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" \
+        -d '{"email":"test@example.com","password":"invalid"}' --max-time "$TIMEOUT" \
+        "$BACKEND_URL/api/auth/login" 2>/dev/null || echo "000")
 
-    if [[ "$rate_limit_test_passed" == "true" ]]; then
-        log_success "Authentication rate limiting is functional"
-    else
-        log_warning "Authentication rate limiting may not be working as expected"
-    fi
+    case "$login_code" in
+        401)
+            log_success "Login rejects invalid credentials (HTTP 401)"
+            ;;
+        503)
+            log_skip "Credential rejection not verified: no identity provider reachable (HTTP 503)"
+            ;;
+        000)
+            log_error "Login endpoint not accessible (connection failed)"
+            return 1
+            ;;
+        *)
+            log_error "Login returned HTTP $login_code for invalid credentials (expected 401)"
+            return 1
+            ;;
+    esac
+
+    # Rate limiting on the login surface is NOT asserted here. The Go server mounts
+    # only CORS middleware (httpapp/app.go Handler returns withCORS(mux)); it has no
+    # HTTP rate limiter, and the RateLimit* symbols elsewhere in the API are
+    # per-token metadata (server/routes/token_router.go), not request throttling.
+    # A proxy or ingress in front of the server could rate limit, but that is not
+    # observable from this script, so the property is recorded as not verified -
+    # never as "rate limiting is functional". The previous loop inferred rate
+    # limiting from its own failed 400 expectation (i>10), which passed on healthy
+    # deployments that never rate limited anything.
+    log_skip "Authentication rate limiting not verified: no server-side HTTP rate limiter is observable from this script"
 
     return 0
 }
@@ -273,7 +301,8 @@ test_frontend_availability() {
                 log_warning "Static asset not found (expected if using different build): $url"
             fi
         else
-            log_warning "Static asset issue: $url (HTTP $response_code)"
+            log_error "Static asset returned unexpected status: $url (HTTP $response_code)"
+            return 1
         fi
     done
 
@@ -297,7 +326,8 @@ test_ssl_tls_configuration() {
                 elif echo "$ssl_output" | grep -q "self signed certificate"; then
                     log_warning "Self-signed certificate detected (may be expected in test environments)"
                 else
-                    log_warning "SSL certificate validation issues detected"
+                    log_error "SSL certificate validation issues detected"
+                    return 1
                 fi
 
                 # Check TLS version
@@ -417,11 +447,31 @@ generate_smoke_test_report() {
         echo
     fi
 
+    if [[ ${#SKIPPED_TESTS[@]} -gt 0 ]]; then
+        echo "⏭️  NOT VERIFIED TESTS (${#SKIPPED_TESTS[@]}):"
+        for test in "${SKIPPED_TESTS[@]}"; do
+            echo "  - $test"
+        done
+        echo
+    fi
+
+    if [[ ${#WARNING_TESTS[@]} -gt 0 ]]; then
+        echo "⚠️  WARNING TESTS (${#WARNING_TESTS[@]}):"
+        for test in "${WARNING_TESTS[@]}"; do
+            echo "  - $test"
+        done
+        echo
+    fi
+
     local total_tests=$((${#PASSED_TESTS[@]} + ${#FAILED_TESTS[@]}))
     echo "Summary: ${#PASSED_TESTS[@]}/$total_tests tests passed"
 
     if [[ ${#FAILED_TESTS[@]} -eq 0 ]]; then
-        echo "🎉 All smoke tests passed successfully!"
+        if [[ ${#SKIPPED_TESTS[@]} -eq 0 && ${#WARNING_TESTS[@]} -eq 0 ]]; then
+            echo "🎉 All smoke tests passed successfully!"
+        else
+            echo "⚠️  All executed smoke tests passed; ${#SKIPPED_TESTS[@]} test(s) not verified and ${#WARNING_TESTS[@]} warning(s) require review"
+        fi
         return 0
     else
         echo "❌ Some smoke tests failed - deployment may need attention"
