@@ -1,14 +1,10 @@
 package value_objects
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 )
 
-// AgentRole: Enumeration of all available agent roles - matches agenthub_main/agent-library/agents
+// AgentRole: Enumeration of all available agent roles.
 type AgentRole string
 
 const (
@@ -70,45 +66,24 @@ func IsValidRole(slug string) bool { _, ok := GetRoleBySlug(slug); return ok }
 // FolderName is the slug with hyphens replaced by underscores.
 func (r AgentRole) FolderName() string { return strings.ReplaceAll(string(r), "-", "_") }
 
-func (r AgentRole) metadataString(key string) string {
-	if md := GetRoleMetadataFromYaml(r); md != nil {
-		if s, ok := md[key].(string); ok {
-			return s
-		}
-	}
-	return ""
-}
+// The job_desc.yaml metadata source lived under the retired agent-library and is
+// gone, so the field accessors below keep their signatures but always return the
+// empty value that was already the only runtime result.
 
 // DisplayName is the "name" field from the role's job_desc.yaml.
-func (r AgentRole) DisplayName() string { return r.metadataString("name") }
+func (r AgentRole) DisplayName() string { return "" }
 
 // Description is the "role_definition" field.
-func (r AgentRole) Description() string { return r.metadataString("role_definition") }
+func (r AgentRole) Description() string { return "" }
 
 // WhenToUse is the "when_to_use" field.
-func (r AgentRole) WhenToUse() string { return r.metadataString("when_to_use") }
+func (r AgentRole) WhenToUse() string { return "" }
 
 // Groups is the "groups" field, or an empty list.
-func (r AgentRole) Groups() []any {
-	if md := GetRoleMetadataFromYaml(r); md != nil {
-		if g, ok := md["groups"].([]any); ok {
-			return g
-		}
-	}
-	return []any{}
-}
+func (r AgentRole) Groups() []any { return []any{} }
 
 // GetSupportedRoles lists supported roles for rule generation.
 func GetSupportedRoles() []string { return GetAllRoles() }
-
-// GetRoleMetadata returns metadata for a role slug, or nil.
-func GetRoleMetadata(roleSlug string) map[string]any {
-	r, ok := GetRoleBySlug(roleSlug)
-	if !ok {
-		return nil
-	}
-	return GetRoleMetadataFromYaml(r)
-}
 
 // GetRoleFolderName returns the folder name for a slug.
 func GetRoleFolderName(roleSlug string) (string, bool) {
@@ -117,35 +92,6 @@ func GetRoleFolderName(roleSlug string) (string, bool) {
 		return "", false
 	}
 	return r.FolderName(), true
-}
-
-// GetYamlLibPath returns the agent-library path for a role.
-func GetYamlLibPath(role AgentRole) (string, bool) {
-	if !IsValidRole(string(role)) {
-		return "", false
-	}
-	return "cursor_agent/agent-library/" + role.FolderName(), true
-}
-
-// GetRoleMetadataFromYaml reads cursor_agent/agent-library/<folder>/job_desc.yaml
-// (relative to the working directory) and adds "folder_name" and "slug".
-// It returns nil for unknown roles, missing files, parse errors, or empty documents.
-func GetRoleMetadataFromYaml(role AgentRole) map[string]any {
-	if !IsValidRole(string(role)) {
-		return nil
-	}
-	folder := role.FolderName()
-	data, err := os.ReadFile(filepath.Join("cursor_agent", "agent-library", folder, "job_desc.yaml"))
-	if err != nil {
-		return nil
-	}
-	var doc map[string]any
-	if err := yaml.Unmarshal(data, &doc); err != nil || len(doc) == 0 {
-		return nil
-	}
-	doc["folder_name"] = folder
-	doc["slug"] = string(role)
-	return doc
 }
 
 // LegacyRoleMappings maps legacy role names to current slugs.

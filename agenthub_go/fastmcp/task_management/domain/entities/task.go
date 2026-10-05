@@ -416,12 +416,8 @@ func titleName(s string) string {
 
 func roleInfo(assignee string) map[string]any {
 	if role, ok := value_objects.GetRoleBySlug(assignee); ok {
-		var md any
-		if m := value_objects.GetRoleMetadataFromYaml(role); m != nil {
-			md = m
-		}
 		return map[string]any{
-			"role": string(role), "display_name": role.DisplayName(), "folder_name": role.FolderName(), "metadata": md,
+			"role": string(role), "display_name": role.DisplayName(), "folder_name": role.FolderName(), "metadata": nil,
 		}
 	}
 	return map[string]any{
