@@ -78,6 +78,19 @@ const (
 	wsAuthInvalidTokenReason = "Invalid or expired token: supply a valid Keycloak, API or MCP bearer token"
 )
 
+// wsScopeMissingReason is the connector's OTHER refusal: the credential was accepted but the
+// token does not grant sessions:write. It is deliberately its own string, NOT one of the auth
+// reasons above, because authentication and authorization are different events for the caller.
+// An authentication refusal means "come back with a token at all"; this one means "come back
+// with a better token". The authorization refusal is a LEGITIMATE outcome, not a credential
+// failure, so it must not read as one: a client told its credential is bad discards a token
+// that is actually fine. Collapsing both refusals into a single "rejected" reason is the
+// natural result of treating "refused" as one case, and is exactly how a fix inherits the
+// defect it was sent to close. Like the auth reasons it stays under the RFC 6455 123-byte
+// control-frame limit (pinned by TestWebSocketRejectionReasonsFitControlFrame).
+const wsScopeMissingReason = "Missing scope " + routes.SessionStreamWriteScope +
+	": the credential is valid but this token must also grant session streaming"
+
 // wsAuthenticateRealtime resolves the socket identity under the SAME decision the REST routes
 // apply instead of giving the socket a rule of its own. Every REST route authenticates through
 // http.go currentUser -> authinterface.GetCurrentUser, which with AUTH_ENABLED=false resolves
@@ -226,19 +239,29 @@ func wsReplayMissedNotifications(ctx context.Context, conn *wsConn, userID strin
 
 // handleConnector ports connector_ingest: authenticate from ?token= or the bearer
 // header, require the sessions:write scope, accept, then serve hello/session/events.
+// Both refusals COMPLETE the handshake and close with 1008 plus a reason (wsRejectUpgrade):
+// a pre-upgrade 403 reaches a browser as close code 1006 with no reason. Authentication and
+// authorization keep distinct reasons - see wsScopeMissingReason.
 func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
 		if token == "" {
 			token = wsBearerToken(r)
 		}
-		result := auth.ValidateTokenUniversal(r.Context(), token, nil)
-		if !result.Valid || result.UserID == nil || *result.UserID == "" {
-			http.Error(w, "Authentication required", http.StatusForbidden)
+		// The connector applies the SAME decision as every REST route and the realtime socket
+		// (wsAuthenticateRealtime), rather than a ValidateTokenUniversal call of its own that
+		// would demand a provider-minted token even with AUTH_ENABLED=false.
+		result, reason := wsAuthenticateRealtime(r.Context(), token)
+		if reason != "" {
+			wsRejectUpgrade(w, r, reason)
 			return
 		}
-		if !wsHasScope(result, routes.SessionStreamWriteScope) {
-			http.Error(w, "Missing scope "+routes.SessionStreamWriteScope, http.StatusForbidden)
+		// Authorization is a separate, legitimate refusal. It is only decidable when auth is on:
+		// with AUTH_ENABLED=false the shared decision resolves the development identity WITHOUT
+		// reading the token, so no token-derived scope set exists to check and the socket must
+		// not impose a scope rule the single decision never consulted.
+		if auth.AuthEnabled() && !wsHasScope(result, routes.SessionStreamWriteScope) {
+			wsRejectUpgrade(w, r, wsScopeMissingReason)
 			return
 		}
 

@@ -366,16 +366,143 @@ func TestMountWebSocketsConnectorConnect(t *testing.T) {
 	}
 }
 
+// TestMountWebSocketsConnectorRequiresScope checks the SCOPE refusal now completes the
+// handshake and closes with 1008 plus wsScopeMissingReason, not a pre-upgrade 403 that a
+// browser sees as 1006 with no reason.
 func TestMountWebSocketsConnectorRequiresScope(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	t.Setenv("JWT_SECRET_KEY", "ws-mount-test-secret-000000000000")
+	t.Setenv("KEYCLOAK_URL", "")
 	token := wsTestToken(t, nil)
 	mux := http.NewServeMux()
 	mountWebSockets(mux, nil)
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	status := wsTestDialStatus(t, server.URL, "/ws/connector?token="+url.QueryEscape(token))
-	if status != http.StatusForbidden {
-		t.Fatalf("status = %d, want 403", status)
+	conn, br := wsTestDial(t, server.URL, "/ws/connector?token="+url.QueryEscape(token))
+	defer conn.Close()
+	code, reason := wsTestReadClose(t, br)
+	if code != wsClosePolicyViolation {
+		t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+	}
+	if reason != wsScopeMissingReason {
+		t.Fatalf("close reason = %q, want %q", reason, wsScopeMissingReason)
+	}
+}
+
+// TestMountWebSocketsConnectorRefusalsReadDifferentReasons pins the reviewer's find on the
+// connector: an AUTH refusal and a SCOPE refusal are told apart by their close REASON, not
+// merely both being 1008. Authentication and authorization are different events for the
+// caller - the auth refusal means "come back with a token at all", the scope refusal means
+// "come back with a better token" and must NOT read as a credential failure.
+func TestMountWebSocketsConnectorRefusalsReadDifferentReasons(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	t.Setenv("JWT_SECRET_KEY", "ws-mount-test-secret-000000000000")
+	t.Setenv("KEYCLOAK_URL", "")
+
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	// Authentication: a bearer no provider minted.
+	const crafted = "self-crafted-token-no-provider-minted"
+	authConn, authBr := wsTestDialAuth(t, server.URL, "/ws/connector", "Authorization: Bearer "+crafted)
+	defer authConn.Close()
+	authCode, authReason := wsTestReadClose(t, authBr)
+	if authCode != wsClosePolicyViolation {
+		t.Fatalf("auth refusal close code = %d, want %d", authCode, wsClosePolicyViolation)
+	}
+	if authReason != wsAuthInvalidTokenReason {
+		t.Fatalf("auth refusal reason = %q, want %q", authReason, wsAuthInvalidTokenReason)
+	}
+
+	// Authorization: a credential the server accepts but that lacks sessions:write.
+	noScope := wsTestToken(t, nil)
+	scopeConn, scopeBr := wsTestDial(t, server.URL, "/ws/connector?token="+url.QueryEscape(noScope))
+	defer scopeConn.Close()
+	scopeCode, scopeReason := wsTestReadClose(t, scopeBr)
+	if scopeCode != wsClosePolicyViolation {
+		t.Fatalf("scope refusal close code = %d, want %d", scopeCode, wsClosePolicyViolation)
+	}
+	if scopeReason != wsScopeMissingReason {
+		t.Fatalf("scope refusal reason = %q, want %q", scopeReason, wsScopeMissingReason)
+	}
+
+	if authReason == scopeReason {
+		t.Fatalf("auth and scope refusals share reason %q - the caller cannot tell a bad token from a token missing a scope", authReason)
+	}
+
+	// Authentication with NO token at all is the third refusal, and it too is not the scope one.
+	missingConn, missingBr := wsTestDial(t, server.URL, "/ws/connector")
+	defer missingConn.Close()
+	missingCode, missingReason := wsTestReadClose(t, missingBr)
+	if missingCode != wsClosePolicyViolation || missingReason != wsAuthMissingTokenReason {
+		t.Fatalf("missing-token refusal = (%d, %q), want (%d, %q)", missingCode, missingReason, wsClosePolicyViolation, wsAuthMissingTokenReason)
+	}
+	if missingReason == scopeReason {
+		t.Fatalf("missing-token and scope refusals share reason %q", missingReason)
+	}
+}
+
+// TestMountWebSocketsConnectorAgreesWithRESTWhenAuthDisabled is the connector half of the
+// ruling the realtime socket already pins: with AUTH_ENABLED=false ONE decision governs both
+// surfaces, so a bearer no provider minted is accepted by the REST dependency AND by the
+// connector as the SAME user. The connector reaches it through wsAuthenticateRealtime (the
+// helper handleConnector calls), and it must not impose the sessions:write scope rule the
+// shared decision never consulted.
+func TestMountWebSocketsConnectorAgreesWithRESTWhenAuthDisabled(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+	t.Setenv("ENV", "dev")
+	wsWireRESTAuth(t)
+	const crafted = "self-crafted-token-no-provider-minted"
+
+	status, restUserID := wsRESTUser(t, "Bearer "+crafted)
+	if status != http.StatusOK || restUserID == "" {
+		t.Fatalf("REST refused the self-crafted token: status=%d user=%q", status, restUserID)
+	}
+
+	result, reason := wsAuthenticateRealtime(context.Background(), crafted)
+	if reason != "" || result.UserID == nil {
+		t.Fatalf("connector decision refused the token REST accepted: reason=%q", reason)
+	}
+	if *result.UserID != restUserID {
+		t.Fatalf("connector user_id = %q, REST user_id = %q - the surfaces applied different decisions", *result.UserID, restUserID)
+	}
+
+	// The socket is actually served, not refused for a scope the shared decision never read.
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	conn, br := wsTestDialAuth(t, server.URL, "/ws/connector", "Authorization: Bearer "+crafted)
+	defer conn.Close()
+	wsTestWriteText(t, conn, []byte(`{"type":"hello","connector_id":"conn-1"}`))
+	opcode, payload := wsTestReadFrame(t, br)
+	if opcode != wsOpText {
+		t.Fatalf("opcode = %d, want text", opcode)
+	}
+	if msg := wsTestJSON(t, payload); msg["type"] != "ready" {
+		t.Fatalf("connector answered %v, want ready", msg)
+	}
+}
+
+// TestWebSocketRejectionReasonsFitControlFrame pins the RFC 6455 limit: a close frame's reason
+// is a control-frame payload capped at 123 bytes after the 2-byte code. Every refusal reason
+// must fit or the client sees a truncated or invalid close, so the limit is a contract on the
+// reason strings rather than a coincidence of their wording.
+func TestWebSocketRejectionReasonsFitControlFrame(t *testing.T) {
+	const limit = 123
+	reasons := map[string]string{
+		"auth missing":  wsAuthMissingTokenReason,
+		"auth invalid":  wsAuthInvalidTokenReason,
+		"scope missing": wsScopeMissingReason,
+	}
+	for name, reason := range reasons {
+		if len(reason) > limit {
+			t.Fatalf("%s reason is %d bytes, over the %d-byte control-frame limit", name, len(reason), limit)
+		}
 	}
 }
 
