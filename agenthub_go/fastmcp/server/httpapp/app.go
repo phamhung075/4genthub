@@ -125,6 +125,7 @@ func (a *App) Handler() http.Handler {
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
 	mountMachineTokenRoutes(mux, a.Sessions)
+	mountTeamRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)
 	return withCORS(mux)
 }

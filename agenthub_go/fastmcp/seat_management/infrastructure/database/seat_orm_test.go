@@ -27,6 +27,10 @@ var seatTableTypes = map[string]reflect.Type{
 	"overlays":           reflect.TypeOf(OverlayORM{}),
 	"seat_links":         reflect.TypeOf(SeatLinkORM{}),
 	"resolved_seats":     reflect.TypeOf(ResolvedSeatORM{}),
+	// The TEAMS section (team_orm.go / team_tables.go); the guard requires one entry per
+	// DDL table, so these are mandatory, not optional.
+	"teams":        reflect.TypeOf(TeamORM{}),
+	"team_members": reflect.TypeOf(TeamMemberORM{}),
 }
 
 func TestSeatORMMatchesDDL(t *testing.T) {
