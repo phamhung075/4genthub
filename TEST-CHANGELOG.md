@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — seat-domain WS frames (Go)
+
+- `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminMutationsBroadcastOneSeatFrame` drives all twelve covered mutations through the mount with a recording seam and asserts exactly one frame each with the right entity/action/id, the room+seat_key on seat frames, a non-empty user id (without it the frame cannot be tenant-scoped), and no frame at all for a rejected mutation.
+- `fastmcp/server/routes/websocket_routes_test.go`: `TestSeatBroadcastReachesOnlyTheOwningUsersSocket` asserts a second logged-in user receives no seat frame at all (only the documented denial frames), and the owner's frame carries entity/action/id/room/seat_key.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/httpapp/` -> both ok; gofmt/vet clean.
+
 ## 2026-10-05 — dead seat reads stopped and can be respawned (Python)
 
 - `src/tests/scripts/test_openrig_bridge.py`: the captured death node (`sessionStatus running`, `lifecycleState attention_required`, `agentActivity {unknown, no_runtime_hook}`) now expects `stopped`; a just-launched node (`unknown`, reason absent) still expects `unknown`.

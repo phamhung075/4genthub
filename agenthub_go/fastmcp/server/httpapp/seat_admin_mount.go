@@ -44,6 +44,7 @@ import (
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/secretscan"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
+	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -275,9 +276,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	mux.HandleFunc("GET /api/v2/openrig/rooms", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListRooms(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}", authed(seatMutation("room", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteRoom(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatTypes(w, r, u, sessions)
 	}))
@@ -299,53 +300,115 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeats(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}", authed(seatMutation("seat", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRemoveSeat(w, r, u, sessions)
-	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/occupant", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatOccupant(w, r, u, sessions)
-	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatPermissionPolicy(w, r, u, sessions)
-	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetCompanyOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/openrig/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleCompanyOverlay(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetRoomOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/overlay", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeatOverlay(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/overlay", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetSeatOverlay(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleUpsertSeatLink(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/links", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatLinks(w, r, u, sessions)
 	}))
-	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteSeatLink(w, r, u, sessions)
-	}))
+	})))
 	mux.HandleFunc("GET /api/v2/openrig/settings", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleGetSettings(w, r, u, sessions)
 	}))
-	mux.HandleFunc("PUT /api/v2/openrig/settings", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+	mux.HandleFunc("PUT /api/v2/openrig/settings", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePutSettings(w, r, u, sessions)
-	}))
+	})))
 }
 
 type seatAdminRoomRequest struct {
 	Slug string `json:"slug"`
 	Name string `json:"name"`
+}
+
+// seatBroadcastFn emits one seat-domain frame on the existing WS v2 envelope (the same
+// BroadcastDataChange the task/project/branch events use, so delivery keeps its per-user
+// scoping). It is a package-level seam so tests can observe the frames without a live socket.
+var seatBroadcastFn = func(ctx context.Context, action, entity, id, room, seatKey, userID string) error {
+	data := entities.NewOrderedMap[any]()
+	data.Set("id", id)
+	if room != "" {
+		data.Set("room", room)
+	}
+	if seatKey != "" {
+		data.Set("seat_key", seatKey)
+	}
+	return routes.BroadcastDataChange(ctx, action, entity, id, userID, data, nil)
+}
+
+// seatStatusRecorder keeps the status a seat admin handler wrote, so the wrapper below can tell
+// a successful mutation from a rejected one without changing any handler.
+type seatStatusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *seatStatusRecorder) WriteHeader(code int) {
+	if s.status == 0 {
+		s.status = code
+	}
+	s.ResponseWriter.WriteHeader(code)
+}
+
+func (s *seatStatusRecorder) Write(b []byte) (int, error) {
+	if s.status == 0 {
+		s.status = http.StatusOK
+	}
+	return s.ResponseWriter.Write(b)
+}
+
+// seatMutation wraps one seat admin mutation so exactly one seat-domain frame is emitted when it
+// succeeds (2xx). The ids come from the route's own path values, so the frame cannot disagree with
+// the mutation that produced it: a seat event carries "<room>/<seat_key>", a room event "<room>",
+// and the company-scoped routes (no {room}) carry "company" — the shape the dashboard half was
+// built against. action is one of created|updated|deleted, entity seats are "seat" or "room".
+func seatMutation(entity, action string, h func(http.ResponseWriter, *http.Request, *authdomain.User)) func(http.ResponseWriter, *http.Request, *authdomain.User) {
+	return func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		rec := &seatStatusRecorder{ResponseWriter: w}
+		h(rec, r, u)
+		if rec.status < 200 || rec.status >= 300 {
+			return
+		}
+		room, seatKey := r.PathValue("room"), r.PathValue("seat")
+		id := room
+		switch {
+		case entity == "seat":
+			id = room + "/" + seatKey
+		case room == "":
+			id = "company"
+		}
+		if err := seatBroadcastFn(r.Context(), action, entity, id, room, seatKey, userID(u)); err != nil {
+			log.Printf("seat broadcast %s %s %s failed: %v", entity, action, id, err)
+		}
+	}
 }
 
 type seatAdminSeatRequest struct {
@@ -473,6 +536,11 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	// This route has no {room} path value (the slug arrives in the body), so the frame is
+	// emitted here rather than by seatMutation; the ids match what the wrapper would produce.
+	if err := seatBroadcastFn(r.Context(), "created", "room", room.Slug, room.Slug, "", userID(u)); err != nil {
+		log.Printf("seat broadcast room created %s failed: %v", room.Slug, err)
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
@@ -782,6 +850,11 @@ func handleCreateSeat(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	// This route has no {seat} path value (the key arrives in the body), so the frame is emitted
+	// here rather than by seatMutation; the ids match what the wrapper would produce.
+	if err := seatBroadcastFn(r.Context(), "created", "seat", room.Slug+"/"+seat.SeatKey, room.Slug, seat.SeatKey, userID(u)); err != nil {
+		log.Printf("seat broadcast seat created %s/%s failed: %v", room.Slug, seat.SeatKey, err)
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)

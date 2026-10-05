@@ -21,6 +21,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `GET /api/v2/branches/{id}/task-counts` had no consumer outside `agenthub_go` (the only external reference is the Python mirror, `agenthub_main/src/fastmcp/server/routes/branch_routes.py:314`; no frontend, script or doc caller), the same criterion that removed its siblings. Deleted: the mount, `routes.GetBranchTaskCounts`, the `BranchController` method, the adapter method, `BranchAPIController.GetBranchTaskCounts` and the mount-inventory row. `GET /api/v2/branches/b1/task-counts` now 404s, pinned by `TestDeletedBranchTaskCountsRouteIsNotServed`.
 
+### Added
+
+**Seat admin mutations now broadcast a seat-domain frame** (2026-10-05)
+
+- `fastmcp/server/httpapp/seat_admin_mount.go`: every seat admin mutation emits one frame on the existing WS v2 envelope (`BroadcastDataChange`, the same path task/project/branch events use): payload entity `seat`|`room`, action `created`|`updated`|`deleted`, and `data.primary` = `{id, room, seat_key}` (seat events), `{id, room}` (room events) or `{id:"company"}` for the company-scoped routes. Covered: room create/delete, seat create/delete, occupant, permission policy, room/company/seat overlay, link upsert/delete, and settings. A rejected mutation emits nothing. Deliberately NOT covered: `POST /seat-types/{slug}/versions` and `PUT /modules/{slug}/versions/{version}` — they change the catalog, not a room or a seat, and the dashboard's seat surface reads resolved seats.
+- The tenant boundary is the existing one: the frame is authorized by the same rules as every other entity (the acting user's own sockets; everyone else denied and told so), so a second user never receives another tenant's seat event.
+
 ### Fixed
 
 **A dead seat now reads `stopped` and can be respawned** (2026-10-05, owner decision)

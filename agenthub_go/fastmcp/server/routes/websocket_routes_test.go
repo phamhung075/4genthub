@@ -2,6 +2,7 @@ package routes
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
@@ -23,6 +24,60 @@ func (f *fakeWS) SendText(ctx context.Context, data string) error {
 func (f *fakeWS) ReceiveText(ctx context.Context) (string, error) { return "", nil }
 
 func strPtr(s string) *string { return &s }
+
+// A seat-domain frame must reach only the owning user's sockets: the seat surface is tenant
+// scoped, and this is the boundary a second logged-in user must never cross.
+func TestSeatBroadcastReachesOnlyTheOwningUsersSocket(t *testing.T) {
+	owner, other := &fakeWS{}, &fakeWS{}
+	connectionsMu.Lock()
+	connections[owner] = &WebSocketConnection{
+		Websocket: owner,
+		User:      &authdomain.User{ID: strPtr("u-owner")},
+		ClientID:  "c1",
+	}
+	connections[other] = &WebSocketConnection{
+		Websocket: other,
+		User:      &authdomain.User{ID: strPtr("u-other")},
+		ClientID:  "c2",
+	}
+	connectionsMu.Unlock()
+	defer func() {
+		connectionsMu.Lock()
+		delete(connections, owner)
+		delete(connections, other)
+		connectionsMu.Unlock()
+	}()
+
+	data := entities.NewOrderedMap[any]()
+	data.Set("id", "dev/alice")
+	data.Set("room", "dev")
+	data.Set("seat_key", "alice")
+	if err := BroadcastDataChange(context.Background(), "created", "seat", "dev/alice", "u-owner", data, nil); err != nil {
+		t.Fatalf("BroadcastDataChange: %v", err)
+	}
+	if len(owner.sent) != 1 {
+		t.Fatalf("the owning user received %d frames, want 1", len(owner.sent))
+	}
+	for _, f := range other.sent {
+		if strings.Contains(string(f), `"entity":"seat"`) {
+			t.Fatalf("a second user received another tenant's seat frame: %s", f)
+		}
+	}
+	// The second user is not silently ignored: the existing rules deny and notify, which is the
+	// path every other entity takes too.
+	if len(other.sent) == 0 {
+		t.Fatalf("the second user was not told the event was denied")
+	}
+	if !strings.Contains(string(other.sent[0]), "authorization_denied") {
+		t.Fatalf("second user frame is not the denial: %s", other.sent[0])
+	}
+	body := string(owner.sent[0])
+	for _, want := range []string{`"entity":"seat"`, `"action":"created"`, `"id":"dev/alice"`, `"room":"dev"`, `"seat_key":"alice"`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("owner frame missing %s: %s", want, body)
+		}
+	}
+}
 
 func omKeys(t *testing.T, m *entities.OrderedMap[any], want ...string) {
 	t.Helper()
