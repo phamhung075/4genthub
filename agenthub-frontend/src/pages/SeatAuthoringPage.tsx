@@ -20,9 +20,11 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select-simple';
 import { ModulePublishForm } from '../components/seats/ModulePublishForm';
+import { McpBlockForm } from '../components/seats/McpBlockForm';
 import { SeatComposer } from '../components/seats/SeatComposer';
 import { SeatTypeVersionForm } from '../components/seats/SeatTypeVersionForm';
 import {
+  useMcpServers,
   useModules,
   useRooms,
   useSeatOverlays,
@@ -45,6 +47,7 @@ export const SeatAuthoringPage: React.FC = () => {
 
   const { seatTypes, isLoading, error, refetch } = useSeatTypes();
   const { modules, isLoading: modulesLoading, error: modulesError, refetch: refetchModules } = useModules();
+  const mcpServers = useMcpServers(modules);
   const { rooms } = useRooms();
 
   const [room, setRoom] = useState('');
@@ -138,6 +141,7 @@ export const SeatAuthoringPage: React.FC = () => {
             seat={seatKey}
             seatType={selectedSeatType}
             modules={modules}
+            mcpServers={mcpServers}
             overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
             isSaving={updateOverlay.isPending}
             saveError={composerError}
@@ -183,6 +187,8 @@ export const SeatAuthoringPage: React.FC = () => {
       </Card>
 
       <ModulePublishForm />
+
+      <McpBlockForm />
 
       <Card>
         <CardHeader>

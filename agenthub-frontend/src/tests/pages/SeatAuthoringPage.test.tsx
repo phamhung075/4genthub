@@ -19,6 +19,7 @@ vi.mock('../../services/seatApi', () => ({
     listSeats: vi.fn(),
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
+    getModuleVersion: vi.fn(),
   },
 }));
 
@@ -108,6 +109,19 @@ describe('SeatAuthoringPage', () => {
       overlay: { scope, ops: [] },
     }));
     mockApi.putOverlay.mockResolvedValue({ success: true, overlay: { scope: 'seat', ops: [] } });
+    mockApi.getModuleVersion.mockImplementation(async (slug) => ({
+      success: true,
+      module: {
+        slug,
+        kind: 'mcp',
+        version: '1.0.0',
+        checksum: 'sum',
+        content:
+          slug === 'agenthub-http'
+            ? JSON.stringify({ name: 'agenthub_http', type: 'http', url: 'https://mcp.test', headers: {} })
+            : JSON.stringify({ name: 'sequential-thinking', type: 'stdio', command: 'npx', args: ['-y', 'pkg'] }),
+      },
+    }));
   });
 
   it('lists seat types with their default runtime and module refs', async () => {
@@ -384,5 +398,72 @@ describe('SeatAuthoringPage composer', () => {
     expect(within(blocks).getByText('pinned at company')).toBeInTheDocument();
     const row = within(blocks).getByText('rules@1.2.0').closest('li') as HTMLElement;
     expect(within(row).getByRole('button', { name: /Remove here/ })).toBeEnabled();
+  });
+});
+
+describe('SeatAuthoringPage mcp blocks', () => {
+  const mcpModules = [
+    { slug: 'rules', kind: 'instruction' as const, version: '1.0.0', sha256: 'abcdef0123456789' },
+    { slug: 'agenthub-http', kind: 'mcp' as const, version: '1.0.0', sha256: '1111111111111111' },
+    { slug: 'sequential-thinking', kind: 'mcp' as const, version: '1.0.0', sha256: '2222222222222222' },
+  ];
+
+  const overlaysFor = (ops: Partial<Record<SeatOverlayScope, SeatOverlayOp[]>>) => {
+    mockApi.getOverlay.mockImplementation(async (scope) => ({
+      success: true,
+      overlay: { scope, ops: ops[scope] ?? [] },
+    }));
+  };
+
+  it('names an mcp entry by its server and transport, not by its tools', async () => {
+    mockApi.listModules.mockResolvedValue({ success: true, modules: mcpModules });
+    renderPage();
+
+    expect(await screen.findByRole('option', { name: 'agenthub-http — agenthub_http · http' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('option', { name: 'sequential-thinking — sequential-thinking · stdio' })
+    ).toBeInTheDocument();
+  });
+
+  it('renders two mcp rows with their inheritance labels, and removing one writes the level outcome', async () => {
+    mockApi.listModules.mockResolvedValue({ success: true, modules: mcpModules });
+    overlaysFor({
+      company: [{ kind: 'add', slug: 'agenthub-http', version: '1.0.0', content: '' }],
+      room: [{ kind: 'add', slug: 'sequential-thinking', version: '1.0.0', content: '' }],
+    });
+    renderPage();
+
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    await within(blocks).findByText('agenthub_http · http');
+    await within(blocks).findByText('sequential-thinking · stdio');
+
+    const httpRow = within(blocks).getByText('agenthub-http@1.0.0').closest('li') as HTMLElement;
+    expect(within(httpRow).getByText('inherited from company')).toBeInTheDocument();
+    expect(
+      within(httpRow).getByText('Removing here: removed at seat · still defined at company')
+    ).toBeInTheDocument();
+
+    const stdioRow = within(blocks).getByText('sequential-thinking@1.0.0').closest('li') as HTMLElement;
+    expect(within(stdioRow).getByText('inherited from room')).toBeInTheDocument();
+    expect(within(stdioRow).getByRole('button', { name: /Remove here/ })).toBeEnabled();
+
+    fireEvent.click(within(httpRow).getByRole('button', { name: /Remove here/ }));
+
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'remove', slug: 'agenthub-http', version: '', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
+  });
+
+  it('offers mcp in the module kind union the publish path uses', async () => {
+    renderPage();
+
+    fireEvent.change(await screen.findByLabelText('Module kind'), { target: { value: 'mcp' } });
+
+    expect(screen.getByLabelText('Module kind')).toHaveValue('mcp');
   });
 });

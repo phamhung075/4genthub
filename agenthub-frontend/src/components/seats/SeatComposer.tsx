@@ -30,6 +30,8 @@ import {
   withRestoredBlock,
   type BlockAtScope,
 } from '../../lib/blockComposition';
+import { mcpServerLabel } from '../../lib/mcpBlock';
+import type { McpServerEntry } from '../../hooks/useSeats';
 import type {
   ModuleSummary,
   SeatOverlayOp,
@@ -44,6 +46,8 @@ export interface SeatComposerProps {
   seatType: SeatType | undefined;
   modules: ModuleSummary[];
   overlays: SeatOverlays;
+  /** Parsed mcp servers by module slug, so an mcp block is named by its server. */
+  mcpServers?: Record<string, McpServerEntry>;
   isSaving: boolean;
   saveError: string | null;
   onApply: (scope: SeatOverlayScope, ops: SeatOverlayOp[]) => void;
@@ -63,6 +67,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
   seatType,
   modules,
   overlays,
+  mcpServers = {},
   isSaving,
   saveError,
   onApply,
@@ -83,6 +88,14 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
     });
     return lookup;
   }, [rows]);
+
+  const kindBySlug = useMemo(() => {
+    const lookup: Record<string, string> = {};
+    modules.forEach((module) => {
+      lookup[module.slug] = module.kind;
+    });
+    return lookup;
+  }, [modules]);
 
   const scopeOps = overlays[scope]?.ops ?? [];
   const presentRows = rows.filter((row) => row.present);
@@ -145,6 +158,13 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
             const block = row.block;
             if (!block) return null;
             const outcome = removalOutcome(row, scope);
+            const mcpEntry = mcpServers[row.slug];
+            const mcpLabel =
+              kindBySlug[row.slug] === 'mcp'
+                ? mcpEntry && mcpEntry.parse.ok
+                  ? mcpServerLabel(mcpEntry.parse.server)
+                  : 'mcp server (unparsed)'
+                : null;
             return (
               <li key={row.slug} className="px-3 py-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -157,6 +177,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                       ? `added at ${scope}`
                       : `inherited from ${originLabel(block.origin)}`}
                   </Badge>
+                  {mcpLabel && <Badge variant="outline">{mcpLabel}</Badge>}
                   {block.pinnedAt && (
                     <Badge variant="outline">
                       <Lock className="mr-1 h-3 w-3" />
@@ -229,10 +250,20 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   bySlug[module.slug] ?? { ...ABSENT_BLOCK, slug: module.slug },
                   scope
                 );
+                const entry = mcpServers[module.slug];
+                const mcpInvalid = module.kind === 'mcp' && entry !== undefined && !entry.parse.ok;
+                const label =
+                  module.kind === 'mcp' && entry && entry.parse.ok
+                    ? `${module.slug} — ${mcpServerLabel(entry.parse.server)}`
+                    : module.slug;
                 return (
-                  <option key={module.slug} value={module.slug} disabled={!outcome.allowed}>
-                    {module.slug}
-                    {outcome.allowed ? '' : ' (already in effect)'}
+                  <option
+                    key={module.slug}
+                    value={module.slug}
+                    disabled={!outcome.allowed || mcpInvalid}
+                  >
+                    {label}
+                    {mcpInvalid ? ' (invalid server)' : outcome.allowed ? '' : ' (already in effect)'}
                   </option>
                 );
               })}

@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — mcp block kind in the palette (frontend, D1/D2/D4)
+
+- `src/tests/utils/mcpBlock.test.ts` (25 tests): mirrors the Go contract - both seed blocks parse (http with a `${AGENTHUB_MCP_URL}` url
+  and a `${VAR}` header; stdio with command+args); ten refusal cases (not JSON, an array, an unknown field, a missing name, a bad type,
+  http without a url, http with a command, stdio without a command, stdio with a url, a non-http(s) url) each assert the reason; the eight
+  credential shapes are flagged and an environment reference is not; `serializeMcpBlock` writes the seed key order and round-trips;
+  `mcpServerLabel` names the server and its transport.
+- `src/tests/components/McpBlockForm.test.tsx` (5 tests): an http server publishes as kind mcp with the secret left as `${A_TOKEN}`; a
+  credential literal in a header keeps Publish off and names the reason; a pasted stdio block fills the fields and publishes; an invalid
+  paste is refused with the reason; a rejected publish surfaces the server error.
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains three mcp cases: the palette option is named by server and transport (the server name
+  differs from the slug, which proves the label comes from the content); two mcp blocks render two rows with their inheritance labels and a
+  removal writes one remove op; the module kind select offers mcp.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 99 files / 1722 tests passed; `npx vite build` ok. Browser drive of
+  the production bundle (one local Bun stub, stateful) over `/seats/authoring`: the palette listed `agenthub-http — agenthub_http · http`
+  and `sequential-thinking — sequential-thinking · stdio`; two mcp blocks inherited from company and room rendered two rows with their
+  labels; removing the company-inherited one wrote `seat ops [{kind:remove,slug:agenthub-http}]` and the row then showed the refusal with
+  a Restore; a literal bearer kept Publish off, `${PROBE_TOKEN}` published `kind: mcp` through PUT /modules/{slug}/versions/{version}, and
+  the palette then offered `my-probe-server — probe_server · http`.
+
 ## 2026-10-05 — import-project (scripts, client-side module import)
 
 - `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains four cases for the new `import-project` subcommand, reusing the file's recording HTTP server: a tmp project root with one http and one stdio `.mcp.json` server and two `.claude/skills/*` dirs, asserting the exact `mcp` block payloads (`name`/`type`/`url`/`command`/`args`; `headers`/`env` values kept verbatim as `${VAR}` references) and `skill` modules (`kind: skill`, content = `SKILL.md`); a credential-shaped literal (`Bearer sk-...`) refused with exit 2, a message naming the server and `${ENV_VAR}`, and zero requests; a dry run that sends nothing; and `test_import_project_uses_the_hooks_project_root_derivation` asserting `team_setup.get_project_root is utils.env_loader.get_project_root` — one derivation, not a copy.

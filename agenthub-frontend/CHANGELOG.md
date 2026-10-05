@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Added
+- **The mcp block kind in the palette, one whole server per block (D1/D2/D4 frontend)** - 2026-10-05
+  - `src/types/seatTypes.ts` gains `mcp` in the module-kind union (`SEAT_MODULE_KINDS`, the single source of truth the backend row also
+    touches) plus `McpServerBlock`, field for field with the Go `mcpblock.Server`.
+  - `src/lib/mcpBlock.ts` mirrors the Go contract rather than inventing one: `parseMcpBlock` applies the same rules as
+    `mcpblock.Parse` (`name` and `type` required; `http` takes `url` and `headers` only; `stdio` takes `command`, `args` and `env` only;
+    an unknown field, a contradictory field, and a url that is neither http(s) nor a `${VAR}` reference are all refused), and
+    `carriesCredentialShape` is the same eight patterns as `domain/secretscan/secretscan.go`, so a credential literal is refused in the
+    form with the server's own message. The server remains the authority; this only fails sooner.
+  - The palette (`SeatComposer`) gains mcp entries named by their SERVER name and transport, read from the block content - not by the
+    module slug, and never by a list of tools. A row carries the same label, so a block reads "agenthub_http · http" even when its slug
+    differs. mcp blocks add and remove exactly like every other kind, with the same inheritance labels and the same two outcome classes.
+  - `src/components/seats/McpBlockForm.tsx` is D4's manual fallback: publish ONE server as a module version from fields (name, type, url
+    or command+args, headers, env) or from a pasted or opened `.json` block. The secret rule holds in the form: a header value shaped like
+    a credential keeps Publish off until it references `${VAR}`, and `${AGENTHUB_MCP_URL}` is shown as the one platform placeholder. The
+    file is read in the browser from the user's own picker - no fetch and no path input, so nothing implies a server-side read of a local
+    path (that is a separate client-side row).
+  - Tests: `src/tests/utils/mcpBlock.test.ts` (25), `src/tests/components/McpBlockForm.test.tsx` (5) and three mcp cases in the authoring
+    page test - 99 files / 1722 tests, up from 97 / 1689.
+
 - **Seat authoring rebuilt as block composition (owner directive 2)** - 2026-10-05
   - `src/pages/SeatAuthoringPage.tsx` now headlines a composition surface for one seat: pick a room and a seat and a
     level (company / room / seat) and add or remove ONE block at a time. `src/components/seats/SeatComposer.tsx` renders

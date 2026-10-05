@@ -22,10 +22,34 @@ export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex', 'agy', 'omp
 export const SEAT_PERMISSION_POLICIES = ['locked', 'standard', 'open', 'yolo', 'none'] as const;
 export type SeatPermissionPolicy = (typeof SEAT_PERMISSION_POLICIES)[number];
 
-export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'memory';
+export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'mcp' | 'memory';
 
-/** Single source of truth for the module kinds offered in the UI. */
-export const SEAT_MODULE_KINDS: SeatModuleKind[] = ['instruction', 'document', 'skill', 'tool', 'memory'];
+/** Single source of truth for the module kinds offered in the UI (mirrors resolver.ModuleKind). */
+export const SEAT_MODULE_KINDS: SeatModuleKind[] = ['instruction', 'document', 'skill', 'tool', 'mcp', 'memory'];
+
+/** The transports an mcp block distinguishes (mcpblock.TypeHTTP / TypeStdio). */
+export const MCP_SERVER_TYPES = ['http', 'stdio'] as const;
+export type McpServerType = (typeof MCP_SERVER_TYPES)[number];
+
+/**
+ * One whole MCP server as an mcp block's content describes it, matching the Go
+ * `mcpblock.Server` field for field. A block mounts the server; per-tool
+ * narrowing stays in the permission layer.
+ */
+export interface McpServerBlock {
+  /** The server key in the rendered MCP fragment. */
+  name: string;
+  type: McpServerType;
+  /** Endpoint of an http server; may hold a ${VAR} reference. */
+  url?: string;
+  /** Executable of a stdio server. */
+  command?: string;
+  args?: string[];
+  /** HTTP headers of an http server; a value may reference ${VAR}. */
+  headers?: Record<string, string>;
+  /** Environment of a stdio server; a value may reference ${VAR}. */
+  env?: Record<string, string>;
+}
 
 export interface Room {
   id: string;
