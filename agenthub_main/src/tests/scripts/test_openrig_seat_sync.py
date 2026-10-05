@@ -1322,6 +1322,62 @@ def test_respawn_launches_only_when_the_seat_reads_dead(monkeypatch, capsys):
     ] in calls
 
 
+def test_respawn_reports_success_when_the_launch_warned_but_the_seat_came_up(
+    monkeypatch, capsys
+):
+    """An automated caller must not read a successful respawn as a failure: rig can start the
+    occupant and still exit non-zero (runtime identity notice), so the seat's own state decides."""
+    ps_calls = []
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            ps_calls.append(command)
+            node = (
+                _ps_node()
+                if len(ps_calls) == 1
+                else _ps_node(
+                    agentActivity={
+                        "state": "running",
+                        "reason": "window_activity_motion",
+                    }
+                )
+            )
+            return subprocess.CompletedProcess(command, 0, json.dumps([node]), "")
+        raise subprocess.CalledProcessError(
+            1,
+            command,
+            output="",
+            stderr="Fresh occupant started but runtime identity requires attention\n",
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    out, err = capsys.readouterr()
+    assert code == 0
+    assert "respawned room1.alpha" in err
+    assert "runtime identity requires attention" in err
+    assert out == ""
+
+
+def test_respawn_fails_when_the_seat_is_still_dead_after_the_launch(
+    monkeypatch, capsys
+):
+    """The other half: if the launch failed and the seat still reads dead, it is a failure."""
+
+    def fake_rig(command):
+        if command[:4] == ["rig", "ps", "--json", "--nodes"]:
+            return subprocess.CompletedProcess(command, 0, json.dumps([_ps_node()]), "")
+        raise subprocess.CalledProcessError(
+            1, command, output="", stderr="launch refused\n"
+        )
+
+    monkeypatch.setattr(seat_sync, "run_rig", fake_rig)
+    code = run_cli(["respawn", "room1", "alpha", "--after-seconds", "0"])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert "rig seat launch reported: launch refused" in err
+
+
 def test_respawn_refuses_a_live_seat(monkeypatch, capsys):
     """A just-launched seat reads exactly like a dead one until its runtime hook attaches, so
     anything that is not the dead reading must stop the command before it launches."""

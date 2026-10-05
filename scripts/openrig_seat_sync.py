@@ -804,14 +804,17 @@ def cmd_respawn(args: argparse.Namespace) -> None:
     try:
         result = run_rig(command)
     except subprocess.CalledProcessError as err:
-        # `rig seat launch` can start the occupant and still exit 1 (for example "Fresh occupant
-        # started but runtime identity requires attention"), so surface its own words rather than
-        # a traceback: the operator decides whether the caveat matters.
+        # `rig seat launch` can start the occupant and still exit non-zero (for example "Fresh
+        # occupant started but runtime identity requires attention"), so decide on the seat's
+        # actual state, not the exit code: an automated caller must not read a successful respawn
+        # as a failure. Still dead -> error; running now -> success with the caveat on stderr.
         detail = (err.stderr or err.stdout or "").strip().splitlines()
-        raise SyncError(
-            "rig seat launch reported: " + (detail[-1] if detail else f"exit {err.returncode}"),
-            EXIT_REMOTE,
-        ) from err
+        message = detail[-1] if detail else f"exit {err.returncode}"
+        node = _seat_node(room, seat) or {}
+        if _agent_is_gone(node):
+            raise SyncError(f"rig seat launch reported: {message}", EXIT_REMOTE) from err
+        print(f"respawned {room}.{seat}; rig seat launch warned: {message}", file=sys.stderr)
+        return
     if result.stdout.strip():
         print(result.stdout.strip())
 
