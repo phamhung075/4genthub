@@ -1,9 +1,9 @@
 # API reference
 
 agenthub is a cloud service that stores the state of AI work — projects, git branches, tasks,
-subtasks, a four-level context hierarchy, a registry of agents, and the **seat model** that
-describes who does the work and how they are configured. A separate client (OpenRig) runs the
-seats on your machine; this API is where their state lives.
+subtasks, a four-level context hierarchy, a live registry of agents (the `manage_agent` surface),
+and the **seat model** that describes who does the work and how they are configured. A separate
+client (OpenRig) runs the seats on your machine; this API is where their state lives.
 
 This page documents the HTTP API, the WebSocket endpoints and the MCP server as the running
 server actually mounts them. Every path below is a real route; the whole document is generated
