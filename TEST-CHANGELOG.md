@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — sessions dashboard (frontend, C3)
+
+- `src/tests/services/sessionApi.test.ts`: `listSessions` issues `GET /api/v2/sessions` (no query string) and returns
+  the parsed body.
+- `src/tests/hooks/useSessionStream.test.tsx`: opens `/ws/sessions/{id}` with the URL-encoded id and token and the
+  `after_seq` cursor; marks live on open and appends replayed frames once (a repeated `seq` from a reconnect is
+  dropped); treats close 4004 as terminal (not-found, no reconnect); reconnects from the last `seq` after an abnormal
+  close; resets to idle when the session id clears. Stubs `WebSocket` and `config/environment`, so the reconnect delay
+  and the socket are deterministic rather than real.
+- `src/tests/pages/SessionsPage.test.tsx`: renders the session list and follows the route's session id; clicking a row
+  navigates and renders that session's streamed events; a terminal not-found stream shows its error. Mocks
+  `useSessions`/`useSessionStream` and `AuthContext`, real router.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run` -> 94 files / 1658 tests passed; `npx vite build` ok.
+  Browser smoke of the production bundle served by one local Bun stub (list JSON + `/ws/sessions/{id}`): `/sessions/s1`
+  rendered the list (alpha active, beta offline), the live badge and frames `#1` message and `#2` command.
+
 ## 2026-10-05 — frontend test runs bounded (worker + heap caps)
 
 - `agenthub-frontend/vite.config.ts`: the `test` block now caps the pool (`maxWorkers: 2`, `minWorkers: 1`) and each

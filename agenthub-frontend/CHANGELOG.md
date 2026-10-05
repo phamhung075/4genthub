@@ -3,6 +3,27 @@
 ## [Unreleased]
 
 ### Added
+- **Sessions dashboard: session list and live stream (C3)** - 2026-10-05
+  - `src/pages/SessionsPage.tsx` with `src/components/sessions/SessionList.tsx` and `SessionLiveView.tsx` render the
+    signed-in user's sessions and the selected one's live event stream; `src/hooks/useSessions.ts` holds `useSessions`
+    (React Query over the list) and `useSessionStream`; `src/services/sessionApi.ts` and `src/types/sessionTypes.ts`
+    own the route and the DTOs. Routes `/sessions` and `/sessions/:sessionId`, plus a nav item in
+    `src/components/Header.tsx`.
+  - Contract, read from the Go source rather than invented: `GET /api/v2/sessions` returns
+    `{sessions: [{id,name,project,status,connector_id,last_seq,created_at,last_seen}]}` - `sessionRow`
+    (`fastmcp/session_stream/repository.go:93`) deliberately omits `session_key` and `user_id`; the list is
+    user-filtered and ordered `last_seen DESC`. The live view uses only `GET /ws/sessions/{id}?token=&after_seq=`
+    (`fastmcp/server/httpapp/ws_mount.go:63`), which replays every stored event and then follows the live ones; a
+    dropped or too-slow socket reconnects from the last `seq` with exponential backoff, and the server's 4004 close
+    (identical for a session that is missing and one that is not yours) is terminal.
+  - `GET /api/v2/sessions/{id}/events` is not called: it pages oldest-first (`ListEvents` clamps to 1000 with
+    `ORDER BY seq`), while the socket replay already yields the full backlog, so a REST call would add a second path
+    to the same data.
+  - The xterm.js raw-terminal tab C3 marks optional is not built: it would add an `xterm` dependency the app does not
+    carry, and the event list is the live view.
+  - Tests: `sessionApi.test.ts`, `useSessionStream.test.tsx` and `SessionsPage.test.tsx` - 94 files / 1658 tests, up
+    from 91 / 1649.
+
 - **Dashboard push: agent-to-human notifications (D3 frontend half)** - 2026-10-05
   - `src/store/notifications.ts` holds the inbox (add with dedupe by frame id, ack, ackAll, dismiss, clearAll);
     `useRealtimeSync` gained a `notification` case that stores the frame and shows a toast; `NotificationBell` (mounted

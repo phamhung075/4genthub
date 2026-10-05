@@ -37,6 +37,7 @@ const HelpSetup = lazy(() => import('./pages/HelpSetup').then(m => ({ default: m
 const SeatsPage = lazy(() => import('./pages/SeatsPage').then(m => ({ default: m.SeatsPage })));
 const SeatAuthoringPage = lazy(() => import('./pages/SeatAuthoringPage').then(m => ({ default: m.SeatAuthoringPage })));
 const SeatDetailPage = lazy(() => import('./pages/SeatDetailPage').then(m => ({ default: m.SeatDetailPage })));
+const SessionsPage = lazy(() => import('./pages/SessionsPage').then(m => ({ default: m.SessionsPage })));
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 
 // Loading fallback component
@@ -351,6 +352,30 @@ function App() {
                 <ProtectedRoute>
                   <AppLayout>
                     <SeatsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SessionsPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              </Suspense>
+            }
+          />
+          <Route
+            path="/sessions/:sessionId"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProtectedRoute>
+                  <AppLayout>
+                    <SessionsPage />
                   </AppLayout>
                 </ProtectedRoute>
               </Suspense>
