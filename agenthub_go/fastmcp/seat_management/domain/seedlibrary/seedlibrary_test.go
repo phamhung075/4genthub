@@ -7,7 +7,9 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/seedmap"
 )
 
 const validFile = `slug: developer
@@ -36,7 +38,7 @@ func withShared(t *testing.T, fsys fstest.MapFS) fstest.MapFS {
 }
 
 func TestParseValid(t *testing.T) {
-	seed, err := Parse("seat-types/developer.yaml", []byte(validFile), nil)
+	seed, err := Parse("seat-types/developer.yaml", []byte(validFile), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +65,7 @@ func TestParseErrorsNameFileAndField(t *testing.T) {
 		"empty file": {"", "file is empty"},
 	}
 	for name, c := range cases {
-		_, err := Parse("seat-types/x.yaml", []byte(c.data), nil)
+		_, err := Parse("seat-types/x.yaml", []byte(c.data), nil, nil)
 		if err == nil || !strings.Contains(err.Error(), "seat-types/x.yaml") || !strings.Contains(err.Error(), c.want) {
 			t.Errorf("%s: err = %v, want file name and %q", name, err, c.want)
 		}
@@ -181,4 +183,137 @@ func TestLoadEmbeddedSeedsCarryCommGuard(t *testing.T) {
 type seedmapModule struct {
 	kind    resolver.ModuleKind
 	content string
+}
+
+// withBlocks adds the embedded block catalog to a test filesystem.
+func withBlocks(t *testing.T, fsys fstest.MapFS) fstest.MapFS {
+	t.Helper()
+	names, err := fs.Glob(embedded, blocksDir+"/*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range names {
+		data, err := fs.ReadFile(embedded, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fsys[name] = &fstest.MapFile{Data: data}
+	}
+	return fsys
+}
+
+// Each of the nine seeded seat types mounts the platform server, and the reasoning roles
+// mount the sequential-thinking server too; the sets are asserted on the shipped seeds.
+func TestLoadEmbeddedSeedsCarryServerSets(t *testing.T) {
+	seeds, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	twoBlocks := map[string]bool{"lead": true, "architect": true, "planner": true, "researcher": true}
+	for _, seed := range seeds {
+		blocks := map[string]seedmap.SeedModule{}
+		for _, m := range seed.Modules {
+			if m.Kind == resolver.KindMCP {
+				blocks[m.Slug] = m
+			}
+		}
+		platform, ok := blocks["agenthub-http"]
+		if !ok {
+			t.Fatalf("%s: no agenthub-http mcp block: %+v", seed.SeatTypeSlug, blocks)
+		}
+		server, err := mcpblock.Parse(platform.Content)
+		if err != nil {
+			t.Fatalf("%s: platform block: %v", seed.SeatTypeSlug, err)
+		}
+		if server.Name != "agenthub_http" || server.Type != mcpblock.TypeHTTP || server.URL != mcpblock.PlatformURLPlaceholder {
+			t.Fatalf("%s: platform block = %+v", seed.SeatTypeSlug, server)
+		}
+		if _, found := blocks["sequential-thinking"]; found != twoBlocks[seed.SeatTypeSlug] {
+			t.Fatalf("%s: sequential-thinking present = %v, want %v", seed.SeatTypeSlug, found, twoBlocks[seed.SeatTypeSlug])
+		}
+		for slug, m := range blocks {
+			if m.Version != seed.Version {
+				t.Fatalf("%s: block %s version %q, seed version %q", seed.SeatTypeSlug, slug, m.Version, seed.Version)
+			}
+			if _, err := mcpblock.Parse(m.Content); err != nil {
+				t.Fatalf("%s: block %s: %v", seed.SeatTypeSlug, slug, err)
+			}
+		}
+	}
+}
+
+// A seat type mounts the blocks it names, and a block becomes a module of kind mcp.
+func TestLoadFSSelectsBlocks(t *testing.T) {
+	fsys := withBlocks(t, withShared(t, fstest.MapFS{
+		"seat-types/a.yaml": {Data: []byte(validFile + "mcp_blocks:\n  - sequential-thinking\n")},
+	}))
+	seeds, err := LoadFS(fsys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var block *seedmap.SeedModule
+	for i := range seeds[0].Modules {
+		if seeds[0].Modules[i].Kind == resolver.KindMCP {
+			block = &seeds[0].Modules[i]
+		}
+	}
+	if block == nil || block.Slug != "sequential-thinking" || block.Version != seeds[0].Version {
+		t.Fatalf("mcp modules = %+v", seeds[0].Modules)
+	}
+}
+
+func TestParseMCPBlockErrors(t *testing.T) {
+	blocks, err := loadBlocks(embedded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]struct{ data, want string }{
+		"unknown block":  {validFile + "mcp_blocks:\n  - nope\n", `unknown block "nope"`},
+		"duplicate slug": {validFile + "mcp_blocks:\n  - agenthub-http\n  - agenthub-http\n", "already listed"},
+	}
+	for name, c := range cases {
+		_, err := Parse("seat-types/x.yaml", []byte(c.data), nil, blocks)
+		if err == nil || !strings.Contains(err.Error(), "seat-types/x.yaml") || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want file name and %q", name, err, c.want)
+		}
+	}
+
+	// Two blocks mounting the same server name would silently shadow one another.
+	colliding := map[string]seedmap.SeedModule{
+		"one": {Slug: "one", Kind: resolver.KindMCP, Content: `{"name":"same","type":"http","url":"http://x"}`},
+		"two": {Slug: "two", Kind: resolver.KindMCP, Content: `{"name":"same","type":"http","url":"http://y"}`},
+	}
+	_, err = Parse("seat-types/x.yaml", []byte(validFile+"mcp_blocks:\n  - one\n  - two\n"), nil, colliding)
+	if err == nil || !strings.Contains(err.Error(), `server "same" is already mounted`) {
+		t.Errorf("collision: err = %v, want a duplicate server error", err)
+	}
+}
+
+// A block file is validated while the library loads, so a malformed or secret-carrying block
+// is refused before it is ever stored.
+func TestLoadFSRejectsBadBlockFile(t *testing.T) {
+	cases := map[string]struct{ content, want string }{
+		"malformed": {`{"name":"x","type":"http"}`, "field url is required"},
+		"secret":    {`{"name":"x","type":"http","url":"http://x","headers":{"Authorization":"Bearer tok_0123456789abcdefghij"}}`, "credential-shaped"},
+	}
+	for name, c := range cases {
+		fsys := withShared(t, fstest.MapFS{
+			"blocks/broken.json": {Data: []byte(c.content)},
+			"seat-types/a.yaml":  {Data: []byte(validFile)},
+		})
+		if _, err := LoadFS(fsys); err == nil || !strings.Contains(err.Error(), "broken.json") || !strings.Contains(err.Error(), c.want) {
+			t.Errorf("%s: err = %v, want broken.json and %q", name, err, c.want)
+		}
+	}
+}
+
+// The file name is the module slug, so it must match the module slug rule.
+func TestLoadFSRejectsBadBlockFileName(t *testing.T) {
+	fsys := withShared(t, fstest.MapFS{
+		"blocks/Nope.json":  {Data: []byte(`{"name":"x","type":"http","url":"http://x"}`)},
+		"seat-types/a.yaml": {Data: []byte(validFile)},
+	})
+	if _, err := LoadFS(fsys); err == nil || !strings.Contains(err.Error(), "block file name") {
+		t.Errorf("err = %v, want a block file name error", err)
+	}
 }

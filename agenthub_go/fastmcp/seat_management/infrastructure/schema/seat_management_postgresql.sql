@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS modules (
     kind TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_modules_user_slug UNIQUE (user_id, slug),
-    CONSTRAINT ck_modules_kind CHECK (kind IN ('instruction', 'document', 'skill', 'tool', 'memory'))
+    CONSTRAINT ck_modules_kind CHECK (kind IN ('instruction', 'document', 'skill', 'tool', 'mcp', 'memory'))
 );
 
 CREATE INDEX IF NOT EXISTS ix_modules_user_id ON modules (user_id);

@@ -1,0 +1,9 @@
+{
+  "name": "agenthub_http",
+  "type": "http",
+  "url": "${AGENTHUB_MCP_URL}",
+  "headers": {
+    "Accept": "application/json, text/event-stream",
+    "Authorization": "Bearer ${AGENTHUB_TOKEN}"
+  }
+}

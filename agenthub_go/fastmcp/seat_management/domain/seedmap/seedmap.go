@@ -11,7 +11,7 @@ import (
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
 // immutable, so a changed module set needs a new version.
-const seedVersion = "1.1.1"
+const seedVersion = "1.2.0"
 
 type SeedModule struct {
 	Slug    string
@@ -38,6 +38,9 @@ type Spec struct {
 	// Shared modules are appended to the seat type's own modules, whatever its default runtime:
 	// the runtime of the seat decides at render time which of them apply.
 	Shared []SeedModule
+	// Blocks are the MCP server blocks this seat type mounts, appended after the shared
+	// modules. A block is content of kind mcp; a seat with no block mounts no server.
+	Blocks []SeedModule
 }
 
 type Seed struct {
@@ -105,6 +108,11 @@ func FromSpec(spec Spec) (Seed, error) {
 	for _, shared := range spec.Shared {
 		shared.Version = seedVersion
 		seed.Modules = append(seed.Modules, shared)
+	}
+
+	for _, block := range spec.Blocks {
+		block.Version = seedVersion
+		seed.Modules = append(seed.Modules, block)
 	}
 
 	seed.ModuleRefs = make([]resolver.ModuleRef, len(seed.Modules))

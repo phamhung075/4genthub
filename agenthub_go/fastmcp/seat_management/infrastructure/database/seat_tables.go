@@ -26,7 +26,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +
 			"\tCONSTRAINT uq_modules_user_slug UNIQUE (user_id, slug),\n" +
-			"\tCONSTRAINT ck_modules_kind CHECK (kind IN ('instruction', 'document', 'skill', 'tool', 'memory'))\n" +
+			"\tCONSTRAINT ck_modules_kind CHECK (kind IN ('instruction', 'document', 'skill', 'tool', 'mcp', 'memory'))\n" +
 			")",
 		"CREATE INDEX ix_modules_user_id ON modules (user_id)",
 	}},

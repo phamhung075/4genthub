@@ -144,3 +144,29 @@ func slugs(seed Seed) string {
 	}
 	return strings.Join(out, ",")
 }
+
+// A seat type's mcp blocks are appended after its shared modules, as modules of kind mcp,
+// and their refs travel with the seed so a published version carries them.
+func TestFromSpecBlocks(t *testing.T) {
+	shared := []SeedModule{{Slug: "guard", Kind: resolver.KindTool, Content: `{"a":1}`}}
+	blocks := []SeedModule{
+		{Slug: "agenthub-http", Kind: resolver.KindMCP, Content: `{"name":"agenthub_http","type":"http","url":"${AGENTHUB_MCP_URL}"}`},
+		{Slug: "sequential-thinking", Kind: resolver.KindMCP, Content: `{"name":"sequential-thinking","type":"stdio","command":"npx"}`},
+	}
+	seed, err := FromSpec(Spec{Slug: "dev", Role: "Dev.", OutputFormat: "Out.", Shared: shared, Blocks: blocks})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := slugs(seed); got != "dev-role,dev-output-format,guard,agenthub-http,sequential-thinking" {
+		t.Fatalf("modules = %s", got)
+	}
+	for _, m := range seed.Modules[3:] {
+		if m.Kind != resolver.KindMCP || m.Version != seedVersion {
+			t.Fatalf("block module %s = %+v", m.Slug, m)
+		}
+	}
+	last := seed.ModuleRefs[len(seed.ModuleRefs)-1]
+	if len(seed.ModuleRefs) != len(seed.Modules) || last.Slug != "sequential-thinking" || last.Version != seedVersion {
+		t.Fatalf("refs = %+v", seed.ModuleRefs)
+	}
+}

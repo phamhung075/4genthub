@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 
 	"gopkg.in/yaml.v3"
@@ -24,7 +25,6 @@ const (
 	roleResourceID       = "role"
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
-	mcpServerName        = "agenthub_http"
 	deliveryHintSendText = "send_text"
 	typeClaudeMCP        = "claude_mcp_fragment"
 	typeClaudeSettings   = "claude_settings_fragment"
@@ -106,32 +106,35 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 	// A tool module is a Claude settings fragment: a seat on another runtime does not apply it
 	// (a seat can switch runtime while its pinned seat type version keeps the tool module).
 	toolModules := modulesOfKind(seat.Modules, resolver.KindTool)
+	// An mcp module mounts one MCP server. The seat's mcp blocks decide which servers mount;
+	// a seat with none mounts no server and no fragment is rendered.
+	mcpModules := modulesOfKind(seat.Modules, resolver.KindMCP)
 
 	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
 	// Only claude-code seats get an MCP fragment: OpenRig has no codex/agy/omp MCP fragment resource type, only claude_mcp_fragment.
-	if receivesClaudeFragments(seat.Runtime) {
+	if receivesClaudeFragments(seat.Runtime) && len(mcpModules) > 0 {
 		var err error
-		mcpFragment, err = renderMCPFragment(mcpURL)
+		mcpFragment, err = renderMCPFragment(mcpModules, mcpURL)
 		if err != nil {
 			return nil, err
 		}
 		runtimeResources = append(runtimeResources, runtimeResourceYAML{
 			ID: mcpResourceID, Path: mcpFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeMCP,
 		})
-		if len(toolModules) > 0 {
-			settings, err := mergeToolModules(toolModules)
-			if err != nil {
-				return nil, err
-			}
-			settingsFragment, err = renderSettingsFragment(settings)
-			if err != nil {
-				return nil, err
-			}
-			runtimeResources = append(runtimeResources, runtimeResourceYAML{
-				ID: settingsResourceID, Path: settingsFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeSettings,
-			})
+	}
+	if receivesClaudeFragments(seat.Runtime) && len(toolModules) > 0 {
+		settings, err := mergeToolModules(toolModules)
+		if err != nil {
+			return nil, err
 		}
+		settingsFragment, err = renderSettingsFragment(settings)
+		if err != nil {
+			return nil, err
+		}
+		runtimeResources = append(runtimeResources, runtimeResourceYAML{
+			ID: settingsResourceID, Path: settingsFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeSettings,
+		})
 	}
 
 	// A codex seat gets the seat's Bash deny list as a codex execpolicy rules file. OpenRig has no
@@ -164,7 +167,9 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		})
 	}
 	if receivesClaudeFragments(seat.Runtime) {
-		files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
+		if mcpFragment != "" {
+			files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
+		}
 		if settingsFragment != "" {
 			files = append(files, OpenRigSpecFile{Path: settingsFragmentPath, Content: settingsFragment})
 		}
@@ -420,23 +425,29 @@ func stringList(value any) ([]string, error) {
 	return out, nil
 }
 
-func renderMCPFragment(mcpURL string) (string, error) {
-	if !strings.HasPrefix(mcpURL, "http://") && !strings.HasPrefix(mcpURL, "https://") {
-		return "", fmt.Errorf("mcp url must be http(s), got %q", mcpURL)
+// renderMCPFragment merges the seat's mounted mcp blocks, in the seat's resolved order, into
+// one MCP fragment: one block is one whole server, keyed by the server name its payload names.
+// The platform placeholder in a block's url is resolved from mcpURL; every other ${VAR} is
+// left for the client runtime to expand. No block renders no server.
+func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string, error) {
+	servers := make(map[string]any, len(modules))
+	for _, m := range modules {
+		server, err := mcpblock.Parse(m.Content)
+		if err != nil {
+			return "", fmt.Errorf("mcp module %q: %w", m.Slug, err)
+		}
+		if _, mounted := servers[server.Name]; mounted {
+			return "", fmt.Errorf("mcp module %q: server %q is already mounted by another block", m.Slug, server.Name)
+		}
+		server = server.WithPlatformURL(mcpURL)
+		if server.Type == mcpblock.TypeHTTP {
+			if err := mcpblock.CheckURL(server.URL); err != nil {
+				return "", fmt.Errorf("mcp module %q: %w", m.Slug, err)
+			}
+		}
+		servers[server.Name] = server.Fragment()
 	}
-	fragment := map[string]any{
-		"mcpServers": map[string]any{
-			mcpServerName: map[string]any{
-				"type": "http",
-				"url":  mcpURL,
-				"headers": map[string]string{
-					"Accept":        "application/json, text/event-stream",
-					"Authorization": "Bearer ${" + OpenRigTokenEnvVar + "}",
-				},
-			},
-		},
-	}
-	return marshalJSON(fragment, "mcp fragment")
+	return marshalJSON(map[string]any{"mcpServers": servers}, "mcp fragment")
 }
 
 func renderSettingsFragment(settings map[string]any) (string, error) {

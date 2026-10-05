@@ -8,22 +8,25 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path"
 	"regexp"
 	"sort"
 	"strings"
 
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
 
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed seat-types/*.yaml shared-modules/*
+//go:embed seat-types/*.yaml shared-modules/* blocks/*.json
 var embedded embed.FS
 
 const (
 	seatTypesDir     = "seat-types"
 	sharedModulesDir = "shared-modules"
+	blocksDir        = "blocks"
 )
 
 // sharedModuleFiles lists the modules every seat type carries: slug, kind and the file in
@@ -52,6 +55,7 @@ type seatTypeFile struct {
 	Name           string     `yaml:"name"`
 	Description    string     `yaml:"description"`
 	DefaultRuntime string     `yaml:"default_runtime"`
+	MCPBlocks      []string   `yaml:"mcp_blocks"`
 	Role           string     `yaml:"role"`
 	Rules          []ruleFile `yaml:"rules"`
 	OutputFormat   string     `yaml:"output_format"`
@@ -62,13 +66,18 @@ func Load() ([]seedmap.Seed, error) {
 	return LoadFS(embedded)
 }
 
-// LoadFS parses every seat-types/*.yaml of fsys; slugs must be unique across files.
+// LoadFS parses every seat-types/*.yaml of fsys; slugs must be unique across files. The
+// shared modules and the published MCP blocks come from the same filesystem.
 func LoadFS(fsys fs.FS) ([]seedmap.Seed, error) {
 	names, err := fs.Glob(fsys, seatTypesDir+"/*.yaml")
 	if err != nil {
 		return nil, err
 	}
 	shared, err := loadSharedModules(fsys)
+	if err != nil {
+		return nil, err
+	}
+	blocks, err := loadBlocks(fsys)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +88,7 @@ func LoadFS(fsys fs.FS) ([]seedmap.Seed, error) {
 		if err != nil {
 			return nil, err
 		}
-		seed, err := Parse(name, data, shared)
+		seed, err := Parse(name, data, shared, blocks)
 		if err != nil {
 			return nil, err
 		}
@@ -105,9 +114,47 @@ func loadSharedModules(fsys fs.FS) ([]seedmap.SeedModule, error) {
 	return modules, nil
 }
 
+// loadBlocks reads the library's published MCP blocks: one blocks/*.json file per block, the
+// file name without .json being the module slug, the content one server in the mcpblock
+// payload shape. A block is validated here, before it is ever stored, so a malformed or
+// secret-carrying block is refused at load time.
+func loadBlocks(fsys fs.FS) (map[string]seedmap.SeedModule, error) {
+	names, err := fs.Glob(fsys, blocksDir+"/*.json")
+	if err != nil {
+		return nil, err
+	}
+	blocks := make(map[string]seedmap.SeedModule, len(names))
+	for _, name := range names {
+		slug := strings.TrimSuffix(path.Base(name), ".json")
+		if !slugPattern.MatchString(slug) {
+			return nil, fmt.Errorf("%s: block file name %q must match %s", name, slug, slugPattern)
+		}
+		data, err := fs.ReadFile(fsys, name)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := mcpblock.Parse(string(data)); err != nil {
+			return nil, fmt.Errorf("%s: %w", name, err)
+		}
+		blocks[slug] = seedmap.SeedModule{Slug: slug, Kind: resolver.KindMCP, Content: string(data)}
+	}
+	return blocks, nil
+}
+
+// blockSlugs lists a block catalog's slugs in sorted order, for an error that names what the
+// seat type could have asked for.
+func blockSlugs(blocks map[string]seedmap.SeedModule) []string {
+	slugs := make([]string, 0, len(blocks))
+	for slug := range blocks {
+		slugs = append(slugs, slug)
+	}
+	sort.Strings(slugs)
+	return slugs
+}
+
 // Parse decodes one seat-type file strictly and builds its seed, which also carries the shared
-// modules; errors name the file and field.
-func Parse(name string, data []byte, shared []seedmap.SeedModule) (seedmap.Seed, error) {
+// modules and the MCP blocks the file names in mcp_blocks; errors name the file and field.
+func Parse(name string, data []byte, shared []seedmap.SeedModule, blocks map[string]seedmap.SeedModule) (seedmap.Seed, error) {
 	var file seatTypeFile
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
@@ -136,6 +183,32 @@ func Parse(name string, data []byte, shared []seedmap.SeedModule) (seedmap.Seed,
 		}
 		spec.Rules = append(spec.Rules, seedmap.Rule{Name: rule.Name, Content: rule.Content})
 	}
+
+	// Each mcp_blocks entry mounts one whole server; a block is one of the files in blocks/.
+	// One server mounted twice would be a block that silently does nothing, so the duplicate
+	// is refused here rather than at render time.
+	selected := make(map[string]string, len(file.MCPBlocks))
+	mounted := make(map[string]string, len(file.MCPBlocks))
+	for i, slug := range file.MCPBlocks {
+		if previous, ok := selected[slug]; ok {
+			return seedmap.Seed{}, fmt.Errorf("%s: field mcp_blocks[%d]: block %q already listed at mcp_blocks[%s]", name, i, slug, previous)
+		}
+		block, ok := blocks[slug]
+		if !ok {
+			return seedmap.Seed{}, fmt.Errorf("%s: field mcp_blocks[%d]: unknown block %q (available: %s)", name, i, slug, strings.Join(blockSlugs(blocks), ", "))
+		}
+		server, err := mcpblock.Parse(block.Content)
+		if err != nil {
+			return seedmap.Seed{}, fmt.Errorf("%s: field mcp_blocks[%d]: block %q: %w", name, i, slug, err)
+		}
+		if previous, ok := mounted[server.Name]; ok {
+			return seedmap.Seed{}, fmt.Errorf("%s: field mcp_blocks[%d]: server %q is already mounted by block %q", name, i, server.Name, previous)
+		}
+		selected[slug] = fmt.Sprintf("%d", i)
+		mounted[server.Name] = slug
+		spec.Blocks = append(spec.Blocks, block)
+	}
+
 	seed, err := seedmap.FromSpec(spec)
 	if err != nil {
 		return seedmap.Seed{}, fmt.Errorf("%s: %w", name, err)
