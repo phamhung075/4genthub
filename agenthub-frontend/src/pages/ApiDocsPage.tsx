@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from '../components/Markdown';
-import { API_BASE_URL } from '../config/environment';
+import { API_BASE_URL, MCP_URL } from '../config/environment';
 // The document is imported raw from the app source tree, so the reviewed file IS
 // the rendered page: no copy step and no generated artefact to fall out of date.
 // It must live inside this tree because the production image copies only
@@ -25,13 +25,10 @@ const TOKEN_MCP_URL = 'MCP_URL';
 const TOKEN_VERSION = 'VERSION';
 
 /**
- * The MCP endpoint is deliberately undefined: it is not a frontend config value
- * today (the platform MCP URL is expressed server-side as ${AGENTHUB_MCP_URL}
- * when a seat is rendered). Constructing one from the origin plus a guessed path
- * would look right and fail later, so {{MCP_URL}} stays visible until a config
- * entry exists.
+ * The MCP endpoint comes from config (VITE_MCP_URL, see config/environment.ts).
+ * It is unset by default because this repository is not a deployment, and an
+ * unset value leaves {{MCP_URL}} visible rather than rendering an empty string.
  */
-const MCP_URL: string | undefined = undefined;
 
 /** Replace {{TOKEN}} with a value, leaving the token when there is no value. */
 export function applyTokens(source: string, values: Record<string, string | undefined>): string {

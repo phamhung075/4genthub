@@ -46,6 +46,17 @@ export const API_BASE_URL = (() => {
   return configuredApiUrl;
 })();
 
+// MCP endpoint, for the API-reference page's {{MCP_URL}} token.
+//
+// Per-deployment configuration, the same shape as the base URL above: a
+// deployment sets VITE_MCP_URL (or the runtime _env_ entry) and its own docs
+// page names its own MCP endpoint. This repository is NOT a deployment, so the
+// default is empty and the token stays VISIBLE on the page rather than being
+// guessed from the origin - a guessed URL would look right and fail later,
+// while a visible token is a finding. Setting the value is what turns the chip
+// into a URL.
+export const MCP_URL = getEnvVar('VITE_MCP_URL', '');
+
 // Environment
 export const ENVIRONMENT = getEnvVar('VITE_ENV', 'development');
 export const IS_PRODUCTION = ENVIRONMENT === 'production';

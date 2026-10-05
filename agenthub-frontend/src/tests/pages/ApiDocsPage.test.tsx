@@ -14,7 +14,7 @@ vi.mock('../../docs/api-reference.en.md?raw', () => ({
     '',
     '## First section',
     '',
-    'Body text with a token: {{API_ORIGIN}}',
+    'Body text with a token: {{API_ORIGIN}} and another: {{MCP_URL}}',
     '',
     '### Nested section',
     '',
@@ -110,6 +110,10 @@ describe('ApiDocsPage', () => {
     const body = screen.getByTestId('api-docs-body').textContent ?? '';
     expect(body).toContain(API_BASE_URL);
     expect(body).not.toContain('{{API_ORIGIN}}');
+
+    // With no VITE_MCP_URL configured this repository is not a deployment, so the
+    // MCP token must stay visible rather than blanking out.
+    expect(body).toContain('{{MCP_URL}}');
   });
 
   it('leaves the version token visible when /health fails', async () => {
