@@ -30,6 +30,17 @@ Deploy loop: bump `healthVersion` in `agenthub_go/fastmcp/server/httpapp/http.go
 
 **Operational fact for readers - `AGENTHUB_TOKEN` rotation (2026-10-05).** The rotation for this rig is COMPLETE and verified across the daemon and all four seats, and the OLD token stays valid until the owner revokes it. A 401 on a production call during this switch is the rotation, not a code defect - check the token before debugging code.
 
+## Rig capacity (2026-10-05)
+
+The rig grew from four seats to **seven**. Original four: `lead`, `go-dev` (backend), `fe-dev` (frontend), `reviewer`. Added: `web-dev` (second frontend seat), `writer` (documentation), `go-dev2` (second backend). Both rig spec files (`rig-omp.yaml`, `rig-claude.yaml`) declare all seven, so a restore or the Claude switch-back keeps them.
+
+Two coordination rules keep two seats from editing one file:
+
+- **Frontend:** the two frontend seats must not edit the same file at once. `web-dev` has claimed `agenthub-frontend/src/App.tsx` and `agenthub-frontend/src/components/Header.tsx` for the C3 row until it commits; `fe-dev` has confirmed it holds off both.
+- **Backend:** the two backend seats must not touch `fastmcp/server/httpapp/routes_mount.go`, `fastmcp/server/httpapp/ws_mount.go` or `fastmcp/task_management/infrastructure/database/models.go` without the lead serializing it with `go-dev`; `go-dev2`'s single `fastmcp/server/httpapp/app.go` line (`mountTeamRoutes`) is claimed with `go-dev`'s agreement.
+
+Current assignments: `web-dev` C3 (dashboard sessions page) then F6 (topology graph); `writer` the residual documentation truth-audit (directive B continuation, docs-only); `go-dev2` D5 teams slice 1 (self-contained teams/members/roles, with the surface-inventory update riding the same commit); `go-dev` the board ticks and G3; `fe-dev` directive C closed and available.
+
 ## Checklist
 Legend: `[x]` done and its check met; `[ ]` open; `[~]` superseded by another item (not done as written; the original text is kept for traceability).
 
