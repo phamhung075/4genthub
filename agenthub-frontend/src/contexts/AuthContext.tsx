@@ -295,7 +295,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // this tab's refresh picks that identity up. That is an identity replacement like login, so
       // the previous identity's cache and inbox must go - while the ordinary same-identity refresh,
       // which is the common case, must not drop the cache.
-      if (userData && userRef.current && userData.id !== userRef.current.id) {
+      // Unusable identity data (a token with no `sub` on either side) fails toward clearing rather
+      // than toward keeping another identity's rows. No previous session still skips the clear.
+      const previousId = userRef.current?.id;
+      if (userData && userRef.current && (!userData.id || !previousId || userData.id !== previousId)) {
         discardPreviousIdentity();
       }
 

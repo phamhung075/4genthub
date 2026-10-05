@@ -744,6 +744,51 @@ describe('AuthContext', () => {
       expect(authContext!.refreshToken).toBe(before);
     });
 
+    it('clears the cache when a refresh arrives with no usable identity on either side', async () => {
+      // Fail-safe direction: a token with no `sub` on both sides must clear rather than keep another
+      // identity's rows. No previous session still skips (that is the mount path, empty cache).
+      const noSub = { ...mockDecodedToken, sub: undefined };
+
+      (Cookies.get as any).mockImplementation((key: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return null;
+      });
+
+      (jwtDecode.jwtDecode as any).mockReturnValue(noSub);
+
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData(['seatRooms'], [{ id: 'r1', slug: 'a-private-room', name: 'A room' }]);
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'no-sub-access-token',
+          refresh_token: 'no-sub-refresh-token'
+        })
+      });
+
+      const { getByText } = rtlRender(
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TestComponent />
+          </AuthProvider>
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+
+      await act(async () => {
+        getByText('Refresh').click();
+      });
+
+      await waitFor(() => {
+        expect(queryClient.getQueryData(['seatRooms'])).toBeUndefined();
+      });
+    });
+
     it('should disconnect WebSocket on logout', async () => {
       // Mock WebSocket as connected
       mockUseWebSocket.mockReturnValue({

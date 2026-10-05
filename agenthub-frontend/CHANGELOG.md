@@ -54,7 +54,10 @@
     document cookies shared by every tab - so when another tab logged out and signed in as B, this tab's next refresh
     returned B's tokens and this tab rendered as B with the previous identity's cached rows still present. It now
     compares the decoded identity with `userRef.current` and calls `discardPreviousIdentity()` only when they differ, so
-    an ordinary same-identity refresh keeps the cache: the guard is identity inequality, not the refresh itself. Its new
+    an ordinary same-identity refresh keeps the cache: the guard is identity inequality, not the refresh itself. The
+    comparison fails toward clearing when either side has no usable `sub` (a token without one cannot be told apart from
+    a different identity, and a privacy guard must not fail open), while no previous session still skips the clear -
+    that is the mount path, where a fresh load's cache is empty. Its new
     dependency is `discardPreviousIdentity` (a `useCallback` whose only dep is `useQueryClient()`, which is
     provider-stable), asserted stable by a test rather than asserted in prose.
 - **The Seats page is live over WebSocket (item 16)** - 2026-10-05
