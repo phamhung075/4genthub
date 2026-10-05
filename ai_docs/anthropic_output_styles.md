@@ -43,7 +43,7 @@ You can either:
 * Run `/output-style [style]`, such as `/output-style explanatory`, to directly
   switch to a style
 
-These changes apply to the [local project level](https://docs.claude.com/en/docs/claude-code/settings)
+These changes apply to the [local project level](https://code.claude.com/docs/en/settings)
 and are saved in `.claude/settings.local.json`.
 
 ## Create a custom output style
@@ -86,14 +86,14 @@ prompt specific to software engineering. Neither CLAUDE.md nor
 adds the contents as a user message *following* Claude Code’s default system
 prompt. `--append-system-prompt` appends the content to the system prompt.
 
-### Output Styles vs. [Agents](https://docs.claude.com/en/docs/claude-code/sub-agents)
+### Output Styles vs. [Agents](https://code.claude.com/docs/en/sub-agents)
 
 Output styles directly affect the main agent loop and only affect the system
 prompt. Agents are invoked to handle specific tasks and can include additional
 settings like the model to use, the tools they have available, and some context
 about when to use the agent.
 
-### Output Styles vs. [Custom Slash Commands](https://docs.claude.com/en/docs/claude-code/slash-commands)
+### Output Styles vs. [Custom Slash Commands](https://code.claude.com/docs/en/slash-commands)
 
 You can think of output styles as “stored system prompts” and custom slash
 commands as “stored prompts”.

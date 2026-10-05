@@ -14,7 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 **ai_docs broken relative links swept** (2026-10-05)
 
-- 21 site-absolute Anthropic references (`/en/ai_docs/...`) in `anthropic_custom_slash_commands.md`, `anthropic_docs_subagents.md`, `anthropic_output_styles.md` and `cc_hooks_docs.md` were repointed to `https://docs.claude.com/en/docs/...` (all ten distinct targets verified `200`). 12 dangling local links were removed — their targets were deleted (`dad51589 remove : all obsolete files`) or live only in the uncommitted `.claude/` submodule — and one was repointed (`../authentication/complete-authentication-system.md` → `complete-authentication-guide.md`). Relative-link check now reports 0 broken.
+- 21 site-absolute Anthropic references (`/en/ai_docs/...`) in `anthropic_custom_slash_commands.md`, `anthropic_docs_subagents.md`, `anthropic_output_styles.md` and `cc_hooks_docs.md` were repointed to their canonical hosts — `https://code.claude.com/docs/en/...` for the Claude Code pages and `https://platform.claude.com/docs/en/models/overview` for the model overview (all ten distinct targets serve `200` directly, no redirect after following the old `docs.claude.com` host's `301/302`). 12 dangling local links were removed — their targets were deleted (`dad51589 remove : all obsolete files`) or live only in the uncommitted `.claude/` submodule — and one was repointed (`../authentication/complete-authentication-system.md` → `complete-authentication-guide.md`). Relative-link check now reports 0 broken.
 
 ### Removed
 
@@ -37,6 +37,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Kept, deliberately: everything the mounted `/api/v2/tokens` routes still serve (`deps.tokens`, `TokenAPIController`'s other methods, the facade's other methods, and the shared `zpTokenFailure` helper) and `MCPTokenService.GenerateMCPTokenFromUserID` — see the handoff: nothing in production calls that one now either, but it is the auth domain's only minting API and the fixture its Validate/Revoke/Cleanup/Stats tests build on, so removing it would gut that coverage rather than remove a route.
 
 ### Added
+
+**Teams and sharing: the account boundary with owner and viewer roles** (2026-10-05, NEXT_GEN D5, slice 1)
+
+- New `team_management` domain. Tables: `teams` (id, user_id, slug, name, created_at, updated_at; unique per owner) and `team_members` (id, team_id, user_id, role `owner` | `viewer`, created_at; unique per team). Declared as a TEAMS section in `fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql` and registered for creation in `fastmcp/seat_management/infrastructure/database/team_tables.go` (`teamManagementDatabaseTables`, appended to `Tables` after the seat tables so `team_members`' foreign key to `teams` resolves in creation order). No foreign key CASCADE: `ORMTeamRepository.Delete` removes the member rows and the team in one transaction (the application layer cascades).
+- Slice 1 is single-owner: the creator is the team's one owner, membership changes are owner-only, and every other member is a viewer with read access. The rule lives in `fastmcp/team_management/application/services/team_service.go`: adding a second owner is refused (`ErrSecondOwner`), and the owner cannot be demoted or removed (`ErrLastOwner`).
+- `{team}` in every path is the team SLUG, resolved within the caller's memberships (`TeamRepository.FindForMember`), because a slug is unique per owner and not globally; a non-member gets 404 rather than learning which teams exist.
+- Routes (`fastmcp/server/httpapp/team_mount.go`, mounted at `app.go:128`): `POST`/`GET /api/v2/openrig/teams`, `GET`/`DELETE /api/v2/openrig/teams/{team}`, `GET`/`POST /api/v2/openrig/teams/{team}/members`, `PATCH`/`DELETE /api/v2/openrig/teams/{team}/members/{user}`. Created teams are not yet wired to existing resources: making a viewer see the owner's rooms and seats is the follow-up (D5's `team_id` on account-scoped tables) and no existing seat or task table changed here.
+- `ai_docs/api-integration/surface-inventory.md` updated in the same commit: §1.20 (the 8 team routes), the two team rows of §3.3, and every count (registrations 132 -> **140**, runtime `Tables` 36 -> **38**).
 
 **Codex seats render an execpolicy deny list for the direct send surface** (2026-10-05, G3 owner decision (e)(i))
 
