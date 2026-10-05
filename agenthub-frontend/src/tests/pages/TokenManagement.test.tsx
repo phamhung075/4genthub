@@ -178,6 +178,33 @@ describe('TokenManagement', () => {
         );
       });
     });
+
+    it('Full Access selects every scope except the connector scope (literal set)', async () => {
+      renderWithProviders(<TokenManagement />);
+
+      fireEvent.change(screen.getByPlaceholderText(/Production API/), { target: { value: 'Full Access Token' } });
+      fireEvent.click(screen.getByRole('button', { name: /Full Access/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate API Token/i }));
+
+      // Literal, never derived from AVAILABLE_SCOPES: adding any scope must turn this red so the
+      // Full Access decision is deliberate. The connector scope is deliberately absent.
+      const FULL_ACCESS_SCOPES = [
+        'openid', 'profile', 'email', 'offline_access', 'mcp-api', 'mcp-roles', 'mcp-profile',
+        'projects:create', 'projects:read', 'projects:update', 'projects:delete',
+        'tasks:create', 'tasks:read', 'tasks:update', 'tasks:delete',
+        'subtasks:create', 'subtasks:read', 'subtasks:update', 'subtasks:delete',
+        'contexts:create', 'contexts:read', 'contexts:update', 'contexts:delete',
+        'agents:create', 'agents:read', 'agents:update', 'agents:delete',
+        'branches:create', 'branches:read', 'branches:update', 'branches:delete',
+        'mcp:execute', 'mcp:delegate',
+      ];
+
+      await waitFor(() => {
+        expect(mockTokenService.generateToken).toHaveBeenCalledWith(
+          expect.objectContaining({ scopes: FULL_ACCESS_SCOPES })
+        );
+      });
+    });
   });
 
   it('creates a new token with form data', async () => {

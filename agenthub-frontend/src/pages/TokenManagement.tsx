@@ -134,6 +134,10 @@ function ScopeCard({ scope, isSelected, onToggle }: ScopeCardProps) {
   );
 }
 
+// The connector scope can open the connector socket and publish terminal sessions, so it is
+// deliberately excluded from the "Full Access" quick action and must be selected by hand.
+const CONNECTOR_SCOPE = 'sessions:write';
+
 const AVAILABLE_SCOPES = [
   // OpenID Connect Core Scopes
   { value: 'openid', label: 'OpenID', description: 'OpenID Connect authentication', category: 'Core' },
@@ -187,7 +191,7 @@ const AVAILABLE_SCOPES = [
   { value: 'mcp:delegate', label: 'Delegate MCP', description: 'Delegate MCP operations', category: 'Execute' },
 
   // Session stream (local connector) scope - mint this only for a connector you run
-  { value: 'sessions:write', label: 'Publish Sessions', description: 'Required by the session-stream connector that runs on your machine: it may open the connector websocket and publish your terminal sessions here.', category: 'Sessions' }
+  { value: CONNECTOR_SCOPE, label: 'Publish Sessions', description: 'Required by the session-stream connector that runs on your machine: it may open the connector websocket and publish your terminal sessions here.', category: 'Sessions' }
 ];
 
 export function TokenManagement() {
@@ -440,7 +444,7 @@ export function TokenManagement() {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.map(s => s.value))}
+                      onClick={() => setSelectedScopes(AVAILABLE_SCOPES.filter(s => s.value !== CONNECTOR_SCOPE).map(s => s.value))}
                       className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                     >
                       <Shield className="h-4 w-4 mr-1" />
@@ -495,6 +499,11 @@ export function TokenManagement() {
                       Clear All
                     </Button>
                   </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Connector access (Publish Sessions) is not included in Full Access - select it explicitly to mint a
+                    connector token.
+                  </p>
 
                   {/* Improved Grid Layout for Scopes */}
                   {['Core', 'API', 'Projects', 'Tasks', 'Subtasks', 'Contexts', 'Agents', 'Branches', 'Execute', 'Sessions'].map((category) => {

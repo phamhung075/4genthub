@@ -27,6 +27,11 @@
   - `src/pages/TokenManagement.tsx` also lists Sessions in the category render order so the picker shows it.
   - Tests: a new case selects the Sessions/Write card and asserts the create payload carries `sessions:write`; it fails
     when the entry is missing (verified by removing it, seeing two failures, restoring).
+  - Full Access no longer includes the connector scope: it is filtered out of the quick action (`CONNECTOR_SCOPE`) and the
+    page states it ("Connector access (Publish Sessions) is not included in Full Access"), because a connector
+    credential can publish a terminal and should be minted deliberately. A literal-array test pins the Full Access set,
+    so any future scope that leaks in turns it red and forces the decision; adding a scope was shown to fail exactly
+    that one case.
 
 ### Changed
 - **Assignee pickers take their names from the user's seats (D6)** - 2026-10-04

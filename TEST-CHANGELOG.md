@@ -6,7 +6,8 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - `src/tests/pages/TokenManagement.test.tsx`: new case `offers the session-stream connector scope and sends it with the token` selects the `Sessions / Write` card and asserts `generateToken` is called with `scopes: ['sessions:write']`; the existing `should have correct available scopes` case gains `Sessions` in its category list. Mutation proof: removing the `sessions:write` entry from `AVAILABLE_SCOPES` fails exactly those two cases (13 passed, 2 failed), restoring it goes back to 15 passed.
 - Live proof on the local build (no production touched): a token created through the page carries `scopes: ['sessions:write']` in the create response and in `GET /api/v2/tokens`; the connector handshake with that token returns `101 Switching Protocols`, and a token minted with `scopes: ['read']` is refused with `403 Missing scope sessions:write`.
-- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 89 files / 1640 tests passed (was 1639; +1 case).
+- New case `Full Access selects every scope except the connector scope (literal set)` pins the exact 33-scope array the Full Access quick action produces (literal, never derived from `AVAILABLE_SCOPES`, so the guard is not self-fulfilling). Mutation proof: adding a temporary scope to `AVAILABLE_SCOPES` fails exactly this one case (1 failed | 15 passed); removing it restores 16 passed.
+- Commands: `npx tsc --noEmit -p .` clean; `npx vite build` ok; `npx vitest run` -> 89 files / 1641 tests passed (was 1640; +1 case).
 
 ## 2026-10-05 — realtime connection registry populated (Go)
 
