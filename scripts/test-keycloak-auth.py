@@ -130,7 +130,8 @@ def test_token_introspection(token: str) -> dict[str, Any] | None:
 def test_api_with_token(token: str):
     """Test calling the backend API with token"""
     print("\n🌐 Testing Backend API with Token...")
-    api_url = "http://localhost:8000/api/health"
+    # Backend health mount is GET /health (there is no /api/health route).
+    api_url = "http://localhost:8000/health"
 
     headers = {"Authorization": f"Bearer {token}"}
 
