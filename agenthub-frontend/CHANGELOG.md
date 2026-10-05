@@ -39,7 +39,9 @@
     401) - cited by call site rather than line number because the numbers move with every edit above them. The gate is
     what keeps the mount path honest: it runs before any session exists and a fresh
     load starts with an empty cache, so skipping the clear there loses nothing and avoids wiping a cache the caller has
-    already primed. Tests cover the explicit logout button with a live session for both the inbox and the cache; the other
+    already primed. That skip is safe only while the provider mounts once per page load: if a future change remounts
+    `AuthProvider` inside a live page (a per-route provider, say), a mount-time logout could meet a warm cache and this
+    gate would skip the clear - re-check it then. Tests cover the explicit logout button with a live session for both the inbox and the cache; the other
     paths reach the same code rather than being covered individually.
   - The same boundary is enforced on the way IN, which is where the leak was actually reachable: `login()` and `signup()`
     can run while another session is live - `/login` and `/signup` are public routes, their forms swap identity with SPA
