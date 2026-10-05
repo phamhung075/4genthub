@@ -1496,10 +1496,11 @@ func TestSeatAdminSetOccupantRejectsInvalidInput(t *testing.T) {
 	fake.seats = append(fake.seats, &repositories.Seat{ID: "seat-a", RoomID: room.ID, SeatKey: "alice", Runtime: "claude-code", PermissionPolicy: "standard"})
 	mux := seatAdminTestMux(t, fake)
 	const path = "/api/v2/openrig/rooms/dev/seats/alice/occupant"
+	// `{"runtime":""}` and `{"model":"sonnet"}` are deliberately NOT rejected any more: a blank or
+	// omitted runtime keeps the seat's current runtime (owner ruling, 2026-10-05), so both are
+	// accepted and covered by seat_occupant_runtime_test.go.
 	for _, body := range []string{
 		`{"runtime":"gemini"}`,
-		`{"runtime":""}`,
-		`{"model":"sonnet"}`,
 		`{"runtime":"codex","model":"-bad"}`,
 		`{"runtime":"codex","model":"has space"}`,
 		`{"runtime":"codex","model":"claude-sonnet-5-5"}`,

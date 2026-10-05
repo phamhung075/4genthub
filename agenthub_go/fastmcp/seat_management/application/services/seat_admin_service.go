@@ -101,12 +101,18 @@ func (s *SeatAdminService) GetSeat(ctx context.Context, userID, roomSlug, seatKe
 // SetOccupant switches the seat to runtime and model. The seat keeps its pinned seat type
 // version; the next resolve renders the new runtime into a new snapshot.
 func (s *SeatAdminService) SetOccupant(ctx context.Context, userID, roomSlug, seatKey, runtime, model string) (*SeatView, error) {
-	if err := repositories.ValidateOccupant(runtime, model); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
-	}
 	room, seat, err := s.seat(ctx, userID, roomSlug, seatKey)
 	if err != nil {
 		return nil, err
+	}
+	// A blank runtime never changes the runtime: keep what the seat already runs, because the
+	// caller is changing the model, not the runtime. The type-default inheritance is CREATE-only
+	// (handleCreateSeat) so a change can never silently reset a live seat runtime.
+	if strings.TrimSpace(runtime) == "" {
+		runtime = seat.Runtime
+	}
+	if err := repositories.ValidateOccupant(runtime, model); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidOccupant, err)
 	}
 	if err := s.store.UpdateSeatOccupant(ctx, userID, seat.ID, runtime, model); err != nil {
 		return nil, err
