@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { SeatDetailPage } from '../../pages/SeatDetailPage';
 import { seatApi } from '../../services/seatApi';
+import { useWebSocket } from '../../hooks/useWebSocketV2';
+import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 import type { SeatOverlay, SeatOverlayScope } from '../../types/seatTypes';
 
 vi.mock('../../services/seatApi', () => ({
@@ -31,7 +33,7 @@ vi.mock('../../services/seatApi', () => ({
 
 // The page mounts the live seat sync (item 16); stub the socket and the auth context.
 vi.mock('../../hooks/useWebSocketV2', () => ({
-  useWebSocket: () => ({ client: { on: vi.fn(), off: vi.fn() }, isConnected: false }),
+  useWebSocket: vi.fn(() => ({ client: { on: vi.fn(), off: vi.fn() }, isConnected: false })),
 }));
 
 vi.mock('../../hooks/useRealtimeSync', () => ({
@@ -456,5 +458,12 @@ describe('SeatDetailPage', () => {
       expect(await screen.findByText('seat "carol" not found')).toBeInTheDocument();
       expect(screen.getByLabelText('Link target')).toHaveValue('bob');
     });
+  });
+
+  it('mounts the live seat sync (useWebSocket + useRealtimeSync)', () => {
+    renderDetail();
+
+    expect(vi.mocked(useWebSocket)).toHaveBeenCalledWith('test-user', 'test-token');
+    expect(vi.mocked(useRealtimeSync)).toHaveBeenCalled();
   });
 });
