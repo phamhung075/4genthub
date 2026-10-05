@@ -40,8 +40,16 @@ First action: tell the user (rig queue) the DeepSeek job ids you started. If eve
   `token_transactions`, `user_agent_configurations_md`, `user_api_tokens`, `user_sessions`,
   `user_agent_instances`) matching production types; `user_agent_instances` (58 rows) and
   `agent_templates` (32 rows) must round-trip on a local DB built from `prod_like.sql`.
+  > **Superseded (2026-10-05):** the table half of WP3 is void. `agent_templates` and
+  > `user_agent_instances` were dropped from the schema (T7/T8) and no code path reads them
+  > (`grep -rn 'agent_templates\|user_agent_instances' agenthub_go --include='*.go' --include='*.sql'`
+  > → NO MATCH; the export-then-drop is recorded in `NEXT_GEN.md` T5/T7). `models_prod.go` now declares
+  > **six** `ProductionTables` — `agent_import_history`, `applied_migrations`, `token_transactions`,
+  > `user_agent_configurations_md`, `user_api_tokens`, `user_sessions` — not eight
+  > (`fastmcp/task_management/infrastructure/database/models_prod.go:96`). The `AUTO_MIGRATE` half of
+  > WP3 stands; see `ai_docs/api-integration/surface-inventory.md` §3.4 and §4.
   ACCEPT: start the Go server against the prod-like local DB with AUTO_MIGRATE unset and verify via `\dt`
-  that no table was created; CRUD on the 8 models passes.
+  that no table was created; CRUD on the six remaining models passes.
 - WP4 (B5) Deploy artefacts, WITHOUT changing production definitions: create `docker-system/docker/Dockerfile.backend.go`
   (multi-stage as proposed in the report; non-root; EXPOSE 8000), `.dockerignore` for agenthub_go
   (.gocache, .gomodcache, scratch), a `-healthcheck` flag in `cmd/agenthub` (HTTP GET /health, exit code,
