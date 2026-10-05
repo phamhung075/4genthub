@@ -13,9 +13,6 @@ type fakeTokenFacade struct {
 	createResult *entities.OrderedMap[any]
 }
 
-func (f *fakeTokenFacade) GenerateMCPTokenFromUser(context.Context, string, string, int, *entities.OrderedMap[any], any) *entities.OrderedMap[any] {
-	return nil
-}
 func (f *fakeTokenFacade) RevokeUserTokens(context.Context, string) *entities.OrderedMap[any] {
 	return nil
 }

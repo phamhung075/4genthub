@@ -21,6 +21,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 - `GET /api/v2/branches/{id}/task-counts` had no consumer outside `agenthub_go` (the only external reference is the Python mirror, `agenthub_main/src/fastmcp/server/routes/branch_routes.py:314`; no frontend, script or doc caller), the same criterion that removed its siblings. Deleted: the mount, `routes.GetBranchTaskCounts`, the `BranchController` method, the adapter method, `BranchAPIController.GetBranchTaskCounts` and the mount-inventory row. `GET /api/v2/branches/b1/task-counts` now 404s, pinned by `TestDeletedBranchTaskCountsRouteIsNotServed`.
 
+**The unreachable MCP-token chain is gone** (2026-10-05)
+
+- `TokenAPIController.GenerateMCPTokenFromUser` (interface member, controller method) and `TokenApplicationFacade.GenerateMCPTokenFromUser` had no mounted caller: verified by grep over the whole Go tree (only the interface declaration, the two methods, and the tests existed) and against the Python side, whose same chain also has no route caller. No mounted route reached it, so it was unreachable code rather than a served route — the same class the frontend cleanup removed, one layer down. The two tests that existed only for it went with it (the port-test fake method and the facade test's `generate_mcp_token_from_user` block).
+- Kept, deliberately: everything the mounted `/api/v2/tokens` routes still serve (`deps.tokens`, `TokenAPIController`'s other methods, the facade's other methods, and the shared `zpTokenFailure` helper) and `MCPTokenService.GenerateMCPTokenFromUserID` — see the handoff: nothing in production calls that one now either, but it is the auth domain's only minting API and the fixture its Validate/Revoke/Cleanup/Stats tests build on, so removing it would gut that coverage rather than remove a route.
+
 ### Added
 
 **Seat admin mutations now broadcast a seat-domain frame** (2026-10-05)

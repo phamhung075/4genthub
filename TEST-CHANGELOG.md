@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — unreachable MCP-token chain removed (Go)
+
+- `token_api_controller_port_test.go`: the `fakeTokenFacade` no longer implements `GenerateMCPTokenFromUser` (the interface member is gone).
+- `draft_token_unified_facade_test.go`: `TestDraftTokenFacadeBranches` drops the `generate_mcp_token_from_user` block; its `validate_token` / `revoke_user_tokens` / stats branches still run.
+- No new tests: this removes an unreachable path, and the packages that own the removed code (`api_controllers`, `facades`, `auth/services`, `server/routes`, `server/httpapp`) all pass unchanged.
+- Commands: `go test -count=1 ./fastmcp/task_management/interface/api_controllers/ ./fastmcp/task_management/application/facades/ ./fastmcp/auth/services/ ./fastmcp/server/routes/ ./fastmcp/server/httpapp/` -> all ok; `gofmt -l` empty, `go build ./fastmcp/...` and `go vet ./fastmcp/task_management/...` clean.
+
 ## 2026-10-05 — seat-domain WS frames (Go)
 
 - `fastmcp/server/httpapp/seat_admin_mount_test.go`: `TestSeatAdminMutationsBroadcastOneSeatFrame` drives all twelve covered mutations through the mount with a recording seam and asserts exactly one frame each with the right entity/action/id, the room+seat_key on seat frames, a non-empty user id (without it the frame cannot be tenant-scoped), and no frame at all for a rejected mutation.
