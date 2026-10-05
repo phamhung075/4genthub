@@ -121,7 +121,7 @@ func (a *MCPKeycloakAuth) BuildMCPPermissions(roles []string) []string {
 		"mcp-admin":     {"*"},
 		"mcp-tools":     {"tools:execute", "tools:list", "tools:describe", "context:read", "context:write"},
 		"mcp-user":      {"tools:list", "tools:describe", "context:read"},
-		"mcp-developer": {"tools:*", "context:*", "agents:*", "projects:*"},
+		"mcp-developer": {"tools:*", "context:*", "projects:*"},
 	}
 
 	var permissions []string
