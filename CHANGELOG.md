@@ -8,6 +8,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+**`mission.md` trimmed to restore the word-limit test** (2026-10-05)
+
+- `scripts/team/4genthub/mission.md` was 522 words against the test's 350–520 limit, red since the API-docs rewrite (`95ffca45`) — a commit that never meant to touch a limit. Four redundant words removed, meaning unchanged (516 words). Script suite now `185 passed, 0 failed` (`python3 -m pytest src/tests/scripts/ --noconftest -q`, from `agenthub_main/`).
+
 **`scripts/openrig_team_setup.py import-project`: a project's `.mcp.json` and `.claude/skills/` become module versions** (2026-10-05)
 
 - New subcommand `import-project` reads the current project's `.mcp.json` (one `mcp` module per `mcpServers` entry, in the block shape the backend's `mcpblock.Parse` accepts: `name`, `type` http|stdio, `url`, or `command` + `args`, plus `headers`/`env`) and `.claude/skills/*` (one `skill` module per directory, content = `SKILL.md`). It pushes them through the same `PUT /api/v2/openrig/modules/{slug}/versions/{version}` step `apply` uses — both paths build that step with `module_step`, so the call cannot drift. Re-pushing unchanged files is the backend's idempotent 200; a changed file at the same version is the backend's 409.
