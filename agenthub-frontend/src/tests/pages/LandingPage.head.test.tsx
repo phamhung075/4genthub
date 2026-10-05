@@ -36,6 +36,33 @@ describe('the static head and the page agree', () => {
     // absolute image URLs from window.location.origin instead.
     expect(indexHtml).not.toMatch(/4genthub\.com/);
   });
+
+  it('keeps the web-app manifest saying the same thing as the head', () => {
+    // The manifest is a third head artifact (install prompt name and description)
+    // and it carried the retired "32 specialized AI agents" line.
+    const manifest = JSON.parse(readFileSync(resolve(process.cwd(), 'public/manifest.json'), 'utf8'));
+    expect(manifest.description).toBe(PAGE_DESCRIPTION);
+    expect(manifest.name).toContain('rooms, seats and modules');
+    expect(manifest.description).not.toContain('32 specialized');
+  });
+
+  it('lists only routes that exist in the app', () => {
+    const sitemap = readFileSync(resolve(process.cwd(), 'public/sitemap.xml'), 'utf8');
+    const appSource = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
+    const locs = [...sitemap.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) =>
+      // Strip the host: what matters here is the path the app must serve.
+      m[1].replace(/^https?:\/\/[^/]+/, ''),
+    );
+
+    expect(locs.length).toBeGreaterThan(0);
+    for (const loc of locs) {
+      const path = loc === '/' ? '"/"' : `"${loc}"`;
+      expect(appSource).toContain(`path=${path}`);
+    }
+    // The route that produced this check stays out of the ENTRIES. The comment
+    // above the urlset names it deliberately, as the reason the file changed.
+    expect(locs).not.toContain('/agents/marketplace');
+  });
 });
 
 describe('the page body claims only what ships', () => {

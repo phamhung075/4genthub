@@ -1,7 +1,7 @@
 {
   "short_name": "4genthub",
-  "name": "4genthub - AI Development Platform",
-  "description": "Enterprise-grade MCP platform with 32 specialized AI agents for modern development",
+  "name": "4genthub - rooms, seats and modules",
+  "description": "4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp.",
   "icons": [
     {
       "src": "favicon.ico",
