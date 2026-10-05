@@ -22,6 +22,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+- **`NEXT_GEN.md` checklist reconciled against HEAD (2026-10-05)** — of the 11 unchecked boxes, three were already delivered and are now ticked with their artefacts (C3 sessions dashboard `f3afcf72`; F6 topology graph `630b2bd0` / `419d57d8`; D5 teams slice 1 `team_mount.go`), and the other eight carry an explicit STILL OPEN verdict naming the missing half (D1/D3, F5, F7 out of scope, G3 partial, G7, the whoami fresh-start check, the codex verification). No box was ticked on prose.
+
 - **`NEXT_GEN.md` backlog records (2026-10-05)** — the D1/D2 delivery (`7a5d792a`: the `mcp` module kind and the rendered server set), the deploy-packet gate (production's `ck_modules_kind` holds five values against the tree's six, so an `mcp` block is inert until the owner-gated constraint change), the four owner decisions still waiting (silent fleet loss, `rig terminal open` idempotence, PIN semantics, D5 sharing), the `57de3715` determinism-test correction, and method rules 8–11.
 
 **NEXT_GEN records: the whoami/comm-guard correction, the deploy path, and the review-coverage closeout** (2026-10-05)
