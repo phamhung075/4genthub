@@ -106,6 +106,7 @@ describe('useRealtimeSync - seat/room events', () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatSeats', 'dev'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatRooms'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'create', 'websocket');
   });
 
@@ -118,6 +119,7 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays', 'dev', 'alice'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatLinks', 'dev', 'alice'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved', 'dev', 'alice'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'update', 'websocket');
   });
 
@@ -130,6 +132,7 @@ describe('useRealtimeSync - seat/room events', () => {
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatOverlays', 'dev', 'alice'] });
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatLinks', 'dev', 'alice'] });
     expect(removeSpy).toHaveBeenCalledWith({ queryKey: ['seatResolved', 'dev', 'alice'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['seatTopology'] });
     expect(animationFactory.animate).toHaveBeenCalledWith('dev/alice', 'delete', 'websocket');
   });
 

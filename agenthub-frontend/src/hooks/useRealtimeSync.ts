@@ -18,6 +18,7 @@ import {
 } from '../types/websocket-protocol';
 import { animationFactory } from '../services/AnimationFactory';
 import { seatKeys } from './useSeats';
+import { topologyKeys } from './useTopology';
 import { useNotificationStore } from '../store/notifications';
 
 // 🔥 GLOBAL toast deduplication tracker (module-level, shared across ALL hook instances)
@@ -876,6 +877,7 @@ export const useRealtimeSync = (
         case 'created':
           queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
           queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           animationFactory.animate(seatId, 'create', 'websocket');
           showToastOnce(`seat-created-${seatId}`, () => {
             showSuccess(`Seat "${seatName}" created`);
@@ -887,6 +889,7 @@ export const useRealtimeSync = (
           queryClient.invalidateQueries({ queryKey: seatKeys.overlays(room, seatKey) });
           queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seatKey) });
           queryClient.invalidateQueries({ queryKey: seatKeys.resolved(room, seatKey) });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           animationFactory.animate(seatId, 'update', 'websocket');
           showToastOnce(`seat-updated-${seatId}`, () => {
             showInfo(`Seat "${seatName}" updated`);
@@ -896,6 +899,7 @@ export const useRealtimeSync = (
         case 'deleted':
           queryClient.invalidateQueries({ queryKey: seatKeys.seats(room) });
           queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+          queryClient.invalidateQueries({ queryKey: topologyKeys.all });
           queryClient.removeQueries({ queryKey: seatKeys.overlays(room, seatKey) });
           queryClient.removeQueries({ queryKey: seatKeys.links(room, seatKey) });
           queryClient.removeQueries({ queryKey: seatKeys.resolved(room, seatKey) });
