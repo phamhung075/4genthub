@@ -429,19 +429,31 @@ func TestMountWebSocketsConnectorRefusalsReadDifferentReasons(t *testing.T) {
 		t.Fatalf("scope refusal reason = %q, want %q", scopeReason, wsScopeMissingReason)
 	}
 
-	if authReason == scopeReason {
-		t.Fatalf("auth and scope refusals share reason %q - the caller cannot tell a bad token from a token missing a scope", authReason)
-	}
-
-	// Authentication with NO token at all is the third refusal, and it too is not the scope one.
+	// Authentication with NO token at all is the third refusal.
 	missingConn, missingBr := wsTestDial(t, server.URL, "/ws/connector")
 	defer missingConn.Close()
 	missingCode, missingReason := wsTestReadClose(t, missingBr)
 	if missingCode != wsClosePolicyViolation || missingReason != wsAuthMissingTokenReason {
 		t.Fatalf("missing-token refusal = (%d, %q), want (%d, %q)", missingCode, missingReason, wsClosePolicyViolation, wsAuthMissingTokenReason)
 	}
-	if missingReason == scopeReason {
-		t.Fatalf("missing-token and scope refusals share reason %q", missingReason)
+
+	// Distinctness BY CONSTRUCTION, not by inspection: the three refusals must be PAIRWISE
+	// different. Each value above already equals its own constant, so this block goes red the
+	// moment two reason constants are unified - not only after a caller sees the wrong message.
+	reasons := map[string]string{
+		"auth invalid token": authReason,
+		"missing token":      missingReason,
+		"missing scope":      scopeReason,
+	}
+	for a, ra := range reasons {
+		for b, rb := range reasons {
+			if a >= b {
+				continue
+			}
+			if ra == rb {
+				t.Fatalf("refusals %q and %q share reason %q - the three must be pairwise different", a, b, ra)
+			}
+		}
 	}
 }
 
