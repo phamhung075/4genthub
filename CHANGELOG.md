@@ -6,6 +6,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Fixed
+
+**The server describes itself with directive G's product line, from one constant** (2026-10-05)
+
+- `/health`'s `server` field reported `agenthub - Task Management & Agent Orchestration`, the pre-G description. It now reports `agenthub - AI Orchestration Platform` — the tagline the frontend landed with G (`agenthub-frontend/src/components/Header.tsx:125`, asserted at `Header.test.tsx:75`) — so the product has one description rather than a third phrasing invented in the Go tree.
+- The same stale string was ALSO a second, independent literal in the same package: the MCP handshake's `serverInfo.name` (`mcp_routes.go:167`). Both sites now read the single `healthServerName` constant, so the server cannot describe itself two ways depending on which surface you ask; that second literal is why this is a constant rather than another string.
+- Established before the change, as the row required: the string was SET in two places and NOTHING asserted it — no Go test pins the constant or the literal, and the Python-side occurrences are the legacy backend's own server name, not consumers of this payload.
+
 ### Changed
 
 **`scripts/openrig_team_setup.py publish-skills` + skill blocks: the library publishes as catalog blocks and the renderer reads them** (2026-10-05)
