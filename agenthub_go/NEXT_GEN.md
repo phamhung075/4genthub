@@ -344,6 +344,16 @@ Open items from this run:
 
 ## Process lessons
 
+**Rules this session had to discover (2026-10-05), each with the incident that produced it:**
+
+1. CITE BY ANCESTRY, NOT BY CONTENT. `git merge-base --is-ancestor <hash> <tip>` (or `git branch --contains`) is the membership test; an empty `git diff --stat` between two hashes is not, because an amended-away commit stays content-identical and resolvable while being in no branch. Incident: an amend left an orphaned duplicate (`032e69c0` vs `daa7d22a`, same subject — checked with `git merge-base --is-ancestor`: the first is NOT an ancestor of main and the second is) that was named to two seats before the reviewer checked membership.
+2. NAME THE ROOT YOU MEASURED, IN THE CLAIM ITSELF. A number measured on a working tree is not a number about a commit, and a number measured in a copy is not a number about the repo. Incident: three separate cases — a grep over the working tree labelled HEAD; tree-level frontend greens read as commit-level; and a delegated worker reporting success against `/tmp/fe-merge`. The fix was a provenance label, not a re-measurement.
+3. A COUNT OF TEXT IS NOT A COUNT OF STRUCTURE, and a discrepancy between two counts of one thing is evidence to CHECK rather than a story to tell. Incident: an unanchored grep gave 14 where the anchored one gave 13 and the plausible mechanism ("a table created twice") was wrong — the extra hit was a header comment.
+4. AGREEMENT BETWEEN TWO INSTRUMENTS WRITTEN THE SAME WAY IS NOT INDEPENDENT CONFIRMATION. Incident: a route inventory and a grep shared one blind spot (mounts made by controller method call), and their agreement produced a false "undocumented split" report to the owner.
+5. NEVER REWRITE A HASH SOMEONE HAS READ. Correct a message with a NEW commit that says what it corrects; the wrong sentence is instructive once the correction is visible beside it.
+6. A SEAT'S VERDICTS BELONG TO THE SEAT, NOT THE OCCUPANT. Rows carry the transitions, so attribute to the seat, and name a specific verdict when it needs today's measurement rather than inheriting it.
+7. WHEN A CLAIM SAYS A THING EXISTS AT HEAD, EVALUATE IT AGAINST HEAD. Where peers keep untracked in-flight files, that distinction is load-bearing rather than pedantic. Incident: a board tick cited `SessionList.tsx:33` as HEAD evidence and the file is not tracked at all.
+
 - Shared-index sweeps put the `seatcheck` changelog blocks into `1b7e7bdc` and `3b07eebf` before their code landed in `951a4136`. The behavior is correct and `git blame` is misleading; history is not rewritten. Commit with an explicit pathspec.
 
 ## Environment facts useful to the next session
