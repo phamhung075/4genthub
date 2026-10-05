@@ -5,13 +5,42 @@
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
+
+    <!--
+      The static head is what a crawler, a link preview and the pre-hydration
+      view see, so it describes the same product as the page body rather than a
+      different one. No host is hardcoded: the React page rewrites og:url, the
+      canonical link and the absolute image URLs from the deployment's own
+      origin at runtime, so any deployment describes itself.
+    -->
+    <title>4genthub - rooms, seats and modules for AI development teams</title>
     <meta
       name="description"
-      content="4genthub - Multi-Project AI Orchestration Platform for Task Management"
+      content="4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp."
     />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="4genthub" />
+    <meta property="og:title" content="4genthub - rooms, seats and modules for AI development teams" />
+    <meta
+      property="og:description"
+      content="4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp."
+    />
+    <meta property="og:image" content="/logo192.png" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="4genthub - rooms, seats and modules for AI development teams" />
+    <meta
+      name="twitter:description"
+      content="4genthub keeps the state of your AI development work in the cloud: rooms, seats and modules. OpenRig runs the seats on your machine with Claude Code, codex, agy or omp."
+    />
+    <meta name="twitter:image" content="/logo192.png" />
+
     <link rel="apple-touch-icon" href="/logo192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>Agenthub Task Manager</title>
     <!-- Runtime environment configuration -->
     <script src="/env-config.js"></script>
   </head>
