@@ -99,8 +99,11 @@ APPLY_MODES = ("none", "set-model", "restart")
 HASH_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 # How often `respawn` re-reads the seat while waiting for the dead reading to hold.
 RESPAWN_POLL_SECONDS = 5.0
-# Default hold before respawning: a just-launched seat reads exactly like a dead one until its
-# runtime hook attaches (observed ~15s), so one reading is never enough.
+# Default hold before respawning. The reason field is the only discriminator, and it is
+# RUNTIME-DEPENDENT: a just-launched agy seat reads exactly like a dead one (`unknown` +
+# `no_runtime_hook`) until its hook attaches (observed ~15s), while an omp seat with no activity
+# yet reports reason null and stays unknown. So one reading is never enough, and this hold must
+# not be shortened without re-measuring per runtime.
 DEFAULT_RESPAWN_AFTER_SECONDS = 30.0
 
 
@@ -769,9 +772,10 @@ def cmd_respawn(args: argparse.Namespace) -> None:
     empty); it offers only the deliberate primitive `rig seat launch <seat> [--fresh] [--stop]
     --reason <text>` (registered at `@openrig/cli/dist/commands/seat.js:419`), which creates a
     blank native occupant with a new session id and generation. This runs that primitive, and
-    only for a seat that really reads dead: a just-launched seat produces the SAME reading
-    (`agentActivity` unknown + `no_runtime_hook`) until its runtime hook attaches, so the
-    reading must hold for `--after-seconds` before anything is launched.
+    only for a seat that really reads dead: a just-launched agy seat produces the SAME reading
+    (`agentActivity` unknown + `no_runtime_hook`) until its runtime hook attaches (~15s; an omp
+    seat with no activity yet reports reason null instead), so the reading must hold for
+    `--after-seconds` before anything is launched.
     """
     room = validate_name("room", args.room)
     seat = validate_name("seat", args.seat)

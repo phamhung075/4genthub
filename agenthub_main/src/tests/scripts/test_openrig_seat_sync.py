@@ -1379,8 +1379,9 @@ def test_respawn_fails_when_the_seat_is_still_dead_after_the_launch(
 
 
 def test_respawn_refuses_a_live_seat(monkeypatch, capsys):
-    """A just-launched seat reads exactly like a dead one until its runtime hook attaches, so
-    anything that is not the dead reading must stop the command before it launches."""
+    """On a runtime that behaves like agy a just-launched seat reads exactly like a dead one until
+    its runtime hook attaches (~15s), so anything that is not the dead reading must stop the
+    command before it launches."""
     calls = []
 
     def fake_rig(command):
