@@ -77,6 +77,7 @@ class _Handler(BaseHTTPRequestHandler):
 
     do_PUT = _handle
     do_POST = _handle
+    do_GET = _handle
 
     def log_message(self, *args):
         pass
@@ -99,6 +100,8 @@ class TeamServer:
     def respond(self, method, path, body):
         if (method, path) in self.overrides:
             return self.overrides[(method, path)]
+        if method == "GET":
+            return 404, '{"detail": "not found"}'
         return (201 if method == "POST" else 200), '{"success": true}'
 
     def close(self):
@@ -429,9 +432,18 @@ def test_import_project_pushes_mcp_blocks_and_skills(
 ):
     code, out, _ = _import(monkeypatch, capsys, project_root)
     assert code == 0
-    assert server.requests and all(r["method"] == "PUT" for r in server.requests)
-    puts = {r["path"].split("/")[5]: r["body"] for r in server.requests}
+    # every module is first resolved with a GET; the pushes themselves are all PUT
+    puts = {
+        r["path"].split("/")[5]: r["body"]
+        for r in server.requests
+        if r["method"] == "PUT"
+    }
     assert set(puts) == {"weather", "filesystem", "alpha-skill", "beta-skill"}
+    assert all(
+        r["path"].startswith("/api/v2/openrig/modules/")
+        for r in server.requests
+        if r["method"] == "GET"
+    )
     # an http server keeps its ${ENV_VAR} header reference verbatim
     assert json.loads(puts["weather"]["content"]) == {
         "name": "weather",
@@ -491,9 +503,9 @@ def test_import_project_dry_run_makes_no_requests(
     assert code == 0
     assert server.requests == []
     assert (
-        "plan: module weather@1.0.0 (PUT /api/v2/openrig/modules/weather/versions/1.0.0)"
-        in out
-    )
+        "plan: module weather@1.0.0: PUSH unless stored content is identical (then SKIP); "
+        "if stored content differs, NEW-VERSION 1.0.1"
+    ) in out
 
 
 def test_import_project_uses_the_hooks_project_root_derivation():
@@ -502,3 +514,88 @@ def test_import_project_uses_the_hooks_project_root_derivation():
     from utils.env_loader import get_project_root as hooks_get_project_root
 
     assert team_setup.get_project_root is hooks_get_project_root
+
+
+def _store_pushes(server):
+    """Serve every recorded module PUT back as a stored GET, the way the backend would."""
+    for req in list(server.requests):
+        if req["method"] != "PUT":
+            continue
+        slug, version = req["path"].split("/")[5], req["path"].split("/")[7]
+        module = {
+            "slug": slug,
+            "version": version,
+            "kind": req["body"]["kind"],
+            "content": req["body"]["content"],
+        }
+        server.overrides[("GET", req["path"])] = (
+            200,
+            json.dumps({"success": True, "module": module}),
+        )
+
+
+def test_import_project_rerun_skips_identical_modules(
+    server, env, monkeypatch, capsys, project_root
+):
+    assert _import(monkeypatch, capsys, project_root)[0] == 0
+    _store_pushes(server)
+    server.requests.clear()
+
+    code, out, _ = _import(monkeypatch, capsys, project_root)
+
+    assert code == 0
+    # the second import leaves the store untouched: every module was already stored
+    assert [r for r in server.requests if r["method"] == "PUT"] == []
+    assert out.count(": skipped (identical content already stored)") == 4
+    assert "import summary: 0 pushed, 0 new version(s), 4 skipped" in out
+
+
+def test_import_project_changed_content_pushes_the_next_patch(
+    server, env, monkeypatch, capsys, project_root
+):
+    assert _import(monkeypatch, capsys, project_root)[0] == 0
+    _store_pushes(server)
+    (project_root / ".claude" / "skills" / "alpha-skill" / "SKILL.md").write_text(
+        "# Alpha v2\nbody\n", encoding="utf-8"
+    )
+    server.requests.clear()
+
+    code, out, _ = _import(monkeypatch, capsys, project_root)
+
+    assert code == 0
+    puts = [r for r in server.requests if r["method"] == "PUT"]
+    # the stored 1.0.0 differs, so the change lands as 1.0.1 rather than an overwrite
+    assert [r["path"] for r in puts] == [
+        "/api/v2/openrig/modules/alpha-skill/versions/1.0.1"
+    ]
+    assert puts[0]["body"]["content"] == "# Alpha v2\nbody\n"
+    assert (
+        "module alpha-skill@1.0.1 (new version; 1.0.0 stored with different content): applied"
+        in out
+    )
+    assert "import summary: 0 pushed, 1 new version(s), 3 skipped" in out
+
+
+def test_import_project_dry_run_classifies_against_stored_versions(
+    server, env, monkeypatch, capsys, project_root
+):
+    assert _import(monkeypatch, capsys, project_root)[0] == 0
+    _store_pushes(server)
+    (project_root / ".claude" / "skills" / "alpha-skill" / "SKILL.md").write_text(
+        "# Alpha v2\nbody\n", encoding="utf-8"
+    )
+    new_skill = project_root / ".claude" / "skills" / "gamma-skill"
+    new_skill.mkdir(parents=True)
+    (new_skill / "SKILL.md").write_text("# Gamma\nbody\n", encoding="utf-8")
+    server.requests.clear()
+
+    code, out, _ = _import(monkeypatch, capsys, project_root, "--dry-run")
+
+    assert code == 0
+    assert [r for r in server.requests if r["method"] == "PUT"] == []
+    assert (
+        "plan: module alpha-skill@1.0.1: NEW-VERSION (1.0.0 stored with different content)"
+        in out
+    )
+    assert "plan: module weather@1.0.0: SKIP (identical content already stored)" in out
+    assert "plan: module gamma-skill@1.0.0: PUSH" in out
