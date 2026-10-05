@@ -181,6 +181,13 @@ func (s *JWTService) claims(pairs ...any) *entities.OrderedMap[any] {
 
 // CreateAccessToken creates an access token; additionalClaims are merged last (an
 // existing key keeps its position, new keys are appended).
+//
+// Token-class contract (session half): the "type" claim declares the token's class,
+// and readers MUST classify a token by that declared type, never by inferring the
+// class from which other claims happen to be present. This mints the SESSION class:
+// "type":"access" together with a user "email". The API-token class minted by
+// GenerateToken below is "type":"api_token" with "scopes" and *no* email — so an
+// absence of email marks nothing on its own; only the declared type does.
 func (s *JWTService) CreateAccessToken(userID, email string, roles []string, additionalClaims *entities.OrderedMap[any], audience string) (string, error) {
 	now := s.now()
 	// roles is written as given: a nil list is JSON null, like Python's None.
@@ -235,6 +242,13 @@ func (s *JWTService) CreateResetToken(userID, email string) (string, error) {
 }
 
 // GenerateToken generates an API token with scopes and an expiry in days.
+//
+// Token-class contract (API-token half): the "type" claim declares the token's class,
+// and readers MUST classify a token by that declared type, never by inferring the
+// class from which other claims happen to be present. This mints the API-TOKEN class:
+// "type":"api_token" with "scopes" and *no* email. The SESSION class minted by
+// CreateAccessToken above is "type":"access" with a user "email" — the missing email
+// here is incidental to the class, not the thing that names it.
 func (s *JWTService) GenerateToken(userID string, scopes []string, expiresInDays int, tokenID, audience string) (string, error) {
 	now := s.now()
 	if scopes == nil {

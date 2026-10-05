@@ -245,6 +245,51 @@ func TestBcryptHashStrictness(t *testing.T) {
 	}
 }
 
+// TestTokenClassContract pins both minted token-class shapes — the SESSION class
+// (type=access, carries email) and the API-TOKEN class (type=api_token, carries
+// scopes, no email) — so that a change to either side of the CreateAccessToken /
+// GenerateToken contract goes red instead of silently drifting. See the
+// token-class contract comments on those two methods.
+func TestTokenClassContract(t *testing.T) {
+	s := newTestService(t, testKey, "2026-10-01T12:00:00Z")
+
+	access, err := s.CreateAccessToken("user-1", "u@example.com", []string{"user"}, nil, DefaultAudience)
+	if err != nil {
+		t.Fatalf("CreateAccessToken: %v", err)
+	}
+	ap := s.VerifyToken(access, "access", DefaultAudience)
+	if ap == nil {
+		t.Fatal("access token failed verification as type=access")
+	}
+	if ap["type"] != "access" {
+		t.Errorf("access token type = %v, want \"access\"", ap["type"])
+	}
+	if email, ok := ap["email"]; !ok || email != "u@example.com" {
+		t.Errorf("access token email = %v (present=%v), want \"u@example.com\"", email, ok)
+	}
+	if scopes, ok := ap["scopes"]; ok {
+		t.Errorf("access token unexpectedly carries scopes: %v", scopes)
+	}
+
+	api, err := s.GenerateToken("user-1", []string{"read", "write"}, 30, "tid-1", DefaultAudience)
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+	tp := s.VerifyToken(api, "api_token", DefaultAudience)
+	if tp == nil {
+		t.Fatal("api token failed verification as type=api_token")
+	}
+	if tp["type"] != "api_token" {
+		t.Errorf("api token type = %v, want \"api_token\"", tp["type"])
+	}
+	if scopes, ok := tp["scopes"].([]any); !ok || len(scopes) != 2 || scopes[0] != "read" || scopes[1] != "write" {
+		t.Errorf("api token scopes = %v, want [read write]", tp["scopes"])
+	}
+	if email, ok := tp["email"]; ok {
+		t.Errorf("api token unexpectedly carries email: %v", email)
+	}
+}
+
 func TestB64FalseHeaderRejected(t *testing.T) {
 	s := newTestService(t, testKey, "2026-10-01T12:00:00Z")
 	enc := func(b string) string { return b64urlEncode([]byte(b)) }
