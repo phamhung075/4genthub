@@ -27,6 +27,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Changed
 
+- **`NEXT_GEN.md` records addendum (2026-10-05)** — method rules 12 (a guard that cannot be a boundary is accepted on what it *records*, not what it *stops*) and 13 (the silent-failure class: nothing happens, and the system's own evidence is silent about the case it exists to catch); the reviewer's independent confirmation that the resolution fold is one stack used by both the read path and the write guard; and the dated-not-pinned note on the registration count (120/121/122 depending on the pattern).
+
 - **`NEXT_GEN.md` checklist reconciled against HEAD (2026-10-05)** — of the 11 unchecked boxes, three were already delivered and are now ticked with their artefacts (C3 sessions dashboard `f3afcf72`; F6 topology graph `630b2bd0` / `419d57d8`; D5 teams slice 1 `team_mount.go`), and the other eight carry an explicit STILL OPEN verdict naming the missing half (D1/D3, F5, F7 out of scope, G3 partial, G7, the whoami fresh-start check, the codex verification). No box was ticked on prose.
 
 - **`NEXT_GEN.md` backlog records (2026-10-05)** — the D1/D2 delivery (`7a5d792a`: the `mcp` module kind and the rendered server set), the deploy-packet gate (production's `ck_modules_kind` holds five values against the tree's six, so an `mcp` block is inert until the owner-gated constraint change), the four owner decisions still waiting (silent fleet loss, `rig terminal open` idempotence, PIN semantics, D5 sharing), the `57de3715` determinism-test correction, and method rules 8–11.
