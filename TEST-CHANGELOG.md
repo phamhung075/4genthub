@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-05 — /health live-registry test (Go, health seam fix)
+
+- `fastmcp/server/httpapp/http_health_test.go` rewritten: the old `fakeHealthStatusProvider`/`swapHealthStatusProvider` cases injected the deleted seam and asserted the nil-provider error path — they passed while production's reading stayed permanently wrong. The new `TestHealthReportsTheLiveRegistry` registers real sockets through `routes.RegisterConnection` (the same entry point `ws_mount.go` uses) and asserts `connections.active_connections` and `status_broadcasting.registered_clients` equal the live registry count (baseline, baseline+1, baseline+2, then back to baseline after unregister), `uptime_seconds` is a non-negative number, and the dropped keys (`server_restart_count`, `recommended_action`, `last_broadcast`, `last_broadcast_time`) are absent. The fake socket carries an `id` field so two instances are distinct map keys (zero-size struct pointers alias to `runtime.zerobase`).
+- Mutation proof: `routes.ConnectionCount` changed to `return 0` -> `TestHealthReportsTheLiveRegistry` FAILS (`connections.active_connections = 0, want 1 (registry count after one registration)`); restored -> PASS.
+- Commands: `gofmt -l` empty on the three touched files; `go vet ./fastmcp/server/httpapp/... ./fastmcp/server/routes/...` clean; `go build ./...` ok; `go test -count=1 ./fastmcp/server/httpapp/ ./fastmcp/server/routes/` -> both ok.
+
 ## 2026-10-05 — topology graph (frontend, F6)
 
 - `src/tests/hooks/useTopology.test.tsx`: the composite query issues exactly one links call per seat (`dev/alice`,

@@ -99,6 +99,15 @@ func UnregisterConnection(ws wslib.WebSocket) {
 	connectionsMu.Unlock()
 }
 
+// ConnectionCount reports how many realtime sockets are registered for broadcast fan-out right now.
+// /health reads this directly, so the figure it prints is the same registry BroadcastDataChange
+// fans out to - never a separate provider that production might never have assigned.
+func ConnectionCount() int {
+	connectionsMu.Lock()
+	defer connectionsMu.Unlock()
+	return len(connections)
+}
+
 // MissedNotification is the persisted replay record shape used by the helpers.
 type MissedNotification struct {
 	ID               string
