@@ -2,8 +2,16 @@
 // fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql.
 //
 // Registered into the shared Tables registry here (the base ORM repository resolves tables
-// by name there). The row structs live in team_orm.go. Appended by a second init() so the
-// teams come after the seat tables (team_members references teams).
+// by name there). The row structs live in team_orm.go.
+//
+// CREATION ORDER IS LOAD-BEARING AND THE CREATOR DOES NOT SORT. createAll
+// (task_management/infrastructure/database/database_config.go) walks taskdb.Tables in slice
+// order and creates each table only when absent, with no dependency sort, and team_members
+// has a foreign key to teams. So teams must be appended before team_members: that holds
+// because (a) the two entries below are in that order, and (b) this file's init runs after
+// seat_tables.go's, since Go runs a package's init functions in lexical file-name order.
+// Renaming this file to sort before seat_tables.go, or reordering the slice below, would
+// put team_members before teams and fail its CREATE TABLE.
 package database
 
 import (
