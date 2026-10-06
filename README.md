@@ -3,9 +3,9 @@ Dai Hung PHAM
 <div align="center">
 
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/agenthub/agenthub)
-[![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2.1.0-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
+[![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2024--11--05-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-9%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-10%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
 
 **The Future of Human-AI Collaboration in Software Development**
 
@@ -20,7 +20,7 @@ Dai Hung PHAM
 ## ✨ **What Makes agenthub Special?**
 
 🎭 **Human-First AI Orchestration** — Drive human and AI work through a beautiful web interface
-🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions
+🧠 **Composable Seats** — each seat renders its own guidance, skills and MCP servers from inherited company → room → seat overlays
 🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration
 🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard
 🚀 **Multi-Agent Workflows** — Chain agent registry entries for complex development workflows
@@ -58,7 +58,7 @@ http://localhost:3800
 - 👥 **Multi-agent coordination**
 - 📈 **Progress tracking**
 - 🎭 **Seat management** — List seats and switch occupants
-- 🧠 **4-tier context** — Global → project → branch → task
+- 🧠 **Contexts** — four-level context records via `POST /api/v2/contexts/{level}`
 - 🔍 **Health & status** — MCP registrations and metrics
 
 </td>
@@ -68,9 +68,9 @@ http://localhost:3800
 ```
 http://localhost:8000
 ```
-- 🤖 **9 published MCP tools**
+- 🤖 **10 published MCP tools**
 - 🛠️ **Task, project, branch, context, agent, seat tools**
-- 📋 **4-tier context hierarchy**
+- 📋 **Contexts API** — `/api/v2/contexts/{level}` with inheritance
 - 🔌 **`POST /mcp` JSON-RPC + `GET /mcp` SSE**
 - 🔍 **Health monitoring (`GET /health`)**
 
@@ -86,7 +86,7 @@ http://localhost:8000
 🎯 **One-Click Orchestration** — Deploy complex multi-agent workflows with simple clicks
 ⚡ **Instant Feedback** — Real-time updates as agents complete tasks and make decisions
 🎭 **Seat Management** — List seats, resolve one, and switch its occupant
-🧠 **4-Tier Context** — Global → project → branch → task inheritance
+🧠 **Contexts** — Four-level context records with inheritance (`/api/v2/contexts`)
 ✨ **Agent Registry** — Register, assign and update agents through `manage_agent`
 
 ---
@@ -105,8 +105,8 @@ graph TD
 
     C --> G[🔗 MCP Server<br/>Go (agenthub_go)]
     G --> H[🤖 Agent Registry<br/>manage_agent]
-    G --> I[📊 4-Tier Context<br/>Global→Project→Branch→Task]
-    G --> J[🗄️ Database Layer<br/>PostgreSQL + Redis]
+    G --> I[📊 Contexts API<br/>/api/v2/contexts]
+    G --> J[🗄️ Database Layer<br/>PostgreSQL]
     G --> R[🪑 Seat Model<br/>manage_seat / call_seat]
 
     style A fill:#e1f5fe
@@ -129,6 +129,22 @@ graph TD
 - 📋 **Project Management**: Hierarchical organization with automatic context inheritance
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
+
+### 🔌 **Rig and OpenRig workflow**
+
+**OpenRig is the client and runtime; 4genthub is the cloud data for orchestration.** The installed `rig` CLI launches and supervises seats on your machine; this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
+
+Three client-side scripts carry the traffic. Each holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
+
+| Script | What it does |
+|---|---|
+| `scripts/openrig_seat_sync.py` | **Pulls** a room's resolved seats and lays each one out on disk for OpenRig from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
+| `scripts/openrig_bridge.py` | **Pushes observations up**: OpenRig seat status and herdr agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
+| `scripts/openrig_team_setup.py` | **Applies** a team definition (modules, room, seats, links, overlays) through the same publish path the UI uses; `apply` is idempotent. |
+
+The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
+
+**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and `scripts/seat_feedback.sh` for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
 
 ## 🤖 **Agent Registry & Seat Model**
 
@@ -324,7 +340,7 @@ mcp__agenthub_http__manage_context(
 
 ### 🌟 **The Context Magic**
 
-**🧠 Context Inheritance**: Every agent automatically knows what previous agents discovered
+**🧠 Context Inheritance**: a context resolved with `GET /api/v2/contexts/{level}/{context_id}/resolve` carries its inherited parent data
 **📈 Progress Tracking**: Watch tasks evolve from idea to completion
 **🔄 Session Continuity**: Stop and resume work - agents remember everything
 **👥 Team Collaboration**: Multiple humans can collaborate with the same agent team
@@ -335,11 +351,11 @@ mcp__agenthub_http__manage_context(
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/CORE_ARCHITECTURE/` |
-| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/DEVELOPMENT_GUIDES/` |
-| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/OPERATIONS/` |
-| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/TROUBLESHOOTING/` |
-| ✨ **Vision System** | AI enhancement documentation | `ai_docs/vision/` |
+| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/architecture-design/` |
+| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/development-guides/` |
+| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
+| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |
+| 🧭 **API & MCP reference** | The mounted route and tool surface | `ai_docs/api-integration/surface-inventory.md` |
 | 📋 **Changelog** | Version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
@@ -391,12 +407,16 @@ Human: Validate solution
 
 ### 🧠 **Context Intelligence**
 
+The context API stores four levels of context records (`/api/v2/contexts/{level}`), each with an inheritance path:
+
 **🌐 Global Context** → Organization-wide patterns and standards
 **📋 Project Context** → Project-specific decisions and architecture
 **🌿 Branch Context** → Feature-specific implementation details
 **🎯 Task Context** → Granular work progress and discoveries
 
-**The Magic**: Every AI agent automatically inherits relevant context, ensuring consistency and eliminating repetitive explanations.
+`GET /api/v2/contexts/{level}/{context_id}/resolve` folds the parent chain into one response; `.../delegate` copies data down a level, and `.../insights` and `.../progress` append to a context.
+
+That is the **context API**, not the platform's composition model. How a seat is built — its guidance, skills and MCP servers — comes from company → room → seat overlays resolved per seat (`ai_docs/api-integration/surface-inventory.md` §1.13, §1.16).
 
 ---
 
@@ -404,7 +424,7 @@ Human: Validate solution
 
 <div align="center">
 
-### **9 Published MCP Tools • JSON-RPC + SSE • Endless Possibilities**
+### **10 Published MCP Tools • JSON-RPC + SSE • Endless Possibilities**
 
 </div>
 
@@ -418,6 +438,7 @@ Human: Validate solution
 - Project hierarchy management
 - Git branch coordination
 - Dependency management
+- AI task actions **refuse legibly** when the AI integration seam is unwired — the caller gets the reason, not a generic error
 
 </td>
 <td width="33%">
@@ -426,6 +447,7 @@ Human: Validate solution
 - Agent registration & management (`manage_agent`)
 - Seat list/get/set_occupant (`manage_seat`)
 - Seat resolution (`call_seat`)
+- Seat friction reporting (`submit_feedback`)
 - Workflow coordination
 - Context sharing between agents
 
@@ -433,8 +455,8 @@ Human: Validate solution
 <td width="33%">
 
 #### 🧠 **Context Intelligence**
-- 4-tier context hierarchy
-- Automatic inheritance
+- Context records at four levels (`manage_context`)
+- Inheritance via `resolve`
 - Cross-session persistence
 - Real-time synchronization
 - Context validation
@@ -488,7 +510,7 @@ Human: Validate solution
 - **Concurrent Users**: 10-50 users
 - **Agent Coordination**: Real-time
 - **Context Sync**: <5ms overhead
-- **Database**: PostgreSQL + Redis
+- **Database**: PostgreSQL
 
 </td>
 <td width="50%">
@@ -516,7 +538,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
 | 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Current Version** | v0.0.2 - Production NOT Ready | [Latest Release](CHANGELOG.md#unreleased) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version. The tree carries **0.0.22** (`agenthub_go/fastmcp/server/httpapp/http.go:159`); the last deploy recorded in this repo is **0.0.21** (packet 3, `0018c644`). The newest *released* section of the changelog is **0.0.5** (2025-09-26) — the two numbering schemes are separate, so this row carries the deploy marker and links the release history. | [CHANGELOG.md](CHANGELOG.md) |
 
 ### 🚀 **Latest Releases**
 
@@ -612,7 +634,7 @@ Our release process follows industry best practices:
 ✅ **Agent Registry & Seats** — Manage agents via `manage_agent` and durable seats via `manage_seat` / `call_seat`
 ✅ **Human-First Design** — Built for people who love web interfaces
 ✅ **Per-Seat Tool Scope** — Each seat's tools and permissions match its role
-✅ **9 MCP Tools** — A small, stable MCP surface (`POST /mcp` + `GET /mcp` SSE)
+✅ **10 MCP Tools** — A small, stable MCP surface (`POST /mcp` + `GET /mcp` SSE)
 ✅ **Enterprise Ready** — Scales from solo dev to global teams
 
 ---
@@ -642,6 +664,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**agenthub v0.0.2** • **Production NOT Ready** • **Built with ❤️ for Human-AI Collaboration**
+**agenthub** • deploy marker **0.0.22** in the tree (`GET /health`; last deploy recorded: **0.0.21**) • **Built with ❤️ for Human-AI Collaboration**
 
 </div>

@@ -3,6 +3,47 @@
 ## [Unreleased]
 
 ### Added
+- **The friction channel's read side: a page grouped by layer (Directive H)** - 2026-10-06
+  - THREE STATES, NOT TWO, and this is the page's integrity rule rather than a nicety: "nothing reported for this layer"
+  is a claim the SERVER made, while a failed read is a claim nobody can make. So the page distinguishes "loaded and
+  empty" from "never loaded": when the read has not succeeded the sections say `Not loaded: the read failed, so this
+  layer's count is unknown.`, no count badge is rendered at all, and the header states `Counts unavailable: the read has
+  not succeeded.` instead of "0 entries". A failure that kept a previous successful read shows the groups with an alert
+  naming them as the last read that succeeded. The defect this closes was found in the page's own browser screenshot:
+  the failure state rendered six "Nothing reported for this layer." lines and a "0 entries" summary, both of which are
+  false - the worst failure available to a viewer, a false statement that looks exactly like a true one.
+  - `src/hooks/useFeedback.ts` carries the `loaded` flag this rests on, so no part of the page can state a count or an
+  empty layer on anything less than a response that actually arrived.
+  - `src/pages/FeedbackPage.tsx` shows the friction reports GROUPED BY LAYER, which is the deliverable rather than a
+  filter over a flat list: every layer of the closed set (runtime, openrig, cloud, seat-context, workspace, other)
+  gets its own section in the canonical order, and a layer the response omits renders its own empty state rather than
+  disappearing - a heading that vanished would read as "this layer was not considered", while "nothing reported for
+  this layer" is the truth. The layer names and their meanings are in `src/types/feedback.ts`; the page shows the
+  heading, the wire value (`seat-context` keeps its hyphen) and the group's own count.
+  - BUILT AGAINST THE CONTRACT THE BACKEND OWNER STATED, not against a guess: `GET /api/v2/openrig/feedback`, no
+  query parameters in this cut, answering `{success, total, layers: [{layer, count, reports: [...]}]}` with the groups
+  already in canonical order and a layer with no reports ABSENT from the array; every row key always present, an
+  empty string where a value is unknown and never JSON null - `id`, `room`, `seat`, `session`, `layer`, `text`,
+  `created_at`, `machine_id`. The route is tenant-scoped by the caller's user id and a machine token does not
+  authenticate on it; the service is `src/services/feedbackApi.ts` (one route) and the query key lives in
+  `src/hooks/useFeedback.ts`, which passes the grouping through untouched because filling the gaps is a display
+  ruling and belongs where it is visible.
+  - A VIEWER, NOT A WORKFLOW: it reads one table. No moderation, no status transition, no escalate affordance - the
+  only control on the page is Refresh, which re-runs the same GET. A group whose layer is outside the closed set is
+  shown under the value the API sent rather than filed under `other`, so a contract breach is visible instead of
+  being absorbed.
+  - Route: `/feedback`, protected and inside `AppLayout`, added to `src/App.tsx` with its lazy import; no nav entry
+    was added, since the page's place in the navigation is a separate decision.
+  - Tests: `src/tests/pages/FeedbackPage.test.tsx` (9) drives the rendered page - canonical heading order with each
+    report under its own layer, the per-layer empty state for an omitted layer, the whole-table empty state, the row's
+    own fields rendered without interpretation, the "only Refresh" property, Refresh re-reading, an out-of-set layer,
+    and the two states a failure can be in: never loaded (no empty claim, no count) and loaded-then-a-failed-refresh
+    (the last read stays, named as such).
+  - OWED, NOT CLAIMED: the browser proof (the page driven with feedback spanning at least two layers). The page is
+    driven and photographed in its FAILURE state now; the grouping-with-data half is blocked on the backend, measured
+    rather than assumed - the tree's server cannot boot at all (`app: unknown table "seat_feedback"`, with
+    AUTO_MIGRATE true and false alike, because the ORM resolves tables by name through the shared registry and
+    `seat_tables.go` has no TableDef for it), so the routes are in the source and not in any runnable process.
 - **API reference documentation page (owner directive E)** - 2026-10-05
   - `src/docs/api-reference.en.md` is the API reference the `/docs` page renders: authentication and the token flow, the mounted route
     families with method and path, the MCP surface (the nine published tools and how a client calls them), the seat-composition model, and
@@ -181,6 +222,21 @@
     that one case.
 
 ### Changed
+- **The pin label states what a pin does instead of implying protection (owner's pin ruling)** - 2026-10-06
+  - `src/components/seats/SeatComposer.tsx:181-183` drops the padlock glyph from the pinned badge: the badge reads
+  `pinned at <scope>` and nothing else. The owner's ruling is that a pin LABELS THE TRUTH - it sets the version in effect
+  at its scope and nothing more - and the resolver enforces no lock (`pin` writes `version`/`pinnedAt` in the overlay fold,
+  `src/lib/blockComposition.ts:127-131`), so a padlock claimed a protection the system does not have. The owner explicitly
+  rejected making a pin a real lock, so no enforcement semantics were added: no disabled control, no refused removal, no
+  new error path.
+  - `SeatComposer.tsx:198-203` adds the sentence a pinned row was missing, "A pin sets the version in effect at `<scope>`
+  for this block and does nothing else - it is not a lock, so removing the block still removes it." The removal keeps its
+  own outcome line (`SeatComposer.tsx:197`, e.g. `Removing here: removed at seat · still defined at company`), which is what
+  the removal actually does.
+  - Swept for other copy that implies a pin protects a block: none. `SeatsPage.tsx:50` and `TopologySeatsTable.tsx:20`
+  label a seat's seat-type version (`Pinned 1.0.0` / `follows latest`), `SeatDetailPage.tsx:89-90` only names the `pin` op
+  kind in the change list, and the two test names mentioning a "pin lock" (`blockComposition.test.ts:144`,
+  `SeatAuthoringPage.test.tsx:419`) assert the ABSENCE of one.
 - **The Vite trap is corrected a SECOND time: the export WINS, and the file Vite reads is the root one** - 2026-10-06
  - A correction of a correction, kept visible because the history is the evidence that the standard is held: 5b9a019f
  retracted the claim that `VITE_WS_URL` is inert without a frontend `.env` - true as far as it went - and then offered
@@ -253,6 +309,56 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **An async continuation that outlives its component — the flake's class — fixed at the two sites that reported it** - 2026-10-06
+  - THE FLAKE IS NOW REPRODUCED, not argued: a single-file loop of `src/tests/components/auth/LoginForm.test.tsx` hit it on
+    **run 11**, exit 1, with an uncaught `ReferenceError: window is not defined` at
+    `react-dom-client.development.js:16850`, reached through React's DISCRETE-EVENT dispatch path (`dispatchDiscreteEvent` ->
+    `dispatchEventForPluginEventSystem` -> `batchedUpdates`). The environment that throws is the jsdom one vitest has already
+    torn down, which is why the run is green and the error names a test FILE.
+  - `src/components/auth/LoginForm.tsx` — the mount effect's `fetchBackendVersion` awaited `/health` and then called
+    `setBackendVersion(...)` with no cleanup; a response that lands after the component is gone now returns at the flag instead
+    of touching state (checked after BOTH awaits and in the catch).
+  - `src/components/GlobalContextDialog.tsx` — the same class inside one component: `fetchGlobalContext` (checked after the
+    `getGlobalContext()` await, in its catch, and its `setLoading(false)` made conditional) and `handleSave` (after its awaits,
+    in its catch, with `setSaving(false)` made conditional), driven by a mount-scoped `aliveRef`.
+  - **HONEST SCOPE, and it matters more than the fix: the REPRODUCED stack is the event-dispatch path, NOT the state-setter path
+    these two changes close, so the reproduction is not claimed as fixed by them.** Both throw from the same read of `window` at
+    `react-dom-client.development.js:16850`; a state setter called after teardown was reproduced deterministically in a throwaway
+    probe (then deleted, not committed). The reproduced instance looks like async work outliving the FILE's environment rather
+    than a component's own fetch, which would put its fix in test/environment hygiene rather than in these components. Reported
+    to the lead with the classification rather than smoothed over.
+  - A THIRD SITE, and many more: a scan of `src` found ~70 async-to-setState candidates across ~30 files. The shape identical to
+    these two — a mount/open effect whose fetch or `.then` sets state with no cancellation — includes `TaskEditDialog.tsx:48`,
+    `SubtaskEditDialog.tsx:56`, `HealthCheck.tsx:41`, `BranchContextDialog.tsx:40`, `ProjectContextDialog.tsx:155,167`,
+    `TaskContextDialog.tsx:152,227,233,238`, `SubtaskDetailsDialog.tsx:65`, `ProjectDetailsDialog.tsx:37`,
+    `LazyTaskList/LazyTaskListRefactored.tsx:88` and `PerformanceDashboard.tsx:104`. NOT fixed here: the same class, but a
+    separate and wider change, and the lead owns that scope.
+  - NO TEST is added for these two, deliberately. The only deterministic way to make the failure fire in-process is to delete
+    `window` mid-test, and doing so lets unrelated pending work throw as well: a probe written that way produced the flake's
+    exact stack FOUR times and made the run exit 1 while green — it manufactured the symptom instead of discriminating. It was
+    removed rather than kept. The run-11 reproduction above is the evidence in its place.
+- **An unguarded global in an async continuation, and two 30s timers nothing owned (hardening — NOT a flake fix)** - 2026-10-06
+  - `src/services/apiV2.ts`'s 401/token-refresh failure branch removed both cookies and dispatched
+    `auth-logout` through `window`. That branch is an ASYNC CONTINUATION — it resumes after the refresh
+    round-trip — so it can run when the DOM is already gone (a torn-down test environment, where the
+    dereference throws `window is not defined`). The three DOM-touching statements now sit behind one
+    `typeof window !== 'undefined'` guard. In a browser `window` and `document` always exist, so the
+    change is behaviour-preserving: this is HARDENING of a latent defect on its own merits, **not** a fix
+    for the intermittent exit-non-zero-while-green flake, whose cause is still unattributed by THIS commit — see the entry
+    above, which reproduces it and fixes the class at the two sites that reported it.
+  - `src/utils/responseValidator.ts` and `src/utils/websocketValidator.ts` each started a module-scope
+    `setInterval(..., 30000)` under `import.meta.env.DEV` and discarded the handle, so nothing owned it:
+    in a Node host (a vitest worker) that timer kept the event loop alive after the environment which
+    started it was gone. THE LIFECYCLE IS NOW STATED AND OWNED: the module owns the timer for the page's
+    lifetime — a browser has no teardown to clear it on, and that is the intended lifetime — and the
+    handle is `unref()`'d where the runtime offers that. A browser's numeric handle has no `unref`, so its
+    behaviour is unchanged. Neither callback touches a DOM global, so neither could produce the
+    `window is not defined` line; this is the separate leak it looks like.
+  - The mechanism behind the reported error SHAPE, proved rather than argued: calling a React state setter
+    once the jsdom `window` is gone throws exactly `ReferenceError: window is not defined` from React DOM's
+    own scheduling code, with every test still passing (reproduced with a throwaway probe, then deleted).
+    That is why the failure names a test file and a state setter, and why no application source contains
+    the string. It does not yet attribute the flake to a file.
 - **A deliberate disconnect stops reporting a reconnection failure** - 2026-10-06
  - `disconnect()` raises the attempt counter to its maximum to suppress auto-reconnect and then closes the socket,
  and `handleClose` could not tell that state from having EXHAUSTED retries - so it took its give-up branch and

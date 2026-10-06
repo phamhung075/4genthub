@@ -209,8 +209,17 @@ func seatTypeVersionToDomain(row *seatdb.SeatTypeVersionORM) (*domainrepo.SeatTy
 func roomToDomain(row *seatdb.RoomORM) *domainrepo.Room {
 	return &domainrepo.Room{
 		ID: row.ID, UserID: row.UserID, Slug: row.Slug, Name: row.Name,
+		TeamID:    stringOrEmpty(row.TeamID),
 		CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}
+}
+
+// stringOrEmpty reads a nullable column as the domain's empty value.
+func stringOrEmpty(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func seatToDomain(row *seatdb.SeatORM) *domainrepo.Seat {

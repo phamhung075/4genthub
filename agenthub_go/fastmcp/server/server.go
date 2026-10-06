@@ -3,16 +3,17 @@
 // server.py defines the FastMCP server class together with its MCP protocol
 // handlers, asyncio lifespan wrappers, uvicorn/Starlette app factories and
 // client/proxy/mount machinery. Those parts depend on anyio, uvicorn, Starlette
-// routes, the low-level mcp.server.Server, httpx clients and the (unported)
-// ToolManager/Client/FastMCPProxy objects; they have no Go meaning and are not
-// ported here.
+// routes, the low-level mcp.server.Server, httpx clients, fastmcp.client.Client and the
+// FastMCPProxy objects; they have no Go meaning and are not ported here. ToolManager IS
+// ported (tools/tool_manager.go), wired at server/proxy.go.
 //
 // The framework-independent behaviour is ported faithfully: URI prefix
 // rewriting (add_resource_prefix, remove_resource_prefix, has_resource_prefix)
 // and the component tag/enabled filter (_should_enable_component). The
 // MountedServer dataclass and the URI_PATTERN constant are represented by the
-// helpers below; MountedServer itself is not ported because it only carried a
-// reference to the unported FastMCP class.
+// helpers below, where the Go surface is deliberately minimal because Python's
+// MountedServer only carried a reference to the FastMCP class, which itself
+// remains unported.
 package server
 
 import (

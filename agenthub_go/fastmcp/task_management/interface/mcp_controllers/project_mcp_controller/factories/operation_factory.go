@@ -50,8 +50,7 @@ type ProjectOperationFactory struct {
 }
 
 // NewProjectOperationFactory builds the factory. Python constructs the two
-// handlers internally from the response formatter; they are injected here
-// because their modules are unported.
+// handlers internally from the response formatter; they are injected here.
 func NewProjectOperationFactory(responseFormatter ResponseFormatter, crudHandler ProjectCRUDHandler, maintenanceHandler ProjectMaintenanceHandler) *ProjectOperationFactory {
 	return &ProjectOperationFactory{
 		responseFormatter:  responseFormatter,

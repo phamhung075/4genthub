@@ -2,9 +2,8 @@ package repositories
 
 // Project Repository Factory (Python infrastructure/repositories/project_repository_factory.py).
 // Python class-level caches and os.environ probing are represented by an injectable factory
-// instance; the MockProjectRepository module is not ported yet, so mock construction goes
-// through the MockFactory hook. The per-db_path environment juggling is not reproduced (the Go
-// database configuration is process-wide).
+// instance; mock construction goes through the MockFactory hook. The per-db_path environment
+// juggling is not reproduced (the Go database configuration is process-wide).
 
 import (
 	"os"
@@ -154,7 +153,7 @@ func (f *ProjectRepositoryFactory) buildORM(userID string, dbPath *string, kwarg
 
 func (f *ProjectRepositoryFactory) buildMock(userID string, dbPath *string, kwargs Kwargs) (domainrepos.ProjectRepository, error) {
 	if f.MockFactory == nil {
-		return nil, &tmvo.ValueError{Msg: "MockProjectRepository is not ported"}
+		return nil, &tmvo.ValueError{Msg: "mock project repository requested but the MockFactory hook is not configured (the type exists in mock_repository_factory.go)"}
 	}
 	return f.MockFactory(), nil
 }

@@ -59,7 +59,7 @@ type zpProjRebalanceAgentsUseCase interface {
 }
 
 // zpProjWebSocketNotifier is the consumer-side port of
-// WebSocketNotificationService.sync_broadcast_project_event (unported). Python passes
+// WebSocketNotificationService.sync_broadcast_project_event. Python passes
 // keyword arguments and the helper swallows its own errors, so no error is returned.
 type zpProjWebSocketNotifier interface {
 	SyncBroadcastProjectEvent(eventType string, projectID any, userID *string, projectData *entities.OrderedMap[any])

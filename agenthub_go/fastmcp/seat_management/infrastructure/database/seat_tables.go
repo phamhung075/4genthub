@@ -10,7 +10,10 @@ import (
 	taskdb "agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-var seatManagementDatabaseTables = []taskdb.TableDef{
+// seatDatabaseTables is this package's share of the registry: the seat system's own tables,
+// in creation order. team_tables.go holds the TEAMS tables; seatManagementDatabaseTables
+// below puts those FIRST, because rooms.team_id references teams (id).
+var seatDatabaseTables = []taskdb.TableDef{
 	{Name: "modules", Model: "ModuleORM", Columns: []taskdb.ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
@@ -101,6 +104,7 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
 		{Name: "slug", Attr: "slug", GoField: "Slug", SQLType: "TEXT", Nullable: false},
 		{Name: "name", Attr: "name", GoField: "Name", SQLType: "TEXT", Nullable: false},
+		{Name: "team_id", Attr: "team_id", GoField: "TeamID", SQLType: "UUID", Nullable: true},
 		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
 	}, DDL: []string{
@@ -109,12 +113,14 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tuser_id TEXT NOT NULL,\n" +
 			"\tslug TEXT NOT NULL,\n" +
 			"\tname TEXT NOT NULL,\n" +
+			"\tteam_id UUID REFERENCES teams (id),\n" +
 			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tupdated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
 			"\tPRIMARY KEY (id),\n" +
 			"\tCONSTRAINT uq_rooms_user_slug UNIQUE (user_id, slug)\n" +
 			")",
 		"CREATE INDEX ix_rooms_user_id ON rooms (user_id)",
+		"CREATE INDEX ix_rooms_team_id ON rooms (team_id)",
 	}},
 	{Name: "seats", Model: "SeatORM", Columns: []taskdb.ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
@@ -304,6 +310,53 @@ var seatManagementDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (user_id, machine_id, room, seat)\n" +
 			")",
 	}},
+	// The seat friction channel (Directive H). layer's CHECK is checked against
+	// domain/feedback's vocabulary by TestSeatFeedbackLayerCheckMatchesDomain, and the columns
+	// here must agree with the schema file's CREATE TABLE - TestSeatDDLParity owns that, columns,
+	// references and CHECKs alike.
+	{Name: "seat_feedback", Model: "SeatFeedbackORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false},
+		{Name: "seat", Attr: "seat", GoField: "Seat", SQLType: "TEXT", Nullable: false},
+		{Name: "session", Attr: "session", GoField: "Session", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+		{Name: "layer", Attr: "layer", GoField: "Layer", SQLType: "TEXT", Nullable: false},
+		{Name: "text", Attr: "text", GoField: "Text", SQLType: "TEXT", Nullable: false},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+	}, DDL: []string{
+		// No DEFAULT on id, like every other table's RUNTIME DDL: the INSERT supplies the
+		// UUID from Go (taskdb.DefaultUUIDv4 -> tmvo.NewUUIDv4), because createAll runs on
+		// databases where uuid-ossp has not been created and uuid_generate_v4() does not exist.
+		// The schema file's copy keeps the DEFAULT for direct SQL.
+		"CREATE TABLE seat_feedback (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tseat TEXT NOT NULL,\n" +
+			"\tsession TEXT NOT NULL DEFAULT '',\n" +
+			"\tlayer TEXT NOT NULL,\n" +
+			"\ttext TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL DEFAULT '',\n" +
+			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tCONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other')),\n" +
+			"\tPRIMARY KEY (id)\n" +
+			")",
+		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",
+	}},
 }
+
+// seatManagementDatabaseTables is the ordered creation list this package registers.
+// THE TEAMS TABLES COME FIRST AND THAT ORDER IS LOAD-BEARING: rooms.team_id references
+// teams (id) (the NEXT_GEN D5 sharing column), and createAll
+// (task_management/infrastructure/database/database_config.go) walks Tables in slice order,
+// creating each table only when absent with no dependency sort — so the referenced table
+// must be created first or rooms' CREATE TABLE fails. The append names
+// teamManagementDatabaseTables explicitly so the order is a dependency, not a consequence of
+// file names (Go initialises a package-level variable after the variables it depends on).
+var seatManagementDatabaseTables = append(
+	append([]taskdb.TableDef{}, teamManagementDatabaseTables...),
+	seatDatabaseTables...,
+)
 
 func init() { taskdb.Tables = append(taskdb.Tables, seatManagementDatabaseTables...) }

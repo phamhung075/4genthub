@@ -10,8 +10,8 @@ import (
 )
 
 // zpGitBranchContextService is the consumer-side port of the UnifiedContextService
-// methods GitBranchService calls. Python imports UnifiedContextService (not ported) and
-// falls back to FacadeService.get_unified_context_facade; the Go caller supplies the
+// methods GitBranchService calls. Python falls back to
+// FacadeService.get_unified_context_facade; the Go caller supplies the
 // facade. Only create_context and delete_context are used, and both are synchronous in
 // Python (storage-touching, so ctx comes first here). The return value is the Python
 // dict; key order is only read through get(), so it is an OrderedMap.
@@ -59,7 +59,8 @@ type GitBranchService struct {
 // zpGitBranchNewService mirrors GitBranchService.__init__. Python raises ValueError when
 // project_repo or git_branch_repo is missing and otherwise builds the context service from
 // FacadeService; here both repositories are required and the context service plus the
-// WebSocket notifier (both unported) are injected and may be nil.
+// WebSocket notifier are injected and may be nil - both ARE nil at the composition root
+// (httpapp/branch_wiring.go:79).
 func zpGitBranchNewService(projectRepo repositories.ProjectRepository, gitBranchRepo zpGitBranchRepository, contextService zpGitBranchContextService, userID *string, notifier zpGitBranchWebSocketNotifier) (*GitBranchService, error) {
 	if projectRepo == nil {
 		return nil, &value_objects.ValueError{Msg: "Project repository is required"}

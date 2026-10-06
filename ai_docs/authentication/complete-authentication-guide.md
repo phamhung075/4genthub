@@ -323,30 +323,15 @@ Header.Payload.Signature
 
 ### Validation Process
 
-**Backend JWT Validation**:
-```python
-from jose import jwt, JWTError
-import requests
+**Backend JWT Validation (Go)**:
 
-# 1. Fetch JWKS (JSON Web Key Set)
-jwks_url = "http://localhost:8080/realms/mcp/protocol/openid-connect/certs"
-jwks = requests.get(jwks_url).json()
-
-# 2. Validate token
-try:
-    payload = jwt.decode(
-        token,
-        jwks,
-        algorithms=["RS256"],
-        audience="mcp-backend",
-        issuer="http://localhost:8080/realms/mcp"
-    )
-    user_id = payload["sub"]
-    email = payload["email"]
-except JWTError as e:
-    # Invalid token
-    raise HTTPException(status_code=401, detail="Invalid token")
-```
+The live backend validates RS256 tokens in Go: `KeycloakAuthProvider.ValidateToken`
+(`agenthub_go/fastmcp/auth/keycloak_integration.go:146`) fetches the realm's JWKS through
+`KeycloakJWKSClient` (`fastmcp/auth/keycloak_dependencies.go:320`, signing key selected by
+`kid` at `:378`) and checks the signature, `exp`, `iss` and `aud`. A rejected credential
+answers `401`; a valid token lacking the required scope or role answers `403`. The unit
+tests for the negative cases (expired, wrong issuer, wrong audience, unknown `kid`,
+tampered payload) are in `fastmcp/auth/mcp_keycloak_jwks_test.go`.
 
 ### Validation Checks
 

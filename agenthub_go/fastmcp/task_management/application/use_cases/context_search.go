@@ -94,7 +94,7 @@ type SearchResult struct {
 	Metadata  *entities.OrderedMap[any]
 }
 
-// ContextSearchContextService is the consumer-side view of the unported
+// ContextSearchContextService is the consumer-side view of the
 // UnifiedContextService. context_search stores it but never calls it
 // (_get_contexts_for_level is a placeholder that returns []).
 type ContextSearchContextService interface{}

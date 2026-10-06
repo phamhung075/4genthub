@@ -23,6 +23,7 @@ const (
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
 	codexRulesPath       = "runtime/codex.rules"
+	ompMCPPath           = "runtime/omp-mcp.json"
 	roleResourceID       = "role"
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
@@ -113,16 +114,24 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 
 	runtimeResources := make([]runtimeResourceYAML, 0, 2)
 	var mcpFragment, settingsFragment string
-	// Only claude-code seats get an MCP fragment: OpenRig has no codex/agy/omp MCP fragment resource type, only claude_mcp_fragment.
-	if receivesClaudeFragments(seat.Runtime) && len(mcpModules) > 0 {
-		var err error
-		mcpFragment, err = renderMCPFragment(mcpModules, mcpURL)
+	// ONE MCP DOCUMENT, TWO DESTINATIONS. claude-code takes it as a runtime resource; omp takes it as
+	// a plain file the client installs, for the same reason the codex seat gets a rules file below:
+	// OpenRig has no omp MCP fragment type. omp DOES read an MCP document — measured 2026-10-06 on the
+	// real runtime: it reads a project `.mcp.json` at startup, expands ${VAR} in a header and in a
+	// stdio server's `env`, and reads `$PI_CODING_AGENT_DIR/.mcp.json` for the agent itself, which is
+	// where the client installs this file so each seat carries its own server set without a per-seat
+	// cwd and without touching the operator's rig-root file.
+	if len(mcpModules) > 0 && (receivesClaudeFragments(seat.Runtime) || seat.Runtime == resolver.RuntimeOmp) {
+		fragment, err := renderMCPFragment(mcpModules, mcpURL)
 		if err != nil {
 			return nil, err
 		}
-		runtimeResources = append(runtimeResources, runtimeResourceYAML{
-			ID: mcpResourceID, Path: mcpFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeMCP,
-		})
+		mcpFragment = fragment
+		if receivesClaudeFragments(seat.Runtime) {
+			runtimeResources = append(runtimeResources, runtimeResourceYAML{
+				ID: mcpResourceID, Path: mcpFragmentPath, Runtime: resolver.RuntimeClaudeCode, Type: typeClaudeMCP,
+			})
+		}
 	}
 	if receivesClaudeFragments(seat.Runtime) && len(toolModules) > 0 {
 		settings, err := mergeToolModules(toolModules)
@@ -187,6 +196,12 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		// that installs rules, and declaring an invented type would be a format the platform does
 		// not understand. The client installs this file; see the G3 note.
 		files = append(files, OpenRigSpecFile{Path: codexRulesPath, Content: codexRules})
+	}
+	if seat.Runtime == resolver.RuntimeOmp && mcpFragment != "" {
+		// Same shape as the codex rules file and for the same reason. The client installs it as
+		// `<seat agent dir>/.mcp.json`; a seat with no mcp block gets NO file, which is the
+		// acceptance's "a seat with no mcp block gets none".
+		files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
 	}
 
 	return &OpenRigSpec{

@@ -20,9 +20,13 @@
 
 **Symptoms**:
 ```
-psycopg2.OperationalError: could not connect to server
-FATAL: password authentication failed for user "agenthub_user"
+# The Go server reaches PostgreSQL through database/sql + pgx and reports the dial failure
+# with the host and port, e.g.:
+dial tcp 127.0.0.1:5432: connect: connection refused
+FATAL: password authentication failed for user "<DATABASE_USER>"
 ```
+> Earlier revisions quoted `psycopg2.OperationalError` — that is the retired Python driver and
+> does not appear in the live Go server's logs.
 
 **Diagnosis**:
 ```bash
@@ -233,17 +237,14 @@ MCP_REQUEST_TIMEOUT=30  # Increase for long operations
 MCP_MAX_RETRIES=3
 ```
 
-**Code Solution**:
-```python
-# Use async operations for long tasks
-from utils.mcp_client import get_default_client
+**Code Solution**: send the call as a JSON-RPC 2.0 request to `POST /mcp` from the client and
+allow a longer client-side timeout for the single request (there is no Python
+`utils.mcp_client` module in the live path — MCP is one HTTP endpoint):
 
-client = get_default_client()
-# Set custom timeout
-result = await client.query_with_timeout(
-    operation="long_operation",
-    timeout=60  # 60 seconds
-)
+```bash
+curl -sS -X POST "$MCP" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":"1","method":"tools/call","params":{"name":"manage_task","arguments":{"action":"list"}}}'
 ```
 
 ---
@@ -290,15 +291,11 @@ queryClient.invalidateQueries(['tasks']);
 queryClient.invalidateQueries(['subtasks']);
 ```
 
-**3. Backend Fix** (ensure sync events):
-```python
-# After subtask create/update
-await sync_broadcast_project_event(
-    project_id=project_id,
-    event_type="SUBTASK_CREATE",
-    payload=subtask_data
-)
-```
+**3. Backend Fix** (ensure sync events): the Go server fans out through
+`BroadcastDataChange` (`agenthub_go/fastmcp/server/routes/websocket_routes.go:416`), called
+after a write. If a client sees no frames after a successful mutation, check that the
+connection was registered by `handleRealtime` (`fastmcp/server/httpapp/ws_mount.go:138`) — a
+broadcast only reaches registered connections.
 
 ### WebSocket Component Rendering
 
@@ -513,14 +510,13 @@ if not result.get("success"):
 **Cause**: User lacks required role
 
 **Solution**:
-```python
-# Check user roles
-payload = verify_token(token)
-roles = payload.get("realm_access", {}).get("roles", [])
-
-# Assign required role in Keycloak
-# Users → Select user → Role Mappings → Assign role
 ```
+Check the token's roles in the Keycloak console:
+  Users → Select user → Role Mappings → Assign role
+```
+> The Go server validates the token and maps its roles; a valid token missing the required
+> role is refused with `403`. (The Python `verify_token(token)` helper shown in earlier
+> revisions belonged to the retired Python backend.)
 
 ### "Connection pool exhausted"
 

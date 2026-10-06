@@ -71,7 +71,7 @@ type VersionDiff struct {
 	UnifiedDiff string
 }
 
-// ContextVersioningContextService is the consumer-side view of the unported
+// ContextVersioningContextService is the consumer-side view of the
 // UnifiedContextService: rollback calls update_context after creating the new
 // version.
 type ContextVersioningContextService interface {

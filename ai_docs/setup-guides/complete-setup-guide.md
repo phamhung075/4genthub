@@ -543,9 +543,13 @@ curl http://localhost:8080
 
 # Create first project
 # manage_project(action="create", name="My Project")
+# POST /api/v2/projects/ reads application/x-www-form-urlencoded ONLY: `name` required,
+# `description` optional. A JSON or multipart body is refused with a 422 naming body.name
+# as missing (app.go:135-144).
 curl -X POST http://localhost:8000/api/v2/projects/ \
-  -H "Authorization: Bearer ${TOKEN}" -H "Content-Type: application/json" \
-  -d '{"name": "My Project"}'
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'name=My Project'
 ```
 
 ---

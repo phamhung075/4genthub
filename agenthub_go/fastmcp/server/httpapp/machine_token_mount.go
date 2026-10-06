@@ -5,8 +5,14 @@ package httpapp
 //	POST   /api/v2/openrig/machines                    {machine_id}: user token; returns the machine token once
 //	DELETE /api/v2/openrig/machines/{machine}/token    user token; revokes the machine's token
 //
-// A machine token is valid on one route, POST /api/v2/openrig/seat-status, and only for the
-// machine it was issued to. It is never logged and never returned again after registration.
+// A machine token is valid on two routes, POST /api/v2/openrig/seat-status and
+// POST /api/v2/openrig/feedback, and only for the machine it was issued to. It is never logged and
+// never returned again after registration.
+//
+// The second route is a deliberate widening (2026-10-06): a bridge reports friction for its seats
+// the same way it reports their status, and it holds no user token to do it with. Neither route
+// scopes the token to a SET of seats — the token is bound to a machine, and each report names what
+// it is about — so the tenant the token belongs to is the boundary in both.
 
 import (
 	"encoding/json"

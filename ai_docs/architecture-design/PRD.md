@@ -23,7 +23,7 @@ Current AI development tools suffer from:
 
 ### 1.3 Solution Overview
 agenthub delivers:
-- **Persistent 4-Tier Context**: Global → Project → Branch → Task hierarchy ensures AI never forgets
+- **Persistent Context**: context records at four levels (`/api/v2/contexts/{level}`), with each seat composed from company → room → seat overlays
 - **Web-First Experience**: Beautiful React dashboard designed for humans who prefer visual interfaces
 - **Agent Registry**: Agents are registry rows managed through the `manage_agent` MCP tool (the Python library's 42+ role templates were retired)
 - **MCP Protocol Native**: Built on industry-standard Model Context Protocol for seamless integration
@@ -125,9 +125,9 @@ agenthub delivers:
 - [ ] Mobile-responsive for tablets (iPad and above)
 - [ ] Supports 10+ concurrent users
 
-### 4.2 Feature: 4-Tier Context Hierarchy
+### 4.2 Feature: Context Hierarchy API (four levels)
 **Priority**: P0 (Must Have)
-**Status**: Implemented
+**Status**: Implemented — the mounted `/api/v2/contexts/{level}` routes store context records at `global`, `project`, `branch` and `task`, with `resolve` folding the parent chain. The Python-era "4-tier context system" product framing is superseded: a seat is composed from company → room → seat overlays (`agenthub_go/NEXT_GEN.md`, directive (G)).
 
 **User Story**: As a developer, I want AI agents to remember all context across sessions so I don't repeat myself.
 
@@ -422,11 +422,13 @@ Database Layer (PostgreSQL + Redis)
 - **Web Dashboard**: REST API + WebSocket on port 3800
 - **Keycloak**: OAuth2/OIDC integration
 - **Database**: PostgreSQL connection pool
-- **Redis**: Session persistence and caching
+- **Session persistence**: in-memory in the Go server (`MemoryEventStore`, `agenthub_go/fastmcp/server/session_store.go`); the module has no Redis client
 
 ---
 
 ## 7. User Workflows
+
+> **Retired model.** The workflows below name the Python agent library's role templates (`master-orchestrator-agent`, `debugger-agent`, `root-cause-analysis-agent`, …). That library and its `call_agent` tool were retired; the live model resolves a **seat** (`GET /api/v2/openrig/seats/{room}/{seat}`, `call_seat`) whose occupant is a runtime plus a model. The workflows are kept as history for the coordination shape they describe.
 
 ### 7.1 Workflow: Feature Development
 ```
@@ -522,13 +524,13 @@ Database Layer (PostgreSQL + Redis)
 ## 10. Success Criteria
 
 ### 10.1 MVP Success (Current)
-- [x] 42+ specialized agents operational
-- [x] 4-tier context hierarchy functional
+- [x] Agent registry operational (`manage_agent`; the 42-role Python agent library was retired)
+- [x] Context API functional (`/api/v2/contexts/{level}`)
 - [x] Web dashboard deployed
 - [x] Keycloak authentication integrated
 - [x] Docker deployment working
 - [x] Task management with vision system implemented
-- [x] Dynamic tool enforcement v2.0 active
+- [x] Per-seat tool scope (the `call_agent`-based "Dynamic Tool Enforcement v2.0" was retired with the tool)
 - [x] <200ms average response time achieved
 - [ ] 10+ active users
 - [ ] 99% uptime in production
@@ -617,7 +619,7 @@ Database Layer (PostgreSQL + Redis)
 - **JWT**: JSON Web Token - authentication standard
 - **SSO**: Single Sign-On - centralized authentication
 - **RBAC**: Role-Based Access Control - authorization pattern
-- **4-Tier Context**: Global → Project → Branch → Task hierarchy
+- **4-Tier Context**: the four `{level}` values of the mounted `/api/v2/contexts/{level}` routes (global, project, branch, task); not the composition model, which is the company → room → seat overlay chain
 
 ### 13.2 References
 - [MCP Protocol Specification](https://modelcontextprotocol.io)

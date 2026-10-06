@@ -127,14 +127,27 @@ func (r *ORMTeamRepository) ListForMember(ctx context.Context, userID string) ([
 	return out, err
 }
 
-// Delete removes the team and its member rows, members first (there is no foreign key
-// CASCADE; the application layer cascades).
+// Delete removes the team, clears rooms.team_id for every room shared with it, and removes its
+// member rows — in one transaction, because there is no foreign key CASCADE and the application
+// layer cascades. A shared room becomes private to its owner again rather than blocking the
+// delete on rooms' foreign key.
 func (r *ORMTeamRepository) Delete(ctx context.Context, teamID string) error {
 	id, err := database.UnifiedUUIDBindParam(teamID, database.DialectPostgres)
 	if err != nil {
 		return err
 	}
 	return r.sessions.Transaction(ctx, func(ctx context.Context) error {
+		// D5 wiring cascade: rooms.team_id references teams (id) with NO CASCADE (the rule is
+		// that the application cascades, not the database), so the sharing has to be cleared
+		// before the team row can go. Every room that pointed at this team becomes private to
+		// its owner again rather than the delete being refused.
+		if err := r.teams.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+			_, err := s.ExecContext(ctx,
+				`UPDATE "rooms" SET "team_id" = NULL, "updated_at" = now() WHERE "team_id" = $1`, id)
+			return err
+		}); err != nil {
+			return err
+		}
 		if err := r.members.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 			_, err := s.ExecContext(ctx, `DELETE FROM "team_members" WHERE "team_id" = $1`, id)
 			return err

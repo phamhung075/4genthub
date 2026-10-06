@@ -675,11 +675,23 @@ export class ValidationStats {
 
 // Enable stats logging in development
 if (import.meta.env.DEV) {
-  // Log stats every 30 seconds in development
-  setInterval(() => {
+  // Log stats every 30 seconds in development.
+  //
+  // LIFECYCLE: the MODULE owns this timer, for the lifetime of the page - a browser has no
+  // teardown to clear it on and that is the intended lifetime. A Node host (a vitest worker)
+  // is the case where it matters: there the same timer keeps the event loop alive after the
+  // environment it was started in is gone, so it is unref'd where the runtime offers that.
+  // The browser's numeric handle has no unref, so its behaviour is unchanged.
+  const statsTimer = setInterval(() => {
     const stats = ValidationStats.getStats();
     if (stats.totalValidations > 0) {
       ValidationStats.logSummary();
     }
   }, 30000);
+  // `setInterval` is typed with the DOM overload (number); a Node host returns a Timeout, and
+  // its unref is the entire point of this line.
+  const unrefable = statsTimer as unknown as { unref?: () => void };
+  if (typeof unrefable.unref === 'function') {
+    unrefable.unref();
+  }
 }

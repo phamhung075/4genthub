@@ -186,8 +186,8 @@ systemctl restart mcp-server
                      ↓
 ┌──────────────────────────────────────────────────────┐
 │              MCP Protocol Transport Layer             │
-│  • WebSocket Connection Establishment                │
-│  • HTTP/2 Request Handling                          │
+│  • POST /mcp  (JSON-RPC request/response)             │
+│  • GET /mcp   (SSE stream)                            │
 ...
 ```
 
@@ -195,8 +195,8 @@ systemctl restart mcp-server
 | Layer | Components | Responsibilities |
 |-------|-----------|------------------|
 | **MCP Client** | Claude, VS Code, Other MCP Clients | Initiate requests via MCP protocol |
-| **MCP Protocol Transport** | WebSocket, HTTP/2, Keep-Alive, Request ID Tracking | Connection management, protocol handling |
-| **FastMCP Server Entry** | Server instance, Environment config, Tool registration, Middleware | Request routing, initial processing |
+| **MCP Protocol Transport** | `POST /mcp` (JSON-RPC), `GET /mcp` (SSE), request-id tracking | Connection management, protocol handling |
+| **Server Entry** | `agenthub_go/fastmcp/server/httpapp` (Go): routing, tool registration, middleware | Request routing, initial processing |
 ...
 
 **Savings**: 180 lines (81% reduction)
@@ -208,7 +208,7 @@ systemctl restart mcp-server
 **After** (actor/action/result table = 22 lines):
 | # | Layer | Component | Action | Input | Output |
 |---|-------|-----------|--------|-------|--------|
-| 1 | Transport | WebSocket | Receive request | MCP JSON | Parsed request |
+| 1 | Transport | `POST /mcp` (JSON-RPC) | Receive request | MCP JSON | Parsed request |
 | 2 | Auth | JWTValidator | Validate token | JWT token | User context |
 | 3 | Interface | TaskController.create() | Parse parameters | {action, title, ...} | TaskCreateDTO |
 ...

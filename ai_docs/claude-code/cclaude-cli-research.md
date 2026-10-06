@@ -427,7 +427,7 @@ cclaude
 
 - Claude CLI documentation: `claude --help`
 - VSCode Terminal API: https://code.visualstudio.com/api/references/vscode-api#Terminal
-- Project MCP tools: `ai_docs/claude-code/tools_list.md`
+- Project MCP tools: the authoritative surface is `ai_docs/api-integration/surface-inventory.md` §2 (the former `ai_docs/claude-code/tools_list.md` does not exist)
 - Existing hooks system: `.claude/hooks/`
 
 ---

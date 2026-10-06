@@ -429,8 +429,8 @@ func checkAndTriggerAlerts(ctx context.Context) {
 	}
 }
 
-// performanceOverviewFunc mirrors performance_metrics_routes.get_performance_overview,
-// which is not ported yet. It is nil until a caller wires it.
+// performanceOverviewFunc mirrors performance_metrics_routes.get_performance_overview.
+// It is nil until a caller wires it.
 var performanceOverviewFunc func(ctx context.Context, user map[string]any, includeDetails bool) (map[string]any, error)
 
 func triggerAlert(ctx context.Context, rule *AlertRule, currentValue float64) {

@@ -68,7 +68,7 @@ The request and response fields for these calls are defined by the handlers unde
 
 ## Route reference
 
-The server mounts **140** route registrations: 120 in the HTTP app (`fastmcp/server/httpapp`)
+The server mounts **141** route registrations: 121 in the HTTP app (`fastmcp/server/httpapp`)
 and 20 in the auth package (`fastmcp/auth`). They are grouped below by family; paths are the
 resolved paths.
 
@@ -168,6 +168,7 @@ or seat-type slug and `{version}` a concrete version.
 | `PUT` | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | Set a seat's occupant (runtime and model). |
 | `PUT` | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | Set a seat's permission policy. |
 | `GET` | `/api/v2/openrig/seat-types` | List seat types. |
+| `POST` | `/api/v2/openrig/seat-types` | Create a seat type. |
 | `POST` | `/api/v2/openrig/seat-types/{slug}/versions` | Publish a seat-type version. |
 | `POST` | `/api/v2/openrig/seat-types/seed` | Seed the built-in seat types. |
 | `GET` | `/api/v2/openrig/modules` | List modules. |
@@ -310,7 +311,7 @@ token just like `tools/call`.
 
 ### Published tools
 
-`tools/list` publishes exactly these nine tools:
+`tools/list` publishes exactly these ten tools:
 
 | Tool | Purpose |
 | :--- | :--- |
@@ -322,6 +323,7 @@ token just like `tools/call`.
 | `manage_agent` | The agent registry. |
 | `manage_seat` | Seats: `list`, `get`, `set_occupant`. |
 | `call_seat` | Resolve one exact seat and its rendered context files. |
+| `submit_feedback` | Report friction: the layer it is in, the room and seat, and what happened. |
 | `manage_connection` | Health check. |
 
 `manage_context` is published whenever the server is database-backed. The list is not gated by

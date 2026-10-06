@@ -567,6 +567,209 @@ def test_rig_second_run_keeps_pin_and_prints_notice(env, tmp_path, capsys):
     assert (rig_dir / "rig.yaml").read_text() == shifted_yaml
 
 
+def test_rig_build_keeps_operator_files_it_did_not_create(env, tmp_path, capsys):
+    """A rebuild replaces what it RENDERS and nothing else.
+
+    The reported defect (OF4 run, 2026-10-06) was a credential loss: an operator's file placed in
+    the rig directory — the documented home of a rig-root ``.env`` — was gone after the next
+    build, and the seats then launched with no credential. The build owns ``rig.yaml`` and
+    ``agents/``; anything else is the operator's and survives, named on stderr.
+    """
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    env.set_seat(HASH_A)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    notes = rig_dir / "operator-notes.txt"
+    notes.write_text("placed by the operator\n")
+    target = tmp_path / "credential-target"
+    target.write_text("not a credential\n")
+    link = rig_dir / "operator-link"
+    link.symlink_to(target)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    # stdout stays exactly the machine-readable line the launcher parses.
+    assert out.strip().splitlines() == [f"rig:{rig_dir / 'rig.yaml'}"]
+    assert notes.read_text() == "placed by the operator\n"
+    assert link.is_symlink() and os.readlink(link) == str(target)
+    assert "kept 2 file(s) the build did not create" in err
+    assert "operator-link" in err and "operator-notes.txt" in err
+
+
+def test_rig_build_keeps_a_file_placed_while_it_materializes(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The window the preserve list used to leave open.
+
+    cmd_rig reads the rig directory, then materializes the staging tree, then swaps. A file that
+    lands in between is in neither the old list nor the new directory — so a build that promises
+    the operator their files survive used to delete it. The preserved set is now derived from the
+    directories AT SWAP TIME, which makes the promise independent of when the file arrived.
+
+    MEASURED, both ways, with this exact hook: reverting the derivation (a list read before the
+    swap) makes this test fail with the marker gone.
+    """
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    env.set_seat(HASH_A)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    original = seat_sync.materialize_agent
+
+    def materialize_then_drop(source, seat_dir, target):
+        original(source, seat_dir, target)
+        if rig_dir.is_dir():
+            (rig_dir / "dropped-while-building.txt").write_text("landed mid-build\n")
+
+    monkeypatch.setattr(seat_sync, "materialize_agent", materialize_then_drop)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert (rig_dir / "dropped-while-building.txt").read_text() == "landed mid-build\n"
+    assert "dropped-while-building.txt" in err
+    # The build's own content is still the build's.
+    assert (rig_dir / "rig.yaml").read_text() == RIG_YAML
+
+
+def test_rig_build_replaces_its_own_rendered_content(env, tmp_path, capsys):
+    """The other half of the same rule, so a future 'preserve everything' change fails here.
+
+    ``agents/`` is the build's: a seat the room no longer lists does not survive the next build,
+    because that is exactly what the staging-and-swap build is for.
+    """
+    env.set_rigspec(
+        RIG_YAML,
+        [{"seat": "seat1", "hash": HASH_A}, {"seat": "seat2", "hash": HASH_B}],
+    )
+    env.set_seat(HASH_A, seat="seat1")
+    env.set_seat(HASH_B, seat="seat2")
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    assert (rig_dir / "agents" / "seat2").is_dir()
+
+    # seat2 leaves the room; the next build must not carry its rendered directory over.
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert (rig_dir / "agents" / "seat1").is_dir()
+    assert not (rig_dir / "agents" / "seat2").exists()
+    # Nothing of the operator's was there, so there is nothing to report.
+    assert "kept" not in err
+
+
+BUNDLE_RIG_YAML = (
+    'version: "0.2"\n'
+    "name: room1\n"
+    "pods:\n"
+    "  - id: room1\n"
+    "    members:\n"
+    "      - id: seat1\n"
+    "        agent_ref: local:agents/seat1\n"
+)
+
+
+def _bundle_fixture(monkeypatch, tmp_path, policy=None):
+    """A pinned seat in a scratch store, plus a rig root whose agent dir may carry a policy."""
+    seats = tmp_path / "seats"
+    seat_dir = seats / "room1" / "seat1"
+    seat_dir.mkdir(parents=True)
+    (seat_dir / "pinned.json").write_text(
+        json.dumps({"hash": HASH_LONG, "path": str(seat_dir / HASH_LONG)})
+    )
+    monkeypatch.setattr(seat_sync, "DEFAULT_OUT", seats)
+
+    rig_yaml = tmp_path / "rig.yaml"
+    rig_yaml.write_text(BUNDLE_RIG_YAML)
+    agent_dir = tmp_path / "rig-root" / "agents" / "seat1"
+    agent_dir.mkdir(parents=True)
+    (agent_dir / "agent.yaml").write_text('name: seat1\nversion: "1.0.0"\n')
+    if policy is not None:
+        (agent_dir / "policy.json").write_text(json.dumps(policy))
+
+    monkeypatch.setattr(
+        seat_sync.subprocess,
+        "run",
+        lambda command, **kwargs: subprocess.CompletedProcess(command, 0),
+    )
+    return rig_yaml, tmp_path / "rig-root", tmp_path / "bundles"
+
+
+def _run_bundle(rig_yaml, rig_root, out_dir):
+    return run_cli(
+        [
+            "bundle",
+            "room1",
+            "seat1",
+            "--rig-yaml",
+            str(rig_yaml),
+            "--rig-root",
+            str(rig_root),
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+
+
+def test_bundle_warns_when_the_rig_root_carries_no_pin(monkeypatch, tmp_path, capsys):
+    """The build used to say nothing: `rig bundle create` answered Bundle created, the artifact
+    passed its own integrity check, and the first sign of trouble was offline-install refusing it
+    later. The operator is now told at BUILD time what the bundle does not contain."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(monkeypatch, tmp_path, policy=None)
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    # stdout stays exactly the machine-readable line callers parse.
+    assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
+    assert "warning:" in err
+    assert "seat1" in err and "no policy.json in agents/seat1" in err
+    assert "offline install will refuse it" in err
+
+
+def test_bundle_warns_when_the_pin_belongs_to_another_seat(
+    monkeypatch, tmp_path, capsys
+):
+    """Two seats sharing one seat type share one agent directory in a bundle, so only one of their
+    policies can ride there. The seat that lost is named, with the reason, rather than being left
+    to offline-install's refusal."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(
+        monkeypatch, tmp_path, policy={"Seat": "someone-else", "Links": []}
+    )
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "warning:" in err
+    assert "belongs to seat 'someone-else'" in err
+
+
+def test_bundle_says_nothing_when_the_pin_is_this_seats(monkeypatch, tmp_path, capsys):
+    """No noise: a rig root that carries this seat's own policy produces no warning at all."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(
+        monkeypatch, tmp_path, policy={"Seat": "seat1", "Links": []}
+    )
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert err == ""
+    assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
+
+
 def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     env.set_seat(HASH_A)

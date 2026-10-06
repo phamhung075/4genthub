@@ -25,17 +25,20 @@
 
 ### CI/CD Pipeline
 
-**GitHub Actions Workflow**:
-1. Security Scanning (Trivy, Bandit, SARIF upload)
-2. Code Quality (Black, isort, flake8, mypy)
-3. Testing (Unit, integration, migrations)
-4. Build & Push (Docker images, multi-architecture)
-5. Deployment (Staging auto, production manual)
+**GitHub Actions workflows, as the repository defines them** (`.github/workflows/`):
 
-**Deployment Triggers**:
-- Staging: Automatic on `main` branch push
-- Production: Manual workflow dispatch or version tag (`v*.*.*`)
-- Rollback: Automatic on production deployment failure
+- **`production-deployment.yml`** — triggered by a push to `main`, a `v*.*.*` tag, or a manual
+  dispatch (with an `environment` choice of `production` or `staging`). Jobs: **Security Scan**
+  (Trivy, results uploaded as SARIF to the Security tab) → **Build Images** (backend and
+  frontend) → **Deploy to Staging** → **Deploy to Production**.
+- **`test_coverage.yml`** — triggered by push/PR and a daily schedule. Jobs: a test matrix,
+  performance tests and a coverage report, all running the **archived Python tree**
+  (`working-directory: agenthub_main`).
+
+**Two facts about that pipeline worth stating in the operations manual:** neither workflow
+installs or runs Go, and neither runs the frontend test runner — so a green pipeline says
+nothing about whether the shipped server passes its tests. The de-link of the archived tree
+from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
 
 ### Deployment Execution
 
@@ -58,13 +61,12 @@ docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
 
 | Component | Purpose | Port | Health Check |
 |-----------|---------|------|--------------|
-| PostgreSQL | Primary database | 5432 | `pg_isready` |
-| Redis | Cache & sessions | 6379 | `redis-cli ping` |
-| MCP Backend | API server | 8000 | `/health` |
-| Frontend | Web interface | 3000 | `/health` |
-| Nginx | Reverse proxy | 80/443 | `/health` |
-| Prometheus | Metrics collection | 9090 | `/-/healthy` |
-| Grafana | Dashboards | 3001 | `/api/health` |
+| PostgreSQL | Primary database (production container `srv-captain--4genthubdb`) | 5432 | `pg_isready` |
+| Go backend (`cmd/agenthub`) | API, WebSocket and MCP server | 8000 (`FASTMCP_PORT`) | `GET /health` |
+| Frontend | React dashboard (dev `npm run dev`) | 3800 | — |
+| Reverse proxy | CapRover's nginx terminates TLS in production | 80/443 | — |
+
+> Earlier revisions of this guide listed **Redis**, **Prometheus** and **Grafana** rows here, and a `timestamp_health_monitor.py` dashboard elsewhere. **None of those components is defined by this repository**: there is no `monitoring/` directory (`git ls-files monitoring/` → 0), and the Go module carries no Redis client (`fastmcp/server/session_store.go:23` sets `zpSessionRedisAvailable = false`). They are not part of this deployment as the repository describes it.
 
 ### Rollback Procedures
 
@@ -284,27 +286,27 @@ AUTO_MIGRATE=true ./agenthub
 | `system_memory_utilization` | >80% | >90% | Memory usage |
 | `api_availability` | <100% | 0% | Service uptime |
 
-**Monitoring Stack**:
-- **Prometheus**: Metrics collection (port 9090)
-- **Grafana**: Dashboards (port 3001)
-- **Loki + Promtail**: Centralized logging
-- **Custom Monitor**: `timestamp_health_monitor.py` (port 8080 dashboard)
+**Monitoring, as this repository actually provides it**:
+- **`GET /health`** — liveness plus the deployed version (the deploy-confirmation signal).
+- **`GET /ws/metrics`** — WebSocket connection metrics (`fastmcp/server/httpapp/misc_mount.go:72`).
+- **Performance metrics** — `GET /api/v1/performance/metrics/overview`, `/timeseries` and `/alerts`.
+- **PostgreSQL** — the `pg_stat_statements` queries below.
+
+> The Prometheus/Grafana/Loki stack and the `timestamp_health_monitor.py` dashboard described
+> in earlier revisions **are not in this repository**: there is no `monitoring/` directory
+> (`git ls-files monitoring/ | wc -l` → 0), so those instructions describe tooling that ships
+> elsewhere or not at all.
 
 **Quick Start Monitoring**:
 ```bash
-# Navigate to monitoring directory
-cd monitoring
+# Liveness and the deployed version
+curl -sS http://localhost:8000/health
 
-# Automated setup
-./setup_monitoring.sh
+# WebSocket metrics
+curl -sS http://localhost:8000/ws/metrics
 
-# Start monitoring
-./start_monitoring.sh
-
-# Start dashboard
-./start_dashboard.sh
-
-# Access dashboard: http://localhost:8080
+# Performance metrics
+curl -sS http://localhost:8000/api/v1/performance/metrics/overview
 ```
 
 ### Performance Tuning
@@ -358,26 +360,11 @@ ORDER BY mean_time DESC
 LIMIT 10;
 ```
 
-**Caching Implementation**:
-```python
-import redis
-from functools import lru_cache
-
-# Redis cache client
-cache_client = redis.Redis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    db=0,
-    decode_responses=True,
-    socket_connect_timeout=5
-)
-
-# LRU cache for frequently accessed data
-@lru_cache(maxsize=1000)
-def get_user_permissions(user_id: str) -> List[str]:
-    """Cache user permissions for 5 minutes."""
-    pass
-```
+**Caching**: the Go server's performance cache is **in-process**; `POST /api/v1/performance/metrics/clear-cache`
+(`routes.ClearPerformanceCache`, `fastmcp/server/routes/performance_metrics_routes.go:438`) clears it,
+and the module has **no Redis client** (`go.mod` lists no redis dependency; `fastmcp/server/session_store.go:23`
+sets `zpSessionRedisAvailable = false`). Earlier revisions of this guide showed a Python
+`redis.Redis` client for the retired Python backend — it is not part of the live stack.
 
 **Performance Baselines**:
 - API Response Time: <2 seconds (95th percentile)
@@ -604,18 +591,20 @@ AUTO_MIGRATE=true ./agenthub
 - **System Logs**: `/var/log/`
 - **Nginx Logs**: `/var/log/nginx/`
 - **Database Logs**: Docker volume `postgres_logs`
-- **Monitoring Logs**: `monitoring/timestamp_monitor.log`
+- **Server Logs**: the Go server's stdout/stderr (the container log, e.g. `docker logs <container>`)
 
 ### Health Check Commands
 
 ```bash
-# All services
+# Backend (the deployed version is what /health reports)
 curl http://localhost:8000/health
-curl http://localhost:8080/health  # Keycloak
-curl http://localhost:3800  # Frontend
 
-# Database
-psql -h localhost -U agenthub_user -d agenthub -c "SELECT 1;"
+# Frontend
+curl http://localhost:3800
+
+# Database (local defaults from .env.sample: database agenthub, role postgres;
+# production is database postgresdb in container srv-captain--4genthubdb)
+psql -h localhost -U postgres -d agenthub -c "SELECT 1;"
 
 # System resources
 docker stats

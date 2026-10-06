@@ -41,13 +41,13 @@ type gbRepositoryProvider interface {
 }
 
 // gbTaskRepositoryFactory is the consumer-side port of
-// TaskRepositoryFactory.create_repository (unported).
+// TaskRepositoryFactory.create_repository.
 type gbTaskRepositoryFactory interface {
 	CreateRepository(ctx context.Context, projectID, gitBranchName string, userID *string) (gbTaskRepository, error)
 }
 
 // gbWebSocketNotifier is the consumer-side port of
-// WebSocketNotificationService.sync_broadcast_branch_event (unported). It swallows its
+// WebSocketNotificationService.sync_broadcast_branch_event. It swallows its
 // own errors in Python.
 type gbWebSocketNotifier interface {
 	SyncBroadcastBranchEvent(eventType, branchID, projectID string, userID *string, branchData *entities.OrderedMap[any])
@@ -62,7 +62,8 @@ type gbAgentFacade interface {
 
 // GitBranchApplicationFacade mirrors git_branch_application_facade.GitBranchApplicationFacade.
 // Python reads RepositoryProviderService/TaskRepositoryFactory/FacadeService singletons
-// inside methods; those are injected here because they are unported or global.
+// inside methods; all three exist in Go and are injected here because Python reaches them
+// as globals.
 type GitBranchApplicationFacade struct {
 	gitBranchService gbGitBranchService
 	projectID        *string

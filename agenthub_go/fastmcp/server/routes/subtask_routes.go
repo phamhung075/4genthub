@@ -8,7 +8,7 @@ import (
 )
 
 // SubtaskController is the minimal SubtaskAPIController surface used by the
-// routes (ctx first). The real controller is not ported yet.
+// routes (ctx first).
 type SubtaskController interface {
 	CreateSubtask(ctx context.Context, taskID, title string, description *string, userID string) (ControllerResult, error)
 	GetSubtask(ctx context.Context, subtaskID, userID string) (ControllerResult, error)

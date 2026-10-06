@@ -97,6 +97,28 @@ func (f *fakeSeatAdmin) GetRoomBySlug(_ context.Context, userID, slug string) (*
 	return nil, nil
 }
 
+// GetVisibleRoomBySlug is the read-scoped lookup (D5 sharing). This fake has no memberships, so it
+// answers with the caller's own room; sharingSeatAdmin in seat_admin_team_sharing_test.go is the
+// fake that models teams and is the one that exercises sharing.
+func (f *fakeSeatAdmin) GetVisibleRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
+	return f.GetRoomBySlug(ctx, userID, slug)
+}
+
+// SetRoomTeam is the sharing write: owner-only, as the repository's owner-scoped UPDATE is.
+func (f *fakeSeatAdmin) SetRoomTeam(_ context.Context, userID, roomID, teamID string) error {
+	for _, r := range f.rooms {
+		if r.ID != roomID {
+			continue
+		}
+		if r.UserID != "" && r.UserID != userID {
+			return repositories.ErrRoomNotOwned
+		}
+		r.TeamID = teamID
+		return nil
+	}
+	return repositories.ErrRoomNotOwned
+}
+
 func (f *fakeSeatAdmin) LatestSeatTypeVersion(_ context.Context, _, slug string) (*repositories.SeatTypeVersion, error) {
 	return f.seatTypes[slug], nil
 }

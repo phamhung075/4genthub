@@ -130,7 +130,7 @@ func (r *TemplateRegistry) SearchByTags(tags []string) []*ContextTemplate {
 }
 
 // TemplateContextService is the UnifiedContextService surface used when applying
-// templates. unified_context_service.py is not ported to Go yet.
+// templates.
 type TemplateContextService interface {
 	CreateContext(ctx context.Context, contextLevel value_objects.ContextLevel, contextID string, data *entities.OrderedMap[any], userID string, projectID, gitBranchID *string) (map[string]any, error)
 }

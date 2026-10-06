@@ -20,8 +20,7 @@ type DeleteProjectUseCase struct {
 	cascadeService *services.CascadeDeletionService
 }
 
-// NewDeleteProjectUseCase builds the use case. Python's repository factories and
-// UnifiedContextFacadeFactory are not ported, so repositories are required.
+// NewDeleteProjectUseCase builds the use case; repositories are required.
 func NewDeleteProjectUseCase(projectRepo services.CascadeProjectRepository,
 	gitBranchRepo services.CascadeBranchRepository,
 	taskRepo services.CascadeTaskRepository,

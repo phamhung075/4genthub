@@ -1,3 +1,5 @@
+> **Historical artifact — dated analysis of the retired Python tree.** Every path, service and `grep` below belongs to the Python implementation's `agenthub_main/src/` (archived) and predates the Go port; its DELETE recommendations describe code that no longer ships. Kept for traceability only.
+
 # MCP Hint/Enrichment Services Analysis
 
 ## Executive Summary

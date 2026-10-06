@@ -33,8 +33,7 @@ type TaskRepositoryFactory struct {
 }
 
 // NewTaskRepositoryFactory mirrors the constructor with optional base_path, default_user_id
-// and project_root. Python's domain.constants.validate_user_id is not yet ported; the local
-// helper keeps the None/empty ValueError but not the UUID normalization.
+// and project_root. The local helper keeps the None/empty ValueError.
 func NewTaskRepositoryFactory(basePath, defaultUserID, projectRoot *string, sessions *database.SessionManager) (*TaskRepositoryFactory, error) {
 	root := FindProjectRoot()
 	if projectRoot != nil && *projectRoot != "" {
@@ -111,7 +110,6 @@ func (f *TaskRepositoryFactory) CreateTemporaryRepository() (domainrepos.TaskRep
 
 // taskRepoFactoryValidateUserID is the subset of domain.constants.validate_user_id that is
 // ported: a nil or empty user id raises ValueError; otherwise the stripped value is returned.
-// The UUID normalization step is not ported (normalize_user_id_to_uuid has no Go port).
 func taskRepoFactoryValidateUserID(userID *string, operation string) (string, error) {
 	if userID == nil {
 		return "", &ValueError{Msg: operation + " requires user authentication. No user ID was provided."}

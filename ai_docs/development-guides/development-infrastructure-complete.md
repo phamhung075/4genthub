@@ -1,5 +1,11 @@
 # Development Infrastructure - Complete Guide
 
+> **Status:** the live backend is the Go service (`agenthub_go`, PostgreSQL-only). Everything
+> below that references `agenthub_main/src/tests/`, pytest marks/commands, the Python logging
+> module or the Python retry/error helpers describes the **retired Python implementation**.
+> The live test path is the Go suite (`cd agenthub_go && go test ./...`); the authoritative
+> HTTP/MCP/table surface is `ai_docs/api-integration/surface-inventory.md`.
+
 ## Quick Reference
 
 | Category | Key Tools/Patterns | Location |

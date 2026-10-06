@@ -1,5 +1,5 @@
 import { AlertCircle, ChevronDown, ChevronRight, Code, Copy, Database, Edit, FileText, Globe, Info, Package, Save, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getGlobalContext, updateGlobalContext } from "../api";
 import { GlobalContext } from "../types/context.types";
 import logger from "../utils/logger";
@@ -35,6 +35,18 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   // Raw JSON editing state
   const [rawJsonText, setRawJsonText] = useState<string>('');
   const [jsonValidationError, setJsonValidationError] = useState<string>('');
+
+  // An async continuation can resume after this component is gone. React DOM then reads the
+  // `window` global while scheduling the update and throws "window is not defined" (which is what
+  // a torn-down test environment looks like), so every continuation in this component checks this
+  // flag before it touches state.
+  const aliveRef = useRef(true);
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   // Fetch global context when dialog opens
   useEffect(() => {
@@ -114,9 +126,12 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
   };
 
   const fetchGlobalContext = async () => {
+    if (!aliveRef.current) return;
     setLoading(true);
     try {
       const response = await getGlobalContext();
+      // The continuation below can resume after this component is gone.
+      if (!aliveRef.current) return;
       logger.debug('Fetched global context response:', response);
 
       // If response is null, undefined, or error, show empty
@@ -177,12 +192,15 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
       logger.debug('Final context data:', filteredContextData);
     } catch (error) {
       logger.error('Error fetching global context:', error);
+      if (!aliveRef.current) return;
       // Initialize with empty object on error (no defaults)
       setGlobalContext(null);
       setEditingData({});
       setRawJsonText('{}');
     } finally {
-      setLoading(false);
+      if (aliveRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -222,14 +240,18 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
 
       await updateGlobalContext(dataToSave);
       await fetchGlobalContext();
+      if (!aliveRef.current) return;
       setEditMode(false);
       setActiveTab('view');
       setJsonValidationError('');
     } catch (error) {
       logger.error('Error saving global context:', error);
+      if (!aliveRef.current) return;
       alert('Failed to save global context. Please try again.');
     } finally {
-      setSaving(false);
+      if (aliveRef.current) {
+        setSaving(false);
+      }
     }
   };
 

@@ -2,9 +2,8 @@ package repositories
 
 // Agent Repository Factory (Python infrastructure/repositories/agent_repository_factory.py).
 // The Python class-level caches and os.environ probing are represented by an injectable
-// factory instance, mirroring project_repository_factory.go. The non-ORM branch calls
-// repository_factory.RepositoryFactory, which is not ported yet, so it goes through the
-// UnportedFactory hook.
+// factory instance, mirroring project_repository_factory.go. The non-ORM branch goes
+// through the UnportedFactory hook.
 
 import (
 	"os"
@@ -123,7 +122,7 @@ func (f *AgentRepositoryFactory) CreateInstance(repositoryType AgentRepositoryTy
 		return f.buildORM(userID, dbPath, kwargs)
 	}
 	if f.UnportedFactory == nil {
-		return nil, &tmvo.ValueError{Msg: "repository_factory.RepositoryFactory is not ported"}
+		return nil, &tmvo.ValueError{Msg: "the non-ORM agent repository has no wiring: AgentRepositoryFactory.UnportedFactory is not configured"}
 	}
 	return f.UnportedFactory()
 }

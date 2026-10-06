@@ -97,8 +97,7 @@ type ProjectMCPController struct {
 }
 
 // NewProjectMCPController ports __init__(facade_factory=None, facade_service=None).
-// Concrete formatter/factories must be injected because the interface-layer
-// formatter and the project operation/response factories are not ported yet.
+// A concrete formatter and factories are injected.
 func NewProjectMCPController(
 	facadeFactory ProjectFacadeFactory,
 	facadeService ProjectFacadeService,

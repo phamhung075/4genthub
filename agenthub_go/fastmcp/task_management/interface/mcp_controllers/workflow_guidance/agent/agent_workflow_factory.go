@@ -5,9 +5,10 @@ package agent
 
 import "agenthub/fastmcp/task_management/domain/entities"
 
-// AgentWorkflowGuidance is the minimal view of the unported
-// workflow_guidance/agent/agent_workflow_guidance.py. That module has no Go port
-// yet; the constructor hook below lets a later worker wire the real type.
+// AgentWorkflowGuidance is the minimal view of
+// workflow_guidance/agent/agent_workflow_guidance.py. The implementation is
+// AgentWorkflowGuidanceImpl (agent_workflow_guidance.go), and its init() ALREADY
+// assigns the constructor hook below to build it.
 type AgentWorkflowGuidance interface {
 	GenerateGuidance(action string, context *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }

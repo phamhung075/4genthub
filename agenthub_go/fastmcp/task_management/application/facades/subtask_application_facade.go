@@ -63,7 +63,8 @@ type SubtaskApplicationFacade struct {
 	getSubtasksUseCase     *usecases.GetSubtasksUseCase
 	completeSubtaskUseCase *usecases.CompleteSubtaskUseCase
 
-	// Optional collaborators for unported infrastructure.
+	// Optional collaborators, nil-guarded. ContextResolver has NO Go implementation yet;
+	// ContextSync and EventBroadcaster do.
 	ContextResolver  SubtaskContextResolver
 	EventBroadcaster SubtaskEventBroadcaster
 	ContextSync      SubtaskContextSyncService

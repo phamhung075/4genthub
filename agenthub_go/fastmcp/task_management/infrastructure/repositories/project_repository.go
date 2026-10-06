@@ -5,9 +5,8 @@ package repositories
 // CacheInvalidationMixin side effects are dropped like logging; audit logging (log_access)
 // is dropped too.
 //
-// The ContextFieldSelector (application/services/context_field_selector.py) is not ported
-// yet, so the selective-field methods go through the small ProjectRepoFieldSelector
-// interface declared here.
+// The selective-field methods go through the small ProjectRepoFieldSelector interface
+// declared here.
 
 import (
 	"context"
@@ -26,8 +25,8 @@ import (
 )
 
 // ProjectRepoFieldSelector is the subset of ContextFieldSelector used by
-// ORMProjectRepository's selective-field methods. It is declared here because that module is
-// not ported yet; a concrete implementation supplies these methods.
+// ORMProjectRepository's selective-field methods; a concrete implementation supplies these
+// methods.
 type ProjectRepoFieldSelector interface {
 	// GetProjectFields is get_project_fields.
 	GetProjectFields(projectID string, fields any) *entities.OrderedMap[any]

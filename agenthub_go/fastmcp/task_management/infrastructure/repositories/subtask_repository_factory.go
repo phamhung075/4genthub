@@ -1,8 +1,7 @@
 package repositories
 
 // Subtask Repository Factory (Python repositories/subtask_repository_factory.py): builds
-// subtask repositories scoped to a user/project/task tree. The central RepositoryFactory
-// (repository_factory.py) is not yet ported, so create_subtask_repository and
+// subtask repositories scoped to a user/project/task tree. create_subtask_repository and
 // create_sqlite_subtask_repository delegate to the SubtaskRepositoryFactoryBackend hook.
 
 import (
@@ -16,7 +15,7 @@ import (
 )
 
 // SubtaskRepositoryFactoryBackend is the central RepositoryFactory.get_subtask_repository used
-// by the factory (not yet ported).
+// by the factory.
 type SubtaskRepositoryFactoryBackend interface {
 	GetSubtaskRepository(userID *string) (domainrepos.SubtaskRepository, error)
 }

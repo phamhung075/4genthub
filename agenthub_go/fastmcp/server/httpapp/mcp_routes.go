@@ -229,7 +229,7 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 }
 
 // getMCPToolsList builds the MCP tools/list result from ToolDefinitions(), the
-// Python tool registry. manage_seat, call_seat and the connection tool are registered by
+// Python tool registry. manage_seat, call_seat, submit_feedback and the connection tool are registered by
 // their own controllers rather than by ToolDefinitions, so their schemas are appended here; every schema is
 // converted with the Python-faithful serializer before encoding/json writes it.
 func (a *App) getMCPToolsList() ([]map[string]any, error) {
@@ -237,7 +237,7 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 		return []map[string]any{}, nil
 	}
 	defs := a.mcpTools.ToolDefinitions()
-	tools := make([]map[string]any, 0, len(defs)+3)
+	tools := make([]map[string]any, 0, len(defs)+4)
 	for _, def := range defs {
 		schema, err := plainJSON(def.Parameters)
 		if err != nil {
@@ -266,6 +266,15 @@ func (a *App) getMCPToolsList() ([]map[string]any, error) {
 		"name":        seatcontrollers.CallSeatToolName,
 		"description": seatcontrollers.CallSeatToolDescription,
 		"inputSchema": callSeatSchema,
+	})
+	submitFeedbackSchema, err := plainJSON(seatcontrollers.SubmitFeedbackInputSchema())
+	if err != nil {
+		return nil, err
+	}
+	tools = append(tools, map[string]any{
+		"name":        seatcontrollers.SubmitFeedbackToolName,
+		"description": seatcontrollers.SubmitFeedbackToolDescription,
+		"inputSchema": submitFeedbackSchema,
 	})
 	connTool, err := connectionToolDefinition()
 	if err != nil {
@@ -425,6 +434,15 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 			return res, false
 		}
 		return map[string]any{"error": "CallSeatController not initialized"}, true
+
+	case seatcontrollers.SubmitFeedbackToolName:
+		if a.mcpTools != nil && a.mcpTools.SubmitFeedbackController != nil {
+			res := a.mcpTools.SubmitFeedbackController.SubmitFeedback(ctx,
+				getOptString(args, "room"), getOptString(args, "seat"), getOptString(args, "session"),
+				getOptString(args, "layer"), getOptString(args, "text"), userID)
+			return res, false
+		}
+		return map[string]any{"error": "SubmitFeedbackController not initialized"}, true
 
 	default:
 		return map[string]any{"error": fmt.Sprintf("Unknown tool: %s", name)}, true

@@ -12,7 +12,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { Boxes, Lock, Minus, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Boxes, Minus, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -179,10 +179,7 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   </Badge>
                   {mcpLabel && <Badge variant="outline">{mcpLabel}</Badge>}
                   {block.pinnedAt && (
-                    <Badge variant="outline">
-                      <Lock className="mr-1 h-3 w-3" />
-                      pinned at {originLabel(block.pinnedAt)}
-                    </Badge>
+                    <Badge variant="outline">pinned at {originLabel(block.pinnedAt)}</Badge>
                   )}
                   {block.overridden && <Badge variant="outline">overridden</Badge>}
                   <Button
@@ -198,6 +195,12 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   </Button>
                 </div>
                 <p className="mt-1 text-xs text-base-secondary">Removing here: {outcome.label}</p>
+                {block.pinnedAt && (
+                  <p className="mt-1 text-xs text-base-secondary">
+                    A pin sets the version in effect at {originLabel(block.pinnedAt)} for this block and
+                    does nothing else - it is not a lock, so removing the block still removes it.
+                  </p>
+                )}
               </li>
             );
           })}

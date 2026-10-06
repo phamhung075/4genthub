@@ -25,7 +25,7 @@ import (
 
 // seatRigSpecSource is the repository surface the rigspec route needs.
 type seatRigSpecSource interface {
-	GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
+	GetVisibleRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
 	ListSeatsByRoom(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	ResolveSeat(ctx context.Context, userID, roomSlug, seatKey string) (*repositories.ResolvedSeat, error)
 	ListSeatLinksFrom(ctx context.Context, userID, seatID string) ([]repositories.SeatLink, error)
@@ -81,8 +81,8 @@ type seatRigSpecRepos struct {
 
 var _ seatRigSpecSource = (*seatRigSpecRepos)(nil)
 
-func (s *seatRigSpecRepos) GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
-	return s.rooms.GetBySlug(ctx, userID, slug)
+func (s *seatRigSpecRepos) GetVisibleRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
+	return s.rooms.GetVisibleBySlug(ctx, userID, slug)
 }
 
 func (s *seatRigSpecRepos) ListSeatsByRoom(ctx context.Context, userID, roomID string) ([]repositories.Seat, error) {
@@ -121,9 +121,9 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !ok {
 		return
 	}
-	uid := userID(u)
+	callerID := userID(u)
 	roomSlug := r.PathValue("room")
-	room, err := source.GetRoomBySlug(r.Context(), uid, roomSlug)
+	room, err := source.GetVisibleRoomBySlug(r.Context(), callerID, roomSlug)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -132,6 +132,11 @@ func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 		writeDetail(w, http.StatusNotFound, "room \""+roomSlug+"\" not found")
 		return
 	}
+	// The rendered rig is the room OWNER's data, so a viewer on the room's team renders it under
+	// the owner's id: the seat listing, the resolve (which appends the snapshot) and the links are
+	// the owner's rows, exactly what the owner's own request produces. An owner's request is
+	// unchanged, because both ids are the same.
+	uid := room.UserID
 
 	seats, err := source.ListSeatsByRoom(r.Context(), uid, room.ID)
 	if err != nil {

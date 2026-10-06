@@ -1,3 +1,5 @@
+> **Historical artifact — a dated analysis of the `ai_docs` tree as it stood on 2025-11-03.** Its obsolete-document lists and move recommendations predate the Go port and much of the current tree; do not act on them. Kept for traceability only.
+
 # ai_docs Cleanup Analysis - 2025-11-03
 
 ## Executive Summary

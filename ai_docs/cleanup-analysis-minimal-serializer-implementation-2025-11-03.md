@@ -1,3 +1,5 @@
+> **Historical artifact — dated analysis of the retired Python tree.** Its scope is the Python implementation's `fastmcp` modules under `agenthub_main/src/` (archived) and it predates the Go port; "Ready for Implementation" describes that tree, not this one. Kept for traceability only.
+
 # Minimal Response Serializer Implementation Analysis
 **Date**: 2025-11-03
 **Category**: Token Optimization

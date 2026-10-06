@@ -7,7 +7,9 @@
 **Update 2026-10-05 (NEXT_GEN D5, teams/sharing).** §1.20 and the two team rows of §3.3
 were added and every count updated: registrations 132 -> **140**, runtime `Tables` 36 ->
 **38**. This delta was generated on top of `b0a1f510`; the rest of the file is unchanged
-from the `c4ff8d42` snapshot.
+from the `c4ff8d42` snapshot. **The registration figure is now 141** — the seat-type create
+route (`POST /api/v2/openrig/seat-types`) was added after that snapshot; §1 carries the
+current count with its pattern and date.
 
 **Scope:** the Go service (`agenthub_go`, `cmd/agenthub`) plus the auth route sets it
 mounts. `agenthub-frontend` and `agenthub_main` (Python) are out of scope and were not
@@ -25,7 +27,7 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts (DATED — carry the date and the pattern, per the counting rule).** At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:291`) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** At HEAD **2026-10-06**, the same pattern gives **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
@@ -107,6 +109,8 @@ and the two auth `RegisterRoutes` methods.
 | GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:61` |
 | GET | `/ws/connector` | `handleConnector` | `ws_mount.go:62` |
 | GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:63` |
+
+**DECLARED OUT OF SCOPE — THE THREE UNMOUNTED OLD-PROTOCOL WEBSOCKET ENDPOINTS (owner decision, 2026-10-06).** **The old-protocol surface served by `fastmcp/websocket/server.go` is NOT mounted on the live handler:** it registers **`/ws/{user_id}`** (`server.go:92`), **`/ws/health`** and **`/ws/stats`** (`server.go:93-94`) on **its own app**, and **nothing outside that package constructs it** (`NewWebSocketServer` has no non-test caller — the only imports of the package elsewhere are `wslib` for the `WebSocket` type, in `ws_mount.go:37` and `server/routes/websocket_routes.go:25`). **THE OWNER DECLARED THESE THREE OUT OF SCOPE RATHER THAN MOUNTING THEM, which is the honest closure of the parity claim: THE PORT IS COMPLETE FOR THE SURFACE IN USE, with `/ws/{user_id}`, `/ws/health` and `/ws/stats` DELIBERATELY EXCLUDED** — so nothing reads as though the old protocol is fully served. **AND IT IS A DECISION RATHER THAN AN OMISSION:** mounting them would have added endpoints **nothing consumes**, and **the owner chose the honest label over the tidier-looking port.**
 
 ### 1.8 MCP registration / metrics (`misc_mount.go`)
 
@@ -201,33 +205,36 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:279` |
-| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:282` |
-| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:285` |
-| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:288` |
-| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:291` |
-| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:294` |
-| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:297` |
-| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:300` |
-| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:303` |
-| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:306` |
-| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:309` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:312` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:315` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:318` |
-| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:321` |
-| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:324` |
-| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:327` |
-| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:330` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:333` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:336` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:339` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:342` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:345` |
-| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:348` |
-| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:351` |
+| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:292` |
+| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:295` |
+| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:298` |
+| PUT | `/api/v2/openrig/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:301` |
+| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:304` |
+| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:307` |
+| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:310` |
+| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:313` |
+| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:316` |
+| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:319` |
+| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:322` |
+| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:325` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:328` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:331` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:334` |
+| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:337` |
+| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:340` |
+| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:343` |
+| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:346` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:349` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:352` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:355` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:358` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:361` |
+| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:364` |
+| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:367` |
 
-**Update 2026-10-05 (docs truth-audit).** The `POST /api/v2/openrig/seat-types` row was **missing** (the D3 create-a-seat-type route, `seat_admin_mount.go:291`) and every Registration line in this section was stale by the insertion; both are corrected here from the source at HEAD, which is why this section went from 24 to 25 rows.
+**Update 2026-10-06 (D5 sharing).** `PUT /api/v2/openrig/rooms/{room}/team` (`handleSetRoomTeam`) is new — it is the route that shares one room, read-only, with one team's members, or makes it private again — and **every Registration line in this section was refreshed from the source in the same pass**, because that insertion shifted them all; all 26 rows were then re-checked one by one against the registrations they cite.
+
+**Update 2026-10-05 (docs truth-audit).** The `POST /api/v2/openrig/seat-types` row was **missing** (the D3 create-a-seat-type route, `seat_admin_mount.go:307`) and every Registration line in this section was stale by the insertion; both are corrected here from the source at HEAD, which is why this section went from 24 to 25 rows.
 
 Note: the mutating rows are wrapped in `seatMutation(kind, action, fn)` (a broadcast +
 audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
@@ -347,7 +354,7 @@ methods. They are the protocol layer and MUST NOT be listed as tools:
 
 ### 2.3 Published tools (`tools/list`)
 
-Nine tool names, always present except `manage_context` (see note):
+Ten tool names, always present except `manage_context` (see note):
 
 | Tool | Source | File:line |
 |---|---|---|
@@ -359,16 +366,20 @@ Nine tool names, always present except `manage_context` (see note):
 | `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:246` |
 | `manage_seat` | appended schema | `mcp_routes.go:257` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
 | `call_seat` | appended schema | `mcp_routes.go:266` (`CallSeatToolName`, `call_seat_controller.go:14`) |
+| `submit_feedback` | appended schema | `mcp_routes.go:271` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
 | `manage_connection` | appended schema | `mcp_routes.go:274` (`connectionToolDefinition`, `mcp_connection_tool.go:39`) |
 
 Note: `manage_context` is emitted only when `ContextController != nil`; the constructor
 sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:107-111`), and
-`app.go:66` passes `DatabaseAvailable: true`. So on a wired server all nine are present.
+`app.go:66` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
+**Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly
+these ten names.**
 
 `tools_golden.json`
 (`fastmcp/task_management/interface/testdata/tools_golden.json`) contains only the six
-Python-registry tools; `TestMCPToolsListMatchesGolden` asserts the wire list equals golden
-plus the three appended names.
+Python-registry tools; `TestMCPToolsListMatchesGolden` filters the **four** names the Go server
+appends (`manage_seat`, `call_seat`, `submit_feedback`, `manage_connection`) and asserts the
+rest equals golden.
 
 ### 2.4 Dispatch-only names (callable via `tools/call`, NOT advertised by `tools/list`)
 
@@ -520,51 +531,42 @@ must not be read as a sentence about the other.
 
 ---
 
-## 5. Contradictions between existing docs and the code
+## 5. Contradictions between existing docs and the code — ALL CLOSED
 
-These are the rewrite worklist. Every claim below is checked against the source in this
-document.
+This section was the rewrite worklist for owner directive (A). Every item below has been
+corrected; each entry keeps the original finding so the audit trail survives, and names
+the correction. The checks themselves are unchanged and re-runnable from Appendix A.
 
-1. **`ai_docs/api-integration/mcp-tools-api-complete.md`** — wrong tool inventory:
-   - line 13 and §"call_agent" (lines 385-407) document the **`call_agent` tool** as live.
-     There is no such tool (`Name: "call_agent"` → NO MATCH); the tool was removed
-     (`b0d441bd refactor(mcp): remove the Go call_agent tool, its routes and wiring`).
-   - line 14 documents `manage_connection`; the doc lists 8 tools and omits `manage_seat`
-     and `call_seat`, which the live registry publishes (§2.3).
-   - line 16's "all tools require `action`" is false for `call_seat`/`manage_connection`.
-
-2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — describes parameter
-   coercion across "All controllers" and example calls to `manage_context`; it is not a
-   surface list, but it shares the tool set above and predates the seat tools.
-
-3. **`ai_docs/architecture-design/Architecture_Technique.md`** — architectural claims
-   that contradict the Go server:
-   - line 33: "32+ specialized agents"; line 49: "PostgreSQL (local), **SQLite
-     (fallback)**"; line 256/317/755/793: **SQLAlchemy** ORM models and Alembic
-     migrations. The Go server is Postgres-only with generated `TableDef` metadata
-     (`models.go`) and no SQLite or SQLAlchemy code path.
-   - Its API/MCP/DB sections describe the Python implementation this Go service replaced.
-
-4. **`agenthub_go/PROD_READINESS_REPORT.md`** (repo root of the Go module, not `ai_docs`)
-   — item B4 states the MCP wiring "is not the real one", `tools/list` returns stub
-   schemas, and `GET /mcp` is not SSE. At this HEAD the opposite is true:
-   `getMCPToolsList` builds from `ToolDefinitions()` (`mcp_routes.go:236`), the golden
-   registry test passes, and `GET /mcp` is `mcpSSEHandler` (`mcp_routes.go:116`). B6's
-   "eight production tables unknown to the Go models" is also stale: `models_prod.go`
-   now declares six of them.
-
-5. **Cross-check `/tmp/inv.md`** (reviewer inventory, same HEAD `c4ff8d42`) — three
-   divergences from the code:
-   - It says the live tool list is `TOOL_*`-gated. The Go `tools/list` path never reads
-     `TOOL_*`; the config table is constructed but only `IsWorkflowGuidanceEnabled` is
-     consumed (§2.5).
-   - It lists `initialize` and `ping` among dispatch cases. They are `handleJSONRPC`
-     protocol methods, not dispatch cases and not tools (§2.2).
-   - Its route count is 112 (httpapp only) and it prints base paths without the
-     trailing segment (e.g. all five `/api/v2/branches` rows). The source has 112
-     httpapp registrations **plus 20 auth registrations = 132**; resolved full paths are
-     in §1.
-   - Its table sections omit the three auth tables and the six `ProductionTables`.
+1. **`ai_docs/api-integration/mcp-tools-api-complete.md`** — **CLOSED** (`95ffca45`).
+   The original finding: it documented the removed `call_agent` **tool** as live, listed
+   eight tools and omitted `manage_seat` and `call_seat`, and claimed every tool requires
+   `action`. The file now carries the ten published tools (`manage_seat` at line 13,
+   `call_seat` at line 14), a `### call_agent — retired` section, and an explicit note
+   that the two seat tools and `manage_connection` take no `action`.
+2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — **CLOSED**. The original
+   finding: it shared the old tool set and predated the seat tools. It now carries a
+   `Seat (manage_seat, call_seat)` row and states that the seat tools are the exception
+   to the `action` rule.
+3. **`ai_docs/architecture-design/Architecture_Technique.md`** — **CLOSED** (`95ffca45`
+   and the 2026-10-06 truth-audit). The original finding: "32+ specialized agents", a
+   **SQLite (fallback)** claim, and SQLAlchemy/Alembic described as the persistence path.
+   The Python module tree and its SQLAlchemy examples are now covered by the
+   **Retired implementation note** at line 224; the Database Layer states the Go
+   `TableDef`/Postgres-only reality; the development, test and directory sections point at
+   `agenthub_go`; and the "4-tier" framing appears only as the `{level}` set of the
+   mounted `/api/v2/contexts/{level}` routes.
+4. **`agenthub_go/PROD_READINESS_REPORT.md`** (Go module root, not `ai_docs`) —
+   **SUPERSEDED IN PLACE** (`95ffca45`). A status block above the blocker table marks B4
+   and B6 as no longer describing HEAD (`getMCPToolsList` builds from
+   `ToolDefinitions()`, `mcp_routes.go:236`; `GET /mcp` is `mcpSSEHandler`,
+   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables`), while the
+   original findings stay visible as the dated record they are.
+5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
+   method only. Its three divergences from the code are settled in this document: the
+   `TOOL_*` gating claim in §2.5, `initialize`/`ping` as protocol methods rather than
+   dispatch cases in §2.2, and the route count in §1 (its 112 was `httpapp`-only; the
+   current figure is 121 + 20 = 141). Its table sections omit the three auth tables and
+   the six `ProductionTables`, both carried in §3.
 
 ---
 
@@ -578,7 +580,7 @@ Run from `/home/daihu/__projects__/4genthub/agenthub_go` unless noted.
 # Every route registration (the source of §1)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go'
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go'
-# Counts: 120 httpapp + 20 auth = 140
+# Counts: 121 httpapp + 20 auth = 141
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go' | wc -l
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go' | wc -l
 

@@ -2,6 +2,332 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the parity guard stops racing the build (Go)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go`:
+  the module walk now skips **dot directories** (`.gocache`, `.gotmp`, `.git` and any future cache
+  inside the module) and skips a file that vanishes between the listing and the read, instead of
+  failing on `ENOENT`. Both were load-bearing rather than tidy: the project's documented convention
+  puts `GOCACHE` and `TMPDIR` inside the module root, so the walk used to descend into the
+  concurrent build's temporary tree.
+- The file's "what it cannot see" list gains the resulting blind spot: a first-party repository
+  under a dot directory inside the module is unchecked.
+- Evidence, and it is the invocation that failed: `cd agenthub_go` with `GOCACHE=$PWD/.gocache`
+  `TMPDIR=$PWD/.gotmp`, then `go test ./...` **three consecutive times**, each green. The failure it
+  replaces was environment-dependent — one red under the full run, green every time the package ran
+  alone — so a single green run would have been no evidence at all.
+
+## 2026-10-06 - the rig build's preserve window is pinned with a mid-build drop (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained
+  `test_rig_build_keeps_a_file_placed_while_it_materializes`: it hooks `materialize_agent` — the
+  moment between the old preserve read and the swap — and drops a file into the rig directory
+  there, then asserts the file survives, that stderr names it, and that the build's own `rig.yaml`
+  is still the build's.
+- MEASURED BOTH WAYS: with the derivation reverted to a list read before the swap the test fails
+  with the marker gone, and an independent driver over the real `cmd_rig` shows the same split
+  (pre-fix: `survives: False`, post-fix: `survives: True`). **The same driver also corrected the
+  row's premise**: a file dropped during the seat PULLS survives under both versions, because the
+  read was never before the pulls — the window is the materialization between the read and the
+  swap. The test therefore hooks the materialization, which is where the window actually is.
+- The two preservation tests and the counterweight test from the earlier entry are unchanged and
+  still pass.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **94 passed**.
+
+## 2026-10-06 - the bundle build's silence about a missing pin is pinned three ways (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained three tests over the existing
+  bundle fixture (stubbed `subprocess.run`, real `cmd_bundle` path):
+  `test_bundle_warns_when_the_rig_root_carries_no_pin` (warning on stderr naming the seat and
+  `no policy.json in agents/seat1`, while stdout stays exactly the bundle path and the exit is 0),
+  `test_bundle_warns_when_the_pin_belongs_to_another_seat` (the shared-seat-type case: the check
+  names the seat the policy actually belongs to), and
+  `test_bundle_says_nothing_when_the_pin_is_this_seats` (no noise when the rig root is correct).
+- Proved by reverting the change: with the warning removed the two warning tests fail and the
+  no-noise test passes, which is the expected split — one test pins the new signal and one pins the
+  absence of a false one.
+- The real-invocation evidence the row asks for is separate from these tests and was run with the
+  actual `rig bundle create`: `Bundle created` + `Integrity: PASS` + `policy.json members: 0` with no
+  warning before, and the same command printing one warning line after, with the exit still 0.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **93 passed** (90 before these three).
+
+## 2026-10-06 - the friction table lands, and the class no gate saw gets its guard (Go)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go` (new,
+  the ALWAYS-RUNNING half): scans every non-test `.go` file in the module for the constructors whose
+  first argument is a table name (`NewORMRepository`, `NewUserScopedORMRepository`,
+  `NewBaseTimestampRepository`) and fails when a name has no `TableDef` in the shared registry.
+  No database, no env var, and it FAILS on a non-literal table name instead of skipping it, so the
+  gap cannot open silently (the two forwarding constructors are an explicit allowlist).
+  **Measured both ways: its only finding when written was `seat_feedback` itself, and it went green
+  in the same commit that registered the table.**
+- `agenthub_go/fastmcp/server/httpapp/app_boot_test.go` (new, the DB-gated half): its doc comment
+  says plainly that it SKIPS without `AGENTHUB_TEST_PG_URL` and is therefore NOT the guard for the
+  boot class - the parity check is. It runs `NewApp` against a throwaway database through the
+  bring-up helper this package already had (no second bring-up path), asserts the tool list carries
+  `manage_seat`, `call_seat` and `submit_feedback`, and asserts the handler serves the seat routes
+  and the friction channel's two paths rather than 404ing.
+- **It earned its keep on its first gated run**: the fresh database has no `uuid-ossp`, so my
+  runtime DDL's `DEFAULT uuid_generate_v4()` failed with `SQLSTATE 42883`. Both runs are recorded -
+  the failing one and the passing one after the repository took over generating the id.
+- `seat_management/infrastructure/database/seat_feedback_orm_test.go` (new): registers the row
+  struct in the shared DDL guard map and checks the `layer` CHECK against `domain/feedback` in BOTH
+  DDL copies, mirroring the seats table's `permission_policy` check.
+- `orm_repositories_test.go` gained `seat_feedback` in the metadata-vs-struct case list, in the
+  constructor list, and a tenant-scoping test asserting every statement touching the table carries
+  `user_id`.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go build ./...` -> clean; `gofmt -l` on the touched files -> empty; `go vet ./fastmcp/...` -> clean;
+  `go test ./fastmcp/seat_management/... ./fastmcp/task_management/infrastructure/repositories/` -> ok;
+  `go test ./fastmcp/server/httpapp/` (default) -> ok with the boot test printing
+  `--- SKIP: AGENTHUB_TEST_PG_URL not set`; `AGENTHUB_TEST_PG_URL=... go test ./fastmcp/server/httpapp/
+  -run TestAppBootsAgainstAMigratedDatabase` -> **PASS** against the throwaway PostgreSQL the OF4
+  recipe brings up on `:54331`.
+- **Demonstrated capable of failing**, in a `git archive HEAD` copy: with the boot-time composition
+  restored (the pre-`d41fba79` state) the gated test fails `NewApp: unknown table "seat_feedback"`,
+  and the same copy without that line passes.
+
+## 2026-10-06 - omp seats get the seat's MCP servers from the render, and the guidance names the tools (Go)
+
+- `renderer.go`: **ONE `mcpServers` document now serves two destinations.** claude-code keeps taking it
+  as the `claude_mcp_fragment` runtime resource; an omp seat gets the same document as a plain file
+  `runtime/omp-mcp.json` (the codex-rules precedent applied to a second runtime), and a seat with NO
+  `mcp` block renders NO file — the acceptance's "a seat with no mcp block gets none", satisfied by
+  absence rather than by an empty document that would read as configuration.
+- `renderer_test.go`: the cross-runtime test **pinned the OLD contract** ("a runtime file for agy or
+  omp") and now pins the new one — agy still renders no runtime file, omp renders exactly
+  `runtime/omp-mcp.json`. Two new tests pin the file against the MEASURED runtime behaviour (type
+  `http`, the platform URL resolved from the seat's mcp url, the bearer LEFT as the literal
+  `${AGENTHUB_TOKEN}`, a stdio server passed through unchanged, byte-identical across two renders, and
+  no claude fragment or settings file on the seat) and the no-block case (no runtime file at all). A
+  third pins step E: the guidance carries `## mcp-usage`, `manage_context` and `call_seat`, and the
+  section is the MODULE's rather than a renderer string.
+- `seedlibrary.go` + `shared-modules/mcp-usage.md` (new): a shared `instruction` module carried by all
+  nine seeded seat types, telling a seat to sync through `manage_context`, reach another seat with
+  `call_seat`, report what it actually ran, and keep credentials out of a tool call. It arrives through
+  the existing instruction → guidance path, so the seat's startup text matches the configuration it was
+  given.
+- **Proven on the real stack, not only in unit tests:** a booted `cmd/agenthub` on a throwaway Postgres,
+  one published `mcp` block and one seat type, a seat created with `runtime: omp`, and
+  `GET /api/v2/openrig/rooms/mcp/rigspec` forcing a resolve →
+  `resolved_seats.files` = `agent.yaml`, `guidance/role.md`, `runtime/omp-mcp.json`. **Those bytes were
+  then taken from the database, installed as an agent-dir `.mcp.json`, and read by the REAL runtime**,
+  which expanded the token and authenticated: the probe endpoint saw
+  `Authorization: Bearer e2e-token-1234` on 20 requests. The stored file still carries the literal
+  `${AGENTHUB_TOKEN}`, so no credential is on disk.
+- `OPENRIG_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate
+  ./fastmcp/seat_management/domain/seatrenderer/` → PASS for claude-code, codex and omp with the real
+  `rig agent validate`. `go test -count=1 ./fastmcp/seat_management/...` → 16 packages green; `gofmt`
+  clean.
+
+## 2026-10-06 - the schema file and the runtime DDL agree on defaults, so the sharing test is true on BOTH databases (Go)
+
+- **THE DEFECT, REPRODUCED BEFORE THE FIX.** `TestRoomSharingVisibilityIntegration` failed on a
+  database the RUNTIME path built and passed on one the FILE built — same binary, same test. Reproduced
+  here on `d5runtime` (a database created by booting the real `cmd/agenthub` against it with
+  `AUTO_MIGRATE=true`) as `ERROR: null value in column "id" of relation "teams" violates not-null
+  constraint (SQLSTATE 23502)`. Cause: the test's raw INSERT omitted `id`, and only the schema FILE
+  declared `id ... DEFAULT uuid_generate_v4()`.
+- **THE RULE, decided from measurement rather than preference: IDS COME FROM THE APPLICATION, so NEITHER
+  source declares a default on `id`** — recorded in the schema file's own header. The evidence: the
+  runtime TableDefs supply the value in Go (`ColumnDef.Default = taskdb.DefaultUUIDv4` →
+  `tmvo.NewUUIDv4()`, `base_orm_repository.go:191`); production takes the RUNTIME path, so the file
+  described a default production does not have; and `createAll` never creates `uuid-ossp`, so the file's
+  default could not be honoured on a fresh runtime database at all (the feedback boot test measured
+  `function uuid_generate_v4() does not exist`, SQLSTATE 42883). The file now declares its 14 `id` columns
+  without a default and no longer creates the extension.
+- The test supplies the id the way the application does — `database.GenerateUUIDString()` for the team and
+  each membership, the same value the repository would have generated — and
+  `ensure_seat_columns_test.go`'s hand-written pre-wiring shape was aligned to the same rule (no `id`
+  default, no extension, a literal room id), so both tests describe what the runtime actually creates.
+- **THE GUARD NOW COVERS THE DIMENSION THAT FAILED:** `TestSeatDDLParity` compares each column's DEFAULT
+  expression in both sources beside the columns, the `REFERENCES` and the `CHECK`s. **It caught this
+  divergence before the fix** — every seat table reported `file: id:uuid_generate_v4()` against
+  `runtime: <absent>` — and is green after it, so this class cannot return silently.
+- **PROVED BOTH WAYS, which is the whole point:** `go test -count=1
+  ./fastmcp/seat_management/infrastructure/... ./fastmcp/team_management/...` is green with
+  `SEAT_TEST_DATABASE_URL`/`AGENTHUB_TEST_PG_URL` pointing at `d5runtime` (built by the runtime path) AND
+  at `d5fresh` (empty; the test applies the schema file itself). The two databases now carry IDENTICAL
+  `rooms` defaults — `created_at now()`, `updated_at now()`, no `id` default — and `d5fresh` passes with
+  **no `uuid-ossp` extension present** (`pg_extension` count 0), where the file previously required it.
+- No production read was claimed and none was needed: this is a schema DESCRIPTION plus tests, and the
+  runtime path's behaviour is unchanged.
+
+## 2026-10-06 - the team-sharing wiring is pinned at both DDL sources, on PostgreSQL, and at the mount (Go)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/database/seat_ddl_parity_test.go` (new) is the
+  second half of the DDL guard: `seat_orm_test.go` compares the schema FILE with the row STRUCTS
+  (column names), and this compares the two DDL SOURCES with each other — column names, the
+  referenced-table multiset and the CHECK expressions, per registered table. Primary-key and DEFAULT
+  spellings legitimately differ between the two, so those are deliberately not compared.
+  **Falsified rather than assumed: dropping `REFERENCES teams (id)` from the runtime DDL alone makes
+  it FAIL with "table rooms: referenced tables differ between the schema file and the runtime DDL"**
+  (restored immediately; the guard is back to green).
+- `agenthub_go/fastmcp/seat_management/infrastructure/database/ensure_seat_columns_test.go` (new)
+  proves the migration an existing database needs, on its own throwaway database (the premise is a
+  `rooms` table WITHOUT the column): creates the pre-wiring `teams` + `rooms`, runs
+  `EnsureSeatColumnsExist` twice, then asserts the column is `uuid` and nullable, that
+  `rooms_team_id_fkey` targets `teams`, that a `team_id` naming no team is REFUSED by the database,
+  and that `ix_rooms_team_id` exists. The double run is the idempotency half.
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/room_sharing_integration_test.go`
+  (new) runs the visibility rules against a real PostgreSQL: a member of the room's team reads the
+  OWNER's room through `GetVisibleBySlug` and sees it in `List`; the strict `GetBySlug` every write
+  path uses still returns nil for that member; the owner's own list is unchanged; a stranger sees
+  nothing in either read; an unshared room stays private; **when the member owns a room with the same
+  slug, the member's own room wins** (the tie-break is asserted rather than left to chance); a viewer's
+  `SetTeam` is `ErrRoomNotOwned` for both sharing and unsharing; a `team_id` that names no team is
+  refused by the foreign key; and unsharing removes the room from the member's list.
+- `agenthub_go/fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go` gained
+  `TestTeamDeleteClearsRoomSharingIntegration`: it inserts a room pointing at the team and asserts the
+  delete SUCCEEDS (it would be refused by the new foreign key without the cascade), that the room
+  survives with `team_id` NULL, and that the member rows are gone.
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_team_sharing_test.go` (new) pins the route behaviour
+  the acceptance names, over the mount's own fake extended with teams: the VIEWER path asserts **every
+  read was asked for the owner's id** (the fake journals the scope it was called with, so "reads as the
+  owner" is measured, not assumed), a nine-case table proves a member cannot mutate anything (occupant,
+  permission policy, room overlay, seat overlay, links upsert and delete, seat delete, room delete,
+  seat create) and that no state moved, a non-member gets 404 on four reads and two writes, the
+  owner's path returns the same rows with an empty `team_id` and can still mutate, and the share route
+  sets, clears and refuses (a team the caller is not in is 404, a viewer's attempt is 404 and changes
+  nothing). `fakeSeatAdmin` gained the two new port methods (`GetVisibleRoomBySlug`, `SetRoomTeam`) and
+  the rigspec fake's lookup was renamed to the widened one.
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`:
+  `TestRoomStatementsAreTenantScoped` was updated for the new column count and extended to the new
+  statements, so the tenant-scoping contract now covers `GetVisibleBySlug` and `SetTeam` as well —
+  both still carry the `user_id` filter the test exists to assert.
+- Commands and results: `go build ./...` clean; `go vet ./fastmcp/seat_management/...
+  ./fastmcp/team_management/... ./fastmcp/server/httpapp/` clean; `gofmt -l` empty on the touched
+  files; `SEAT_TEST_DATABASE_URL=... AGENTHUB_TEST_PG_URL=... go test -count=1
+  ./fastmcp/seat_management/... ./fastmcp/team_management/... ./fastmcp/task_management/infrastructure/database/...`
+  all green, and `./fastmcp/server/httpapp/` green except `TestMissedNotificationStoredOfflineAndReplayedOnce`,
+  which fails on another seat's in-flight `seat_feedback` table (`NewApp: unknown table "seat_feedback"`)
+  and is untouched by this change. `/tmp/d5pg` held the throwaway PostgreSQL (port 54339).
+- Live smoke with the real binary: a database holding ONLY the pre-wiring `teams`, `team_members` and
+  `rooms` (no `team_id`), booted with `AUTO_MIGRATE=true` — after boot `rooms.team_id` is `uuid`
+  nullable with `rooms_team_id_fkey -> teams` and `ix_rooms_team_id`, all 38 registered tables exist,
+  `/health` is 200, and `PUT /api/v2/openrig/rooms/dev/team` answers 403 `{"detail":"Not authenticated"}`
+  (mounted and behind auth) rather than 404.
+
+## 2026-10-06 - the rig build's delete of operator files is pinned from both sides (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained two tests over the existing
+  local-HTTP-server fixture, so the whole client path runs and only the cloud is canned:
+  `test_rig_build_keeps_operator_files_it_did_not_create` places a marker file and a SYMLINK in
+  `<out>/<room>/rig` between two builds and asserts both survive, that the stderr notice names
+  them, and that stdout stays exactly the machine-readable `rig:<path>` line;
+  `test_rig_build_replaces_its_own_rendered_content` drops a seat from the room and asserts the
+  build still removes that seat's rendered `agents/<seat>` directory and prints no notice.
+- The second test is the deliberate counterweight: without it, a future change that preserved
+  EVERYTHING would pass the first test while breaking the staging-and-swap build's whole purpose.
+- Proved by reverting the change: with the fix removed the preservation test fails
+  (`FileNotFoundError: .../room1/rig/operator-notes.txt`) and passes with it; the counterweight test
+  passes both ways, which is what a guard for an unchanged invariant should do.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **90 passed** (88 before these two), and the
+  whole script suite `... src/tests/scripts -q` -> **221 passed**.
+- No credential is created, read or printed by either test: the marker holds the text
+  "placed by the operator" and the symlink points at a temp file holding "not a credential".
+
+## 2026-10-06 - the friction channel is driven from both submission paths into one store (Go)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_feedback_mount_test.go` (new) mounts the two routes over
+  an in-memory store and pins what a consumer reads: the grouped answer's LAYER ORDER and counts
+  (submitted cloud-first to prove the grouping is by vocabulary, not by arrival), the exact row key
+  set, newest-first inside a group, the id the POST answered with being the id the read carries,
+  eight refusals (malformed body, unknown field, unknown layer, the underscore spelling of
+  `seat-context`, empty text, missing room, oversized session, oversized text), the 422 secret
+  refusal naming `text` and NOT echoing the credential, the machine-token attribution and the 401
+  the read side gives a machine token, tenant scoping, and the empty-channel envelope.
+- `agenthub_go/fastmcp/server/httpapp/submit_feedback_mcp_test.go` (new) publishes and dispatches
+  the `submit_feedback` tool: the schema's layer enum equals the domain vocabulary, an unknown layer
+  is refused with the vocabulary named and nothing stored, and **the tool and the route write into
+  ONE store and their rows are compared field by field** (`assertSameRowShape`: everything that
+  describes the submission, with id, text and the instant excluded for stated reasons).
+- `agenthub_go/fastmcp/server/httpapp/seat_feedback_script_test.go` (new) executes the REAL
+  `scripts/seat_feedback.sh` against the routed server over HTTP (`httptest` + `exec`), asserts the
+  route's own answer is what the script prints, compares the script's row with the tool's row, and
+  checks that an unknown layer is refused by the script WITHOUT a request reaching the server.
+- `agenthub_go/fastmcp/server/httpapp/mcp_routes_test.go` gained the new tool in the golden test's
+  Go-only skip list (`submit_feedback`, beside `manage_seat`/`call_seat`), so the Python registry
+  comparison stays honest rather than growing a silent exception.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go test ./fastmcp/server/httpapp/ -run 'TestSeatFeedback|TestMCPSubmitFeedback|TestMCPToolsListPublishesSubmitFeedback'`
+  -> ok; `go vet ./fastmcp/server/... ./fastmcp/seat_management/...` -> clean; `go build ./...` -> clean;
+  `gofmt -l` on the touched files -> empty. **Run at HEAD in a pristine copy** (`git archive HEAD` +
+  the new files), because the shared working tree could not compile the httpapp test binary at the
+  time: go-dev2's in-flight D5 edit had widened `seatAdminSource`/`seatRigSpecSource` without its
+  test fakes yet. Production `go build ./...` was clean in the live tree, and the same tests were
+  re-run there once it built.
+- NOT covered yet, and named: the `seat_feedback` table's own DDL/registry/DDL-guard slice is held
+  for the D5 serialization, so no test in this list touches the database; the gated integration
+  suite gains its case with that slice.
+
+## 2026-10-06 - the swallowed AI refusal is driven at both layers (Go)
+
+- `agenthub_go/fastmcp/task_management/interface/ai_refusal_surfacing_test.go` (new) has two tests.
+  `TestFiveAIActionsDispatchTheRefusal` drives the REAL composition — `taskResponseFormatter` →
+  `factories.NewOperationFactory` → `HandleOperation` → `StandardizeFacadeResponse` — for all five
+  actions (`ai_plan`, `ai_create`, `ai_enhance`, `ai_analyze`, `ai_suggest_agents`) with the AI seam
+  unwired, and asserts each answers `success:false` with the sentence naming the unwired seam.
+  `TestStandardizeFacadeResponseKeepsFormatterErrorMessage` is the minimal form of the same defect.
+- `agenthub_go/fastmcp/server/httpapp/ai_refusal_caller_test.go` (new) drives the caller's own path:
+  a raw JSON-RPC `tools/call` for `manage_task` through the real `POST /mcp` route, and asserts the
+  payload the caller receives contains the refusal sentence and not `Unknown error occurred`.
+  The facade factory is a local stub (`CreateTaskFacade` returning a facade built with nil
+  repositories), because the `ai_plan` path refuses before it reaches any repository; the test needs
+  no database, which is why it runs in the normal suite.
+- Both fail on the unfixed tree and pass on the fixed one, measured: the interface test at
+  `error message = "Unknown error occurred"`, the httpapp test with the same string in the wire body.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go test ./fastmcp/task_management/interface/ ./fastmcp/server/httpapp/` -> ok;
+  `go vet ./fastmcp/task_management/interface/... ./fastmcp/server/httpapp/...` -> clean;
+  `gofmt -l` on the three touched files -> empty.
+
+## 2026-10-06 - the pin label is driven, not read (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` (the case at :419, renamed from 'marks a pinned block and still
+  offers removal') DRIVES the pinned row instead of asserting around it: with a `pin` op on the company overlay it
+  clicks `Remove here` on that row and asserts the write that follows - `putOverlay('seat', { ops: [{ kind: 'remove',
+  slug: 'rules', version: '', content: '' }] }, 'dev', 'alice')` - so the surface is shown removing a pinned block
+  rather than promising to.
+- Three assertions pin the copy the owner's ruling is about: the badge's text is EXACTLY `pinned at company` (the
+  padlock glyph is gone, asserted as no `svg` inside the badge), the row carries the sentence saying a pin sets the
+  version in effect at its scope and is not a lock, and the same row states its own removal outcome
+  (`Removing here: removed at seat · still defined at the seat type`) while the button stays enabled.
+- Proved by removing the change, measured rather than argued: with the padlock restored the case fails
+  `AssertionError: expected SVGSVGElement{ …(2), …(2) } to be null` with the received node `class="lucide
+  lucide-lock mr-1 h-3 w-3"`, and with the sentence removed it fails `Unable to find an element with the text: A
+  pin sets the version in effect at company for this block and does nothing else - it is not a lock, so removing
+  the block still removes it.` Both halves are pinned rather than described; the component was then restored and
+  `git diff` on it is empty.
+- THE FILE'S OWN SETUP IS NOW AT FILE SCOPE (the repair, `qitem-20261006163405-fffde845a648c88c`): the mocks every
+  case needs were registered in a `beforeEach` INSIDE the first describe, so the two describes it does not contain -
+  `SeatAuthoringPage composer` and `SeatAuthoringPage mcp blocks` - inherited them only by accident of full-file
+  order. The block is moved verbatim to file scope with the reason in a comment above it. This is a scope move and
+  not a behaviour change, and the full-file run is the measurement of that: 22 passed before and after, the same 22
+  case names, none skipped, no expectation edited.
+- MEASURED BEFORE AND AFTER ON THE SAME INVOCATION, `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx -t
+  '<case>'`: BEFORE the move, `-t 'labels a pin as what it does'` failed `TestingLibraryElementError: Unable to find
+  a label with the text of: Compose level` with the page rendering "No rooms yet" - the case never reached its own
+  assertion (reproduced twice, which is how the defect was found). AFTER the move the same string passes
+  `1 passed | 21 skipped`, and so do `-t 'labels each block with where it is inherited from'`, `-t 'refuses to add
+  a block already in effect at this level'`, `-t 'lists seat types with their default runtime'` and `-t 'names an
+  mcp entry by its server and transport'`.
+- Counts: that file 22 tests, 0 errors.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
+  passed; the five single-case invocations above -> `1 passed | 21 skipped` each.
+
+## 2026-10-06 — the two destructive paths are exercised rather than read (Go)
+
+- `agenthub_go/fastmcp/seat_management/application/services/deletion_paths_integration_test.go` (new, gated by `SEAT_TEST_DATABASE_URL` like its neighbour `seat_resolution_integration_test.go`) covers the ONLY two destructive paths in the shipped surface — a seat link delete and a room delete — which had **no execution coverage at all**: the audit that reported them verified the SQL by reading, and the gated tests were not run for it.
+- Five assertions, each counting rows PER TABLE in both directions, so a future change that starts touching a neighbouring table fails here rather than passing quietly: (1) a link delete removes exactly one row — `seat_links 4->3` and no other table moved; (2) an absent link answers not-found, changes nothing, and the delete's scoping is proved by **deleting the neighbouring triple while the real row survives**; (3) a non-empty room is refused **with its count** (`still holds 2 seat(s)`) and removes nothing, proved by counts rather than by the error; (4) an empty room removes exactly its room overlay, its reported statuses and the room, with a **second room's** seat, link, overlay and status counted afterwards as survivors; (5) a second user identity is answered `ErrRoomNotFound` rather than forbidden, at the store level where the scoping lives, and removes nothing.
+- The layer division is named in the file: the HTTP status mapping (409 for the refusal, 404 for a missing link or room) belongs to the in-memory mount tests `TestSeatAdminDeleteRoom` and `TestSeatAdminDeleteLink`; this test asserts the counts and the store-level scoping those cannot.
+- It SKIPS when the variable is unset — verified: `--- SKIP: TestDeletionPathsIntegration`, with the package still ok — so the ordinary suite is unaffected, and the file states that the target is whatever the variable names, **with no fallback host**.
+- Commands: `gofmt -l` -> empty; `SEAT_TEST_DATABASE_URL=<throwaway> go test -count=1 -run TestDeletionPathsIntegration ./fastmcp/seat_management/application/services/` -> ok; the same run ungated -> SKIP; the package ungated -> ok.
+- One expectation was corrected by the measurement during the run, recorded because it is the point: claim 4 was first written as `seat_status 3->1` and measured `2->1`, because the fixture's own `RemoveSeat` had already removed that row — the code was right and the expectation was the error.
+
 ## 2026-10-06 - a deliberate socket close is not a failure (frontend)
 
 - `src/tests/services/WebSocketClient.test.ts` adds the case that DRIVES the deliberate close: connect, open, then

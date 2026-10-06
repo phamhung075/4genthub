@@ -25,7 +25,11 @@ pulls every listed seat with the same pinning rules as ``pull``, then builds::
 The ``agents/<seat>`` link makes the ``local:agents/<seat>`` references in the
 YAML resolve. The rig directory is built in a staging directory and swapped in
 only after every seat is pinned, so a failed run leaves a previous rig directory
-untouched. Print only ``rig:<path to rig.yaml>`` so the operator can run
+untouched. **Everything in the rig directory that the build did not write is carried
+over** — a credential link, a delegation file, an operator's notes — and named on
+stderr rather than deleted, and what the build wrote is derived from the directories
+at swap time, so a file that lands WHILE the seats are being pulled survives too.
+Print only ``rig:<path to rig.yaml>`` on stdout so the operator can run
 ``rig up <that path>``.
 
 Offline use is an explicit operator choice. ``bundle`` produces a self-contained
@@ -542,8 +546,26 @@ def materialize_agent(source: Path, seat_dir: Path, target: Path) -> None:
             shutil.copy2(candidate, target / name)
 
 
-def swap_dir(staging: Path, target: Path) -> None:
-    """Move ``staging`` onto ``target``, restoring ``target`` if the move fails."""
+def swap_dir(staging: Path, target: Path) -> list[str]:
+    """Move ``staging`` onto ``target``, restoring ``target`` if the move fails.
+
+    Everything the caller did not write is carried over, and **what the caller wrote is derived
+    HERE, from the two directories**: the entries of the old ``target`` that the new one does not
+    have are moved back in, and their names are returned so the caller can say what it kept. A
+    name the new directory already has is left alone — the caller's own content wins. Entries are
+    moved rather than copied, so a symlink stays a symlink.
+
+    Deriving this at swap time rather than from a list read earlier buys two things. It closes a
+    real window, and the window is MEASURED rather than assumed: ``cmd_rig`` reads the old
+    directory AFTER pulling the seats and BEFORE staging materializes them, so the gap is the
+    materialization — a copy per seat — between that read and this swap. A file that lands in the
+    gap is in neither the old list nor the new directory, so it used to be deleted by a build that
+    promises the operator their files survive. (A file that lands during the PULLS survives under
+    both the old and the new code; it was never the open phase.) And the derivation removes the
+    need to enumerate what the build owns, an enumeration a new rendered artifact would silently
+    invalidate.
+    """
+    kept: list[str] = []
     backup = None
     if target.exists() or target.is_symlink():
         backup = Path(
@@ -558,7 +580,14 @@ def swap_dir(staging: Path, target: Path) -> None:
             backup.rename(target)
         raise
     if backup is not None:
+        written = {entry.name for entry in target.iterdir()}
+        for entry in sorted(backup.iterdir(), key=lambda path: path.name):
+            if entry.name in written:
+                continue
+            entry.rename(target / entry.name)
+            kept.append(entry.name)
         shutil.rmtree(backup, ignore_errors=True)
+    return kept
 
 
 def cmd_rig(args: argparse.Namespace) -> None:
@@ -600,6 +629,7 @@ def cmd_rig(args: argparse.Namespace) -> None:
 
     room_dir = out / room
     room_dir.mkdir(parents=True, exist_ok=True)
+    rig_dir = room_dir / "rig"
     staging = Path(tempfile.mkdtemp(prefix=".rig.", dir=room_dir))
     try:
         (staging / "rig.yaml").write_text(yaml_text, encoding="utf-8")
@@ -607,12 +637,70 @@ def cmd_rig(args: argparse.Namespace) -> None:
         agents.mkdir()
         for seat in seats:
             materialize_agent(pinned[seat], out / room / seat, agents / seat)
-        swap_dir(staging, room_dir / "rig")
+        # The swap carries over whatever the build did not write, derived from the directories at
+        # that moment - so a file placed in the rig directory WHILE the seats were being pulled
+        # survives too, which a list read before the pull could not promise.
+        kept = swap_dir(staging, rig_dir)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
 
-    print(f"rig:{room_dir / 'rig' / 'rig.yaml'}")
+    if kept:
+        print(
+            f"kept {len(kept)} file(s) the build did not create in {rig_dir}: "
+            f"{', '.join(kept)}",
+            file=sys.stderr,
+        )
+    print(f"rig:{rig_dir / 'rig.yaml'}")
+
+
+def unpinned_seats(rig_yaml: Path, rig_root: Path) -> list[tuple[str, str]]:
+    """Seats of a rig spec whose agent directory in the rig root carries no usable pinned policy.
+
+    A bundle copies ``<rig-root>/agents/<agent>/`` verbatim, and ``seatcheck`` reads its policy
+    from the pin that directory is supposed to hold - so a bundle built from a rig root without it
+    holds seats that cannot decide or audit offline. Until now the build said nothing about that:
+    ``rig bundle create`` answers "Bundle created" and the artifact passes its own integrity check,
+    while the first sign of trouble is ``offline-install`` refusing the bundle later
+    ("no pinned policy found under .../agents").
+
+    Returns ``(seat, reason)`` pairs, and an empty list when there is nothing true to say: if the
+    spec or the root is unreadable the build that got this far had a spec the CLI could read, so a
+    warning about the check itself would be noise rather than a signal.
+    """
+    try:
+        import yaml  # lazy: the other subcommands stay dependency-free
+    except ImportError:  # pragma: no cover - environment dependent
+        return []
+    try:
+        spec = yaml.safe_load(Path(rig_yaml).read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return []
+    if not isinstance(spec, dict):
+        return []
+
+    missing: list[tuple[str, str]] = []
+    for pod in spec.get("pods") or []:
+        for member in (pod or {}).get("members") or []:
+            seat = str((member or {}).get("id") or "")
+            ref = str((member or {}).get("agent_ref") or "")
+            agent = ref.partition("local:agents/")[2]
+            if not seat or not agent or not safe_relative(agent):
+                continue
+            policy = Path(rig_root) / "agents" / agent / "policy.json"
+            if not policy.is_file():
+                missing.append((seat, f"no policy.json in agents/{agent}"))
+                continue
+            try:
+                claimed = json.loads(policy.read_text(encoding="utf-8")).get("Seat")
+            except (OSError, ValueError):
+                missing.append((seat, f"the policy in agents/{agent} is unreadable"))
+                continue
+            # Two seats sharing one seat type share one agent directory, so only one of their
+            # policies can travel; the other seat is here.
+            if isinstance(claimed, str) and claimed != seat:
+                missing.append((seat, f"the policy in agents/{agent} belongs to seat {claimed!r}"))
+    return missing
 
 
 def cmd_bundle(args: argparse.Namespace) -> None:
@@ -656,6 +744,22 @@ def cmd_bundle(args: argparse.Namespace) -> None:
     except subprocess.CalledProcessError as err:
         raise SyncError(
             f"rig bundle create failed with exit code {err.returncode}", EXIT_REMOTE
+        )
+
+    # The build succeeded and the artifact passes its own integrity check, so this is the only
+    # place the operator can be told what it does NOT contain. WARNED rather than refused: a
+    # bundle without a pin is still complete for everything that does not enforce or audit, and
+    # `offline-install` already refuses it with a precise message - what was missing was the
+    # SIGNAL AT BUILD TIME, which is what this adds.
+    missing = unpinned_seats(args.rig_yaml, args.rig_root)
+    if missing:
+        detail = "; ".join(f"{seat} ({reason})" for seat, reason in missing)
+        print(
+            f"warning: {len(missing)} seat(s) in this bundle have no usable pinned policy, so a "
+            f"seat launched from it offline cannot decide or audit and an offline install will "
+            f"refuse it - {detail}. Build the rig root with `{Path(__file__).name} rig <room>`, "
+            "which materializes each seat's policy.json into its agent directory.",
+            file=sys.stderr,
         )
     print(str(bundle_path))
 

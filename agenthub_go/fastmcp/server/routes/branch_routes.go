@@ -2,8 +2,8 @@
 //
 // The FastAPI APIRouter/Depends/Form plumbing has no Go meaning; the handler
 // logic, validation branches, error text and HTTP status codes are preserved.
-// BranchAPIController is not ported yet, so the minimal result and controller
-// surfaces used by these routes are declared here.
+// The minimal result and controller surfaces used by these routes are declared
+// here.
 package routes
 
 import (

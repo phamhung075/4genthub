@@ -900,6 +900,7 @@ func TestSeatTableMetadataMatchesStructs(t *testing.T) {
 		{"seat_settings", reflect.TypeOf(seatdb.SeatSettingsORM{})},
 		{"machines", reflect.TypeOf(seatdb.MachineORM{})},
 		{"seat_status", reflect.TypeOf(seatdb.SeatStatusORM{})},
+		{"seat_feedback", reflect.TypeOf(seatdb.SeatFeedbackORM{})},
 	}
 	byName := map[string]database.TableDef{}
 	for _, def := range database.Tables {
@@ -953,6 +954,11 @@ func TestRepositoryConstructors(t *testing.T) {
 	if _, err := NewORMMachineStatusRepository(sessions); err != nil {
 		t.Fatalf("NewORMMachineStatusRepository: %v", err)
 	}
+	// The friction channel's repository. Its constructor resolving here is what makes the boot
+	// composition safe: NewORMRepository resolves the table by NAME at construction time.
+	if _, err := NewORMSeatFeedbackRepository(sessions); err != nil {
+		t.Fatalf("NewORMSeatFeedbackRepository: %v", err)
+	}
 }
 
 func assertNoStatement(t *testing.T, f *fakeDriver, substr string) {
@@ -999,11 +1005,11 @@ func assertTenantScoped(t *testing.T, f *fakeDriver, table string) {
 func TestRoomStatementsAreTenantScoped(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
-	roomCols := []string{"id", "user_id", "slug", "name", "created_at", "updated_at"}
+	roomCols := []string{"id", "user_id", "slug", "name", "team_id", "created_at", "updated_at"}
 	f := &fakeDriver{}
 	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 		if strings.Contains(q, `FROM "rooms"`) {
-			return roomCols, [][]driver.Value{fakeRow(testRoomID, testUser, "eng", "Engineering", now, now)}, nil
+			return roomCols, [][]driver.Value{fakeRow(testRoomID, testUser, "eng", "Engineering", nil, now, now)}, nil
 		}
 		return nil, nil, nil
 	}
@@ -1016,6 +1022,15 @@ func TestRoomStatementsAreTenantScoped(t *testing.T) {
 	}
 	if _, err := repo.GetBySlug(ctx, testUser, "eng"); err != nil {
 		t.Fatalf("GetBySlug: %v", err)
+	}
+	// The sharing reads and the sharing write are covered by the same rule: GetVisibleBySlug
+	// widens by the caller's memberships and SetTeam matches the owner, and both still carry the
+	// user_id filter this test asserts.
+	if _, err := repo.GetVisibleBySlug(ctx, testUser, "eng"); err != nil {
+		t.Fatalf("GetVisibleBySlug: %v", err)
+	}
+	if err := repo.SetTeam(ctx, testUser, testRoomID, testRoomID); err != nil {
+		t.Fatalf("SetTeam: %v", err)
 	}
 	if err := repo.Delete(ctx, testUser, testRoomID); err != nil {
 		t.Fatalf("Delete: %v", err)
@@ -1055,6 +1070,38 @@ func TestSeatLinkStatementsAreTenantScoped(t *testing.T) {
 		t.Fatalf("DeleteBySeat: %v", err)
 	}
 	assertTenantScoped(t, f, "seat_links")
+}
+
+func TestSeatFeedbackStatementsAreTenantScoped(t *testing.T) {
+	ctx := context.Background()
+	now := time.Now().UTC()
+	cols := []string{"id", "user_id", "room", "seat", "session", "layer", "text", "machine_id", "created_at"}
+	row := fakeRow("77777777-7777-4777-8777-777777777777", testUser, "room1", "seat1", "", "runtime",
+		"the harness dropped the pane id", "", now)
+	f := &fakeDriver{}
+	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
+		switch {
+		case strings.Contains(q, `INSERT INTO "seat_feedback"`):
+			return cols, [][]driver.Value{row}, nil
+		case strings.Contains(q, `FROM "seat_feedback"`):
+			return cols, [][]driver.Value{row}, nil
+		}
+		return nil, nil, nil
+	}
+	repo, err := NewORMSeatFeedbackRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.Create(ctx, domainrepo.SeatFeedback{
+		UserID: testUser, Room: "room1", Seat: "seat1", Layer: "runtime",
+		Text: "the harness dropped the pane id", CreatedAt: now,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := repo.List(ctx, testUser); err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	assertTenantScoped(t, f, "seat_feedback")
 }
 
 func TestResolvedSeatStatementsAreTenantScoped(t *testing.T) {
