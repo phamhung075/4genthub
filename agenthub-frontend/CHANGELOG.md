@@ -637,6 +637,28 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **A dead WebSocket sender — removed as unreachable code, not as a fix** - 2026-10-06
+  - Deleted the `updateTask` property from the object `useTaskWebSocket` returns in `src/hooks/useWebSocketV2.ts`. It
+    sent `{ type: 'update', payload: { entity: 'task', action: 'update', ... } }` and had NO CALLER anywhere in `src`:
+    its only consumer destructures `{ isConnected, isReconnecting, error }`, and every other `updateTask` in the tree
+    is the REST function in `api.ts`/`useTasks.ts`. Established by sweep rather than by impression, and confirmed
+    independently by go-dev.
+  - IT COULD NOT HAVE WORKED IF IT HAD BEEN CALLED, which is why it is dead rather than merely unused: the server's
+    realtime handler accepts only `ping`, `heartbeat` and `subscribe` and answers everything else with
+    `UNKNOWN_MESSAGE_TYPE` (`ws_mount.go:194-213`). That was MEASURED against the running server by sending this exact
+    frame and reading the refusal back, and go-dev has since pinned the accepted set with a test (8b17228b). So the
+    endpoint is deliberately closed to mutation frames, and the client now states that in code instead of carrying a
+    sender no server would accept.
+  - AND THE ACTION TENSE WAS NOT THE DEFECT, which matters because a tense theory was briefly in circulation: the
+    protocol's action literals are present tense (`types.go:37-41`, `ActionTypeUpdate = "update"`) and the validator
+    accepts exactly what the sender emitted. The refusal is on the top-level `type`, and only there.
+  - NOT DELETED, AND THE REASON IS WORTH KEEPING: the `type: 'bulk'` object built by `WebSocketClient.mergeAIUpdates`
+    looks like a second dead sender and is not one. It is called at `WebSocketClient.ts:152` on the RECEIVE path over
+    `this.aiBuffer` and its result is emitted to local listeners — it never reaches a socket — and a test covers it.
+    The bulk frame and its builder stay.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vitest run` on `WebSocketClient.test.ts`,
+    `WebSocketAnimationService.test.ts` and `WebSocketAnimationService.unified.test.ts` -> 3 files, 109 passed; the
+    `useRealtimeSync` task/seat/notification suites -> 3 files, 24 passed.
 - **An unreachable component — dead code, removed by measurement rather than preference** - 2026-10-06
   - Deleted `src/components/HealthCheck.tsx` (114 lines). It had no render site anywhere, and the evidence is the sweep rather than an impression: across the WHOLE repository, outside the file itself, there is no import of it, no JSX use, no route, no test and no string-based dynamic import; it is absent from `App.tsx`, `main.tsx` and `index.tsx`; there is no `import.meta.glob` or `require.context` anywhere in `src`, so no glob could reach it without naming it; and every dynamic import in `src` names a literal path. It was last touched by `9787bce2 migrate to agenthub`.
   - WHY REMOVED RATHER THAN GUARDED: a component nothing can reach is not a placeholder, it is a liability — establishing that cost one sweep, and leaving it would charge the next reader the same sweep. The project's rule is no dead code left behind, and git history keeps the file if anyone ever wants it. The lead placed the removal as its own change, deliberately separate from the unmount-guard work that found it.

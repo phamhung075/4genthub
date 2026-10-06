@@ -284,21 +284,6 @@ export function useTaskWebSocket(userId: string, token: string, taskId?: string)
 
   return {
     ...wsState,
-    sendMessage,
-    updateTask: (update: any) => {
-      sendMessage({
-        type: 'update',
-        payload: {
-          entity: 'task',
-          action: 'update',
-          data: {
-            primary: { id: taskId, ...update }
-          }
-        },
-        metadata: {
-          source: 'user'
-        }
-      });
-    }
+    sendMessage
   };
 }
