@@ -256,6 +256,22 @@
     that one case.
 
 ### Changed
+- **The one animation path that failed silently now says so (observability, no behaviour change)** - 2026-10-06
+  - `src/services/AnimationFactory.ts` `shouldAllowAnimation` returned `false` with NO output when a request arrived inside
+    `ANIMATION_COOLDOWN` (100ms) from a source that may not override the one already running. That made the two states an
+    animation loss can be - "the message never arrived" and "the cooldown ate it" - INDISTINGUISHABLE in a console, and they
+    have OPPOSITE fixes: one is a client timing window, the other is a server that never sent. Established tonight at the cost
+    of a live run that had to wrap the page's own WebSocket to tell them apart. The drop is now logged with the element id,
+    the requested source, the previously-running source and the elapsed time, and the message NAMES the 100ms cooldown so the
+    reader learns the rule rather than only the fact.
+  - THE PRINCIPLE, because it is the reason for two lines of logging in a hot path: AN INSTRUMENT THAT CANNOT SHOW YOU ITS OWN
+    SILENT PATH REPORTS ABSENCES AS CLEAN. Every other refusal in this class already logs - `animate` warns on an unregistered
+    element - so this was the single spot where a debugger without extra tooling was left guessing.
+  - NO BEHAVIOUR CHANGE: the return value, the ordering of the checks and the cooldown itself are untouched; only the blocked
+    branch gained a `logger.debug`, in the same message-plus-context shape as the file's existing logs.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vitest run` on the three animation suites
+    (`WebSocketAnimationService.test.ts`, `WebSocketAnimationService.unified.test.ts`, `WebSocketClient.test.ts`) and the
+    three `useRealtimeSync` suites (task, seat, notification) -> 6 files, 133 passed.
 - **Two dialogs stop writing state after they are gone — hygiene, NOT a bug fix, zero observable risk today** - 2026-10-06
   - `src/components/TaskEditDialog.tsx` and `src/components/SubtaskEditDialog.tsx` each start `getAvailableAgents()` from an effect and then write `setAvailableSeats` / `setAvailableSeatsError`. Both are rendered CONDITIONALLY (`LazyTaskList/components/DialogSection.tsx:54,65` and `LazySubtaskList/components/SubtaskDialogs.tsx:118`), so closing the dialog while the load is in flight unmounts the component and the continuation writes state on something that is gone. Both effects now carry an effect-scoped `cancelled` flag — checked after the load resolves and in the catch, with the cleanup setting it. ONE shape, twice, and deliberately not a token or a wrapper.
   - WHAT THIS IS NOT, said first because the temptation is to read it as more than it is: NONE of these sites is the crash reproduced earlier tonight, and this does not fix that crash. A post-unmount state write in a LIVE environment is a no-op — React ignores it and dereferences nothing (this project is on React 19.1.1). The reproduced crash came from React DOM running after the TEST ENVIRONMENT had been torn down, where `window` is gone entirely, which is a different condition. THE OBSERVABLE RISK TODAY IS ZERO.

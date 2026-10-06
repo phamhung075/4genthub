@@ -243,7 +243,22 @@ class AnimationFactory {
       return true;
     }
 
-    // Block everything else
+    // Block everything else. LOGGED DELIBERATELY, and it is the only point in the animation system that
+    // used to fail with no output at all: a dropped animation and a message that never arrived look
+    // IDENTICAL in a console, and they have opposite fixes - one is a client timing window, the other is
+    // a server that never sent. Naming the cooldown in the message teaches the rule, not just the fact.
+    logger.debug(
+      `🎬 [AnimationFactory] Animation dropped for '${elementId}': a '${source}' request arrived ${timeSinceLastAnimation}ms after the element's last '${currentState.source}' animation, inside the ${this.ANIMATION_COOLDOWN}ms cooldown`,
+      {
+        elementId,
+        requestedType: type,
+        requestedSource: source,
+        previousSource: currentState.source,
+        timeSinceLastAnimation,
+        cooldownMs: this.ANIMATION_COOLDOWN
+      },
+      'AnimationFactory.ts'
+    );
     return false;
   }
 
