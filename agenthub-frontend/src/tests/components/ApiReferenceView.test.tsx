@@ -102,6 +102,10 @@ describe('ApiReferenceView', () => {
     expect(within(withActions).getByText('create')).toBeInTheDocument();
 
     const withoutActions = within(toolsRegion()).getByRole('article', { name: 'call_seat' });
+    // No badge NODE exists either: `Badge` renders a span, so this asserts the absence rather
+    // than inheriting it from a map over an empty array (fe-dev's precision note - a reader
+    // checking the claim should read the test and not only the component).
+    expect(withoutActions.querySelectorAll('span')).toHaveLength(0);
     expect(within(withoutActions).queryByText('Actions')).toBeNull();
     // It declares no description either, so the only paragraph is the Parameters label: an
     // empty description adds no element at all, rather than an empty one.

@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the badge absence is asserted rather than inherited (frontend)
+
+- `src/tests/components/ApiReferenceView.test.tsx`: the "a tool with no actions renders no badges" half of its
+  claim was GUARANTEED BY THE SOURCE - `tool.actions.length > 0` wraps the label and the badges together - and
+  never asserted; the case pinned the label's absence and a paragraph count only. That is fe-dev's precision
+  note from its review of the component, and the standard is right: a reader checking the claim should read the
+  test, not only the component.
+- The assertion added is `withoutActions.querySelectorAll('span')` -> length 0, with the reason in a comment
+  (`Badge` renders a span, so an empty Actions container would appear here). ORDER IS DELIBERATE: the structural
+  assertion runs FIRST, so it is exercised when it fails instead of being shadowed by the label assertion that
+  would abort the case first - which is what happened on the first falsification run and is how the shadowing
+  was found.
+- PROVED BY REMOVING THE GUARD rather than argued: with `tool.actions.length > 0` replaced by `true`, the case
+  fails on the NEW assertion - "expected <span> to have a length of +0 but got 1" - which is the plausible
+  regression (an empty Actions container rendering its label). The component was then restored, its diff is
+  empty, the file is 7/7 green and `npx tsc --noEmit -p .` reports 0 errors.
+
 ## 2026-10-06 - the one-client skeleton: the contract, the platform matrix, refusals instead of stubs (Go)
 
 - New `cmd/agenthubclient` (thin dispatcher), `internal/clientcmd` (the shared contract and the platform
