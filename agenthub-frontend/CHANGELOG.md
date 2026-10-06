@@ -207,8 +207,11 @@
  its default - this directory, holding only `.env.sample` - and injected only the process environment's variables,
  with `VITE_WS_URL` absent; another loaded the parent env and carried `VITE_WS_URL` in the object itself. So the
  client's read was CORRECT and its fallback to the page origin was its correct consequence: the value never
- ARRIVED rather than being discarded. The other two candidates are refuted, not parked - the runtime `window._env_`
- path is absent in development, and the computed-key read resolves against a populated object in the build.
+ ARRIVED rather than being discarded. The other two candidates are refuted, not parked, and the FIRST REASON HERE IS
+ CORRECTED: the runtime `window._env_` object is NOT absent in development - `index.html` loads `/env-config.js` in
+ every environment and that file defines the object - but it carries NO websocket key (its keys are placeholders such
+ as `__VITE_API_URL__`, which `getEnvVar` ignores), so that branch cannot supply the URL. The computed-key read
+ resolved against a populated object in the build, as measured when that output was present.
  Diagnostic, one command: fetch the transformed config module from the running dev server and read line one, where
  the injected object is literally present. WHICH config the original observing run used stays unprovable here.
 - **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
