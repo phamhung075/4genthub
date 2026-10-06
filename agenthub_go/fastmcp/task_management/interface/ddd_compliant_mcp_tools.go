@@ -30,19 +30,19 @@ import (
 
 // DDDCompliantMCPTools orchestrates the MCP controllers for DDD-compliant tools.
 type DDDCompliantMCPTools struct {
-	Config               *configuration.ToolConfig
-	PathResolver         *utilities.PathResolver
-	FacadeService        *services.FacadeService
-	TaskController       *taskctl.TaskMCPController
-	SubtaskController    *subtaskctl.SubtaskMCPController
-	ProjectController    *projectctl.ProjectMCPController
-	GitBranchController  *branchctl.GitBranchMCPController
-	AgentController      *agent_mcp_controller.AgentMCPController
-	ManageSeatController *seatcontrollers.ManageSeatController
-	CallSeatController   *seatcontrollers.CallSeatController
+	Config                   *configuration.ToolConfig
+	PathResolver             *utilities.PathResolver
+	FacadeService            *services.FacadeService
+	TaskController           *taskctl.TaskMCPController
+	SubtaskController        *subtaskctl.SubtaskMCPController
+	ProjectController        *projectctl.ProjectMCPController
+	GitBranchController      *branchctl.GitBranchMCPController
+	AgentController          *agent_mcp_controller.AgentMCPController
+	ManageSeatController     *seatcontrollers.ManageSeatController
+	CallSeatController       *seatcontrollers.CallSeatController
 	SubmitFeedbackController *seatcontrollers.SubmitFeedbackController
-	ContextController    *contextctl.UnifiedContextMCPController // nil when the database is unavailable
-	WorkflowHintEnhancer *workflow_hint_enhancer.WorkflowHintEnhancer
+	ContextController        *contextctl.UnifiedContextMCPController // nil when the database is unavailable
+	WorkflowHintEnhancer     *workflow_hint_enhancer.WorkflowHintEnhancer
 }
 
 // Dependencies are the pieces Python obtains from module-level singletons

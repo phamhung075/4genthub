@@ -90,6 +90,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**One file `1b183904` touched was not gofmt-clean, and that commit's gate sentence was true of the compile rather than of the tree** (2026-10-06)
+
+- `fastmcp/task_management/interface/ddd_compliant_mcp_tools.go` needed its struct realigned when `SubmitFeedbackController` joined `DDDCompliantMCPTools`: the new field name is the longest, so gofmt aligns the whole block to it. `gofmt -w` on that one file, 12 lines, no behaviour.
+- **The correction, recorded rather than amended into the commit that claimed it:** `1b183904`'s body says `gofmt -l` was empty, and that was measured against a hand-written list of files which did not include this one. It is the same failure the same commit's "everything here compiles and is tested" sentence had — **a gate sentence that was true of the check that was run and false of the tree** — and the fix for both is the same: measure the tree, not a list.
+- Verified after the fix: `gofmt -l` over every tracked `.go` file in the module reports nothing (the vendored module cache under `.gomodcache/` is excluded, and it is not ours).
+
 **The rig build no longer deletes what the operator put in the rig directory** (2026-10-06)
 
 - The defect, found on the real stack (OF4 run): `openrig_seat_sync.py rig <room>` builds `<out>/<room>/rig` in a staging directory and swaps it in, and the swap removed **everything** that was there — including files the build never created. An operator's `.env` symlink in the rig root, **the documented home of a rig's provider credential**, was gone after the next build, and the seats then launched with the right values and no credential (`No API key found for deepseek`), with nothing at the build step saying it had just removed it.
