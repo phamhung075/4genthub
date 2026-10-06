@@ -2,6 +2,42 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the friction table lands, and the class no gate saw gets its guard (Go)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go` (new,
+  the ALWAYS-RUNNING half): scans every non-test `.go` file in the module for the constructors whose
+  first argument is a table name (`NewORMRepository`, `NewUserScopedORMRepository`,
+  `NewBaseTimestampRepository`) and fails when a name has no `TableDef` in the shared registry.
+  No database, no env var, and it FAILS on a non-literal table name instead of skipping it, so the
+  gap cannot open silently (the two forwarding constructors are an explicit allowlist).
+  **Measured both ways: its only finding when written was `seat_feedback` itself, and it went green
+  in the same commit that registered the table.**
+- `agenthub_go/fastmcp/server/httpapp/app_boot_test.go` (new, the DB-gated half): its doc comment
+  says plainly that it SKIPS without `AGENTHUB_TEST_PG_URL` and is therefore NOT the guard for the
+  boot class - the parity check is. It runs `NewApp` against a throwaway database through the
+  bring-up helper this package already had (no second bring-up path), asserts the tool list carries
+  `manage_seat`, `call_seat` and `submit_feedback`, and asserts the handler serves the seat routes
+  and the friction channel's two paths rather than 404ing.
+- **It earned its keep on its first gated run**: the fresh database has no `uuid-ossp`, so my
+  runtime DDL's `DEFAULT uuid_generate_v4()` failed with `SQLSTATE 42883`. Both runs are recorded -
+  the failing one and the passing one after the repository took over generating the id.
+- `seat_management/infrastructure/database/seat_feedback_orm_test.go` (new): registers the row
+  struct in the shared DDL guard map and checks the `layer` CHECK against `domain/feedback` in BOTH
+  DDL copies, mirroring the seats table's `permission_policy` check.
+- `orm_repositories_test.go` gained `seat_feedback` in the metadata-vs-struct case list, in the
+  constructor list, and a tenant-scoping test asserting every statement touching the table carries
+  `user_id`.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go build ./...` -> clean; `gofmt -l` on the touched files -> empty; `go vet ./fastmcp/...` -> clean;
+  `go test ./fastmcp/seat_management/... ./fastmcp/task_management/infrastructure/repositories/` -> ok;
+  `go test ./fastmcp/server/httpapp/` (default) -> ok with the boot test printing
+  `--- SKIP: AGENTHUB_TEST_PG_URL not set`; `AGENTHUB_TEST_PG_URL=... go test ./fastmcp/server/httpapp/
+  -run TestAppBootsAgainstAMigratedDatabase` -> **PASS** against the throwaway PostgreSQL the OF4
+  recipe brings up on `:54331`.
+- **Demonstrated capable of failing**, in a `git archive HEAD` copy: with the boot-time composition
+  restored (the pre-`d41fba79` state) the gated test fails `NewApp: unknown table "seat_feedback"`,
+  and the same copy without that line passes.
+
 ## 2026-10-06 - the team-sharing wiring is pinned at both DDL sources, on PostgreSQL, and at the mount (Go)
 
 - `agenthub_go/fastmcp/seat_management/infrastructure/database/seat_ddl_parity_test.go` (new) is the

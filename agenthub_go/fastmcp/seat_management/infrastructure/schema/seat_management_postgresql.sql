@@ -252,6 +252,30 @@ CREATE TABLE IF NOT EXISTS seat_settings (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
+-- Table: seat_feedback
+-- The seat friction channel: what a seat (or its operator, or a bridge reporting for its seats)
+-- hit, and in which layer of the platform. layer is a closed vocabulary with a CHECK rather than
+-- a tag, because the read side GROUPS by it; its Go source of truth is
+-- fastmcp/seat_management/domain/feedback, and TestSeatFeedbackLayerCheckMatchesDomain holds the
+-- two together. room and seat are slugs, not references: friction stays readable after the seat
+-- it is about is gone, which is the point of the channel. machine_id is empty when a user token
+-- submitted the row and names the bridge when a machine token did. The row is append-only in use:
+-- nothing updates or deletes it.
+CREATE TABLE IF NOT EXISTS seat_feedback (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    seat TEXT NOT NULL,
+    session TEXT NOT NULL DEFAULT '',
+    layer TEXT NOT NULL,
+    text TEXT NOT NULL,
+    machine_id TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT ck_seat_feedback_layer CHECK (layer IN ('runtime', 'openrig', 'cloud', 'seat-context', 'workspace', 'other'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
+
 -- Table: machines
 -- One row per (user, bridge machine). agents is the latest herdr agent snapshot, a JSON
 -- array of {agent, status, pane_id}; last_seen is server time of the last status report.

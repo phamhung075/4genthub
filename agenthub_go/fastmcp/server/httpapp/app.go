@@ -57,16 +57,21 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 		return nil, err
 	}
 	callSeat := newCallSeatController(sessions)
-	// submit_feedback is deliberately NOT composed here yet: its controller constructs the
-	// seat_feedback repository, NewORMRepository resolves the table BY NAME from the shared
-	// registry, and that table's TableDef is held with the D5 serialization - so composing it
-	// kills the process at boot with `app: unknown table "seat_feedback"` on every database,
-	// AUTO_MIGRATE true or false. It is re-composed in the commit that lands the table.
+	// The friction channel needs BOTH of its lines together: this composition, which constructs
+	// the seat_feedback repository at BOOT (and so needs the table registered), and the mount
+	// below. Composed without the table the process dies with `app: unknown table
+	// "seat_feedback"`; mounted without the composition the routes answer 500. They landed with
+	// the table, and 947bb81b is the entry. See app_boot_test.go for the check that boots this.
+	submitFeedback, err := newSubmitFeedbackController(sessions)
+	if err != nil {
+		return nil, err
+	}
 	mcpTools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     facadeService,
 		DatabaseAvailable: true,
 		ManageSeat:        manageSeat,
 		CallSeat:          callSeat,
+		SubmitFeedback:    submitFeedback,
 	}, nil)
 	if err != nil {
 		return nil, err
@@ -129,7 +134,7 @@ func (a *App) Handler() http.Handler {
 	mountSeatAdminRoutes(mux, a.Sessions)
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
-	// mountSeatFeedbackRoutes returns with the seat_feedback table; see NewApp's note above.
+	mountSeatFeedbackRoutes(mux, a.Sessions)
 	mountMachineTokenRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)

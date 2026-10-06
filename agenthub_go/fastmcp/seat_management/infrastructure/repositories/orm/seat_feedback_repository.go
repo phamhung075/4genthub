@@ -5,6 +5,7 @@ import (
 
 	domainrepo "agenthub/fastmcp/seat_management/domain/repositories"
 	seatdb "agenthub/fastmcp/seat_management/infrastructure/database"
+	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	baserepo "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
@@ -28,16 +29,24 @@ func NewORMSeatFeedbackRepository(sessions *database.SessionManager) (*ORMSeatFe
 	return &ORMSeatFeedbackRepository{ORMRepository: base}, nil
 }
 
-// Create stores one report and returns the stored row. The id comes from the column default
-// (uuid_generate_v4()); created_at is the caller's clock, not now() on the server, so the
-// answer the route returns and the row it stored carry the same instant.
+// Create stores one report and returns the stored row.
+//
+// The id is generated HERE rather than left to the column default, and that is the same choice the
+// base repository makes for taskdb.DefaultUUIDv4: the table's runtime DDL has no DEFAULT on id
+// because createAll (the path a fresh database takes) does not create the uuid-ossp extension, so
+// uuid_generate_v4() does not exist there. created_at is the caller's clock rather than now(), so
+// the answer the route returns and the row it stored carry the same instant.
 func (r *ORMSeatFeedbackRepository) Create(ctx context.Context, report domainrepo.SeatFeedback) (*domainrepo.SeatFeedback, error) {
 	row := &seatdb.SeatFeedbackORM{}
+	id := report.ID
+	if id == "" {
+		id = value_objects.NewUUIDv4()
+	}
 	err := r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		return s.QueryRowContext(ctx,
-			`INSERT INTO "seat_feedback" ("user_id", "room", "seat", "session", "layer", "text", "machine_id", "created_at") `+
-				`VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING `+seatFeedbackReturning,
-			report.UserID, report.Room, report.Seat, report.Session, report.Layer,
+			`INSERT INTO "seat_feedback" ("id", "user_id", "room", "seat", "session", "layer", "text", "machine_id", "created_at") `+
+				`VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING `+seatFeedbackReturning,
+			id, report.UserID, report.Room, report.Seat, report.Session, report.Layer,
 			report.Text, report.MachineID, report.CreatedAt,
 		).Scan(&row.ID, &row.UserID, &row.Room, &row.Seat, &row.Session, &row.Layer,
 			&row.Text, &row.MachineID, &row.CreatedAt)
