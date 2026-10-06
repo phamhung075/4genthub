@@ -170,6 +170,11 @@ def installed_checker(monkeypatch, tmp_path):
     link_dir.mkdir(parents=True)
     _write_fake_rig(link_dir, tmp_path / "whoami.json")
 
+    # The link location is MACHINE-LEVEL and resolves from the passwd entry, not from HOME, so a
+    # temp HOME can no longer redirect it: without this stub install-checker links into the REAL
+    # ~/.local/bin while every assertion here looks in the temp one. Same seam, and the same
+    # reason, as the sibling fixture in test_openrig_seat_sync.py.
+    monkeypatch.setattr(seat_sync, "checker_link", lambda: link_dir / "seatcheck")
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv(
         "PATH",

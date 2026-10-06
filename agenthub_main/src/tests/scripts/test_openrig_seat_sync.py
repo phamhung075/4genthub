@@ -1759,7 +1759,7 @@ def test_pull_runs_when_the_link_points_at_the_store_binary(
 def fake_go_build(calls):
     def run(command, **kwargs):
         calls.append((command, kwargs))
-        make_binary(Path(command[3]).parent.parent)
+        make_binary(Path(command[command.index("-o") + 1]).parent.parent)
         return subprocess.CompletedProcess(command, 0)
 
     return run
@@ -1782,7 +1782,15 @@ def test_install_checker_builds_and_links_on_path(
     assert out.strip() == f"checker:{binary}"
     assert (checker_home / "seatcheck").resolve() == binary
     ((command, kwargs),) = calls
-    assert command == ["go", "build", "-o", str(binary), "./cmd/seatcheck"]
+    assert command == [
+        "go",
+        "build",
+        "-ldflags",
+        f"-X main.installedPinsDir={pins.resolve()}",
+        "-o",
+        str(binary),
+        "./cmd/seatcheck",
+    ]
     assert (
         kwargs["cwd"]
         == seat_sync.AGENTHUB_GO_DIR

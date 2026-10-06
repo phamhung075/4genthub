@@ -229,6 +229,24 @@ func TestDefaultPinsDoesNotFollowHome(t *testing.T) {
 	}
 }
 
+// The store can be fixed at BUILD time, and that is the only way it can be set from outside: a
+// binary built with one reads exactly that directory, and nothing a process does afterwards moves
+// it - there is no flag and no environment read to change it, which is the property that keeps the
+// store out of the hands of the seat the guard constrains.
+func TestDefaultPinsUsesTheBuildTimeStore(t *testing.T) {
+	old := installedPinsDir
+	installedPinsDir = "/baked/store"
+	t.Cleanup(func() { installedPinsDir = old })
+
+	got, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "/baked/store" {
+		t.Fatalf("defaultPins = %q, want the baked store", got)
+	}
+}
+
 func TestSendUsageErrorsExit2(t *testing.T) {
 	cases := map[string][]string{
 		"no recipient":   {"--intent", "task", "--", "hi"},

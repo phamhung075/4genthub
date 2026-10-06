@@ -526,7 +526,15 @@ def cmd_install_checker(args: argparse.Namespace) -> None:
         directory.mkdir(exist_ok=True)
     try:
         subprocess.run(
-            ["go", "build", "-o", str(binary), "./cmd/seatcheck"],
+            [
+                "go",
+                "build",
+                "-ldflags",
+                f"-X main.installedPinsDir={out}",
+                "-o",
+                str(binary),
+                "./cmd/seatcheck",
+            ],
             cwd=AGENTHUB_GO_DIR,
             env={**os.environ, "GOCACHE": str(cache), "TMPDIR": str(tmp)},
             check=True,

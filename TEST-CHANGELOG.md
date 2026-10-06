@@ -2,6 +2,35 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the guard's store is a build-time fact, and the fixture stops writing machine state
+
+- `test_openrig_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on
+  HOME, so the link installs into the temp directory. THIS IS A MACHINE-STATE REPAIR AS WELL AS AN ADAPTATION:
+  with the link resolving from the account, the red run had written the REAL `~/.local/bin/seatcheck` and left it
+  pointing at a pytest temporary binary; with the stub the suite cannot touch it, and a full folder run now leaves
+  the link byte-identical, checked before and after.
+- The two end-to-end cases - `test_linked_guard_delivers_to_an_allowed_peer` and
+  `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` - KEEP EVERY ASSERTION, including the audit rows read
+  from the temp store: they pass because `install-checker` bakes its `--out` store into the binary it builds, which
+  is the only channel that can point an out-of-process guard at a temporary store. The guard has no flag and reads
+  no environment variable, so nothing a process does afterwards can move it.
+- `cmd/seatcheck/main_test.go`: `TestDefaultPinsUsesTheBuildTimeStore` pins the property that makes the seam safe -
+  a binary built with a store reads exactly that directory - while `TestDefaultPinsDoesNotFollowHome` keeps the
+  fallback pinned.
+- `test_openrig_seat_sync.py`: `fake_go_build` took the built binary from argv POSITION 3, so the two flags the seam
+  adds made it write into the current directory instead; it now locates `-o`, and the command assertion pins the
+  new argv EXACTLY, seam included, rather than pinning less.
+- THE GENERALISATION THIS CHANGE RECORDS, and it is why the fixture was adapted rather than the assertions
+  relaxed: A TEST THAT RESOLVES A PATH FROM THE ACCOUNT CAN WRITE MACHINE STATE FROM INSIDE A TEST RUN, AND
+  NOTHING IN ITS OUTPUT SAYS SO. The failures read `FileNotFoundError`; the damage was a symlink in the
+  operator's home.
+- Commands: `go test -count=1 ./cmd/seatcheck/` -> ok; `go vet ./cmd/seatcheck/` -> no output, exit 0;
+  `gofmt -l ./cmd/seatcheck/` -> empty. Folder: `python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts -q` from `agenthub_main` -> 280 passed, 8 warnings, 67s. The seam proved both ways by hand:
+  built with `-X main.installedPinsDir=/tmp/seamprobe` the guard refuses naming
+  `/tmp/seamprobe/4genthub-min/feedback-dev/policy.json`; built without it,
+  `/home/daihu/.openrig/agenthub-seats/4genthub-min/feedback-dev/policy.json`.
+
 ## 2026-10-06 - the bridge's defaults are pinned against HOME (python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_bridge.py`: `test_the_path_defaults_do_not_follow_home`

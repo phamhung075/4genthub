@@ -74,7 +74,19 @@ var (
 	deliver = rigSend
 )
 
+// installedPinsDir is the pins directory baked in at BUILD time by whoever built this binary:
+// scripts/openrig_seat_sync.py install-checker passes its --out store here with
+// `-ldflags -X main.installedPinsDir=<store>`. The seat cannot choose it - this command has no
+// flag and reads no environment variable at all, so what the guard reads and audits is decided
+// before it runs rather than by the process it constrains. Empty means the binary was built
+// without the seam, and the store then falls back to the account's home, which is where the
+// client's own default resolves on a machine with no override.
+var installedPinsDir = ""
+
 func defaultPins() (string, error) {
+	if installedPinsDir != "" {
+		return installedPinsDir, nil
+	}
 	home, err := realHome()
 	if err != nil {
 		return "", err
