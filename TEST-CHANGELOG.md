@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the task create path's silent truncation is pinned as a refusal instead (Go)
+
+- `fastmcp/task_management/application/use_cases/create_task_test.go`:
+  `TestCreateTaskUseCaseDefaultsAndTruncation` is **deleted** - it pinned the defect, asserting that a
+  250-character title and a 2100-character description came back sliced to 200 and 2000 - and replaced
+  by `TestCreateTaskUseCaseDefaults` plus `TestCreateTaskUseCaseRefusesOverLongContent`, which asserts
+  the entity's own `*ValueError` for a title over 200 and a description over 2000, that NO row is saved
+  in either case, and that exactly 2000 characters is accepted and stored intact.
+- **Falsified**: with the slicer restored in an export, both subtests fail with
+  `response = &{Success:true ... Task created successfully}` - the truncation returning success.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet ./fastmcp/task_management/...`
+  and `go test ./fastmcp/task_management/...` -> all pass.
+
 ## 2026-10-06 - the per-seat policy is now delivered by the client, and pinned (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`: five tests over the policy pass —

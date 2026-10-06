@@ -87,6 +87,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **Two practical facts, verified on this box rather than relayed: there is no `psql`, `createdb` or `dropdb` on `PATH`** (the server binaries exist only in `/home/daihu/.cache/agenthub-testpg/bin/`) **while `psycopg2` 2.9.11 is installed**, so the recipe drives Postgres **through Python**; and the drop-afterwards rule.
 - `ai_docs/verification/of4-local-stack.md` links to it, and the procedure is **deliberately not copied into the product's documentation** — the owner asked for it on the gate list.
 
+**The task create path refuses over-long content instead of truncating it** (2026-10-06, found by the writer while using the tool)
+
+- **The defect, measured on both paths:** `manage_task` CREATE silently truncated the description at exactly 2000 characters — a ~2500-character create returned `success: true` and stored exactly 2000, mid-sentence, with no error, no warning and no marker on the row — while UPDATE refused the same input loudly with `Task description cannot exceed 2000 characters`.
+- **Root cause:** `create_task.go` sliced the title to 200 runes and the description to 2000 before the entity ever saw them, so `ValidateEntity` — which refuses with exactly the message the update path reports — never fired. The create path **bypassed a rule that already existed**, and the slicing was inherited from `agenthub_main`'s `create_task.py`, an archived tree that is not a parity target.
+- **The fix deletes the slicer and lets the domain speak**, so the limit has one definition rather than a validator and a slicer that disagree. A create over either limit now returns the entity's `*ValueError` and stores no row; a create at exactly 2000 characters still succeeds with the full text.
+- Tests: `TestCreateTaskUseCaseDefaultsAndTruncation` — which pinned the truncation — is **deleted** and replaced by `TestCreateTaskUseCaseRefusesOverLongContent` (title over 200, description over 2000, and the exactly-2000 boundary). Falsified: restoring the slicer makes both subtests report `Success:true` / `Task created successfully`.
+- Gates: `go vet ./fastmcp/task_management/...` and `go test ./fastmcp/task_management/...` -> all pass.
+
 **The per-seat policy is delivered by the pipeline, not applied by hand** (2026-10-06, packet 5 delta 2)
 
 - `openrig_seat_sync.py rig` now applies each seat's policy to that seat's `<agent dir>/config.yml`, so a seat launched from a synced rig carries it without anyone running `scripts/openrig_seat_policy.py`. Before this the rules were applied by hand after the seats existed, which is exactly how the three seats that could not call a tool ended up unpoliced.
