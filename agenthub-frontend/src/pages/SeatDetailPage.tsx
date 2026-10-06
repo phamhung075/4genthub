@@ -725,9 +725,13 @@ export const SeatDetailPage: React.FC = () => {
   const { seatTypes } = useSeatTypes();
   // The resolve read is what renders the seat. When it refuses, nothing behind the seat can be
   // rendered, so the refusal is reported instead of the ordinary panels - which would otherwise show
-  // a seat that looks healthy while nothing resolves it. The same query key is used by PreviewTab,
-  // so this subscribes to that one request rather than adding a second.
-  const { error: resolveError, refetch: refetchResolved } = useResolvedSeat(room, seat);
+  // a seat that looks healthy while nothing resolves it. The same query key is used by PreviewTab, so
+  // this subscribes to that one request rather than adding a second.
+  const {
+    isLoading: resolveLoading,
+    error: resolveError,
+    refetch: refetchResolved,
+  } = useResolvedSeat(room, seat);
 
   const currentSeat = seats.find(candidate => candidate.seat_key === seat);
   const seatType = currentSeat
@@ -761,7 +765,13 @@ export const SeatDetailPage: React.FC = () => {
         </Alert>
       )}
 
-      {currentSeat && resolveError && (
+      {/* Gated on the read's STATUS, not only on its error: a pending resolve shows that it is
+          resolving rather than rendering tabs that would look healthy if the read never answered.
+          apiRequest carries no timeout, so a HUNG resolve stays visibly pending for as long as it
+          hangs - the honest state, and the one explicitly chosen here over looking resolved. */}
+      {currentSeat && resolveLoading && <Loading label="Resolving this seat..." />}
+
+      {currentSeat && !resolveLoading && resolveError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -776,7 +786,7 @@ export const SeatDetailPage: React.FC = () => {
         </Alert>
       )}
 
-      {currentSeat && !resolveError && (
+      {currentSeat && !resolveLoading && !resolveError && (
         <Tabs defaultValue="modules">
           <TabsList>
             <TabsTrigger value="modules">

@@ -300,6 +300,36 @@ describe('AuthContext', () => {
       );
     });
 
+    // The MOUNT's own failure path, which nothing pinned before: a refresh cookie the mount cannot use
+    // is cleared and the app lands signed out, rather than retrying the dead cookie on every load.
+    it('clears a refresh cookie the mount cannot use and lands signed out', async () => {
+      vi.mocked(Cookies.get).mockImplementation((key?: string) =>
+        key === 'refresh_token' ? 'dead-refresh-token' : undefined
+      );
+      vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+      expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+      expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+    });
+
     it('should handle expired token on mount', async () => {
       const expiredToken = {
         ...mockDecodedToken,
@@ -1086,16 +1116,23 @@ describe('AuthContext', () => {
         disconnect: mockDisconnect
       });
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      // A session is present (BOTH cookies) and decodes, so the MOUNT does not refresh by itself. With
+      // the refresh-cookie-only scaffold this test previously carried, the mount consumed the queued
+      // 401 and called disconnect on its own, while the explicit call below reached an unmocked fetch,
+      // threw a TypeError, and was swallowed - so the assertion passed without the claim being tested.
+      vi.mocked(Cookies.get).mockImplementation((key?: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
-        return null;
+        return undefined;
       });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(mockDecodedToken);
+
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ detail: 'Invalid refresh token' })
-      });
+      } as unknown as Response);
 
       const { getByText } = render(
         <AuthProvider>
@@ -1103,11 +1140,14 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
-      await act(async () => {
-        await authContext!.refreshToken().catch(() => {
-          // Expected to reject; this test asserts the WebSocket cleanup.
-        });
-      });
+      // Asserting the REJECTION, not just the cleanup: the 401 path throws this message, while the
+      // unmocked-fetch failure threw a TypeError - so this line is what makes the case exercise the
+      // explicit call rather than the mount's.
+      await expect(
+        act(async () => {
+          await authContext!.refreshToken();
+        })
+      ).rejects.toThrow('Token refresh failed');
 
       expect(mockDisconnect).toHaveBeenCalled();
     });

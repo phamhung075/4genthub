@@ -2,6 +2,29 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the two verdicts' changes: a pending resolve, and a test that passed for the wrong reason (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx`'s failed-resolve case asserted the text "Resolved snapshot"
+  was absent, which can NEVER match: that string lives in PreviewTab, and Radix unmounts inactive tab
+  content, so it passed for a reason unrelated to the guard. It now asserts the default tab's module
+  content ("rules") is absent - content a rendered page does show - and a NEW case pins the state the
+  reviewer asked to be explicit about: a resolve that never settles shows "Resolving this seat..." and
+  NO tab, so a hung read (`apiRequest` carries no timeout) waits visibly instead of looking resolved.
+- `src/tests/contexts/AuthContext.test.tsx`'s `should disconnect WebSocket on token refresh failure`
+  carried the same refresh-cookie-only scaffold as the two cases fixed in be26d520: the MOUNT consumed
+  its queued 401, called disconnect itself, and the explicit call reached an unmocked fetch and threw a
+  TypeError the test swallowed - so `expect(mockDisconnect)` was satisfied by the mount and the claim
+  was never exercised. It now sets BOTH cookies so the mount does not refresh, and it asserts the 401
+  path's REJECTION ("Token refresh failed") rather than only the cleanup, which is what makes it
+  exercise the explicit call. A new case pins the MOUNT's own failure path: a refresh cookie it cannot
+  use is cleared and the app lands signed out instead of retrying the dead cookie on every load.
+- Correction to the earlier entry's wording: the cases render TWO providers (test-utils wraps in
+  AllTheProviders, which contains its own AuthProvider, and the case renders another), so a
+  refresh-cookie-only mount fires the refresh twice - hence the persistent response, not "the mount
+  consumes one".
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` on the two page suites plus AuthContext -> 91
+  passed; `npx vitest run` -> 102 files / 1757 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - a live refresh cookie is used instead of demanding a sign-in (frontend)
 
 - `src/tests/contexts/AuthContext.test.tsx` adds the three cases the ruling asks for: a refresh-cookie-
