@@ -169,3 +169,10 @@ Stop the member rig (`rig seat stop` / `rig down`), remove the scratch store dir
 (`~/.openrig/agenthub-seats/of4room`), and revert any occupant change to the fixture's value.
 **Leave the Postgres data dir in place** unless you are done with the stack — it is what makes
 the next bring-up cheap.
+
+## See also
+
+**A packet that changes schema needs one gate this page does not cover: the two-binary upgrade test**,
+where the OLD binary builds the old schema and the NEW one migrates it — because **the fresh-database
+boot described here proves the binary runs and proves nothing about migrations.** The procedure, its
+assertions and the two practical facts are in **`schema-upgrade-gate.md`** beside this file.

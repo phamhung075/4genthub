@@ -42,6 +42,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**The schema-upgrade gate, added to the team's gate list for any schema-changing packet** (2026-10-06)
+
+- A new page, `ai_docs/verification/schema-upgrade-gate.md`, records the **two-binary upgrade test the owner added beyond the ordinary gates**: the **OLD** binary builds the old schema with `AUTO_MIGRATE=true` on a scratch database, the **NEW** one migrates it, **a SECOND boot proves idempotence**, and the scratch database is **dropped afterwards** so a later run cannot pass vacuously.
+- **The WHY is stated because it is what decides the gate's existence: a fresh-database boot with `AUTO_MIGRATE=false` proves the binary runs and proves nothing about migrations, while production migrates an EXISTING database** — so the only path that matters in production is the one the fresh boot never touches.
+- The page carries the owner's packet-4 assertions (`rooms.team_id` plus FK plus index, `seat_feedback` plus its CHECK, healthy `0.0.22`, second boot idempotent) and the production read as a **separate read-only step that does not replace the transition**.
+- **Two practical facts, verified on this box rather than relayed: there is no `psql`, `createdb` or `dropdb` on `PATH`** (the server binaries exist only in `/home/daihu/.cache/agenthub-testpg/bin/`) **while `psycopg2` 2.9.11 is installed**, so the recipe drives Postgres **through Python**; and the drop-afterwards rule.
+- `ai_docs/verification/of4-local-stack.md` links to it, and the procedure is **deliberately not copied into the product's documentation** — the owner asked for it on the gate list.
+
 **The client installs the rendered omp MCP document per seat** (2026-10-06, packet 5 step D)
 
 - `openrig_seat_sync.py rig` now installs the render's **`runtime/omp-mcp.json`** as **`<seat agent dir>/.mcp.json`** — the per-seat location step A measured: the agent-dir file and the project-root file **compose** when their server names differ, and the **agent-dir entry wins** on a collision.

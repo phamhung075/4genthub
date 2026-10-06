@@ -510,20 +510,27 @@
       "path": "troubleshooting-guides"
     },
     "verification": {
-      "count": 1,
+      "count": 2,
       "files": [
         {
-          "hash": "b1c7485900d40651722fbbf75bc30985",
-          "modified": "2026-10-06T18:43:39.151387",
+          "hash": "79c539e5f3e8df3f1a1e6cc3601b41de",
+          "modified": "2026-10-06T19:37:24.750800",
           "name": "of4-local-stack.md",
           "path": "verification/of4-local-stack.md",
-          "size": 9310
+          "size": 9725
+        },
+        {
+          "hash": "7e093ffd894fbafa9aaa657cb2bae3c8",
+          "modified": "2026-10-06T19:37:19.327036",
+          "name": "schema-upgrade-gate.md",
+          "path": "verification/schema-upgrade-gate.md",
+          "size": 5628
         }
       ],
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-06T19:01:02.029666",
+  "generated_at": "2026-10-06T19:37:24.902683",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -660,10 +667,11 @@
     },
     "verification": {
       "files": [
-        "of4-local-stack.md"
+        "of4-local-stack.md",
+        "schema-upgrade-gate.md"
       ]
     }
   },
   "total_directories": 21,
-  "total_files": 56
+  "total_files": 57
 }
