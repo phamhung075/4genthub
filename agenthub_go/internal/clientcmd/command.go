@@ -25,8 +25,19 @@ const (
 	ExitUsage = 2
 	// ExitUnavailable is the platform matrix's refusal: the verb exists, this machine cannot do it,
 	// and the message says exactly why. An unported verb returns it too, so a verb that is not in the
-	// build can never look like one that ran.
+	// build can never look like one that ran. It coincides with the Python client's EXIT_FAILED (3).
 	ExitUnavailable = 3
+	// ExitBehind is a seat whose local pin differs from the cloud's snapshot. MEASURED from
+	// openrig_seat_client.py: EXIT_BEHIND = 4 - the first draft of the Go status core used 1, and the
+	// verification its own comment asked for caught it.
+	ExitBehind = 4
+	// ExitRemote is a failure talking to the cloud or to the rig: the verb ran and the remote did not
+	// answer as it should. It is the bridge's reporting failure and NOT the client script's
+	// EXIT_FAILED (3); the two scripts numbered their failures differently, so it is named here.
+	//
+	// ONE PLACE A CALLER LOOKS: codes scattered per package make a bare 1 ambiguous - a caller could
+	// not tell a seat being behind from a report not being accepted.
+	ExitRemote = 1
 )
 
 // Rig is how a command reaches OpenRig: the resolved program and its argument prefix. On Linux, WSL2

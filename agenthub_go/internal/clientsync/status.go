@@ -7,13 +7,9 @@ import (
 	"agenthub/internal/clientcmd"
 )
 
-// ExitBehind is what `sync status` returns when at least one seat is behind. NOT YET VERIFIED against
-// the Python constant (openrig_seat_client.py); it is checked when the CLI wiring for status lands, and
-// it is named here rather than inlined so that check has one place to correct.
-const ExitBehind = 1
-
 // SeatsBehind returns, in the order the cloud listed them, the seats whose local pin differs from the
-// cloud's hash or is missing entirely.
+// cloud's hash or is missing entirely. The exit code that goes with it is clientcmd.ExitBehind (4,
+// measured from openrig_seat_client.py's EXIT_BEHIND - it was 1 in the first draft here).
 //
 // PORTED FROM openrig_seat_client.py's seats_behind, whose test is the parity spec:
 //
@@ -83,7 +79,7 @@ func FormatStatus(w io.Writer, order []string, cloud map[string]string, pinned m
 func RunStatus(w io.Writer, order []string, cloud map[string]string, pinned map[string]string) int {
 	FormatStatus(w, order, cloud, pinned)
 	if len(SeatsBehind(order, cloud, pinned)) > 0 {
-		return ExitBehind
+		return clientcmd.ExitBehind
 	}
 	return clientcmd.ExitOK
 }

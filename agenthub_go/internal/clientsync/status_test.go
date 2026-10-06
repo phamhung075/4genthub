@@ -42,8 +42,8 @@ func TestStatusRendersThePythonsColumns(t *testing.T) {
 	pinned := map[string]string{"lead": "aaaaaaaaaaaa1111", "writer": ""}
 
 	var out bytes.Buffer
-	if code := RunStatus(&out, order, cloud, pinned); code != ExitBehind {
-		t.Fatalf("exit = %d, want %d (a seat is behind)", code, ExitBehind)
+	if code := RunStatus(&out, order, cloud, pinned); code != clientcmd.ExitBehind {
+		t.Fatalf("exit = %d, want %d (a seat is behind)", code, clientcmd.ExitBehind)
 	}
 	lines := strings.Split(strings.TrimRight(out.String(), "\n"), "\n")
 	if len(lines) != 2 {

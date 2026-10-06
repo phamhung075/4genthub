@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 
+	"agenthub/internal/clientbridge"
 	"agenthub/internal/clientcmd"
 	"agenthub/internal/clientsync"
 )
@@ -58,10 +59,12 @@ func refuse(stderr io.Writer, name, owner string) int {
 	return clientcmd.ExitUnavailable
 }
 
-// commands is the registry. Every entry comes from a package or is a named pending one.
+// commands is the registry. Every entry comes from a package or is a named pending one, and a second
+// package registering is ONE append here rather than a refactor - which is what the shared contract in
+// internal/clientcmd buys.
 func commands() []clientcmd.Command {
-	return append(clientsync.Commands(),
-		pending("bridge", "report this machine and its rigs to the cloud", true),
+	registry := append(clientsync.Commands(), clientbridge.Commands()...)
+	return append(registry,
 		pending("feedback", "report friction to the owner", false),
 		pending("seatcheck", "the seat-side checker (also reachable as `seatcheck` via argv[0])", false),
 	)
