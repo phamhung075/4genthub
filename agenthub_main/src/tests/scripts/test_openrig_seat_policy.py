@@ -194,3 +194,17 @@ def test_every_notice_tells_the_seat_to_track_work_in_4genthub_and_offload_to_de
         assert "manage_task" in text and "manage_context" in text
         assert "deepseek_agent" in text
         assert "Do not start work that has no task" in text
+
+
+def test_every_seat_has_a_guide_and_its_notice_carries_the_common_procedure_and_its_own():
+    for seat in policy.SEAT_ROLES[RIG]:
+        text = notice(seat)
+        assert "## Working procedure (every seat)" in text
+        assert f"## Guide: {seat}" in text
+
+
+def test_a_seat_without_a_guide_file_is_an_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(policy, "GUIDES_DIR", tmp_path)
+    (tmp_path / "_common.md").write_text("common\n")
+    with pytest.raises(SystemExit):
+        policy.render_guide("lead")

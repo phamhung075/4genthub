@@ -142,6 +142,25 @@ def render_config(seat: str, role: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+GUIDES_DIR = (
+    Path(__file__).resolve().parents[1] / "ai_docs" / "operations" / "seat-guides"
+)
+
+
+def render_guide(seat: str) -> str:
+    """The common working procedure plus this seat's own guide, from ai_docs/operations/seat-guides.
+
+    A seat with no guide file is an error, like a seat with no role: there is no generic fallback.
+    """
+    parts = []
+    for name in ("_common", seat):
+        path = GUIDES_DIR / f"{name}.md"
+        if not path.is_file():
+            raise SystemExit(f"no guide for {seat!r}: {path} is missing")
+        parts.append(path.read_text().strip())
+    return "\n\n".join(parts) + "\n"
+
+
 def render_notice(seat: str, role: str) -> str:
     """The seat's AGENTS.md: its own limits in plain words, from the same tables as the config.
 
@@ -204,7 +223,7 @@ def render_notice(seat: str, role: str) -> str:
         "",
         "Reading any file, running tests and builds, `deepseek_agent` for offloaded work, and the 4genthub tools above. Call them with `write` to `xd://mcp__<server>_<tool>`.",
     ]
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n" + "\n" + render_guide(seat)
 
 
 def seat_roles(rig: str) -> dict[str, str]:
