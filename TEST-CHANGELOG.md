@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the per-seat omp permission policy is pinned (Python)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` (8 tests, all pass): every seat waits for MCP and checks compound commands; every seat including the lead is denied push, amend, `git add -A`, hard reset, ssh and tmux kill; only the lead keeps `rig launch` and the agent/seat/connection MCP tools; the context-sync and deepseek tools are never denied; only the reviewer loses `edit`/`ast_edit`; an unlisted rig or seat has no permissive default; `apply` writes every seat, is idempotent, `--check` reports drift and refuses a seat that was never launched.
+
 ## 2026-10-06 - the MCP protocol revision is pinned to what the implementation matches (Go)
 
 - `TestProtocolVersionIsOneValueOnEverySurface` (fastmcp/server/httpapp) asserts that `initialize`

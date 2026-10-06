@@ -6,6 +6,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ## [Unreleased]
 
+### Added
+
+**Per-seat permission policy for omp seats, and the MCP startup window** (2026-10-06)
+
+- `scripts/openrig_seat_policy.py` writes each omp seat's `agent/config.yml` from one role table (`lead`, `dev`, `reviewer`, `writer`). OpenRig offers an omp seat only `yolo` or `always-ask`, and the managed runner auto-cancels every approval, so `always-ask` means no tool at all and `rig seat set-permissions` refuses omp. Every seat therefore runs `yolo`, and the restrictions live in omp's own settings, which it honours in every approval mode: `bash.patterns` deny rules (with `allowCompoundCommands`, so `cd x && git push` is caught) and a per-tool `tools.approval` deny that also covers MCP tools.
+- Denied for every seat: `git push`, `--amend`, `git add -A`/`--all`, `git reset --hard`, `git clean`, `git stash drop`/`clear`, `rm -rf`, `sudo`, `ssh`, `scp`, `docker`, `tmux kill-*`, `pkill`, `killall`, `printenv`, reading the deepseek env file, `rig down|up|remove`. Denied to every seat except the lead: `rig launch`, `rig seat stop|launch|clean|set-*` and the MCP tools `manage_agent`, `manage_seat`, `manage_connection`. The reviewer also loses `edit` and `ast_edit`. The context-sync tools and the deepseek offload tools stay open to all.
+- **This is a guard rail against accidents, not a sandbox**: a seat that can write files or run `eval` can still do what a rule blocks by another route. Measured on a replica with the real configs: a push inside a compound command, `rig launch` and `manage_agent` are blocked; `manage_project`, normal commands and file reads pass; the reviewer's `edit` is blocked and its `write` is not.
+- Every generated config also sets `mcp.startupTimeoutMs: 0`. omp waits 250 ms for MCP tools at startup by default, the HTTPS agenthub server is slower, and a seat whose first turns start without it reports `No such tool: xd://mcp__agenthub_http_...`. `apply --check` exits 1 on drift.
+
 ### Removed
 
 **The unrunnable agent-library parity test, its fixture section, and the dead generation flag** (2026-10-06)
