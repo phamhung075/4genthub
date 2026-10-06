@@ -3,6 +3,33 @@
 ## [Unreleased]
 
 ### Added
+- **The friction channel's read side: a page grouped by layer (Directive H)** - 2026-10-06
+  - `src/pages/FeedbackPage.tsx` shows the friction reports GROUPED BY LAYER, which is the deliverable rather than a
+  filter over a flat list: every layer of the closed set (runtime, openrig, cloud, seat-context, workspace, other)
+  gets its own section in the canonical order, and a layer the response omits renders its own empty state rather than
+  disappearing - a heading that vanished would read as "this layer was not considered", while "nothing reported for
+  this layer" is the truth. The layer names and their meanings are in `src/types/feedback.ts`; the page shows the
+  heading, the wire value (`seat-context` keeps its hyphen) and the group's own count.
+  - BUILT AGAINST THE CONTRACT THE BACKEND OWNER STATED, not against a guess: `GET /api/v2/openrig/feedback`, no
+  query parameters in this cut, answering `{success, total, layers: [{layer, count, reports: [...]}]}` with the groups
+  already in canonical order and a layer with no reports ABSENT from the array; every row key always present, an
+  empty string where a value is unknown and never JSON null - `id`, `room`, `seat`, `session`, `layer`, `text`,
+  `created_at`, `machine_id`. The route is tenant-scoped by the caller's user id and a machine token does not
+  authenticate on it; the service is `src/services/feedbackApi.ts` (one route) and the query key lives in
+  `src/hooks/useFeedback.ts`, which passes the grouping through untouched because filling the gaps is a display
+  ruling and belongs where it is visible.
+  - A VIEWER, NOT A WORKFLOW: it reads one table. No moderation, no status transition, no escalate affordance - the
+  only control on the page is Refresh, which re-runs the same GET. A group whose layer is outside the closed set is
+  shown under the value the API sent rather than filed under `other`, so a contract breach is visible instead of
+  being absorbed.
+  - Route: `/feedback`, protected and inside `AppLayout`, added to `src/App.tsx` with its lazy import; no nav entry
+    was added, since the page's place in the navigation is a separate decision.
+  - Tests: `src/tests/pages/FeedbackPage.test.tsx` (8) drives the rendered page - canonical heading order with each
+    report under its own layer, the per-layer empty state for an omitted layer, the whole-table empty state, the
+    route failure shown instead of an empty page, the row's own fields rendered without interpretation, and the
+    "only Refresh" property.
+  - OWED, NOT CLAIMED: the browser proof (the page driven with feedback spanning at least two layers) waits for
+    go-dev's routes to land. Until then the page shows the real 404 rather than a faked endpoint.
 - **API reference documentation page (owner directive E)** - 2026-10-05
   - `src/docs/api-reference.en.md` is the API reference the `/docs` page renders: authentication and the token flow, the mounted route
     families with method and path, the MCP surface (the nine published tools and how a client calls them), the seat-composition model, and
