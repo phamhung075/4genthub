@@ -89,6 +89,19 @@ from pathlib import Path, PurePosixPath
 DEFAULT_OUT = Path.home() / ".openrig" / "agenthub-seats"
 AGENTHUB_GO_DIR = Path(__file__).resolve().parent.parent / "agenthub_go"
 CHECKER_NAME = "seatcheck"
+
+# The rendered omp MCP document inside a seat's render files, and the file name omp reads it from in
+# the seat's own agent directory. Both measured in step A (MCP-OMP-STEP-A-MEASUREMENT.md): the
+# agent-dir file and the project-root file COMPOSE when their server names differ, and the AGENT-DIR
+# entry WINS on a collision - which is why this install writes exactly the rendered document and
+# never a name the render does not own.
+OMP_MCP_RENDER_PATH = PurePosixPath("runtime/omp-mcp.json")
+OMP_MCP_INSTALL_NAME = ".mcp.json"
+
+# Where omp keeps per-seat state: the runner's --state-root default, plus the session name. A module
+# constant like DEFAULT_OUT, so a test can point it at a scratch tree. A launch that overrides
+# --state-root cannot be followed from here - the install refuses legibly instead of missing quietly.
+OMP_STATE_ROOT = Path.home() / ".openrig" / "state" / "omp"
 SEATS_PATH = "/api/v2/openrig/seats"
 ROOMS_PATH = "/api/v2/openrig/rooms"
 
@@ -627,6 +640,10 @@ def cmd_rig(args: argparse.Namespace) -> None:
                 f"seat {seat} could not be pulled: {err}", EXIT_REMOTE
             ) from err
 
+    # Resolve and validate every omp MCP install BEFORE the build writes anything, so a rig whose
+    # seats have not been launched yet refuses with nothing half-applied.
+    omp_installs = omp_mcp_installs(pinned, room, yaml_text)
+
     room_dir = out / room
     room_dir.mkdir(parents=True, exist_ok=True)
     rig_dir = room_dir / "rig"
@@ -651,7 +668,103 @@ def cmd_rig(args: argparse.Namespace) -> None:
             f"{', '.join(kept)}",
             file=sys.stderr,
         )
+    # The rendered omp MCP documents, once the build is in place. Written VERBATIM and only when
+    # they differ, so a rebuild is not a diff; the operator's rig-root .mcp.json is never opened.
+    for rendered, destination in omp_installs:
+        if write_bytes_if_changed(rendered.read_bytes(), destination):
+            print(f"installed {destination}", file=sys.stderr)
     print(f"rig:{rig_dir / 'rig.yaml'}")
+
+
+def session_name(pod_id: str, member: str, rig: str) -> str:
+    """The session name the runner gives a member: ``<pod>-<member>@<rig>``.
+
+    Corroborated rather than assumed: fourteen live state directories under this machine's omp state
+    root match the shape, four of them from a different rig (``of4room-alpha@of4room``), and this
+    seat's own ``rig whoami`` reports ``logicalId`` ``<pod>.<member>`` against ``sessionName``
+    ``<pod>-<member>@<rig>``.
+    """
+    return f"{pod_id}-{member}@{rig}"
+
+
+def omp_agent_dir(session: str) -> Path:
+    """Where omp reads one seat's own MCP config: ``<state root>/<session>/agent``."""
+    return OMP_STATE_ROOT / session / "agent"
+
+
+def write_bytes_if_changed(data: bytes, target: Path) -> bool:
+    """Write ``data`` to ``target`` only when it differs; True when the file actually changed.
+
+    The render is deterministic, so a rebuild that produces the same document must leave the file -
+    and its mtime - exactly as it was: a rebuild is not a diff.
+    """
+    if target.is_file():
+        try:
+            if target.read_bytes() == data:
+                return False
+        except OSError:
+            pass
+    target.write_bytes(data)
+    return True
+
+
+def omp_mcp_installs(
+    snapshots: dict[str, Path], rig: str, rig_yaml_text: str
+) -> list[tuple[Path, Path]]:
+    """Resolve ``(rendered document, destination)`` for every seat whose render carries one.
+
+    A seat with no ``mcp`` block renders NO file, so it appears in no pair here and nothing is
+    written for it - that is half the acceptance, satisfied by absence.
+
+    **Every destination is resolved and validated before anything is written**, which is why this is
+    separate from the writing loop: a rig whose seats have not been launched yet must refuse without
+    having installed a file for the seats that happen to be up.
+
+    The document is installed VERBATIM. Its ``Bearer ${AGENTHUB_TOKEN}`` stays literal text: the
+    renderer resolves only the platform URL and leaves every other variable for the runtime, which
+    step A measured the runtime expanding (and, when the variable is unset, sending as the literal -
+    a server that is present but unauthenticated).
+    """
+    rendered_by_seat = {
+        seat: snapshot / OMP_MCP_RENDER_PATH
+        for seat, snapshot in snapshots.items()
+        if (snapshot / OMP_MCP_RENDER_PATH).is_file()
+    }
+    if not rendered_by_seat:
+        return []
+
+    try:
+        import yaml  # lazy: only a rig that actually rendered an omp MCP file needs the spec
+    except ImportError as err:  # pragma: no cover - environment dependent
+        raise SyncError(
+            f"PyYAML is required to install a rendered omp MCP file: {err}", EXIT_USAGE
+        ) from err
+    try:
+        spec = yaml.safe_load(rig_yaml_text)
+    except yaml.YAMLError as err:
+        raise SyncError(f"cannot read the rig spec to place the omp MCP file: {err}", EXIT_USAGE) from err
+    if not isinstance(spec, dict):
+        raise SyncError("cannot read the rig spec to place the omp MCP file", EXIT_USAGE)
+
+    installs: list[tuple[Path, Path]] = []
+    for pod in spec.get("pods") or []:
+        pod_id = str((pod or {}).get("id") or "")
+        for member in (pod or {}).get("members") or []:
+            member_id = str((member or {}).get("id") or "")
+            if not pod_id or not member_id or member_id not in rendered_by_seat:
+                continue
+            agent_dir = omp_agent_dir(session_name(pod_id, member_id, rig))
+            if not agent_dir.is_dir():
+                raise SyncError(
+                    f"cannot install the rendered omp MCP file for {rig}/{member_id}: "
+                    f"{agent_dir} does not exist. That directory appears once the seat has been "
+                    f"launched, so on a rig that has never been up run the client again after the "
+                    f"seats exist. If the seats ARE running, this launch used a different "
+                    f"--state-root than {OMP_STATE_ROOT}.",
+                    EXIT_USAGE,
+                )
+            installs.append((rendered_by_seat[member_id], agent_dir / OMP_MCP_INSTALL_NAME))
+    return installs
 
 
 def unpinned_seats(rig_yaml: Path, rig_root: Path) -> list[tuple[str, str]]:

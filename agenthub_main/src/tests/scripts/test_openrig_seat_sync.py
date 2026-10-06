@@ -770,6 +770,137 @@ def test_bundle_says_nothing_when_the_pin_is_this_seats(monkeypatch, tmp_path, c
     assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
 
 
+OMP_MCP_DOCUMENT = {
+    "mcpServers": {
+        "agenthub_http": {
+            "type": "http",
+            "url": "https://api.example.test/mcp",
+            "headers": {"Authorization": "Bearer ${AGENTHUB_TOKEN}"},
+        }
+    }
+}
+
+# RIG_YAML is `pods: [{id: main, members: [{id: seat1}]}]` under `name: room1`, so the session is
+# main-seat1@room1 - and this is what pins the POD-id derivation rather than the rig name, which
+# would give room1-seat1@room1.
+OMP_SESSION = "main-seat1@room1"
+
+
+def _omp_agent_dir(tmp_path):
+    return tmp_path / "ompstate" / OMP_SESSION / "agent"
+
+
+def _omp_rig(env, monkeypatch, tmp_path, with_render=True, make_agent_dir=True):
+    """A rig whose seat render may carry the omp MCP document, plus a state root for the seat."""
+    monkeypatch.setattr(seat_sync, "OMP_STATE_ROOT", tmp_path / "ompstate")
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    files = list(FILES)
+    if with_render:
+        files.append(
+            {"path": "runtime/omp-mcp.json", "content": json.dumps(OMP_MCP_DOCUMENT)}
+        )
+    env.set_seat(HASH_A, files=files)
+    if make_agent_dir:
+        agent_dir = _omp_agent_dir(tmp_path)
+        agent_dir.mkdir(parents=True)
+    return _omp_agent_dir(tmp_path) / ".mcp.json"
+
+
+def test_rig_installs_the_rendered_omp_mcp_document_verbatim(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The rendered document is installed into the seat's OWN agent directory, byte for byte.
+
+    Verbatim matters: the renderer resolves the platform URL and leaves every other variable alone,
+    so `Bearer ${AGENTHUB_TOKEN}` must arrive as literal text for the runtime to expand.
+    """
+    installed = _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert out.strip().splitlines() == [
+        f"rig:{tmp_path / 'room1' / 'rig' / 'rig.yaml'}"
+    ]
+    assert "installed" in err and str(installed) in err
+    assert json.loads(installed.read_text()) == OMP_MCP_DOCUMENT
+    assert "${AGENTHUB_TOKEN}" in installed.read_text()
+
+
+def test_rig_leaves_the_operators_rig_root_mcp_json_alone(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The operator's file is never opened for writing: it is read by every seat and holds their own
+    servers, so a render must add to the seat's directory and touch nothing at the rig root."""
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    operator_file = tmp_path / "room1" / "rig" / ".mcp.json"
+    operator_file.write_text(
+        '{"mcpServers": {"deepseek": {"type": "stdio", "command": "x"}}}\n'
+    )
+    before = operator_file.read_bytes()
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    assert operator_file.read_bytes() == before
+
+
+def test_rig_install_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """A rebuild that renders the same document must not rewrite the file: a rebuild is not a diff."""
+    installed = _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    first = installed.read_bytes()
+    stamp = installed.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert installed.read_bytes() == first
+    assert installed.stat().st_mtime_ns == stamp
+    assert "installed" not in err
+
+
+def test_rig_writes_nothing_for_a_seat_with_no_mcp_block(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat with no mcp block renders no document, so nothing is installed for it - the second half
+    of the acceptance, satisfied by absence rather than by an empty file."""
+    installed = _omp_rig(env, monkeypatch, tmp_path, with_render=False)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert not installed.exists()
+    assert "installed" not in err
+
+
+def test_rig_refuses_when_the_seat_agent_directory_is_absent(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat that has not been launched has no agent directory, and the install must say so rather
+    than miss quietly: the refusal names the path, the SEQUENCE that creates it, and the possibility
+    that the launch used a different --state-root. Nothing is written, including the rig itself."""
+    installed = _omp_rig(env, monkeypatch, tmp_path, make_agent_dir=False)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 2
+    # The message names the missing DIRECTORY rather than the file that would go in it: the
+    # directory is what is absent, and it is what the operator has to look for.
+    assert str(_omp_agent_dir(tmp_path)) in err
+    assert "launched" in err and "--state-root" in err
+    assert not installed.exists()
+    # Validated before the build wrote anything: no half-applied rig directory.
+    assert not (tmp_path / "room1" / "rig").exists()
+
+
 def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     env.set_seat(HASH_A)

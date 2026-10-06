@@ -2,6 +2,27 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the per-seat omp MCP install is pinned five ways (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained five tests over the existing rig
+  fixture: `test_rig_installs_the_rendered_omp_mcp_document_verbatim` (the document lands in the seat's
+  agent dir byte for byte, `Bearer ${AGENTHUB_TOKEN}` included, and the fixture's pod id `main` pins
+  the session derivation as `main-seat1@room1` rather than the rig name),
+  `test_rig_leaves_the_operators_rig_root_mcp_json_alone` (an operator `.mcp.json` at the rig root is
+  byte-identical after a rebuild), `test_rig_install_is_idempotent` (content AND mtime unchanged, no
+  `installed` line on the second run), `test_rig_writes_nothing_for_a_seat_with_no_mcp_block`, and
+  `test_rig_refuses_when_the_seat_agent_directory_is_absent` (exit 2; the message names the missing
+  DIRECTORY, the sequence that creates it and `--state-root`; and no rig directory is left behind,
+  which is what proves the validate-then-write ordering).
+- The live-runtime form was reproduced separately, outside the suite, because it needs a probe
+  endpoint and the real binary: the rendered bytes were placed in an agent dir, the real `omp` ran
+  from a neutral cwd with `AGENTHUB_TOKEN` set, and the probe logged `Authorization: Bearer
+  <probe value>` on **3 of 3** requests; with the variable **unset** the same run logged the literal
+  `${AGENTHUB_TOKEN}` on 3 requests — the A2 trap, which is why the acceptance for the live seat is
+  "lists the tools AND one call lands" rather than "the tools are listed".
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **99 passed**.
+
 ## 2026-10-06 - the parity guard stops racing the build (Go)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go`:

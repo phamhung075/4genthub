@@ -42,6 +42,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**The client installs the rendered omp MCP document per seat** (2026-10-06, packet 5 step D)
+
+- `openrig_seat_sync.py rig` now installs the render's **`runtime/omp-mcp.json`** as **`<seat agent dir>/.mcp.json`** — the per-seat location step A measured: the agent-dir file and the project-root file **compose** when their server names differ, and the **agent-dir entry wins** on a collision.
+- **The three properties, each for a measured reason rather than by policy:** ADDITIVE because the delivery point is a *different file* from the operator's, so the rig-root `.mcp.json` (their deepseek server) keeps contributing with no merge logic; IDEMPOTENT because the render is deterministic and the write is **write-if-changed** (a rebuild is not a diff, mtime included); NON-DESTRUCTIVE TOWARD OTHER SEATS because the path is per-seat.
+- **The operator's rig-root `.mcp.json` is never opened for writing**, and no name the render does not own is ever written — a same-named agent-dir entry shadows the project entry entirely, so shadowing one of their servers would be silent.
+- **A seat with no `mcp` block renders no document and gets no file**: half the acceptance, satisfied by absence.
+- **Every destination is resolved and validated before anything is written**, so a rig whose seats have not been launched refuses with nothing half-applied — not even the rig directory. The refusal names the expected directory, the possibility that the launch used a different `--state-root`, and **the sequence** (that directory appears once a seat has been launched, so on a rig that has never been up the client runs again after the seats exist). The client does not create it: that path belongs to the runner.
+- **The document is installed verbatim.** `Bearer ${AGENTHUB_TOKEN}` stays literal text — the renderer resolves only the platform URL, and the runtime expands the rest.
+- Evidence: five script tests (install verbatim including the literal placeholder; the operator's rig-root file untouched; idempotence by content AND mtime; nothing written for a seat with no block; the refusal naming path, sequence and `--state-root` with no rig directory left behind), plus a **real-runtime reproduction of the same form** — the rendered bytes in an agent dir, the real `omp` run from a neutral cwd against a probe endpoint, which received **`Authorization: Bearer <probe value>` on 3 of 3 requests**. The reverse is measured too: with the variable **unset** the literal `${AGENTHUB_TOKEN}` is sent, so "the server is listed" is not evidence the credential works.
+- **PRODUCTION: nothing here claims it works there.** The `mcp` module kind is inert until the owner's decision-9 window (production holds the five-value `ck_modules_kind`), and the live-seat acceptance — a seat listing the tools and landing one call — belongs to the restart that follows.
+
 **omp seats get their MCP servers from the seat render** (2026-10-06, packet 5)
 
 - **The renderer emits ONE `mcpServers` document for every runtime that must carry servers outside a
