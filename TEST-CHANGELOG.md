@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the ten guide ops, proven by their effect with the real blocks (Go, packet 6 step 1b)
+
+- New `fastmcp/seat_management/domain/seedlibrary/guides_render_test.go`:
+  `TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD` walks all ten per-seat blocks out of the shelf's
+  own loader and, for each, renders a seat whose ONLY module is that block, then asserts that `AGENTS.md`
+  carries the block **verbatim** (the renderer adds a provenance header and strips trailing newlines and
+  nothing else), that the seat's own heading appears **exactly once**, and that `guidance/role.md` carries
+  none of it. It lives in package `seedlibrary` because the per-seat blocks are reachable only through the
+  shelf loader; the import direction is test-only, which is why the cycle step 1 refused (recorded at
+  `validateBlockContent`) does not return.
+- This is the half of packet 6 step 1 (b) that needs no production: it measures the EFFECT of the ten
+  overlay ops (`add guide-<seat>@1.0.0`) a `4genthub-min` room creation would carry, while the room itself
+  remains an owner decision.
+- **Falsified**: in a clean export of HEAD, appending a phrase the real guide does not contain to the
+  verbatim assertion fails for all ten seats on exactly that line, while the control run passes.
+- Commands: `go test -count=1 -run TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD
+  ./fastmcp/seat_management/domain/seedlibrary/` → ok; `go test -count=1
+  ./fastmcp/seat_management/domain/seedlibrary/` → ok.
+
 ## 2026-10-06 - the guide document's install is pinned, with the seam the old check would have mis-warned (Python scripts, packet 6 step 1)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`:
