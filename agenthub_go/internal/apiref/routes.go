@@ -84,9 +84,14 @@ func routesFromDir(dir string) ([]RouteEntry, error) {
 	return routes, nil
 }
 
-// routesInSource parses one mount file and returns the routes it registers. A file that does not parse
-// is an error rather than an empty result: a silent zero here would become a document that says the
-// platform mounts nothing.
+// routesInSource parses one mount file and returns the routes it registers.
+//
+// THE FIRST ARGUMENT IS AN EXPRESSION, NOT A LITERAL, and this is the fix for a silent skip that the
+// witness caught: accepting only a string literal skipped every concatenated registration - 38 of
+// them in this package alone - with no error and no count, which the empty-artefact guard cannot
+// detect because the artefact was not empty, it was short. So the pattern is EVALUATED here, and ANY
+// CALL SITE THAT CANNOT BE RESOLVED IS AN ERROR: a skip is the defect, and the count below is only
+// its symptom.
 func routesInSource(filename string, source []byte) ([]RouteEntry, error) {
 	fileSet := token.NewFileSet()
 	file, err := parser.ParseFile(fileSet, filename, source, parser.ParseComments)
@@ -105,43 +110,118 @@ func routesInSource(filename string, source []byte) ([]RouteEntry, error) {
 		docs[fn.Name.Name] = strings.TrimSpace(fn.Doc.Text())
 	}
 
+	// bases is LEXICAL AND SEQUENTIAL: the value in force is the nearest preceding assignment, because
+	// one mount file declares several bases and a single file-level base produces wrong paths. The
+	// walk below is in source order, so setting the map as assignments are met is exactly that rule.
+	bases := map[string]string{}
+	candidates := 0
 	routes := []RouteEntry{}
 	var walkErr error
 	ast.Inspect(file, func(node ast.Node) bool {
-		call, ok := node.(*ast.CallExpr)
-		if !ok || walkErr != nil {
-			return true
-		}
-		selector, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok || (selector.Sel.Name != "HandleFunc" && selector.Sel.Name != "Handle") {
-			return true
-		}
-		if len(call.Args) == 0 {
-			return true
-		}
-		pattern, ok := stringLiteral(call.Args[0])
-		if !ok {
-			return true
-		}
-		method, path, params, err := splitPattern(pattern)
-		if err != nil {
-			walkErr = fmt.Errorf("%s: %w", filename, err)
+		if walkErr != nil {
 			return false
 		}
-		entry := RouteEntry{Method: method, Path: path, PathParams: params}
-		if len(call.Args) > 1 {
-			entry.Handler = handlerName(call.Args[1])
+		switch typed := node.(type) {
+		case *ast.AssignStmt:
+			recordBase(typed, bases)
+			return true
+		case *ast.CallExpr:
+			selector, ok := typed.Fun.(*ast.SelectorExpr)
+			if !ok || (selector.Sel.Name != "HandleFunc" && selector.Sel.Name != "Handle") {
+				return true
+			}
+			if len(typed.Args) == 0 {
+				walkErr = fmt.Errorf("%s: a %s call with no pattern", filename, selector.Sel.Name)
+				return false
+			}
+			candidates++
+			pattern, ok := resolvePattern(typed.Args[0], bases)
+			if !ok {
+				walkErr = fmt.Errorf(
+					"%s: cannot resolve the pattern of a %s call (only string literals, concatenations "+
+						"and identifiers assigned earlier in the file are read)", filename, selector.Sel.Name)
+				return false
+			}
+			method, path, params, err := splitPattern(pattern)
+			if err != nil {
+				walkErr = fmt.Errorf("%s: %w", filename, err)
+				return false
+			}
+			entry := RouteEntry{Method: method, Path: path, PathParams: params}
+			if len(typed.Args) > 1 {
+				entry.Handler = handlerName(typed.Args[1])
+			}
+			if doc, ok := docs[entry.Handler]; ok {
+				entry.Description = doc
+			}
+			routes = append(routes, entry)
 		}
-		if doc, ok := docs[entry.Handler]; ok {
-			entry.Description = doc
-		}
-		routes = append(routes, entry)
 		return true
 	})
 	if walkErr != nil {
 		return nil, walkErr
 	}
+	// THE COUNT IS THE SYMPTOM CHECK: every registration call site must have produced an entry, so a
+	// call the walk never recognized cannot pass as a smaller surface.
+	if candidates != len(routes) {
+		return nil, fmt.Errorf("%s: %d registration call sites but %d entries: a call site the parser "+
+			"did not read is a missing route, not a smaller surface", filename, candidates, len(routes))
+	}
 	return routes, nil
+}
+
+// recordBase remembers a single-identifier assignment whose right-hand side resolves, so a pattern
+// built from it can be evaluated. Anything else is left out rather than guessed, and a pattern that
+// needs it then fails loudly at the call site.
+func recordBase(assign *ast.AssignStmt, bases map[string]string) {
+	if len(assign.Lhs) != 1 || len(assign.Rhs) != 1 {
+		return
+	}
+	name, ok := assign.Lhs[0].(*ast.Ident)
+	if !ok || name.Name == "_" {
+		return
+	}
+	if value, ok := resolvePattern(assign.Rhs[0], bases); ok {
+		bases[name.Name] = value
+	}
+}
+
+// resolvePattern evaluates a registration's first argument under the witness's convention: a string
+// literal is its own text, a concatenation is its parts in order, and an identifier is the value
+// assigned to it earlier in the same file. ANYTHING ELSE - a computed pattern, a call, a constant this
+// file does not assign - does not resolve, and the caller turns that into an error rather than a
+// silently missing route.
+func resolvePattern(expr ast.Expr, bases map[string]string) (string, bool) {
+	switch value := expr.(type) {
+	case *ast.BasicLit:
+		if value.Kind != token.STRING {
+			return "", false
+		}
+		text, err := strconv.Unquote(value.Value)
+		if err != nil {
+			return "", false
+		}
+		return text, true
+	case *ast.ParenExpr:
+		return resolvePattern(value.X, bases)
+	case *ast.BinaryExpr:
+		if value.Op != token.ADD {
+			return "", false
+		}
+		left, ok := resolvePattern(value.X, bases)
+		if !ok {
+			return "", false
+		}
+		right, ok := resolvePattern(value.Y, bases)
+		if !ok {
+			return "", false
+		}
+		return left + right, true
+	case *ast.Ident:
+		text, ok := bases[value.Name]
+		return text, ok
+	}
+	return "", false
 }
 
 // splitPattern turns `GET /api/v2/openrig/rooms/{room}` into its method, its path and its parameters.
@@ -160,7 +240,18 @@ func splitPattern(pattern string) (method, path string, params []string, err err
 	if !strings.HasPrefix(path, "/") {
 		return "", "", nil, fmt.Errorf("route pattern %q does not start with a slash", pattern)
 	}
+	// AN EMPTY LIST, NOT A NIL ONE: a nil slice marshals to JSON null, and the page's type declares
+	// pathParams as an array, so a route with no parameters would arrive as null and fail the
+	// frontend's type check. A route with no parameters has an EMPTY list of them, and that is what
+	// the artefact says.
+	params = []string{}
 	for _, match := range pathParam.FindAllStringSubmatch(path, -1) {
+		if match[1] == "$" {
+			// `{$}` is Go 1.22's exact-match marker rather than a parameter. The path keeps it, because
+			// the artefact reports the pattern as registered; the parameter list does not, because the
+			// marker names no value a handler receives.
+			continue
+		}
 		params = append(params, match[1])
 	}
 	return method, path, params, nil
