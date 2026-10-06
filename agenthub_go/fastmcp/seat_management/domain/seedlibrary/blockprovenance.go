@@ -29,6 +29,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -66,17 +67,42 @@ type guideLockEntry struct {
 	SourceSHA256 string `json:"source_sha256"`
 }
 
-func loadGuideLock() (map[string]guideLockEntry, error) {
+func loadGuideLock() (map[string]guideLockEntry, error) { return parseGuideLock(guideLockJSON) }
+
+// sha256HexRe is the one digest rule this file states, the same lowercase-hex form the skill blocks
+// record. It lives in the production file because the parser validates against it, not the test.
+var sha256HexRe = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+// parseGuideLock reads the recorded pairing. It takes bytes rather than reading the embedded file so
+// the refusals below can be driven with hostile input - the discipline that caught this file's panic,
+// where an untested error path crashed precisely when it was asked to refuse.
+func parseGuideLock(data []byte) (map[string]guideLockEntry, error) {
 	var doc struct {
 		Guides []guideLockEntry `json:"guides"`
 	}
-	if err := json.Unmarshal(guideLockJSON, &doc); err != nil {
+	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("guides.lock.json: %w", err)
+	}
+	if len(doc.Guides) == 0 {
+		return nil, errors.New("guides.lock.json: no guides recorded")
 	}
 	out := make(map[string]guideLockEntry, len(doc.Guides))
 	for i, e := range doc.Guides {
 		if e.Slug == "" || e.Path == "" || e.SHA256 == "" || e.SourcePath == "" || e.SourceSHA256 == "" {
 			return nil, fmt.Errorf("guides.lock.json: guides[%d] must state slug, path, sha256, source_path and source_sha256", i)
+		}
+		// A record whose digest is not a digest would never match, so the shelf would be refused with
+		// a message about bytes nobody recorded: refuse the RECORD here instead, where the writer
+		// still learns which field is wrong.
+		for _, f := range []struct{ name, value string }{{"sha256", e.SHA256}, {"source_sha256", e.SourceSHA256}} {
+			if !sha256HexRe.MatchString(f.value) {
+				return nil, fmt.Errorf("guides.lock.json: guides[%d].%s = %q, want 64 lowercase hex", i, f.name, f.value)
+			}
+		}
+		for _, f := range []struct{ name, value string }{{"path", e.Path}, {"source_path", e.SourcePath}} {
+			if path.IsAbs(f.value) {
+				return nil, fmt.Errorf("guides.lock.json: guides[%d].%s must be relative to a root, got %q", i, f.name, f.value)
+			}
 		}
 		if _, dup := out[e.Slug]; dup {
 			return nil, fmt.Errorf("guides.lock.json: %s appears twice", e.Slug)

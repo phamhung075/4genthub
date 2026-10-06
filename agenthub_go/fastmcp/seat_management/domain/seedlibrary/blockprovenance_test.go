@@ -9,12 +9,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
-
-var sha256Hex64 = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
 func TestBlockProvenanceTableCoversEveryFileTheShelfCarries(t *testing.T) {
 	table, err := BlockProvenanceTable()
@@ -24,7 +21,7 @@ func TestBlockProvenanceTableCoversEveryFileTheShelfCarries(t *testing.T) {
 	bySlug := map[string]BlockProvenance{}
 	for _, e := range table {
 		bySlug[e.Slug] = e
-		if !sha256Hex64.MatchString(e.SHA256) {
+		if !sha256HexRe.MatchString(e.SHA256) {
 			t.Errorf("%s: sha256 = %q, want 64 lowercase hex", e.Slug, e.SHA256)
 		}
 		if !strings.HasPrefix(e.Path, libraryRootPrefix) {
@@ -49,7 +46,7 @@ func TestBlockProvenanceTableCoversEveryFileTheShelfCarries(t *testing.T) {
 			t.Errorf("%s is missing from the provenance table", slug)
 			continue
 		}
-		if e.SourcePath == "" || !sha256Hex64.MatchString(e.SourceSHA256) {
+		if e.SourcePath == "" || !sha256HexRe.MatchString(e.SourceSHA256) {
 			t.Errorf("%s: source pairing missing (source_path=%q source_sha256=%q)", slug, e.SourcePath, e.SourceSHA256)
 		}
 	}
@@ -218,5 +215,50 @@ func TestBlockDriftNamesEveryWayAFileCanMove(t *testing.T) {
 func TestBlockDriftRefusesARootWithoutTheLibrary(t *testing.T) {
 	if _, err := CheckBlockDrift(t.TempDir()); err == nil {
 		t.Fatal("a root holding no library reported success")
+	}
+}
+
+// The panic this file shipped was an UNTESTED ERROR PATH, so every refusal the parser owns is driven
+// here with hostile input rather than typical input. A record that cannot be read must say which
+// field is wrong, and a value that is not a digest must be refused as a RECORD rather than never
+// matching and blaming the shelf for bytes nobody recorded.
+func TestParseGuideLockRefusesMalformedRecords(t *testing.T) {
+	digest := strings.Repeat("a", 64)
+	other := strings.Repeat("b", 64)
+	record := func(slug, path, sha, sourcePath, sourceSHA string) string {
+		return `{"slug":"` + slug + `","path":"` + path + `","sha256":"` + sha +
+			`","source_path":"` + sourcePath + `","source_sha256":"` + sourceSHA + `"}`
+	}
+	wrap := func(records ...string) []byte {
+		return []byte(`{"guides":[` + strings.Join(records, ",") + `]}`)
+	}
+
+	if _, err := parseGuideLock(wrap(record("guide-x", "p/x.md", digest, "s/x.md", other))); err != nil {
+		t.Fatalf("a well-formed record was refused: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		body []byte
+		want string
+	}{
+		{"not JSON at all", []byte(`{`), "guides.lock.json"},
+		{"no records", []byte(`{"guides":[]}`), "no guides recorded"},
+		{"a field missing", wrap(record("guide-x", "p/x.md", digest, "", other)), "must state slug, path, sha256"},
+		{"a digest that is not one", wrap(record("guide-x", "p/x.md", "not-a-digest", "s/x.md", other)), "want 64 lowercase hex"},
+		{"an absolute library path", wrap(record("guide-x", "/etc/x.md", digest, "s/x.md", other)), "must be relative"},
+		{"the same slug twice", wrap(record("guide-x", "p/x.md", digest, "s/x.md", other), record("guide-x", "p/y.md", digest, "s/y.md", other)), "appears twice"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := parseGuideLock(c.body)
+			if err == nil {
+				t.Fatal("malformed input was accepted")
+			}
+			if !strings.Contains(err.Error(), c.want) {
+				t.Errorf("refusal %q does not contain %q", err.Error(), c.want)
+			}
+			t.Logf("refused: %v", err)
+		})
 	}
 }

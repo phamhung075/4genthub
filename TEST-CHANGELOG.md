@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - every refusal the guide-lock parser owns, driven with hostile input (Go, packet 6)
+
+- `guides.lock.json` parsing moved behind `parseGuideLock(data []byte)` so its refusals are testable,
+  and `TestParseGuideLockRefusesMalformedRecords` drives all six with input chosen to BREAK them
+  rather than to be typical: not JSON, no records, a missing field, **a digest that is not a digest**,
+  an absolute path, and the same slug twice. Each refusal names the field it is about - a record that
+  cannot be read must say which field is wrong, not fail later as a shelf mismatch.
+- Two record rules that nothing validated before now do: a digest must be 64 lowercase hex (the same
+  rule the skill blocks record) and a path must be relative to a root. Without them a malformed record
+  would simply never match, and the SHELF would be blamed for bytes nobody recorded.
+- The digest rule moved out of this test file into the production file (`sha256HexRe`), because the
+  parser validates against it and a rule that lives only in a test is a rule the code does not have.
+- This is the class of `2d9de9e8`'s panic, closed rather than noted: THE CODE THAT REPORTS A PROBLEM IS
+  ITSELF UNTESTED AGAINST THE PROBLEM until somebody writes the hostile input for it.
+- Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; `gofmt -l` on the
+  package → empty; `go vet` → exit 0.
+
+
 ## 2026-10-06 - the kind set gets a guard on the axis that drifts: the DDL against the enum (Go, found by fe-dev while checking a gate)
 
 - New `TestSeatKindConstraintTracksTheAcceptedKinds` (`infrastructure/database`): each DDL source's
