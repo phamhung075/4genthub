@@ -55,7 +55,24 @@ def brief(args, width: int) -> str:
     return json.dumps(args)[:width]
 
 
-def events(line: str, width: int):
+def detail_lines(role: str | None, part: dict, width: int):
+    """Reasoning, what the agent says, and what it is told: the parts OpenRig's own view omits."""
+    kind = part.get("type")
+    if role == "assistant" and kind == "thinking":
+        text = " ".join(str(part.get("thinking", "")).split())
+        if text:
+            yield f"\033[2;3;35m~ think {text[:width]}{RESET}"
+    elif role == "assistant" and kind == "text":
+        text = " ".join(str(part.get("text", "")).split())
+        if len(text) > 1:
+            yield f"\033[1;97m▸ say {RESET}{text[:width]}"
+    elif role == "user" and kind == "text":
+        text = " ".join(str(part.get("text", "")).split())
+        if text:
+            yield f"\033[1;96m◂ in {RESET}\033[36m{text[:width]}{RESET}"
+
+
+def events(line: str, width: int, detail: bool = False):
     try:
         msg = json.loads(line).get("message") or {}
     except json.JSONDecodeError:
@@ -72,6 +89,8 @@ def events(line: str, width: int):
             yield f"\033[2m← {body}{RESET}"
     elif isinstance(content, list):
         for part in content:
+            if detail and isinstance(part, dict):
+                yield from detail_lines(msg.get("role"), part, width)
             if isinstance(part, dict) and part.get("type") == "toolCall":
                 name = part.get("name") or "?"
                 code = 35 if name.startswith("mcp__") else TOOL_COLORS.get(name, 97)
@@ -134,7 +153,10 @@ def grid(a: argparse.Namespace) -> None:
             panes.append(cur)
     me = Path(__file__).resolve()
     for pane, seat in zip(panes, seats):
-        cmd = f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
+        cmd = (
+            f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
+            + (" --detail" if a.detail else "")
+        )
         herdr("pane", "send-text", pane, cmd)
         herdr("pane", "send-keys", pane, "Enter")
     herdr("workspace", "focus", root.split(":")[0])
@@ -149,6 +171,12 @@ def main() -> None:
         p.add_argument("--rig", default="4genthub-min")
         p.add_argument("--back", type=int, default=3 if name == "feed" else 4)
         p.add_argument("--width", type=int, default=170 if name == "feed" else 110)
+        p.add_argument(
+            "--detail",
+            action="store_true",
+            default=name == "grid",
+            help="also show the agent's reasoning, what it says and what it is told (on for grid)",
+        )
         if name == "feed":
             p.add_argument("--seat", nargs="*")
         else:
@@ -167,7 +195,7 @@ def feed(a: argparse.Namespace) -> None:
 
     def show(seat, line):
         stamp = time.strftime("%H:%M:%S")
-        for text in events(line, a.width):
+        for text in events(line, a.width, a.detail):
             print(
                 f"\033[2m{stamp}\033[0m \033[1;{color[seat]}m{seat:<12}{RESET} {text}",
                 flush=True,
@@ -178,7 +206,9 @@ def feed(a: argparse.Namespace) -> None:
         if f is None:
             continue
         lines = f.read_text().splitlines()
-        shown = [ln for ln in lines if any(True for _ in events(ln, 1))][-a.back * 2 :]
+        shown = [ln for ln in lines if any(True for _ in events(ln, 1, a.detail))][
+            -a.back * 2 :
+        ]
         for ln in shown:
             show(seat, ln)
         pos[seat] = (f, f.stat().st_size)

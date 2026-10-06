@@ -67,3 +67,20 @@ def test_mcp_tools_get_their_own_colour():
     ]
     (text,) = watch.events(line("assistant", call), 200)
     assert "\033[1;35m" in text
+
+
+def test_detail_adds_reasoning_what_the_agent_says_and_what_it_is_told_and_nothing_else_does():
+    thinking = line(
+        "assistant", [{"type": "thinking", "thinking": "weigh the two options"}]
+    )
+    said = line("assistant", [{"type": "text", "text": "I will run the tests now"}])
+    told = line("user", [{"type": "text", "text": "please review packet 5"}])
+    for entry, marker in ((thinking, "think"), (said, "say"), (told, "in")):
+        assert list(watch.events(entry, 200)) == []
+        (text,) = watch.events(entry, 200, detail=True)
+        assert marker in text
+
+
+def test_a_single_character_reply_is_not_shown_as_something_said():
+    dot = line("assistant", [{"type": "text", "text": "."}])
+    assert list(watch.events(dot, 200, detail=True)) == []

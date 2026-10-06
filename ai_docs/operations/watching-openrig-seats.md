@@ -38,6 +38,18 @@ python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] 
 
 All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or without herdr.
 
+## Detail: reasoning, what the agent says, what it is told
+
+`grid` shows it by default; for `feed` add `--detail`. Three more kinds of line:
+
+| Mark | Meaning |
+|---|---|
+| `~ think` (dim italic) | the agent's reasoning before it acts |
+| `▸ say` (bold) | what the agent writes back (single-character replies are skipped) |
+| `◂ in` (cyan) | a message the agent received: the owner, another seat, a system notice |
+
+**What OpenRig already shows, and what this adds.** OpenRig's own views (`rig transcript`, `rig ask`, `rig terminal open`, the UI's transcript drill-in) read the seat's pane, which the omp runner fills with the assistant's text, one-line tool summaries, incoming messages, compaction and errors. They do not carry the reasoning or a tool's full arguments and result; those exist only in the seat's session log, which this tool reads. Use OpenRig's views for the conversation, this one for the reasoning and tool detail.
+
 ## Reading a line
 
 ```
