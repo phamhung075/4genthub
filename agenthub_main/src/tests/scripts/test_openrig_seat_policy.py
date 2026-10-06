@@ -147,3 +147,42 @@ def test_check_tolerates_keys_the_policy_does_not_define_and_still_catches_a_bro
 
     path.write_text(path.read_text().replace('"git push*"', '"git pull*"'))
     assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT
+
+
+def notice(seat: str) -> str:
+    return policy.render_notice(seat, policy.SEAT_ROLES[RIG][seat])
+
+
+def test_every_notice_lists_every_refused_command_of_its_seat():
+    for seat, role in policy.SEAT_ROLES[RIG].items():
+        bash, tools = policy.policy_for(role)
+        text = notice(seat)
+        for pattern in bash:
+            assert f"`{pattern}`" in text, f"{seat}'s notice omits {pattern}"
+        for tool in tools:
+            assert f"`{tool}`" in text, f"{seat}'s notice omits {tool}"
+
+
+def test_the_notice_names_what_to_do_instead_of_pushing():
+    for seat in policy.SEAT_ROLES[RIG]:
+        text = notice(seat)
+        assert "you never push" in text
+        assert "git add -- <path>" in text
+
+
+def test_only_the_non_lead_notice_hands_rig_control_to_the_lead():
+    assert "ask the lead" in notice("go-dev")
+    assert "the principal does that" in notice("lead")
+
+
+def test_apply_writes_the_notice_next_to_the_config_and_check_sees_it_drift(tmp_path):
+    seed_state(tmp_path)
+    args = ["--rig", RIG, "--state-root", str(tmp_path)]
+    assert policy.main(["apply", *args]) == policy.EXIT_OK
+    for seat, role in policy.SEAT_ROLES[RIG].items():
+        assert policy.notice_path(
+            tmp_path, RIG, seat
+        ).read_text() == policy.render_notice(seat, role)
+    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_OK
+    policy.notice_path(tmp_path, RIG, "writer").write_text("stale\n")
+    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT

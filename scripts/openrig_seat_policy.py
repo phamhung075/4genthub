@@ -291,7 +291,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
             continue
         path.write_text(want)
         print(f"{seat}: written ({role})")
-    return EXIT_DRIFT if args.check and drift else EXIT_OK
+    # The notice is the same policy in words; one command keeps config and notice together.
+    notice_status = cmd_notice(args)
+    if notice_status == EXIT_USAGE:
+        return EXIT_USAGE
+    return EXIT_DRIFT if args.check and (drift or notice_status) else EXIT_OK
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -301,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     show.add_argument("seat")
     show.add_argument("--rig", required=True)
     show.set_defaults(func=cmd_show)
-    apply = sub.add_parser("apply", help="write every seat's config.yml")
+    apply = sub.add_parser("apply", help="write every seat's config.yml and AGENTS.md")
     apply.add_argument("--rig", required=True)
     apply.add_argument("--state-root", default=str(DEFAULT_STATE_ROOT))
     apply.add_argument(

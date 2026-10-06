@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **Seat limits are told to each seat, not only enforced**: `openrig_seat_policy.py apply` now also writes each seat's `AGENTS.md` (its refused commands and tools, and what to do instead), generated from the same tables as `config.yml`; the new `notice` command writes only that file. omp loads it at every launch; a fresh session given only that file answered four limit questions correctly with no tool. Documented in `ai_docs/operations/openrig-seat-limits.md`. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`.
+
 - **`scripts/openrig_watch_tools.py`**: read-only live view of what each seat of an OpenRig rig is doing. `grid` opens a herdr workspace with one pane per seat; `feed` merges all seats into one stream. Tool calls and results are coloured by kind, policy refusals shown white-on-red. Documented in `ai_docs/operations/watching-openrig-seats.md`. Tested by `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py` (4 tests pass; the grid command was run against the live herdr).
 
 **The rendered seat carries the deepseek offload bridge, so the per-seat MCP file is no longer hand-written** (2026-10-06)
