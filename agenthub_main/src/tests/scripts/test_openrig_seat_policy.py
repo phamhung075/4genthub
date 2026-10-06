@@ -130,3 +130,20 @@ def test_apply_refuses_a_seat_that_was_never_launched(tmp_path):
         policy.main(["apply", "--rig", RIG, "--state-root", str(tmp_path)])
         == policy.EXIT_USAGE
     )
+
+
+def test_check_tolerates_keys_the_policy_does_not_define_and_still_catches_a_broken_rule(
+    tmp_path,
+):
+    """The pipeline MERGES this document into the runtime's file, so `--check` compares the policy's
+    own keys rather than the whole file - and still reports a rule that is actually wrong."""
+    seed_state(tmp_path)
+    args = ["--rig", RIG, "--state-root", str(tmp_path)]
+    assert policy.main(["apply", *args]) == policy.EXIT_OK
+    path = policy.config_path(tmp_path, RIG, "go-dev")
+
+    path.write_text(path.read_text() + "\nmodel: something-else\n")
+    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_OK
+
+    path.write_text(path.read_text().replace('"git push*"', '"git pull*"'))
+    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT

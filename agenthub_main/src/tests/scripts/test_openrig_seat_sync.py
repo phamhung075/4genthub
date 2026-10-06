@@ -799,6 +799,132 @@ def _omp_config_path(tmp_path):
     return _omp_agent_dir(tmp_path) / "config.yml"
 
 
+POLICY_MODULE_PATH = (
+    Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_policy.py"
+)
+
+
+def _policy_module_with_room1(monkeypatch):
+    """The REAL policy module with the fixture's rig added to its table.
+
+    The rules stay the module's own - only the registry gains a row - so a test that compares the
+    written file with ``render_config`` is asserting the single-source property rather than a copy.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "openrig_seat_policy_for_test", POLICY_MODULE_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.SEAT_ROLES["room1"] = {"seat1": "dev"}
+    monkeypatch.setattr(seat_sync, "load_seat_policy", lambda: module)
+    return module
+
+
+def test_rig_applies_the_per_seat_policy_from_the_single_source(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A launched seat gets its policy from the render's rig, with no script run by hand.
+
+    The file must equal ``render_config``'s own document, which is what makes this an IMPORT rather
+    than a second copy of the rules: the allow/deny lists are never restated in this client.
+    """
+    policy = _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    config = _omp_config_path(tmp_path)
+    assert config.read_text() == policy.render_config("seat1", "dev")
+    assert "applied the per-seat policy" in err
+
+    parsed = yaml.safe_load(config.read_text())
+    bash, tools = policy.policy_for("dev")
+    assert [rule["match"] for rule in parsed["bash"]["patterns"]] == bash
+    assert all(rule["approval"] == "deny" for rule in parsed["bash"]["patterns"])
+    assert sorted(parsed["tools"]["approval"]) == sorted(tools)
+    assert parsed["mcp"]["startupTimeoutMs"] == 0
+
+
+def test_rig_policy_merge_keeps_what_the_runtime_file_already_carries(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The agent-dir config.yml is the runtime's own file: the policy's keys are set, the rest stays."""
+    _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+    _omp_config_path(tmp_path).write_text("model: something-else\n")
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    parsed = yaml.safe_load(_omp_config_path(tmp_path).read_text())
+    assert (
+        parsed["model"] == "something-else"
+    ), "a key the policy does not define was lost"
+    assert parsed["mcp"]["startupTimeoutMs"] == 0
+    assert parsed["bash"]["patterns"], "the policy's own keys did not arrive"
+    assert parsed["tools"]["approval"]
+
+
+def test_rig_policy_application_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """A second run writes nothing and touches no mtime: the file already carries the policy."""
+    _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    config = _omp_config_path(tmp_path)
+    before = config.read_bytes()
+    stamp = config.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert config.read_bytes() == before
+    assert config.stat().st_mtime_ns == stamp
+    assert "applied the per-seat policy" not in err
+
+
+def test_rig_reports_a_seat_the_policy_table_does_not_cover(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A governed rig with an unlisted seat is a real gap, and silence would hide it."""
+    spec = importlib.util.spec_from_file_location(
+        "openrig_seat_policy_for_test", POLICY_MODULE_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.SEAT_ROLES["room1"] = {"somebody-else": "dev"}
+    monkeypatch.setattr(seat_sync, "load_seat_policy", lambda: module)
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "room1/seat1 has no role" in err and "unpoliced" in err
+    config = _omp_config_path(tmp_path)
+    if config.exists():
+        assert "bash" not in (yaml.safe_load(config.read_text()) or {})
+
+
+def test_rig_leaves_a_rig_outside_the_policy_table_alone(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The table is a registry: a rig it does not govern gets no policy and no editorial line."""
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    # No editorial line and no policy: the render's own installs may still be reported.
+    assert "no role" not in err and "applied the per-seat policy" not in err
+    assert "unpoliced" not in err
+    config = _omp_config_path(tmp_path)
+    if config.exists():
+        assert "bash" not in (yaml.safe_load(config.read_text()) or {})
+
+
 def _omp_rig(
     env, monkeypatch, tmp_path, with_render=True, with_config=True, make_agent_dir=True
 ):

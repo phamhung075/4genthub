@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the per-seat policy is now delivered by the client, and pinned (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`: five tests over the policy pass —
+  the single-source proof (the written `config.yml` equals `render_config(...)` from the REAL module,
+  with the fixture rig added to its table), the merge (an unrelated `model:` key survives while the
+  policy's keys arrive), semantic idempotence (second run writes nothing, mtime untouched), a seat
+  the governed rig's table omits (warned as unpoliced, no policy keys written), and a rig outside the
+  table (no policy, no editorial line).
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: one test that `--check` tolerates a
+  key the policy does not define and still reports a rule that is wrong.
+- **Falsified, both**: a copy instead of a merge fails the merge test with `KeyError: 'model'`; one
+  restated rule fails the single-source test because the file stops matching `render_config`.
+- **Behaviour, not just the file**: while making the change, this seat's runtime refused
+  `rm -rf …` citing `Blocked by bash pattern: rm -rf*` (the eleventh line of the policy document)
+  while `rm -r …` ran — the enforcement reads the file the pipeline writes.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py src/tests/scripts/test_openrig_seat_policy.py -q`
+  -> **117 passed**.
+
 ## 2026-10-06 - the rendered omp seat file carries both hand-written MCP entries (Go)
 
 - `TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape` **extended, not paralleled**: the omp document

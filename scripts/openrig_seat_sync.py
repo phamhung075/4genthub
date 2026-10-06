@@ -74,6 +74,7 @@ Exit codes:
 """
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -692,6 +693,43 @@ def cmd_rig(args: argparse.Namespace) -> None:
             "that predates the setting produces the first case.",
             file=sys.stderr,
         )
+    # The per-seat policy, from the one module that defines the rules. Applied AFTER the render's
+    # installs so the shared `mcp` keys it also sets are already in place; the merge is key-level
+    # either way, so the order is converging rather than load-bearing.
+    #
+    # A rig the table does not govern is skipped SILENTLY: the table is a registry of the rigs whose
+    # seats have roles, and a rig outside it (an operator's scratch rig, another team) is not this
+    # module's business - its own `apply --rig` refuses loudly when asked about such a rig, which is
+    # where the operator learns it. Within a governed rig, a seat the table omits is a real gap and
+    # is reported, because that is the shape drift takes in a rig that HAS a policy.
+    policy_module = load_seat_policy()
+    if room in getattr(policy_module, "SEAT_ROLES", {}):
+        for pod_id, member_id in rig_members(yaml_text):
+            document = policy_document(policy_module, room, member_id)
+            if document is None:
+                print(
+                    f"warning: {room}/{member_id} has no role in "
+                    f"{SEAT_POLICY_MODULE_PATH.name}, so no per-seat policy was delivered. That "
+                    "table is the single definition of the rules and an unlisted seat has no "
+                    "default, so this seat is running unpoliced.",
+                    file=sys.stderr,
+                )
+                continue
+            agent_dir = omp_agent_dir(session_name(pod_id, member_id, room))
+            if not agent_dir.is_dir():
+                print(
+                    f"warning: no omp agent directory at {agent_dir}, so {room}/{member_id} did not "
+                    "get the per-seat policy. The directory appears once the seat has launched under "
+                    "omp, so run the client again after that; a seat on another runtime never has "
+                    "one.",
+                    file=sys.stderr,
+                )
+                continue
+            if apply_policy(document, agent_dir / OMP_CONFIG_INSTALL_NAME):
+                print(
+                    f"applied the per-seat policy {agent_dir / OMP_CONFIG_INSTALL_NAME}",
+                    file=sys.stderr,
+                )
     print(f"rig:{rig_dir / 'rig.yaml'}")
 
 
@@ -727,11 +765,19 @@ def write_bytes_if_changed(data: bytes, target: Path) -> bool:
     return True
 
 
-def _merged_config(rendered: dict, existing: dict) -> dict:
-    """``existing`` with the RENDERED keys set on top: mappings merge, leaves overwrite."""
+def _merged_config(rendered: dict, existing: dict, owned: tuple[str, ...] = ()) -> dict:
+    """``existing`` with the RENDERED keys set on top: mappings merge, leaves overwrite.
+
+    ``owned`` names the top-level keys the rendered document owns WHOLE: those are set rather than
+    merged, because a list or a map inside them that the document no longer carries must not linger
+    in the file. The per-seat policy uses it for ``bash`` and ``tools``, the two namespaces it
+    defines outright; everything else merges key by key.
+    """
     out = dict(existing)
     for key, value in rendered.items():
-        if isinstance(value, dict) and isinstance(out.get(key), dict):
+        if key in owned:
+            out[key] = value
+        elif isinstance(value, dict) and isinstance(out.get(key), dict):
             out[key] = _merged_config(value, out[key])
         else:
             out[key] = value
@@ -800,6 +846,119 @@ def merge_config_key(fragment: bytes, target: Path) -> bool:
     return True
 
 
+# --- the per-seat policy, delivered rather than applied by hand ------------------------------
+#
+# THE RULES HAVE ONE DEFINITION: scripts/openrig_seat_policy.py - its SEAT_ROLES table and its
+# policy_for()/render_config() build each seat's config. This client IMPORTS that module and applies
+# its document to the seat's agent-dir config.yml; it does not restate a single rule, because two
+# copies of a policy is how a policy drifts.
+#
+# THE SEAM, stated because it is the choice rather than an implementation detail: THE CLIENT applies
+# the policy; the RENDER does not emit it. The rules are Python and the client is Python, so the
+# import IS the shared definition, while the render would have to carry the tables into Go - the
+# second copy. The table is also a LOCAL fact (rig + seat -> role, resolved per machine), and the
+# agent directory the document belongs to is the client's own install target, one layer along from
+# the MCP document it already installs there.
+#
+# WHAT A SEAT OUTSIDE THE TABLE GETS: nothing, reported. The table's own stance is that an unlisted
+# rig or seat is an error rather than a permissive default, so the client says so per seat and
+# continues installing the rest - a rig with one unlisted seat must not stop the others syncing.
+SEAT_POLICY_MODULE_PATH = Path(__file__).resolve().parent / "openrig_seat_policy.py"
+
+
+def load_seat_policy():
+    """Import the policy module by path - the same load its own tests use."""
+    if not SEAT_POLICY_MODULE_PATH.is_file():
+        raise SyncError(
+            f"the per-seat policy module is missing: {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE
+        )
+    spec = importlib.util.spec_from_file_location("openrig_seat_policy", SEAT_POLICY_MODULE_PATH)
+    if spec is None or spec.loader is None:  # pragma: no cover - path exists by the check above
+        raise SyncError(f"cannot load {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def policy_document(policy_module, rig: str, member: str):
+    """The seat's policy document, or None when the table has no role for it."""
+    roles = getattr(policy_module, "SEAT_ROLES", {}).get(rig)
+    if not roles or member not in roles:
+        return None
+    return policy_module.render_config(member, roles[member])
+
+
+def apply_policy(document: str, target: Path) -> bool:
+    """Apply the policy document to ``target``, the runtime's own config.yml. True if it changed.
+
+    THE POLICY OWNS ITS NAMESPACES: ``bash`` and ``tools`` are set whole, because a deny the policy
+    dropped must not linger in the file. ``mcp`` is SHARED - the render puts ``startupTimeoutMs``
+    there - so it merges key by key, and any other key the runtime's file carries survives.
+
+    When the file holds nothing but policy keys, the policy's own bytes are written VERBATIM, so the
+    document keeps its header comment; a file that carries other keys is merged and re-serialised,
+    which costs its comments (named here rather than discovered later).
+    """
+    try:
+        import yaml
+    except ImportError as err:  # pragma: no cover - environment dependent
+        raise SyncError(f"PyYAML is required to apply the per-seat policy: {err}", EXIT_USAGE) from err
+    if not target.is_file():
+        target.write_text(document, encoding="utf-8")
+        return True
+    text = target.read_text(encoding="utf-8")
+    try:
+        rendered = yaml.safe_load(document)
+        existing = yaml.safe_load(text) or {}
+    except yaml.YAMLError as err:
+        raise SyncError(
+            f"refusing to apply the per-seat policy in {target}: it is not readable YAML ({err}).",
+            EXIT_USAGE,
+        ) from err
+    if not isinstance(rendered, dict) or not isinstance(existing, dict):
+        raise SyncError(
+            f"refusing to apply the per-seat policy in {target}: its top level is not a mapping",
+            EXIT_USAGE,
+        )
+    if set(existing) <= set(rendered):
+        if text == document:
+            return False
+        target.write_text(document, encoding="utf-8")
+        return True
+    merged = _merged_config(rendered, existing, owned=("bash", "tools"))
+    if merged == existing:
+        return False
+    target.write_text(
+        yaml.safe_dump(merged, sort_keys=False, default_flow_style=False), encoding="utf-8"
+    )
+    return True
+
+
+def rig_members(rig_yaml_text: str) -> list[tuple[str, str]]:
+    """The ``(pod id, member id)`` pairs of a rig spec, in spec order; a bad spec raises.
+
+    One definition, used by both passes that walk the spec: the MCP install and the per-seat policy.
+    """
+    try:
+        import yaml  # lazy: only a caller that has a spec needs it
+    except ImportError as err:  # pragma: no cover - environment dependent
+        raise SyncError(f"PyYAML is required to read the rig spec: {err}", EXIT_USAGE) from err
+    try:
+        spec = yaml.safe_load(rig_yaml_text)
+    except yaml.YAMLError as err:
+        raise SyncError(f"cannot read the rig spec: {err}", EXIT_USAGE) from err
+    if not isinstance(spec, dict):
+        raise SyncError("cannot read the rig spec", EXIT_USAGE)
+    pairs: list[tuple[str, str]] = []
+    for pod in spec.get("pods") or []:
+        pod_id = str((pod or {}).get("id") or "")
+        for member in (pod or {}).get("members") or []:
+            member_id = str((member or {}).get("id") or "")
+            if pod_id and member_id:
+                pairs.append((pod_id, member_id))
+    return pairs
+
+
 def omp_render_installs(
     snapshots: dict[str, Path], rig: str, rig_yaml_text: str
 ) -> tuple[list[tuple[Path, Path, str]], list[tuple[str, str]]]:
@@ -841,45 +1000,29 @@ def omp_render_installs(
     if not renders_by_seat:
         return [], []
 
-    try:
-        import yaml  # lazy: only a rig that actually rendered an omp file needs the spec
-    except ImportError as err:  # pragma: no cover - environment dependent
-        raise SyncError(
-            f"PyYAML is required to install a rendered omp file: {err}", EXIT_USAGE
-        ) from err
-    try:
-        spec = yaml.safe_load(rig_yaml_text)
-    except yaml.YAMLError as err:
-        raise SyncError(f"cannot read the rig spec to place the omp files: {err}", EXIT_USAGE) from err
-    if not isinstance(spec, dict):
-        raise SyncError("cannot read the rig spec to place the omp files", EXIT_USAGE)
-
     installs: list[tuple[Path, Path, str]] = []
     gaps: list[tuple[str, str]] = []
-    for pod in spec.get("pods") or []:
-        pod_id = str((pod or {}).get("id") or "")
-        for member in (pod or {}).get("members") or []:
-            member_id = str((member or {}).get("id") or "")
-            if not pod_id or not member_id or member_id not in renders_by_seat:
-                continue
-            present = renders_by_seat[member_id]
-            agent_dir = omp_agent_dir(session_name(pod_id, member_id, rig))
-            if not agent_dir.is_dir():
-                raise SyncError(
-                    f"cannot install the rendered omp files for {rig}/{member_id}: "
-                    f"{agent_dir} does not exist. That directory appears once the seat has been "
-                    f"launched, so on a rig that has never been up run the client again after the "
-                    f"seats exist. If the seats ARE running, this launch used a different "
-                    f"--state-root than {OMP_STATE_ROOT}.",
-                    EXIT_USAGE,
-                )
-            if "verbatim" in present:
-                installs.append((present["verbatim"], agent_dir / OMP_MCP_INSTALL_NAME, "verbatim"))
-            if "merge" in present:
-                installs.append((present["merge"], agent_dir / OMP_CONFIG_INSTALL_NAME, "merge"))
-            if len(present) == 1:
-                missing = OMP_CONFIG_RENDER_PATH if "verbatim" in present else OMP_MCP_RENDER_PATH
-                gaps.append((member_id, str(missing)))
+    for pod_id, member_id in rig_members(rig_yaml_text):
+        if member_id not in renders_by_seat:
+            continue
+        present = renders_by_seat[member_id]
+        agent_dir = omp_agent_dir(session_name(pod_id, member_id, rig))
+        if not agent_dir.is_dir():
+            raise SyncError(
+                f"cannot install the rendered omp files for {rig}/{member_id}: "
+                f"{agent_dir} does not exist. That directory appears once the seat has been "
+                f"launched, so on a rig that has never been up run the client again after the "
+                f"seats exist. If the seats ARE running, this launch used a different "
+                f"--state-root than {OMP_STATE_ROOT}.",
+                EXIT_USAGE,
+            )
+        if "verbatim" in present:
+            installs.append((present["verbatim"], agent_dir / OMP_MCP_INSTALL_NAME, "verbatim"))
+        if "merge" in present:
+            installs.append((present["merge"], agent_dir / OMP_CONFIG_INSTALL_NAME, "merge"))
+        if len(present) == 1:
+            missing = OMP_CONFIG_RENDER_PATH if "verbatim" in present else OMP_MCP_RENDER_PATH
+            gaps.append((member_id, str(missing)))
     return installs, gaps
 
 
