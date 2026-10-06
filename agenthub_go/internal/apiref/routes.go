@@ -46,25 +46,39 @@ type RouteEntry struct {
 // pathParam matches one {name} segment of a Go 1.22 route pattern.
 var pathParam = regexp.MustCompile(`\{([^}]*)\}`)
 
-// mountFileSuffix is the file family that registers routes on the mux.
-const mountFileSuffix = "_mount.go"
+// testFileSuffix marks the files whose registrations are not part of the surface: a registration in a
+// test is a test's own mux, not the server's.
+const testFileSuffix = "_test.go"
 
-// routesFromDir reads every mount file in dir and returns their routes, sorted, deduplicated.
+// routesFromDir reads every non-test Go file in dir and returns their routes, sorted.
+//
+// THE FILE FAMILY IS EVERY .go FILE, NOT ONLY THE _mount.go ONES, and the witness is why: a first
+// version filtered to *_mount.go, both producer and witness shared that filter, and the witness then
+// agreed with the producer about a surface that omitted 29 registrations - every route mounted by a
+// per-family *_routes.go (branches, tasks, subtasks, sessions) and by app.go itself. A witness that
+// inherits the producer's scope is not a witness.
 //
 // Unexported on purpose: this is the producer's instrument, and the witness must parse the same
 // source text with its own code rather than call this.
 func routesFromDir(dir string) ([]RouteEntry, error) {
-	names, err := filepath.Glob(filepath.Join(dir, "*"+mountFileSuffix))
+	names, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	if err != nil {
-		return nil, fmt.Errorf("cannot list the mount files in %s: %w", dir, err)
+		return nil, fmt.Errorf("cannot list the Go files in %s: %w", dir, err)
 	}
-	if len(names) == 0 {
-		return nil, fmt.Errorf("no %s files in %s: the route surface cannot be empty", mountFileSuffix, dir)
-	}
-	sort.Strings(names)
-
-	routes := make([]RouteEntry, 0, len(names))
+	files := make([]string, 0, len(names))
 	for _, name := range names {
+		if strings.HasSuffix(name, testFileSuffix) {
+			continue
+		}
+		files = append(files, name)
+	}
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no Go files in %s: the route surface cannot be empty", dir)
+	}
+	sort.Strings(files)
+
+	routes := make([]RouteEntry, 0, len(files))
+	for _, name := range files {
 		source, err := os.ReadFile(name)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read %s: %w", name, err)
@@ -125,6 +139,9 @@ func routesInSource(filename string, source []byte) ([]RouteEntry, error) {
 		case *ast.AssignStmt:
 			recordBase(typed, bases)
 			return true
+		case *ast.GenDecl:
+			recordBases(typed, bases)
+			return true
 		case *ast.CallExpr:
 			selector, ok := typed.Fun.(*ast.SelectorExpr)
 			if !ok || (selector.Sel.Name != "HandleFunc" && selector.Sel.Name != "Handle") {
@@ -174,6 +191,27 @@ func routesInSource(filename string, source []byte) ([]RouteEntry, error) {
 			"did not read is a missing route, not a smaller surface", filename, candidates, len(routes))
 	}
 	return routes, nil
+}
+
+// recordBases remembers const and var declarations whose value resolves, under the same
+// nearest-preceding rule as assignments. A base declared with const or var is invisible to a walk that
+// reads only assignments, and THAT IS THE SHAPE THIS PARSER REFUSED A REAL SITE ON: the witness
+// resolver matches the declaration forms alike, which is why it read the sites this one refused.
+func recordBases(decl *ast.GenDecl, bases map[string]string) {
+	for _, spec := range decl.Specs {
+		value, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+		for index, name := range value.Names {
+			if name.Name == "_" || index >= len(value.Values) {
+				continue
+			}
+			if text, ok := resolvePattern(value.Values[index], bases); ok {
+				bases[name.Name] = text
+			}
+		}
+	}
 }
 
 // recordBase remembers a single-identifier assignment whose right-hand side resolves, so a pattern
