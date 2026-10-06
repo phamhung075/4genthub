@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the task notifier is wired in production, and the constructor is pinned (Go)
+
+- `fastmcp/server/httpapp/app_boot_test.go`: `TestTaskNotifierIsWired` asserts the notifier the composition
+  root builds has a broker and a context provider. THE DEFECT IT STANDS BEHIND: `app.go` passed
+  `&services.WebSocketNotificationService{}` - zero-valued - so `Notifier` was non-nil while `Broker` was nil
+  and every task and subtask event returned at `if s.Broker == nil`. No test in the package could see it,
+  because they all construct the service WITH a fake broker; only the production call site passed nothing.
+- WHAT THE TEST DOES NOT COVER, stated in its own comment: reverting the call site to the zero value leaves
+  it green, so the CALL SITE is pinned by fe-dev's live socket capture and by nothing here. A real end-to-end
+  pin (dial `/ws/realtime`, update a task through the controller, require the frame) is named as the next step
+  rather than implied.
+- `fastmcp/server/httpapp/submit_feedback_mcp_test.go`: `TestMCPToolsListRefusesAnUncomposedRegistry` pins that
+  the refusal is `ErrMCPToolsRegistryUncomposed` - matched by IDENTITY, not by prose - which is the half the
+  build-time generator's guard depends on.
+- Commands: `go test ./fastmcp/server/httpapp/ -count=1` -> ok (1.053s); `go vet ./fastmcp/server/httpapp/` -> 0 bytes, exit 0; `gofmt -l` -> empty. Falsification of the sentinel half: deleting the sentinel and returning `fmt.Errorf` makes the identity assertion fail.
+
 ## 2026-10-06 - a failed task listing is loud in the log and unchanged on the wire (Go)
 
 - `fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/handlers_port_test.go`:

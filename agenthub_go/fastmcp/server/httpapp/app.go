@@ -44,7 +44,7 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, sessions)
 	a.projects = projectControllerAdapter{c: api_controllers.NewProjectAPIController(projectFacadeProvider{sessions: sessions, ctxFactory: ctxFactory})}
 	a.branches = branchControllerAdapter{c: api_controllers.NewBranchAPIController(branchFacadeProvider{sessions}, branchRepoProvider{sessions}), sessions: sessions}
-	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: &services.WebSocketNotificationService{}}
+	taskProvider := taskFacadeProvider{sessions: sessions, ctxFactory: ctxFactory, notifier: newTaskNotifier(sessions)}
 	projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory := buildMCPFacadeFactories(ctx, sessions, ctxFactory)
 	facadeService := services.NewFacadeService(taskFacadeFactory{taskProvider}, subtaskFacadeFactory{factory: factories.NewSubtaskFacadeFactory(services.RepositoryProviderService{}.GetInstance()), ctxFactory: ctxFactory, sessions: sessions}, projectFactory, branchFactory, agentFactory, contextFactory, tokenFactory)
 	services.SetInstance(facadeService)

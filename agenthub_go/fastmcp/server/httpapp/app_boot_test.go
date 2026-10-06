@@ -80,3 +80,26 @@ func TestAppBootsAgainstAMigratedDatabase(t *testing.T) {
 		}
 	}
 }
+
+// TestTaskNotifierIsWired pins the CONSTRUCTOR the composition root uses, and says plainly what it does
+// not cover: app.go calling it. Reverting the call site to the zero value it replaced leaves this test
+// green, so the call site is pinned by fe-dev's live socket capture and by nothing here yet - a real
+// end-to-end pin (dial /ws/realtime, update a task through the controller, require the frame) is the
+// next step and is named rather than implied.
+//
+// The defect behind it was invisible to every other test in this package, because they all construct the
+// service with a fake broker while only the PRODUCTION wiring passed a zero value: app.go built
+// &services.WebSocketNotificationService{}, whose Notifier field is non-nil (so the hook's
+// `if h.Notifier == nil` check passed) while Broker was nil, so SyncBroadcastTask returned at
+// `if s.Broker == nil` for every task and subtask event. Seats kept broadcasting - they call
+// routes.BroadcastDataChange directly - which is what made the app look half-alive and sent two seats
+// looking for the fault in dedup, in the update path and in the client.
+func TestTaskNotifierIsWired(t *testing.T) {
+	notifier := newTaskNotifier(nil)
+	if notifier.Broker == nil {
+		t.Fatalf("the task notifier has no broker: every task and subtask event is dropped at the Broker-nil return")
+	}
+	if notifier.Provider == nil {
+		t.Fatalf("the task notifier has no context provider: notification metadata would run degraded")
+	}
+}
