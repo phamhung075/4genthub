@@ -13,7 +13,7 @@ Backlog: agenthub_go/NEXT_GEN.md is the single backlog and decision record. Take
 1. Defects found by running the real stack (server on Postgres, a real OpenRig rig, the bridge). Reproduce first, then fix the cause.
 2. The seat model: authoring screens for modules and seat types in the frontend, link deletion, room deletion, changing a seat's runtime or model, connecting the local send guard (seatcheck) to seats, per-machine tokens for the bridge, recording the pinned hash in the bridge status.
 3. ~~Retire the old agenthub_main/agent-library and the call_agent path~~ **DONE** — the `agent-library`, the `call_agent` tool and its routes are removed on both the Go and Python sides; the seat model (`manage_seat` / `call_seat`) replaced them (`call_agent` survives only as a field of `manage_agent`).
-4. Remaining Go port items in NEXT_GEN.md, and the known cleanups: the 23 TypeScript errors, the gofmt finding in the subtask controller.
+4. Remaining Go port items in NEXT_GEN.md, and the known cleanups: ~~the 23 TypeScript errors~~ — **REMOVED 2026-10-03; the count is now zero** (`npx tsc --noEmit -p .` reports 0, re-measured 2026-10-06; `agenthub-frontend/CHANGELOG.md`, the 2026-10-03 entry "TypeScript: 23 pre-existing errors removed") — and the gofmt finding in the subtask controller.
 Do not work on the GitHub pipeline test job; the owner decided against it.
 
 Working loop for the lead: pick one backlog item, write its acceptance criteria, delegate to the right seat, require the evidence format of that seat, send the change to the review seat, then to the tester, then report. Keep several independent items in flight when seats are idle. Record each decision and finished item in NEXT_GEN.md.

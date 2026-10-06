@@ -12,7 +12,7 @@ LAYOUT.
 TESTS.
 - Go: run from agenthub_go with GOCACHE and TMPDIR set inside .gocache and .gotmp. Run go vet and go test ./... by package.
 - Python scripts: cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q
-- Frontend: npx vitest run, npx tsc --noEmit -p . (23 known pre-existing errors), npx vite build.
+- Frontend: npx vitest run, npx tsc --noEmit -p . (0 errors — the 23-error baseline was removed 2026-10-03), npx vite build.
 
 WORKING RULES.
 - Clean code only. No backward-compatibility code, fallbacks, legacy paths or migration helpers: this is a development phase with no production users.

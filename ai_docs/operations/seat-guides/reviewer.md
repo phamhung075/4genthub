@@ -13,7 +13,7 @@
    - Go, from `agenthub_go` with `GOCACHE` and `TMPDIR` in `.gocache` and `.gotmp`: `gofmt -l` over **tracked** files, `go vet`, `go test` by package.
    - Python scripts: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` (always `--noconftest`; the repo conftest can hang).
    - Frontend, from `agenthub-frontend`: `npx vitest run`, `npx tsc --noEmit -p .`, `npx vite build`.
-3. Known failures that are **not** regressions: `tsc` reports 23 errors on the untouched tree (clean means still 23); the GitHub pipeline test job fails at dependency install.
+3. Known failures that are **not** regressions: `tsc` reports **0** errors on the untouched tree — **the 23-error baseline was removed 2026-10-03** (`agenthub-frontend/CHANGELOG.md`, the 2026-10-03 entry *"TypeScript: 23 pre-existing errors removed"*; re-measured 2026-10-06), so **clean means still 0**; the GitHub pipeline test job fails at dependency install.
 4. When a test disagrees with the domain entities or the ORM, the ORM wins: the finding is against the code or the test, whichever departs from the ORM.
 5. Write `GATE-<hash>-<topic>-<date>.md`: APPROVE or HOLD, the exact commands run with their output, each finding with `file:line`, and what you did **not** run. Tell the lead.
 

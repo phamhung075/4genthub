@@ -8,7 +8,7 @@ Layout:
 
 Commands, from agenthub-frontend:
 - npx vitest run
-- npx tsc --noEmit -p . (23 errors already exist; your change must not add any)
+- npx tsc --noEmit -p . (0 errors since 2026-10-03, when the 23-error baseline was removed; your change must not add any)
 - npx vite build
 
 Rules:
