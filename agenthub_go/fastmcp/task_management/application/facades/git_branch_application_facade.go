@@ -62,7 +62,8 @@ type gbAgentFacade interface {
 
 // GitBranchApplicationFacade mirrors git_branch_application_facade.GitBranchApplicationFacade.
 // Python reads RepositoryProviderService/TaskRepositoryFactory/FacadeService singletons
-// inside methods; those are injected here because they are unported or global.
+// inside methods; all three exist in Go and are injected here because Python reaches them
+// as globals.
 type GitBranchApplicationFacade struct {
 	gitBranchService gbGitBranchService
 	projectID        *string
