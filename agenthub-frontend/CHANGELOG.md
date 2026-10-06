@@ -245,6 +245,31 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **Two transitive advisories closed, and the lockfile question answered** - 2026-10-06
+  - `source-map-js` 1.2.1 -> **1.2.2** and `brace-expansion` 2.0.2 -> **2.1.7**. Both are TRANSITIVE - the first through
+    `postcss` (and `tailwindcss > postcss-nested > postcss`), the second through `tailwindcss > sucrase > glob > minimatch` -
+    so the fix is an override rather than a direct-dependency bump, bounded to the SAME MAJOR as the vulnerable copy: an
+    unbounded range resolved `brace-expansion` all the way to 5.0.12, which is the blind bump this change exists to avoid.
+  - The override sits in `pnpm-workspace.yaml` (the supported home: the local pnpm is 12.9.1 and warns that the
+    `package.json` `pnpm` field is no longer read) AND in `package.json`'s `pnpm` block, because the production image pins
+    `pnpm@10.9.0`, which does read it. The duplication is the compatibility shim across the two managers actually in play.
+  - WHICH LOCKFILE THE BUILD USES, measured rather than assumed: `docker-system/docker/Dockerfile.frontend.production`
+    (reached through `captain-definition.frontend`) copies `agenthub-frontend/pnpm-lock.yaml` and runs
+    `pnpm install --frozen-lockfile`, so the FRONTEND lockfile is authoritative. `node_modules` carries pnpm's own markers
+    (`.pnpm`, `.modules.yaml`). CI installs no frontend dependencies at all: `test_coverage.yml` works only in
+    `agenthub_main`, and `production-deployment.yml`'s frontend image step names `./agenthub-frontend/Dockerfile.production`,
+    which does not exist in the tree (reported, not fixed here - outside this task's scope).
+  - The root lockfiles (`package-lock.json`, `pnpm-lock.yaml`) are tracked but serve the root `package.json` (a thin project
+    with `sass` and the agent SDK, and no scripts); the root's `source-map-js@1.2.1` sits under the root's own `sass`, not in
+    the frontend's path. Neither is read by the frontend build or by CI, so whether they are dead weight is the owner's call;
+    nothing here deletes them.
+  - Gates, measured before and after: `tsc --noEmit` **0 errors** -> **0 errors** (the 23-error baseline was removed
+    2026-10-03); `vite build` clean (21.65s); `vitest run` **102 files / 1763 passed** before -> **1763 passed of 1764** after,
+    where the one failure is in `WebSocketClient.test.ts` at line 116 (`expect(failures).not.toHaveBeenCalled()`, the
+    reconnection-failure path) - and BOTH that test file and its source are modified and uncommitted by another seat, with the
+    suite gaining a test between the two runs. Neither bumped package is reachable from that path.
+  - Lockfile regenerated with `pnpm@10.9.0` (the production pin) via `pnpm install --no-frozen-lockfile`; the only version
+    changes are the two above.
 - **The block form stops refusing blocks the renderer accepts** - 2026-10-06
  - The frontend mirror of the Go parser was STRICTER in two places, so it refused blocks the authority accepts -
  the direction that makes it a defect rather than a note. Go matches object keys to struct tags
