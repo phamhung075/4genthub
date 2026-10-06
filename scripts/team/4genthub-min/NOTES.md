@@ -14,13 +14,17 @@ do it silently because every field would be filled in.
 texts are a **pure copy** of the seed-library blocks, verified byte-identical to the digests recorded
 in `seedlibrary/guides.lock.json`, 11 of 11.
 
-## The seat types: six clean, three flagged
+## The seat types: seven clean, three flagged (7 + 3 = 10)
 
 | seats | seat_type | why |
 |---|---|---|
 | `lead`, `reviewer`, `writer` | `lead`, `reviewer`, `writer` | match by name |
 | `go-dev`, `go-dev2`, `fe-dev`, `web-dev` | `developer` | match by name |
 | `skills-dev`, `context-dev`, `feedback-dev` | `developer` **(flagged)** | they resolve the **orchestrator** spec today, and `orchestrator` is not one of the nine seeded types |
+
+Seven seats match a seeded type by name — `lead`, `reviewer`, `writer`, `go-dev`, `go-dev2`, `fe-dev`,
+`web-dev` — and three do not: `skills-dev`, `context-dev`, `feedback-dev`. Seven plus three is the ten
+seats in `team.json`, which is the check to run on this paragraph rather than counting table rows.
 
 The three flagged seats are a **product choice still open with the owner**: either `orchestrator`
 becomes a tenth seed type — which means a new `seat-types/orchestrator.yaml` in the seed library, and
