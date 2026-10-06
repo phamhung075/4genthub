@@ -556,10 +556,14 @@ def swap_dir(staging: Path, target: Path) -> list[str]:
     moved rather than copied, so a symlink stays a symlink.
 
     Deriving this at swap time rather than from a list read earlier buys two things. It closes a
-    real window: the rig build reads the old directory, then pulls every seat — minutes — and only
-    then swaps, so a file that landed in between used to be deleted by a build that promises the
-    operator their files survive. And it removes the need to enumerate what the build owns, an
-    enumeration a new rendered artifact would silently invalidate.
+    real window, and the window is MEASURED rather than assumed: ``cmd_rig`` reads the old
+    directory AFTER pulling the seats and BEFORE staging materializes them, so the gap is the
+    materialization — a copy per seat — between that read and this swap. A file that lands in the
+    gap is in neither the old list nor the new directory, so it used to be deleted by a build that
+    promises the operator their files survive. (A file that lands during the PULLS survives under
+    both the old and the new code; it was never the open phase.) And the derivation removes the
+    need to enumerate what the build owns, an enumeration a new rendered artifact would silently
+    invalidate.
     """
     kept: list[str] = []
     backup = None
