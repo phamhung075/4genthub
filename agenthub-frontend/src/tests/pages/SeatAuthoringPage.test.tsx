@@ -432,6 +432,10 @@ describe('SeatAuthoringPage composer', () => {
     ).toBeInTheDocument();
 
     const row = within(blocks).getByText('rules@1.2.0').closest('li') as HTMLElement;
+    // What a removal does is stated on the same row, so the pinned block is not read as unremovable.
+    expect(
+      within(row).getByText('Removing here: removed at seat · still defined at the seat type')
+    ).toBeInTheDocument();
     expect(within(row).getByRole('button', { name: /Remove here/ })).toBeEnabled();
     fireEvent.click(within(row).getByRole('button', { name: /Remove here/ }));
 

@@ -30,11 +30,22 @@ Track test suite changes, fixes, and improvements for agenthub.
   clicks `Remove here` on that row and asserts the write that follows - `putOverlay('seat', { ops: [{ kind: 'remove',
   slug: 'rules', version: '', content: '' }] }, 'dev', 'alice')` - so the surface is shown removing a pinned block
   rather than promising to.
-- Two assertions pin the copy the owner's ruling is about: the badge's text is EXACTLY `pinned at company` (the
-  padlock glyph is gone, asserted as no `svg` inside the badge), and the row carries the sentence saying a pin sets
-  the version in effect at its scope and is not a lock.
-- Proved by removing the change: with the padlock restored the `svg` assertion fails, and with the sentence removed
-  the text lookup fails - both halves are pinned rather than described.
+- Three assertions pin the copy the owner's ruling is about: the badge's text is EXACTLY `pinned at company` (the
+  padlock glyph is gone, asserted as no `svg` inside the badge), the row carries the sentence saying a pin sets the
+  version in effect at its scope and is not a lock, and the same row states its own removal outcome
+  (`Removing here: removed at seat · still defined at the seat type`) while the button stays enabled.
+- Proved by removing the change, measured rather than argued: with the padlock restored the case fails
+  `AssertionError: expected SVGSVGElement{ …(2), …(2) } to be null` with the received node `class="lucide
+  lucide-lock mr-1 h-3 w-3"`, and with the sentence removed it fails `Unable to find an element with the text: A
+  pin sets the version in effect at company for this block and does nothing else - it is not a lock, so removing
+  the block still removes it.` Both halves are pinned rather than described; the component was then restored and
+  `git diff` on it is empty.
+- ONE FINDING ABOUT THE FILE, not fixed here: the `SeatAuthoringPage composer` describe (:327) has no `beforeEach`
+  of its own - it inherits the first describe's mocks only because that describe's `beforeEach` runs first in a full
+  file run. Filtered (`vitest run <file> -t '<one composer case>'`) no test of the first describe runs, the API
+  mocks stay unimplemented, and the page renders "No rooms yet" - the case then fails at the `Compose level`
+  lookup, not at its own assertion. Reproduced twice. A full-file run is the correct way to run these cases until
+  the shared `beforeEach` is hoisted to file scope.
 - Counts: that file 22 tests, 0 errors.
 - Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
   passed.
