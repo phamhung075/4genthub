@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Live tool-call feed for the omp seats of an OpenRig rig. Read-only.
 
-    openrig_watch_tools.py feed [--rig R] [--seat S ...] [--back N] [--width W]
+    openrig_watch_tools.py feed [--rig R] [--seat S ...] [--back N] [--width W] [--lines L]
         one merged stream: a line per tool call and per result, coloured by tool kind
-    openrig_watch_tools.py grid [--rig R] [--cols 2] [--back N] [--width W]
+    openrig_watch_tools.py grid [--rig R] [--cols 2] [--back N] [--width W] [--lines L]
         a new herdr workspace with one pane per seat, each running its own ``feed``
 
 The feed reads each seat's newest session jsonl under ~/.openrig/state/omp and follows it.
@@ -18,20 +18,32 @@ import time
 from pathlib import Path
 
 ROOT = Path.home() / ".openrig" / "state" / "omp"
-COLORS = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94]
 RESET = "\033[0m"
+BOLD = "\033[1m"
+
+
+def fg(code: int) -> str:
+    """256-colour foreground. Every colour below is a light one: readable on a black background."""
+    return f"\033[38;5;{code}m"
+
+
+SEAT_COLORS = [203, 114, 221, 75, 213, 87, 215, 183, 120, 229]
+MCP_COLOR = 213
+DEFAULT_TOOL_COLOR = 255
+RESULT_COLOR = 249
+STAMP_COLOR = 245
 # tool name -> colour: reads blue, writes yellow, shell green, MCP magenta, anything else white
 TOOL_COLORS = {
-    "read": 34,
-    "grep": 34,
-    "find": 34,
-    "ls": 34,
-    "search": 34,
-    "write": 33,
-    "edit": 33,
-    "ast_edit": 33,
-    "bash": 32,
-    "eval": 32,
+    "read": 117,
+    "grep": 117,
+    "find": 117,
+    "ls": 117,
+    "search": 117,
+    "write": 221,
+    "edit": 221,
+    "ast_edit": 221,
+    "bash": 120,
+    "eval": 120,
 }
 
 
@@ -40,22 +52,67 @@ def newest_session(seat_dir: Path):
     return max(files, key=lambda f: f.stat().st_mtime, default=None)
 
 
-def brief(args, width: int) -> str:
+def pretty(text: str) -> str:
+    """A result that is JSON (compact or not) is shown indented; anything else as it is."""
+    stripped = text.strip()
+    if stripped[:1] in "{[":
+        try:
+            return json.dumps(json.loads(stripped), indent=2, ensure_ascii=False)
+        except json.JSONDecodeError:
+            pass
+    return text
+
+
+def block(head: str, style: str, text: str, width: int, lines: int) -> str:
+    """``head`` then ``text`` as real lines: the first beside the head, the rest indented.
+
+    Each line is cut at ``width`` characters and at most ``lines`` lines are shown; what is hidden
+    is counted, never silently dropped.
+    """
+    rows = text.rstrip().splitlines() or [""]
+    out = [f"{head}{style}{rows[0][:width]}{RESET}"]
+    out += [f"    {style}{row[:width]}{RESET}" for row in rows[1:lines]]
+    if len(rows) > lines:
+        out.append(f"    {fg(STAMP_COLOR)}… +{len(rows) - lines} more lines{RESET}")
+    return "\n".join(out)
+
+
+def call_body(args) -> tuple[str, str]:
+    """(names of the arguments not shown, the main argument as text)."""
     if not isinstance(args, dict):
-        return str(args)[:width]
+        return "", str(args)
     for key in ("command", "path", "intent", "prompt", "code"):
         if key in args:
-            text = str(args[key]).replace("\n", " ⏎ ")
-            extra = (
-                ""
-                if len(args) == 1
-                else f" (+{', '.join(k for k in args if k != key)})"
+            others = [k for k in args if k != key]
+            extra = f" (+{', '.join(others)})" if others else ""
+            return extra, f"{key}={args[key]}"
+    return "", json.dumps(args, indent=2, ensure_ascii=False)
+
+
+def detail_lines(role: str | None, part: dict, width: int, lines: int):
+    """Reasoning, what the agent says, and what it is told: the parts OpenRig's own view omits."""
+    kind = part.get("type")
+    if role == "assistant" and kind == "thinking":
+        text = str(part.get("thinking", "")).strip()
+        if text:
+            yield block(
+                f"{BOLD}{fg(183)}~ think {RESET}",
+                f"{fg(183)}\033[3m",
+                text,
+                width,
+                lines,
             )
-            return f"{key}={text[:width]}{extra}"
-    return json.dumps(args)[:width]
+    elif role == "assistant" and kind == "text":
+        text = str(part.get("text", "")).strip()
+        if len(text) > 1:
+            yield block(f"{BOLD}{fg(231)}▸ say {RESET}", fg(255), text, width, lines)
+    elif role == "user" and kind == "text":
+        text = str(part.get("text", "")).strip()
+        if text:
+            yield block(f"{BOLD}{fg(87)}◂ in {RESET}", fg(123), text, width, lines)
 
 
-def events(line: str, width: int):
+def events(line: str, width: int, detail: bool = False, lines: int = 25):
     try:
         msg = json.loads(line).get("message") or {}
     except json.JSONDecodeError:
@@ -63,19 +120,30 @@ def events(line: str, width: int):
     content = msg.get("content")
     if msg.get("role") == "toolResult":
         text = " ".join(p.get("text", "") for p in content or [] if isinstance(p, dict))
-        body = text.replace(chr(10), " ⏎ ")[:width]
+        body = pretty(text)
         if text.startswith("Tool ") and "is blocked by tool policy" in text[:120]:
-            yield f"\033[1;97;41m ✗ BLOCKED {RESET} \033[91m{body}{RESET}"
+            head = f"\033[1;38;5;231;48;5;160m ✗ BLOCKED {RESET} "
+            yield block(head, fg(210), body, width, lines)
         elif msg.get("isError"):
-            yield f"\033[1;91m✗ {body}{RESET}"
+            yield block(f"{BOLD}{fg(203)}✗ {RESET}", fg(203), body, width, lines)
         else:
-            yield f"\033[2m← {body}{RESET}"
+            yield block(
+                f"{fg(RESULT_COLOR)}← {RESET}", fg(RESULT_COLOR), body, width, lines
+            )
     elif isinstance(content, list):
         for part in content:
+            if detail and isinstance(part, dict):
+                yield from detail_lines(msg.get("role"), part, width, lines)
             if isinstance(part, dict) and part.get("type") == "toolCall":
                 name = part.get("name") or "?"
-                code = 35 if name.startswith("mcp__") else TOOL_COLORS.get(name, 97)
-                yield f"\033[1;{code}m→ {name}{RESET} {brief(part.get('arguments'), width)}"
+                code = (
+                    MCP_COLOR
+                    if name.startswith("mcp__")
+                    else TOOL_COLORS.get(name, DEFAULT_TOOL_COLOR)
+                )
+                extra, body = call_body(part.get("arguments"))
+                head = f"{BOLD}{fg(code)}→ {name}{extra}{RESET} "
+                yield block(head, fg(255), body, width, lines)
 
 
 def rig_seats(rig: str) -> list[str]:
@@ -134,7 +202,12 @@ def grid(a: argparse.Namespace) -> None:
             panes.append(cur)
     me = Path(__file__).resolve()
     for pane, seat in zip(panes, seats):
-        cmd = f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
+        cmd = (
+            f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
+            + f" --lines {a.lines}"
+            + (" --detail" if a.detail else "")
+        )
+        herdr("pane", "rename", pane, seat)
         herdr("pane", "send-text", pane, cmd)
         herdr("pane", "send-keys", pane, "Enter")
     herdr("workspace", "focus", root.split(":")[0])
@@ -147,8 +220,15 @@ def main() -> None:
     for name, fn in (("feed", feed), ("grid", grid)):
         p = sub.add_parser(name)
         p.add_argument("--rig", default="4genthub-min")
-        p.add_argument("--back", type=int, default=3 if name == "feed" else 4)
-        p.add_argument("--width", type=int, default=170 if name == "feed" else 110)
+        p.add_argument("--back", type=int, default=3 if name == "feed" else 40)
+        p.add_argument("--width", type=int, default=170 if name == "feed" else 200)
+        p.add_argument("--lines", type=int, default=25)
+        p.add_argument(
+            "--detail",
+            action="store_true",
+            default=name == "grid",
+            help="also show the agent's reasoning, what it says and what it is told (on for grid)",
+        )
         if name == "feed":
             p.add_argument("--seat", nargs="*")
         else:
@@ -162,27 +242,31 @@ def feed(a: argparse.Namespace) -> None:
     seats = rig_seats(a.rig)
     if a.seat:
         seats = [s for s in seats if s in a.seat]
-    color = {s: COLORS[i % len(COLORS)] for i, s in enumerate(seats)}
+    color = {s: SEAT_COLORS[i % len(SEAT_COLORS)] for i, s in enumerate(seats)}
     pos: dict[str, tuple[Path, int]] = {}
 
     def show(seat, line):
         stamp = time.strftime("%H:%M:%S")
-        for text in events(line, a.width):
-            print(
-                f"\033[2m{stamp}\033[0m \033[1;{color[seat]}m{seat:<12}{RESET} {text}",
-                flush=True,
-            )
+        # One seat in view (a grid pane): its name is the pane's title, not a column on every line.
+        name = "" if len(seats) == 1 else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
+        for text in events(line, a.width, a.detail, a.lines):
+            print(f"{fg(STAMP_COLOR)}{stamp}{RESET} {name}{text}", flush=True)
 
+    if len(seats) == 1:
+        print(f"{BOLD}{fg(color[seats[0]])}== {seats[0]} =={RESET}", flush=True)
+    else:
+        print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     for seat in seats:
         f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")
         if f is None:
             continue
         lines = f.read_text().splitlines()
-        shown = [ln for ln in lines if any(True for _ in events(ln, 1))][-a.back * 2 :]
+        shown = [
+            ln for ln in lines if any(True for _ in events(ln, 1, a.detail, a.lines))
+        ][-a.back * 2 :]
         for ln in shown:
             show(seat, ln)
         pos[seat] = (f, f.stat().st_size)
-    print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     while True:
         for seat in seats:
             f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")

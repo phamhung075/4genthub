@@ -2,6 +2,296 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the client's unported table lost the entry that became real (Go client)
+
+- `cmd/agenthubclient/main_test.go`: `TestUnportedCommandRefusesRatherThanStubbing` listed
+  `{"sync", "status", "4genthub-dev"}` as UNPORTED, which stopped being true in `64f8ecde` when the verb
+  was ported - so the table was pinning a refusal the command no longer gives, and `go test ./...` failed on
+  it. The entry is removed and the ported behaviour takes its place in
+  `TestSyncStatusIsPortedAndRefusesOnTheEnvironment`: no `AGENTHUB_URL` -> exit 2 with "AGENTHUB_URL is not
+  set", nothing on stdout, and explicitly NO "not ported" (a porting note for a ported verb would be a lie).
+  `{"sync", "pull", ...}` STAYS in the table, because pull's positional half is still unported - which is
+  what that test exists to keep honest - and the test's comment now says the table holds only the commands
+  still unported and that an entry leaves it when its verb becomes real.
+- The same two codes are pinned at unit level in `internal/clientsync/statusverb_test.go`
+  (`TestRunStatusVerbMapsFailuresThePythonsWay`: no env -> 2, an unreadable cloud -> 3), so the top-level
+  case is the dispatcher's exit code rather than a second copy of the verb's internals.
+
+## 2026-10-06 - the snapshot path guards, tested before anything writes (Go client)
+
+- `internal/clientsync/seatfiles_test.go`: `TestSafeRelativeRefusesEveryEscapeThePythonSpecLists` uses the
+  PYTHON SPEC'S OWN parametrized bad paths - `../evil.txt`, `/etc/passwd`, `a\b.txt`, `a//b.txt`, `""`,
+  `./x.txt`, `..` - plus four the same rule catches (`\absolute`, `docs/../../etc/passwd`, `../..`, `a/..`),
+  and then the legal ones including a path with a space and a dot in a component. Every rejection is a way
+  a server-supplied path could land outside the snapshot directory, which is the whole reason the guard
+  exists; a port that drops one writes wherever the cloud says.
+- `TestValidateHashRefusesAnythingThatIsNotADirectoryName` pins `HASH_RE` plus the `..` check the pattern
+  alone allows (`a..b` matches it and is refused), and nine refusals including a space, a newline and a
+  leading dot.
+- `TestExtractFilesSeparatesTheCloudsTwoFailures` pins the split a port would flatten: a malformed ANSWER is
+  `EXIT_REMOTE` (the cloud is wrong) while an unsafe PATH is `EXIT_USAGE` (the cloud is dangerous) - seven
+  cases over the two.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok (23 tests in the package now); `go vet` ->
+  0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - `sync status <room>` runs, and its two ported subtleties are pinned (Go client)
+
+- `internal/clientsync/statusverb_test.go`: `TestRunStatusVerbMapsFailuresThePythonsWay` pins the mapping a
+  port gets wrong - the helpers raise with `EXIT_REMOTE` (1) and the CLIENT's main maps everything that is
+  not `EXIT_USAGE` (2) to `EXIT_FAILED` (3), so a cloud that cannot be read exits **3**; the tempting
+  `clientcmd.CodeOf(err, ...)` would return the helper's own 1, and this case catches it. A missing
+  `AGENTHUB_URL` is a USAGE error with the Python's message ("AGENTHUB_URL is not set").
+  `TestPinnedHashesAbsenceAndEmpty` pins the other subtlety: ABSENT means "not pulled" while an EMPTY pin
+  means BEHIND, which is the Python's `pinned is None` distinction - and
+  `TestAnEmptyPinIsBehindRatherThanNotPulled` corrects an earlier version of the Go status core that folded
+  them together. Two cases of that earlier core were passing *because* their data used `""` where the
+  Python's spec has `None`; the data is now the absent key it should be.
+- `TestParseStatusArgsMirrorsTheSubparser` and `TestRunStatusVerbEndToEnd` cover the verb's surface: the
+  positional room, `--out`, a repeatable `--seat` (a filter that narrows both the rows and the exit), and
+  six usage refusals (no room, two positionals, an unknown flag, a flag with no value).
+- SMOKE, the REAL BINARY against a real (tiny) HTTP cloud rather than only the unit fakes: `sync status cd`
+  printed the Python's own table (`writer pinned None cloud h3 not pulled`, `lead pinned h2 cloud h2 in
+  sync`) and exited 4; `--seat lead` exited 0; a 404 cloud printed `GET
+  /api/v2/openrig/rooms/nope/rigspec failed: HTTP 404` and exited 3; and without the env var it printed
+  `AGENTHUB_URL is not set` and exited 2.
+- Commands: `go test ./internal/clientsync/ ./internal/clientcmd/ -count=1` -> ok (16 tests);
+  `go vet` over both -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - the cloud half of the status path, with every refusal pinned (Go client)
+
+- `internal/clientsync/rigspec_test.go`: `TestFetchRigspecPinsTheFourTransportRefusals` covers SEVEN cases
+  across the two layers, every one of them a refusal - HTTP status with the body's first 300 characters,
+  invalid JSON, **a JSON list refused as a "malformed response" rather than invalid JSON** (the Python's
+  `json.load` succeeds there and its `isinstance(dict)` check refuses it, so decoding into a Go map would
+  report the wrong refusal), `success: false`, a MISSING `success` key (not True either), no `rigspec`, and
+  a `rigspec` that is a list. Each asserts the message AND the exit code, because a caller reading only
+  prose would keep going on a failure.
+- `TestFetchRigspecSendsTheTokenAndThePath` pins the request half: the bearer token, `Accept:
+  application/json`, and the path with a trailing slash on the base URL (it must not double) - a port that
+  quietly sent no token would look identical against a permissive dev stack.
+- `TestCloudHashesKeepsTheCloudOrderAndRefusesAMalformedEntry` pins the cloud's ORDER travelling beside the
+  map (the Python's dict keeps it, Go's does not, so the status core takes it as an argument) and three
+  malformed entries reported at ExitFailed's number (3, this client's ExitUnavailable) rather than skipped -
+  skipping would answer "all in sync" for a rigspec nobody could have meant.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok (23 subtests across the two units);
+  `go vet ./internal/clientsync/` -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - an unrouted error frame is reported, so a server refusal stops being invisible (Frontend)
+
+- `agenthub-frontend/src/tests/services/WebSocketAnimationService.test.ts`: three cases over the service's routing.
+  `reports the server's own explanation instead of dropping it` drives the REAL frame the server sends for a refused task
+  notification - `type: 'error'`, `entity: 'system'`, `action: 'notification_blocked'`, a primary carrying
+  `code: 'NOT_AUTHORIZED'`, `entity_type: 'task'`, `entity_id`, `event_type: 'updated'` - and asserts the logger is called
+  ONCE carrying that code and that entity id, and that no animation was attempted.
+  `does NOT report a heartbeat, which is also entity system` and `does NOT report an ordinary frame it routes, like a task
+  update` pin the DISCRIMINATOR: the new branch keys on `type === 'error'` rather than `entity === 'system'`, because
+  heartbeat replies are also `entity: 'system'` (action `pong`) and keying on the entity would report every heartbeat.
+- THE FRAME IS COPIED FROM A LIVE CAPTURE rather than invented, so the shape under test is the server's. WHAT THE THREE
+  CASES DO NOT COVER, stated rather than implied: nothing asserts the message TEXT - the property is that the server's
+  reason reaches the console at all, and pinning the wording would make the next person fight the test to improve it.
+- Commands: `npx vitest run` on `WebSocketAnimationService.test.ts`, `WebSocketAnimationService.unified.test.ts`,
+  `WebSocketClient.test.ts`, `test_useRealtimeSync_task.test.tsx`, `test_useRealtimeSync_seat.test.tsx`,
+  `test_useRealtimeSync_notification.test.tsx` -> 6 files, 136 passed (133 before these three); `npx tsc --noEmit -p .` ->
+  exit 0, 0 errors.
+
+## 2026-10-06 - the pinned-snapshot reader ported with its two refusals (Go client)
+
+- `internal/clientsync/lock_test.go`: `TestReadLockMirrorsThePythonBranches` pins ALL THREE outcomes of
+  `openrig_seat_sync.py`'s `read_lock`, because the two failure ones are what a port drops silently:
+  **absent is not an error** (the seat was never pulled, which `status` renders as "not pulled"), **a
+  directory counts as absent** (the Python's `is_file()` is false for one, and so is a stat that fails),
+  a valid lock yields both fields, and then the refusals: invalid JSON exits 2 with the Python's
+  "cannot read lock file <path>: <cause>" prefix, and five malformed shapes (`no hash`, `no path`, `hash`
+  as a number, `path` null, a JSON list) exit 2 with "lock file <path> is malformed". An unreadable file
+  is covered too, skipped when running as root.
+- WHY the parity basis is the CODE rather than a Python test for this piece: `test_openrig_seat_sync.py`
+  has no direct unit test of `read_lock` - its specs for it are behavioural, through the pull path - so
+  the three branches are read from `read_lock` itself and pinned here, and the two that a caller would
+  otherwise only meet in production are named in the test's own subtests.
+- `internal/clientcmd/command.go`: `CodedError` + `CodeOf` are the Python scripts' `SyncError` shape; the
+  tests read a failure's exit code with `CodeOf` and assert the error is a `CodedError`, so a caller can
+  never be left deciding a code the failure already carried.
+- Commands: `go test ./internal/clientsync/ ./internal/clientcmd/ -count=1` -> ok; `go vet` over both ->
+  0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - the task notifier is wired in production, and the constructor is pinned (Go)
+
+- `fastmcp/server/httpapp/app_boot_test.go`: `TestTaskNotifierIsWired` asserts the notifier the composition
+  root builds has a broker and a context provider. THE DEFECT IT STANDS BEHIND: `app.go` passed
+  `&services.WebSocketNotificationService{}` - zero-valued - so `Notifier` was non-nil while `Broker` was nil
+  and every task and subtask event returned at `if s.Broker == nil`. No test in the package could see it,
+  because they all construct the service WITH a fake broker; only the production call site passed nothing.
+- WHAT THE TEST DOES NOT COVER, stated in its own comment: reverting the call site to the zero value leaves
+  it green, so the CALL SITE is pinned by fe-dev's live socket capture and by nothing here. A real end-to-end
+  pin (dial `/ws/realtime`, update a task through the controller, require the frame) is named as the next step
+  rather than implied.
+- `fastmcp/server/httpapp/submit_feedback_mcp_test.go`: `TestMCPToolsListRefusesAnUncomposedRegistry` pins that
+  the refusal is `ErrMCPToolsRegistryUncomposed` - matched by IDENTITY, not by prose - which is the half the
+  build-time generator's guard depends on.
+- Commands: `go test ./fastmcp/server/httpapp/ -count=1` -> ok (1.053s); `go vet ./fastmcp/server/httpapp/` -> 0 bytes, exit 0; `gofmt -l` -> empty. Falsification of the sentinel half: deleting the sentinel and returning `fmt.Errorf` makes the identity assertion fail.
+
+## 2026-10-06 - a failed task listing is loud in the log and unchanged on the wire (Go)
+
+- `fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/handlers_port_test.go`:
+  `TestListTasksLogsTheFailureAndKeepsTheParityResponse` pins the PAIR - a facade failure is reported with its
+  message (`Task listing failed for user u1: Task description cannot be empty`, warning level, Python's own
+  words from `crud_handler.py:332`) while the returned response stays the Python shape (success false carrying
+  the message, which the route renders as its empty success envelope);
+  `TestListTasksLogsAnErrorWhenTheFacadeRaises` covers the other Python line (`:342`, error level) for a facade
+  that cannot be built.
+- `fastmcp/server/routes/task_user_routes_test.go` (new): `TestListUserTasksKeepsTheInheritedEnvelope` pins the
+  WIRE behaviour of a failed listing - 200 with `success: true`, `tasks: []`, `count: 0`, no error key - with the
+  Python lines cited (`task_user_routes.py:126-140`, `:175-180`), so the inherited contract is documented rather
+  than assumed and whoever changes it changes it on purpose.
+- PROVED BY REMOVAL: deleting the `listLogWarn` call fails the pair test on both log assertions ("the Python's
+  warning wording is missing from the log", "the CAUSE is missing from the log, which is the whole point") while
+  its response half still passes - the pair is pinned, not one half. The call was then restored.
+- Commands: `go test ./fastmcp/task_management/interface/api_controllers/task_api_controller/... ./fastmcp/server/routes/ ./fastmcp/server/httpapp/ -count=1` -> all ok; `go vet` over both touched packages -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - the realtime endpoint's accepted set is pinned instead of silent (Go)
+
+- `fastmcp/server/httpapp/ws_mount_test.go`: `TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe` dials
+  `/ws/realtime` and pins the inbound vocabulary as a DECISION: `ping` and `heartbeat` answer heartbeat/pong,
+  `subscribe` answers sync/subscribed, and every other frame - including four types the PROTOCOL knows (`update`,
+  `bulk`, `sync`, `error`) - is refused with `Unknown message type: <type>` / `UNKNOWN_MESSAGE_TYPE`.
+- WHY that set: the retired Python endpoint handled exactly `message_type in ["ping", "heartbeat"]`
+  (`agenthub_main/src/fastmcp/server/routes/websocket_routes.py:680`) and `== "subscribe"` (`:701`), with
+  everything else in its `else` (`:748`) returning the identical payload - so the refusal is the port being
+  faithful, not a gap in it. The realtime socket pushes server->client; mutations travel over the HTTP API.
+- WHY the test exists: the refusal was SILENT in both directions. A client frame that could never be accepted
+  (the frontend's dead `useWebSocketV2.ts:290` sender, which has no caller in `src`) received an error nobody
+  read, and no test on either side failed.
+- PROVED BY MOVING THE SET, not argued: adding a `case "update":` to `handleRealtime` fails this test with
+  "update: type = heartbeat, want error - the endpoint must refuse it, not ignore it" (run and observed); the
+  case was then removed and `git diff` over `ws_mount.go` is empty.
+- Commands: `go test ./fastmcp/server/httpapp/ -count=1` -> ok (1.045s); `go vet ./fastmcp/server/httpapp/` -> 0
+  bytes; `gofmt -l fastmcp/server/httpapp/` -> empty.
+
+## 2026-10-06 - the badge absence is asserted rather than inherited (frontend)
+
+- `src/tests/components/ApiReferenceView.test.tsx`: the "a tool with no actions renders no badges" half of its
+  claim was GUARANTEED BY THE SOURCE - `tool.actions.length > 0` wraps the label and the badges together - and
+  never asserted; the case pinned the label's absence and a paragraph count only. That is fe-dev's precision
+  note from its review of the component, and the standard is right: a reader checking the claim should read the
+  test, not only the component.
+- The assertion added is `withoutActions.querySelectorAll('span')` -> length 0, with the reason in a comment
+  (`Badge` renders a span, so an empty Actions container would appear here). ORDER IS DELIBERATE: the structural
+  assertion runs FIRST, so it is exercised when it fails instead of being shadowed by the label assertion that
+  would abort the case first - which is what happened on the first falsification run and is how the shadowing
+  was found.
+- PROVED BY REMOVING THE GUARD rather than argued: with `tool.actions.length > 0` replaced by `true`, the case
+  fails on the NEW assertion - "expected <span> to have a length of +0 but got 1" - which is the plausible
+  regression (an empty Actions container rendering its label). The component was then restored, its diff is
+  empty, the file is 7/7 green and `npx tsc --noEmit -p .` reports 0 errors.
+
+## 2026-10-06 - the one-client skeleton: the contract, the platform matrix, refusals instead of stubs (Go)
+
+- New `cmd/agenthubclient` (thin dispatcher), `internal/clientcmd` (the shared contract and the platform
+  matrix) and `internal/clientsync` (the sync verb package). The dispatcher reads argv[0] and the first
+  argument, resolves rig ONCE through `clientcmd.RequireRig`, and calls `Command.Run`; it knows nothing
+  about what any verb does.
+- **The interface a subcommand package implements is `clientcmd.Command`**: `Name()`, `Summary()`,
+  `NeedsRig()`, `Run(ctx, *Rig, args, stdout, stderr) int` - with `Rig.Run` as the ONE place an external
+  command is started (argument list, never a shell string). It lives outside `cmd/` because a main
+  package cannot be imported.
+- **The platform matrix is one function**, `RequireRig`: rig on PATH → use it; native Windows → the error
+  names the supported `wsl.exe -e rig` route; otherwise → the error names what is missing. Asserted by
+  SHAPE (non-zero, exactly ONE line, the reason named); the falsification removes the refusal and the
+  Windows branch and both tests fail.
+- **An unported command REFUSES by name and exits 3** rather than answering something plausible, and an
+  unknown verb exits 2 so a typo does not read as a missing feature - both pinned, because "looks
+  complete and is not" is this evening's recurring shape.
+- Commands: `go vet` (0 bytes) and `go test -count=1` (ok) for the three packages; the built binary
+  exercised for real - `version`/`help` → 0, `bridge once` → 3, `sync status …` → 3, `sync nonsense` → 2.
+
+## 2026-10-06 - every refusal the guide-lock parser owns, driven with hostile input (Go, packet 6)
+
+- `guides.lock.json` parsing moved behind `parseGuideLock(data []byte)` so its refusals are testable,
+  and `TestParseGuideLockRefusesMalformedRecords` drives all six with input chosen to BREAK them
+  rather than to be typical: not JSON, no records, a missing field, **a digest that is not a digest**,
+  an absolute path, and the same slug twice. Each refusal names the field it is about - a record that
+  cannot be read must say which field is wrong, not fail later as a shelf mismatch.
+- Two record rules that nothing validated before now do: a digest must be 64 lowercase hex (the same
+  rule the skill blocks record) and a path must be relative to a root. Without them a malformed record
+  would simply never match, and the SHELF would be blamed for bytes nobody recorded.
+- The digest rule moved out of this test file into the production file (`sha256HexRe`), because the
+  parser validates against it and a rule that lives only in a test is a rule the code does not have.
+- This is the class of `2d9de9e8`'s panic, closed rather than noted: THE CODE THAT REPORTS A PROBLEM IS
+  ITSELF UNTESTED AGAINST THE PROBLEM until somebody writes the hostile input for it.
+- Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; `gofmt -l` on the
+  package → empty; `go vet` → exit 0.
+
+
+## 2026-10-06 - the kind set gets a guard on the axis that drifts: the DDL against the enum (Go, found by fe-dev while checking a gate)
+
+- New `TestSeatKindConstraintTracksTheAcceptedKinds` (`infrastructure/database`): each DDL source's
+  `ck_modules_kind` set must EQUAL `resolver.Kinds()`, in BOTH directions - a kind the enum accepts and
+  the DDL refuses is a module that validates, publishes, seeds and then fails an INSERT on the
+  constraint; a kind the DDL allows and the enum refuses is a constraint wider than the language. The
+  failure message prints both sets.
+- Why it exists BESIDE `TestSeatDDLParity`: that guard compares the two DDL SOURCES with each other -
+  the drift that HAD happened - while the kind set is known in a THIRD place, so a kind added to the
+  enum alone passed every application check and nothing between the three places said so. This is the
+  same remediation the other two seats found today: compare against something that does not move with
+  the thing being checked.
+- `resolver.Kinds()` is now the ONE enumeration of the kind set, and `modulecontent`'s
+  `TestEveryValidKindHasARule` reads it instead of writing the list a third time.
+- **Falsified**: dropping a kind from EITHER side fails the guard with
+  `constrains [...] while resolver.Kinds() accepts [...]`.
+- Commands: `cd agenthub_go && go vet` (0 bytes) and `go test -count=1` (ok) for
+  `./fastmcp/seat_management/infrastructure/database/`, `./fastmcp/seat_management/domain/modulecontent/`
+  and `./fastmcp/seat_management/domain/resolver/`.
+
+
+## 2026-10-06 - the provenance checker's panic, found by its own assertion (Go, packet 6)
+
+- `verifyGuideLocks` sliced `got[:12]` to name a digest in its refusal, so a caller handing a value
+  that is not a digest got a **panic** rather than the refusal: `slice bounds out of range [:12] with
+  length 10`. It came in with 4ca19a01 and was found because branch 1 of
+  `TestGuidePairingRefusesAStaleRecord` hands such a value in ON PURPOSE - the assertion reported a
+  CRASH instead of the message it expected, which is what a bounded slice on untrusted input does.
+  Fixed with the existing `short()` helper, and the test deliberately keeps the non-digest so the
+  guard is pinned rather than removed.
+- The same test was also ORDER-DEPENDENT: branch 2's expected refusal could be shadowed by branch 1's
+  mutation depending on Go's map iteration order. It now undoes the first mutation before the second,
+  and that is verified by running the package **five times** rather than once.
+- A process note kept rather than tidied: the comment-only commit `e3e983a6` was made in the same
+  command whose gate had already printed a failure. The change itself was comment-only and harmless,
+  but committing over a red is the habit this repository spends the most words preventing, so the
+  fix commit records it.
+- Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; the package alone run
+  five times → ok each time; `gofmt -l` on the package → empty; `go vet` → exit 0.
+
+
+## 2026-10-06 - block provenance: computed on the library side, recorded for the migration (Go, packet 6)
+
+- New `fastmcp/seat_management/domain/seedlibrary/blockprovenance.go`, `blockprovenance_test.go` and
+  `guides.lock.json`. The LIBRARY side needs nothing stored: `BlockProvenanceTable()` computes, for
+  every file the shelf carries (17 - thirteen under `blocks/`, four shared), its repository-relative
+  path and the sha256 of the bytes the binary holds. The MIGRATION side is what needs recording:
+  `guides.lock.json` holds the eleven guide blocks with the interim file each was copied from and that
+  file's digest, because while both copies exist nothing else compares them, so a hand-edit to a
+  source file is invisible by construction.
+- `VerifyGuidePairing()` runs from `Load()` and refuses a shelf whose bytes disagree with its lock, or
+  a lock naming a block the shelf does not carry. It is deliberately NOT in `LoadFS`: that loads
+  whatever filesystem a caller hands it, and the lock is a fact about the shipped library - putting it
+  there broke twelve existing tests, which is how the mistake was found rather than reasoned about.
+- `CheckBlockDrift(root)` reports all four ways a file can move: a library block `differs`, a library
+  block `missing`, a source `source-differs`, and a source `source-gone` - the last being the intended
+  state after the migration rather than a failure. A root that does not hold the library is an ERROR,
+  not an empty result, so a wrong root cannot read as "in step".
+- **Falsified in a clean export, both directions, with the counts closing**: a root holding the library
+  and all eleven sources → 0 divergences; one source hand-edited → exactly 1, naming `guide-go-dev:
+  ai_docs/operations/seat-guides/go-dev.md source-differs; recorded e9ae5fdf8c65, found 8ca0cd5d17bb`;
+  the library file edited as well → exactly 2, naming both.
+- **The first cut of this was BLIND and the demonstration caught it**: it compared the embedded bytes
+  against the tree they were embedded FROM, so `go run` re-embedded the edited file and both sides
+  moved together - 0 divergences after a hand-edit. That is why the lock exists: a check on the
+  migration window has to have the pairing RECORDED, not computed.
+- Commands: `gofmt -l` on the package → empty; `go vet ./fastmcp/seat_management/domain/seedlibrary/`
+  → exit 0; `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/` → ok.
+
+
 ## 2026-10-06 - the fold and the two emissions: one parse feeds the runtime document and the seat's words (Go, packet 6 step 2, second slice)
 
 - New `fastmcp/seat_management/domain/seatrenderer/policy_fold.go`: `FoldPolicies` unions the deny lists
@@ -25,6 +315,15 @@ Track test suite changes, fixes, and improvements for agenthub.
   imports seedlibrary, and `seedlibrary/blockprovenance.go` does not compile at this moment (another seat
   mid-edit: `go:embed requires import "embed"`), so a tree-wide run is blocked by THAT file and not by
   this change. In an export of HEAD plus my changes, excluding theirs, the whole package is `ok`.
+  **RE-ESTABLISHED ON THE TREE** once the neighbour landed (its `4ca19a01`): `go build ./...` writes
+  0 bytes and the four packages I touch are vet-clean and green, because a verification has an expiry
+  when the code around it moves.
+- `TestRenderSeatEmitsBothArtifactsFromOneFold` pins the ONE-SOURCE claim **from the artifacts rather
+  than from the fold**: the same refusals are read out of `runtime/omp-config.yml` and `AGENTS.md`,
+  because two code paths that happen to agree today would pass a test written against the fold. It also
+  pins that a seat with no policy block still gets the startup constant, so the supersession changed one
+  case rather than all of them. **Falsified**: pointing the limits text at an empty set (a second path)
+  fails with `the limits text lacks the refusal "…"`.
 - Commands: `cd agenthub_go && go vet ./fastmcp/seat_management/domain/seatrenderer/` and
   `go test -count=1` on the package, both in that export.
 
@@ -1901,6 +2200,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ### Added
 
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 2 tests for `--detail` (reasoning, speech and incoming messages appear only with it; a one-character reply is skipped). 6 pass.
 - `agenthub_main/src/tests/scripts/test_openrig_seat_client.py`: 9 tests with fakes (behind detection, quiet wait including the give-up and the just-wrote cases, sync adopting through the script, a pin that does not move, relaunch only changed and quiet seats, the seat filter). 9 pass.
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 2 tests (every seat's notice carries the common procedure and its own guide; a seat without a guide file is an error). 16 pass.
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 1 test that every seat's notice carries the 4genthub task/context rule and the deepseek offload rule. 14 pass.

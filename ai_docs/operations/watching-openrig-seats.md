@@ -22,10 +22,10 @@ columns top to bottom, left to right. With the default 2 columns for `4genthub-m
 | go-dev | web-dev |
 | go-dev2 | writer |
 
-Every line carries the seat name, so the position never matters.
+Each pane is named after its seat (herdr pane title) and starts with a `== seat ==` header; its lines carry no seat name, to save width. The merged `feed` (several seats in one stream) still puts the seat name on every line.
 
 Options: `--rig <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
-at start, default 4), `--width N` (characters of each command or result, default 110).
+at start, default 40; a pane holds only what was printed since it started, so raise this to see older work), `--width N` (characters kept of each line, default 200), `--lines N` (lines shown of each call, result or message, default 25).
 
 Run it again for a fresh grid. It does not reuse or close an earlier one; close the old workspace
 in herdr (`herdr workspace close <id>`).
@@ -33,15 +33,35 @@ in herdr (`herdr workspace close <id>`).
 ## Feed: one merged stream
 
 ```bash
-python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] [--width 170]
+python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] [--width 170] [--lines 25]
 ```
 
 All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or without herdr.
 
+## Scrolling back
+
+herdr keeps 10 MB of scrollback per pane. Scroll with the mouse wheel (3 lines a notch) or the scrollbar; or press `prefix+[` for copy mode and use `PageUp`/`PageDown`, `q` or `Esc` to leave. Output stays live and follows the bottom. Settings (`~/.config/herdr/config.toml`): `[ui] mouse_scroll_lines`, `mouse_capture`, `pane_scrollbars`; `[advanced] scrollback_limit_bytes`. Older work than the replay is not in the pane: start the grid with a larger `--back`.
+
+## Detail: reasoning, what the agent says, what it is told
+
+`grid` shows it by default; for `feed` add `--detail`. Three more kinds of line:
+
+| Mark | Meaning |
+|---|---|
+| `~ think` (light purple italic) | the agent's reasoning before it acts |
+| `▸ say` (bold) | what the agent writes back (single-character replies are skipped) |
+| `◂ in` (light cyan) | a message the agent received: the owner, another seat, a system notice |
+
+**What OpenRig already shows, and what this adds.** OpenRig's own views (`rig transcript`, `rig ask`, `rig terminal open`, the UI's transcript drill-in) read the seat's pane, which the omp runner fills with the assistant's text, one-line tool summaries, incoming messages, compaction and errors. They do not carry the reasoning or a tool's full arguments and result; those exist only in the seat's session log, which this tool reads. Use OpenRig's views for the conversation, this one for the reasoning and tool detail.
+
 ## Reading a line
 
 ```
-21:01:20 lead   → bash command=cd … ⏎ rig queue … (+cwd, timeout)
+21:01:20 lead   → bash (+cwd, timeout) command=cd /home/daihu/…
+                rig queue list --json
+21:01:20 lead   ← {
+                  "success": true,
+                  …
 21:01:20 lead   ← Sent to 4genthub-min-reviewer@4genthub-min
 ```
 
@@ -50,11 +70,14 @@ All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or wi
 | `→ tool key=value` | a tool call; `(+a, b)` lists arguments that are not shown |
 | `← text` | the tool's result, dim |
 | `✗ text` | an error result, red |
-| `✗ BLOCKED` (white on red) | the seat's policy refused the call (`scripts/openrig_seat_policy.py`) |
-| `⏎` | a line break inside a command or result |
+| `✗ BLOCKED` (white on a red block) | the seat's policy refused the call (`scripts/openrig_seat_policy.py`) |
+| indented lines below a mark | the rest of that call, result or message, as real lines; a compact JSON result is shown indented |
+| `… +N more lines` | N lines beyond `--lines` were not shown (nothing is dropped silently) |
 
-Tool colours: read, grep, find, ls blue; write, edit yellow; bash, eval green; `mcp__*` (4genthub,
-deepseek) magenta. The timestamp is when the viewer printed the line, not when the seat ran it, so
+All colours are light 256-colour tones chosen for a black terminal background; none uses the dim style or the dark ANSI blues and magentas (change the palette at the top of the script).
+
+Tool colours: read, grep, find, ls light blue; write, edit yellow; bash, eval green; `mcp__*` (4genthub,
+deepseek) pink. The timestamp is when the viewer printed the line, not when the seat ran it, so
 the replayed lines at start all share one time.
 
 ## Notes

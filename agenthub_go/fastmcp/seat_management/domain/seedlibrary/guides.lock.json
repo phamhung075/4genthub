@@ -1,0 +1,83 @@
+{
+  "_what": "The eleven guide blocks and the interim file each was copied from, at copy time. A guide block needs this because a divergence between the two copies is undetectable by construction: nothing else compares them, and this file is the only place the pairing is recorded. It is read at load, where a block whose bytes disagree with its entry is REFUSED.",
+  "_deletion": "The deletion of the interim files under ai_docs/operations/seat-guides/ is gated on the owner ruling on the 4genthub-min room. AFTER it, a missing source is the steady state and the drift check reports it as source-gone rather than as a divergence.",
+  "guides": [
+    {
+      "slug": "guide-common",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md",
+      "sha256": "1df9362d2e7e1a8c45977243f314013c9cfd13f3ac63ab08ee266b9696ded940",
+      "source_path": "ai_docs/operations/seat-guides/_common.md",
+      "source_sha256": "1df9362d2e7e1a8c45977243f314013c9cfd13f3ac63ab08ee266b9696ded940"
+    },
+    {
+      "slug": "guide-context-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-context-dev.md",
+      "sha256": "133f62b1c68b6e2fb42c450738148349537754633a73df2c975591f1ea033c0f",
+      "source_path": "ai_docs/operations/seat-guides/context-dev.md",
+      "source_sha256": "133f62b1c68b6e2fb42c450738148349537754633a73df2c975591f1ea033c0f"
+    },
+    {
+      "slug": "guide-fe-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md",
+      "sha256": "b0721fb3466b75d6a8cfa36d9638266e35883d79719cbe440ea54173a79b8d19",
+      "source_path": "ai_docs/operations/seat-guides/fe-dev.md",
+      "source_sha256": "b0721fb3466b75d6a8cfa36d9638266e35883d79719cbe440ea54173a79b8d19"
+    },
+    {
+      "slug": "guide-feedback-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-feedback-dev.md",
+      "sha256": "ca961a47ca18107db3d5c276875da2e64efa68b1521025a473294981fd7ae735",
+      "source_path": "ai_docs/operations/seat-guides/feedback-dev.md",
+      "source_sha256": "ca961a47ca18107db3d5c276875da2e64efa68b1521025a473294981fd7ae735"
+    },
+    {
+      "slug": "guide-go-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev.md",
+      "sha256": "e9ae5fdf8c6556b12d0d4c5133f932a06f80ab1df2f70256dbe37b2c73df6db8",
+      "source_path": "ai_docs/operations/seat-guides/go-dev.md",
+      "source_sha256": "e9ae5fdf8c6556b12d0d4c5133f932a06f80ab1df2f70256dbe37b2c73df6db8"
+    },
+    {
+      "slug": "guide-go-dev2",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev2.md",
+      "sha256": "39c0afb0b7e2b6e13c0f9d4a4bdff9a6ae7f9ff227572f002201669597b33b35",
+      "source_path": "ai_docs/operations/seat-guides/go-dev2.md",
+      "source_sha256": "39c0afb0b7e2b6e13c0f9d4a4bdff9a6ae7f9ff227572f002201669597b33b35"
+    },
+    {
+      "slug": "guide-lead",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md",
+      "sha256": "ba567103ea5ded0474a912b29c85878872d284b3a66f7a5a5ab483e876a4d024",
+      "source_path": "ai_docs/operations/seat-guides/lead.md",
+      "source_sha256": "ba567103ea5ded0474a912b29c85878872d284b3a66f7a5a5ab483e876a4d024"
+    },
+    {
+      "slug": "guide-reviewer",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md",
+      "sha256": "a2986f1f391a9c9ed1c99d06a15401b24fe4f45934dfbf18e2d21169bcaa9ffd",
+      "source_path": "ai_docs/operations/seat-guides/reviewer.md",
+      "source_sha256": "a2986f1f391a9c9ed1c99d06a15401b24fe4f45934dfbf18e2d21169bcaa9ffd"
+    },
+    {
+      "slug": "guide-skills-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-skills-dev.md",
+      "sha256": "6805d5964980691de2ad071e9329dd080a40ae060c6f83d3115d27742f8ae11e",
+      "source_path": "ai_docs/operations/seat-guides/skills-dev.md",
+      "source_sha256": "6805d5964980691de2ad071e9329dd080a40ae060c6f83d3115d27742f8ae11e"
+    },
+    {
+      "slug": "guide-web-dev",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-web-dev.md",
+      "sha256": "d45949df59d538be9cab81a7e850428e83023eadbe5315b4c93aa5d896e0be11",
+      "source_path": "ai_docs/operations/seat-guides/web-dev.md",
+      "source_sha256": "d45949df59d538be9cab81a7e850428e83023eadbe5315b4c93aa5d896e0be11"
+    },
+    {
+      "slug": "guide-writer",
+      "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md",
+      "sha256": "d3b847f81f5d18277e69c7599da674d7af68a30dc5d9d7d85ef25e5463089644",
+      "source_path": "ai_docs/operations/seat-guides/writer.md",
+      "source_sha256": "d3b847f81f5d18277e69c7599da674d7af68a30dc5d9d7d85ef25e5463089644"
+    }
+  ]
+}

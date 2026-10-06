@@ -13,6 +13,8 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
+
+	"agenthub/fastmcp/server/routes"
 )
 
 // branchGetter is the GitBranchGetter the use cases read branches through.
@@ -50,6 +52,36 @@ func (b branchRepoWithProject) FirstProjectID(ctx context.Context) (string, bool
 		return nil
 	})
 	return id, found, err
+}
+
+// routesBroadcaster adapts the routes package's package-level broadcast to the port the application
+// layer declares. Go interfaces are implicit but ordinary functions are not, so the port needs exactly
+// one adapter and this is it.
+type routesBroadcaster struct{}
+
+func (routesBroadcaster) BroadcastDataChange(
+	ctx context.Context, eventType, entityType, entityID, userID string, data any,
+	metadata *entities.OrderedMap[any],
+) error {
+	return routes.BroadcastDataChange(ctx, eventType, entityType, entityID, userID, data, metadata)
+}
+
+// newTaskNotifier is the notifier the task and subtask facades publish through, and it exists because
+// the ZERO-VALUED service it replaces looked wired and was not: `&services.WebSocketNotificationService{}`
+// has a non-nil Notifier field, so the hook's `if h.Notifier == nil` check passed, while Broker was nil,
+// so SyncBroadcastTask returned at `if s.Broker == nil` for EVERY task and subtask event. The app looked
+// half-alive because of it - on the same socket, in the same capture, seat frames arrived (they go
+// through routes.BroadcastDataChange directly) and task frames never did - and NO TEST COULD SEE IT,
+// because every test constructs the service WITH a fake broker.
+//
+// The Provider reads the context the notification metadata is enriched from (titles, parent branch);
+// absent, the service falls back to the Python's fallback contexts, but a production app has the real
+// one available and there is no reason to run degraded.
+func newTaskNotifier(sessions *database.SessionManager) *services.WebSocketNotificationService {
+	return &services.WebSocketNotificationService{
+		Provider: &services.DBWebSocketContextProvider{Sessions: sessions},
+		Broker:   routesBroadcaster{},
+	}
 }
 
 // taskFacadeProvider is FacadeService.get_task_facade: it builds the task facade, use cases

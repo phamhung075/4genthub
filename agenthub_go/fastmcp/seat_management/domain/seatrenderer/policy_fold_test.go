@@ -94,6 +94,51 @@ func TestFoldPoliciesUnionsDenyListsAndRefusesDisagreeingScalars(t *testing.T) {
 	}
 }
 
+// TestRenderSeatEmitsBothArtifactsFromOneFold is the claim that retires the hand-built notice: the
+// document the runtime reads and the words the seat reads come from ONE parse. It is asserted from the
+// ARTIFACTS rather than from the fold, because two code paths that happen to agree today would pass a
+// test written against the fold.
+func TestRenderSeatEmitsBothArtifactsFromOneFold(t *testing.T) {
+	seat := withMCP(
+		seatFixture("omp"),
+		policyModule("policy.dev", `{"role":"dev","mcp":{"startupTimeoutMs":0},"bash":{"patterns":[
+			{"match":"sudo thing","approval":"deny","sibling":"ask the lead to run it"},
+			{"match":"forced delete","approval":"deny","sibling":"remove one named file"}]}}`),
+		mcpPlatformModule(),
+	)
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+	config := fileContent(t, spec, "runtime/omp-config.yml")
+	agents := fileContent(t, spec, "AGENTS.md")
+
+	// The SAME refusals, read out of each artifact: the set in the document is the set in the words.
+	for _, match := range []string{"sudo thing", "forced delete"} {
+		if !strings.Contains(config, match) {
+			t.Errorf("the config document lacks the refusal %q:\n%s", match, config)
+		}
+		if !strings.Contains(agents, "- `"+match+"`") {
+			t.Errorf("the limits text lacks the refusal %q:\n%s", match, agents)
+		}
+	}
+	if strings.Contains(config, "sibling") || strings.Contains(config, "ask the lead to run it") {
+		t.Errorf("a sibling reached runtime configuration; it is words for the seat:\n%s", config)
+	}
+	// The setting the block declared reached the DOCUMENT, not the constant's default path.
+	if !strings.Contains(config, "startupTimeoutMs") || !strings.Contains(config, "0") {
+		t.Errorf("the declared startup setting did not reach the document:\n%s", config)
+	}
+	// A seat with no policy block still gets the constant, so the supersession changed one case only.
+	plain, err := RenderSeat(withMCP(seatFixture("omp"), mcpPlatformModule()), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(plain): %v", err)
+	}
+	if got := fileContent(t, plain, "runtime/omp-config.yml"); got != ompMCPStartupTimeoutConfig {
+		t.Errorf("a seat with no policy block did not get the constant:\n%s", got)
+	}
+}
+
 // TestRenderPolicyConfigOmitsAnAbsentSetting: a setting no block asked for must not appear as a
 // literal 0, because "does not speak about it" and "sets it to 0" are different facts.
 func TestRenderPolicyConfigOmitsAnAbsentSetting(t *testing.T) {

@@ -3,6 +3,40 @@
 ## [Unreleased]
 
 ### Added
+- **The docs page's reference tier renderer (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
+  - `src/components/docs/ApiReferenceView.tsx` renders the generated reference: every mounted HTTP route
+  (method, path as registered, the handler when the mount names one, that handler's doc comment) and every MCP
+  tool (name, description, action badges, parameter schema), with a counts line per section.
+  - IT RENDERS WHAT IT IS GIVEN AND NOTHING ELSE. `reference` is a REQUIRED prop, because the generated module is
+  a BUILD-TIME import: an absent reference is a compile error at the caller, so the component carries NO loading
+  state and NO failure state. A branch for a failure that cannot happen is unreachable code that reads as
+  diligence. The spec's "a page that cannot load shows the failure" has no surface on this tier in step 1 - it
+  becomes load-bearing at step 2, where the guide tier reads documents from the cloud at runtime.
+  - TWO LEGITIMATE EMPTIES RENDER AS ABSENT rather than as an error or a placeholder: `handler` is empty when a
+  mount registers an inline closure (that row carries nothing but its method and path), and `actions` is empty
+  when a tool takes no `action` parameter (no badges, no label).
+  - THE SCHEMA IS VERBATIM WITH A SUMMARY DERIVED FROM IT: the `<pre>` block is the server's own JSON schema
+  character for character, and the property table is read out of that same object - so the page cannot document
+  a shape the server does not accept, and cannot become a second source of truth about one.
+  - Tests: `src/tests/components/ApiReferenceView.test.tsx` (7) drives the rendered component - every route
+  rendered, an inline closure absent, actions rendered only when declared, the schema parsing back to the object
+  the reference carries, the derived summary marking only what the schema marks, no loading or failure state,
+  and an empty reference rendering as empty sections rather than as a failure.
+  - Gate: `npx tsc --noEmit -p .` -> 0 errors; the new file 7 passed; the full suite and `npx vite build` green.
+  - OWED, AND NAMED AS A CLAIM STILL BEING MADE: the component is exercised against the REAL generated module
+  when go-dev2's artefact lands - a fixture proves the component, the real module proves the integration.
+- **The generated reference's type - the docs page's own seam (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
+  - `src/types/apiReference.ts` is the SINGLE definition of the reference tier's shape: `ApiReference`
+  (`{ routes: ApiRouteEntry[]; tools: ApiToolEntry[] }`), `ApiRouteEntry` (`method`, `path`, `pathParams`,
+  `handler`, `description`) and `ApiToolEntry` (`name`, `description`, `parameters`, `actions`).
+  - THE GENERATOR EMITS DATA AND IMPORTS THESE TYPES: go-dev2 declares nothing, so the generated module in
+  `src/docs` exports one const typed from here and the page's component takes that const as a prop. One
+  definition, and the generator cannot drift away from the page without a compile error. The alternative - the
+  module exporting its own type and the page mirroring it - was rejected as two definitions of one concept.
+  - Two states are LEGITIMATE rather than missing, and the types say so: `handler` is empty when a mount
+  registers an inline closure, and `actions` is empty when a tool takes no `action` parameter. `parameters`
+  carries the server's JSON schema object verbatim, so the page cannot document a shape the server does not accept.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors.
 - **The friction channel's read side: a page grouped by layer (Directive H)** - 2026-10-06
   - THREE STATES, NOT TWO, and this is the page's integrity rule rather than a nicety: "nothing reported for this layer"
   is a claim the SERVER made, while a failed read is a claim nobody can make. So the page distinguishes "loaded and
@@ -222,6 +256,22 @@
     that one case.
 
 ### Changed
+- **The one animation path that failed silently now says so (observability, no behaviour change)** - 2026-10-06
+  - `src/services/AnimationFactory.ts` `shouldAllowAnimation` returned `false` with NO output when a request arrived inside
+    `ANIMATION_COOLDOWN` (100ms) from a source that may not override the one already running. That made the two states an
+    animation loss can be - "the message never arrived" and "the cooldown ate it" - INDISTINGUISHABLE in a console, and they
+    have OPPOSITE fixes: one is a client timing window, the other is a server that never sent. Established tonight at the cost
+    of a live run that had to wrap the page's own WebSocket to tell them apart. The drop is now logged with the element id,
+    the requested source, the previously-running source and the elapsed time, and the message NAMES the 100ms cooldown so the
+    reader learns the rule rather than only the fact.
+  - THE PRINCIPLE, because it is the reason for two lines of logging in a hot path: AN INSTRUMENT THAT CANNOT SHOW YOU ITS OWN
+    SILENT PATH REPORTS ABSENCES AS CLEAN. Every other refusal in this class already logs - `animate` warns on an unregistered
+    element - so this was the single spot where a debugger without extra tooling was left guessing.
+  - NO BEHAVIOUR CHANGE: the return value, the ordering of the checks and the cooldown itself are untouched; only the blocked
+    branch gained a `logger.debug`, in the same message-plus-context shape as the file's existing logs.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vitest run` on the three animation suites
+    (`WebSocketAnimationService.test.ts`, `WebSocketAnimationService.unified.test.ts`, `WebSocketClient.test.ts`) and the
+    three `useRealtimeSync` suites (task, seat, notification) -> 6 files, 133 passed.
 - **Two dialogs stop writing state after they are gone — hygiene, NOT a bug fix, zero observable risk today** - 2026-10-06
   - `src/components/TaskEditDialog.tsx` and `src/components/SubtaskEditDialog.tsx` each start `getAvailableAgents()` from an effect and then write `setAvailableSeats` / `setAvailableSeatsError`. Both are rendered CONDITIONALLY (`LazyTaskList/components/DialogSection.tsx:54,65` and `LazySubtaskList/components/SubtaskDialogs.tsx:118`), so closing the dialog while the load is in flight unmounts the component and the continuation writes state on something that is gone. Both effects now carry an effect-scoped `cancelled` flag — checked after the load resolves and in the catch, with the cleanup setting it. ONE shape, twice, and deliberately not a token or a wrapper.
   - WHAT THIS IS NOT, said first because the temptation is to read it as more than it is: NONE of these sites is the crash reproduced earlier tonight, and this does not fix that crash. A post-unmount state write in a LIVE environment is a no-op — React ignores it and dereferences nothing (this project is on React 19.1.1). The reproduced crash came from React DOM running after the TEST ENVIRONMENT had been torn down, where `window` is gone entirely, which is a different condition. THE OBSERVABLE RISK TODAY IS ZERO.
@@ -313,6 +363,23 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A refused notification was invisible on the client: an error frame with no animation route was dropped in silence** - 2026-10-06
+  - `src/services/WebSocketAnimationService.ts` `handleWebSocketMessage` routed task/subtask/branch/project and had NO branch
+    for anything else, so every error frame the server sends was discarded without a trace. THE FRAME THAT FOUND IT, from a
+    live capture after the server's notifier was repaired: `type: 'error'`, `payload.entity: 'system'`, `payload.action:
+    'notification_blocked'`, `data.primary: { code: 'NOT_AUTHORIZED', message: "Notification blocked: You don't have access to
+    this task", entity_type: 'task', entity_id: <id>, event_type: 'updated', reason: 'Authorization check failed' }`. The
+    server was explaining a refusal and the client was throwing the explanation away, which made a REFUSED animation
+    indistinguishable from one that never fired - the same silent-absence shape the Changed section logs on the client side,
+    at the other end of the same pipe.
+  - The unrouted error frame is now reported at `warn` with the code, the message and the entity the server was talking
+    about, so the console carries the server's own reason instead of an absence.
+  - THE DISCRIMINATOR IS `type === 'error'` AND NOT `entity === 'system'`, deliberately and pinned by test: heartbeat replies
+    are also `entity: 'system'` (action `pong`), so keying on the entity would report every heartbeat.
+  - Tests: three cases in `src/tests/services/WebSocketAnimationService.test.ts` - an error frame is reported with its code
+    and entity, a heartbeat is not, and an ordinary routed task update is not.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; the three animation suites and the three `useRealtimeSync` suites ->
+    6 files, 136 passed.
 - **An async continuation that outlives its component — the flake's class — fixed at the two sites that reported it** - 2026-10-06
   - THE FLAKE IS NOW REPRODUCED, not argued: a single-file loop of `src/tests/components/auth/LoginForm.test.tsx` hit it on
     **run 11**, exit 1, with an uncaught `ReferenceError: window is not defined` at
@@ -603,6 +670,28 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **A dead WebSocket sender — removed as unreachable code, not as a fix** - 2026-10-06
+  - Deleted the `updateTask` property from the object `useTaskWebSocket` returns in `src/hooks/useWebSocketV2.ts`. It
+    sent `{ type: 'update', payload: { entity: 'task', action: 'update', ... } }` and had NO CALLER anywhere in `src`:
+    its only consumer destructures `{ isConnected, isReconnecting, error }`, and every other `updateTask` in the tree
+    is the REST function in `api.ts`/`useTasks.ts`. Established by sweep rather than by impression, and confirmed
+    independently by go-dev.
+  - IT COULD NOT HAVE WORKED IF IT HAD BEEN CALLED, which is why it is dead rather than merely unused: the server's
+    realtime handler accepts only `ping`, `heartbeat` and `subscribe` and answers everything else with
+    `UNKNOWN_MESSAGE_TYPE` (`ws_mount.go:194-213`). That was MEASURED against the running server by sending this exact
+    frame and reading the refusal back, and go-dev has since pinned the accepted set with a test (8b17228b). So the
+    endpoint is deliberately closed to mutation frames, and the client now states that in code instead of carrying a
+    sender no server would accept.
+  - AND THE ACTION TENSE WAS NOT THE DEFECT, which matters because a tense theory was briefly in circulation: the
+    protocol's action literals are present tense (`types.go:37-41`, `ActionTypeUpdate = "update"`) and the validator
+    accepts exactly what the sender emitted. The refusal is on the top-level `type`, and only there.
+  - NOT DELETED, AND THE REASON IS WORTH KEEPING: the `type: 'bulk'` object built by `WebSocketClient.mergeAIUpdates`
+    looks like a second dead sender and is not one. It is called at `WebSocketClient.ts:152` on the RECEIVE path over
+    `this.aiBuffer` and its result is emitted to local listeners — it never reaches a socket — and a test covers it.
+    The bulk frame and its builder stay.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vitest run` on `WebSocketClient.test.ts`,
+    `WebSocketAnimationService.test.ts` and `WebSocketAnimationService.unified.test.ts` -> 3 files, 109 passed; the
+    `useRealtimeSync` task/seat/notification suites -> 3 files, 24 passed.
 - **An unreachable component — dead code, removed by measurement rather than preference** - 2026-10-06
   - Deleted `src/components/HealthCheck.tsx` (114 lines). It had no render site anywhere, and the evidence is the sweep rather than an impression: across the WHOLE repository, outside the file itself, there is no import of it, no JSX use, no route, no test and no string-based dynamic import; it is absent from `App.tsx`, `main.tsx` and `index.tsx`; there is no `import.meta.glob` or `require.context` anywhere in `src`, so no glob could reach it without naming it; and every dynamic import in `src` names a literal path. It was last touched by `9787bce2 migrate to agenthub`.
   - WHY REMOVED RATHER THAN GUARDED: a component nothing can reach is not a placeholder, it is a liability — establishing that cost one sweep, and leaving it would charge the next reader the same sweep. The project's rule is no dead code left behind, and git history keeps the file if anyone ever wants it. The lead placed the removal as its own change, deliberately separate from the unmount-guard work that found it.

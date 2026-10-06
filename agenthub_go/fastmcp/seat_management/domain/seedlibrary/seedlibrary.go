@@ -85,8 +85,14 @@ type seatTypeFile struct {
 	OutputFormat   string     `yaml:"output_format"`
 }
 
-// Load returns the seeds of the embedded seat types, sorted by slug.
+// Load returns the seeds of the embedded seat types, sorted by slug. It first checks the shelf's
+// recorded provenance pairing, so a library whose bytes no longer match what the lock says is
+// refused here rather than discovered by a drift check that would then be comparing against a
+// pairing already known to be wrong.
 func Load() ([]seedmap.Seed, error) {
+	if err := VerifyGuidePairing(); err != nil {
+		return nil, err
+	}
 	return LoadFS(embedded)
 }
 
@@ -173,20 +179,14 @@ func loadBlocks(fsys fs.FS) (map[string]seedmap.SeedModule, error) {
 	}
 	blocks := make(map[string]seedmap.SeedModule, len(names))
 	for _, name := range names {
-		ext := path.Ext(name)
-		var kind resolver.ModuleKind
-		switch ext {
-		case ".json":
-			kind = resolver.KindMCP
-		case ".md":
-			kind = resolver.KindInstruction
-		default:
+		kind, err := kindOfBlockFile(name)
+		if err != nil {
 			// A file whose kind the loader cannot name is refused rather than skipped: skipping is
 			// how a block sits in the shelf with nothing able to load it, which is the same silent
 			// absence the per-kind rule exists to prevent.
-			return nil, fmt.Errorf("%s: a block file is .json (mcp) or .md (instruction), got %q", name, ext)
+			return nil, err
 		}
-		slug := strings.TrimSuffix(path.Base(name), ext)
+		slug := strings.TrimSuffix(path.Base(name), path.Ext(name))
 		if !slugPattern.MatchString(slug) {
 			return nil, fmt.Errorf("%s: block file name %q must match %s", name, slug, slugPattern)
 		}

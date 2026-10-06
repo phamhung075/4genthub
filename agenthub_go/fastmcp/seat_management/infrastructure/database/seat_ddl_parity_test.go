@@ -24,6 +24,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"agenthub/fastmcp/seat_management/domain/resolver"
 )
 
 const seatSchemaFile = "seat_management_postgresql.sql"
@@ -242,6 +244,61 @@ func seatTopLevelItems(body string) []string {
 		items = append(items, tail)
 	}
 	return items
+}
+
+// seatKindCheck finds the kind list a CHECK constraint carries.
+var seatKindCheck = regexp.MustCompile(`(?i)ck_modules_kind\s+check\s*\(\s*kind\s+in\s*\(([^)]*)\)`)
+
+// TestSeatKindConstraintTracksTheAcceptedKinds is the guard on the axis that ACTUALLY drifts.
+//
+// The guard beside it, TestSeatDDLParity, compares the two DDL SOURCES against each other - the drift
+// that HAD happened, and its own comment records the ck_modules_kind widening as the instance. But the
+// kind set is known in a THIRD place, resolver.ValidKind: a kind added there alone passes every
+// application check, passes the publish gate (which asks ValidKind), and then FAILS AN INSERT on the
+// constraint. That is how the policy kind arrived, and nothing between the three places would tell
+// anyone - so this compares each DDL's constrained set with resolver.Kinds(), in BOTH directions.
+func TestSeatKindConstraintTracksTheAcceptedKinds(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller(0) failed")
+	}
+	raw, err := os.ReadFile(filepath.Join(filepath.Dir(thisFile), "..", "schema", seatSchemaFile))
+	if err != nil {
+		t.Fatalf("read schema file: %v", err)
+	}
+
+	accepted := make([]string, 0)
+	for _, kind := range resolver.Kinds() {
+		accepted = append(accepted, string(kind))
+	}
+
+	sources := map[string]string{"the schema file": string(raw)}
+	for _, def := range seatManagementDatabaseTables {
+		if def.Name == "modules" {
+			sources["the runtime TableDef"] = strings.Join(def.DDL, "\n")
+		}
+	}
+	if len(sources) != 2 {
+		t.Fatalf("expected both DDL sources for modules, found %d", len(sources))
+	}
+
+	for name, ddl := range sources {
+		match := seatKindCheck.FindStringSubmatch(ddl)
+		if match == nil {
+			t.Fatalf("%s carries no ck_modules_kind check: the constraint this test guards is gone", name)
+		}
+		var constrained []string
+		for _, entry := range strings.Split(match[1], ",") {
+			constrained = append(constrained, strings.Trim(strings.TrimSpace(entry), "'"))
+		}
+		if !equalSets(constrained, accepted) {
+			t.Errorf(
+				"%s constrains %v while resolver.Kinds() accepts %v: a kind in one and not the other is "+
+					"either a module that validates and cannot be stored, or a constraint wider than the language",
+				name, constrained, accepted,
+			)
+		}
+	}
 }
 
 // equalSets reports whether two slices hold the same values, order ignored, duplicates counted.

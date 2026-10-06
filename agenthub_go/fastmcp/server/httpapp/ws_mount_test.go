@@ -644,3 +644,106 @@ func TestMountWebSocketsRealtimeWithCORSAndOrigin(t *testing.T) {
 		t.Fatalf("handshake status = %d, want 101", resp.StatusCode)
 	}
 }
+
+// TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe pins the inbound vocabulary of
+// /ws/realtime as a DECISION instead of an accident.
+//
+// The accepted set is the same one the retired Python endpoint had: message_type in ["ping",
+// "heartbeat"] (agenthub_main/src/fastmcp/server/routes/websocket_routes.py:680) and
+// message_type == "subscribe" (:701). Everything else fell into ITS else branch too (:748),
+// answering the identical "Unknown message type" / UNKNOWN_MESSAGE_TYPE payload - so refusing a
+// frame is this endpoint being faithful to the platform, not a gap in the port. The realtime socket
+// pushes changes server->client, and mutations travel over the HTTP API.
+//
+// The test exists because that refusal was SILENT in both directions: a client whose frame can never
+// be accepted received an error nobody read, and no test on either side failed. It asserts through a
+// real socket rather than a helper on purpose, so the switch in handleRealtime stays the single
+// source of truth - moving the accepted set means failing here rather than drifting from it.
+func TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe(t *testing.T) {
+	token := wsTestToken(t, nil)
+	mux := http.NewServeMux()
+	mountWebSockets(mux, nil)
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	conn, br := wsTestDial(t, server.URL, "/ws/realtime?token="+url.QueryEscape(token))
+	defer conn.Close()
+	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
+	// Every connection is greeted first: consume the welcome so each case reads the answer to its
+	// OWN frame.
+	if opcode, _ := wsTestReadFrame(t, br); opcode != wsOpText {
+		t.Fatalf("welcome opcode = %d, want text", opcode)
+	}
+
+	send := func(body string) {
+		t.Helper()
+		wsTestWriteText(t, conn, []byte(body))
+	}
+	receive := func() map[string]any {
+		t.Helper()
+		opcode, payload := wsTestReadFrame(t, br)
+		if opcode != wsOpText {
+			t.Fatalf("opcode = %d, want text", opcode)
+		}
+		return wsTestJSON(t, payload)
+	}
+	payloadOf := func(msg map[string]any) map[string]any {
+		t.Helper()
+		body, _ := msg["payload"].(map[string]any)
+		if body == nil {
+			t.Fatalf("payload is not an object: %v", msg["payload"])
+		}
+		return body
+	}
+
+	// The accepted set, with the answer each frame earns.
+	accepted := []struct{ frame, wantType, wantAction string }{
+		{`{"version":"2.0","type":"ping"}`, "heartbeat", "pong"},
+		{`{"version":"2.0","type":"heartbeat"}`, "heartbeat", "pong"},
+		{`{"version":"2.0","type":"subscribe","payload":{"scope":"branch"}}`, "sync", "subscribed"},
+	}
+	for _, want := range accepted {
+		send(want.frame)
+		msg := receive()
+		if msg["type"] != want.wantType {
+			t.Errorf("%s: type = %v, want %s", want.frame, msg["type"], want.wantType)
+		}
+		if action := payloadOf(msg)["action"]; action != want.wantAction {
+			t.Errorf("%s: action = %v, want %s", want.frame, action, want.wantAction)
+		}
+	}
+
+	// Everything else is refused by design. Four of these are types the PROTOCOL knows
+	// (websocket.MessageTypeValues): a message type being valid is not the same as this endpoint
+	// dispatching it, and the client's dead senders (type update, type bulk) are what the distinction
+	// costs when nobody states it.
+	for _, frameType := range []string{"update", "bulk", "sync", "error", "command", "not-a-type"} {
+		send(`{"version":"2.0","type":"` + frameType + `"}`)
+		msg := receive()
+		if msg["type"] != "error" {
+			t.Errorf("%s: type = %v, want error - the endpoint must refuse it, not ignore it", frameType, msg["type"])
+			continue
+		}
+		body := payloadOf(msg)
+		if body["action"] != "error" {
+			t.Errorf("%s: action = %v, want error", frameType, body["action"])
+		}
+		data, _ := body["data"].(map[string]any)
+		if data == nil {
+			t.Errorf("%s: payload.data is not an object", frameType)
+			continue
+		}
+		primary, _ := data["primary"].(map[string]any)
+		if primary == nil {
+			t.Errorf("%s: payload.data.primary is not an object", frameType)
+			continue
+		}
+		if primary["code"] != "UNKNOWN_MESSAGE_TYPE" {
+			t.Errorf("%s: code = %v, want UNKNOWN_MESSAGE_TYPE", frameType, primary["code"])
+		}
+		if want := "Unknown message type: " + frameType; primary["message"] != want {
+			t.Errorf("%s: message = %v, want %q", frameType, primary["message"], want)
+		}
+	}
+}

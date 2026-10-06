@@ -27,12 +27,12 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts (DATED — carry the date and the pattern, per the counting rule).** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **124** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **144 total.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **124** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **144 total.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** **THESE COUNTS ARE RE-DERIVABLE IN ONE COMMAND, WHICH IS THE POINT OF THEM BEING NUMBERS AT ALL: `COUNTS-AUDIT.py`, beside the seat area, re-runs every headline figure this document states — the two registration counts, the tool counts, the table counts, the 39 total and the SQL statement count — and exits non-zero when any of them differs from the tree. It is read-only by construction (no `--write` at all), so a gate may run it as it stands.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
 
-**CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, and §5's two quoted-report cites were re-derived here; the DDL and table citations in §3 were NOT re-derived in this pass (the `ProductionTables` count among them).** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
+**CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, §5's two quoted-report cites and §3's table citations were all re-derived in this pass (see §3.6 for the table half); §4's gone-list holds commands rather than citations and was NOT re-run.** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
 
 Path convention for the Registration column: paths are relative to `agenthub_go/`; from
 §1.2 on, the column gives the BASENAME (`branch_routes.go:61`) because the section header
@@ -474,33 +474,33 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 ### 3.3 Seat-management and team tables — appended to `Tables` via `init()`
 
-Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go`
-(`seatManagementDatabaseTables`, appended at `seat_tables.go:309`) and
-`team_tables.go` (`teamManagementDatabaseTables`, appended at `team_tables.go:56`). The
-same 15 tables are declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: the 13
-seat tables plus the 2 team tables of the file's TEAMS section (note for a reader counting
-statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **16** because the file's header
-COMMENT at line 6 contains that phrase; there are **15** statements, one per table, and no
-table is declared twice — `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> 15).
+Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **14 entries**, `seat_tables.go:16`) and
+`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:357`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:362`). **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **16** tables are declared as DDL in
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 14 seat tables plus the 2 team tables** (note for a reader counting
+statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **17** because the file's header
+COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **16**, one per table, and no
+table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list.
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
-| `modules` | `ModuleORM` | `seat_tables.go:14` | `seat_management_postgresql.sql:32` |
-| `module_versions` | `ModuleVersionORM` | `seat_tables.go:33` | `:47` |
-| `seat_types` | `SeatTypeORM` | `seat_tables.go:56` | `:63` |
-| `seat_type_versions` | `SeatTypeVersionORM` | `seat_tables.go:76` | `:79` |
-| `rooms` | `RoomORM` | `seat_tables.go:99` | `:96` |
-| `seats` | `SeatORM` | `seat_tables.go:119` | `:112` |
-| `overlays` | `OverlayORM` | `seat_tables.go:152` | `:135` |
-| `seat_links` | `SeatLinkORM` | `seat_tables.go:184` | `:160` |
-| `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:210` | `:180` |
-| `seat_settings` | `SeatSettingsORM` | `seat_tables.go:235` | `:198` |
-| `machines` | `MachineORM` | `seat_tables.go:247` | `:207` |
-| `machine_tokens` | `MachineTokenORM` | `seat_tables.go:261` | `:219` |
-| `seat_status` | `SeatStatusORM` | `seat_tables.go:281` | `:234` |
-| `teams` | `TeamORM` | `team_tables.go:14` | `:258` |
-| `team_members` | `TeamMemberORM` | `team_tables.go:34` | `:272` |
+| `modules` | `ModuleORM` | `seat_tables.go:17` | `seat_management_postgresql.sql:46` |
+| `module_versions` | `ModuleVersionORM` | `seat_tables.go:36` | `:61` |
+| `seat_types` | `SeatTypeORM` | `seat_tables.go:59` | `:77` |
+| `seat_type_versions` | `SeatTypeVersionORM` | `seat_tables.go:79` | `:93` |
+| `teams` | `TeamORM` | `team_tables.go:25` | `:121` |
+| `team_members` | `TeamMemberORM` | `team_tables.go:45` | `:135` |
+| `rooms` | `RoomORM` | `seat_tables.go:102` | `:159` |
+| `seats` | `SeatORM` | `seat_tables.go:125` | `:177` |
+| `overlays` | `OverlayORM` | `seat_tables.go:158` | `:200` |
+| `seat_links` | `SeatLinkORM` | `seat_tables.go:190` | `:225` |
+| `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:216` | `:245` |
+| `seat_settings` | `SeatSettingsORM` | `seat_tables.go:241` | `:263` |
+| `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:317` | `:278` |
+| `machines` | `MachineORM` | `seat_tables.go:253` | `:296` |
+| `machine_tokens` | `MachineTokenORM` | `seat_tables.go:267` | `:308` |
+| `seat_status` | `SeatStatusORM` | `seat_tables.go:287` | `:323` |
+
+**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:317`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
 
 ### 3.4 `ProductionTables` — declared but NOT appended to `Tables` (6)
 
@@ -520,10 +520,15 @@ auth `users` table and would mis-order DDL). They are therefore **not** created 
 
 ### 3.5 Totals
 
-- `database.Tables` at runtime: 20 (core) + 3 (auth) + 13 (seat) + 2 (team) = **38 tables**.
+- `database.Tables` at runtime: 20 (core) + 3 (auth) + **14** (seat) + 2 (team) = **39 tables** — **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).**
 - Plus `ProductionTables`: **6** tables declared but not registered for creation.
+- **Both totals, and every count in this document, are re-derived by `COUNTS-AUDIT.py` beside the seat area — read-only, non-zero on any difference, safe to run in a gate (§1 carries the same pointer).**
 - Every table in §3.1–3.4 carries a `user_id` column except `applied_migrations`
   (a migration ledger; `models_prod.go:118`).
+
+### 3.6 Re-derivation of this section (2026-10-06, docs duty pass 3)
+
+**Every citation in §3.1–§3.4 was re-measured against the tree rather than trusted, and the section was found ONE TABLE SHORT AND STALE IN EVERY LINE NUMBER OF §3.3.** (a) **`seat_feedback` was missing entirely** — registered at `seat_tables.go:317`, declared in the DDL at `:278`, read by `NewORMSeatFeedbackRepository` (`seat_feedback_repository.go:25`, `:47`); **with it the seat block is 14 tables and the runtime registry is 39, not 38.** (b) **Every `seat_tables.go`, `team_tables.go` and SQL line number in §3.3 was stale** — the Go cites by 3–36 lines, the SQL cites by 12–66. (c) **`team_tables.go:56`, cited as an append site, does not exist**: `team_tables.go` has no `init()` at all; the composition and the single append are `seat_tables.go:357` and `:362`. **§3.1, §3.2 and §3.4 came through clean — the 20 core entries, the three auth entries and the six `ProductionTables` matched name-for-name and line-for-line — and that is the control that says this method finds real drift rather than inventing it.** **The counting method is worth keeping: entries are counted at DEPTH 1 of each registry's literal (`{Name: "...", Model: ...}`), because a plain `grep -c 'Name:'` counts every COLUMN and reports 572 for a 20-table registry.** **§4's gone-list holds commands and their outputs rather than citations; those were not re-run in this pass.**
 
 ---
 
@@ -535,10 +540,12 @@ no output.
 | Retired item | How established it is gone | Command | Result |
 |---|---|---|---|
 | `agenthub_main/agent-library` (Python agent library) | directory absent on disk and untracked in git; removed by commit `60bcdb68` | `ls agenthub_main/agent-library` ; `git ls-files 'agenthub_main/agent-library*' \| wc -l` ; `git log --oneline -1 -S'agent-library' -- agenthub_main` | `No such file or directory` ; `0` ; `60bcdb68 refactor(agents): remove the Python agent library and agent management (T8 Python half)` |
-| `call_agent` **tool** (MCP tool "load agent instructions") | no tool definition, absent from `tools_golden.json`, and the test suite asserts its absence | `grep -rn 'Name: *"call_agent"' agenthub_go --include='*.go' \| grep -v .gomodcache` ; `grep -n 'removed call_agent tool' agenthub_go --include='*_test.go'` | `NO MATCH` ; `call_seat_mcp_test.go:62: t.Fatal("tools/list still publishes the removed call_agent tool")` |
+| `call_agent` **tool** (MCP tool "load agent instructions") | no tool definition, absent from `tools_golden.json`, and the test suite asserts its absence | `grep -rn 'Name: *"call_agent"' agenthub_go --include='*.go' \| grep -v .gomodcache` ; `grep -n 'removed call_agent tool' agenthub_go --include='*_test.go'` | `NO MATCH` ; `call_seat_mcp_test.go:64: t.Fatal("tools/list still publishes the removed call_agent tool")` *(line corrected from `:62` on re-execution, 2026-10-06)* |
 | `/api/v2/openrig/agents` route | no registration anywhere in the Go tree | `grep -rn 'openrig/agents' agenthub_go --include='*.go' \| grep -v .gomodcache` | `NO MATCH` |
 | `agent_templates` table | no declaration in Go models/DDL or in the production SQL | `grep -rn 'agent_templates' agenthub_go --include='*.go' --include='*.sql'` ; `grep -rn 'agent_templates' agenthub_main --include='*.sql'` | `NO MATCH` (both) |
 | `user_agent_instances` table | same as above | `grep -rn 'user_agent_instances' agenthub_go --include='*.go' --include='*.sql'` ; `grep -rn 'user_agent_instances' agenthub_main --include='*.sql'` | `NO MATCH` (both) |
+
+**RE-EXECUTED 2026-10-06 (docs duty pass 3) — every command in this table was run again and its result compared with the text above.** **All five entries still hold**: the directory is absent and untracked, the removal commit is still `60bcdb68`, `call_agent` has no tool definition, and `openrig/agents`, `agent_templates` and `user_agent_instances` all return nothing in both trees. **One line number had moved and is corrected in the table: the assertion is at `call_seat_mcp_test.go:64`, not `:62`** — the same drift class as §1–§3, caught here by re-running rather than by re-deriving, which is why the two are different jobs. **And the distinction's three citations were verified by READING the lines rather than by grepping for the word**: `ddd_compliant_mcp_tools.go:249` is the `manage_agent` definition, `unified_agent_description.go:101` is `props.Set("call_agent", …)`, and `tool_input_schemas.go:126` is the `call_agent` schema entry — **so the tool is gone and the field is live, exactly as the note says.**
 
 **Distinction that must not be collapsed:** `call_agent` the **tool** is gone, but
 `call_agent` remains a **parameter/field of the `manage_agent` tool** (register/update):

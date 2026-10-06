@@ -1,0 +1,303 @@
+{
+  "room": {
+    "slug": "4genthub-min",
+    "name": "4genthub minimum team"
+  },
+  "modules": [
+    {
+      "slug": "guide-common",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-common.md"
+    },
+    {
+      "slug": "guide-lead",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-lead.md"
+    },
+    {
+      "slug": "guide-go-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-go-dev.md"
+    },
+    {
+      "slug": "guide-go-dev2",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-go-dev2.md"
+    },
+    {
+      "slug": "guide-fe-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-fe-dev.md"
+    },
+    {
+      "slug": "guide-web-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-web-dev.md"
+    },
+    {
+      "slug": "guide-skills-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-skills-dev.md"
+    },
+    {
+      "slug": "guide-context-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-context-dev.md"
+    },
+    {
+      "slug": "guide-feedback-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-feedback-dev.md"
+    },
+    {
+      "slug": "guide-reviewer",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-reviewer.md"
+    },
+    {
+      "slug": "guide-writer",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "guide-writer.md"
+    }
+  ],
+  "seats": [
+    {
+      "seat_key": "lead",
+      "seat_type": "lead",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "go-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "go-dev2",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "fe-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "web-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "skills-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "context-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "feedback-dev",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "reviewer",
+      "seat_type": "reviewer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    },
+    {
+      "seat_key": "writer",
+      "seat_type": "writer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash"
+    }
+  ],
+  "links": [
+    {
+      "from": "lead",
+      "to": "go-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "go-dev2",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "fe-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "web-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "skills-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "context-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "feedback-dev",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "reviewer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "lead",
+      "to": "writer",
+      "kind": "delegates_to"
+    },
+    {
+      "from": "go-dev",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "go-dev",
+      "to": "fe-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "go-dev2",
+      "to": "go-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "skills-dev",
+      "to": "go-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "context-dev",
+      "to": "go-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "web-dev",
+      "to": "fe-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "writer",
+      "to": "reviewer",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "feedback-dev",
+      "to": "web-dev",
+      "kind": "collaborates_with"
+    },
+    {
+      "from": "go-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "go-dev2",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "fe-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "web-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "skills-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "context-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "feedback-dev",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "reviewer",
+      "to": "lead",
+      "kind": "escalates_to"
+    },
+    {
+      "from": "writer",
+      "to": "lead",
+      "kind": "escalates_to"
+    }
+  ],
+  "company_overlay": [
+    "guide-common"
+  ],
+  "seat_overlays": {
+    "lead": [
+      "guide-lead"
+    ],
+    "go-dev": [
+      "guide-go-dev"
+    ],
+    "go-dev2": [
+      "guide-go-dev2"
+    ],
+    "fe-dev": [
+      "guide-fe-dev"
+    ],
+    "web-dev": [
+      "guide-web-dev"
+    ],
+    "skills-dev": [
+      "guide-skills-dev"
+    ],
+    "context-dev": [
+      "guide-context-dev"
+    ],
+    "feedback-dev": [
+      "guide-feedback-dev"
+    ],
+    "reviewer": [
+      "guide-reviewer"
+    ],
+    "writer": [
+      "guide-writer"
+    ]
+  }
+}
