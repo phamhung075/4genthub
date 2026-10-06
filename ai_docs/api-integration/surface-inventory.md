@@ -32,7 +32,7 @@ The commands used and the full registration dump are in the acceptance appendix.
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
 
-**CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, and §5's two quoted-report cites were re-derived here; the DDL and table citations in §3 were NOT re-derived in this pass (the `ProductionTables` count among them).** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
+**CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, §5's two quoted-report cites and §3's table citations were all re-derived in this pass (see §3.6 for the table half); §4's gone-list holds commands rather than citations and was NOT re-run.** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
 
 Path convention for the Registration column: paths are relative to `agenthub_go/`; from
 §1.2 on, the column gives the BASENAME (`branch_routes.go:61`) because the section header
@@ -474,33 +474,33 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 ### 3.3 Seat-management and team tables — appended to `Tables` via `init()`
 
-Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go`
-(`seatManagementDatabaseTables`, appended at `seat_tables.go:309`) and
-`team_tables.go` (`teamManagementDatabaseTables`, appended at `team_tables.go:56`). The
-same 15 tables are declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: the 13
-seat tables plus the 2 team tables of the file's TEAMS section (note for a reader counting
-statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **16** because the file's header
-COMMENT at line 6 contains that phrase; there are **15** statements, one per table, and no
-table is declared twice — `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> 15).
+Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **14 entries**, `seat_tables.go:16`) and
+`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:357`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:362`). **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **16** tables are declared as DDL in
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 14 seat tables plus the 2 team tables** (note for a reader counting
+statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **17** because the file's header
+COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **16**, one per table, and no
+table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list.
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
-| `modules` | `ModuleORM` | `seat_tables.go:14` | `seat_management_postgresql.sql:32` |
-| `module_versions` | `ModuleVersionORM` | `seat_tables.go:33` | `:47` |
-| `seat_types` | `SeatTypeORM` | `seat_tables.go:56` | `:63` |
-| `seat_type_versions` | `SeatTypeVersionORM` | `seat_tables.go:76` | `:79` |
-| `rooms` | `RoomORM` | `seat_tables.go:99` | `:96` |
-| `seats` | `SeatORM` | `seat_tables.go:119` | `:112` |
-| `overlays` | `OverlayORM` | `seat_tables.go:152` | `:135` |
-| `seat_links` | `SeatLinkORM` | `seat_tables.go:184` | `:160` |
-| `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:210` | `:180` |
-| `seat_settings` | `SeatSettingsORM` | `seat_tables.go:235` | `:198` |
-| `machines` | `MachineORM` | `seat_tables.go:247` | `:207` |
-| `machine_tokens` | `MachineTokenORM` | `seat_tables.go:261` | `:219` |
-| `seat_status` | `SeatStatusORM` | `seat_tables.go:281` | `:234` |
-| `teams` | `TeamORM` | `team_tables.go:14` | `:258` |
-| `team_members` | `TeamMemberORM` | `team_tables.go:34` | `:272` |
+| `modules` | `ModuleORM` | `seat_tables.go:17` | `seat_management_postgresql.sql:46` |
+| `module_versions` | `ModuleVersionORM` | `seat_tables.go:36` | `:61` |
+| `seat_types` | `SeatTypeORM` | `seat_tables.go:59` | `:77` |
+| `seat_type_versions` | `SeatTypeVersionORM` | `seat_tables.go:79` | `:93` |
+| `teams` | `TeamORM` | `team_tables.go:25` | `:121` |
+| `team_members` | `TeamMemberORM` | `team_tables.go:45` | `:135` |
+| `rooms` | `RoomORM` | `seat_tables.go:102` | `:159` |
+| `seats` | `SeatORM` | `seat_tables.go:125` | `:177` |
+| `overlays` | `OverlayORM` | `seat_tables.go:158` | `:200` |
+| `seat_links` | `SeatLinkORM` | `seat_tables.go:190` | `:225` |
+| `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:216` | `:245` |
+| `seat_settings` | `SeatSettingsORM` | `seat_tables.go:241` | `:263` |
+| `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:317` | `:278` |
+| `machines` | `MachineORM` | `seat_tables.go:253` | `:296` |
+| `machine_tokens` | `MachineTokenORM` | `seat_tables.go:267` | `:308` |
+| `seat_status` | `SeatStatusORM` | `seat_tables.go:287` | `:323` |
+
+**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:317`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
 
 ### 3.4 `ProductionTables` — declared but NOT appended to `Tables` (6)
 
@@ -520,10 +520,14 @@ auth `users` table and would mis-order DDL). They are therefore **not** created 
 
 ### 3.5 Totals
 
-- `database.Tables` at runtime: 20 (core) + 3 (auth) + 13 (seat) + 2 (team) = **38 tables**.
+- `database.Tables` at runtime: 20 (core) + 3 (auth) + **14** (seat) + 2 (team) = **39 tables** — **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).**
 - Plus `ProductionTables`: **6** tables declared but not registered for creation.
 - Every table in §3.1–3.4 carries a `user_id` column except `applied_migrations`
   (a migration ledger; `models_prod.go:118`).
+
+### 3.6 Re-derivation of this section (2026-10-06, docs duty pass 3)
+
+**Every citation in §3.1–§3.4 was re-measured against the tree rather than trusted, and the section was found ONE TABLE SHORT AND STALE IN EVERY LINE NUMBER OF §3.3.** (a) **`seat_feedback` was missing entirely** — registered at `seat_tables.go:317`, declared in the DDL at `:278`, read by `NewORMSeatFeedbackRepository` (`seat_feedback_repository.go:25`, `:47`); **with it the seat block is 14 tables and the runtime registry is 39, not 38.** (b) **Every `seat_tables.go`, `team_tables.go` and SQL line number in §3.3 was stale** — the Go cites by 3–36 lines, the SQL cites by 12–66. (c) **`team_tables.go:56`, cited as an append site, does not exist**: `team_tables.go` has no `init()` at all; the composition and the single append are `seat_tables.go:357` and `:362`. **§3.1, §3.2 and §3.4 came through clean — the 20 core entries, the three auth entries and the six `ProductionTables` matched name-for-name and line-for-line — and that is the control that says this method finds real drift rather than inventing it.** **The counting method is worth keeping: entries are counted at DEPTH 1 of each registry's literal (`{Name: "...", Model: ...}`), because a plain `grep -c 'Name:'` counts every COLUMN and reports 572 for a 20-table registry.** **§4's gone-list holds commands and their outputs rather than citations; those were not re-run in this pass.**
 
 ---
 
