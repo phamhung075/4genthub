@@ -505,18 +505,17 @@ That is the **context API**, not the platform's composition model. How a seat is
 <tr>
 <td width="50%">
 
-### ⚡ **Current Performance**
-- **Response Time**: <200ms average
-- **Concurrent Users**: 10-50 users
-- **Agent Coordination**: Real-time
-- **Context Sync**: <5ms overhead
+### ⚡ **Performance — NOT MEASURED**
+- **No benchmark of this server exists in this repository**, so the figures that used to print here (`<200ms average` response time, `10-50 concurrent users`, `Context Sync <5ms overhead`) are **removed rather than restated: they had no measurement behind them and none in the tree.** Settle them by measuring, or leave them out.
+- **Agent Coordination**: real-time over the socket path — the mounted surface is in [the surface inventory](ai_docs/api-integration/surface-inventory.md)
 - **Database**: PostgreSQL
 
 </td>
 <td width="50%">
 
-### 📈 **Scaling Roadmap**
-- **MVP** (Current): 100 RPS
+### 📈 **Scaling Roadmap — TARGETS, NOT MEASURED CAPACITY**
+- **Every tier below is an aspiration with no measurement behind it and no date metadata in the tree, and the quarters it names have passed** — recorded as a roadmap so that nothing here reads as current capacity.
+- **MVP** (when written): 100 RPS
 - **Tier 1** (Q2 2025): 1K RPS + Microservices
 - **Tier 2** (Q3 2025): 10K RPS + Service Mesh
 - **Enterprise** (Q4 2025): 1M+ RPS + Global Edge
@@ -544,10 +543,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
 
 **Recent highlights from our development journey:**
 
-- **[2025-09-19] - Iteration 107** - 🏆 Septuple Centenarian Perfection
-  - 541 tests passing with 100% success rate
-  - 107 consecutive perfect iterations achieved
-  - Self-healing system with zero maintenance required
+- **HISTORY — `[2025-09-19] - Iteration 107`** - 🏆 *"Septuple Centenarian Perfection"* — **this is a record of the RETIRED PYTHON TREE, not of this server:** `agenthub_main/` is archived and this repository no longer builds or tests it (`55c33107`, "ci: stop building and testing the archived Python server"). **The 541 tests and the 107 iterations are `agenthub_main`'s; the Go server's own tests are the live ones.** Kept, labelled, rather than deleted — **a release note that reads as a current highlight is a retired stack presented as live.**
 
 - **Agent Library Retirement** - Removed the Python agent library (32 templates), the `agent_templates` / `user_agent_instances` tables and the `call_agent` MCP tool
   - Replaced by the seat model (`manage_seat` / `call_seat`) and the `agents` registry via `manage_agent`
