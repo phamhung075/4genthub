@@ -3,7 +3,7 @@ Dai Hung PHAM
 <div align="center">
 
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/agenthub/agenthub)
-[![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2.1.0-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
+[![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2024--11--05-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-9%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
 
@@ -20,7 +20,7 @@ Dai Hung PHAM
 ## ✨ **What Makes agenthub Special?**
 
 🎭 **Human-First AI Orchestration** — Drive human and AI work through a beautiful web interface
-🧠 **Intelligent Context Management** — 4-tier hierarchy ensures AI agents never lose context between sessions
+🧠 **Composable Seats** — each seat renders its own guidance, skills and MCP servers from inherited company → room → seat overlays
 🔗 **MCP Protocol Native** — Built on the Model Context Protocol for seamless AI integration
 🎯 **Visual Task Management** — See your AI agents working in real-time through our React dashboard
 🚀 **Multi-Agent Workflows** — Chain agent registry entries for complex development workflows
@@ -58,7 +58,7 @@ http://localhost:3800
 - 👥 **Multi-agent coordination**
 - 📈 **Progress tracking**
 - 🎭 **Seat management** — List seats and switch occupants
-- 🧠 **4-tier context** — Global → project → branch → task
+- 🧠 **Contexts** — four-level context records via `POST /api/v2/contexts/{level}`
 - 🔍 **Health & status** — MCP registrations and metrics
 
 </td>
@@ -70,7 +70,7 @@ http://localhost:8000
 ```
 - 🤖 **9 published MCP tools**
 - 🛠️ **Task, project, branch, context, agent, seat tools**
-- 📋 **4-tier context hierarchy**
+- 📋 **Contexts API** — `/api/v2/contexts/{level}` with inheritance
 - 🔌 **`POST /mcp` JSON-RPC + `GET /mcp` SSE**
 - 🔍 **Health monitoring (`GET /health`)**
 
@@ -86,7 +86,7 @@ http://localhost:8000
 🎯 **One-Click Orchestration** — Deploy complex multi-agent workflows with simple clicks
 ⚡ **Instant Feedback** — Real-time updates as agents complete tasks and make decisions
 🎭 **Seat Management** — List seats, resolve one, and switch its occupant
-🧠 **4-Tier Context** — Global → project → branch → task inheritance
+🧠 **Contexts** — Four-level context records with inheritance (`/api/v2/contexts`)
 ✨ **Agent Registry** — Register, assign and update agents through `manage_agent`
 
 ---
@@ -105,8 +105,8 @@ graph TD
 
     C --> G[🔗 MCP Server<br/>Go (agenthub_go)]
     G --> H[🤖 Agent Registry<br/>manage_agent]
-    G --> I[📊 4-Tier Context<br/>Global→Project→Branch→Task]
-    G --> J[🗄️ Database Layer<br/>PostgreSQL + Redis]
+    G --> I[📊 Contexts API<br/>/api/v2/contexts]
+    G --> J[🗄️ Database Layer<br/>PostgreSQL]
     G --> R[🪑 Seat Model<br/>manage_seat / call_seat]
 
     style A fill:#e1f5fe
@@ -324,7 +324,7 @@ mcp__agenthub_http__manage_context(
 
 ### 🌟 **The Context Magic**
 
-**🧠 Context Inheritance**: Every agent automatically knows what previous agents discovered
+**🧠 Context Inheritance**: a context resolved with `GET /api/v2/contexts/{level}/{context_id}/resolve` carries its inherited parent data
 **📈 Progress Tracking**: Watch tasks evolve from idea to completion
 **🔄 Session Continuity**: Stop and resume work - agents remember everything
 **👥 Team Collaboration**: Multiple humans can collaborate with the same agent team
@@ -335,11 +335,11 @@ mcp__agenthub_http__manage_context(
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/CORE_ARCHITECTURE/` |
-| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/DEVELOPMENT_GUIDES/` |
-| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/OPERATIONS/` |
-| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/TROUBLESHOOTING/` |
-| ✨ **Vision System** | AI enhancement documentation | `ai_docs/vision/` |
+| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/architecture-design/` |
+| 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/development-guides/` |
+| 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
+| 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |
+| 🧭 **API & MCP reference** | The mounted route and tool surface | `ai_docs/api-integration/surface-inventory.md` |
 | 📋 **Changelog** | Version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 
 ---
@@ -391,12 +391,16 @@ Human: Validate solution
 
 ### 🧠 **Context Intelligence**
 
+The context API stores four levels of context records (`/api/v2/contexts/{level}`), each with an inheritance path:
+
 **🌐 Global Context** → Organization-wide patterns and standards
 **📋 Project Context** → Project-specific decisions and architecture
 **🌿 Branch Context** → Feature-specific implementation details
 **🎯 Task Context** → Granular work progress and discoveries
 
-**The Magic**: Every AI agent automatically inherits relevant context, ensuring consistency and eliminating repetitive explanations.
+`GET /api/v2/contexts/{level}/{context_id}/resolve` folds the parent chain into one response; `.../delegate` copies data down a level, and `.../insights` and `.../progress` append to a context.
+
+That is the **context API**, not the platform's composition model. How a seat is built — its guidance, skills and MCP servers — comes from company → room → seat overlays resolved per seat (`ai_docs/api-integration/surface-inventory.md` §1.13, §1.16).
 
 ---
 
@@ -433,8 +437,8 @@ Human: Validate solution
 <td width="33%">
 
 #### 🧠 **Context Intelligence**
-- 4-tier context hierarchy
-- Automatic inheritance
+- Context records at four levels (`manage_context`)
+- Inheritance via `resolve`
 - Cross-session persistence
 - Real-time synchronization
 - Context validation
@@ -488,7 +492,7 @@ Human: Validate solution
 - **Concurrent Users**: 10-50 users
 - **Agent Coordination**: Real-time
 - **Context Sync**: <5ms overhead
-- **Database**: PostgreSQL + Redis
+- **Database**: PostgreSQL
 
 </td>
 <td width="50%">

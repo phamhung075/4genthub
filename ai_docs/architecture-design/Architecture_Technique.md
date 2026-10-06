@@ -32,7 +32,7 @@ AgentHub is an enterprise-grade AI agent orchestration platform that enables int
 **Core Capabilities**:
 - Multi-agent task orchestration through the `manage_agent` MCP tool (the Python agent library with 32+ specialized agents was retired; see `ai_docs/api-integration/surface-inventory.md` §4)
 - Real-time WebSocket synchronization (v2.0 protocol)
-- 4-tier hierarchical context management (Global → Project → Branch → Task)
+- Context records at four levels behind `/api/v2/contexts/{level}` (`global`, `project`, `branch`, `task`); the platform's composition model is the seat overlay chain (company → room → seat)
 - Domain-Driven Design (DDD) architecture
 - Keycloak-based authentication with JWT tokens
 - PostgreSQL database (Go server; Postgres-only, no SQLite or SQLAlchemy path)
@@ -364,7 +364,7 @@ class SQLAlchemyTaskRepository(TaskRepository):
 | `/api/v2/subtasks/{id}` | DELETE | Delete subtask | ✅ |
 | `/api/v2/subtasks/{id}/complete` | POST | Complete subtask | ✅ |
 
-The full surface (132 route registrations) is in `ai_docs/api-integration/surface-inventory.md` §1.
+The full surface (141 route registrations) is in `ai_docs/api-integration/surface-inventory.md` §1.
 
 **Request/Response Format**:
 ```typescript
@@ -406,7 +406,7 @@ Response: {
 | `manage_subtask` | Subtask CRUD, progress tracking, completion |
 | `manage_project` | Project lifecycle, health checks, validation |
 | `manage_git_branch` | Branch CRUD, agent assignment, statistics |
-| `manage_context` | 4-tier hierarchy, inheritance, delegation |
+| `manage_context` | Context records at four levels, inheritance, delegation |
 | `manage_agent` | Agent registry: register, assign, update |
 | `manage_seat` | Seat list/get/set_occupant (Go-only) |
 | `call_seat` | Resolve one seat and its rendered context files (Go-only) |
@@ -522,7 +522,7 @@ manage_subtask(
 
 ### Tool: manage_context
 
-**4-Tier Hierarchy**:
+**Context levels** (the `{level}` segment of `/api/v2/contexts/{level}`; the retired Python-era "4-tier context system" product framing is superseded by the seat overlay chain — see `agenthub_go/NEXT_GEN.md`):
 ```
 GLOBAL (per user)
   ↓ inherits
@@ -715,12 +715,13 @@ User Login → Keycloak → JWT Token → Frontend stores token → Backend vali
 ```
 
 **Configuration**:
-```python
-# Backend: agenthub_main/src/fastmcp/server/config.py
-KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
-KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
-KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
+```bash
+# Read by the Go server from the environment; the Keycloak/JWKS path is implemented in
+# agenthub_go/fastmcp/auth/keycloak_dependencies.go (see KEYCLOAK_URL/REALM/CLIENT_ID/CLIENT_SECRET)
+KEYCLOAK_URL=...
+KEYCLOAK_REALM=...
+KEYCLOAK_CLIENT_ID=...
+KEYCLOAK_CLIENT_SECRET=...
 ```
 
 ### JWT Token Structure
@@ -777,7 +778,7 @@ SELECT * FROM tasks WHERE git_branch_id = $1 AND user_id = $2;
 
 **Location**: `agenthub_go/fastmcp/task_management/infrastructure/database/models.go` (`database.Tables`), plus `models_auth.go`, `seat_tables.go` and `models_prod.go`.
 
-The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` holds the **36 tables** the server creates; `ProductionTables` (`models_prod.go`) declares 6 more that are deliberately not appended and are therefore not created by `CreateTables`. The full list is in `ai_docs/api-integration/surface-inventory.md` §3.
+The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` holds the **38 tables** the server creates (20 core + 3 auth + 13 seat + 2 team); `ProductionTables` (`models_prod.go`) declares 6 more that are deliberately not appended and are therefore not created by `CreateTables`. The full list is in `ai_docs/api-integration/surface-inventory.md` §3.
 
 **Key tables**:
 
@@ -786,10 +787,11 @@ The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` 
 | `tasks`, `subtasks`, `task_assignees`, `task_dependencies`, `task_labels`, `task_contexts` | Task domain |
 | `projects` | Projects |
 | `project_git_branchs` | Git branches (note the actual table name) |
-| `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` | 4-tier context data |
+| `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` | Context records at the four levels (`/api/v2/contexts/{level}`) |
 | `agents`, `agent_sessions`, `agent_session_events` | Agent registry and session records |
 | `users`, `user_token_balances`, `email_tokens` | Auth tables |
 | `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `machines`, `machine_tokens`, `seat_status` | Seat management (13 tables) |
+| `teams`, `team_members` | Teams and sharing (2 tables) |
 
 Every runtime table carries a `user_id` column except `applied_migrations` (a `ProductionTables` ledger).
 
@@ -813,7 +815,9 @@ Every runtime table carries a `user_id` column except `applied_migrations` (a `P
 
 ## Context Management
 
-### 4-Tier Hierarchy
+### Context levels
+
+> The four levels below are the `{level}` set of the mounted `/api/v2/contexts/{level}` routes. The Python-era "4-tier context system" framing is superseded: a seat is composed from company → room → seat overlays (`agenthub_go/NEXT_GEN.md`, directive (G)).
 
 ```
 GLOBAL (user-123)
@@ -917,9 +921,8 @@ UI Updated (150ms animation delay)
 
 | Layer | File | Responsibility |
 |-------|------|----------------|
-| **Backend** | `websocket_payload_builder.py` | Build minimal payloads |
-| **Backend** | `websocket_notification_service.py` | Broadcast events |
-| **Backend** | `websocket_routes.py` | WebSocket endpoint |
+| **Backend** | `fastmcp/server/httpapp/ws_mount.go` | WebSocket endpoints (`/ws/realtime`, `/ws/connector`, `/ws/sessions/{id}`) |
+| **Backend** | `fastmcp/server/routes/websocket_routes.go` | `BroadcastDataChange`: fan-out to connected clients |
 | **Frontend** | `WebSocketClient.ts` | Connection management |
 | **Frontend** | `useRealtimeSync.ts` | Event processing, cache updates |
 | **Frontend** | `responseValidator.ts` | Payload validation |
@@ -970,9 +973,8 @@ if (message.metadata?.source === 'system') {
 
 **Start Backend**:
 ```bash
-cd agenthub_main
-source .venv/bin/activate
-python -m fastmcp.server.mcp_entry_point
+cd agenthub_go
+go run ./cmd/agenthub
 # Backend running on http://localhost:8000
 ```
 
@@ -1001,12 +1003,11 @@ npm run dev
 3. Test changes immediately
 
 **Backend Changes**:
-1. Edit files in `agenthub_main/src/`
-2. Kill backend process (Ctrl+C)
-3. Restart: `python -m fastmcp.server.mcp_entry_point`
-4. **OR** use Docker menu: `echo "R" | ./docker-system/docker-menu.sh`
+1. Edit files in `agenthub_go/`
+2. Restart the running server (Ctrl+C, then `go run ./cmd/agenthub`), or rebuild the image
+3. **OR** use Docker menu: `echo "R" | ./docker-system/docker-menu.sh`
 
-**Why?** Python caches imported modules in memory - must restart process to load new code.
+**Why?** The Go server is a compiled binary — a running process has the old code until it is restarted.
 
 ### Environment Variables
 
@@ -1052,18 +1053,14 @@ test: add WebSocket integration tests
 ### Test Structure
 
 ```
-agenthub_main/src/tests/
-├── unit/                          # Unit tests (isolated)
-│   ├── domain/                   # Domain entity tests
-│   ├── application/              # Use case tests
-│   └── infrastructure/           # Repository tests
-├── integration/                   # Integration tests (with DB)
-│   ├── api/                      # API endpoint tests
-│   └── websocket/                # WebSocket tests
-├── e2e/                          # End-to-end tests
-│   └── workflows/                # Complete user workflows
-└── performance/                   # Performance tests
-    └── load_tests/               # Load testing scenarios
+agenthub_go/                        # Backend tests: Go _test.go files beside their packages
+├── fastmcp/server/httpapp/         # HTTP and WebSocket handler tests
+├── fastmcp/task_management/        # Domain, application and infrastructure tests
+├── fastmcp/seat_management/        # Seat/room/module and teams tests
+└── fastmcp/auth/                   # Auth tests (JWT/JWKS)
+
+(The retired Python suite lived under `agenthub_main/src/tests/`; it is not part of the
+live test path.)
 ```
 
 ### Frontend Tests
@@ -1085,12 +1082,11 @@ agenthub-frontend/src/tests/
 ### Test Commands
 
 ```bash
-# Backend tests
-cd agenthub_main
-pytest src/tests/unit/              # Unit tests only
-pytest src/tests/integration/       # Integration tests
-pytest src/tests/                   # All tests
-pytest -v -s                        # Verbose with output
+# Backend tests (Go)
+cd agenthub_go
+go test ./...                        # All packages
+go test ./fastmcp/server/httpapp/    # One package
+go test -race -count=1 ./...         # Race detector, no cache
 
 # Frontend tests
 cd agenthub-frontend
@@ -1248,8 +1244,9 @@ subtask = manage_subtask(
 | Path | Purpose |
 |------|---------|
 | `agenthub-frontend/src/` | Frontend React code |
-| `agenthub_main/src/fastmcp/` | Backend Python code |
-| `agenthub_main/src/tests/` | Backend tests |
+| `agenthub_go/` | Backend Go server (`cmd/agenthub`) |
+| `agenthub_go/fastmcp/server/httpapp/` | HTTP routes, WebSockets and MCP transport |
+| `agenthub_main/` | Archived Python backend — not in the live path |
 | `agenthub-frontend/src/tests/` | Frontend tests |
 | `ai_docs/` | Documentation |
 | `.env` | Environment variables |
@@ -1258,22 +1255,19 @@ subtask = manage_subtask(
 
 ```bash
 # Start backend
-python -m fastmcp.server.mcp_entry_point
+cd agenthub_go && go run ./cmd/agenthub
 
 # Start frontend
-npm run dev
+cd agenthub-frontend && npm run dev
 
 # Run backend tests
-pytest src/tests/
+cd agenthub_go && go test ./...
 
 # Run frontend tests
-npm test
+cd agenthub-frontend && npm test
 
 # Docker restart (after code changes)
 echo "R" | ./docker-system/docker-menu.sh
-
-# Check backend logs
-tail -f logs/backend.log
 ```
 
 ---

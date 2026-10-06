@@ -17,7 +17,7 @@
 **agenthub** revolutionizes human-AI collaboration through an intuitive web-based platform orchestrating human and AI work through a Model Context Protocol (MCP) native architecture. The Python agent library's 42+ specialized agent roles were retired; agents are now registry rows managed through the `manage_agent` MCP tool.
 
 **Problem Solved**:
-- Context loss between AI sessions → Persistent 4-tier context hierarchy
+- Context loss between AI sessions → Context records at four levels behind `/api/v2/contexts/{level}`, plus per-seat composition from company → room → seat overlays
 - Tool fragmentation → Unified MCP protocol platform
 - Complexity barrier → Web-first visual interface
 - Workflow isolation → Multi-agent collaboration
@@ -34,7 +34,7 @@
 **DDD Architecture** with 4 layers (Interface → Application → Domain → Infrastructure) across 5 bounded contexts:
 1. Task Management
 2. Agent Orchestration
-3. Context Management (4-tier hierarchy)
+3. Context Management (four mounted levels)
 4. Project Management
 5. Authentication
 
@@ -66,7 +66,7 @@
 | Feature | Priority | Status | User Story | Key Requirements |
 |---------|----------|--------|------------|------------------|
 | **Web Dashboard** | P0 | ✅ Implemented | Visual agent management without CLI | Real-time updates, responsive, drag-drop tasks |
-| **4-Tier Context** | P0 | ✅ Implemented | AI remembers all context across sessions | Global→Project→Branch→Task, <5ms sync |
+| **Context API** | P0 | ✅ Implemented | Four-level context records with inheritance | `/api/v2/contexts/{level}` (`resolve`, `delegate`, `insights`, `progress`); the live composition model is the seat overlay chain |
 | **Agent registry** | P0 | ✅ Implemented | Register and assign agents via MCP | `manage_agent` tool + `agents` table; the 42-role Python agent library was retired |
 | **MCP Protocol** | P0 | ✅ Implemented | Industry-standard integration | `POST /mcp` (JSON-RPC) + `GET /mcp` (SSE), 9 published tools |
 | **Agent Coordination** | P0 | ✅ Implemented | Multi-agent parallel execution | Real-time collaboration, progress tracking |
@@ -168,7 +168,7 @@ External Services:
 |---------|---------|----------|----------|
 | **Task Management** | Hierarchical task structures | Task, Subtask, TaskDependency | `task_management/` |
 | **Agent Orchestration** | Agent registry coordination | Agent | `task_management/interface/mcp_controllers/agent_mcp_controller/` |
-| **Context Management** | 4-tier hierarchy | GlobalContext, ProjectContext, BranchContext, TaskContext | `context_management/` |
+| **Context Management** | Context records at four levels | GlobalContext, ProjectContext, BranchContext, TaskContext | `context_management/` |
 | **Project Management** | Projects & git branches | Project, GitBranch, Milestone | `project_management/` |
 | **Authentication** | User auth & sessions | User, Session, Role | `auth/` |
 
@@ -253,7 +253,7 @@ src/
 - `projects` - Project definitions
 - `project_git_branchs` - Git branch tracking
 - `agents` - Agent registry
-- `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` - 4-tier context storage
+- `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` - Context records at the four levels (`/api/v2/contexts/{level}`)
 - `users` - User accounts (Keycloak sync)
 - `agent_sessions`, `agent_session_events` - Session records
 
@@ -332,7 +332,7 @@ User → Keycloak SSO → JWT Token → API Gateway → Validation → MCP Serve
 |-------|---------------|
 | **Transport** | HTTPS only (TLS 1.3) |
 | **Authentication** | Keycloak SSO + JWT |
-| **Authorization** | RBAC + dynamic tool enforcement |
+| **Authorization** | RBAC + per-seat tool scope (the `call_agent`-based dynamic enforcement was retired) |
 | **Data** | Per-user isolation, encrypted at rest |
 | **API** | Rate limiting, input validation |
 | **Audit** | Complete operation logging |
@@ -345,8 +345,8 @@ User → Keycloak SSO → JWT Token → API Gateway → Validation → MCP Serve
 
 **MVP (Current - v0.0.2)**:
 - ✅ Web dashboard with real-time updates
-- ✅ 42+ specialized agents
-- ✅ 4-tier context hierarchy
+- ✅ Agent registry (`manage_agent`) — the 42-role Python agent library was retired
+- ✅ Context API at four levels (`/api/v2/contexts/{level}`)
 - ✅ Keycloak authentication
 - ✅ Docker deployment
 - ⏳ Production hardening

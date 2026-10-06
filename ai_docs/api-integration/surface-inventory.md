@@ -7,7 +7,9 @@
 **Update 2026-10-05 (NEXT_GEN D5, teams/sharing).** §1.20 and the two team rows of §3.3
 were added and every count updated: registrations 132 -> **140**, runtime `Tables` 36 ->
 **38**. This delta was generated on top of `b0a1f510`; the rest of the file is unchanged
-from the `c4ff8d42` snapshot.
+from the `c4ff8d42` snapshot. **The registration figure is now 141** — the seat-type create
+route (`POST /api/v2/openrig/seat-types`) was added after that snapshot; §1 carries the
+current count with its pattern and date.
 
 **Scope:** the Go service (`agenthub_go`, `cmd/agenthub`) plus the auth route sets it
 mounts. `agenthub-frontend` and `agenthub_main` (Python) are out of scope and were not
@@ -522,51 +524,42 @@ must not be read as a sentence about the other.
 
 ---
 
-## 5. Contradictions between existing docs and the code
+## 5. Contradictions between existing docs and the code — ALL CLOSED
 
-These are the rewrite worklist. Every claim below is checked against the source in this
-document.
+This section was the rewrite worklist for owner directive (A). Every item below has been
+corrected; each entry keeps the original finding so the audit trail survives, and names
+the correction. The checks themselves are unchanged and re-runnable from Appendix A.
 
-1. **`ai_docs/api-integration/mcp-tools-api-complete.md`** — wrong tool inventory:
-   - line 13 and §"call_agent" (lines 385-407) document the **`call_agent` tool** as live.
-     There is no such tool (`Name: "call_agent"` → NO MATCH); the tool was removed
-     (`b0d441bd refactor(mcp): remove the Go call_agent tool, its routes and wiring`).
-   - line 14 documents `manage_connection`; the doc lists 8 tools and omits `manage_seat`
-     and `call_seat`, which the live registry publishes (§2.3).
-   - line 16's "all tools require `action`" is false for `call_seat`/`manage_connection`.
-
-2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — describes parameter
-   coercion across "All controllers" and example calls to `manage_context`; it is not a
-   surface list, but it shares the tool set above and predates the seat tools.
-
-3. **`ai_docs/architecture-design/Architecture_Technique.md`** — architectural claims
-   that contradict the Go server:
-   - line 33: "32+ specialized agents"; line 49: "PostgreSQL (local), **SQLite
-     (fallback)**"; line 256/317/755/793: **SQLAlchemy** ORM models and Alembic
-     migrations. The Go server is Postgres-only with generated `TableDef` metadata
-     (`models.go`) and no SQLite or SQLAlchemy code path.
-   - Its API/MCP/DB sections describe the Python implementation this Go service replaced.
-
-4. **`agenthub_go/PROD_READINESS_REPORT.md`** (repo root of the Go module, not `ai_docs`)
-   — item B4 states the MCP wiring "is not the real one", `tools/list` returns stub
-   schemas, and `GET /mcp` is not SSE. At this HEAD the opposite is true:
-   `getMCPToolsList` builds from `ToolDefinitions()` (`mcp_routes.go:236`), the golden
-   registry test passes, and `GET /mcp` is `mcpSSEHandler` (`mcp_routes.go:116`). B6's
-   "eight production tables unknown to the Go models" is also stale: `models_prod.go`
-   now declares six of them.
-
-5. **Cross-check `/tmp/inv.md`** (reviewer inventory, same HEAD `c4ff8d42`) — three
-   divergences from the code:
-   - It says the live tool list is `TOOL_*`-gated. The Go `tools/list` path never reads
-     `TOOL_*`; the config table is constructed but only `IsWorkflowGuidanceEnabled` is
-     consumed (§2.5).
-   - It lists `initialize` and `ping` among dispatch cases. They are `handleJSONRPC`
-     protocol methods, not dispatch cases and not tools (§2.2).
-   - Its route count is 112 (httpapp only) and it prints base paths without the
-     trailing segment (e.g. all five `/api/v2/branches` rows). The source has 112
-     httpapp registrations **plus 20 auth registrations = 132**; resolved full paths are
-     in §1.
-   - Its table sections omit the three auth tables and the six `ProductionTables`.
+1. **`ai_docs/api-integration/mcp-tools-api-complete.md`** — **CLOSED** (`95ffca45`).
+   The original finding: it documented the removed `call_agent` **tool** as live, listed
+   eight tools and omitted `manage_seat` and `call_seat`, and claimed every tool requires
+   `action`. The file now carries the nine published tools (`manage_seat` at line 13,
+   `call_seat` at line 14), a `### call_agent — retired` section, and an explicit note
+   that the two seat tools and `manage_connection` take no `action`.
+2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — **CLOSED**. The original
+   finding: it shared the old tool set and predated the seat tools. It now carries a
+   `Seat (manage_seat, call_seat)` row and states that the seat tools are the exception
+   to the `action` rule.
+3. **`ai_docs/architecture-design/Architecture_Technique.md`** — **CLOSED** (`95ffca45`
+   and the 2026-10-06 truth-audit). The original finding: "32+ specialized agents", a
+   **SQLite (fallback)** claim, and SQLAlchemy/Alembic described as the persistence path.
+   The Python module tree and its SQLAlchemy examples are now covered by the
+   **Retired implementation note** at line 224; the Database Layer states the Go
+   `TableDef`/Postgres-only reality; the development, test and directory sections point at
+   `agenthub_go`; and the "4-tier" framing appears only as the `{level}` set of the
+   mounted `/api/v2/contexts/{level}` routes.
+4. **`agenthub_go/PROD_READINESS_REPORT.md`** (Go module root, not `ai_docs`) —
+   **SUPERSEDED IN PLACE** (`95ffca45`). A status block above the blocker table marks B4
+   and B6 as no longer describing HEAD (`getMCPToolsList` builds from
+   `ToolDefinitions()`, `mcp_routes.go:236`; `GET /mcp` is `mcpSSEHandler`,
+   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables`), while the
+   original findings stay visible as the dated record they are.
+5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
+   method only. Its three divergences from the code are settled in this document: the
+   `TOOL_*` gating claim in §2.5, `initialize`/`ping` as protocol methods rather than
+   dispatch cases in §2.2, and the route count in §1 (its 112 was `httpapp`-only; the
+   current figure is 121 + 20 = 141). Its table sections omit the three auth tables and
+   the six `ProductionTables`, both carried in §3.
 
 ---
 
@@ -580,7 +573,7 @@ Run from `/home/daihu/__projects__/4genthub/agenthub_go` unless noted.
 # Every route registration (the source of §1)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go'
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go'
-# Counts: 120 httpapp + 20 auth = 140
+# Counts: 121 httpapp + 20 auth = 141
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go' | wc -l
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go' | wc -l
 

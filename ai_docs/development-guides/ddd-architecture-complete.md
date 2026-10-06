@@ -1,5 +1,12 @@
 # DDD Architecture - Complete Guide
 
+> **Status:** the live backend is the Go service (`agenthub_go`, PostgreSQL-only). The
+> Python/FastAPI examples and the `agenthub_main/src/...` paths throughout this guide describe
+> the **retired Python implementation**; the Go implementation is what ships. The authoritative
+> HTTP/MCP/table surface is `ai_docs/api-integration/surface-inventory.md`. The layer model and
+> request flow below still hold structurally — read "Transport" as `POST /mcp` (JSON-RPC) and
+> `GET /mcp` (SSE).
+
 ## Quick Reference
 
 | Layer | Components | Key Pattern | Files |
@@ -20,7 +27,7 @@
 | Step | Layer | Action | Result |
 |------|-------|--------|--------|
 | 1 | MCP Client | Send request | Request initiated |
-| 2 | Transport | WebSocket/HTTP/2, generate request_id | Connection ready |
+| 2 | Transport | `POST /mcp` (JSON-RPC) / `GET /mcp` (SSE), generate request_id | Connection ready |
 | 3 | FastMCP Server | Route to TaskController | Controller selected |
 | 4 | Auth Middleware | Validate JWT, extract user context | Authorized user |
 | 5 | Interface (Controller) | Parse params, validate types, create DTO | Valid DTO |

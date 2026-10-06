@@ -68,7 +68,7 @@ The request and response fields for these calls are defined by the handlers unde
 
 ## Route reference
 
-The server mounts **140** route registrations: 120 in the HTTP app (`fastmcp/server/httpapp`)
+The server mounts **141** route registrations: 121 in the HTTP app (`fastmcp/server/httpapp`)
 and 20 in the auth package (`fastmcp/auth`). They are grouped below by family; paths are the
 resolved paths.
 
@@ -168,6 +168,7 @@ or seat-type slug and `{version}` a concrete version.
 | `PUT` | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | Set a seat's occupant (runtime and model). |
 | `PUT` | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | Set a seat's permission policy. |
 | `GET` | `/api/v2/openrig/seat-types` | List seat types. |
+| `POST` | `/api/v2/openrig/seat-types` | Create a seat type. |
 | `POST` | `/api/v2/openrig/seat-types/{slug}/versions` | Publish a seat-type version. |
 | `POST` | `/api/v2/openrig/seat-types/seed` | Seed the built-in seat types. |
 | `GET` | `/api/v2/openrig/modules` | List modules. |

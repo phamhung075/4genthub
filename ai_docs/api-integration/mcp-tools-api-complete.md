@@ -8,7 +8,7 @@
 | **manage_subtask** | create, update, complete | task_id, progress_percentage, progress_notes | Hierarchical task decomposition |
 | **manage_project** | create, list, project_health_check | name | Project coordination |
 | **manage_git_branch** | create, assign_agent, get_statistics | project_id, git_branch_name | Branch operations |
-| **manage_context** | create, get, resolve, delegate | level, context_id | 4-tier context hierarchy |
+| **manage_context** | create, get, resolve, delegate | level, context_id | Context records at four levels (global \| project \| branch \| task) |
 | **manage_agent** | register, assign, get, list, update, unassign, unregister, rebalance | project_id, name, call_agent (field) | Agent registry orchestration |
 | **manage_seat** | list, get, set_occupant | room, seat, runtime, model | Seat management (switch a seat's occupant) |
 | **call_seat** | N/A (single action) | room, seat | Resolve one exact seat and its rendered context files |
@@ -16,7 +16,7 @@
 
 **Common Pattern**: All tools require `action` parameter except `call_seat` and `manage_connection`.
 
-The live registry publishes **nine** tools, the nine rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. The Go-only tools `manage_seat` and `call_seat` are appended to the Python registry by their own controllers; `tools/list` is not gated by any `TOOL_*` environment variable.
+The live registry publishes **nine** tools, the nine rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-274`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable.
 
 ---
 
@@ -267,11 +267,11 @@ manage_git_branch(action="get_statistics", git_branch_id="branch-uuid")
 
 ### manage_context
 
-**Purpose**: Unified 4-tier hierarchical context (Global → Project → Branch → Task)
+**Purpose**: Context records at four levels behind the mounted `/api/v2/contexts/{level}` routes (`global`, `project`, `branch`, `task`)
 
 **Actions**: create, get, update, delete, resolve, delegate, add_insight, add_progress, list
 
-**4-Tier Hierarchy**:
+**Context levels** (the `{level}` path segment):
 
 | Level | Context ID | Inheritance | Use Case |
 |-------|-----------|-------------|----------|
@@ -333,8 +333,8 @@ manage_context(
 ```
 
 **Features**:
-- Unified API across all 4 tiers
-- Auto-inheritance from parent levels
+- One API across the four context levels
+- Auto-inheritance from parent levels on resolve
 - Smart caching with TTL
 - Change propagation (cascading updates)
 - Delegation queue for moving context between levels
@@ -562,7 +562,7 @@ All tools return consistent error format:
 
 ### Context Inheritance (manage_context)
 
-**Inheritance Chain**: Task → Branch → Project → Global
+**Inheritance Chain** (what `resolve` folds): Task → Branch → Project → Global
 
 **Resolution**: Set `include_inherited=true` to get merged data from all parent levels
 
