@@ -13,9 +13,10 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// WorkflowHintEnhancer is the minimal view of the unported
-// workflow_hint_enhancer module. That module has no Go port yet; the hook below
-// lets a later worker wire the real type.
+// WorkflowHintEnhancer is the minimal view of the workflow_hint_enhancer module,
+// which IS ported (workflow_hint_enhancer.go). The hook below is still nil because
+// the concrete type does not yet satisfy this interface - it lacks
+// EnhanceErrorResponseV2 - so wiring it needs an adapter.
 type WorkflowHintEnhancer interface {
 	EnhanceErrorResponseV2(response *entities.OrderedMap[any], action string, context *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	EnhanceTaskResponse(response *entities.OrderedMap[any], action string, requestParams *entities.OrderedMap[any]) *entities.OrderedMap[any]
