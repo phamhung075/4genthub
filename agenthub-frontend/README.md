@@ -2,6 +2,19 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Local development in this repo
+
+The script notes below are the Create React App defaults and do not match this project. It runs with
+`npm start` on **port 3800** (see `vite.config.ts`), and Vite proxies `/api` and `/ws` to the backend on
+`:8000`.
+
+The realtime socket is the part that bites: the app builds its URL from `VITE_WS_URL` when that variable
+is set, and otherwise, in development, from the page origin. **Exporting `VITE_WS_URL` before `npm start`
+has no effect** - Vite reads `.env` files only, never the process environment - so in development the
+socket is aimed at this dev server, and the `/ws` proxy is what carries it to the API. Without that proxy
+the dev server's own websocket server accepts the upgrade, and the UI reports **Live with no backend
+behind it** rather than connecting to nothing.
+
 ## Available Scripts
 
 In the project directory, you can run:

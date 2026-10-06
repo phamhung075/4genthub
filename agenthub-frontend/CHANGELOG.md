@@ -181,6 +181,13 @@
     that one case.
 
 ### Changed
+- **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
+ - The file still carried the Create React App defaults (`pnpm start`, port 3000); this project runs
+ `npm start` on port 3800 through Vite, which proxies `/api` and now `/ws` to the backend on :8000.
+ - It also records the trap that cost an hour tonight: `VITE_WS_URL` is inert in development unless it is in
+ a `.env` file, because Vite reads only `.env` files and not the process environment - so the socket reaches
+ the API through the `/ws` proxy, and without that proxy the dev server accepts the upgrade itself and the
+ UI reports Live with no backend behind it.
 - **The frontend speaks the seat model, not the retired agent library (owner directive C)** - 2026-10-05
   - Read-only inventory first: every claim the frontend makes about the API it calls and about the agent model, with
     file:line and a class (matches / stale / retired-as-live). Result: no retired-as-live HTTP call survived - the
