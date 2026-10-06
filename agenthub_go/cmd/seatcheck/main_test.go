@@ -174,6 +174,50 @@ func TestSendPolicyMissingOrCorruptFailsClosed(t *testing.T) {
 	}
 }
 
+// The store is the seat's own home-relative pins directory, so the SEAT'S environment decides
+// where the guard looks. Every other test replaces pinsDir through seatEnv, which is why this
+// one exercises the real resolver and pins the location a writer must satisfy. A store the
+// guard cannot reach fails CLOSED - exit 2, no delivery, no audit line - and the message names
+// the path it looked for, so a seat that was never given a policy is refused rather than left
+// silently unguarded.
+func TestDefaultPinsIsHomeRelativeAndFailsClosedWhenAbsent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	oldPins, oldIdentify, oldDeliver := pinsDir, identify, deliver
+	got := &delivery{}
+	pinsDir = defaultPins
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{"b": {"pod-b@r"}}}, nil
+	}
+	deliver = func(target, text string, _, _ io.Writer) int {
+		got.calls++
+		got.target, got.text = target, text
+		return got.code
+	}
+	t.Cleanup(func() { pinsDir, identify, deliver = oldPins, oldIdentify, oldDeliver })
+
+	wantPath := filepath.Join(home, ".openrig", "agenthub-seats", testRig, testMember, "policy.json")
+
+	code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
+	if code != 2 || got.calls != 0 {
+		t.Fatalf("no policy: exit = %d, calls = %d, stderr %q, want a closed refusal with no delivery", code, got.calls, stderr)
+	}
+	if !strings.Contains(stderr, wantPath) {
+		t.Fatalf("the refusal must name the path it looked for:\n got %q\nwant it to contain %q", stderr, wantPath)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(wantPath), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(wantPath, []byte(allowPolicy), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi"); code != 0 || got.calls != 1 {
+		t.Fatalf("policy at the contracted path: exit = %d, calls = %d, stderr %q, want one delivery", code, got.calls, stderr)
+	}
+}
+
 func TestSendUsageErrorsExit2(t *testing.T) {
 	cases := map[string][]string{
 		"no recipient":   {"--intent", "task", "--", "hi"},
