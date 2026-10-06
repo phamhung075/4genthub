@@ -234,6 +234,10 @@
  would change when it would not. It now says an empty box keeps the model the seat already has.
  - Copy only, and deliberately no test: an assertion on the text would pass whether or not the sentence is
  true, which is the same reason the `/ws` proxy has none.
+ - The same create-only claim survived in two more places, found by the reviewer: the doc comment on
+ `isValidSeatModel` (`lib/seatNames.ts`) and the doc on `OccupantUpdate` (`types/seatTypes.ts`). Both now say
+ what an empty model means where they sit, so the next editor does not inherit the wrong generality. The
+ create form's hint (`SeatsPage.tsx`) keeps the sentence because it is true for a create.
 - **The realtime socket reaches the API in development, and a refusal says why** - 2026-10-06
  - The dev server proxied `/api` to the backend but not `/ws`, while the app derives its socket URL from the
  page origin in development (`config/environment.ts`: `VITE_WS_URL` when set, else `API_BASE_URL` with the
