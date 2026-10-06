@@ -211,6 +211,15 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A copy button does not throw without a clipboard, and a copied reset no longer outlives its component** - 2026-10-06
+ - `GlobalContextDialog`'s Copy handler and `RawJSONDisplay`'s copy button called `navigator.clipboard.writeText`
+ unguarded, so a context without a clipboard (jsdom, or a browser refusing the write) threw out of the click; both
+ now go through `navigator.clipboard?.writeText?.(...)?.catch(() => {})`.
+ - `RawJSONDisplay`'s two-second "Copied!" reset is held in a ref and cleared on unmount, so it cannot fire
+ `setState` on an unmounted tree, and a second copy replaces the first's timer rather than leaving two running.
+ - In the same touch, `GlobalContextDialog.test.tsx`'s clipboard case installed a stub on the GLOBAL `navigator`
+ and never restored it; an `afterEach` now captures that descriptor once and puts it back exactly, so a spec
+ sharing the worker cannot inherit the stub.
 - **A live refresh cookie is used instead of demanding a sign-in** - 2026-10-06
  - `setTokens` writes the access cookie for 7 days and the refresh cookie for 30, so a user returning on
  day 8 held a VALID refresh cookie with no access cookie - and the mount path required both, so it

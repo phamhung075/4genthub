@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - clipboard guards and a leaked navigator stub (frontend, hygiene)
+
+- `src/tests/components/GlobalContextDialog.test.tsx` installed a clipboard stub on the GLOBAL `navigator` and
+  never restored it. An `afterEach` now captures that descriptor once and puts it back exactly, which matters
+  because jsdom provides no clipboard of its own: deleting the stub would take away the property the rest of the
+  file expects, and leaving it in place leaks it to every spec sharing the worker.
+- A new case pins ONE of the two guards, with the failure it prevents: with a clipboard present but lacking
+  `writeText`, clicking RawJSONDisplay's copy button (rendered inside the dialog) must not throw - and it fails
+  with "navigator.clipboard.writeText is not a function" when that guard is removed. The dialog's OWN Copy button
+  carries the same guard, but REACT SWALLOWS THAT HANDLER'S ERROR in this spec: the case passed with the guard
+  removed, so that half was dropped rather than kept green for the wrong reason, and the reason is written in the
+  case's comment.
+- HYGIENE ONLY, and it is not the window-is-not-defined flake: no run here reproduced it and nothing in this
+  change claims to fix it. Two of the four sites fe-dev named are still open and are not touched here.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` (GlobalContextDialog, TaskDetailsDialog,
+  TaskDetailsDialog.websocket) -> 54 passed; `npx vitest run` -> 102 files / 1758 tests passed, 0 errors;
+  `npx vite build` -> ok.
+
 ## 2026-10-06 - the two verdicts' changes: a pending resolve, and a test that passed for the wrong reason (frontend)
 
 - `src/tests/pages/SeatDetailPage.test.tsx`'s failed-resolve case asserted the text "Resolved snapshot"
