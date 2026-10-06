@@ -3,6 +3,7 @@ package controllers
 import (
 	"testing"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/connection_management/application/dtos"
 	tmentities "agenthub/fastmcp/task_management/domain/entities"
 )
@@ -20,7 +21,7 @@ func TestFormatHealthCheckResponseSanitizes(t *testing.T) {
 		Success:    true,
 		Status:     "healthy",
 		ServerName: "agenthub",
-		Version:    "0.0.2c",
+		Version:    config.ReleaseVersion,
 		Timestamp:  123.5,
 		Authentication: connCtlTestOD(
 			"enabled", true, "mvp_mode", false, "secret_token", "leak",

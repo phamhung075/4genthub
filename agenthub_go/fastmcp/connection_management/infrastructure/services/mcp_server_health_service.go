@@ -6,6 +6,7 @@ import (
 
 	"agenthub/fastmcp/connection_management/domain/entities"
 	"agenthub/fastmcp/connection_management/domain/value_objects"
+	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
 // MCPServerHealthService is the infrastructure implementation of ServerHealthService.
@@ -33,7 +34,7 @@ func (s *MCPServerHealthService) GetEnvironmentInfo() map[string]any {
 	authEnabled := envIsTrue("AUTH_ENABLED", "true")
 	cursorToolsDisabled := envIsTrue("AGENTHUB_DISABLE_CURSOR_TOOLS", "false")
 	mvpMode := envIsTrue("PRODUCTION", "false")
-	databaseConfigured := os.Getenv("SUPABASE_URL") != "" || os.Getenv("DATABASE_URL") != ""
+	databaseConfigured := database.IsDatabaseConfigured(os.LookupEnv)
 	return map[string]any{
 		"auth_enabled":          authEnabled,
 		"cursor_tools_disabled": cursorToolsDisabled,

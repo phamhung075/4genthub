@@ -66,7 +66,7 @@ type SecureHealthChecker struct {
 func NewSecureHealthChecker() *SecureHealthChecker {
 	return &SecureHealthChecker{
 		ServerName: config.ServerName,
-		Version:    "2.1.0",
+		Version:    config.ReleaseVersion,
 	}
 }
 

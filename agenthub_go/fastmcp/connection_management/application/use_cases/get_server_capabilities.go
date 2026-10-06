@@ -43,7 +43,7 @@ func (u *GetServerCapabilitiesUseCase) Execute(request *dtos.ServerCapabilitiesR
 		authentication := connOrderedFromMap(u.healthService.GetAuthenticationStatus(), connAuthKeys)
 		taskManagement := connOrderedFromMap(u.healthService.GetTaskManagementInfo(), connTaskManagementKeys)
 		server = u.serverRepository.CreateServer(
-			config.ServerName, "2.1.0",
+			config.ServerName, config.ReleaseVersion,
 			environment, authentication, taskManagement,
 		)
 		u.serverRepository.SaveServer(server)

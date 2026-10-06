@@ -53,7 +53,7 @@ func (u *GetServerStatusUseCase) Execute(request *dtos.ServerStatusRequest) (res
 		authentication := connOrderedFromMap(u.healthService.GetAuthenticationStatus(), connAuthKeys)
 		taskManagement := connOrderedFromMap(u.healthService.GetTaskManagementInfo(), connTaskManagementKeys)
 		server = u.serverRepository.CreateServer(
-			config.ServerName, "2.1.0",
+			config.ServerName, config.ReleaseVersion,
 			environment, authentication, taskManagement,
 		)
 	}

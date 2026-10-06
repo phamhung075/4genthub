@@ -12,6 +12,7 @@ import (
 	"agenthub/fastmcp/auth"
 	authperm "agenthub/fastmcp/auth/domain"
 	"agenthub/fastmcp/auth/middleware"
+	"agenthub/fastmcp/config"
 	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -165,7 +166,7 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 			},
 			"serverInfo": map[string]any{
 				"name":    healthServerName,
-				"version": "2.1.0",
+				"version": config.ReleaseVersion,
 			},
 		}
 

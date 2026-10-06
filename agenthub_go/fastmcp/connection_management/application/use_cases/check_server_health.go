@@ -54,9 +54,9 @@ func (u *CheckServerHealthUseCase) Execute(request *dtos.HealthCheckRequest) (re
 		environment := connOrderedFromMap(u.healthService.GetEnvironmentInfo(), connEnvKeys)
 		authentication := connOrderedFromMap(u.healthService.GetAuthenticationStatus(), connAuthKeys)
 		taskManagement := connOrderedFromMap(u.healthService.GetTaskManagementInfo(), connTaskManagementKeys)
-		name, _ := config.VersionInfo().Get("name")
+		name := config.ServerName
 		server = u.serverRepository.CreateServer(
-			connString(name), config.Version, environment, authentication, taskManagement,
+			connString(name), config.ReleaseVersion, environment, authentication, taskManagement,
 		)
 		u.serverRepository.SaveServer(server)
 	}

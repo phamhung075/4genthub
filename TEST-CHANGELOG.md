@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the release identity and the database flag each get a check that can fail (Go)
+
+- **Version surfaces**: new `TestEveryVersionSurfaceReportsTheOneRelease` (fastmcp/server/httpapp)
+  asserts that four surfaces a client can reach report the same `config.ReleaseVersion` and none
+  reports a fossil — `GET /health`, MCP `initialize` `serverInfo.version`, the `register_mcp_client`
+  `server.version`, and the connection-management health route the `manage_connection` tool returns.
+  `server_info.version` is asserted in `TestGetMCPStatusNoClients` and `version` in
+  `TestSecureHealthCheckKeys` so the two remaining surfaces are pinned where they live.
+- **Fixture retired with its scope stated**: `config/testdata/version_cases.json` (96 cases) is now
+  `security_cases.json` (24) and `TestVersionAndAuthConfigParity` is `TestSecurityConfigParity`. The
+  version and info columns and the whole `SERVER_VERSION` dimension went with the ported machinery
+  they tested; the security and enforcement matrix is unchanged case for case. The parity that was
+  dropped was parity with an archived tree.
+- **Database flag**: new `TestDatabaseConfiguredMirrorsTheServerGate` covers seven environments —
+  postgresql with credentials, supabase with credentials, the auth variable alone, `DATABASE_URL`
+  alone, postgresql missing credentials, no `DATABASE_TYPE`, unsupported type — and asserts
+  `services_configured.database` agrees. `TestMCPServerHealthServiceEnvironment` now clears every
+  name the gate reads (not only the two the old flag tested, which a machine with `DATABASE_TYPE`
+  exported would have decided) and configures its custom case the supported way.
+- **Falsified, both**: with the MCP `serverInfo` version reverted to `2.1.0`, the version test fails
+  `initialize serverInfo.version = "2.1.0", want "0.0.23"`; with the old two-name expression
+  restored, four database cases fail — both supported configurations report `false` (want `true`)
+  and the auth-variable-alone case reports `true` (want `false`).
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet` and `go test` for
+  `./fastmcp/config/...`, `./fastmcp/server/...`, `./fastmcp/connection_management/...`,
+  `./fastmcp/task_management/infrastructure/database/...` -> all pass.
+
 ## 2026-10-06 - the omp startup setting's install is pinned, including the clobber it must not do (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained four tests over the existing omp

@@ -85,7 +85,7 @@ func TestFormatSecureHealthResponseAuthenticated(t *testing.T) {
 	result.Set("success", true)
 	result.Set("status", "healthy")
 	result.Set("server_name", config.ServerName)
-	result.Set("version", "2.1.0")
+	result.Set("version", config.ReleaseVersion)
 	result.Set("uptime_seconds", 7200.0)
 	result.Set("active_connections", 3)
 	result.Set("restart_count", 1)
@@ -95,7 +95,7 @@ func TestFormatSecureHealthResponseAuthenticated(t *testing.T) {
 	want := "🟢 Server Health Check - Authenticated View\n\n" +
 		"**Server Information:**\n" +
 		"• Name: " + config.ServerName + "\n" +
-		"• Version: 2.1.0\n" +
+		"• Version: " + config.ReleaseVersion + "\n" +
 		"• Status: HEALTHY\n" +
 		"• Uptime: 2.0 hours\n" +
 		"• Active Connections: 3\n" +
@@ -111,7 +111,7 @@ func TestFormatSecureHealthResponseAuthenticatedNoRestart(t *testing.T) {
 	result := entities.NewOrderedMap[any]()
 	result.Set("status", "unhealthy")
 	result.Set("server_name", config.ServerName)
-	result.Set("version", "2.1.0")
+	result.Set("version", config.ReleaseVersion)
 	result.Set("uptime_seconds", 0.0)
 	result.Set("active_connections", 0)
 	result.Set("restart_count", 0)
@@ -121,7 +121,7 @@ func TestFormatSecureHealthResponseAuthenticatedNoRestart(t *testing.T) {
 	want := "🔴 Server Health Check - Authenticated View\n\n" +
 		"**Server Information:**\n" +
 		"• Name: " + config.ServerName + "\n" +
-		"• Version: 2.1.0\n" +
+		"• Version: " + config.ReleaseVersion + "\n" +
 		"• Status: UNHEALTHY\n" +
 		"• Uptime: 0.0 hours\n" +
 		"• Active Connections: 0\n\n" +
@@ -135,7 +135,7 @@ func TestFormatSecureHealthResponseAdmin(t *testing.T) {
 	result := entities.NewOrderedMap[any]()
 	result.Set("status", "healthy")
 	result.Set("server_name", config.ServerName)
-	result.Set("version", "2.1.0")
+	result.Set("version", config.ReleaseVersion)
 	result.Set("uptime_seconds", 3600.0)
 
 	auth := entities.NewOrderedMap[any]()
@@ -176,7 +176,7 @@ func TestFormatSecureHealthResponseAdmin(t *testing.T) {
 	want := "🟢 Server Health Check - Administrative View\n\n" +
 		"**Server Information:**\n" +
 		"• Name: " + config.ServerName + "\n" +
-		"• Version: 2.1.0\n" +
+		"• Version: " + config.ReleaseVersion + "\n" +
 		"• Status: HEALTHY\n" +
 		"• Uptime: 1.0 hours\n\n" +
 		"**Authentication:**\n" +

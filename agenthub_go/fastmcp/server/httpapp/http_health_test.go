@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/server/routes"
+	"agenthub/fastmcp/task_management/domain/entities"
 )
 
 // healthTestWS satisfies the registry's socket contract; these tests never send on it.
@@ -156,5 +158,63 @@ func TestHealthAuthEnabled(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "off")
 	if got := doHealthRequest(t)["auth_enabled"]; got != false {
 		t.Fatalf("AUTH_ENABLED=off -> auth_enabled = %v, want false", got)
+	}
+}
+
+// TestEveryVersionSurfaceReportsTheOneRelease is the anti-drift test for the release identity.
+//
+// Four surfaces here used to answer "which release is this?" three different ways: /health
+// carried the deploy marker while the MCP surfaces carried the ported module's 0.0.2c or the
+// Python framework's 2.1.0. A version string that disagrees with itself is how a deploy gets
+// called complete when it is not, so every surface below must report config.ReleaseVersion.
+func TestEveryVersionSurfaceReportsTheOneRelease(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+
+	// 1. GET /health.
+	healthVersionReported := doHealthRequest(t)["version"]
+	if healthVersionReported != config.ReleaseVersion {
+		t.Errorf("/health version = %v, want %q", healthVersionReported, config.ReleaseVersion)
+	}
+
+	// 2. MCP initialize -> result.serverInfo.version, the version a client sees first.
+	app := newMCPTestApp(t)
+	rec := postMCP(t, app, `{"jsonrpc":"2.0","id":1,"method":"initialize"}`, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("initialize status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	var wire struct {
+		Result struct {
+			ServerInfo struct {
+				Version string `json:"version"`
+			} `json:"serverInfo"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &wire); err != nil {
+		t.Fatalf("decode initialize: %v (%s)", err, rec.Body.String())
+	}
+	if wire.Result.ServerInfo.Version != config.ReleaseVersion {
+		t.Errorf("initialize serverInfo.version = %q, want %q", wire.Result.ServerInfo.Version, config.ReleaseVersion)
+	}
+
+	// 3. POST /register -> server.version.
+	registered := mcpRegisterResponse("sess-version", "http://example.com")
+	serverInfo, _ := registered.Get("server")
+	registerVersion, _ := serverInfo.(*entities.OrderedMap[any]).Get("version")
+	if registerVersion != config.ReleaseVersion {
+		t.Errorf("register server.version = %v, want %q", registerVersion, config.ReleaseVersion)
+	}
+
+	// 4. The connection-management health route, which the manage_connection tool returns.
+	connectionHealth := routes.HealthCheck(nil)
+	connectionVersion, _ := connectionHealth.Get("version")
+	if connectionVersion != config.ReleaseVersion {
+		t.Errorf("connection health version = %v, want %q", connectionVersion, config.ReleaseVersion)
+	}
+
+	// The fossils must be gone from every surface, not merely agree with each other.
+	for _, got := range []any{healthVersionReported, wire.Result.ServerInfo.Version, registerVersion, connectionVersion} {
+		if got == "0.0.2c" || got == "2.1.0" {
+			t.Errorf("a version surface still reports the fossil %v", got)
+		}
 	}
 }

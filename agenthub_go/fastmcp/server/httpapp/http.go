@@ -153,10 +153,11 @@ func authenticateUser(ctx context.Context, r *http.Request) (*authdomain.User, e
 // two in step rather than phrasing a third one here.
 const healthServerName = config.ServerName
 
-// healthVersion is the release the server reports on /health. Bump it with every
-// change that must be confirmable after a deploy: the Docker build context has
-// no .git, so no commit id can be embedded.
-const healthVersion = "0.0.23"
+// healthVersion is the release the server reports on /health, and it is the same value every
+// other version surface reports: config.ReleaseVersion, defined once. Bump THAT with every
+// change that must be confirmable after a deploy (the Docker build context has no .git, so no
+// commit id can be embedded), and make it the last commit in the set before a deploy.
+const healthVersion = config.ReleaseVersion
 
 // healthProcessStart is the process start time captured at init; /health reports seconds since it.
 // The Python handler read uptime from the connection manager, an object the Go server never had.

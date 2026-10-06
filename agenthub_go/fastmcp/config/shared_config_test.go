@@ -46,17 +46,17 @@ func envMap(v any) map[string]string {
 	return env
 }
 
-func TestVersionAndAuthConfigParity(t *testing.T) {
-	for i, c := range load(t, "version_cases.json") {
+// TestSecurityConfigParity covers the environment matrix the Python port pinned for
+// validate_security_requirements and should_enforce_authentication.
+//
+// The fixture used to pin the version and its metadata as well, generated against
+// agenthub_main - an archived tree this server no longer runs parity with. The version is now
+// config.ReleaseVersion, one literal, and its surfaces are checked together by the version test
+// in server/httpapp; so the version and info columns and the SERVER_VERSION dimension went with
+// the Python machinery that produced them, and the security and enforcement columns are unchanged.
+func TestSecurityConfigParity(t *testing.T) {
+	for i, c := range load(t, "security_cases.json") {
 		env := envMap(field(c, "env"))
-		lookup := func(k string) (string, bool) { v, ok := env[k]; return v, ok }
-		version := config.ResolveVersion(lookup)
-		if version != field(c, "version") {
-			t.Fatalf("case %d: version %q want %v", i, version, field(c, "version"))
-		}
-		if g, w := dump(t, config.VersionInfoFor(version)), dump(t, field(c, "info")); g != w {
-			t.Fatalf("case %d info: got %s want %s", i, g, w)
-		}
 		sec := config.ValidateSecurityRequirements(func(k string) string { return env[k] })
 		if g, w := dump(t, sec), dump(t, field(c, "sec")); g != w {
 			t.Fatalf("case %d sec: got %s want %s", i, g, w)
