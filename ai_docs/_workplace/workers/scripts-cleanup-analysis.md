@@ -1,3 +1,5 @@
+> **Historical artifact — dated scratch about the retired Python tree.** Its paths, counts and recommendations describe `agenthub_main/` scripts (archived) and predate the Go port; the live surface is `agenthub_go/` (`ai_docs/api-integration/surface-inventory.md`). Kept for traceability only.
+
 # Scripts Directory Cleanup Analysis Report
 
 **Generated:** 2025-10-24

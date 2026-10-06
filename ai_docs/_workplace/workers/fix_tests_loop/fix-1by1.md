@@ -1,3 +1,5 @@
+> **Historical artifact — dated scratch about the retired Python tree.** Its commands and file lists describe the Python test-fix loop (`pytest`) against `agenthub_main/` (archived); they predate the Go port and are not current. Kept for traceability only.
+
 # Test Fix Loop - Token-Optimized Guide
 
 ## 🚨 GOLDEN RULE

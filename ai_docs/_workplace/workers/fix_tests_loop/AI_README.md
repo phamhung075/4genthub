@@ -1,3 +1,5 @@
+> **Historical artifact — dated scratch about the retired Python tree.** This describes the Python test-fix loop (`pytest`, `test-menu.sh`) against `agenthub_main/` (archived); it predates the Go port and the live test path is the Go suite (`cd agenthub_go && go test ./...`). Kept for traceability only.
+
 # AI Test Fix Loop - Integration Guide
 
 ## Quick Start

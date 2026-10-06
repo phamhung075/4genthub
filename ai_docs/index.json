@@ -27,11 +27,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "bfcdfc93e61e5695d929602abb9ff12b",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "fc42ded5e21cb2270940a5c1f51da3d9",
+          "modified": "2026-10-06T18:47:20.756242",
           "name": "scripts-cleanup-analysis.md",
           "path": "_workplace/workers/scripts-cleanup-analysis.md",
-          "size": 22294
+          "size": 22591
         }
       ],
       "path": "_workplace/workers"
@@ -40,18 +40,18 @@
       "count": 2,
       "files": [
         {
-          "hash": "61587f83204df9c2dd789040c767bfb0",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "3871e12ce8936260ddfe7dd29530a17e",
+          "modified": "2026-10-06T18:47:20.776240",
           "name": "AI_README.md",
           "path": "_workplace/workers/fix_tests_loop/AI_README.md",
-          "size": 4622
+          "size": 4930
         },
         {
-          "hash": "28a3c0fd1e4fd381966c4f992350599d",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "d8eed66d4bd0c3815bca3cdda527751d",
+          "modified": "2026-10-06T18:47:20.808237",
           "name": "fix-1by1.md",
           "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 7055
+          "size": 7315
         }
       ],
       "path": "_workplace/workers/fix_tests_loop"
@@ -406,11 +406,11 @@
           "size": 6661
         },
         {
-          "hash": "2d46f3b915e2575a56b0d06685ecea6e",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "e5565145b819a818a725455dabaac7ff",
+          "modified": "2026-10-06T18:47:25.671729",
           "name": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
           "path": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
-          "size": 6181
+          "size": 6480
         },
         {
           "hash": "f36bd93e951295ca30e9d85b3b31cbad",
@@ -420,18 +420,18 @@
           "size": 10561
         },
         {
-          "hash": "f7c67c8a91e95397791f7b7a87ce1be9",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "5246701b6a32d67cf6628b9edb1057d0",
+          "modified": "2026-10-06T18:47:25.651731",
           "name": "cleanup-analysis-2025-11-03.md",
           "path": "cleanup-analysis-2025-11-03.md",
-          "size": 6972
+          "size": 7220
         },
         {
-          "hash": "8fcf1affe0e9d50ed5dee1071aca4fed",
-          "modified": "2025-11-15T16:13:47",
+          "hash": "fa3c239bec4b9a8a78f1e0d160511e3c",
+          "modified": "2026-10-06T18:47:25.691727",
           "name": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
           "path": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
-          "size": 11892
+          "size": 12182
         }
       ],
       "path": ""
@@ -523,7 +523,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-06T18:43:39.403166",
+  "generated_at": "2026-10-06T18:47:42.155427",
   "structure": {
     "_absolute_docs": {
       "scripts": {
