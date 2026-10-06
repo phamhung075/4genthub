@@ -150,6 +150,15 @@ Track test suite changes, fixes, and improvements for agenthub.
   `call_seat`, report what it actually ran, and keep credentials out of a tool call. It arrives through
   the existing instruction → guidance path, so the seat's startup text matches the configuration it was
   given.
+- **The second half of the delivery, added after the owner found the root cause on the live rig:**
+  `renderer.go` now renders TWO files for an omp seat that mounts mcp blocks — `runtime/omp-mcp.json`
+  and `runtime/omp-config.yml` (`mcp:` / `  startupTimeoutMs: 0`) — because **the runtime's
+  `mcp.startupTimeoutMs` defaults to 250 ms, which a local stdio server meets and a remote HTTPS server
+  does not**, and the setting can only live in the agent directory (the runner's environment allowlist
+  is deny-by-default). `TestRenderSeatOmpWaitsForMCPConnections` **pins the setting** — the exact bytes
+  and what `0` means (WAIT UNTIL CONNECTIONS SETTLE, not "no timeout") — so a later change cannot
+  quietly drop it; the cross-runtime test now expects both files for omp, and the no-mcp-block case
+  still renders none. `0` is also the reason a RUNNING seat needs a relaunch to pick a server up.
 - **Proven on the real stack, not only in unit tests:** a booted `cmd/agenthub` on a throwaway Postgres,
   one published `mcp` block and one seat type, a seat created with `runtime: omp`, and
   `GET /api/v2/openrig/rooms/mcp/rigspec` forcing a resolve →

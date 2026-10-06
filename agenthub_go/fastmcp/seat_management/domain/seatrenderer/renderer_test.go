@@ -527,21 +527,22 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		t.Fatalf("agy skill does not name seatcheck send:\n%s", skill)
 	}
 
-	// omp gets the seat's MCP servers as ONE file in the render, and NOT the claude fragments a
-	// claude-code seat takes. The platform has no omp MCP runtime-resource type, which is why this
-	// travels with the render — and the runtime DOES read an MCP document (measured 2026-10-06).
+	// omp gets the seat's MCP servers as TWO files in the render — the server document and the
+	// startup-timeout setting that makes the seat wait for a remote server — and NOT the claude
+	// fragments a claude-code seat takes. The platform has no omp MCP runtime-resource type, which
+	// is why these travel with the render, and the runtime DOES read both (measured 2026-10-06).
 	omp, err := RenderSeat(withModules(seatFixture("omp"), modules), testMCPURL)
 	if err != nil {
 		t.Fatalf("omp: %v", err)
 	}
-	var ompRuntimeFiles []string
+	found := map[string]bool{}
 	for _, path := range filePaths(omp) {
 		if strings.HasPrefix(path, "runtime/") {
-			ompRuntimeFiles = append(ompRuntimeFiles, path)
+			found[path] = true
 		}
 	}
-	if len(ompRuntimeFiles) != 1 || ompRuntimeFiles[0] != ompMCPPath {
-		t.Errorf("omp runtime files = %v, want exactly %q", ompRuntimeFiles, ompMCPPath)
+	if len(found) != 2 || !found[ompMCPPath] || !found[ompConfigPath] {
+		t.Errorf("omp runtime files = %v, want exactly %q and %q", filePaths(omp), ompMCPPath, ompConfigPath)
 	}
 	if skill := fileContent(t, omp, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
 		t.Fatalf("omp skill does not name seatcheck send:\n%s", skill)
@@ -632,6 +633,30 @@ func TestRenderSeatGuidanceNamesTheMCPTools(t *testing.T) {
 	for _, want := range []string{"## mcp-usage", "manage_context", "call_seat"} {
 		if !strings.Contains(guidance, want) {
 			t.Fatalf("seat guidance does not carry %q:\n%s", want, guidance)
+		}
+	}
+}
+
+// TestRenderSeatOmpWaitsForMCPConnections PINS THE SETTING THAT MAKES THE MCP ENTRY MOUNT, so a
+// future change cannot quietly drop it or change its value. Measured root cause (2026-10-06,
+// owner-found): `mcp.startupTimeoutMs` defaults to 250 ms, a LOCAL stdio server connects inside that
+// window and a REMOTE HTTPS server does not — so a seat's first turn started with the local server
+// only. 0 means WAIT UNTIL CONNECTIONS SETTLE (not "no timeout"), and the setting must live in the
+// AGENT DIRECTORY because the runner's environment allowlist is deny-by-default.
+func TestRenderSeatOmpWaitsForMCPConnections(t *testing.T) {
+	seat := withModules(seatFixture("omp"), []resolver.ResolvedModule{mcpPlatformModule()})
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(omp): %v", err)
+	}
+	if got, want := fileContent(t, spec, ompConfigPath), "mcp:\n  startupTimeoutMs: 0\n"; got != want {
+		t.Fatalf("the omp config file = %q, want %q", got, want)
+	}
+	// The setting ships ONLY with a server to wait for: a seat with no mcp block renders no config
+	// file at all (asserted in TestRenderSeatOmpWithoutMCPBlocksRendersNoMCPFile).
+	for _, path := range filePaths(spec) {
+		if path == mcpFragmentPath || path == settingsFragmentPath {
+			t.Fatalf("an omp seat must not carry the claude fragments, found %q", path)
 		}
 	}
 }

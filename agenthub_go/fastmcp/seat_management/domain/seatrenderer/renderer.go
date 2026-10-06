@@ -24,6 +24,7 @@ const (
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
 	codexRulesPath       = "runtime/codex.rules"
 	ompMCPPath           = "runtime/omp-mcp.json"
+	ompConfigPath        = "runtime/omp-config.yml"
 	roleResourceID       = "role"
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
@@ -202,6 +203,9 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		// `<seat agent dir>/.mcp.json`; a seat with no mcp block gets NO file, which is the
 		// acceptance's "a seat with no mcp block gets none".
 		files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+		// AND THE SETTING THAT MAKES THE ENTRY MOUNT, in the same delivery because either half
+		// alone fails the seat: see ompMCPStartupTimeoutConfig for the measured root cause.
+		files = append(files, OpenRigSpecFile{Path: ompConfigPath, Content: ompMCPStartupTimeoutConfig})
 	}
 
 	return &OpenRigSpec{
@@ -473,6 +477,27 @@ func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string
 	return marshalJSON(map[string]any{"mcpServers": servers}, "mcp fragment")
 }
 
+// ompMCPStartupTimeoutConfig is installed by the client as `<seat agent dir>/config.yml`. It is HALF
+// THE DELIVERY: the rendered `runtime/omp-mcp.json` declares the server, and this setting is what
+// makes the seat WAIT for it.
+//
+// THE MEASURED ROOT CAUSE (2026-10-06, owner-found and verified on the live rig): `mcp.startupTimeoutMs`
+// defaults to 250 ms — "wait this many milliseconds for initial MCP tool discovery; 0 waits until
+// connections settle". A LOCAL stdio server (the deepseek bridge) connects inside that window; a
+// REMOTE HTTPS server does not, so a seat's first turn started with the local server only and its
+// device list showed no agenthub tools. The timeout is why a seat needs a RELAUNCH to pick the
+// server up, not an asynchronous mount — "asynchronous" described the symptom.
+//
+// 0 is the value that means WAIT UNTIL CONNECTIONS SETTLE; it is not "no timeout" and it is not a
+// disabled setting.
+//
+// IT MUST LIVE IN THE AGENT DIRECTORY AND NOT THE ENVIRONMENT: the runner hands the runtime an
+// allowlist of environment variables that is DENY BY DEFAULT, so an `MCP_STARTUP_TIMEOUT_MS` variable
+// never reaches the process (measured: 14 names reach it, and this is not among them). The agent dir
+// is the only per-seat place the runtime reads settings from.
+const ompMCPStartupTimeoutConfig = "mcp:\n  startupTimeoutMs: 0\n"
+
+// renderSettingsFragment writes a JSON settings fragment, the shape claude-code takes.
 func renderSettingsFragment(settings map[string]any) (string, error) {
 	return marshalJSON(settings, "settings fragment")
 }

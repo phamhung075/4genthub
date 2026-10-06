@@ -103,6 +103,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
   `call_seat`, so the guidance a seat starts with matches the configuration it was given — and the text
   lives in the catalog rather than in the renderer, which keeps the renderer free of a project's tool
   names.
+- **AND THE ENTRY ALONE DOES NOT MOUNT — the render now ships the startup setting with it**
+  (`runtime/omp-config.yml`, installed as `<seat agent dir>/config.yml`): `mcp.startupTimeoutMs: 0`.
+  **The measured root cause, found by the owner on the live rig:** that setting DEFAULTS TO 250 ms, a
+  local stdio server connects inside the window and a REMOTE HTTPS server does not, so a seat's first
+  turn started with the local server only and its device list showed no agenthub tools. `0` means WAIT
+  UNTIL CONNECTIONS SETTLE — not "no timeout". **It must live in the agent directory and not the
+  environment**, because the runner's environment allowlist is deny-by-default (14 names reach the
+  runtime; an `MCP_STARTUP_TIMEOUT_MS` variable never would). A relaunch is part of the fix for a seat
+  that is already running, and a test now pins the setting so a later change cannot drop it.
 - **Proven end-to-end, not by unit tests alone:** a seat created on a throwaway database with `runtime:
   omp` and one `mcp` block resolved through the real route into `resolved_seats.files` holding exactly
   `agent.yaml`, `guidance/role.md` and `runtime/omp-mcp.json`; those bytes installed as an agent-dir
