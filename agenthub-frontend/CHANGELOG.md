@@ -309,6 +309,34 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **An async continuation that outlives its component — the flake's class — fixed at the two sites that reported it** - 2026-10-06
+  - THE FLAKE IS NOW REPRODUCED, not argued: a single-file loop of `src/tests/components/auth/LoginForm.test.tsx` hit it on
+    **run 11**, exit 1, with an uncaught `ReferenceError: window is not defined` at
+    `react-dom-client.development.js:16850`, reached through React's DISCRETE-EVENT dispatch path (`dispatchDiscreteEvent` ->
+    `dispatchEventForPluginEventSystem` -> `batchedUpdates`). The environment that throws is the jsdom one vitest has already
+    torn down, which is why the run is green and the error names a test FILE.
+  - `src/components/auth/LoginForm.tsx` — the mount effect's `fetchBackendVersion` awaited `/health` and then called
+    `setBackendVersion(...)` with no cleanup; a response that lands after the component is gone now returns at the flag instead
+    of touching state (checked after BOTH awaits and in the catch).
+  - `src/components/GlobalContextDialog.tsx` — the same class inside one component: `fetchGlobalContext` (checked after the
+    `getGlobalContext()` await, in its catch, and its `setLoading(false)` made conditional) and `handleSave` (after its awaits,
+    in its catch, with `setSaving(false)` made conditional), driven by a mount-scoped `aliveRef`.
+  - **HONEST SCOPE, and it matters more than the fix: the REPRODUCED stack is the event-dispatch path, NOT the state-setter path
+    these two changes close, so the reproduction is not claimed as fixed by them.** Both throw from the same read of `window` at
+    `react-dom-client.development.js:16850`; a state setter called after teardown was reproduced deterministically in a throwaway
+    probe (then deleted, not committed). The reproduced instance looks like async work outliving the FILE's environment rather
+    than a component's own fetch, which would put its fix in test/environment hygiene rather than in these components. Reported
+    to the lead with the classification rather than smoothed over.
+  - A THIRD SITE, and many more: a scan of `src` found ~70 async-to-setState candidates across ~30 files. The shape identical to
+    these two — a mount/open effect whose fetch or `.then` sets state with no cancellation — includes `TaskEditDialog.tsx:48`,
+    `SubtaskEditDialog.tsx:56`, `HealthCheck.tsx:41`, `BranchContextDialog.tsx:40`, `ProjectContextDialog.tsx:155,167`,
+    `TaskContextDialog.tsx:152,227,233,238`, `SubtaskDetailsDialog.tsx:65`, `ProjectDetailsDialog.tsx:37`,
+    `LazyTaskList/LazyTaskListRefactored.tsx:88` and `PerformanceDashboard.tsx:104`. NOT fixed here: the same class, but a
+    separate and wider change, and the lead owns that scope.
+  - NO TEST is added for these two, deliberately. The only deterministic way to make the failure fire in-process is to delete
+    `window` mid-test, and doing so lets unrelated pending work throw as well: a probe written that way produced the flake's
+    exact stack FOUR times and made the run exit 1 while green — it manufactured the symptom instead of discriminating. It was
+    removed rather than kept. The run-11 reproduction above is the evidence in its place.
 - **An unguarded global in an async continuation, and two 30s timers nothing owned (hardening — NOT a flake fix)** - 2026-10-06
   - `src/services/apiV2.ts`'s 401/token-refresh failure branch removed both cookies and dispatched
     `auth-logout` through `window`. That branch is an ASYNC CONTINUATION — it resumes after the refresh
@@ -316,8 +344,8 @@
     dereference throws `window is not defined`). The three DOM-touching statements now sit behind one
     `typeof window !== 'undefined'` guard. In a browser `window` and `document` always exist, so the
     change is behaviour-preserving: this is HARDENING of a latent defect on its own merits, **not** a fix
-    for the intermittent exit-non-zero-while-green flake, whose cause is still unattributed — that row
-    (`qitem-20261005052811`) stays parked as a monitor with its wake armed.
+    for the intermittent exit-non-zero-while-green flake, whose cause is still unattributed by THIS commit — see the entry
+    above, which reproduces it and fixes the class at the two sites that reported it.
   - `src/utils/responseValidator.ts` and `src/utils/websocketValidator.ts` each started a module-scope
     `setInterval(..., 30000)` under `import.meta.env.DEV` and discarded the handle, so nothing owned it:
     in a Node host (a vitest worker) that timer kept the event loop alive after the environment which

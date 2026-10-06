@@ -58,12 +58,20 @@ export const LoginForm: React.FC = () => {
 
   // Fetch backend version on component mount to verify connection
   useEffect(() => {
+    // An async continuation can resume after this component is gone. React DOM then reads the
+    // `window` global while scheduling the update and throws "window is not defined" (which is
+    // what a torn-down test environment looks like), so every continuation below checks this
+    // flag before it touches state.
+    let cancelled = false;
+
     const fetchBackendVersion = async () => {
       try {
         // Use the configured API URL from environment
         const response = await fetch(`${API_BASE_URL}/health`);
+        if (cancelled) return;
         if (response.ok) {
           const data = await response.json();
+          if (cancelled) return;
           if (data && data.version) {
             setBackendVersion(data.version);
           }
@@ -72,6 +80,7 @@ export const LoginForm: React.FC = () => {
           setBackendVersion(undefined);
         }
       } catch (err) {
+        if (cancelled) return;
         // Backend is not reachable
         logger.debug('Backend not connected:', err);
         setBackendVersion(undefined);
@@ -79,6 +88,10 @@ export const LoginForm: React.FC = () => {
     };
 
     fetchBackendVersion();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const onSubmit = async (data: LoginFormData) => {
