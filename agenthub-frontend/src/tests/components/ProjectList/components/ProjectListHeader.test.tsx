@@ -4,6 +4,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ProjectListHeader } from '../../../../components/ProjectList/components/ProjectListHeader';
 import type { ProjectListHeaderProps } from '../../../../types/componentTypes';
 import { mockWebSocketStore } from '../../../zustand-utils';
+import { useWebSocketStore } from '../../../../store/websocket';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -106,7 +107,21 @@ describe('ProjectListHeader Component', () => {
       );
     });
 
-    it('should show disconnected status when isConnected is false', () => {
+    // A 1008 refusal makes the client give up permanently - authenticationFailed is emitted and no retry is
+  // scheduled - so the badge must not keep promising one. The store's own sequence is driven here:
+  // disconnected sets isReconnecting, and the failure then decides against it.
+  it('shows the failure the client decided on, not a retry it cancelled', () => {
+    useWebSocketStore.getState().setDisconnected();
+    useWebSocketStore.getState().setError('WebSocket authentication failed: Authentication required');
+
+    renderComponent({ isConnected: false });
+
+    expect(screen.queryByText('Reconnecting…')).not.toBeInTheDocument();
+    const chip = screen.getByText('Offline').closest('div');
+    expect(chip).toHaveAttribute('title', expect.stringContaining('Authentication required'));
+  });
+
+  it('should show disconnected status when isConnected is false', () => {
       renderComponent({ isConnected: false });
 
       expect(screen.getByTestId('wifi-off-icon')).toBeInTheDocument();

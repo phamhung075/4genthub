@@ -218,6 +218,12 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **An authentication refusal stops the status chip promising a retry** - 2026-10-06
+ - A 1008 close makes the client give up permanently: `handleClose` emits `authenticationFailed` and returns
+ WITHOUT scheduling a reconnect. But the store's `setError` set only the error, leaving `isReconnecting` true
+ from the preceding `setDisconnected`, so the chip rendered "Reconnecting..." forever - a retry the client had
+ decided against. The error now clears the retry state, so the chip shows Offline with the reason the server
+ gave, which is the state the client actually reached.
 - **The module form refuses an mcp block the renderer would refuse** - 2026-10-06
  - An mcp module's content is ONE whole server block that the renderer PARSES, and the publish route checks
  the KIND rather than the block: measured on the running backend, `{"kind":"mcp","content":"not a block"}`
