@@ -54,6 +54,15 @@ Track test suite changes, fixes, and improvements for agenthub.
   imports seedlibrary, and `seedlibrary/blockprovenance.go` does not compile at this moment (another seat
   mid-edit: `go:embed requires import "embed"`), so a tree-wide run is blocked by THAT file and not by
   this change. In an export of HEAD plus my changes, excluding theirs, the whole package is `ok`.
+  **RE-ESTABLISHED ON THE TREE** once the neighbour landed (its `4ca19a01`): `go build ./...` writes
+  0 bytes and the four packages I touch are vet-clean and green, because a verification has an expiry
+  when the code around it moves.
+- `TestRenderSeatEmitsBothArtifactsFromOneFold` pins the ONE-SOURCE claim **from the artifacts rather
+  than from the fold**: the same refusals are read out of `runtime/omp-config.yml` and `AGENTS.md`,
+  because two code paths that happen to agree today would pass a test written against the fold. It also
+  pins that a seat with no policy block still gets the startup constant, so the supersession changed one
+  case rather than all of them. **Falsified**: pointing the limits text at an empty set (a second path)
+  fails with `the limits text lacks the refusal "…"`.
 - Commands: `cd agenthub_go && go vet ./fastmcp/seat_management/domain/seatrenderer/` and
   `go test -count=1` on the package, both in that export.
 
