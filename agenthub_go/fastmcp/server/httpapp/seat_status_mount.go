@@ -143,11 +143,44 @@ func handlePostSeatStatus(w http.ResponseWriter, r *http.Request, token *reposit
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	// The machine is told what the cloud expects for what it just reported: the same expected
+	// hash and verdict GET /machines derives, read back through the same join so the two views
+	// cannot disagree. This is the only way a bridge can learn it - the machines list takes a
+	// user token and a bridge deliberately holds only its machine token - and without it a
+	// client can never record the hash it was last in sync with.
+	machines, err := source.List(r.Context(), token.UserID)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("machine_id", machine.MachineID)
 	body.Set("seats", len(machine.Seats))
+	body.Set("verdicts", seatVerdicts(machines, machine.MachineID))
 	writeJSON(w, http.StatusOK, body)
+}
+
+// seatVerdicts is the per-seat expected hash and sync verdict for one machine, in the shape
+// machineBody renders per seat, so the report response and the machines list agree by
+// construction. No machine matches (or it has no seats) means no verdicts.
+func seatVerdicts(machines []repositories.Machine, machineID string) []any {
+	for _, m := range machines {
+		if m.MachineID != machineID {
+			continue
+		}
+		out := make([]any, 0, len(m.Seats))
+		for _, s := range m.Seats {
+			verdict := entities.NewOrderedMap[any]()
+			verdict.Set("room", s.Room)
+			verdict.Set("seat", s.Seat)
+			verdict.Set("expected_hash", s.ExpectedHash)
+			verdict.Set("sync", seatsync.Sync(s.RunningHash, s.ExpectedHash))
+			out = append(out, verdict)
+		}
+		return out
+	}
+	return []any{}
 }
 
 func readSeatStatusBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
