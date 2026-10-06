@@ -5,7 +5,7 @@ Dai Hung PHAM
 [![Architecture Status](https://img.shields.io/badge/Architecture-Production%20NOT%20Ready-orange?style=for-the-badge)](https://github.com/agenthub/agenthub)
 [![MCP Protocol](https://img.shields.io/badge/MCP%20Protocol-2024--11--05-blue?style=for-the-badge&logo=protocol)](https://modelcontextprotocol.io)
 [![Docker Support](https://img.shields.io/badge/Docker-Multi%20Config-success?style=for-the-badge&logo=docker)](https://docker.com)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-9%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-10%20Published-purple?style=for-the-badge&logo=robot)](https://github.com/agenthub/agenthub)
 
 **The Future of Human-AI Collaboration in Software Development**
 
@@ -68,7 +68,7 @@ http://localhost:3800
 ```
 http://localhost:8000
 ```
-- 🤖 **9 published MCP tools**
+- 🤖 **10 published MCP tools**
 - 🛠️ **Task, project, branch, context, agent, seat tools**
 - 📋 **Contexts API** — `/api/v2/contexts/{level}` with inheritance
 - 🔌 **`POST /mcp` JSON-RPC + `GET /mcp` SSE**
@@ -616,7 +616,7 @@ Our release process follows industry best practices:
 ✅ **Agent Registry & Seats** — Manage agents via `manage_agent` and durable seats via `manage_seat` / `call_seat`
 ✅ **Human-First Design** — Built for people who love web interfaces
 ✅ **Per-Seat Tool Scope** — Each seat's tools and permissions match its role
-✅ **9 MCP Tools** — A small, stable MCP surface (`POST /mcp` + `GET /mcp` SSE)
+✅ **10 MCP Tools** — A small, stable MCP surface (`POST /mcp` + `GET /mcp` SSE)
 ✅ **Enterprise Ready** — Scales from solo dev to global teams
 
 ---

@@ -67,11 +67,11 @@
           "size": 17045
         },
         {
-          "hash": "79c4d4bc668c14800253f96bed922aef",
-          "modified": "2026-10-05T21:25:15.839659",
+          "hash": "f29ac03da3740d3009e284d3d57623cf",
+          "modified": "2026-10-06T19:00:35.088099",
           "name": "seat-model-and-mcp-surface.md",
           "path": "agent-system/seat-model-and-mcp-surface.md",
-          "size": 3449
+          "size": 3448
         },
         {
           "hash": "07dc7f2faa821a00979abac90cd04ce4",
@@ -114,18 +114,18 @@
       "count": 2,
       "files": [
         {
-          "hash": "6666393755b59a987888fcdd7a0a831b",
-          "modified": "2026-10-06T18:30:38.686281",
+          "hash": "9afc9793d391c85934678ef19ab28957",
+          "modified": "2026-10-06T19:00:56.962950",
           "name": "mcp-tools-api-complete.md",
           "path": "api-integration/mcp-tools-api-complete.md",
-          "size": 18851
+          "size": 19169
         },
         {
-          "hash": "d1d9e689b1d7b86cc943351644f2d61a",
-          "modified": "2026-10-06T18:30:38.686281",
+          "hash": "1083b8c234dd137446d2fecfd68c9be6",
+          "modified": "2026-10-06T19:00:28.264458",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 39788
+          "size": 40956
         }
       ],
       "path": "api-integration"
@@ -141,11 +141,11 @@
           "size": 1841
         },
         {
-          "hash": "0b334c3d401dc99fa2839d0f3a006433",
-          "modified": "2026-10-06T18:34:30.152707",
+          "hash": "d35676668eab828233e375accd41f235",
+          "modified": "2026-10-06T19:00:35.112098",
           "name": "product-architecture-complete.md",
           "path": "architecture-design/product-architecture-complete.md",
-          "size": 17922
+          "size": 17923
         },
         {
           "hash": "5469368fa28710782a1ac433e34fddbf",
@@ -467,11 +467,11 @@
           "size": 14292
         },
         {
-          "hash": "1cd760232f6cd509edb8b9910dfbcdfe",
-          "modified": "2026-10-05T20:51:34.218974",
+          "hash": "a2f2275cb6126dce24e767d70ffa5580",
+          "modified": "2026-10-06T19:00:39.751854",
           "name": "mcp-tools-validation-complete.md",
           "path": "testing-qa/mcp-tools-validation-complete.md",
-          "size": 8458
+          "size": 8476
         },
         {
           "hash": "3ed7649a7c19dd69249126f18809b3a2",
@@ -523,7 +523,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-06T18:47:42.155427",
+  "generated_at": "2026-10-06T19:01:02.029666",
   "structure": {
     "_absolute_docs": {
       "scripts": {

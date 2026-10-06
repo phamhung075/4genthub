@@ -12,11 +12,12 @@
 | **manage_agent** | register, assign, get, list, update, unassign, unregister, rebalance | project_id, name, call_agent (field) | Agent registry orchestration |
 | **manage_seat** | list, get, set_occupant | room, seat, runtime, model | Seat management (switch a seat's occupant) |
 | **call_seat** | N/A (single action) | room, seat | Resolve one exact seat and its rendered context files |
+| **submit_feedback** | N/A (single action) | room, seat, session, layer, text | Report friction from a seat: the layer it is in, the room and seat, and what happened |
 | **manage_connection** | N/A (health check) | include_details | System health monitoring |
 
-**Common Pattern**: All tools require `action` parameter except `call_seat` and `manage_connection`.
+**Common Pattern**: All tools require `action` parameter except `call_seat`, `submit_feedback` and `manage_connection`.
 
-The live registry publishes **nine** tools, the nine rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-274`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable.
+The live registry publishes **ten** tools, the ten rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat`, `submit_feedback` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-279`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable. **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly these ten names.**
 
 ---
 

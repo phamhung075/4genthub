@@ -354,7 +354,7 @@ methods. They are the protocol layer and MUST NOT be listed as tools:
 
 ### 2.3 Published tools (`tools/list`)
 
-Nine tool names, always present except `manage_context` (see note):
+Ten tool names, always present except `manage_context` (see note):
 
 | Tool | Source | File:line |
 |---|---|---|
@@ -366,16 +366,20 @@ Nine tool names, always present except `manage_context` (see note):
 | `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:246` |
 | `manage_seat` | appended schema | `mcp_routes.go:257` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
 | `call_seat` | appended schema | `mcp_routes.go:266` (`CallSeatToolName`, `call_seat_controller.go:14`) |
+| `submit_feedback` | appended schema | `mcp_routes.go:271` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
 | `manage_connection` | appended schema | `mcp_routes.go:274` (`connectionToolDefinition`, `mcp_connection_tool.go:39`) |
 
 Note: `manage_context` is emitted only when `ContextController != nil`; the constructor
 sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:107-111`), and
-`app.go:66` passes `DatabaseAvailable: true`. So on a wired server all nine are present.
+`app.go:66` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
+**Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly
+these ten names.**
 
 `tools_golden.json`
 (`fastmcp/task_management/interface/testdata/tools_golden.json`) contains only the six
-Python-registry tools; `TestMCPToolsListMatchesGolden` asserts the wire list equals golden
-plus the three appended names.
+Python-registry tools; `TestMCPToolsListMatchesGolden` filters the **four** names the Go server
+appends (`manage_seat`, `call_seat`, `submit_feedback`, `manage_connection`) and asserts the
+rest equals golden.
 
 ### 2.4 Dispatch-only names (callable via `tools/call`, NOT advertised by `tools/list`)
 
@@ -536,7 +540,7 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
 1. **`ai_docs/api-integration/mcp-tools-api-complete.md`** — **CLOSED** (`95ffca45`).
    The original finding: it documented the removed `call_agent` **tool** as live, listed
    eight tools and omitted `manage_seat` and `call_seat`, and claimed every tool requires
-   `action`. The file now carries the nine published tools (`manage_seat` at line 13,
+   `action`. The file now carries the ten published tools (`manage_seat` at line 13,
    `call_seat` at line 14), a `### call_agent — retired` section, and an explicit note
    that the two seat tools and `manage_connection` take no `action`.
 2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — **CLOSED**. The original

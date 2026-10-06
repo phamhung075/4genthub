@@ -56,7 +56,7 @@ mcp__agenthub_http__call_seat          # Resolve one exact seat
 mcp__agenthub_http__manage_connection  # Health check
 ```
 
-The live registry publishes nine tools; `tools/list` is not gated by any `TOOL_*` environment
+The live registry publishes ten tools; `tools/list` is not gated by any `TOOL_*` environment
 variable. See `ai_docs/api-integration/mcp-tools-api-complete.md`.
 
 > **Superseded.** The earlier AGENTS.md section "MCP TOOL PERMISSIONS" stated that only the

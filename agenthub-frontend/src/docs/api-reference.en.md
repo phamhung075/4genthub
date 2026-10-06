@@ -311,7 +311,7 @@ token just like `tools/call`.
 
 ### Published tools
 
-`tools/list` publishes exactly these nine tools:
+`tools/list` publishes exactly these ten tools:
 
 | Tool | Purpose |
 | :--- | :--- |
@@ -323,6 +323,7 @@ token just like `tools/call`.
 | `manage_agent` | The agent registry. |
 | `manage_seat` | Seats: `list`, `get`, `set_occupant`. |
 | `call_seat` | Resolve one exact seat and its rendered context files. |
+| `submit_feedback` | Report friction: the layer it is in, the room and seat, and what happened. |
 | `manage_connection` | Health check. |
 
 `manage_context` is published whenever the server is database-backed. The list is not gated by

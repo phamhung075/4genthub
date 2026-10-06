@@ -68,7 +68,7 @@
 | **Web Dashboard** | P0 | ✅ Implemented | Visual agent management without CLI | Real-time updates, responsive, drag-drop tasks |
 | **Context API** | P0 | ✅ Implemented | Four-level context records with inheritance | `/api/v2/contexts/{level}` (`resolve`, `delegate`, `insights`, `progress`); the live composition model is the seat overlay chain |
 | **Agent registry** | P0 | ✅ Implemented | Register and assign agents via MCP | `manage_agent` tool + `agents` table; the 42-role Python agent library was retired |
-| **MCP Protocol** | P0 | ✅ Implemented | Industry-standard integration | `POST /mcp` (JSON-RPC) + `GET /mcp` (SSE), 9 published tools |
+| **MCP Protocol** | P0 | ✅ Implemented | Industry-standard integration | `POST /mcp` (JSON-RPC) + `GET /mcp` (SSE), 10 published tools |
 | **Agent Coordination** | P0 | ✅ Implemented | Multi-agent parallel execution | Real-time collaboration, progress tracking |
 | **Keycloak Auth** | P0 | ✅ Implemented | Enterprise SSO + multi-tenancy | JWT tokens, RBAC, session management |
 | **WebSocket v2** | P1 | ✅ Implemented | Real-time UI updates | Sub-100ms latency, auto-reconnect |
