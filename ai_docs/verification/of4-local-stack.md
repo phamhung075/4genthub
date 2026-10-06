@@ -51,7 +51,11 @@ DEFAULT_USER_EMAIL=dev@example.com AGENTHUB_PUBLIC_URL=http://localhost:8000 FAS
 ```
 
 `GET /health` must answer `healthy` with the version the binary carries
-(`healthVersion`, `agenthub_go/fastmcp/server/httpapp/http.go:159`; it read `0.0.21` in that run).
+(the release literal is `ReleaseVersion`, `agenthub_go/fastmcp/config/version.go:21`, read into
+`healthVersion` at `agenthub_go/fastmcp/server/httpapp/http.go:160`; **it read `0.0.21` in that run.
+Corrected 2026-10-06 by the writer seat: this citation said `http.go:159`, which is where the literal
+lived when the run was made and where `origin/main` still holds it — the value has since moved into
+`config/version.go`, and the old citation would send a reader to a reference rather than the value**).
 
 **Frontend:**
 
