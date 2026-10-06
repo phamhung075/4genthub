@@ -9,11 +9,26 @@
 package auth
 
 import (
+	"errors"
+	"net/http"
 	"os"
 	"time"
 
 	authentities "agenthub/fastmcp/auth/domain/entities"
 )
+
+// ErrJWTSecretNotSet is the single decision about an unset JWT_SECRET_KEY. Every
+// surface that refuses to authenticate or to mint without a secret uses this text,
+// so an operator sees the same actionable sentence whichever endpoint they hit. It
+// names the VARIABLE only; no secret value is ever included.
+var ErrJWTSecretNotSet = errors.New("Server configuration error: JWT secret not set")
+
+// JWTSecretNotSetError is the FastAPI HTTPException the REST dependency chain raises
+// for ErrJWTSecretNotSet. The token mint path returns the same value, so both
+// surfaces carry the identical status (500) and sentence.
+func JWTSecretNotSetError() *HTTPException {
+	return &HTTPException{StatusCode: http.StatusInternalServerError, Detail: ErrJWTSecretNotSet.Error()}
+}
 
 // DependenciesJWTSecretKey mirrors the module-level JWT_SECRET_KEY read. Python logs
 // a CRITICAL SECURITY WARNING and leaves the value None when unset; here the empty
@@ -40,7 +55,7 @@ type TokenDecoder interface {
 // extracted by the FastAPI HTTPBearer dependence (the router passes it explicitly).
 func GetCurrentUser(decoder TokenDecoder, credentials string) (*authentities.User, error) {
 	if DependenciesJWTSecretKey == "" {
-		return nil, &HTTPException{StatusCode: 500, Detail: "Server configuration error: JWT secret not set"}
+		return nil, JWTSecretNotSetError()
 	}
 
 	payload, err := decoder.DecodeJWT(credentials, DependenciesJWTSecretKey, DependenciesJWTAlgorithm)

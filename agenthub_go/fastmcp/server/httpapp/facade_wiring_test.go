@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	authpkg "agenthub/fastmcp/auth"
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
 	"agenthub/fastmcp/task_management/application/services"
@@ -19,8 +20,10 @@ func TestCreateTokenFacadeRefusesUnsetSecret(t *testing.T) {
 	t.Setenv("JWT_SECRET_KEY", "")
 	if _, err := (mcpTokenFacadeFactory{}).CreateTokenFacade(); err == nil {
 		t.Fatal("CreateTokenFacade with an unset JWT_SECRET_KEY: expected refusal")
-	} else if !strings.Contains(err.Error(), "JWT_SECRET_KEY must be set in environment") {
-		t.Fatalf("unexpected error: %v", err)
+	} else if he, ok := err.(*authpkg.HTTPException); !ok {
+		t.Fatalf("error type = %T, want *auth.HTTPException", err)
+	} else if he.Detail != authpkg.ErrJWTSecretNotSet.Error() || he.StatusCode != 500 {
+		t.Fatalf("refusal = %d %q, want 500 %q", he.StatusCode, he.Detail, authpkg.ErrJWTSecretNotSet)
 	}
 	if got := os.Getenv("JWT_SECRET_KEY"); got != "" {
 		t.Fatalf("CreateTokenFacade mutated JWT_SECRET_KEY to %q; unset must stay unset", got)

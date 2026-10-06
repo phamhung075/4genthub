@@ -403,6 +403,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logout();
         });
       }
+    } else if (refresh_token) {
+      // The access cookie is written for 7 days and the refresh cookie for 30 (see setTokens), so a
+      // user who never signed out arrives here holding ONLY the refresh cookie: the access cookie has
+      // simply expired. That is the case the refresh endpoint exists for, so try it before deciding
+      // the session is gone. logout() clears BOTH cookies, so a refresh cookie that survived means
+      // the user did not end the session; a state with neither cookie still falls through below and
+      // shows the login form, which is what an explicit sign-out must keep landing on.
+      refreshToken().catch(() => {
+        logout();
+      });
     } else {
       // No tokens available - ensure WebSocket is disconnected
       if (isWebSocketConnected) {

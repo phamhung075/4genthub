@@ -211,6 +211,41 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A copy button does not throw without a clipboard, and a copied reset no longer outlives its component** - 2026-10-06
+ - `GlobalContextDialog`'s Copy handler and `RawJSONDisplay`'s copy button called `navigator.clipboard.writeText`
+ unguarded, so a context without a clipboard (jsdom, or a browser refusing the write) threw out of the click; both
+ now go through `navigator.clipboard?.writeText?.(...)?.catch(() => {})`.
+ - `RawJSONDisplay`'s two-second "Copied!" reset is held in a ref and cleared on unmount, so it cannot fire
+ `setState` on an unmounted tree, and a second copy replaces the first's timer rather than leaving two running.
+ - In the same touch, `GlobalContextDialog.test.tsx`'s clipboard case installed a stub on the GLOBAL `navigator`
+ and never restored it; an `afterEach` now captures that descriptor once and puts it back exactly, so a spec
+ sharing the worker cannot inherit the stub.
+- **A live refresh cookie is used instead of demanding a sign-in** - 2026-10-06
+ - `setTokens` writes the access cookie for 7 days and the refresh cookie for 30, so a user returning on
+ day 8 held a VALID refresh cookie with no access cookie - and the mount path required both, so it
+ declined the refresh it could still use and asked for a sign-in nobody should need. A refresh-cookie-
+ only mount now attempts the refresh before deciding the session is absent, so the session is restored.
+ - An explicit sign-out still clears both cookies and is NOT undone: the branch only runs when a refresh
+ cookie is present, and logout leaves neither. A refresh that fails still ends on the login form, with
+ the dead refresh cookie cleared rather than retried on every load.
+- **A seat that cannot be resolved no longer renders as a working seat** - 2026-10-06
+ - The seat page read the resolve (`GET /api/v2/openrig/seats/{room}/{seat}`) only inside the Preview tab
+ and rendered its ordinary panels whatever that read answered, so a refused resolve - measured with a
+ catalog missing a referenced module: 404 `module queue-handoff@1.0.0 not found in catalog` - left the
+ page looking healthy while nothing behind the seat resolved. The page now subscribes to that read for
+ its whole life and, when it fails, renders the refusal with the reason the API gave (which names the
+ module and version) instead of the tabs. Subscribing for the whole life is the deliberate trade: a seat
+ page now fetches the resolve on load rather than only when Preview is opened, and a realtime
+ invalidation refetches it instead of hitting an unobserved stale entry - the page cannot report a
+ refusal it never reads.
+ - The seats list marks the same condition where it is visible without a request per seat: a seat a
+ machine reports as live whose `expected_hash` is empty - the hash of the cloud's newest stored resolved
+ snapshot - gets a `no resolved snapshot` badge. `sync unknown` did not say this, because it also covers
+ a missing running hash; a stopped seat is not marked, since nothing is expected to resolve it.
+ - Gated on the read's STATUS and not only on its error: while the resolve is still pending the page
+ shows a "Resolving this seat..." state instead of the tabs. `apiRequest` carries no timeout, so a
+ resolve that hangs stays visibly pending for as long as it hangs - chosen deliberately over a page
+ that would otherwise look resolved.
 - **A token that cannot start a session is reported, not silently cleared** - 2026-10-06
  - A token minted by `POST /api/v2/tokens` decodes but carries no `email` claim. The token decoder built
  the username from that claim, so it threw, returned null exactly like an expired token, and the mount

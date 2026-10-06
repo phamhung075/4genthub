@@ -480,6 +480,48 @@ describe('SeatsPage', () => {
       expect(badge).not.toHaveClass('bg-amber-50');
     });
 
+    // The row is only a defect while the seat is live, so both halves of that boundary are pinned:
+    // a machine reporting a running seat the cloud has no snapshot for is marked, and the same empty
+    // snapshot on a stopped seat is not - nothing is resolving a seat that is not running.
+    it('marks a live seat the cloud has no resolved snapshot for', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          { ...machine, seats: [{ ...machineSeat, expected_hash: '', sync: 'unknown' as const }] },
+        ],
+      });
+      renderPage();
+
+      // The mark is on the seat card, so the room has to be selected for a card to exist at all.
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+
+      expect(screen.getByText('no resolved snapshot')).toBeInTheDocument();
+    });
+
+    it('does not mark a stopped seat for the same empty snapshot', async () => {
+      mockApi.fetchMachines.mockResolvedValue({
+        success: true,
+        machines: [
+          {
+            ...machine,
+            seats: [
+              { ...machineSeat, state: 'stopped' as const, expected_hash: '', sync: 'unknown' as const },
+            ],
+          },
+        ],
+      });
+      renderPage();
+
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText('alice');
+      // The machine status is what makes the row's mark possible, so wait for it before asserting its
+      // absence - otherwise this would pass merely because nothing had loaded.
+      await screen.findByText('pc-home');
+
+      expect(screen.queryByText('no resolved snapshot')).not.toBeInTheDocument();
+    });
+
     it('counts drifted seats across machines and shows one badge per drifted row', async () => {
       const drifted = (seat: string, hash: string) => ({
         ...machineSeat,

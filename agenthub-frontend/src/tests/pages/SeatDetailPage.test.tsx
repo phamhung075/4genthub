@@ -329,6 +329,43 @@ describe('SeatDetailPage', () => {
     expect(screen.getByText('B content')).toBeInTheDocument();
   });
 
+  // The measured defect (seat-resolve row): with the local catalog lacking a referenced module the
+  // resolve read fails, yet the page rendered its ordinary panels and looked healthy - the failure was
+  // only visible by calling the API directly. This fails if the panels render over a failed resolve.
+  it('reports a failed resolve instead of rendering the panels', async () => {
+    mockApi.getResolvedSeat.mockRejectedValue(
+      new Error('module queue-handoff@1.0.0 not found in catalog')
+    );
+
+    renderDetail();
+
+    expect(await screen.findByText(/does not resolve/i)).toBeInTheDocument();
+    // The reason the API gave, which names the missing reference.
+    expect(
+      screen.getByText('module queue-handoff@1.0.0 not found in catalog')
+    ).toBeInTheDocument();
+    // Nothing ordinary is rendered over it: no tabs, and none of the module content a rendered page
+    // shows in its default tab. (The previous line asserted "Resolved snapshot" was absent, which can
+    // never match - that string lives in PreviewTab, whose Radix content is unmounted unless Preview is
+    // the active tab - so it passed for a reason unrelated to the guard.)
+    expect(screen.queryByRole('tab', { name: /modules/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('rules')).not.toBeInTheDocument();
+  });
+
+  // The third state the reviewer asked to be explicit about: a resolve that has not answered yet must
+  // not present as healthy. A promise that never settles stands for the hung resolve apiRequest cannot
+  // time out, so this pins that the page waits visibly instead of rendering its panels.
+  it('shows that it is resolving instead of rendering the panels while the read is pending', async () => {
+    const { promise: neverSettles } = Promise.withResolvers<never>();
+    mockApi.getResolvedSeat.mockReturnValue(neverSettles);
+
+    renderDetail();
+
+    expect(await screen.findByText(/resolving this seat/i)).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /modules/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('rules')).not.toBeInTheDocument();
+  });
+
   it('offers the five OpenRig link kinds with labels and message rules', async () => {
     renderDetail();
     await screen.findByText('rules');

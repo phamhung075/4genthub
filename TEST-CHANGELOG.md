@@ -2,6 +2,82 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - clipboard guards and a leaked navigator stub (frontend, hygiene)
+
+- `src/tests/components/GlobalContextDialog.test.tsx` installed a clipboard stub on the GLOBAL `navigator` and
+  never restored it. An `afterEach` now captures that descriptor once and puts it back exactly, which matters
+  because jsdom provides no clipboard of its own: deleting the stub would take away the property the rest of the
+  file expects, and leaving it in place leaks it to every spec sharing the worker.
+- A new case pins ONE of the two guards, with the failure it prevents: with a clipboard present but lacking
+  `writeText`, clicking RawJSONDisplay's copy button (rendered inside the dialog) must not throw - and it fails
+  with "navigator.clipboard.writeText is not a function" when that guard is removed. The dialog's OWN Copy button
+  carries the same guard, but REACT SWALLOWS THAT HANDLER'S ERROR in this spec: the case passed with the guard
+  removed, so that half was dropped rather than kept green for the wrong reason, and the reason is written in the
+  case's comment.
+- HYGIENE ONLY, and it is not the window-is-not-defined flake: no run here reproduced it and nothing in this
+  change claims to fix it. Two of the four sites fe-dev named are still open and are not touched here.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` (GlobalContextDialog, TaskDetailsDialog,
+  TaskDetailsDialog.websocket) -> 54 passed; `npx vitest run` -> 102 files / 1758 tests passed, 0 errors;
+  `npx vite build` -> ok.
+
+## 2026-10-06 - the two verdicts' changes: a pending resolve, and a test that passed for the wrong reason (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx`'s failed-resolve case asserted the text "Resolved snapshot"
+  was absent, which can NEVER match: that string lives in PreviewTab, and Radix unmounts inactive tab
+  content, so it passed for a reason unrelated to the guard. It now asserts the default tab's module
+  content ("rules") is absent - content a rendered page does show - and a NEW case pins the state the
+  reviewer asked to be explicit about: a resolve that never settles shows "Resolving this seat..." and
+  NO tab, so a hung read (`apiRequest` carries no timeout) waits visibly instead of looking resolved.
+- `src/tests/contexts/AuthContext.test.tsx`'s `should disconnect WebSocket on token refresh failure`
+  carried the same refresh-cookie-only scaffold as the two cases fixed in be26d520: the MOUNT consumed
+  its queued 401, called disconnect itself, and the explicit call reached an unmocked fetch and threw a
+  TypeError the test swallowed - so `expect(mockDisconnect)` was satisfied by the mount and the claim
+  was never exercised. It now sets BOTH cookies so the mount does not refresh, and it asserts the 401
+  path's REJECTION ("Token refresh failed") rather than only the cleanup, which is what makes it
+  exercise the explicit call. A new case pins the MOUNT's own failure path: a refresh cookie it cannot
+  use is cleared and the app lands signed out instead of retrying the dead cookie on every load.
+- Correction to the earlier entry's wording: the cases render TWO providers (test-utils wraps in
+  AllTheProviders, which contains its own AuthProvider, and the case renders another), so a
+  refresh-cookie-only mount fires the refresh twice - hence the persistent response, not "the mount
+  consumes one".
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` on the two page suites plus AuthContext -> 91
+  passed; `npx vitest run` -> 102 files / 1757 tests passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - a live refresh cookie is used instead of demanding a sign-in (frontend)
+
+- `src/tests/contexts/AuthContext.test.tsx` adds the three cases the ruling asks for: a refresh-cookie-
+  only mount restores the session through POST /api/auth/refresh and shows the user; neither cookie
+  present still lands on the login form and does NOT reach the refresh endpoint; and an explicit
+  sign-out removes BOTH cookies, clears the session, and is not undone. The sign-out case models the
+  cookie jar's removal, so "signed out" is read back through Cookies.get instead of being asserted by
+  hand.
+- Two existing cases needed their scaffolding changed rather than their claims, both because their setup
+  was exactly the refresh-cookie-only state that is now restored on mount: `should refresh token
+  successfully` now has a persistent fetch response (the mount consumes one, the explicit call under
+  test the next), and `should console error on token refresh failure` now sets BOTH cookies so the mount
+  does not refresh at all. The second mattered: with its old setup the mount ate the queued rejection
+  and the explicit call reached an unmocked fetch, which surfaced as a vitest unhandled rejection
+  ("expected [Function] to throw error including 'Network error' but got 'Cannot read properties of
+  undefined (reading ok)'") WHILE EVERY TEST STILL REPORTED PASSED - a green count with an Errors line
+  is not green, and the Errors line is where a mount-time change hides.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/contexts/AuthContext.test.tsx` -> 39
+  passed, 0 errors; `npx vitest run` -> 102 files / 1755 tests passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - a seat that cannot resolve stops looking healthy (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx` adds a case with a rejected resolve read: the reason the API
+  gave is rendered and nothing ordinary is (no tab and no resolved-snapshot panel). Proved by restoring
+  the old render - with the guard removed the case fails with "Unable to find an element with the text:
+  /does not resolve/i", because the panels render over the failure, which is the defect itself.
+- `src/tests/pages/SeatsPage.test.tsx` pins both halves of the list mark on the seat card: a
+  machine-reported running seat with an empty `expected_hash` shows `no resolved snapshot`, and the same
+  empty snapshot on a stopped seat does not. The first version of these two failed honestly - they
+  asserted on a card without selecting the room, and the first fix then raced the async room list; the
+  click now awaits the button, so the case cannot fail intermittently.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx
+  src/tests/pages/SeatsPage.test.tsx` -> 50 passed; `npx vitest run` -> 102 files / 1752 tests passed;
+  `npx vite build` -> ok.
+
 ## 2026-10-06 — the gated real-PostgreSQL seat suite, and the trap a reused test database sets (Go)
 
 - Ran the whole `./fastmcp/seat_management/...` tree WITH `SEAT_TEST_DATABASE_URL` set, which the ungated runs never exercise: on a fresh database exactly one test fails, `TestSeatResolutionEndToEnd`, at the seed, naming the cause — `seed architect: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types`. Everything else, including `TestSeatRepositoriesIntegration` in the orm package, passes against the real database.

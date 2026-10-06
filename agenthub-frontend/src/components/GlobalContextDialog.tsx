@@ -302,7 +302,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             </div>
           </div>
         </DialogHeader>
-        
+
         {/* Tab Navigation */}
         <div className="flex gap-1 border-b px-6 -mt-2">
           <button
@@ -316,7 +316,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             <Info className="w-4 h-4" />
             View
           </button>
-          
+
           {editMode && (
             <button
               onClick={() => setActiveTab('edit')}
@@ -332,7 +332,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             </button>
           )}
         </div>
-        
+
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="space-y-4 overflow-y-auto flex-1 p-4">
             {loading ? (
@@ -352,7 +352,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                     User-scoped global configuration and settings across all projects
                   </p>
                 </div>
-                
+
                 {activeTab === 'edit' && (
                   <div className="space-y-6">
                     {/* Enhanced JSON Editor Card */}
@@ -476,7 +476,9 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                navigator.clipboard.writeText(rawJsonText);
+                                // jsdom has no clipboard context and a browser can refuse the write:
+                                // a copy button must not throw out of either.
+                                navigator.clipboard?.writeText?.(rawJsonText)?.catch(() => {});
                               }}
                               disabled={!rawJsonText.trim()}
                               className="flex items-center gap-1"
@@ -560,7 +562,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
                     </Card>
                   </div>
                 )}
-                
+
                 {/* Enhanced JSON Display - Interactive Tree View */}
                 <div className="space-y-6">
                   {/* Enhanced JSON Viewer with expand/collapse */}
@@ -670,7 +672,7 @@ export const GlobalContextDialog: React.FC<GlobalContextDialogProps> = ({
             )}
           </div>
         </div>
-        
+
         <DialogFooter className="flex justify-end">
           {!editMode && (
             <Button variant="outline" onClick={onClose}>

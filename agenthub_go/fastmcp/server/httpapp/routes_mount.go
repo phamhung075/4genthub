@@ -512,36 +512,66 @@ func tokenOpResult(m *entities.OrderedMap[any]) routes.TokenOperationResult {
 }
 
 func (a tokenRoutesAdapter) GenerateAPIToken(ctx context.Context, userID, name string, scopes []string, expiresInDays int, rateLimit *int) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.GenerateAPIToken(ctx, userID, name, scopes, expiresInDays, rateLimit, nil)), nil
+	m, err := a.c.GenerateAPIToken(ctx, userID, name, scopes, expiresInDays, rateLimit, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) ListUserTokens(ctx context.Context, userID string) (routes.TokenRouteListResult, error) {
-	m := a.c.ListUserTokens(ctx, userID, nil, 0, 100)
+	m, err := a.c.ListUserTokens(ctx, userID, nil, 0, 100)
+	if err != nil {
+		return routes.TokenRouteListResult{}, err
+	}
 	return routes.TokenRouteListResult{Success: mountBool(m, "success"), Error: mountStrPtr(m, "error"), Tokens: mountMapList(m, "tokens"), Total: mountInt(m, "total")}, nil
 }
 
 func (a tokenRoutesAdapter) GetTokenDetails(ctx context.Context, tokenID, userID string) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.GetTokenDetails(ctx, tokenID, userID, nil)), nil
+	m, err := a.c.GetTokenDetails(ctx, tokenID, userID, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) DeleteToken(ctx context.Context, tokenID, userID string) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.DeleteToken(ctx, tokenID, userID, nil)), nil
+	m, err := a.c.DeleteToken(ctx, tokenID, userID, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) RevokeToken(ctx context.Context, tokenID, userID string) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.RevokeToken(ctx, tokenID, userID, nil)), nil
+	m, err := a.c.RevokeToken(ctx, tokenID, userID, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) ReactivateToken(ctx context.Context, tokenID, userID string) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.ReactivateToken(ctx, tokenID, userID, nil)), nil
+	m, err := a.c.ReactivateToken(ctx, tokenID, userID, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) RotateToken(ctx context.Context, tokenID, userID string) (routes.TokenOperationResult, error) {
-	return tokenOpResult(a.c.RotateToken(ctx, tokenID, userID, nil)), nil
+	m, err := a.c.RotateToken(ctx, tokenID, userID, nil)
+	if err != nil {
+		return routes.TokenOperationResult{}, err
+	}
+	return tokenOpResult(m), nil
 }
 
 func (a tokenRoutesAdapter) ValidateToken(ctx context.Context, token string) (routes.TokenValidateResult, error) {
-	m := a.c.ValidateToken(ctx, token, nil)
+	m, err := a.c.ValidateToken(ctx, token, nil)
+	if err != nil {
+		return routes.TokenValidateResult{}, err
+	}
 	res := routes.TokenValidateResult{Success: mountBool(m, "success"), Error: mountStrPtr(m, "error")}
 	if v, ok := mountGet(m, "claims"); ok {
 		res.Claims, _ = v.(*entities.OrderedMap[any])
@@ -550,7 +580,10 @@ func (a tokenRoutesAdapter) ValidateToken(ctx context.Context, token string) (ro
 }
 
 func (a tokenRoutesAdapter) CleanupExpiredTokens(ctx context.Context, userID string) (routes.TokenCleanupResult, error) {
-	m := a.c.CleanupExpiredTokens(ctx)
+	m, err := a.c.CleanupExpiredTokens(ctx)
+	if err != nil {
+		return routes.TokenCleanupResult{}, err
+	}
 	return routes.TokenCleanupResult{Success: mountBool(m, "success"), Error: mountStrPtr(m, "error"), Message: mountStrPtr(m, "message"), DeletedCount: mountInt(m, "deleted_count")}, nil
 }
 

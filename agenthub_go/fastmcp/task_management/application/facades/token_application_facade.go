@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	authpkg "agenthub/fastmcp/auth"
 	authservices "agenthub/fastmcp/auth/domain/services"
 	mcpservices "agenthub/fastmcp/auth/services"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -48,11 +49,13 @@ type TokenApplicationFacade struct {
 }
 
 // NewTokenApplicationFacade mirrors __init__: reads JWT_SECRET_KEY / JWT_ISSUER and builds
-// the JWT service. An empty secret raises ValueError.
+// the JWT service. An empty secret refuses with the shared auth.JWTSecretNotSetError, so
+// the mint path raises the same 500 and the same sentence as the REST dependency chain
+// (one decision about the missing variable, not a second phrasing).
 func NewTokenApplicationFacade(tokenRepository repositories.ITokenRepository) (*TokenApplicationFacade, error) {
 	jwtSecret := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecret == "" {
-		return nil, &value_objects.ValueError{Msg: "JWT_SECRET_KEY must be set in environment"}
+		return nil, authpkg.JWTSecretNotSetError()
 	}
 	issuer := os.Getenv("JWT_ISSUER")
 	if issuer == "" {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act, waitFor } from './../test-utils';
+import { render, screen, act, waitFor, fireEvent } from './../test-utils';
 import { render as rtlRender } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
 import type { JWTPayload } from '../../types/authTypes';
@@ -201,6 +201,133 @@ describe('AuthContext', () => {
         { sub: 'user-123', exp: Math.floor(Date.now() / 1000) + 3600 },
         /carries no email claim and declares no type/i
       );
+    });
+
+    // The access cookie is written for 7 days and the refresh cookie for 30 (setTokens), so a user who
+    // never signed out can arrive holding ONLY the refresh cookie. That is the case the refresh
+    // endpoint exists for: the session is restored instead of the user being asked to sign in again.
+    it('restores a session from a refresh cookie when the access cookie is gone', async () => {
+      vi.mocked(Cookies.get).mockImplementation((key?: string) =>
+        key === 'refresh_token' ? 'live-refresh-token' : undefined
+      );
+      vi.mocked(Cookies.set).mockImplementation((key: string, value: string) => {
+        void key;
+        return value;
+      });
+      // The body the client reads from the refresh endpoint; a stand-in for Response, not one.
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({ access_token: 'restored-access', refresh_token: 'restored-refresh' })
+      } as unknown as Response);
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(mockDecodedToken);
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true');
+      });
+      expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+    });
+
+    it('does not attempt a refresh when neither cookie is present', async () => {
+      vi.mocked(Cookies.get).mockImplementation(() => undefined);
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+    });
+
+    // An explicit sign-out must keep clearing BOTH cookies, and the refresh-cookie-only branch must
+    // not resurrect the session it ended. The jar models removal so "signed out" is read back through
+    // Cookies.get rather than asserted by hand.
+    it('an explicit sign-out clears both cookies and is not undone by a refresh', async () => {
+      const removed: string[] = [];
+      vi.mocked(Cookies.remove).mockImplementation((key?: string) => {
+        if (key) removed.push(key);
+      });
+      vi.mocked(Cookies.get).mockImplementation((key?: string) => {
+        if (!key || removed.includes(key)) return undefined;
+        if (key === 'access_token') return mockTokens.access_token;
+        if (key === 'refresh_token') return mockTokens.refresh_token;
+        return undefined;
+      });
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(mockDecodedToken);
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true');
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: /^logout$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+      });
+      expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+      expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
+      expect(Cookies.get('access_token')).toBeUndefined();
+      expect(Cookies.get('refresh_token')).toBeUndefined();
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+    });
+
+    // The MOUNT's own failure path, which nothing pinned before: a refresh cookie the mount cannot use
+    // is cleared and the app lands signed out, rather than retrying the dead cookie on every load.
+    it('clears a refresh cookie the mount cannot use and lands signed out', async () => {
+      vi.mocked(Cookies.get).mockImplementation((key?: string) =>
+        key === 'refresh_token' ? 'dead-refresh-token' : undefined
+      );
+      vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-loading')).toHaveTextContent('false');
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/auth/refresh`,
+        expect.anything()
+      );
+      expect(screen.getByTestId('is-authenticated')).toHaveTextContent('false');
+      expect(Cookies.remove).toHaveBeenCalledWith('access_token');
+      expect(Cookies.remove).toHaveBeenCalledWith('refresh_token');
     });
 
     it('should handle expired token on mount', async () => {
@@ -899,13 +1026,16 @@ describe('AuthContext', () => {
 
       (jwtDecode.jwtDecode as any).mockReturnValue(mockDecodedToken);
 
-      (global.fetch as any).mockResolvedValueOnce({
+      // This state is a refresh cookie with no access cookie, which is now restored ON MOUNT as well,
+      // so the response is persistent rather than one-shot: the mount's refresh consumes one and the
+      // explicit refreshToken() below is the call under test.
+      vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
         json: async () => ({
           access_token: 'new-access-token',
           refresh_token: 'new-refresh-token'
         })
-      });
+      } as unknown as Response);
 
       render(
         <AuthProvider>
@@ -986,16 +1116,23 @@ describe('AuthContext', () => {
         disconnect: mockDisconnect
       });
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      // A session is present (BOTH cookies) and decodes, so the MOUNT does not refresh by itself. With
+      // the refresh-cookie-only scaffold this test previously carried, the mount consumed the queued
+      // 401 and called disconnect on its own, while the explicit call below reached an unmocked fetch,
+      // threw a TypeError, and was swallowed - so the assertion passed without the claim being tested.
+      vi.mocked(Cookies.get).mockImplementation((key?: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
-        return null;
+        return undefined;
       });
 
-      (global.fetch as any).mockResolvedValueOnce({
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(mockDecodedToken);
+
+      vi.mocked(global.fetch).mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ detail: 'Invalid refresh token' })
-      });
+      } as unknown as Response);
 
       const { getByText } = render(
         <AuthProvider>
@@ -1003,11 +1140,14 @@ describe('AuthContext', () => {
         </AuthProvider>
       );
 
-      await act(async () => {
-        await authContext!.refreshToken().catch(() => {
-          // Expected to reject; this test asserts the WebSocket cleanup.
-        });
-      });
+      // Asserting the REJECTION, not just the cleanup: the 401 path throws this message, while the
+      // unmocked-fetch failure threw a TypeError - so this line is what makes the case exercise the
+      // explicit call rather than the mount's.
+      await expect(
+        act(async () => {
+          await authContext!.refreshToken();
+        })
+      ).rejects.toThrow('Token refresh failed');
 
       expect(mockDisconnect).toHaveBeenCalled();
     });
@@ -1326,12 +1466,17 @@ describe('AuthContext', () => {
     it('should console error on token refresh failure', async () => {
       const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation();
 
-      (Cookies.get as any).mockImplementation((key: string) => {
+      // A session is present (BOTH cookies), so the MOUNT does not refresh by itself - the
+      // refresh-cookie-only mount has its own case above, and this one is about what an explicit
+      // refresh failure does.
+      vi.mocked(Cookies.get).mockImplementation((key?: string) => {
+        if (key === 'access_token') return mockTokens.access_token;
         if (key === 'refresh_token') return mockTokens.refresh_token;
-        return null;
+        return undefined;
       });
+      vi.mocked(jwtDecode.jwtDecode).mockReturnValue(mockDecodedToken);
 
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'));
 
       render(
         <AuthProvider>

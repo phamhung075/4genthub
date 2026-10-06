@@ -79,6 +79,22 @@ describe('GlobalContextDialog', () => {
     vi.clearAllMocks();
   });
 
+  // The clipboard case below installs a stub on the GLOBAL navigator. Spec files share a worker here,
+  // so a stub that outlives its test is another file's environment: the descriptor is captured once and
+  // put back exactly, including the case where jsdom provides no clipboard at all and the stub is the
+  // only own property there has ever been.
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+
+  afterEach(() => {
+    if (originalClipboard) {
+      Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      return;
+    }
+    // `as unknown as` because the DOM types declare clipboard readonly; the stub is this suite's own
+    // property, so removing it is what leaves the prototype as the suite found it.
+    delete (navigator as unknown as Record<string, unknown>).clipboard;
+  });
+
   it('renders nothing when closed', () => {
     render(
       <GlobalContextDialog
@@ -446,6 +462,36 @@ describe('GlobalContextDialog', () => {
 
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining('user_preferences'));
 
+    await waitFor(() => {
+      expect(screen.getByText('Copied!')).toBeInTheDocument();
+    });
+  });
+
+  // The hygiene row's guard, with the failure it prevents: RawJSONDisplay's copy button threw out of its
+  // handler when the clipboard context had no writeText. jsdom has none, so an object without one models
+  // the same absence. The dialog's OWN Copy button (edit view) takes the same guard, but React swallows
+  // that handler's error here, so a not.toThrow assertion on it could not discriminate and is not made.
+  it('does not throw from the rendered copy button when the clipboard context is absent', async () => {
+    vi.mocked(api.getGlobalContext).mockResolvedValue({
+      user_preferences: { theme: 'dark' },
+      version: '1.0.0'
+    });
+    Object.assign(navigator, { clipboard: {} });
+
+    render(
+      <GlobalContextDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
+        onClose={mockOnClose}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Copy JSON')).toBeInTheDocument();
+    });
+
+    expect(() => fireEvent.click(screen.getByText('Copy JSON'))).not.toThrow();
+    // The affordance still reports what it did, so the guard is not a silent early return.
     await waitFor(() => {
       expect(screen.getByText('Copied!')).toBeInTheDocument();
     });

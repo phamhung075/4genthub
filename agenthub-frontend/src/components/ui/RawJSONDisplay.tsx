@@ -1,5 +1,5 @@
 import { CheckCircle, Copy } from 'lucide-react';
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from './button';
 
 interface RawJSONDisplayProps {
@@ -14,11 +14,28 @@ export default function RawJSONDisplay({ jsonData, title = "Global Context Manag
   // Handle null/undefined data
   const safeJsonData = jsonData ?? {};
 
+  // The "Copied!" reset is a two-second timer. One that outlives the component fires setState on an
+  // unmounted tree, so it is held in a ref and cleared on unmount - and a second copy replaces the
+  // first's timer rather than leaving two running.
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (copyResetRef.current !== null) {
+        clearTimeout(copyResetRef.current);
+      }
+    };
+  }, []);
+
   const copyToClipboard = () => {
     const jsonString = JSON.stringify(safeJsonData, null, 2);
-    navigator.clipboard.writeText(jsonString);
+    // jsdom has no clipboard context and a browser can refuse the write: a copy button must not throw
+    // out of either, and a refused write must not surface as an unhandled rejection.
+    navigator.clipboard?.writeText?.(jsonString)?.catch(() => {});
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (copyResetRef.current !== null) {
+      clearTimeout(copyResetRef.current);
+    }
+    copyResetRef.current = setTimeout(() => setCopied(false), 2000);
   };
 
   const getLineCount = () => {
