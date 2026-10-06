@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -73,12 +74,36 @@ var (
 	deliver = rigSend
 )
 
+// installedPinsDir is the pins directory baked in at BUILD time by whoever built this binary:
+// scripts/openrig_seat_sync.py install-checker passes its --out store here with
+// `-ldflags -X main.installedPinsDir=<store>`. The seat cannot choose it - this command has no
+// flag and reads no environment variable at all, so what the guard reads and audits is decided
+// before it runs rather than by the process it constrains. Empty means the binary was built
+// without the seam, and the store then falls back to the account's home, which is where the
+// client's own default resolves on a machine with no override.
+var installedPinsDir = ""
+
 func defaultPins() (string, error) {
-	home, err := os.UserHomeDir()
+	if installedPinsDir != "" {
+		return installedPinsDir, nil
+	}
+	home, err := realHome()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(home, defaultPinsDir), nil
+}
+
+// realHome is the account's home directory from the passwd entry, NOT the HOME variable: a seat
+// is launched with HOME pointed at its own state directory, so resolving from the environment
+// makes the store a function of who invokes the guard - the seat would look somewhere the
+// client never writes, and a policy that was installed would read as never installed. This is
+// the same resolution as real_home() in scripts/openrig_seat_policy.py, one language over.
+func realHome() (string, error) {
+	if u, err := user.Current(); err == nil && u.HomeDir != "" {
+		return u.HomeDir, nil
+	}
+	return os.UserHomeDir()
 }
 
 func runSend(args []string, stdout, stderr io.Writer) int {

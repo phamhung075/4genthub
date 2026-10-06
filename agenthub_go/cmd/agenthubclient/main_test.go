@@ -21,15 +21,16 @@ func rigMissing(t *testing.T) {
 // answered an empty success would be the "looks complete and is not" shape in a new place.
 //
 // THE TABLE IS ONLY THE COMMANDS STILL UNPORTED, and an entry leaves it the moment its verb becomes
-// real: `sync status` was here until 64f8ecde, and its ported behaviour is pinned by
-// TestSyncStatusIsPortedAndRefusesOnTheEnvironment below. `sync pull` stays because its positional half
-// is still unported - which is what this test exists to keep honest.
+// real: `sync status` was here until 64f8ecde and `sync pull` until the pull commit, and both now have
+// their ported behaviour pinned by TestPortedVerbsRefuseOnTheEnvironment below. What remains here is what
+// the client still refuses by name - the other sync verbs among them - which is what this test exists to
+// keep honest.
 func TestUnportedCommandRefusesRatherThanStubbing(t *testing.T) {
 	rigMissing(t)
 	for _, args := range [][]string{
 		{"feedback", "oops"},
 		{"seatcheck", "send", "x", "y"},
-		{"sync", "pull", "4genthub-dev", "alpha"},
+		{"sync", "bundle", "4genthub-dev", "alpha"},
 	} {
 		var out, errOut bytes.Buffer
 		if code := run(args, &out, &errOut); code != clientcmd.ExitUnavailable {
@@ -44,28 +45,34 @@ func TestUnportedCommandRefusesRatherThanStubbing(t *testing.T) {
 	}
 }
 
-// TestSyncStatusIsPortedAndRefusesOnTheEnvironment is the OTHER half of the test above, and it replaces
-// the case that sat inside it: `sync status` stopped being unported in 64f8ecde, so the property to pin
-// is no longer the porting note but the failure a ported verb gives when the platform is not configured -
-// the same one the binary was smoked against: exit 2 and the variable's name, with nothing on stdout.
+// TestPortedVerbsRefuseOnTheEnvironment is the OTHER half of the test above, and it replaces the entries
+// that sat inside it: `sync status` stopped being unported in 64f8ecde and `sync pull` in the pull commit,
+// so the property to pin is no longer the porting note but the failure a ported verb gives when the
+// platform is not configured - the same one the binary was smoked against: exit 2 and the variable's
+// name, with nothing on stdout.
 //
 // It stays in the exit-code-and-message shape rather than being loosened to "some error", because the
 // code is the part a caller scripts against and the message is the part an operator acts on.
-func TestSyncStatusIsPortedAndRefusesOnTheEnvironment(t *testing.T) {
+func TestPortedVerbsRefuseOnTheEnvironment(t *testing.T) {
 	t.Setenv("AGENTHUB_URL", "")
 	t.Setenv("AGENTHUB_TOKEN", "")
-	var out, errOut bytes.Buffer
-	if code := run([]string{"sync", "status", "4genthub-dev"}, &out, &errOut); code != clientcmd.ExitUsage {
-		t.Errorf("exit code = %d, want %d (a usage/environment error)", code, clientcmd.ExitUsage)
-	}
-	if !strings.Contains(errOut.String(), "AGENTHUB_URL is not set") {
-		t.Errorf("message = %q, want the environment's own fault named", errOut.String())
-	}
-	if strings.Contains(errOut.String(), "not ported") {
-		t.Errorf("message = %q: status IS ported now, so the porting note would be a lie", errOut.String())
-	}
-	if out.Len() != 0 {
-		t.Errorf("stdout = %q, want nothing before the cloud answers", out.String())
+	for _, args := range [][]string{
+		{"sync", "status", "4genthub-dev"},
+		{"sync", "pull", "4genthub-dev", "alpha"},
+	} {
+		var out, errOut bytes.Buffer
+		if code := run(args, &out, &errOut); code != clientcmd.ExitUsage {
+			t.Errorf("%v: exit code = %d, want %d (a usage/environment error)", args, code, clientcmd.ExitUsage)
+		}
+		if !strings.Contains(errOut.String(), "AGENTHUB_URL is not set") {
+			t.Errorf("%v: message = %q, want the environment's own fault named", args, errOut.String())
+		}
+		if strings.Contains(errOut.String(), "not ported") {
+			t.Errorf("%v: message = %q: the verb IS ported now, so the porting note would be a lie", args, errOut.String())
+		}
+		if out.Len() != 0 {
+			t.Errorf("%v: stdout = %q, want nothing before the cloud answers", args, out.String())
+		}
 	}
 }
 

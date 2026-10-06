@@ -2,6 +2,167 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the guard's store is a build-time fact, and the fixture stops writing machine state
+
+- `test_openrig_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on
+  HOME, so the link installs into the temp directory. THIS IS A MACHINE-STATE REPAIR AS WELL AS AN ADAPTATION:
+  with the link resolving from the account, the red run had written the REAL `~/.local/bin/seatcheck` and left it
+  pointing at a pytest temporary binary; with the stub the suite cannot touch it, and a full folder run now leaves
+  the link byte-identical, checked before and after.
+- The two end-to-end cases - `test_linked_guard_delivers_to_an_allowed_peer` and
+  `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` - KEEP EVERY ASSERTION, including the audit rows read
+  from the temp store: they pass because `install-checker` bakes its `--out` store into the binary it builds, which
+  is the only channel that can point an out-of-process guard at a temporary store. The guard has no flag and reads
+  no environment variable, so nothing a process does afterwards can move it.
+- `cmd/seatcheck/main_test.go`: `TestDefaultPinsUsesTheBuildTimeStore` pins the property that makes the seam safe -
+  a binary built with a store reads exactly that directory - while `TestDefaultPinsDoesNotFollowHome` keeps the
+  fallback pinned.
+- `test_openrig_seat_sync.py`: `fake_go_build` took the built binary from argv POSITION 3, so the two flags the seam
+  adds made it write into the current directory instead; it now locates `-o`, and the command assertion pins the
+  new argv EXACTLY, seam included, rather than pinning less.
+- THE GENERALISATION THIS CHANGE RECORDS, and it is why the fixture was adapted rather than the assertions
+  relaxed: A TEST THAT RESOLVES A PATH FROM THE ACCOUNT CAN WRITE MACHINE STATE FROM INSIDE A TEST RUN, AND
+  NOTHING IN ITS OUTPUT SAYS SO. The failures read `FileNotFoundError`; the damage was a symlink in the
+  operator's home.
+- Commands: `go test -count=1 ./cmd/seatcheck/` -> ok; `go vet ./cmd/seatcheck/` -> no output, exit 0;
+  `gofmt -l ./cmd/seatcheck/` -> empty. Folder: `python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts -q` from `agenthub_main` -> 280 passed, 8 warnings, 67s. The seam proved both ways by hand:
+  built with `-X main.installedPinsDir=/tmp/seamprobe` the guard refuses naming
+  `/tmp/seamprobe/4genthub-min/feedback-dev/policy.json`; built without it,
+  `/home/daihu/.openrig/agenthub-seats/4genthub-min/feedback-dev/policy.json`.
+
+## 2026-10-06 - the bridge's defaults are pinned against HOME (python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_bridge.py`: `test_the_path_defaults_do_not_follow_home`
+  loads the module TWICE under two different HOMEs - one of them named like a seat state directory - and
+  asserts `DEFAULT_ENV_FILE`, `DEFAULT_PINS` and `DEFAULT_SYNC_STATE` are EQUAL across the two loads, then
+  that none of them sits under either fake home. The equality across two HOMEs is the shape the sync
+  script's own test uses, and it is what makes the test ask the PROPERTY rather than the wording: anything
+  that follows HOME cannot survive the second load, whatever the implementation looks like.
+- PROVED BY REVERTING ONE SITE, not argued: putting `DEFAULT_PINS` back on `Path.home()` fails it with
+  "DEFAULT_PINS followed HOME: <seat-like>/.openrig/agenthub-seats against <other-home>/.openrig/agenthub-seats",
+  which names the site rather than the line; the site was restored and the file's 55 tests pass again.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q`.
+
+## 2026-10-06 - the guard that decides which seats get a limits section, pinned on its negative side (Go)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy_limits_join_test.go`:
+  `TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule` renders the SAME seat twice, with and
+  without a policy module, and asserts the limits section lands in `AGENTS.md` in the first case
+  (`## Your limits as seat (dev)`, `### Refused shell commands`, and the rule with its sibling) and is
+  ABSENT in the second while the guide is still written - so the section's presence is attributable to the
+  policy module rather than to the render in general.
+- WHY IT EXISTS, CORRECTED BY MEASUREMENT AFTER THE FIRST VERSION OF THIS ENTRY WAS WRONG: the claim it
+  was written on - that "the render carries the limits into AGENTS.md" had never run - is FALSE, and the
+  instrument that refuted it is coverage rather than grep. `policy_fold_test.go`'s
+  `TestRenderSeatEmitsBothArtifactsFromOneFold` already drives `RenderSeat` with a policy module and
+  asserts the refusals appear in `AGENTS.md`; a `-skip` run of the new file covers the identical block set
+  (204 blocks either way), so the new test adds NO coverage. What misled the first version: `renderAgentsMD`
+  has exactly one code caller (`renderer.go:206`) and a grep for the private name finds no test - because
+  tests reach it THROUGH the exported `RenderSeat`. WHAT THE FILE ACTUALLY ADDS is the other half of the
+  guard (`policySet.Role != ""`, fed by `FoldPolicies`, which reads only `kind: policy`, `policy_fold.go:37`):
+  no other test asserts that a guide-carrying seat WITHOUT a policy module gets a document with no limits
+  section, and the positive branch is the control that makes that absence mean something.
+- Commands: `go test ./fastmcp/seat_management/domain/seatrenderer/ -run TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule -v`
+  -> PASS (0.00s); `go test ./fastmcp/seat_management/domain/seatrenderer/` -> ok (0.036s); `gofmt -l` on the
+  new file -> empty; `go vet ./fastmcp/seat_management/domain/seatrenderer/` -> exit 0.
+
+## 2026-10-06 - the rig path's validation half, with its six refusals (Go client)
+
+- `internal/clientsync/rig_test.go`: `TestReadRigspecPinsEveryShapeRefusal` covers the six checks `cmd_rig`
+  makes plus the name rule it applies per seat - a rigspec for a different room, no yaml text, no seats
+  (missing, not a list, or empty), a malformed seat entry (an entry that is not an object, a seat that is
+  not a string), an entry with no hash, a seat listed twice, and a seat name the rule refuses - each
+  asserting the message AND the code, because the split matters: a badly named room/seat is exit 2 while a
+  malformed ANSWER is exit 1. `TestValidateNameMirrorsThePythonRule` pins the rule in both directions,
+  including the ones that look harmless (`-leading`, `.dot`, `_leading`, a space, a newline).
+- THE ORDERING IS MEASURED, NOT ASSUMED: the "a bad room name never reaches the cloud" case counts the
+  requests the fake server received and requires ZERO, which is what makes "validation comes first" a
+  property rather than a reading of the Python's statement order.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok; `go test ./...` -> ok packages 143, FAIL lines
+  0; `go vet` -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
+## 2026-10-06 - the client's path defaults are pinned to the account, not HOME (python scripts)
+
+- `test_openrig_seat_sync.py`: `test_the_store_and_state_root_do_not_follow_home` reloads the module under
+  two different HOMEs and states the independence as an EQUALITY - the same assertion shape as the guard's
+  `TestDefaultPinsDoesNotFollowHome` and the sibling's `test_the_default_state_root_is_the_same_under_any_HOME`
+  - covering `DEFAULT_OUT`, `OMP_STATE_ROOT` and `checker_link()`.
+- The `checker_home` fixture now patches `seat_sync.checker_link` instead of setting HOME: the link location is
+  machine-level, so on a machine where the real `~/.local/bin/seatcheck` exists a temp HOME can no longer
+  simulate its absence. The four cases that use it (`test_pull_and_rig_fail_loudly_without_the_link` twice,
+  `test_pull_fails_when_seatcheck_resolves_elsewhere`, `test_pull_runs_when_the_link_points_at_the_store_binary`)
+  keep every assertion; only the seam they simulate through changed.
+- Load-bearing by mutation: `DEFAULT_OUT` restored to `Path.home()` fails the new case with the doubled path
+  visible in the assertion, and nothing else in the file changes verdict.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py
+  src/tests/scripts/test_openrig_seat_policy.py -q` from `agenthub_main` -> 129 passed, 2 warnings, 42s (with the
+  mutation: 1 failed). Driven by hand: `python3 scripts/openrig_seat_sync.py pull --help` prints
+  `/home/daihu/.openrig/agenthub-seats` from inside a seat and from the operator shell alike.
+
+## 2026-10-06 - the seatcheck store resolution is pinned, where every other test stubbed it
+
+- `cmd/seatcheck/main_test.go`: `TestDefaultPinsDoesNotFollowHome` is the only case in the file that exercises the
+  REAL `defaultPins` - every other test replaces `pinsDir` through `seatEnv`, so the store resolution was
+  invisible to the whole suite. It asserts the store is NOT under a seat-like `HOME`, is the SAME under two
+  different `HOME`s (the independence stated as an equality, as the python side's
+  `test_the_default_state_root_is_the_same_under_any_HOME` states it), and that a send driven through the real
+  resolver with no policy is refused CLOSED - exit 2, no delivery - naming the exact path that was missing.
+- Load-bearing by mutation: resolving `$HOME` first fails this case at `main_test.go:191`, naming the seat
+  directory in the failure, while the other 620 lines pass unchanged. A first attempt at the mutation did not
+  compile (`os/user` unused), which is a build failure rather than the property being exercised, so it was redone.
+- Commands: `go test -count=1 ./cmd/seatcheck/` -> ok 0.133s (FAIL with the mutation); `go vet ./cmd/seatcheck/`
+  -> no output, exit 0; `gofmt -l ./cmd/seatcheck/` -> empty. Driven against the built binary from inside a seat:
+  allow exit 0, deny exit 3 (`denied: no link`), missing policy exit 2, unreadable policy (mode 000) exit 2 - and
+  after the fix the missing-policy message names `/home/daihu/.openrig/agenthub-seats/<rig>/<member>/policy.json`
+  rather than the seat's own state directory.
+
+## 2026-10-06 - the state root's default is pinned as a RESOLVED PATH (python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and
+  failing on the unfixed script with the doubled path visible in the assertion -
+  `PosixPath('/home/daihu/.openrig/state/omp/4genthub-min-web-dev@4genthub-min/.openrig/state/omp')` against the
+  expected `/home/daihu/.openrig/state/omp`:
+  `test_the_default_state_root_survives_a_home_that_points_at_a_seat` sets HOME to a seat's own state directory,
+  reloads the module, and asserts the RESOLVED PATH equals the passwd-derived state root, that the seat's own
+  directory is not a prefix of it, and that `notice_path` is single-nested under it;
+  `test_the_default_state_root_is_the_same_under_any_HOME` states the independence as an equality across two
+  different HOMEs.
+- The assertion is a path rather than a message on purpose: a case pinning the wording would be a wording test,
+  and the defect was in what the path RESOLVED to.
+- Commands: `cd agenthub_main && python3 -m pytest src/tests/scripts/test_openrig_seat_policy.py -q` -> 18 passed
+  (16 before, 2 new); `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 276 passed,
+  2 failed, and NEITHER FAILURE IS THIS CHANGE: both are
+  `test_openrig_team_setup.py::test_context_files_respect_word_limits[mission-4genthub]`, which asserts the word
+  count of `scripts/team/4genthub/mission.md` is within (350, 520) while the file now measures 544 words - the
+  writer's stale-baseline correction (`1f0b177a`) is what moved it, and that test file does not reference
+  `openrig_seat_policy` at all.
+
+## 2026-10-06 - the pull path ported with all three Python specs (Go client)
+
+- `internal/clientsync/pull_test.go` ports the Python's three pull specs one for one, each over a fake
+  cloud whose hash and files the test changes between calls (the fixture's `env.set_seat`):
+  `test_pull_writes_files_and_creates_lock` (exit 0, stdout EXACTLY `path:<store>/<hash>`, stderr EMPTY,
+  files written through nested directories, the lock carrying hash and snapshot path, the policy written),
+  `test_second_pull_keeps_lock_and_prints_notice` (a newer hash without `--update`: exit 0, stdout the
+  PINNED path, stderr exactly the notice, the pin unmoved, the new hash directory NOT created, the pinned
+  file unchanged) and `test_update_moves_lock_and_materializes_new_hash` (`--update`: exit 0, stdout the
+  new path, stderr empty, the pin moved, and **the PREVIOUS snapshot still on disk with its original
+  content** - the immutability that lets a running seat keep reading what it was launched with).
+- Plus `TestPullRefusesWhenThePinnedDirectoryIsGone`, the refusal the path promises: a pin whose snapshot
+  is missing is exit 2 with "pinned seat directory is missing … refusing silent fallback", and nothing on
+  stdout - never a silent fall back to a different snapshot.
+- `cmd/agenthubclient/main_test.go`: pull's entry left the unported table the same way status's did, and
+  `TestPortedVerbsRefuseOnTheEnvironment` now covers BOTH ported verbs (exit 2 and "AGENTHUB_URL is not
+  set", no "not ported" for a verb that is), with `sync bundle` taking pull's place in the table so the
+  table keeps naming something that really is unported.
+- SMOKE, the REAL BINARY against a tiny HTTP cloud: the first pull printed `path:<store>/room1/seat1/h1a2b3c4`
+  and wrote the two files, the lock and the policy; the second printed the notice on stderr and the PINNED
+  path with exit 0; `--update` printed the new path and left the old snapshot reading "hello" against the
+  new "newer".
+- Commands: `go test ./...` in agenthub_go with GOCACHE/TMPDIR inside `.gocache`/`.gotmp` -> ok packages 142,
+  FAIL lines 0; `go vet` over the touched packages -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the client's unported table lost the entry that became real (Go client)
 
 - `cmd/agenthubclient/main_test.go`: `TestUnportedCommandRefusesRatherThanStubbing` listed

@@ -37,6 +37,8 @@ A running seat reads its config at start, so ``apply`` takes effect on the next 
 
 import argparse
 import json
+import os
+import pwd
 import sys
 from pathlib import Path
 
@@ -44,7 +46,26 @@ EXIT_OK = 0
 EXIT_DRIFT = 1
 EXIT_USAGE = 2
 
-DEFAULT_STATE_ROOT = Path.home() / ".openrig" / "state" / "omp"
+
+def real_home() -> Path:
+    """The REAL user's home directory - which ``$HOME`` is not, inside an omp seat.
+
+    OpenRig launches a seat with HOME set to the seat's own state directory
+    (``/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>``), so ``Path.home()``,
+    ``os.path.expanduser("~")`` and any read of ``$HOME`` all resolve there. A default built on
+    them therefore appends the state root to itself, which is how the documented
+    ``apply --rig RIG --check`` came to report every seat "no agent directory" and exit 2 while
+    the policy was in fact applied.
+
+    The passwd database answers for the user this process runs as, and that answer is the same
+    inside a seat and out of one - which is the property a MACHINE-LEVEL default needs, since
+    the state root is a machine-level location rather than a per-seat one. ``--state-root``
+    stays the explicit override for any other layout.
+    """
+    return Path(pwd.getpwuid(os.getuid()).pw_dir)
+
+
+DEFAULT_STATE_ROOT = real_home() / ".openrig" / "state" / "omp"
 
 # rig -> seat -> role. An unlisted rig or seat is an error: there is no permissive default.
 SEAT_ROLES = {

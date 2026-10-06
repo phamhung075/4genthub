@@ -174,6 +174,79 @@ func TestSendPolicyMissingOrCorruptFailsClosed(t *testing.T) {
 	}
 }
 
+// The store does NOT follow HOME. A seat is launched with HOME pointed at its own state
+// directory, so a store resolved from the environment is a function of who invokes the guard:
+// the seat looks somewhere the client never writes and a policy that WAS installed reads as
+// never installed. Every other test replaces pinsDir through seatEnv, so this one is the only
+// place the real resolver is exercised at all.
+func TestDefaultPinsDoesNotFollowHome(t *testing.T) {
+	seatHome := t.TempDir()
+	t.Setenv("HOME", seatHome)
+
+	first, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasPrefix(first, seatHome) {
+		t.Fatalf("the store followed HOME into the seat's own directory: %s", first)
+	}
+	if !strings.HasSuffix(first, filepath.Join(".openrig", "agenthub-seats")) {
+		t.Fatalf("the store is not the pins directory: %s", first)
+	}
+
+	other := t.TempDir()
+	t.Setenv("HOME", other)
+	second, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != second {
+		t.Fatalf("the store depends on HOME: %q then %q", first, second)
+	}
+
+	// Driven through the real resolver and no stubs: a seat with no policy is refused CLOSED and
+	// is told the exact path that was missing, which is the store a writer must fill.
+	oldPins, oldIdentify, oldDeliver := pinsDir, identify, deliver
+	got := &delivery{}
+	pinsDir = defaultPins
+	identify = func() (identity, error) {
+		return identity{Rig: testRig, Member: testMember, Peers: map[string][]string{"b": {"pod-b@r"}}}, nil
+	}
+	deliver = func(target, text string, _, _ io.Writer) int {
+		got.calls++
+		got.target, got.text = target, text
+		return got.code
+	}
+	t.Cleanup(func() { pinsDir, identify, deliver = oldPins, oldIdentify, oldDeliver })
+
+	code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
+	if code != 2 || got.calls != 0 {
+		t.Fatalf("no policy: exit = %d, calls = %d, stderr %q, want a closed refusal with no delivery", code, got.calls, stderr)
+	}
+	wantPath := filepath.Join(first, testRig, testMember, "policy.json")
+	if !strings.Contains(stderr, wantPath) {
+		t.Fatalf("the refusal must name the path it looked for:\n got %q\nwant it to contain %q", stderr, wantPath)
+	}
+}
+
+// The store can be fixed at BUILD time, and that is the only way it can be set from outside: a
+// binary built with one reads exactly that directory, and nothing a process does afterwards moves
+// it - there is no flag and no environment read to change it, which is the property that keeps the
+// store out of the hands of the seat the guard constrains.
+func TestDefaultPinsUsesTheBuildTimeStore(t *testing.T) {
+	old := installedPinsDir
+	installedPinsDir = "/baked/store"
+	t.Cleanup(func() { installedPinsDir = old })
+
+	got, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "/baked/store" {
+		t.Fatalf("defaultPins = %q, want the baked store", got)
+	}
+}
+
 func TestSendUsageErrorsExit2(t *testing.T) {
 	cases := map[string][]string{
 		"no recipient":   {"--intent", "task", "--", "hi"},

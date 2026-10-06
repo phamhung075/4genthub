@@ -81,15 +81,25 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import openrig_scrub  # noqa: E402
+import openrig_seat_policy  # noqa: E402
+
+# THE ONE HOME RESOLUTION THIS TREE HAS, LOADED RATHER THAN COPIED - the same resolution
+# openrig_seat_policy.py carries and openrig_seat_sync.py loads. real_home() answers from the
+# passwd entry, because OpenRig launches a seat with HOME pointed at the seat's OWN state
+# directory (/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>): Path.home(),
+# os.path.expanduser("~") and any read of $HOME all resolve THERE, so every MACHINE-LEVEL default
+# built on them lands inside that seat's tree instead of the account's. The bridge IS run from a
+# seat in practice, so all three defaults below resolve from the account.
+real_home = openrig_seat_policy.real_home
 
 STATUS_PATH = "/api/v2/openrig/seat-status"
 REGISTER_PATH = "/api/v2/openrig/machines"
-DEFAULT_ENV_FILE = Path.home() / ".config" / "agenthub-bridge.env"
-DEFAULT_PINS = Path.home() / ".openrig" / "agenthub-seats"
+DEFAULT_ENV_FILE = real_home() / ".config" / "agenthub-bridge.env"
+DEFAULT_PINS = real_home() / ".openrig" / "agenthub-seats"
 # DEFAULT_SYNC_STATE records, per seat, the expected hash the cloud last answered in_sync for.
 # It is the client half of drift visibility: without it a seat's pinned hash has nothing local
 # to be compared against, so a drift is only ever visible by asking the server.
-DEFAULT_SYNC_STATE = Path.home() / ".openrig" / "bridge-sync.json"
+DEFAULT_SYNC_STATE = real_home() / ".openrig" / "bridge-sync.json"
 HEARTBEAT_SECONDS = 60.0
 MAX_BACKOFF = 120.0
 TOOL_TIMEOUT = 15
