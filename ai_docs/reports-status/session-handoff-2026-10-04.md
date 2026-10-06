@@ -20,7 +20,7 @@ purpose; do not treat a pending item as done because it is written down.
    with owner authorization. `healthVersion` is bumped **0.0.12 → 0.0.13** in
    `agenthub_go/fastmcp/server/httpapp/http.go` and `http_health_test.go`; production reported
    0.0.12 before the bump, so the deploy is confirmable. After pushing, poll
-   `https://api.4genthub.com/health` until it reports 0.0.13.
+   `https://api.4genthub.com/health` until it reports 0.0.13. **[SPENT — measured 2026-10-06: the push landed and this check was satisfied by a LATER marker, production reporting **0.0.19** after packet 1; the instruction is kept as the form the check took at this date, not as something still to run.]**
 2. **T6: remove `call_agent`.** D1 is decided (owner, 2026-10-04): a new tool named **`call_seat`**,
    served from the seat model; implemented and committed as `2740697e`. `call_agent` is untouched
    and must go — T6 also carries its routes, `-seed-agents`, the library path utils and the
@@ -34,14 +34,14 @@ purpose; do not treat a pending item as done because it is written down.
    `4genthub-dev` has since been deleted from OpenRig entirely, so the drift now applies to
    whatever rig is rebuilt from that room.
 4. **Cloud/runtime divergence.** The cloud room `4genthub-dev` still holds 9 seats (all `agy`,
-   all `yolo`); the runtime now runs a 3-seat `4genthub-min` team as the dev team. Reconcile or
+   all `yolo`); the runtime now runs a 3-seat `4genthub-min` team as the dev team **[count stale 2026-10-06: it is **10 seats** — see §3's measurement; the cloud half of this item is NOT-CHEAPLY-CHECKABLE from this seat, since the cloud room's seat count needs the cloud/owner surface]**. Reconcile or
    retire the room.
 5. **`call_seat` is not on production** until the push deploys. Anything on production that calls
    MCP tools cannot see it yet.
    **Update (later): superseded** by item 2's update — T6 landed and `call_seat` is the published
-   seat-call tool.
+   seat-call tool. **[Also measured 2026-10-06: the push LANDS this code — `2740697e` and the T6 removals are ancestors of `origin/main` — so the production half is satisfied too by the push item above. Whether production's MCP surface currently lists `call_seat` is NOT-CHEAPLY-CHECKABLE from this seat: it needs a production call this seat's rules forbid.]**
 
-## 2. What landed today (commits are local, unpushed)
+## 2. What landed on 2026-10-04 (then local and unpushed — **since PUSHED**, 2026-10-06)
 
 `2c8d05f3` omp runtime added to the one runtime list; `f66d25a4` every client-side runtime list
 made to match the server (frontend `SEAT_RUNTIMES`, `openrig_seat_sync.py`, `openrig_bridge.py`);
@@ -51,7 +51,9 @@ commits recording omp support, the 167-hour agy limit, the per-seat usage findin
 review-worker correction.
 
 **Local only, deliberately NOT committed** (project rule): `CLAUDE.md` and `.claude/`. Both were
-edited today and the edits are live in the working tree:
+edited on 2026-10-04 and the edits were live in the working tree:
+
+> **STALE HALF (measured 2026-10-06): `CLAUDE.md` no longer exists.** `ls CLAUDE.md` fails at the repo root, and a glob finds only `CLAUDE.local.md` and `ai_docs/claude-code/*` — so every edit described below describes a file that is gone. **The `.claude/` half still holds:** `.claude/hooks/session_start.py` contains `rig whoami`, and `.claude/hooks/utils/role_enforcer.py` contains no `call_agent`. The project rule itself (never commit `CLAUDE.md`/`.claude`) is unaffected.
 - `CLAUDE.md`: the "ABSOLUTE FIRST PRIORITY" block now says *know which seat you are* — run
   `rig whoami --json`, reach the team with `manage_seat`, and **do not call `call_agent`**
   (it answers "template not found" for every name on production). Also the quick reference, the
@@ -69,10 +71,15 @@ edited today and the edits are live in the working tree:
 4genthub-deepseek  1/1 running — the supervisor, self-parking on its queue item
 ```
 
+**MEASURED 2026-10-06 (`rig ps`, `rig whoami --json`) — the block above is the handoff's own snapshot and three of its lines have since moved:**
+- **`1 rig · 10 seats · 0 need attention`** — `4genthub-min` is **10/10 running** (lead, go-dev, go-dev2, reviewer, fe-dev, web-dev, skills-dev, context-dev, feedback-dev, writer), not `3/3`.
+- **`4genthub-deepseek` is STOPPED**, not running: `rig ps --include-archived` shows 1 node, 0 running, lifecycle `rec`, snapshot 18h ago. The "supervisor keeps running" paragraph below is therefore stale in its first sentence.
+- **`4genthub-dev` is gone** ✓, consistent with its bullet below; only `dev-agy` (2 nodes, **stopped**, needs attention) survives as a stopped archive.
+
 - **`4genthub-min` is the dev team now** (owner instruction). `4genthub-dev` was deleted from
   OpenRig; only its files remain under `~/.openrig/agenthub-seats/4genthub-dev/`.
 - **The supervisor keeps running after this session closes** — it is a separate rig, not part of
-  the Claude session. It parks itself with `rig queue block --wake-after` and wakes on its own.
+  the Claude session. **[STALE (measured 2026-10-06): it is STOPPED — the rig shows 0 running with a snapshot 18h old; the self-parking mechanism described here remains accurate as a mechanism.]** It parks itself with `rig queue block --wake-after` and wakes on its own.
   Stop it with `rig down 4genthub-deepseek` if supervision is not wanted.
 - **agy is out of service** until roughly Oct 10 (owner-stated ~167 hours). Its seats are skipped
   entirely: no probe, no nudge.
