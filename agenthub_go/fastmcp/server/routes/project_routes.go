@@ -10,7 +10,7 @@ import (
 )
 
 // ProjectController is the minimal ProjectAPIController surface used by the
-// routes (ctx first). The real controller is not ported yet.
+// routes (ctx first).
 type ProjectController interface {
 	CreateProject(ctx context.Context, request project.CreateProjectRequest, userID string) (ControllerResult, error)
 	ListProjects(ctx context.Context, userID string) (ControllerResult, error)

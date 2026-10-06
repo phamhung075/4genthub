@@ -78,7 +78,7 @@ func (t *ArgTransform) Validate() error {
 }
 
 // TransformParent is the minimal view of tools/tool.py::Tool that the transform
-// builder needs. tools/tool.py is not ported yet.
+// builder needs.
 type TransformParent interface {
 	Parameters() *entities.OrderedMap[any]
 	Run(ctx context.Context, arguments *entities.OrderedMap[any]) ([]any, error)

@@ -81,7 +81,7 @@ type ContextProgressRequest struct {
 }
 
 // ContextController is the minimal ContextAPIController surface used by the
-// routes (ctx first). The real controller is not ported yet.
+// routes (ctx first).
 type ContextController interface {
 	CreateContext(ctx context.Context, level, contextID string, data *entities.OrderedMap[any], userID string) (ControllerResult, error)
 	GetContext(ctx context.Context, level, contextID string, includeInherited bool, userID string) (ControllerResult, error)
