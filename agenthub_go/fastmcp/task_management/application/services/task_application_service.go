@@ -19,7 +19,7 @@ type zpTaskAppCreateTaskUseCase interface {
 
 // zpTaskAppGetTaskUseCase is the unported GetTaskUseCase.
 type zpTaskAppGetTaskUseCase interface {
-	Execute(ctx context.Context, taskID string, generateRules, forceFullGeneration, includeContext bool) (*taskdtos.TaskResponse, error)
+	Execute(ctx context.Context, taskID string, forceFullGeneration, includeContext bool) (*taskdtos.TaskResponse, error)
 }
 
 // zpTaskAppUpdateTaskUseCase is the unported UpdateTaskUseCase.
@@ -115,8 +115,8 @@ func (s *TaskApplicationService) CreateTask(ctx context.Context, request taskdto
 }
 
 // GetTask mirrors TaskApplicationService.get_task.
-func (s *TaskApplicationService) GetTask(ctx context.Context, taskID string, generateRules, forceFullGeneration, includeContext bool, userID *string, projectID, gitBranchName string) (*taskdtos.TaskResponse, error) {
-	response, err := s.deps.GetTask.Execute(ctx, taskID, generateRules, forceFullGeneration, includeContext)
+func (s *TaskApplicationService) GetTask(ctx context.Context, taskID string, forceFullGeneration, includeContext bool, userID *string, projectID, gitBranchName string) (*taskdtos.TaskResponse, error) {
+	response, err := s.deps.GetTask.Execute(ctx, taskID, forceFullGeneration, includeContext)
 	if err != nil {
 		var notFound *exceptions.TaskNotFoundError
 		if errors.As(err, &notFound) {

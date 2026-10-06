@@ -1024,7 +1024,7 @@ func (f *TaskApplicationFacade) GetTask(ctx context.Context, taskID string, incl
 		return notFound()
 	}
 
-	taskResponse, err := f.deps.GetTask.Execute(ctx, taskID, true, false, includeContext)
+	taskResponse, err := f.deps.GetTask.Execute(ctx, taskID, false, includeContext)
 	if err != nil {
 		var autoRule *exceptions.AutoRuleGenerationError
 		switch {
@@ -1067,7 +1067,7 @@ func (f *TaskApplicationFacade) getTaskAfterRuleFailure(ctx context.Context, tas
 	var taskResponse *dtostask.TaskResponse
 	if domainID, err := value_objects.NewTaskId(taskID); err == nil {
 		if entity, ferr := f.taskRepository.FindByID(ctx, domainID); ferr == nil && entity != nil {
-			if r, rerr := f.deps.GetTask.Execute(ctx, taskID, false, false, includeContext); rerr == nil {
+			if r, rerr := f.deps.GetTask.Execute(ctx, taskID, false, includeContext); rerr == nil {
 				taskResponse = r
 			}
 		}

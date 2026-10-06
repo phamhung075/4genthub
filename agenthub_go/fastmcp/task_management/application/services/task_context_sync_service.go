@@ -169,7 +169,7 @@ func (s *TaskContextSyncService) SyncContextAndGetTask(ctx context.Context, task
 		}
 	}
 
-	return s.getTaskUseCase.Execute(ctx, taskID, false, false, true)
+	return s.getTaskUseCase.Execute(ctx, taskID, false, true)
 }
 
 // zpTaskCtxSyncStringValue mirrors `.value if hasattr(..., "value") else str(...)`.

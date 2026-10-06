@@ -18,7 +18,7 @@ func (f *zpTaskAppTestCreate) Execute(request taskdtos.CreateTaskRequest) (*task
 
 type zpTaskAppTestGet struct{ notFound bool }
 
-func (f *zpTaskAppTestGet) Execute(ctx context.Context, taskID string, generateRules, forceFullGeneration, includeContext bool) (*taskdtos.TaskResponse, error) {
+func (f *zpTaskAppTestGet) Execute(ctx context.Context, taskID string, forceFullGeneration, includeContext bool) (*taskdtos.TaskResponse, error) {
 	if f.notFound {
 		return nil, exceptions.NewTaskNotFoundError(taskID)
 	}
@@ -117,7 +117,7 @@ func TestTaskApplicationService_CreateTaskBuildsContextData(t *testing.T) {
 func TestTaskApplicationService_GetTaskNotFoundReturnsNil(t *testing.T) {
 	svc, _, get, _, _, _, _ := zpTaskAppTestService(t)
 	get.notFound = true
-	resp, err := svc.GetTask(context.Background(), "missing", true, false, false, nil, "", "main")
+	resp, err := svc.GetTask(context.Background(), "missing", false, false, nil, "", "main")
 	if err != nil {
 		t.Fatal(err)
 	}
