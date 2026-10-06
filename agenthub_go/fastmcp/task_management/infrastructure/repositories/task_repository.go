@@ -28,8 +28,7 @@ import (
 )
 
 // TaskRepoFieldSelector is the subset of ContextFieldSelector used by ORMTaskRepository's
-// selective-field methods. It is declared here because that module is not ported yet; a
-// concrete implementation supplies these methods.
+// selective-field methods; a concrete implementation supplies these methods.
 type TaskRepoFieldSelector interface {
 	// GetTaskFields is get_task_fields.
 	GetTaskFields(taskID string, fields any) *entities.OrderedMap[any]

@@ -15,7 +15,7 @@ import (
 )
 
 // SubtaskRepositoryFactoryBackend is the central RepositoryFactory.get_subtask_repository used
-// by the factory (not yet ported).
+// by the factory.
 type SubtaskRepositoryFactoryBackend interface {
 	GetSubtaskRepository(userID *string) (domainrepos.SubtaskRepository, error)
 }
