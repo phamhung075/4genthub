@@ -57,11 +57,16 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 		return nil, err
 	}
 	callSeat := newCallSeatController(sessions)
+	submitFeedback, err := newSubmitFeedbackController(sessions)
+	if err != nil {
+		return nil, err
+	}
 	mcpTools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
 		FacadeService:     facadeService,
 		DatabaseAvailable: true,
 		ManageSeat:        manageSeat,
 		CallSeat:          callSeat,
+		SubmitFeedback:    submitFeedback,
 	}, nil)
 	if err != nil {
 		return nil, err
@@ -124,6 +129,7 @@ func (a *App) Handler() http.Handler {
 	mountSeatAdminRoutes(mux, a.Sessions)
 	mountSeatRigSpecRoutes(mux, a.Sessions)
 	mountSeatStatusRoutes(mux, a.Sessions)
+	mountSeatFeedbackRoutes(mux, a.Sessions)
 	mountMachineTokenRoutes(mux, a.Sessions)
 	mountTeamRoutes(mux, a.Sessions)
 	mountMiscRoutes(mux)

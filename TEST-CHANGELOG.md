@@ -2,6 +2,40 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the friction channel is driven from both submission paths into one store (Go)
+
+- `agenthub_go/fastmcp/server/httpapp/seat_feedback_mount_test.go` (new) mounts the two routes over
+  an in-memory store and pins what a consumer reads: the grouped answer's LAYER ORDER and counts
+  (submitted cloud-first to prove the grouping is by vocabulary, not by arrival), the exact row key
+  set, newest-first inside a group, the id the POST answered with being the id the read carries,
+  eight refusals (malformed body, unknown field, unknown layer, the underscore spelling of
+  `seat-context`, empty text, missing room, oversized session, oversized text), the 422 secret
+  refusal naming `text` and NOT echoing the credential, the machine-token attribution and the 401
+  the read side gives a machine token, tenant scoping, and the empty-channel envelope.
+- `agenthub_go/fastmcp/server/httpapp/submit_feedback_mcp_test.go` (new) publishes and dispatches
+  the `submit_feedback` tool: the schema's layer enum equals the domain vocabulary, an unknown layer
+  is refused with the vocabulary named and nothing stored, and **the tool and the route write into
+  ONE store and their rows are compared field by field** (`assertSameRowShape`: everything that
+  describes the submission, with id, text and the instant excluded for stated reasons).
+- `agenthub_go/fastmcp/server/httpapp/seat_feedback_script_test.go` (new) executes the REAL
+  `scripts/seat_feedback.sh` against the routed server over HTTP (`httptest` + `exec`), asserts the
+  route's own answer is what the script prints, compares the script's row with the tool's row, and
+  checks that an unknown layer is refused by the script WITHOUT a request reaching the server.
+- `agenthub_go/fastmcp/server/httpapp/mcp_routes_test.go` gained the new tool in the golden test's
+  Go-only skip list (`submit_feedback`, beside `manage_seat`/`call_seat`), so the Python registry
+  comparison stays honest rather than growing a silent exception.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go test ./fastmcp/server/httpapp/ -run 'TestSeatFeedback|TestMCPSubmitFeedback|TestMCPToolsListPublishesSubmitFeedback'`
+  -> ok; `go vet ./fastmcp/server/... ./fastmcp/seat_management/...` -> clean; `go build ./...` -> clean;
+  `gofmt -l` on the touched files -> empty. **Run at HEAD in a pristine copy** (`git archive HEAD` +
+  the new files), because the shared working tree could not compile the httpapp test binary at the
+  time: go-dev2's in-flight D5 edit had widened `seatAdminSource`/`seatRigSpecSource` without its
+  test fakes yet. Production `go build ./...` was clean in the live tree, and the same tests were
+  re-run there once it built.
+- NOT covered yet, and named: the `seat_feedback` table's own DDL/registry/DDL-guard slice is held
+  for the D5 serialization, so no test in this list touches the database; the gated integration
+  suite gains its case with that slice.
+
 ## 2026-10-06 - the swallowed AI refusal is driven at both layers (Go)
 
 - `agenthub_go/fastmcp/task_management/interface/ai_refusal_surfacing_test.go` (new) has two tests.

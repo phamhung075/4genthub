@@ -40,6 +40,7 @@ type DDDCompliantMCPTools struct {
 	AgentController      *agent_mcp_controller.AgentMCPController
 	ManageSeatController *seatcontrollers.ManageSeatController
 	CallSeatController   *seatcontrollers.CallSeatController
+	SubmitFeedbackController *seatcontrollers.SubmitFeedbackController
 	ContextController    *contextctl.UnifiedContextMCPController // nil when the database is unavailable
 	WorkflowHintEnhancer *workflow_hint_enhancer.WorkflowHintEnhancer
 }
@@ -52,6 +53,8 @@ type Dependencies struct {
 	DatabaseAvailable bool
 	ManageSeat        *seatcontrollers.ManageSeatController
 	CallSeat          *seatcontrollers.CallSeatController
+	// SubmitFeedback is the seat friction channel's tool; nil when the caller does not compose it.
+	SubmitFeedback *seatcontrollers.SubmitFeedbackController
 }
 
 // NewDDDCompliantMCPTools ports __init__(projects_file_path, config_overrides,
@@ -76,7 +79,7 @@ func NewDDDCompliantMCPTools(deps Dependencies, configOverrides map[string]any) 
 	}
 	wireAuthHooks()
 	wireWorkflowGuidance()
-	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, ManageSeatController: deps.ManageSeat, CallSeatController: deps.CallSeat}
+	t := &DDDCompliantMCPTools{Config: cfg, PathResolver: resolver, FacadeService: facadeService, ManageSeatController: deps.ManageSeat, CallSeatController: deps.CallSeat, SubmitFeedbackController: deps.SubmitFeedback}
 	formatter := utils.NewMCPResponseFormatter()
 	if err := t.initControllers(deps, formatter); err != nil {
 		return nil, err
