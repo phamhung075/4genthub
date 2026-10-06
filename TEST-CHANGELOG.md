@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the rig build's delete of operator files is pinned from both sides (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained two tests over the existing
+  local-HTTP-server fixture, so the whole client path runs and only the cloud is canned:
+  `test_rig_build_keeps_operator_files_it_did_not_create` places a marker file and a SYMLINK in
+  `<out>/<room>/rig` between two builds and asserts both survive, that the stderr notice names
+  them, and that stdout stays exactly the machine-readable `rig:<path>` line;
+  `test_rig_build_replaces_its_own_rendered_content` drops a seat from the room and asserts the
+  build still removes that seat's rendered `agents/<seat>` directory and prints no notice.
+- The second test is the deliberate counterweight: without it, a future change that preserved
+  EVERYTHING would pass the first test while breaking the staging-and-swap build's whole purpose.
+- Proved by reverting the change: with the fix removed the preservation test fails
+  (`FileNotFoundError: .../room1/rig/operator-notes.txt`) and passes with it; the counterweight test
+  passes both ways, which is what a guard for an unchanged invariant should do.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **90 passed** (88 before these two), and the
+  whole script suite `... src/tests/scripts -q` -> **221 passed**.
+- No credential is created, read or printed by either test: the marker holds the text
+  "placed by the operator" and the symlink points at a temp file holding "not a credential".
+
 ## 2026-10-06 - the friction channel is driven from both submission paths into one store (Go)
 
 - `agenthub_go/fastmcp/server/httpapp/seat_feedback_mount_test.go` (new) mounts the two routes over

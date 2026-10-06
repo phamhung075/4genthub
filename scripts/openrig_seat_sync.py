@@ -25,8 +25,11 @@ pulls every listed seat with the same pinning rules as ``pull``, then builds::
 The ``agents/<seat>`` link makes the ``local:agents/<seat>`` references in the
 YAML resolve. The rig directory is built in a staging directory and swapped in
 only after every seat is pinned, so a failed run leaves a previous rig directory
-untouched. Print only ``rig:<path to rig.yaml>`` so the operator can run
-``rig up <that path>``.
+untouched. **The build owns exactly ``rig.yaml`` and ``agents/``**: anything else
+found in the rig directory was placed there by the operator — a credential link,
+a delegation file, notes — and is carried over to the rebuilt directory, named on
+stderr, rather than deleted. Print only ``rig:<path to rig.yaml>`` on stdout so the
+operator can run ``rig up <that path>``.
 
 Offline use is an explicit operator choice. ``bundle`` produces a self-contained
 ``.rigbundle`` from the pinned snapshot; it is never used automatically as a
@@ -542,8 +545,35 @@ def materialize_agent(source: Path, seat_dir: Path, target: Path) -> None:
             shutil.copy2(candidate, target / name)
 
 
-def swap_dir(staging: Path, target: Path) -> None:
-    """Move ``staging`` onto ``target``, restoring ``target`` if the move fails."""
+# The entries a rig build writes into the rig directory. Everything else found there was placed
+# by the operator and is preserved across a rebuild: the swap replaces what the build RENDERS, and
+# an operator's file was never the build's to delete.
+RIG_BUILD_ENTRIES = frozenset({"rig.yaml", "agents"})
+
+
+def operator_entries(rig_dir: Path) -> list[str]:
+    """The names in a rig directory that the build does not own.
+
+    A credential link, a delegation file, an operator's notes — anything that is not
+    ``rig.yaml`` or ``agents`` — lives here, and a rebuild must carry it over rather than
+    remove it silently.
+    """
+    if not rig_dir.is_dir():
+        return []
+    return sorted(
+        entry.name for entry in rig_dir.iterdir() if entry.name not in RIG_BUILD_ENTRIES
+    )
+
+
+def swap_dir(staging: Path, target: Path, preserve: list[str] | None = None) -> list[str]:
+    """Move ``staging`` onto ``target``, restoring ``target`` if the move fails.
+
+    ``preserve`` names entries of the old ``target`` that the caller does not own: after the swap
+    they are moved back into the new directory, and their names are returned so the caller can say
+    what it kept. A name the new directory already has is left alone — the build's own content
+    wins. Entries are moved rather than copied, so a symlink stays a symlink.
+    """
+    kept: list[str] = []
     backup = None
     if target.exists() or target.is_symlink():
         backup = Path(
@@ -558,7 +588,16 @@ def swap_dir(staging: Path, target: Path) -> None:
             backup.rename(target)
         raise
     if backup is not None:
+        for name in preserve or []:
+            candidate = backup / name
+            if not candidate.exists() and not candidate.is_symlink():
+                continue
+            if (target / name).exists() or (target / name).is_symlink():
+                continue
+            candidate.rename(target / name)
+            kept.append(name)
         shutil.rmtree(backup, ignore_errors=True)
+    return kept
 
 
 def cmd_rig(args: argparse.Namespace) -> None:
@@ -600,6 +639,10 @@ def cmd_rig(args: argparse.Namespace) -> None:
 
     room_dir = out / room
     room_dir.mkdir(parents=True, exist_ok=True)
+    rig_dir = room_dir / "rig"
+    # Whatever the operator put in the rig directory survives this build; the swap below only
+    # ever replaces what the build itself renders.
+    operator_files = operator_entries(rig_dir)
     staging = Path(tempfile.mkdtemp(prefix=".rig.", dir=room_dir))
     try:
         (staging / "rig.yaml").write_text(yaml_text, encoding="utf-8")
@@ -607,12 +650,18 @@ def cmd_rig(args: argparse.Namespace) -> None:
         agents.mkdir()
         for seat in seats:
             materialize_agent(pinned[seat], out / room / seat, agents / seat)
-        swap_dir(staging, room_dir / "rig")
+        kept = swap_dir(staging, rig_dir, preserve=operator_files)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
 
-    print(f"rig:{room_dir / 'rig' / 'rig.yaml'}")
+    if kept:
+        print(
+            f"kept {len(kept)} file(s) the build did not create in {rig_dir}: "
+            f"{', '.join(kept)}",
+            file=sys.stderr,
+        )
+    print(f"rig:{rig_dir / 'rig.yaml'}")
 
 
 def cmd_bundle(args: argparse.Namespace) -> None:

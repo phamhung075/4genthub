@@ -567,6 +567,69 @@ def test_rig_second_run_keeps_pin_and_prints_notice(env, tmp_path, capsys):
     assert (rig_dir / "rig.yaml").read_text() == shifted_yaml
 
 
+def test_rig_build_keeps_operator_files_it_did_not_create(env, tmp_path, capsys):
+    """A rebuild replaces what it RENDERS and nothing else.
+
+    The reported defect (OF4 run, 2026-10-06) was a credential loss: an operator's file placed in
+    the rig directory — the documented home of a rig-root ``.env`` — was gone after the next
+    build, and the seats then launched with no credential. The build owns ``rig.yaml`` and
+    ``agents/``; anything else is the operator's and survives, named on stderr.
+    """
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    env.set_seat(HASH_A)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    notes = rig_dir / "operator-notes.txt"
+    notes.write_text("placed by the operator\n")
+    target = tmp_path / "credential-target"
+    target.write_text("not a credential\n")
+    link = rig_dir / "operator-link"
+    link.symlink_to(target)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    # stdout stays exactly the machine-readable line the launcher parses.
+    assert out.strip().splitlines() == [f"rig:{rig_dir / 'rig.yaml'}"]
+    assert notes.read_text() == "placed by the operator\n"
+    assert link.is_symlink() and os.readlink(link) == str(target)
+    assert "kept 2 file(s) the build did not create" in err
+    assert "operator-link" in err and "operator-notes.txt" in err
+
+
+def test_rig_build_replaces_its_own_rendered_content(env, tmp_path, capsys):
+    """The other half of the same rule, so a future 'preserve everything' change fails here.
+
+    ``agents/`` is the build's: a seat the room no longer lists does not survive the next build,
+    because that is exactly what the staging-and-swap build is for.
+    """
+    env.set_rigspec(
+        RIG_YAML,
+        [{"seat": "seat1", "hash": HASH_A}, {"seat": "seat2", "hash": HASH_B}],
+    )
+    env.set_seat(HASH_A, seat="seat1")
+    env.set_seat(HASH_B, seat="seat2")
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    assert (rig_dir / "agents" / "seat2").is_dir()
+
+    # seat2 leaves the room; the next build must not carry its rendered directory over.
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert (rig_dir / "agents" / "seat1").is_dir()
+    assert not (rig_dir / "agents" / "seat2").exists()
+    # Nothing of the operator's was there, so there is nothing to report.
+    assert "kept" not in err
+
+
 def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     env.set_seat(HASH_A)
