@@ -11,7 +11,7 @@ require golang.org/x/text v0.42.0
 require github.com/dlclark/regexp2 v1.11.5
 
 require (
-	github.com/jackc/pgx/v5 v5.7.2
+	github.com/jackc/pgx/v5 v5.11.0
 	golang.org/x/crypto v0.57.0
 )
 

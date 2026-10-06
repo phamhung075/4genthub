@@ -535,17 +535,54 @@ func TestTaskRepoCompletedSubtasks(t *testing.T) {
 	}
 }
 
-func TestTaskRepoGetOverdueTaskDefect(t *testing.T) {
+// GetOverdueTasks means the tasks that are PAST DUE AND NOT COMPLETED - the filter the Python
+// original applied (Task.due_date < datetime.now(UTC) AND Task.status != "completed"), and the
+// only reading of "overdue" this repository defines. The port preserved a DEFECT instead of the
+// behaviour: due_date is a text column, comparing it with a timestamp raises on PostgreSQL, and
+// so the method always failed and this test pinned the failure.
+//
+// It asserts the INTENT now - the three cases that distinguish it - rather than whatever the
+// driver happens to return, because a security bump that made a broken query merely stop
+// erroring would otherwise be recorded as the behaviour.
+func TestTaskRepoGetOverdueTasksReturnsPastDueUnfinished(t *testing.T) {
 	sessions := newTestRepoEnv(t)
 	ctx := context.Background()
 	branchID := taskRepoTestBranch(t, sessions, taskRepoTestUserA)
 	repo := taskRepoTestNewRepo(t, sessions, taskRepoTestUserA, branchID, false)
-	if _, err := repo.CreateTask(ctx, "T", "D", "medium", nil, nil, NewKwargs("due_date", "2000-01-01")); err != nil {
+
+	pastDue, err := repo.CreateTask(ctx, "past due", "D", "medium", nil, nil, NewKwargs("due_date", "2000-01-01"))
+	if err != nil {
 		t.Fatal(err)
 	}
-	// Python compares a VARCHAR column to a datetime; PostgreSQL rejects the comparison.
-	if _, err := repo.GetOverdueTasks(ctx); err == nil {
-		t.Fatalf("expected a type error from due_date < timestamp")
+	future, err := repo.CreateTask(ctx, "future due", "D", "medium", nil, nil, NewKwargs("due_date", "2999-01-01"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	finished, err := repo.CreateTask(ctx, "past due but finished", "D", "medium", nil, nil, NewKwargs("due_date", "2000-01-01"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Set the finished task's status directly: UpdateTask is itself a transcription with its own
+	// defects ("'str' object has no attribute 'touch'"), and this fixture needs the row, not that
+	// code path.
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx, `UPDATE tasks SET status = 'completed' WHERE id = $1::uuid`, finished.ID.String())
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := repo.GetOverdueTasks(ctx)
+	if err != nil {
+		t.Fatalf("GetOverdueTasks: %v", err)
+	}
+	titles := make([]string, 0, len(got))
+	for _, task := range got {
+		titles = append(titles, task.Title)
+	}
+	if len(got) != 1 || got[0].ID.String() != pastDue.ID.String() {
+		t.Fatalf("overdue = %v, want exactly the past-due unfinished task; future due is %q, past due but completed is %q",
+			titles, future.Title, finished.Title)
 	}
 }
 
