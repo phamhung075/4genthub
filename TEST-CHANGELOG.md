@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the pin label is driven, not read (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` (the case at :419, renamed from 'marks a pinned block and still
+  offers removal') DRIVES the pinned row instead of asserting around it: with a `pin` op on the company overlay it
+  clicks `Remove here` on that row and asserts the write that follows - `putOverlay('seat', { ops: [{ kind: 'remove',
+  slug: 'rules', version: '', content: '' }] }, 'dev', 'alice')` - so the surface is shown removing a pinned block
+  rather than promising to.
+- Two assertions pin the copy the owner's ruling is about: the badge's text is EXACTLY `pinned at company` (the
+  padlock glyph is gone, asserted as no `svg` inside the badge), and the row carries the sentence saying a pin sets
+  the version in effect at its scope and is not a lock.
+- Proved by removing the change: with the padlock restored the `svg` assertion fails, and with the sentence removed
+  the text lookup fails - both halves are pinned rather than described.
+- Counts: that file 22 tests, 0 errors.
+- Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
+  passed.
+
 ## 2026-10-06 — the two destructive paths are exercised rather than read (Go)
 
 - `agenthub_go/fastmcp/seat_management/application/services/deletion_paths_integration_test.go` (new, gated by `SEAT_TEST_DATABASE_URL` like its neighbour `seat_resolution_integration_test.go`) covers the ONLY two destructive paths in the shipped surface — a seat link delete and a room delete — which had **no execution coverage at all**: the audit that reported them verified the SQL by reading, and the gated tests were not run for it.

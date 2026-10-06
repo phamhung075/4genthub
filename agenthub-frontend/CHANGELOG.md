@@ -181,6 +181,21 @@
     that one case.
 
 ### Changed
+- **The pin label states what a pin does instead of implying protection (owner's pin ruling)** - 2026-10-06
+  - `src/components/seats/SeatComposer.tsx:181-183` drops the padlock glyph from the pinned badge: the badge reads
+  `pinned at <scope>` and nothing else. The owner's ruling is that a pin LABELS THE TRUTH - it sets the version in effect
+  at its scope and nothing more - and the resolver enforces no lock (`pin` writes `version`/`pinnedAt` in the overlay fold,
+  `src/lib/blockComposition.ts:127-131`), so a padlock claimed a protection the system does not have. The owner explicitly
+  rejected making a pin a real lock, so no enforcement semantics were added: no disabled control, no refused removal, no
+  new error path.
+  - `SeatComposer.tsx:198-203` adds the sentence a pinned row was missing, "A pin sets the version in effect at `<scope>`
+  for this block and does nothing else - it is not a lock, so removing the block still removes it." The removal keeps its
+  own outcome line (`SeatComposer.tsx:197`, e.g. `Removing here: removed at seat · still defined at company`), which is what
+  the removal actually does.
+  - Swept for other copy that implies a pin protects a block: none. `SeatsPage.tsx:50` and `TopologySeatsTable.tsx:20`
+  label a seat's seat-type version (`Pinned 1.0.0` / `follows latest`), `SeatDetailPage.tsx:89-90` only names the `pin` op
+  kind in the change list, and the two test names mentioning a "pin lock" (`blockComposition.test.ts:144`,
+  `SeatAuthoringPage.test.tsx:419`) assert the ABSENCE of one.
 - **The Vite trap is corrected a SECOND time: the export WINS, and the file Vite reads is the root one** - 2026-10-06
  - A correction of a correction, kept visible because the history is the evidence that the standard is held: 5b9a019f
  retracted the claim that `VITE_WS_URL` is inert without a frontend `.env` - true as far as it went - and then offered

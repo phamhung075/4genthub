@@ -414,14 +414,35 @@ describe('SeatAuthoringPage composer', () => {
     expect(within(blocks).getByRole('button', { name: /Restore/ })).toBeInTheDocument();
   });
 
-  it('marks a pinned block and still offers removal - no invented pin lock', async () => {
+  // The owner's pin ruling: a pin labels what it does - sets the version in effect at its scope -
+  // and must not read as protection; the resolver has no pin lock and a removal below still wins.
+  it('labels a pin as what it does and still removes the block - no invented pin lock', async () => {
     overlaysFor({ company: [{ kind: 'pin', slug: 'rules', version: '1.2.0', content: '' }] });
     await openComposer();
 
     const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
-    expect(within(blocks).getByText('pinned at company')).toBeInTheDocument();
+    const badge = within(blocks).getByText('pinned at company');
+    expect(badge.textContent).toBe('pinned at company');
+    // A padlock glyph claimed a protection the resolver does not enforce.
+    expect(badge.querySelector('svg')).toBeNull();
+    expect(
+      within(blocks).getByText(
+        'A pin sets the version in effect at company for this block and does nothing else - it is not a lock, so removing the block still removes it.'
+      )
+    ).toBeInTheDocument();
+
     const row = within(blocks).getByText('rules@1.2.0').closest('li') as HTMLElement;
     expect(within(row).getByRole('button', { name: /Remove here/ })).toBeEnabled();
+    fireEvent.click(within(row).getByRole('button', { name: /Remove here/ }));
+
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'remove', slug: 'rules', version: '', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
   });
 });
 
