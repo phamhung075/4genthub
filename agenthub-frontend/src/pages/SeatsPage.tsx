@@ -25,8 +25,8 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
-import { MachinesPanel, SeatStateBadge, SeatSyncBadge } from '../components/seats/MachinesPanel';
-import { latestSeatStatus } from '../lib/machineSeats';
+import { MachinesPanel, SeatStateBadge, SeatSyncBadge, SeatUnresolvedBadge } from '../components/seats/MachinesPanel';
+import { isUnresolvedLiveSeat, latestSeatStatus } from '../lib/machineSeats';
 import { isValidSeatModel, isValidSeatName, SEAT_MODEL_MESSAGE, SEAT_NAME_MESSAGE } from '../lib/seatNames';
 import {
   useCreateRoom,
@@ -390,6 +390,7 @@ export const SeatsPage: React.FC = () => {
                     <span className="flex items-center gap-2">
                       {live && <SeatStateBadge state={live.state} />}
                       {live && <SeatSyncBadge seat={live} />}
+                      {live && isUnresolvedLiveSeat(live) && <SeatUnresolvedBadge />}
                     </span>
                   </CardTitle>
                   <CardDescription>{seat.seat_type}</CardDescription>

@@ -723,6 +723,11 @@ export const SeatDetailPage: React.FC = () => {
   useRealtimeSync(webSocketClient.client, true);
   const { seats, isLoading, error, refetch } = useSeats(room);
   const { seatTypes } = useSeatTypes();
+  // The resolve read is what renders the seat. When it refuses, nothing behind the seat can be
+  // rendered, so the refusal is reported instead of the ordinary panels - which would otherwise show
+  // a seat that looks healthy while nothing resolves it. The same query key is used by PreviewTab,
+  // so this subscribes to that one request rather than adding a second.
+  const { error: resolveError, refetch: refetchResolved } = useResolvedSeat(room, seat);
 
   const currentSeat = seats.find(candidate => candidate.seat_key === seat);
   const seatType = currentSeat
@@ -756,7 +761,22 @@ export const SeatDetailPage: React.FC = () => {
         </Alert>
       )}
 
-      {currentSeat && (
+      {currentSeat && resolveError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-medium">
+              This seat does not resolve, so nothing behind it can be rendered.
+            </p>
+            <p className="mt-1 font-mono text-xs">{resolveError.message}</p>
+            <Button variant="outline" size="sm" className="ml-3" onClick={() => refetchResolved()}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {currentSeat && !resolveError && (
         <Tabs defaultValue="modules">
           <TabsList>
             <TabsTrigger value="modules">

@@ -54,6 +54,20 @@ export const SeatSyncBadge: React.FC<{ seat: Pick<MachineSeatStatus, 'sync' | 'h
   );
 };
 
+/**
+ * A seat a machine reports as live whose cloud record has no resolved snapshot. "sync unknown" alone
+ * does not say this: it covers a missing running hash too, and the empty snapshot is the state worth
+ * naming, because a seat that cannot resolve looks exactly like one nothing has resolved yet.
+ */
+export const SeatUnresolvedBadge: React.FC = () => (
+  <Badge
+    variant="destructive"
+    title="A machine reports this seat as live, but the cloud has no resolved snapshot for it: nothing has resolved it."
+  >
+    no resolved snapshot
+  </Badge>
+);
+
 const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
   <Card>
     <CardHeader>

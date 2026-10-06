@@ -329,6 +329,26 @@ describe('SeatDetailPage', () => {
     expect(screen.getByText('B content')).toBeInTheDocument();
   });
 
+  // The measured defect (seat-resolve row): with the local catalog lacking a referenced module the
+  // resolve read fails, yet the page rendered its ordinary panels and looked healthy - the failure was
+  // only visible by calling the API directly. This fails if the panels render over a failed resolve.
+  it('reports a failed resolve instead of rendering the panels', async () => {
+    mockApi.getResolvedSeat.mockRejectedValue(
+      new Error('module queue-handoff@1.0.0 not found in catalog')
+    );
+
+    renderDetail();
+
+    expect(await screen.findByText(/does not resolve/i)).toBeInTheDocument();
+    // The reason the API gave, which names the missing reference.
+    expect(
+      screen.getByText('module queue-handoff@1.0.0 not found in catalog')
+    ).toBeInTheDocument();
+    // Nothing ordinary is rendered over it: no tabs, no resolved-snapshot panel.
+    expect(screen.queryByRole('tab', { name: /modules/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Resolved snapshot')).not.toBeInTheDocument();
+  });
+
   it('offers the five OpenRig link kinds with labels and message rules', async () => {
     renderDetail();
     await screen.findByText('rules');

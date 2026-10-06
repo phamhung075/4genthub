@@ -28,3 +28,13 @@ export function latestSeatStatus(
   }
   return latest;
 }
+
+/**
+ * A seat a machine reports as live whose cloud record carries no resolved snapshot: something
+ * launched it, yet nothing has resolved it. An unresolvable seat lands here, because a refused
+ * resolve stores no snapshot. `expected_hash` is the hash of the seat's newest stored snapshot, so
+ * empty means none exists - and only a live state makes that a defect rather than an idle seat.
+ */
+export function isUnresolvedLiveSeat(seat: MachineSeatStatus): boolean {
+  return seat.expected_hash === '' && seat.state !== 'stopped' && seat.state !== 'unknown';
+}

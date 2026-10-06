@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a seat that cannot resolve stops looking healthy (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx` adds a case with a rejected resolve read: the reason the API
+  gave is rendered and nothing ordinary is (no tab and no resolved-snapshot panel). Proved by restoring
+  the old render - with the guard removed the case fails with "Unable to find an element with the text:
+  /does not resolve/i", because the panels render over the failure, which is the defect itself.
+- `src/tests/pages/SeatsPage.test.tsx` pins both halves of the list mark on the seat card: a
+  machine-reported running seat with an empty `expected_hash` shows `no resolved snapshot`, and the same
+  empty snapshot on a stopped seat does not. The first version of these two failed honestly - they
+  asserted on a card without selecting the room, and the first fix then raced the async room list; the
+  click now awaits the button, so the case cannot fail intermittently.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx
+  src/tests/pages/SeatsPage.test.tsx` -> 50 passed; `npx vitest run` -> 102 files / 1752 tests passed;
+  `npx vite build` -> ok.
+
 ## 2026-10-06 — the gated real-PostgreSQL seat suite, and the trap a reused test database sets (Go)
 
 - Ran the whole `./fastmcp/seat_management/...` tree WITH `SEAT_TEST_DATABASE_URL` set, which the ungated runs never exercise: on a fresh database exactly one test fails, `TestSeatResolutionEndToEnd`, at the seed, naming the cause — `seed architect: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types`. Everything else, including `TestSeatRepositoriesIntegration` in the orm package, passes against the real database.

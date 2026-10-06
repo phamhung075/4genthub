@@ -211,6 +211,17 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A seat that cannot be resolved no longer renders as a working seat** - 2026-10-06
+ - The seat page read the resolve (`GET /api/v2/openrig/seats/{room}/{seat}`) only inside the Preview tab
+ and rendered its ordinary panels whatever that read answered, so a refused resolve - measured with a
+ catalog missing a referenced module: 404 `module queue-handoff@1.0.0 not found in catalog` - left the
+ page looking healthy while nothing behind the seat resolved. The page now subscribes to that read and,
+ when it fails, renders the refusal with the reason the API gave (which names the module and version)
+ instead of the tabs. It shares the query key with the Preview tab, so this adds no request.
+ - The seats list marks the same condition where it is visible without a request per seat: a seat a
+ machine reports as live whose `expected_hash` is empty - the hash of the cloud's newest stored resolved
+ snapshot - gets a `no resolved snapshot` badge. `sync unknown` did not say this, because it also covers
+ a missing running hash; a stopped seat is not marked, since nothing is expected to resolve it.
 - **A token that cannot start a session is reported, not silently cleared** - 2026-10-06
  - A token minted by `POST /api/v2/tokens` decodes but carries no `email` claim. The token decoder built
  the username from that claim, so it threw, returned null exactly like an expired token, and the mount
