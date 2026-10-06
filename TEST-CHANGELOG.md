@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the limits-into-AGENTS.md join is pinned, because a withdrawal rests on it (Go)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy_limits_join_test.go`:
+  `TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule` renders the SAME seat twice, with and
+  without a policy module, and asserts the limits section lands in `AGENTS.md` in the first case
+  (`## Your limits as seat (dev)`, `### Refused shell commands`, and the rule with its sibling) and is
+  ABSENT in the second while the guide is still written - so the section's presence is attributable to the
+  policy module rather than to the render in general.
+- WHY IT EXISTS: Packet 6 retires the seat-limits generator on the claim that "the render carries the
+  limits", and that join had never run. `RenderPolicyLimits` is tested as a function (`policy_test.go`,
+  `policy_fold_test.go:189`) while `renderAgentsMD` has exactly one caller (`renderer.go:206`) that no test
+  reached. The guard is `policySet.Role != ""` fed by `FoldPolicies`, which reads only `kind: policy`
+  modules (`policy_fold.go:37`), and no policy module exists in this tree - so for every seat today the
+  render's document is guides-only, which is what the retirement's fourth sentence must say.
+- Commands: `go test ./fastmcp/seat_management/domain/seatrenderer/ -run TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule -v`
+  -> PASS (0.00s); `go test ./fastmcp/seat_management/domain/seatrenderer/` -> ok (0.036s); `gofmt -l` on the
+  new file -> empty; `go vet ./fastmcp/seat_management/domain/seatrenderer/` -> exit 0.
+
 ## 2026-10-06 - the rig path's validation half, with its six refusals (Go client)
 
 - `internal/clientsync/rig_test.go`: `TestReadRigspecPinsEveryShapeRefusal` covers the six checks `cmd_rig`
