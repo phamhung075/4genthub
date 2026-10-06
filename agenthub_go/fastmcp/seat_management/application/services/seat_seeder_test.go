@@ -144,3 +144,38 @@ func TestSeedSeatTypesAcceptsItsOwnAuthoredModules(t *testing.T) {
 		t.Errorf("versions = %+v, want 1", seatTypes.versions)
 	}
 }
+
+// THE CLASS THIS CLOSES, and it is the reason the gate exists as one function: the seeder writes
+// module versions directly, so before the shared gate it could STORE a version whose content its
+// kind's renderer cannot read - something the publish route refuses with a 400. The failure then
+// appeared at render time on a seat, on a different route from the seed that caused it.
+//
+// Nothing may be written for the refused module: not the version, not the module row, and not the
+// seat type version that references it.
+func TestSeedSeatTypesRefusesAModuleItsKindCannotRead(t *testing.T) {
+	catalog, seatTypes := newFakeCatalog(), newFakeSeatTypes()
+	seed := authoredSeed()
+	seed.Modules = append(seed.Modules, seedmap.SeedModule{
+		Slug:    "developer-skill",
+		Kind:    resolver.KindSkill,
+		Version: "1.3.0",
+		Content: "this is not a skill block",
+	})
+
+	err := SeedSeatTypes(context.Background(), "u", []seedmap.Seed{seed}, catalog, seatTypes)
+	if err == nil {
+		t.Fatal("a seed whose module its kind cannot read succeeded")
+	}
+	if !strings.Contains(err.Error(), "developer-skill@1.3.0") || !strings.Contains(err.Error(), "developer") {
+		t.Errorf("error %q must name the module and the seat type", err)
+	}
+	if len(catalog.versions) != 0 {
+		t.Errorf("a refused seed stored module versions: %+v", catalog.versions)
+	}
+	if len(seatTypes.versions) != 0 {
+		t.Errorf("a refused seed wrote a seat type version: %+v", seatTypes.versions)
+	}
+	if len(seatTypes.saved) != 0 {
+		t.Errorf("a refused seed wrote a seat type: %+v", seatTypes.saved)
+	}
+}

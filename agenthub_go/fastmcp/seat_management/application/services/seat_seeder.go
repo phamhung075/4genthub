@@ -13,6 +13,19 @@ import (
 // different content under the same version fails instead of being overwritten.
 func SeedSeatTypes(ctx context.Context, userID string, seeds []seedmap.Seed, modules repositories.ModuleRepository, seatTypes repositories.SeatTypeRepository) error {
 	for _, seed := range seeds {
+		// THE SAME GATE THE PUBLISH ROUTE USES, and the reason this exists: this seeder writes module
+		// versions directly, so before this call it could store a content its kind's renderer cannot
+		// read - a version the route refuses with a 400 - and the failure then appeared when a seat
+		// rendered the block, on a different route from the seed that caused it.
+		//
+		// EVERY module of the seed is validated BEFORE any of them is written, so a seed carrying one
+		// unrenderable module is refused whole rather than half-stored - the same shape as the ref
+		// check below, which verifies what the version references before writing the version.
+		for _, m := range seed.Modules {
+			if err := ValidateModuleContent(m.Kind, m.Content); err != nil {
+				return fmt.Errorf("seed %s: module %s@%s: %w", seed.SeatTypeSlug, m.Slug, m.Version, err)
+			}
+		}
 		for _, m := range seed.Modules {
 			if _, err := modules.SaveModule(ctx, userID, m.Slug, m.Kind); err != nil {
 				return fmt.Errorf("seed %s: module %s: %w", seed.SeatTypeSlug, m.Slug, err)

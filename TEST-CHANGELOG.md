@@ -2,6 +2,28 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the module content gate is pinned for BOTH writers (Go)
+
+- New `fastmcp/seat_management/application/services/module_content_gate_test.go`: the unknown kind,
+  the empty content, content over the bound, content the kind's renderer cannot read, and the accepted
+  cases (a plain instruction module, and content exactly AT the bound); plus the secret case asserted
+  through `errors.Is(err, ErrModuleSecretDetected)`, because that is the one refusal a caller maps to
+  its own surface (the route answers 422 for it).
+- New `TestSeedSeatTypesRefusesAModuleItsKindCannotRead`: a seed whose second module is a skill block
+  that will not parse is refused, naming the module and the seat type, and **nothing is stored** - not
+  the module, not its version, and not the seat type version that references it.
+- **Falsified**: removing the seeder's gate call in an export makes that test fail with
+  `a refused seed stored module versions: map[developer-role@1.3.0:role]` - i.e. the writer stores
+  exactly what the gate refuses, which is the defect.
+- The route's existing tests (`TestSeatAdminPutModuleVersionRefusesUnrenderableContent` and its
+  siblings) pass unchanged through the shared gate, which is the evidence that the HTTP statuses and
+  messages did not move.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet
+  ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` and `go test` on both
+  -> pass. NOT run repo-wide, and the reason is a finding: `seedlibrary.go` does not compile at this
+  moment (`undefined: secretscan`) because another seat is mid-edit in that package for packet 6
+  step 1; that package is untouched by this change.
+
 ## 2026-10-06 - the task create path's silent truncation is pinned as a refusal instead (Go)
 
 - `fastmcp/task_management/application/use_cases/create_task_test.go`:
