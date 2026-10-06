@@ -2,6 +2,34 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the seat guides load as instruction blocks (Go, packet 6 step 1)
+
+- New `fastmcp/seat_management/domain/seedlibrary/guides_test.go`, five tests:
+  `TestEmbeddedSeatGuidesLoadAsInstructionBlocks` (each of the ten `blocks/guide-<seat>.md` loads as kind
+  `instruction` **and carries its own `## Guide: <seat>` heading**, so the assertion is on content rather
+  than on a file's existence), `TestGuideCommonIsCarriedByEverySeatType` (exactly one `guide-common` per
+  seat type, which is what makes it the shared guide), and three refusals: an extension the loader cannot
+  name, an empty guide, and a guide carrying `TOKEN=abcdef123456` — the last one because `instruction`
+  accepts any text, so without the loader's own `secretscan` the library path would be how a credential
+  reached a seat's guidance.
+- **Falsified twice on the way, and each one is why a decision looks the way it does**: (1) the first run
+  failed `blocks/guide-*.md did not load` for all ten, because `//go:embed` named `blocks/*.json` — the
+  markdown files were on disk and outside the binary, which is what makes the embed pattern part of this
+  change rather than an accident of it; (2) importing `modulecontent` into `seedlibrary` closed an import
+  cycle (`seedlibrary → modulecontent → seatrenderer`, and `seatrenderer`'s test imports `seedlibrary`),
+  so the loader states the rule for the two kinds a block FILE can carry and refuses any other extension
+  instead of inheriting a silent pass.
+- Commands, all from `agenthub_go`, each number read from a FILE that was then parsed rather than from the
+  echo: `gofmt -l .` → 490 flagged paths, **every one under `.gomodcache/` (349) or `.gotmp/` (129)**, none
+  a source file (the echo spilled, so the count came from the artifact); `gofmt -l
+  fastmcp/seat_management/domain/seedlibrary/` → empty; `go vet ./...` → 0; `go test -count=1 -json ./...` →
+  **138 packages, 2385 tests, 0 failures**; `seedlibrary` alone → 18 of 18.
+- The route half of the acceptance was measured in a clean export of HEAD, not in the repo: the eleven real
+  guide files PUT through the real mux, one per request → **11 of 11 answered 200**, so the library does not
+  hold content its own writer would refuse.
+- Correction to the entry below: the `undefined: secretscan` it observed in `seedlibrary.go` was this edit
+  caught mid-write; it is resolved, and that package builds and passes.
+
 ## 2026-10-06 - the module content gate is pinned for BOTH writers (Go)
 
 - New `fastmcp/seat_management/application/services/module_content_gate_test.go`: the unknown kind,
