@@ -26,12 +26,10 @@ func ValidateRuntime(runtime string) error {
 	return resolver.CheckRuntime(runtime)
 }
 
-// ValidateModel accepts an empty model or a model id. A blank is ACCEPTED AND STORED
-// BLANK: nothing in this service substitutes a default, and the rendered seat
-// (agent.yaml) carries no model line at all - the renderer cannot emit one, since
-// seatrenderer references no model. Any substitution happens at the RUNTIME, observed
-// to resolve a model when handed an empty one; which default, and whether it comes
-// from the environment or a built-in fallback, is not established here.
+// ValidateModel accepts an empty model or a model id. A blank model is accepted and
+// stored blank: this service substitutes no default and the resolved seat renders no
+// model line. The runtime CLI does substitute one when handed none, measured; which
+// default it picks is not established here.
 func ValidateModel(model string) error {
 	if model != "" && !modelPattern.MatchString(model) {
 		return fmt.Errorf("model %q must be empty or match %s", model, modelPattern)

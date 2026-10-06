@@ -88,7 +88,7 @@ func ManageSeatInputSchema() *tmentities.OrderedMap[any] {
 	properties.Set("room", seatParam("Room", "[OPTIONAL for list, REQUIRED for get and set_occupant] Room slug", true))
 	properties.Set("seat", seatParam("Seat", "[REQUIRED for get and set_occupant] Seat key", true))
 	properties.Set("runtime", seatParam("Runtime", "[REQUIRED for set_occupant] claude-code, codex, agy or omp", true))
-	properties.Set("model", seatParam("Model", "[OPTIONAL for set_occupant] Model id. Empty means TWO DIFFERENT THINGS depending on the action: on UPDATE it is IGNORED - the stored model is kept unchanged and no error is returned, so an empty value cannot be used to reset a model; on CREATE it is ACCEPTED AND STORED BLANK - nothing in this service substitutes a default, and the rendered seat (agent.yaml) carries no model line. Any substitution happens at the RUNTIME, observed to resolve a model when handed an empty one; which default, and whether it comes from the environment or a built-in fallback, is not established here", true))
+	properties.Set("model", seatParam("Model", "[OPTIONAL for set_occupant] Model id. On UPDATE an empty value is IGNORED - the stored model is kept unchanged and no error is returned, so an empty value cannot be used to reset a model. On CREATE: a blank model is accepted and stored blank: this service substitutes no default and the resolved seat renders no model line. The runtime CLI does substitute one when handed none, measured; which default it picks is not established here", true))
 	properties.Set("user_id", seatParam("User Id", "[OPTIONAL] ", true))
 
 	schema := tmentities.NewOrderedMap[any]()
