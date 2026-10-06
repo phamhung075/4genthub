@@ -176,7 +176,11 @@ func tokenResponseFromMap(m *taskdomain.OrderedMap[any]) TokenResponse {
 func GenerateTokenHandler(ctx context.Context, req TokenCreateRequest, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.GenerateAPIToken(ctx, currentUserID(currentUser), req.Name, req.Scopes, req.ExpiresInDays, req.RateLimit)
 	if err != nil {
-		return nil, httpErr(500, "Failed to generate token")
+		// Propagate the controller's error instead of replacing it with a bare
+		// "Failed to generate token": an unset JWT_SECRET_KEY arrives here as the
+		// same *auth.HTTPException (500, "Server configuration error: JWT secret
+		// not set") the REST dependency path raises.
+		return nil, err
 	}
 	if result.Success {
 		resp := tokenResponseFromMap(result.TokenData)
@@ -189,7 +193,10 @@ func GenerateTokenHandler(ctx context.Context, req TokenCreateRequest, currentUs
 func ListTokensHandler(ctx context.Context, currentUser *authdomain.User, c TokenRouteController, skip, limit int) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.ListUserTokens(ctx, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to list tokens")
+		// Propagate the controller's error instead of replacing it with a bare
+		// "Failed to list tokens": a facade-resolution failure (unset JWT_SECRET_KEY)
+		// arrives here as the same *auth.HTTPException the REST dependency path raises.
+		return nil, err
 	}
 	if !result.Success {
 		return nil, httpErr(500, pyOrStr(result.Error, "Failed to list tokens"))
@@ -227,7 +234,9 @@ func ListTokens(ctx context.Context, currentUser *authdomain.User, c TokenRouteC
 func GetTokenDetails(ctx context.Context, tokenID string, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.GetTokenDetails(ctx, tokenID, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to get token details")
+		// Propagate the controller's error instead of a bare "Failed to get token
+		// details" (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	if result.Success {
 		resp := tokenResponseFromMap(result.TokenData)
@@ -256,7 +265,9 @@ func tokenMessage(result TokenOperationResult, def, failDef string) (*taskdomain
 func DeleteToken(ctx context.Context, tokenID string, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.DeleteToken(ctx, tokenID, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to delete token")
+		// Propagate the controller's error instead of a bare "Failed to delete token"
+		// (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	return tokenMessage(result, "Token deleted successfully", "Failed to delete token")
 }
@@ -265,7 +276,9 @@ func DeleteToken(ctx context.Context, tokenID string, currentUser *authdomain.Us
 func RevokeToken(ctx context.Context, tokenID string, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.RevokeToken(ctx, tokenID, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to revoke token")
+		// Propagate the controller's error instead of a bare "Failed to revoke token"
+		// (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	return tokenMessage(result, "Token revoked successfully", "Failed to revoke token")
 }
@@ -274,7 +287,9 @@ func RevokeToken(ctx context.Context, tokenID string, currentUser *authdomain.Us
 func ReactivateToken(ctx context.Context, tokenID string, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.ReactivateToken(ctx, tokenID, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to reactivate token")
+		// Propagate the controller's error instead of a bare "Failed to reactivate
+		// token" (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	return tokenMessage(result, "Token reactivated successfully", "Failed to reactivate token")
 }
@@ -283,7 +298,9 @@ func ReactivateToken(ctx context.Context, tokenID string, currentUser *authdomai
 func RotateToken(ctx context.Context, tokenID string, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.RotateToken(ctx, tokenID, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to rotate token")
+		// Propagate the controller's error instead of a bare "Failed to rotate token"
+		// (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	if result.Success {
 		resp := tokenResponseFromMap(result.TokenData)
@@ -299,7 +316,10 @@ func RotateToken(ctx context.Context, tokenID string, currentUser *authdomain.Us
 func ValidateTokenEndpoint(ctx context.Context, token string, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.ValidateToken(ctx, token)
 	if err != nil {
-		return nil, httpErr(401, "Invalid token")
+		// A facade-resolution failure is a server misconfiguration, not an invalid
+		// token: propagate the cause (the same *auth.HTTPException the REST dependency
+		// path raises, 500 + the actionable sentence) instead of masking it as a 401.
+		return nil, err
 	}
 	if result.Success {
 		return result.Claims, nil
@@ -311,7 +331,9 @@ func ValidateTokenEndpoint(ctx context.Context, token string, c TokenRouteContro
 func CleanupExpiredTokens(ctx context.Context, currentUser *authdomain.User, c TokenRouteController) (*taskdomain.OrderedMap[any], error) {
 	result, err := c.CleanupExpiredTokens(ctx, currentUserID(currentUser))
 	if err != nil {
-		return nil, httpErr(500, "Failed to cleanup tokens")
+		// Propagate the controller's error instead of a bare "Failed to cleanup
+		// tokens" (same facade-resolution cause as ListTokensHandler).
+		return nil, err
 	}
 	if result.Success {
 		out := taskdomain.NewOrderedMap[any]()

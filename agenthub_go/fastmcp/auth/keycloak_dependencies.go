@@ -515,7 +515,7 @@ func ValidateKeycloakToken(ctx context.Context, token string) (*authentities.Use
 func ValidateLocalToken(token string) (*authentities.User, error) {
 	jwtSecret := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecret == "" {
-		return nil, &HTTPException{StatusCode: 500, Detail: "Server configuration error: JWT secret not set"}
+		return nil, JWTSecretNotSetError()
 	}
 
 	payload, err := jwtDecodeHS256Claims(token, jwtSecret, keycloakDependenciesJWTAlgorithm, jwtDecodeOptions{

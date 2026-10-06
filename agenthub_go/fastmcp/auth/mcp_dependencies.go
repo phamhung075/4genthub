@@ -33,10 +33,7 @@ func envDefault(key, def string) string {
 // Python raises.
 func GetCurrentMCPUser(token string) (*authentities.User, *HTTPException) {
 	if frontendJWTSecret == "" {
-		return nil, &HTTPException{
-			StatusCode: 500,
-			Detail:     "Server configuration error: JWT secret not set",
-		}
+		return nil, JWTSecretNotSetError()
 	}
 
 	payload, err := jwtDecodeHS256Claims(token, frontendJWTSecret, frontendJWTAlgorithm, jwtDecodeOptions{
