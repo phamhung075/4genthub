@@ -8,19 +8,20 @@
 // version answered 200 and the failure appeared on the seat's next read, arbitrarily far from the
 // writer.
 //
-// The rules live with the parsers that own them: skillblock for a skill block, mcpblock for a
-// server object, and the settings object mergeToolModules reads for a tool module. This package is
-// the one place that maps a kind to its rule, so a kind added later has to state its rule instead
-// of inheriting a silent default.
+// The rules live with the parsers that own them, and every one of the three parsed kinds delegates
+// rather than restates: skillblock.Parse for a skill block, mcpblock.Parse for a server object, and
+// seatrenderer.ParseToolSettings — the very call mergeToolModules makes — for a tool module. This
+// package is the one place that maps a kind to its rule, so a kind added later has to state its
+// rule instead of inheriting a silent default.
 package modulecontent
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/seatrenderer"
 	"agenthub/fastmcp/seat_management/domain/skillblock"
 )
 
@@ -45,7 +46,7 @@ func Validate(kind resolver.ModuleKind, content string) error {
 			return fmt.Errorf("mcp content: %w", err)
 		}
 	case resolver.KindTool:
-		if err := validateSettingsObject(content); err != nil {
+		if _, err := seatrenderer.ParseToolSettings(content); err != nil {
 			return fmt.Errorf("tool content: %w", err)
 		}
 	case resolver.KindInstruction, resolver.KindDocument, resolver.KindMemory:
@@ -53,17 +54,6 @@ func Validate(kind resolver.ModuleKind, content string) error {
 		// already refuses an empty content, which is the only shape rule these kinds have.
 	default:
 		return fmt.Errorf("%w: %q", ErrNoRule, kind)
-	}
-	return nil
-}
-
-// validateSettingsObject mirrors the parse mergeToolModules performs when it merges tool modules
-// into the runtime's settings fragment, so the two cannot drift: a tool module's content is a JSON
-// object of settings, and anything else fails on a claude-code or codex seat.
-func validateSettingsObject(content string) error {
-	var obj map[string]any
-	if err := json.Unmarshal([]byte(content), &obj); err != nil {
-		return fmt.Errorf("content is not a JSON object: %w", err)
 	}
 	return nil
 }

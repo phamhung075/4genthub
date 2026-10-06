@@ -377,15 +377,29 @@ func quotedPattern(fields []string) string {
 	return strings.Join(quoted, ", ")
 }
 
+// ParseToolSettings reads one tool module's content: the settings object the runtime's settings
+// fragment merges. mergeToolModules below calls it, and so does the module publish validator
+// (domain/modulecontent) — exported here, rather than re-implemented there, so the rule a tool
+// module is held to at the store and the parse the renderer performs cannot drift, exactly as the
+// skill and mcp kinds delegate to skillblock.Parse and mcpblock.Parse. A change to what the tool
+// renderer accepts therefore changes the publish rule with it.
+func ParseToolSettings(content string) (map[string]any, error) {
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(content), &obj); err != nil {
+		return nil, fmt.Errorf("content is not a JSON object: %w", err)
+	}
+	return obj, nil
+}
+
 // mergeToolModules merges tool module JSON objects in module order. A top-level key present
 // in several modules takes the later value, except `permissions`: its deny, allow and ask lists
 // are the deduplicated union in order of appearance, and its other keys follow later-wins.
 func mergeToolModules(modules []resolver.ResolvedModule) (map[string]any, error) {
 	merged := make(map[string]any)
 	for _, m := range modules {
-		var obj map[string]any
-		if err := json.Unmarshal([]byte(m.Content), &obj); err != nil {
-			return nil, fmt.Errorf("tool module %q: content is not a JSON object: %w", m.Slug, err)
+		obj, err := ParseToolSettings(m.Content)
+		if err != nil {
+			return nil, fmt.Errorf("tool module %q: %w", m.Slug, err)
 		}
 		for key, value := range obj {
 			if key != "permissions" {

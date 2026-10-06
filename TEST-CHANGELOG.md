@@ -21,6 +21,12 @@ Track test suite changes, fixes, and improvements for agenthub.
   seat's next read fails with `skill "bad-skill": content is not one JSON value` - measured first in
   a throwaway in-process test in this package (real resolver, real renderer) and now pinned by the
   refusal cases.
+- **Every parsed kind delegates to one implementation**, so no rule can drift from the renderer it
+  protects: `skillblock.Parse` and `mcpblock.Parse` are called, and the tool kind calls the new
+  `seatrenderer.ParseToolSettings` — the same function `mergeToolModules` now uses, so the tool
+  unmarshal exists once in the tree (`grep -n json.Unmarshal renderer.go` finds it only there, and
+  `modulecontent.go` has none). Both ends are pinned: the renderer by
+  `TestRenderSeatToolModuleInvalidJSONError`, the validator by the refusal cases below.
 - Three existing publish fixtures moved from junk skill content to blocks
   (`TestSeatAdminPutModuleVersion`, `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`):
   they assert storage and listing, which a block exercises the same way, and the conflict case still
