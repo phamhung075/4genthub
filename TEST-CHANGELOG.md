@@ -1713,6 +1713,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ### Added
 
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 1 test that every seat's notice carries the 4genthub task/context rule and the deepseek offload rule. 14 pass.
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 4 tests for the seat notice (lists every refused command and tool of its seat, says what to do instead of pushing, the lead/non-lead wording, `apply` writes it and `--check` sees it drift). 13 pass.
 - `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 4 tests for how a session log line becomes a feed line (tool call, policy refusal vs quoted text, non-events, MCP colour).
 - Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.

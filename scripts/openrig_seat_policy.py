@@ -187,6 +187,19 @@ def render_notice(seat: str, role: str) -> str:
             ]
     lines += [
         "",
+        "## How you work: 4genthub and deepseek-offload are part of the job, not extras",
+        "",
+        "Call a tool by writing JSON to `xd://mcp__<server>_<tool>`; read that path first to see its schema.",
+        "",
+        "- **Start of every piece of work**: find or create its task with `manage_task` (server `agenthub_http`) and set it in progress. Do not start work that has no task.",
+        "- **While working**: record decisions, findings and progress with `manage_context` or the task's update action, so the next session and the other seats can pick it up without asking you.",
+        "- **End of work**: complete the task with a one-line result (the commit hash, the verdict file, or what blocked you). A task with no recorded result is not done.",
+        "- **Offload with `deepseek_agent`** (server `deepseek`): searching many files, reading long logs, drafting tests or docs, mechanical edits, and first-pass analysis. Give it one self-contained prompt that names the files and the exact output you want. Its git writes are guarded. Read what it returns before you rely on it; you stay responsible for the result.",
+        "- Do not offload what needs your judgement or touches shared state: the decision itself, a commit, a message to another seat.",
+        "- If a 4genthub or deepseek call fails, report the exact error to the lead and carry on with the work; do not drop the task record.",
+    ]
+    lines += [
+        "",
         "## Always open to you",
         "",
         "Reading any file, running tests and builds, `deepseek_agent` for offloaded work, and the 4genthub tools above. Call them with `write` to `xd://mcp__<server>_<tool>`.",

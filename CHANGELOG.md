@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **Seats are told to work through 4genthub and deepseek-offload**: every seat's generated `AGENTS.md` now has a "How you work" section: a task in `manage_task` before work, progress in `manage_context`, a recorded result on completion, and bulk work offloaded to `deepseek_agent` (decisions, commits and messages are not). Baseline measured first: `deepseek_agent` calls per seat were 3-7, nearly all principal verification pings, and only five seats had touched `manage_task`. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`.
+
 - **Seat limits are told to each seat, not only enforced**: `openrig_seat_policy.py apply` now also writes each seat's `AGENTS.md` (its refused commands and tools, and what to do instead), generated from the same tables as `config.yml`; the new `notice` command writes only that file. omp loads it at every launch; a fresh session given only that file answered four limit questions correctly with no tool. Documented in `ai_docs/operations/openrig-seat-limits.md`. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`.
 
 - **`scripts/openrig_watch_tools.py`**: read-only live view of what each seat of an OpenRig rig is doing. `grid` opens a herdr workspace with one pane per seat; `feed` merges all seats into one stream. Tool calls and results are coloured by kind, policy refusals shown white-on-red. Documented in `ai_docs/operations/watching-openrig-seats.md`. Tested by `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py` (4 tests pass; the grid command was run against the live herdr).

@@ -186,3 +186,11 @@ def test_apply_writes_the_notice_next_to_the_config_and_check_sees_it_drift(tmp_
     assert policy.main(["apply", *args, "--check"]) == policy.EXIT_OK
     policy.notice_path(tmp_path, RIG, "writer").write_text("stale\n")
     assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT
+
+
+def test_every_notice_tells_the_seat_to_track_work_in_4genthub_and_offload_to_deepseek():
+    for seat in policy.SEAT_ROLES[RIG]:
+        text = notice(seat)
+        assert "manage_task" in text and "manage_context" in text
+        assert "deepseek_agent" in text
+        assert "Do not start work that has no task" in text
