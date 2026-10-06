@@ -47,6 +47,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The AI refusal's reason reaches the caller — the standardisation pass was reading a map as a string** (2026-10-06)
+
+- The five task-management AI actions answer a legible refusal from the handler layer, and the reason never reached the caller. `StandardizeFacadeResponse` (`agenthub_go/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories/response_factory.go:88`) read `facadeResponse["error"]` through a **string** type assertion, while the interface formatter writes that key as a **map** — `{message, code, operation, timestamp}` built in `CreateResponse` (`interface/utils/response_formatter.go:123-135`). The assertion failed, the reason was dropped, and the pass answered the generic `"Unknown error occurred"` with the code left at its `OPERATION_FAILED` default. That is the layer the earlier commit (`f26b5b81`) left unidentified.
+- The fix reads both shapes: a flat string (a facade response) and the formatter's error map, taking **`message`** for the reason and **`code`** for the code.
+- **Caller-visible before and after, same request through the real `POST /mcp` route** (`manage_task` / `action: ai_plan`, `AUTH_ENABLED=false`): before, `"message": "Unknown error occurred"`, `"code": "OPERATION_FAILED"`; after, `"message": "AI integration is not available: the AITaskIntegrationService seam is not wired in this build"`, same code, HTTP 200 and `isError:false` both times.
+- **The panic half is settled by execution rather than by inference.** With the nil guard removed for the experiment, all five actions panic on the DISPATCHED path — `AI operation failed: runtime error: invalid memory address or nil pointer dereference` — and the panic is absorbed by the recover in `OperationFactory.handleAIOperation`. So a dispatch never crashed the server, and the pre-fix caller saw a failure with no reason; the refusal commit was both a crash-class fix and a legibility fix.
+- Tests: `fastmcp/task_management/interface/ai_refusal_surfacing_test.go` and `fastmcp/server/httpapp/ai_refusal_caller_test.go`.
+
 **`healthVersion` 0.0.20 — the deploy marker for this packet** (2026-10-06)
 
 - Bumped from 0.0.19 in `agenthub_go/fastmcp/server/httpapp/http.go`. `/health` reports this string and it is the only deploy-verifiable fact the server can expose (the Docker build context has no `.git`, so no commit id can be embedded): after the push, production must report **0.0.20**, and if it does not, the deploy did not take.

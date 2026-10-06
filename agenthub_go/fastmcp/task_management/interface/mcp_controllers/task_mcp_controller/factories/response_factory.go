@@ -85,13 +85,28 @@ func (f *ResponseFactory) StandardizeFacadeResponse(facadeResponse *entities.Ord
 		return f.CreateSuccessResponse(operation, data, workflowGuidance)
 	}
 
+	// A facade answers with the reason as a flat string; the handler layer answers
+	// through the interface formatter, which writes it into an error map
+	// ({message, code, ...}). Reading only the string form dropped every reason the
+	// formatter produced - the five AI refusals among them - and answered
+	// "Unknown error occurred" instead.
 	errorMessage := "Unknown error occurred"
+	errorCode := ErrorCodeOperationFailed
 	if v, ok := facadeResponse.Get("error"); ok && v != nil {
-		if s, isStr := v.(string); isStr {
-			errorMessage = s
+		switch typed := v.(type) {
+		case string:
+			errorMessage = typed
+		case *entities.OrderedMap[any]:
+			if m, ok := typed.Get("message"); ok && m != nil {
+				errorMessage = value_objects.PyStr(m)
+			}
+			if c, ok := typed.Get("code"); ok && c != nil {
+				if s, isStr := c.(string); isStr {
+					errorCode = s
+				}
+			}
 		}
 	}
-	errorCode := ErrorCodeOperationFailed
 	if v, ok := facadeResponse.Get("error_code"); ok && v != nil {
 		if s, isStr := v.(string); isStr {
 			errorCode = s

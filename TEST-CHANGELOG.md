@@ -2,6 +2,27 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the swallowed AI refusal is driven at both layers (Go)
+
+- `agenthub_go/fastmcp/task_management/interface/ai_refusal_surfacing_test.go` (new) has two tests.
+  `TestFiveAIActionsDispatchTheRefusal` drives the REAL composition — `taskResponseFormatter` →
+  `factories.NewOperationFactory` → `HandleOperation` → `StandardizeFacadeResponse` — for all five
+  actions (`ai_plan`, `ai_create`, `ai_enhance`, `ai_analyze`, `ai_suggest_agents`) with the AI seam
+  unwired, and asserts each answers `success:false` with the sentence naming the unwired seam.
+  `TestStandardizeFacadeResponseKeepsFormatterErrorMessage` is the minimal form of the same defect.
+- `agenthub_go/fastmcp/server/httpapp/ai_refusal_caller_test.go` (new) drives the caller's own path:
+  a raw JSON-RPC `tools/call` for `manage_task` through the real `POST /mcp` route, and asserts the
+  payload the caller receives contains the refusal sentence and not `Unknown error occurred`.
+  The facade factory is a local stub (`CreateTaskFacade` returning a facade built with nil
+  repositories), because the `ai_plan` path refuses before it reaches any repository; the test needs
+  no database, which is why it runs in the normal suite.
+- Both fail on the unfixed tree and pass on the fixed one, measured: the interface test at
+  `error message = "Unknown error occurred"`, the httpapp test with the same string in the wire body.
+- Commands, from `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`:
+  `go test ./fastmcp/task_management/interface/ ./fastmcp/server/httpapp/` -> ok;
+  `go vet ./fastmcp/task_management/interface/... ./fastmcp/server/httpapp/...` -> clean;
+  `gofmt -l` on the three touched files -> empty.
+
 ## 2026-10-06 - the pin label is driven, not read (frontend)
 
 - `src/tests/pages/SeatAuthoringPage.test.tsx` (the case at :419, renamed from 'marks a pinned block and still
