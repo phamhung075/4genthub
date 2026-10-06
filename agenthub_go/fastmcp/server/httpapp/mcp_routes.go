@@ -198,7 +198,7 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 		resp.Result = map[string]any{}
 
 	case "tools/list":
-		tools, err := a.getMCPToolsList()
+		tools, err := a.MCPToolsList()
 		if err != nil {
 			resp.Error = &jsonRPCError{Code: -32603, Message: "Internal error"}
 			return resp
@@ -250,11 +250,17 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 	return resp
 }
 
-// getMCPToolsList builds the MCP tools/list result from ToolDefinitions(), the
+// MCPToolsList builds the MCP tools/list result from ToolDefinitions(), the
 // Python tool registry. manage_seat, call_seat, submit_feedback and the connection tool are registered by
 // their own controllers rather than by ToolDefinitions, so their schemas are appended here; every schema is
 // converted with the Python-faithful serializer before encoding/json writes it.
-func (a *App) getMCPToolsList() ([]map[string]any, error) {
+//
+// EXPORTED because a second reader needs the same entries and must not build them differently: the
+// docs generator calls this rather than parsing the appended four out of the source, so an entry added
+// here reaches the documentation because it reaches the wire, not because someone remembered to a
+// second place. The drift test's independence is unaffected - its witness reads the DISPATCH entries
+// in the code, which is a separate reading rather than a second copy of this one.
+func (a *App) MCPToolsList() ([]map[string]any, error) {
 	if a.mcpTools == nil {
 		return []map[string]any{}, nil
 	}

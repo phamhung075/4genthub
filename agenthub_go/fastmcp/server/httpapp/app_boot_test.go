@@ -43,9 +43,9 @@ func TestAppBootsAgainstAMigratedDatabase(t *testing.T) {
 
 	// The composition produced the MCP tool surface it promises: the two seat tools and the
 	// friction channel's tool. A controller that failed to compose shows up here as a missing tool.
-	tools, err := app.getMCPToolsList()
+	tools, err := app.MCPToolsList()
 	if err != nil {
-		t.Fatalf("getMCPToolsList: %v", err)
+		t.Fatalf("MCPToolsList: %v", err)
 	}
 	published := map[string]bool{}
 	for _, tool := range tools {
