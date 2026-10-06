@@ -40,6 +40,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Side effect, not by any advisory: `github.com/stretchr/testify` v1.8.1 → v1.11.1 (indirect, required by the new pgx).
 - **THE BEHAVIOUR CHANGE THIS BUMP CARRIES IS RECORDED UNDER `### Changed` BELOW, deliberately**, because a dependency bump that silently alters what a query returns is exactly the kind of thing a reader must be able to find.
 
+### Changed
+
+- **Docs maintenance, pass 2 (the standing duty's second pass, after packet 4 deployed) — the README's deploy marker is now a measured production fact (2026-10-06)** — the four moving facts re-measured and one of them moved: `healthVersion` **`0.0.22`** unchanged in the tree (`http.go:159`), the changelog's newest *released* section unchanged at **`0.0.5` (2025-09-26)**, **`tools/list` still TEN** (re-measured at `fcd4c268` and at `12771e93`), and the deploy record now reading **PACKET 4 CLOSED — IT DEPLOYED (`fcd4c268`)**. **And for the first time the deploy marker was measured from PRODUCTION rather than from the record: a read-only `GET https://api.4genthub.com/health` answers `healthy` with `"version":"0.0.22"`**, which is the tree's own marker — **the first deploy where the two agree** (the previous was `0.0.21` at packet 3). The README's deploy row and footer now carry that measured fact instead of the record's older value, and `DOCS-MAINTENANCE.md` **retires the unverified row that measurement settles**. **Deliberately unchanged: packet 5 stays out of the README** (its live acceptance still fails — the seats do not mount the tools), the "Production NOT Ready" badge stays an owner judgement rather than a tree fact, and the unmeasured performance numbers stay listed as unverified.
+
 ### Added
 
 **The schema-upgrade gate, added to the team's gate list for any schema-changing packet** (2026-10-06)

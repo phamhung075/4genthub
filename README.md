@@ -538,7 +538,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
 | 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Deploy marker** | `GET /health` reports the running version. The tree carries **0.0.22** (`agenthub_go/fastmcp/server/httpapp/http.go:159`); the last deploy recorded in this repo is **0.0.21** (packet 3, `0018c644`). The newest *released* section of the changelog is **0.0.5** (2025-09-26) — the two numbering schemes are separate, so this row carries the deploy marker and links the release history. | [CHANGELOG.md](CHANGELOG.md) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version. **Measured 2026-10-06: production answers `healthy` with `"version":"0.0.22"`** — and that is also the tree's marker (`agenthub_go/fastmcp/server/httpapp/http.go:159`), **the first deploy where the two agree** (packet 4, `fcd4c268`; the previous deploy was `0.0.21` at packet 3, `0018c644`). The newest *released* section of the changelog is **`0.0.5` (2025-09-26)** — a separate numbering scheme — so this row carries the deploy marker and links the release history. | [CHANGELOG.md](CHANGELOG.md) |
 
 ### 🚀 **Latest Releases**
 
@@ -664,6 +664,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**agenthub** • deploy marker **0.0.22** in the tree (`GET /health`; last deploy recorded: **0.0.21**) • **Built with ❤️ for Human-AI Collaboration**
+**agenthub** • deployed marker **0.0.22** (production `GET /health`, measured 2026-10-06) • **Built with ❤️ for Human-AI Collaboration**
 
 </div>
