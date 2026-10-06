@@ -49,16 +49,20 @@ func TestRoomSharingVisibilityIntegration(t *testing.T) {
 	stranger := fmt.Sprintf("share-stranger-%d", stamp)
 
 	// The team and its two memberships are written directly: this test is about the ROOM
-	// repository's visibility, and the teams repository has its own integration test.
-	var teamID string
-	if err := db.QueryRowContext(ctx,
-		`INSERT INTO teams (user_id, slug, name) VALUES ($1, 'eng', 'Engineering') RETURNING id::text`,
-		owner).Scan(&teamID); err != nil {
+	// repository's visibility, and the teams repository has its own integration test. The ids are
+	// generated in Go, EXACTLY as the application does (ColumnDef.Default = DefaultUUIDv4), because
+	// neither creation path declares a server default on id — an insert that omitted it would pass
+	// on a database the schema FILE made and fail on one the RUNTIME path made.
+	teamID := database.GenerateUUIDString()
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO teams (id, user_id, slug, name) VALUES ($1, $2, 'eng', 'Engineering')`,
+		teamID, owner); err != nil {
 		t.Fatal(err)
 	}
 	for _, m := range []struct{ user, role string }{{owner, "owner"}, {member, "viewer"}} {
 		if _, err := db.ExecContext(ctx,
-			`INSERT INTO team_members (team_id, user_id, role) VALUES ($1, $2, $3)`, teamID, m.user, m.role); err != nil {
+			`INSERT INTO team_members (id, team_id, user_id, role) VALUES ($1, $2, $3, $4)`,
+			database.GenerateUUIDString(), teamID, m.user, m.role); err != nil {
 			t.Fatal(err)
 		}
 	}

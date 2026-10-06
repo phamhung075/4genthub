@@ -20,8 +20,22 @@
 -- column added to an existing settings table later, not a new table.
 -- ================================================================================
 
--- uuid_generate_v4() for the UUID primary key defaults, matching the existing schema.
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- IDS COME FROM THE APPLICATION, NOT FROM A SERVER DEFAULT.
+--
+-- Every id column below is declared WITHOUT a DEFAULT, because the runtime DDL that createAll
+-- executes (infrastructure/database/seat_tables.go) declares none either and the Go layer
+-- generates the value (ColumnDef.Default = taskdb.DefaultUUIDv4 -> tmvo.NewUUIDv4(),
+-- base_orm_repository.go). THE TWO SOURCES MUST SAY THE SAME THING: this file used to carry
+-- `DEFAULT uuid_generate_v4()` while the runtime declared none, which made a database created
+-- from the FILE behave differently from one the RUNTIME path created — an insert that omitted
+-- the id worked on the first and failed with a not-null violation on the second (measured
+-- 2026-10-06, both directions: the D5 sharing test and the feedback boot test).
+--
+-- The uuid-ossp extension is deliberately NOT created here: nothing in this schema needs it any
+-- more, and createAll never created it, so a runtime-built database never had it — which is the
+-- other half of why a server default could not be honoured on a fresh database.
+-- TestSeatDDLParity compares the columns, the REFERENCES, the CHECKs AND the DEFAULTs of both
+-- sources, so this divergence cannot come back silently.
 
 -- ================================================================================
 -- CREATE TABLES
@@ -30,7 +44,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Table: modules
 -- A named, tenant-scoped unit of seat content.
 CREATE TABLE IF NOT EXISTS modules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     kind TEXT NOT NULL,
@@ -45,7 +59,7 @@ CREATE INDEX IF NOT EXISTS ix_modules_user_id ON modules (user_id);
 -- Immutable: append-only. The application never issues an UPDATE against this table.
 -- checksum is the lowercase sha256 hex digest of content.
 CREATE TABLE IF NOT EXISTS module_versions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     module_id UUID NOT NULL REFERENCES modules (id),
     version TEXT NOT NULL,
@@ -61,7 +75,7 @@ CREATE INDEX IF NOT EXISTS ix_module_versions_module_id ON module_versions (modu
 -- Table: seat_types
 -- A tenant-scoped template for a seat; its default runtime and module set live in the versions.
 CREATE TABLE IF NOT EXISTS seat_types (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -77,7 +91,7 @@ CREATE INDEX IF NOT EXISTS ix_seat_types_user_id ON seat_types (user_id);
 -- default_runtime is the runtime of a seat that sets none. module_refs is a JSON array of
 -- {"slug": ..., "version": ...} objects.
 CREATE TABLE IF NOT EXISTS seat_type_versions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     seat_type_id UUID NOT NULL REFERENCES seat_types (id),
     version TEXT NOT NULL,
@@ -105,7 +119,7 @@ CREATE INDEX IF NOT EXISTS ix_seat_type_versions_seat_type_id ON seat_type_versi
 -- Table: teams
 -- A team. user_id is the owning user and the tenant column, matching every other table.
 CREATE TABLE IF NOT EXISTS teams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -119,7 +133,7 @@ CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams (user_id);
 -- Table: team_members
 -- One user's membership in one team, with the role that user holds.
 CREATE TABLE IF NOT EXISTS team_members (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     team_id UUID NOT NULL REFERENCES teams (id),
     user_id TEXT NOT NULL,
     role TEXT NOT NULL,
@@ -143,7 +157,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_team_members_one_owner ON team_members (tea
 -- what hangs off it admits a member of that team, and every write still matches user_id, so a
 -- viewer cannot mutate. Plain REFERENCES, no CASCADE: the application clears the column.
 CREATE TABLE IF NOT EXISTS rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -161,7 +175,7 @@ CREATE INDEX IF NOT EXISTS ix_rooms_team_id ON rooms (team_id);
 -- pinned_version NULL means the seat follows the seat type's latest version.
 -- permission_policy is the OpenRig permission_policy name rendered on the member.
 CREATE TABLE IF NOT EXISTS seats (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     room_id UUID NOT NULL REFERENCES rooms (id),
     seat_key TEXT NOT NULL,
@@ -184,7 +198,7 @@ CREATE INDEX IF NOT EXISTS ix_seats_seat_type_id ON seats (seat_type_id);
 -- An ordered JSON array of {kind, slug, version, content} ops applied to one scope target.
 -- scope=company has no room_id/seat_id, scope=room has room_id only, scope=seat has seat_id only.
 CREATE TABLE IF NOT EXISTS overlays (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     scope TEXT NOT NULL,
     room_id UUID REFERENCES rooms (id),
@@ -209,7 +223,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_overlays_target ON overlays (user_id, scope
 -- Table: seat_links
 -- A directed communication edge between two seats.
 CREATE TABLE IF NOT EXISTS seat_links (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     from_seat_id UUID NOT NULL REFERENCES seats (id),
     to_seat_id UUID NOT NULL REFERENCES seats (id),
@@ -229,7 +243,7 @@ CREATE INDEX IF NOT EXISTS ix_seat_links_to_seat_id ON seat_links (to_seat_id);
 -- Immutable: append-only. The application never issues an UPDATE against this table.
 -- files is a JSON array of {path, content}; policy is a JSON object.
 CREATE TABLE IF NOT EXISTS resolved_seats (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     seat_id UUID NOT NULL REFERENCES seats (id),
     hash TEXT NOT NULL,
@@ -262,7 +276,7 @@ CREATE TABLE IF NOT EXISTS seat_settings (
 -- submitted the row and names the bridge when a machine token did. The row is append-only in use:
 -- nothing updates or deletes it.
 CREATE TABLE IF NOT EXISTS seat_feedback (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     room TEXT NOT NULL,
     seat TEXT NOT NULL,
@@ -292,7 +306,7 @@ CREATE TABLE IF NOT EXISTS machines (
 -- hex of a token is stored; the token itself is shown once at registration. A revoked token
 -- keeps its row (revoked_at set) and never authenticates again.
 CREATE TABLE IF NOT EXISTS machine_tokens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY,
     user_id TEXT NOT NULL,
     machine_id TEXT NOT NULL,
     token_hash TEXT NOT NULL,

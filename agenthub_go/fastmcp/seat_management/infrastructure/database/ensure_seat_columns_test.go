@@ -45,12 +45,8 @@ func TestEnsureSeatColumnsExistOnOldSchema(t *testing.T) {
 	defer db.Close()
 	ctx := context.Background()
 
-	// The schema file creates this extension; the hand-made pre-wiring shape below uses it too.
-	if _, err := db.ExecContext(ctx, `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`); err != nil {
-		t.Fatal(err)
-	}
-
-	// The pre-wiring shape: teams exists (slice 1), rooms does not have team_id.
+	// The pre-wiring shape: teams exists (slice 1), rooms does not have team_id. NO SERVER DEFAULT
+	// on id, matching what the runtime path creates — the schema file declares none either.
 	if _, err := db.ExecContext(ctx, `CREATE TABLE teams (
 		id UUID PRIMARY KEY,
 		user_id TEXT NOT NULL,

@@ -78,6 +78,10 @@ func TestSeatDDLParity(t *testing.T) {
 			t.Errorf("table %s: CHECK expressions differ between the schema file and the runtime DDL\n file: %v\nruntime: %v",
 				def.Name, want, got)
 		}
+		if got, want := seatDefaults(runtimeBody), seatDefaults(body); !equalMaps(got, want) {
+			t.Errorf("table %s: column DEFAULTs differ between the schema file and the runtime DDL\n file: %v\nruntime: %v",
+				def.Name, want, got)
+		}
 	}
 }
 
@@ -168,6 +172,50 @@ func seatChecks(body string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// seatDefaults returns each column's DEFAULT expression, normalised, keyed by column name. A
+// column with no DEFAULT is absent.
+//
+// THIS IS THE DIMENSION THAT MADE A TEST ENVIRONMENT-DEPENDENT (2026-10-06): the schema file
+// declared `id ... DEFAULT uuid_generate_v4()` for every table while the runtime TableDefs
+// (which supply the id in Go) declared none, so an insert that omitted the id worked on a
+// database the file had created and failed on one createAll had created. Comparing defaults
+// makes that divergence un-reintroducible.
+func seatDefaults(body string) map[string]string {
+	out := map[string]string{}
+	for _, item := range seatTopLevelItems(body) {
+		fields := strings.Fields(item)
+		if len(fields) == 0 {
+			continue
+		}
+		name := strings.ToLower(strings.Trim(fields[0], `"`))
+		switch name {
+		case "constraint", "primary", "unique", "check", "foreign", "exclude":
+			continue
+		}
+		lower := strings.ToLower(item)
+		idx := strings.Index(lower, " default ")
+		if idx < 0 {
+			continue
+		}
+		expr := strings.Join(strings.Fields(lower[idx+len(" default "):]), " ")
+		out[name] = strings.Trim(expr, " ,")
+	}
+	return out
+}
+
+// equalMaps reports whether two string maps hold the same keys and values.
+func equalMaps(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 // seatTopLevelItems splits a CREATE TABLE body on the commas that are not inside parentheses.

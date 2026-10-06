@@ -74,6 +74,39 @@ Track test suite changes, fixes, and improvements for agenthub.
   restored (the pre-`d41fba79` state) the gated test fails `NewApp: unknown table "seat_feedback"`,
   and the same copy without that line passes.
 
+## 2026-10-06 - the schema file and the runtime DDL agree on defaults, so the sharing test is true on BOTH databases (Go)
+
+- **THE DEFECT, REPRODUCED BEFORE THE FIX.** `TestRoomSharingVisibilityIntegration` failed on a
+  database the RUNTIME path built and passed on one the FILE built — same binary, same test. Reproduced
+  here on `d5runtime` (a database created by booting the real `cmd/agenthub` against it with
+  `AUTO_MIGRATE=true`) as `ERROR: null value in column "id" of relation "teams" violates not-null
+  constraint (SQLSTATE 23502)`. Cause: the test's raw INSERT omitted `id`, and only the schema FILE
+  declared `id ... DEFAULT uuid_generate_v4()`.
+- **THE RULE, decided from measurement rather than preference: IDS COME FROM THE APPLICATION, so NEITHER
+  source declares a default on `id`** — recorded in the schema file's own header. The evidence: the
+  runtime TableDefs supply the value in Go (`ColumnDef.Default = taskdb.DefaultUUIDv4` →
+  `tmvo.NewUUIDv4()`, `base_orm_repository.go:191`); production takes the RUNTIME path, so the file
+  described a default production does not have; and `createAll` never creates `uuid-ossp`, so the file's
+  default could not be honoured on a fresh runtime database at all (the feedback boot test measured
+  `function uuid_generate_v4() does not exist`, SQLSTATE 42883). The file now declares its 14 `id` columns
+  without a default and no longer creates the extension.
+- The test supplies the id the way the application does — `database.GenerateUUIDString()` for the team and
+  each membership, the same value the repository would have generated — and
+  `ensure_seat_columns_test.go`'s hand-written pre-wiring shape was aligned to the same rule (no `id`
+  default, no extension, a literal room id), so both tests describe what the runtime actually creates.
+- **THE GUARD NOW COVERS THE DIMENSION THAT FAILED:** `TestSeatDDLParity` compares each column's DEFAULT
+  expression in both sources beside the columns, the `REFERENCES` and the `CHECK`s. **It caught this
+  divergence before the fix** — every seat table reported `file: id:uuid_generate_v4()` against
+  `runtime: <absent>` — and is green after it, so this class cannot return silently.
+- **PROVED BOTH WAYS, which is the whole point:** `go test -count=1
+  ./fastmcp/seat_management/infrastructure/... ./fastmcp/team_management/...` is green with
+  `SEAT_TEST_DATABASE_URL`/`AGENTHUB_TEST_PG_URL` pointing at `d5runtime` (built by the runtime path) AND
+  at `d5fresh` (empty; the test applies the schema file itself). The two databases now carry IDENTICAL
+  `rooms` defaults — `created_at now()`, `updated_at now()`, no `id` default — and `d5fresh` passes with
+  **no `uuid-ossp` extension present** (`pg_extension` count 0), where the file previously required it.
+- No production read was claimed and none was needed: this is a schema DESCRIPTION plus tests, and the
+  runtime path's behaviour is unchanged.
+
 ## 2026-10-06 - the team-sharing wiring is pinned at both DDL sources, on PostgreSQL, and at the mount (Go)
 
 - `agenthub_go/fastmcp/seat_management/infrastructure/database/seat_ddl_parity_test.go` (new) is the
