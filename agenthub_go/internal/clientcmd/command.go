@@ -48,6 +48,29 @@ type Rig struct {
 	Prefix  []string
 }
 
+// CodedError is the Python client scripts' SyncError: a message plus the exit code the process should
+// end with, so a failure deep in a helper carries its own code to the top instead of every layer
+// re-deciding. The Python raises it from inside the helpers (fetch_rigspec, read_lock, request_json)
+// and its main() unwraps `err.code`; this is the same shape, which is why the codes above live beside
+// it rather than in the packages that raise them.
+type CodedError struct {
+	Message string
+	Code    int
+}
+
+func (e *CodedError) Error() string { return e.Message }
+
+// CodeOf is the exit code a failure should end with: a CodedError's own code when it carries one, and
+// otherwise the caller's fallback - which mirrors the Python's `return EXIT_USAGE if code == EXIT_USAGE
+// else EXIT_FAILED` mapping in one place instead of at every call site.
+func CodeOf(err error, fallback int) int {
+	var coded *CodedError
+	if errors.As(err, &coded) {
+		return coded.Code
+	}
+	return fallback
+}
+
 // Run executes rig with an ARGUMENT LIST - the only place any command starts rig, so the
 // no-shell-string rule has one home.
 func (r *Rig) Run(ctx context.Context, args ...string) (string, error) {

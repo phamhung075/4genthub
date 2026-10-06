@@ -20,6 +20,26 @@ Track test suite changes, fixes, and improvements for agenthub.
   `test_useRealtimeSync_notification.test.tsx` -> 6 files, 136 passed (133 before these three); `npx tsc --noEmit -p .` ->
   exit 0, 0 errors.
 
+## 2026-10-06 - the pinned-snapshot reader ported with its two refusals (Go client)
+
+- `internal/clientsync/lock_test.go`: `TestReadLockMirrorsThePythonBranches` pins ALL THREE outcomes of
+  `openrig_seat_sync.py`'s `read_lock`, because the two failure ones are what a port drops silently:
+  **absent is not an error** (the seat was never pulled, which `status` renders as "not pulled"), **a
+  directory counts as absent** (the Python's `is_file()` is false for one, and so is a stat that fails),
+  a valid lock yields both fields, and then the refusals: invalid JSON exits 2 with the Python's
+  "cannot read lock file <path>: <cause>" prefix, and five malformed shapes (`no hash`, `no path`, `hash`
+  as a number, `path` null, a JSON list) exit 2 with "lock file <path> is malformed". An unreadable file
+  is covered too, skipped when running as root.
+- WHY the parity basis is the CODE rather than a Python test for this piece: `test_openrig_seat_sync.py`
+  has no direct unit test of `read_lock` - its specs for it are behavioural, through the pull path - so
+  the three branches are read from `read_lock` itself and pinned here, and the two that a caller would
+  otherwise only meet in production are named in the test's own subtests.
+- `internal/clientcmd/command.go`: `CodedError` + `CodeOf` are the Python scripts' `SyncError` shape; the
+  tests read a failure's exit code with `CodeOf` and assert the error is a `CodedError`, so a caller can
+  never be left deciding a code the failure already carried.
+- Commands: `go test ./internal/clientsync/ ./internal/clientcmd/ -count=1` -> ok; `go vet` over both ->
+  0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the task notifier is wired in production, and the constructor is pinned (Go)
 
 - `fastmcp/server/httpapp/app_boot_test.go`: `TestTaskNotifierIsWired` asserts the notifier the composition
