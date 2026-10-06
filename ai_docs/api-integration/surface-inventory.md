@@ -108,6 +108,8 @@ and the two auth `RegisterRoutes` methods.
 | GET | `/ws/connector` | `handleConnector` | `ws_mount.go:62` |
 | GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:63` |
 
+**DECLARED OUT OF SCOPE — THE THREE UNMOUNTED OLD-PROTOCOL WEBSOCKET ENDPOINTS (owner decision, 2026-10-06).** **The old-protocol surface served by `fastmcp/websocket/server.go` is NOT mounted on the live handler:** it registers **`/ws/{user_id}`** (`server.go:92`), **`/ws/health`** and **`/ws/stats`** (`server.go:93-94`) on **its own app**, and **nothing outside that package constructs it** (`NewWebSocketServer` has no non-test caller — the only imports of the package elsewhere are `wslib` for the `WebSocket` type, in `ws_mount.go:37` and `server/routes/websocket_routes.go:25`). **THE OWNER DECLARED THESE THREE OUT OF SCOPE RATHER THAN MOUNTING THEM, which is the honest closure of the parity claim: THE PORT IS COMPLETE FOR THE SURFACE IN USE, with `/ws/{user_id}`, `/ws/health` and `/ws/stats` DELIBERATELY EXCLUDED** — so nothing reads as though the old protocol is fully served. **AND IT IS A DECISION RATHER THAN AN OMISSION:** mounting them would have added endpoints **nothing consumes**, and **the owner chose the honest label over the tidier-looking port.**
+
 ### 1.8 MCP registration / metrics (`misc_mount.go`)
 
 | Method | Path | Handler | Registration |
