@@ -2,6 +2,32 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the module publish route refuses an unrenderable content, per kind (Go)
+
+- `fastmcp/seat_management/domain/modulecontent` (new package, 3 tests): each parsed kind has a
+  content the renderer accepts and a content it refuses, and the error names the kind;
+  `TestEveryValidKindHasARule` requires a rule for every kind `resolver.ValidKind` accepts, so a
+  kind added later cannot inherit a silent pass; an unknown kind returns `ErrNoRule` rather than
+  being allowed through.
+- `fastmcp/server/httpapp/seat_admin_module_content_test.go` (new file):
+  `TestSeatAdminPutModuleVersionRefusesUnrenderableContent` holds the route to five refusals - skill
+  markdown, mcp that is not a server object, an mcp object with no `type`, a tool that is not JSON,
+  and JSON that is not an object - each a 400 whose detail names the kind, and each case also
+  asserts that **nothing was stored**; `...AcceptsRenderableContentPerKind` publishes one renderable
+  content per kind (all six), so the new validation cannot pass by refusing everything;
+  `TestSeatAdminPublishedModuleResolvesInASeat` publishes a skill through the route, adds it with a
+  seat overlay, and asserts the real resolution service renders the module version's SKILL.md.
+- **Falsified**: with the validation removed, the same five cases answer 200 at publish and the
+  seat's next read fails with `skill "bad-skill": content is not one JSON value` - measured first in
+  a throwaway in-process test in this package (real resolver, real renderer) and now pinned by the
+  refusal cases.
+- Three existing publish fixtures moved from junk skill content to blocks
+  (`TestSeatAdminPutModuleVersion`, `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`):
+  they assert storage and listing, which a block exercises the same way, and the conflict case still
+  exercises the immutable-version 409.
+- Commands: `cd agenthub_go && gofmt -l` on the touched files -> nothing;
+  `go vet ./fastmcp/seat_management/... ./fastmcp/server/...` -> clean; `go test -count=1 ./...` -> all pass.
+
 ## 2026-10-06 - the per-seat omp permission policy is pinned (Python)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` (8 tests, all pass): every seat waits for MCP and checks compound commands; every seat including the lead is denied push, amend, `git add -A`, hard reset, ssh and tmux kill; only the lead keeps `rig launch` and the agent/seat/connection MCP tools; the context-sync and deepseek tools are never denied; only the reviewer loses `edit`/`ast_edit`; an unlisted rig or seat has no permissive default; `apply` writes every seat, is idempotent, `--check` reports drift and refuses a seat that was never launched.

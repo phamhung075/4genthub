@@ -42,6 +42,7 @@ import (
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/commpolicy"
+	"agenthub/fastmcp/seat_management/domain/modulecontent"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/secretscan"
@@ -911,6 +912,13 @@ func handlePutModuleVersion(w http.ResponseWriter, r *http.Request, u *authdomai
 	}
 	if secretscan.Contains(req.Content) {
 		writeDetail(w, http.StatusUnprocessableEntity, "secret detected in content")
+		return
+	}
+	// The version is immutable, so this is the last moment an unrenderable content can be refused:
+	// without this check the route answered 200 and a seat's next read failed instead. The parse
+	// run here is the one the renderer will run, by kind.
+	if err := modulecontent.Validate(kind, req.Content); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	source, ok := seatAdminSourceFor(w, sessions)

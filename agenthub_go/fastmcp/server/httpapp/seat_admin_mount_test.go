@@ -716,10 +716,11 @@ func TestSeatAdminPutModuleVersion(t *testing.T) {
 	fake := newFakeSeatAdmin()
 	mux := seatAdminTestMux(t, fake)
 	const path = "/api/v2/openrig/modules/my-skill/versions/1.0.0"
-	sum := sha256.Sum256([]byte("hello"))
+	block := testSkillBlock(t, "# A skill\n")
+	sum := sha256.Sum256([]byte(block))
 	sha := hex.EncodeToString(sum[:])
 
-	rec := doTestRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"hello"}`)
+	rec := doTestRequest(t, mux, http.MethodPut, path, testModuleBody(t, "skill", block))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("create: status = %d: %s", rec.Code, rec.Body.String())
 	}
@@ -727,15 +728,15 @@ func TestSeatAdminPutModuleVersion(t *testing.T) {
 	if strings.TrimSpace(rec.Body.String()) != want {
 		t.Errorf("create body = %s, want %s", rec.Body.String(), want)
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"hello"}`); rec.Code != http.StatusOK {
+	if rec = doTestRequest(t, mux, http.MethodPut, path, testModuleBody(t, "skill", block)); rec.Code != http.StatusOK {
 		t.Errorf("idempotent repeat: status = %d: %s", rec.Code, rec.Body.String())
 	}
 
-	rec = doTestRequest(t, mux, http.MethodPut, path, `{"kind":"skill","content":"changed"}`)
+	rec = doTestRequest(t, mux, http.MethodPut, path, testModuleBody(t, "skill", testSkillBlock(t, "# Another skill\n")))
 	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "version 1.0.0 of module my-skill already exists with different content") {
 		t.Errorf("content conflict: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, path, `{"kind":"document","content":"hello"}`); rec.Code != http.StatusConflict {
+	if rec = doTestRequest(t, mux, http.MethodPut, path, testModuleBody(t, "document", block)); rec.Code != http.StatusConflict {
 		t.Errorf("kind mismatch: status = %d, want 409: %s", rec.Code, rec.Body.String())
 	}
 }
@@ -773,7 +774,7 @@ func TestSeatAdminListModules(t *testing.T) {
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"modules":[]`) {
 		t.Fatalf("empty list: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/zeta/versions/1.0.0", `{"kind":"skill","content":"z"}`); rec.Code != http.StatusOK {
+	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/zeta/versions/1.0.0", testModuleBody(t, "skill", testSkillBlock(t, "# zeta\n"))); rec.Code != http.StatusOK {
 		t.Fatalf("put module: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/alpha/versions/1.2.0", `{"kind":"instruction","content":"a"}`); rec.Code != http.StatusOK {
@@ -793,11 +794,11 @@ func TestSeatAdminCreateSeatTypeVersion(t *testing.T) {
 	fake.seedSeatType("coder", "1.0.0")
 	mux := seatAdminTestMux(t, fake)
 	for _, put := range []string{"instr/versions/1.0.0", "skill-x/versions/2.1.0"} {
-		kind := "instruction"
+		kind, content := "instruction", "c"
 		if strings.HasPrefix(put, "skill") {
-			kind = "skill"
+			kind, content = "skill", testSkillBlock(t, "# skill-x\n")
 		}
-		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+put, `{"kind":"`+kind+`","content":"c"}`); rec.Code != http.StatusOK {
+		if rec := doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/modules/"+put, testModuleBody(t, kind, content)); rec.Code != http.StatusOK {
 			t.Fatalf("put module %s: %d %s", put, rec.Code, rec.Body.String())
 		}
 	}
