@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the snapshot path guards, tested before anything writes (Go client)
+
+- `internal/clientsync/seatfiles_test.go`: `TestSafeRelativeRefusesEveryEscapeThePythonSpecLists` uses the
+  PYTHON SPEC'S OWN parametrized bad paths - `../evil.txt`, `/etc/passwd`, `a\b.txt`, `a//b.txt`, `""`,
+  `./x.txt`, `..` - plus four the same rule catches (`\absolute`, `docs/../../etc/passwd`, `../..`, `a/..`),
+  and then the legal ones including a path with a space and a dot in a component. Every rejection is a way
+  a server-supplied path could land outside the snapshot directory, which is the whole reason the guard
+  exists; a port that drops one writes wherever the cloud says.
+- `TestValidateHashRefusesAnythingThatIsNotADirectoryName` pins `HASH_RE` plus the `..` check the pattern
+  alone allows (`a..b` matches it and is refused), and nine refusals including a space, a newline and a
+  leading dot.
+- `TestExtractFilesSeparatesTheCloudsTwoFailures` pins the split a port would flatten: a malformed ANSWER is
+  `EXIT_REMOTE` (the cloud is wrong) while an unsafe PATH is `EXIT_USAGE` (the cloud is dangerous) - seven
+  cases over the two.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok (23 tests in the package now); `go vet` ->
+  0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - `sync status <room>` runs, and its two ported subtleties are pinned (Go client)
 
 - `internal/clientsync/statusverb_test.go`: `TestRunStatusVerbMapsFailuresThePythonsWay` pins the mapping a
