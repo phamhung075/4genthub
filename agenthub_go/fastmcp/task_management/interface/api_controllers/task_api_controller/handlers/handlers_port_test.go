@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"log/slog"
+	"strings"
 	"testing"
 
 	taskdto "agenthub/fastmcp/task_management/application/dtos/task"
@@ -120,6 +124,86 @@ func TestListTasks(t *testing.T) {
 		t.Fatalf("total = %v", resp.Total)
 	}
 }
+
+// TestListTasksLogsTheFailureAndKeepsTheParityResponse pins the PAIR the lead ruled on: a listing
+// that fails must be REPORTED with its message, while the response stays exactly as the retired Python
+// leaves it.
+//
+// WHY THE PAIR AND NOT JUST THE LOG: the failure is invisible to the caller by design in both
+// implementations - Python flags it in the handler and its route renders the flag as
+// 200 {"success": true, "tasks": [], "count": 0} (task_user_routes.py:126-140, :175-180), and the Go
+// route does the same (fastmcp/server/routes/task_user_routes.go). So a row the domain refuses - an
+// empty description is the one that cost three seats an evening, task.py:197-198 in the retired
+// Python and the same rule in entities.NewTask - made the whole list look EMPTY. The log is the only
+// place the cause can surface; the wire contract is parity and must not drift while it is pinned here.
+func TestListTasksLogsTheFailureAndKeepsTheParityResponse(t *testing.T) {
+	var buf bytes.Buffer
+	previous := listFailureLog
+	listFailureLog = slog.New(slog.NewTextHandler(&buf, nil))
+	defer func() { listFailureLog = previous }()
+
+	facade := &fakeTaskFacade{listResult: om("success", false, "error", "Task description cannot be empty")}
+	h := NewTaskCrudHandler(fakeFacadeService{facade: facade})
+
+	resp := h.ListTasks(context.Background(), &taskdto.ListTasksRequest{}, "u1")
+
+	// Half one: the response keeps the Python shape - a failure flag carrying the message, which the
+	// route is free to render as its empty success envelope.
+	if resp.Success {
+		t.Errorf("success = true, want false: a refused listing must not report success")
+	}
+	if resp.Error == nil || *resp.Error != "Task description cannot be empty" {
+		t.Errorf("error = %v, want the facade's message", resp.Error)
+	}
+	if len(resp.Tasks) != 0 {
+		t.Errorf("tasks = %d, want 0", len(resp.Tasks))
+	}
+
+	// Half two: the message reached the log, in the Python's own words (crud_handler.py:332).
+	logged := buf.String()
+	if !strings.Contains(logged, "Task listing failed for user u1") {
+		t.Errorf("the Python's warning wording is missing from the log: %q", logged)
+	}
+	if !strings.Contains(logged, "Task description cannot be empty") {
+		t.Errorf("the CAUSE is missing from the log, which is the whole point: %q", logged)
+	}
+	if !strings.Contains(logged, "level=WARN") {
+		t.Errorf("the failed-result branch must warn, as Python does: %q", logged)
+	}
+}
+
+// TestListTasksLogsAnErrorWhenTheFacadeRaises covers the other Python log line (crud_handler.py:342,
+// error with exc_info): a facade that cannot even be built is reported at error level with the cause,
+// and the response still carries it.
+func TestListTasksLogsAnErrorWhenTheFacadeRaises(t *testing.T) {
+	var buf bytes.Buffer
+	previous := listFailureLog
+	listFailureLog = slog.New(slog.NewTextHandler(&buf, nil))
+	defer func() { listFailureLog = previous }()
+
+	h := NewTaskCrudHandler(raisingFacadeService{err: errors.New("database is gone")})
+	resp := h.ListTasks(context.Background(), &taskdto.ListTasksRequest{}, "u2")
+
+	if resp.Success {
+		t.Errorf("success = true, want false")
+	}
+	logged := buf.String()
+	if !strings.Contains(logged, "Error listing tasks for user u2") {
+		t.Errorf("the Python's error wording is missing: %q", logged)
+	}
+	if !strings.Contains(logged, "database is gone") {
+		t.Errorf("the cause is missing: %q", logged)
+	}
+	if !strings.Contains(logged, "level=ERROR") {
+		t.Errorf("a raised facade must be logged at error level, as Python does: %q", logged)
+	}
+}
+
+// raisingFacadeService is a facade service whose GetTaskFacade fails, mirroring the Python path where
+// building the facade raises (caught by crud_handler.py:352-362).
+type raisingFacadeService struct{ err error }
+
+func (s raisingFacadeService) GetTaskFacade(_, _, _ *string) (any, error) { return nil, s.err }
 
 // TestCountTasksLegacyInt mirrors search_handler.count_tasks when the facade
 // returns a bare count (legacy format): success true, count as-is, filters

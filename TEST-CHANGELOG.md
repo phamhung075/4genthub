@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a failed task listing is loud in the log and unchanged on the wire (Go)
+
+- `fastmcp/task_management/interface/api_controllers/task_api_controller/handlers/handlers_port_test.go`:
+  `TestListTasksLogsTheFailureAndKeepsTheParityResponse` pins the PAIR - a facade failure is reported with its
+  message (`Task listing failed for user u1: Task description cannot be empty`, warning level, Python's own
+  words from `crud_handler.py:332`) while the returned response stays the Python shape (success false carrying
+  the message, which the route renders as its empty success envelope);
+  `TestListTasksLogsAnErrorWhenTheFacadeRaises` covers the other Python line (`:342`, error level) for a facade
+  that cannot be built.
+- `fastmcp/server/routes/task_user_routes_test.go` (new): `TestListUserTasksKeepsTheInheritedEnvelope` pins the
+  WIRE behaviour of a failed listing - 200 with `success: true`, `tasks: []`, `count: 0`, no error key - with the
+  Python lines cited (`task_user_routes.py:126-140`, `:175-180`), so the inherited contract is documented rather
+  than assumed and whoever changes it changes it on purpose.
+- PROVED BY REMOVAL: deleting the `listLogWarn` call fails the pair test on both log assertions ("the Python's
+  warning wording is missing from the log", "the CAUSE is missing from the log, which is the whole point") while
+  its response half still passes - the pair is pinned, not one half. The call was then restored.
+- Commands: `go test ./fastmcp/task_management/interface/api_controllers/task_api_controller/... ./fastmcp/server/routes/ ./fastmcp/server/httpapp/ -count=1` -> all ok; `go vet` over both touched packages -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the realtime endpoint's accepted set is pinned instead of silent (Go)
 
 - `fastmcp/server/httpapp/ws_mount_test.go`: `TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe` dials

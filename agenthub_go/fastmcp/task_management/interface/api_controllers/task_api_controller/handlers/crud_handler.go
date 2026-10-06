@@ -7,6 +7,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 	"time"
 
 	taskdto "agenthub/fastmcp/task_management/application/dtos/task"
@@ -255,11 +257,37 @@ func (h *TaskCrudHandler) DeleteTask(ctx context.Context, taskID, userID string)
 	return &types.DeleteResponse{Success: false, Deleted: boolPtr(false), Error: errorMsg, Message: errorMsg, Timestamp: thNow()}
 }
 
+// listFailureLog is where a failed listing is reported. The retired Python logs it in TWO places - a
+// warning when the facade returns a failure (crud_handler.py:332, "Task listing failed for user ...:
+// <error>") and an error when the call raises (:342, with exc_info) - and the Go port logged NEITHER.
+// The message that names the cause (for example "Task description cannot be empty", raised by the
+// domain rule the Python and the Go entity share) therefore existed and went nowhere: a refused read
+// looked exactly like an empty account, and that cost three seats an evening of falsified hypotheses.
+//
+// THE WIRE CONTRACT IS DELIBERATELY UNCHANGED. The retired Python catches the failure, flags it, and
+// lets its route render the flag as 200 with {"success": true, "tasks": [], "count": 0}
+// (task_user_routes.py:126-140 then :175-180), so the Go route discarding the same flag is parity, not
+// a defect. What was missing is the diagnostic, and that is what these two lines restore.
+//
+// A package-level seam rather than an injected interface: tests replace the variable.
+var listFailureLog *slog.Logger = slog.Default()
+
+// listLogWarn mirrors crud_handler.py:332 for a listing that failed without raising.
+func listLogWarn(userID, message string) {
+	listFailureLog.Warn(fmt.Sprintf("Task listing failed for user %s: %s", userID, message))
+}
+
+// listLogError mirrors crud_handler.py:342, which logs the exception with exc_info.
+func listLogError(userID string, cause any) {
+	listFailureLog.Error(fmt.Sprintf("Error listing tasks for user %s: %v", userID, cause))
+}
+
 // ListTasks mirrors TaskCrudHandler.list_tasks.
 func (h *TaskCrudHandler) ListTasks(ctx context.Context, request *taskdto.ListTasksRequest, userID string) (resp *types.TasksResponse) {
 	resp = &types.TasksResponse{Success: false, Tasks: []*types.TaskDTO{}, Timestamp: thNow()}
 	defer func() {
 		if r := recover(); r != nil {
+			listLogError(userID, r)
 			resp.Success = false
 			resp.Tasks = []*types.TaskDTO{}
 			resp.Error = thPanicStr(r)
@@ -269,10 +297,12 @@ func (h *TaskCrudHandler) ListTasks(ctx context.Context, request *taskdto.ListTa
 	}()
 	raw, err := h.facadeService.GetTaskFacade(nil, request.GitBranchID, &userID)
 	if err != nil {
+		listLogError(userID, err)
 		return thListFailure(err)
 	}
 	facade, ok := raw.(TaskHandlerFacade)
 	if !ok {
+		listLogError(userID, "Failed to list tasks")
 		return thListFailureMsg("Failed to list tasks")
 	}
 	result := facade.ListTasks(ctx, request, true, false)
@@ -282,6 +312,7 @@ func (h *TaskCrudHandler) ListTasks(ctx context.Context, request *taskdto.ListTa
 		for _, t := range tasks {
 			dto, derr := thTaskValue(t, false)
 			if derr != nil {
+				listLogError(userID, derr)
 				return thListFailure(derr)
 			}
 			dtos = append(dtos, dto)
@@ -290,6 +321,13 @@ func (h *TaskCrudHandler) ListTasks(ctx context.Context, request *taskdto.ListTa
 		return &types.TasksResponse{Success: true, Tasks: dtos, Total: &total, Timestamp: thNow()}
 	}
 	errorMsg := thErrorMsg(result, "Failed to list tasks")
+	// The branch the Python warns on (crud_handler.py:332): the listing failed without raising, and
+	// its message is the only thing that names the cause.
+	if errorMsg != nil {
+		listLogWarn(userID, *errorMsg)
+	} else {
+		listLogWarn(userID, "Failed to list tasks")
+	}
 	return &types.TasksResponse{Success: false, Tasks: []*types.TaskDTO{}, Error: errorMsg, Message: errorMsg, Timestamp: thNow()}
 }
 
