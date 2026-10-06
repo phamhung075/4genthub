@@ -427,6 +427,20 @@ def write_sync_state(path: Path, machine_id: str, seats: dict[str, str]) -> None
         print(f"openrig-bridge: cannot record the sync state in {path}: {err}", file=sys.stderr)
 
 
+def verdicts_of(body: bytes):
+    """The per-seat verdicts in a report answer, or None when the answer carries none.
+
+    None means the record is left as it was: an answer that is absent, not JSON, not an object,
+    or carries no verdicts list is not evidence that anything moved.
+    """
+    try:
+        answer = json.loads(body.decode("utf-8"))
+    except (AttributeError, UnicodeDecodeError, ValueError):
+        return None
+    verdicts = answer.get("verdicts") if isinstance(answer, dict) else None
+    return verdicts if isinstance(verdicts, list) else None
+
+
 def register_command(args) -> int:
     """`register`: issue this machine's token and store it where the service unit reads it."""
     url, user_token = (
@@ -527,59 +541,71 @@ class Bridge:
     def _state_key(self, room: str, seat: str) -> str:
         return f"{self.machine_id}/{room}/{seat}"
 
-    def local_verdicts(self, seats: list[dict]) -> dict[str, dict]:
-        """What this machine can say about each seat WITHOUT asking the cloud.
+    def local_record(self, seats: list[dict]) -> dict[str, dict]:
+        """What this machine can say about each seat from its own record, and NOTHING more.
 
-        The recorded value is the expected hash the cloud last answered ``in_sync`` for, so a
-        running hash that no longer equals it is drift the operator can see on this machine,
-        before any server read. A seat with no record, or no running hash, reads ``unknown``:
-        the bridge never infers a sync it has not been told about.
+        It answers exactly one question: has this seat changed since the cloud last CONFIRMED it
+        in sync? So its values are ``unchanged`` / ``changed`` / ``unknown`` - deliberately not
+        the cloud's words. It CANNOT establish ``in_sync``: that is the cloud comparing the
+        running hash against its NEWEST stored snapshot, and the cloud can move while this
+        machine does not. The answer to a report is the only channel that knows the cloud's
+        current expectation, which is why a verdict that is not ``in_sync`` is also named from
+        that answer (see apply_verdicts). No record, or no running hash, reads ``unknown``.
         """
         out: dict[str, dict] = {}
         for seat in seats:
             room, name = _str(seat.get("room")), _str(seat.get("seat"))
             running = _str(seat.get("hash"))
-            recorded = self.sync_state.get(self._state_key(room, name), "")
-            if not recorded or not running:
-                verdict = "unknown"
-            elif running == recorded:
-                verdict = "in_sync"
+            confirmed = self.sync_state.get(self._state_key(room, name), "")
+            if not confirmed or not running:
+                since = "unknown"
+            elif running == confirmed:
+                since = "unchanged"
             else:
-                verdict = "drift"
+                since = "changed"
             out[f"{room}/{name}"] = {
                 "running": running,
-                "last_in_sync": recorded,
-                "sync": verdict,
+                "last_in_sync": confirmed,
+                "since_last_in_sync": since,
             }
         return out
 
-    def record_verdicts(self, body: bytes) -> None:
-        """Record the expected hash of every seat the cloud answered ``in_sync`` for.
+    def apply_verdicts(self, body: bytes) -> None:
+        """Take what the cloud's answer says: record the ``in_sync`` ones, NAME the rest.
 
-        This is the only place the value can be learned: the machines list takes a user token
-        and this bridge holds only its machine token, so the report answer is where the cloud's
-        expectation reaches the machine. An answer that is absent, not JSON or carries no
-        verdicts leaves the record as it was rather than clearing it.
+        This answer is the ONLY channel that knows the cloud's CURRENT expectation, so a seat the
+        cloud calls drift or unknown is named here even while this machine's own record still
+        matches it - the cloud moved and the machine did not, which the local record cannot see
+        by construction. A seat the cloud confirms ``in_sync`` is recorded, so the local view has
+        a confirmed hash to compare against next cycle. An answer that is absent, not JSON or
+        carries no verdicts leaves the record as it was rather than clearing it.
         """
-        try:
-            answer = json.loads(body.decode("utf-8"))
-        except (AttributeError, UnicodeDecodeError, ValueError):
-            return
-        verdicts = answer.get("verdicts") if isinstance(answer, dict) else None
-        if not isinstance(verdicts, list):
+        verdicts = verdicts_of(body)
+        if verdicts is None:
             return
         changed = False
         for verdict in verdicts:
-            if not isinstance(verdict, dict) or verdict.get("sync") != "in_sync":
+            if not isinstance(verdict, dict):
                 continue
             room, seat = _str(verdict.get("room")), _str(verdict.get("seat"))
-            expected = _str(verdict.get("expected_hash"))
-            if not room or not seat or not expected:
+            if not room or not seat:
                 continue
-            key = self._state_key(room, seat)
-            if self.sync_state.get(key) != expected:
-                self.sync_state[key] = expected
-                changed = True
+            where = f"{room}/{seat}"
+            expected = _str(verdict.get("expected_hash"))
+            sync = _str(verdict.get("sync"))
+            if sync == "in_sync":
+                if not expected:
+                    continue
+                key = self._state_key(room, seat)
+                if self.sync_state.get(key) != expected:
+                    self.sync_state[key] = expected
+                    changed = True
+                continue
+            self.note(
+                f"cloud:{where}",
+                f"the cloud reports {where} {sync or 'without a verdict'}"
+                + (f" (it expects {expected})" if expected else ""),
+            )
         if changed:
             write_sync_state(self.sync_state_path, self.machine_id, self.sync_state)
 
@@ -590,14 +616,16 @@ class Bridge:
             key = json.dumps(
                 {k: v for k, v in payload.items() if k != "reported_at"}, sort_keys=True
             )
-            # What this machine knows on its own, said BEFORE the report: the comparison is
-            # against the recorded last-in-sync expected hash, so it needs no server read.
-            for where, verdict in self.local_verdicts(payload["seats"]).items():
-                if verdict["sync"] == "drift":
+            # What this machine knows from its OWN record, said BEFORE the report: it answers only
+            # whether the seat has changed since the cloud last confirmed it, so the words are
+            # unchanged/changed and never the cloud's in_sync. The cloud's own verdicts are named
+            # from the answer below, which is the only channel that knows them.
+            for where, record in self.local_record(payload["seats"]).items():
+                if record["since_last_in_sync"] == "changed":
                     self.note(
-                        f"drift:{where}",
-                        f"{where} differs from the hash the cloud last answered in_sync "
-                        f"(running {verdict['running']}, last in sync {verdict['last_in_sync']})",
+                        f"changed:{where}",
+                        f"{where} has changed since the cloud last confirmed it in sync "
+                        f"(running {record['running']}, confirmed {record['last_in_sync']})",
                     )
             now = self.clock()
             due = self._last_sent is None or now - self._last_sent >= HEARTBEAT_SECONDS
@@ -607,7 +635,7 @@ class Bridge:
         except Exception as err:
             return self._fail(f"cycle failed: {type(err).__name__}: {err}")
         if 200 <= status < 300:
-            self.record_verdicts(body)
+            self.apply_verdicts(body)
             self._last_key, self._last_sent = key, now
             self.strip_detail = False
             self.backoff = 0.0
@@ -731,9 +759,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "once" and args.print_only:
         bridge = build_bridge(args, lambda body: (200, b""))
         payload = bridge.build_payload()
-        # The local view rides this dump and NOT the reported payload: the server refuses unknown
-        # report fields, and this is what the operator machine knows on its own.
-        payload["local_sync"] = bridge.local_verdicts(payload["seats"])
+        # The local record rides this dump and NOT the reported payload: the server refuses
+        # unknown report fields, and this is what the operator's machine knows on its own - which
+        # is only whether a seat has CHANGED since the cloud last confirmed it, not the cloud's
+        # verdict, which the answer's own verdicts carry.
+        payload["local_record"] = bridge.local_record(payload["seats"])
         print(json.dumps(payload, indent=2))
         return EXIT_OK
     bridge = build_bridge(args, sender_from_env())

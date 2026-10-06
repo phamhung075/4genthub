@@ -161,9 +161,10 @@ func handlePostSeatStatus(w http.ResponseWriter, r *http.Request, token *reposit
 	writeJSON(w, http.StatusOK, body)
 }
 
-// seatVerdicts is the per-seat expected hash and sync verdict for one machine, in the shape
-// machineBody renders per seat, so the report response and the machines list agree by
-// construction. No machine matches (or it has no seats) means no verdicts.
+// seatVerdicts is the per-seat expected hash and sync verdict for one machine, carrying the same
+// two derived fields machineBody renders per seat (expected_hash and sync) and nothing else: the
+// other fields that route sets describe the reported state, which this answer does not repeat. No
+// machine matches (or it has no seats) means no verdicts.
 func seatVerdicts(machines []repositories.Machine, machineID string) []any {
 	for _, m := range machines {
 		if m.MachineID != machineID {

@@ -731,10 +731,10 @@ def test_an_in_sync_answer_records_the_expected_hash(tmp_path):
     }
 
 
-def test_the_record_survives_a_restart_and_still_shows_a_drift(tmp_path, capsys):
+def test_the_record_survives_a_restart_and_still_names_a_changed_seat(tmp_path, capsys):
     """The requirement's whole point. A restarted bridge still knows what it was last in sync
-    with, and a running hash that has moved since then is visible locally - here with the cloud
-    UNREACHABLE, so nothing but the record on disk can be producing the verdict."""
+    with, and a seat that has changed since then is named locally - here with the cloud
+    UNREACHABLE, so nothing but the record on disk can be producing it."""
     _pin(tmp_path, "eng", "coder", "cloud456")
     state = tmp_path / "sync.json"
     first = make_bridge(
@@ -756,17 +756,47 @@ def test_the_record_survives_a_restart_and_still_shows_a_drift(tmp_path, capsys)
     assert restarted.sync_state == {"pc-1/eng/coder": "cloud456"}
     restarted.cycle()
     err = capsys.readouterr().err
-    assert "eng/coder differs from the hash the cloud last answered in_sync" in err
+    assert "eng/coder has changed since the cloud last confirmed it in sync" in err
     assert "run999" in err and "cloud456" in err
 
-    verdicts = restarted.local_verdicts(restarted.build_payload()["seats"])
-    assert verdicts["eng/coder"] == {
+    record = restarted.local_record(restarted.build_payload()["seats"])
+    assert record["eng/coder"] == {
         "running": "run999",
         "last_in_sync": "cloud456",
-        "sync": "drift",
+        "since_last_in_sync": "changed",
     }
-    # a seat with no record is unknown, never in_sync by accident
-    assert verdicts["eng/reviewer"]["sync"] == "unknown"
+    # a seat with no record reads unknown, never ``unchanged`` by accident
+    assert record["eng/reviewer"]["since_last_in_sync"] == "unknown"
+
+
+def test_the_cloud_moving_ahead_is_named_even_though_the_machine_did_not_move(
+    tmp_path, capsys
+):
+    """THE CASE THAT WAS SILENT, and the inversion the review found: the cloud's expectation
+    moves, the seat does not. The local record rightly reads ``unchanged`` - the machine IS
+    unchanged - so the local comparison CANNOT see this by construction, and the answer's
+    verdict is the only channel that knows the cloud's current expectation. It must be named,
+    and the record must NOT advance on it, because a drift answer is not a confirmation."""
+    _pin(tmp_path, "eng", "coder", "h1")
+    state = tmp_path / "sync.json"
+    state.write_text(_record("pc-1", {"pc-1/eng/coder": "h1"}), encoding="utf-8")
+    # the cloud now expects h2 for a seat that is unchanged here, so its answer is drift
+    bridge = make_bridge(
+        tmp_path,
+        fake_runner(rig_output(), None),
+        lambda b: (200, _verdicts(("eng", "coder", "h2", "drift"))),
+        sync_state_path=state,
+    )
+
+    record = bridge.local_record(bridge.build_payload()["seats"])
+    assert record["eng/coder"]["since_last_in_sync"] == "unchanged"
+
+    bridge.cycle()
+
+    err = capsys.readouterr().err
+    assert "the cloud reports eng/coder drift" in err, err
+    assert "h2" in err
+    assert bridge.sync_state == {"pc-1/eng/coder": "h1"}
 
 
 def test_an_answer_without_verdicts_leaves_the_record_intact(tmp_path):
@@ -794,8 +824,8 @@ def test_an_unreadable_record_reads_as_empty_rather_than_inventing_a_hash(tmp_pa
         sync_state_path=state,
     )
     assert bridge.sync_state == {}
-    verdicts = bridge.local_verdicts(bridge.build_payload()["seats"])
-    assert {v["sync"] for v in verdicts.values()} == {"unknown"}
+    record = bridge.local_record(bridge.build_payload()["seats"])
+    assert {v["since_last_in_sync"] for v in record.values()} == {"unknown"}
 
 
 def test_once_print_carries_the_local_view_and_not_the_reported_payload(
@@ -818,14 +848,14 @@ def test_once_print_carries_the_local_view_and_not_the_reported_payload(
     )
 
     printed = json.loads(capsys.readouterr().out)
-    # the dump carries a local verdict per reported seat ... (the record this host has for them
-    # is not this test's to write, so a seat it has no record for reads unknown rather than
-    # in_sync - the discrimination itself is pinned by the restart test above)
-    assert printed["local_sync"]["eng/coder"]["sync"] == "unknown"
-    assert printed["local_sync"]["eng/coder"]["last_in_sync"] == ""
+    # the dump carries a per-seat local RECORD ... (this host's own record is not this test's to
+    # write, so a seat it has no record for reads unknown - and the words are the record's own,
+    # unchanged/changed, never the cloud's in_sync; the discrimination is pinned above)
+    assert printed["local_record"]["eng/coder"]["since_last_in_sync"] == "unknown"
+    assert printed["local_record"]["eng/coder"]["last_in_sync"] == ""
     # ... and the POSTed payload must NOT grow that key: the server refuses unknown report
     # fields, so a local view put on the wire would turn every report into a 400
     payload = bridge_mod.Bridge(
         "pc-1", 20.0, lambda b: (200, b""), pins_dir=tmp_path
     ).build_payload()
-    assert "local_sync" not in payload
+    assert "local_record" not in payload
