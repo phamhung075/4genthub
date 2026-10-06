@@ -106,6 +106,12 @@ OMP_MCP_INSTALL_NAME = ".mcp.json"
 OMP_CONFIG_RENDER_PATH = PurePosixPath("runtime/omp-config.yml")
 OMP_CONFIG_INSTALL_NAME = "config.yml"
 
+# The seat's guide document. The renderer writes it from the seat's guide blocks (packet 6 step 1),
+# and omp loads it from the agent directory into every session, so the client installs it where the
+# script that hand-wrote it used to. Wholly the render's document, so it installs VERBATIM.
+AGENTS_MD_RENDER_PATH = PurePosixPath("AGENTS.md")
+AGENTS_MD_INSTALL_NAME = "AGENTS.md"
+
 # Where omp keeps per-seat state: the runner's --state-root default, plus the session name. A module
 # constant like DEFAULT_OUT, so a test can point it at a scratch tree. A launch that overrides
 # --state-root cannot be followed from here - the install refuses legibly instead of missing quietly.
@@ -964,7 +970,7 @@ def omp_render_installs(
 ) -> tuple[list[tuple[Path, Path, str]], list[tuple[str, str]]]:
     """Resolve ``(rendered, destination, mode)`` for every seat's render, plus the half-renders.
 
-    Two files, installed under different names and treated differently:
+    THREE files, and the first two are one setup while the third is independent:
 
     - ``runtime/omp-mcp.json`` -> ``<agent dir>/.mcp.json``, mode ``verbatim``: the file is wholly
       the render's document, and its ``Bearer ${AGENTHUB_TOKEN}`` stays literal text because the
@@ -972,9 +978,14 @@ def omp_render_installs(
       the runtime expanding it, and sending the literal when the variable is unset).
     - ``runtime/omp-config.yml`` -> ``<agent dir>/config.yml``, mode ``merge``: one setting for a
       file that is omp's own, so the keys are SET and everything else in it survives.
+    - ``AGENTS.md`` -> ``<agent dir>/AGENTS.md``, mode ``verbatim`` (packet 6 step 1): the seat's
+      guide document, which the renderer now writes from the seat's guide blocks instead of a script
+      writing it by hand. It is INDEPENDENT of the pair above - a seat with guides and no mcp block
+      gets this file and neither of the others - which is why it is not part of the half-render check.
 
-    A seat with no ``mcp`` block renders NEITHER file, so it appears in no triple and nothing is
-    written for it - absence is the signal rather than an empty file.
+    A seat with no ``mcp`` block renders neither of the first two, and a seat whose resolution
+    carries no guide renders no ``AGENTS.md``: it appears in no triple and nothing is written for it,
+    because absence is the signal rather than an empty file.
 
     **Every destination is resolved and validated before anything is written**, which is why this is
     separate from the writing loop: a rig whose seats have not been launched yet must refuse without
@@ -992,6 +1003,7 @@ def omp_render_installs(
             for mode, path in (
                 ("verbatim", OMP_MCP_RENDER_PATH),
                 ("merge", OMP_CONFIG_RENDER_PATH),
+                ("agents", AGENTS_MD_RENDER_PATH),
             )
             if (snapshot / path).is_file()
         }
@@ -1020,7 +1032,11 @@ def omp_render_installs(
             installs.append((present["verbatim"], agent_dir / OMP_MCP_INSTALL_NAME, "verbatim"))
         if "merge" in present:
             installs.append((present["merge"], agent_dir / OMP_CONFIG_INSTALL_NAME, "merge"))
-        if len(present) == 1:
+        if "agents" in present:
+            # Independent of the MCP pair: a seat with guides and no mcp block gets only this one.
+            installs.append((present["agents"], agent_dir / AGENTS_MD_INSTALL_NAME, "verbatim"))
+        mcp_halves = [mode for mode in ("verbatim", "merge") if mode in present]
+        if len(mcp_halves) == 1:
             missing = OMP_CONFIG_RENDER_PATH if "verbatim" in present else OMP_MCP_RENDER_PATH
             gaps.append((member_id, str(missing)))
     return installs, gaps

@@ -785,6 +785,15 @@ OMP_MCP_DOCUMENT = {
 # ompMCPStartupTimeoutConfig), trailing newline included.
 OMP_CONFIG_FRAGMENT = "mcp:\n  startupTimeoutMs: 0\n"
 
+# What the renderer emits for a seat with guide blocks (packet 6 step 1): provenance stamps, then the
+# guides with their OWN headings, which the renderer must not re-head.
+AGENTS_MD_DOCUMENT = (
+    "<!-- seat-hash: a1a1 -->\n"
+    "<!-- seat-type-version: 1.2.0 -->\n\n"
+    "## Guide: every seat\n\nshared words\n\n"
+    "## Guide: seat1\n\nits own words\n"
+)
+
 # RIG_YAML is `pods: [{id: main, members: [{id: seat1}]}]` under `name: room1`, so the session is
 # main-seat1@room1 - and this is what pins the POD-id derivation rather than the rig name, which
 # would give room1-seat1@room1.
@@ -926,9 +935,15 @@ def test_rig_leaves_a_rig_outside_the_policy_table_alone(
 
 
 def _omp_rig(
-    env, monkeypatch, tmp_path, with_render=True, with_config=True, make_agent_dir=True
+    env,
+    monkeypatch,
+    tmp_path,
+    with_render=True,
+    with_config=True,
+    with_agents=False,
+    make_agent_dir=True,
 ):
-    """A rig whose seat render may carry either or both omp files, plus a state root for the seat."""
+    """A rig whose seat render may carry any of the omp files, plus a state root for the seat."""
     monkeypatch.setattr(seat_sync, "OMP_STATE_ROOT", tmp_path / "ompstate")
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     files = list(FILES)
@@ -938,6 +953,8 @@ def _omp_rig(
         )
     if with_config:
         files.append({"path": "runtime/omp-config.yml", "content": OMP_CONFIG_FRAGMENT})
+    if with_agents:
+        files.append({"path": "AGENTS.md", "content": AGENTS_MD_DOCUMENT})
     env.set_seat(HASH_A, files=files)
     if make_agent_dir:
         agent_dir = _omp_agent_dir(tmp_path)
@@ -1077,6 +1094,59 @@ def test_rig_install_is_idempotent(env, tmp_path, capsys, monkeypatch):
     assert installed.read_bytes() == first
     assert installed.stat().st_mtime_ns == stamp
     assert "installed" not in err
+
+
+def test_rig_installs_the_rendered_guide_document_verbatim(
+    env, tmp_path, capsys, monkeypatch
+):
+    """Packet 6 step 1's delivery half: the render's AGENTS.md reaches the agent directory.
+
+    Byte for byte, because the guides' headings are the blocks' own and a re-serialised copy would be
+    a second place the text could drift.
+    """
+    _omp_rig(env, monkeypatch, tmp_path, with_agents=True)
+    installed = _omp_agent_dir(tmp_path) / "AGENTS.md"
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "installed" in err and str(installed) in err
+    assert installed.read_text() == AGENTS_MD_DOCUMENT
+
+    # A rebuild that renders the same guide is not a diff.
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+    assert str(installed) not in err
+
+
+def test_rig_installs_the_guide_document_for_a_seat_with_no_mcp_block(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The guide is INDEPENDENT of the MCP pair, and the half-render warning must know that.
+
+    A seat with guide blocks and no ``mcp`` block renders only AGENTS.md. Before the third mode
+    existed the half-render check counted FILES rather than the MCP pair, so this seat would have been
+    reported as missing half its MCP setup - a warning about something it never had.
+    """
+    _omp_rig(
+        env,
+        monkeypatch,
+        tmp_path,
+        with_render=False,
+        with_config=False,
+        with_agents=True,
+    )
+    installed = _omp_agent_dir(tmp_path) / "AGENTS.md"
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert installed.read_text() == AGENTS_MD_DOCUMENT
+    assert "HALF" not in err, err
+    assert not (_omp_agent_dir(tmp_path) / ".mcp.json").exists()
+    assert not _omp_config_path(tmp_path).exists()
 
 
 def test_rig_writes_nothing_for_a_seat_with_no_mcp_block(

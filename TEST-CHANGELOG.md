@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the guide document's install is pinned, with the seam the old check would have mis-warned (Python scripts, packet 6 step 1)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`:
+  `test_rig_installs_the_rendered_guide_document_verbatim` - the render's `AGENTS.md` lands in the agent
+  directory byte for byte, and a rebuild that renders the same guide writes nothing (a rebuild is not a
+  diff). `test_rig_installs_the_guide_document_for_a_seat_with_no_mcp_block` - a seat with guide blocks
+  and NO `mcp` block gets the guide and **no half-render warning**, which is the guard on the gap-logic
+  fix: the check counted files, so that seat would have been warned about missing half an MCP setup it
+  never had.
+- **Falsified**: removing the install branch makes both fail - `installed …/AGENTS.md` absent from
+  stderr, then the file itself missing.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **110 passed**.
+
 ## 2026-10-06 - the library's own guide, through the real render (Go, packet 6 step 1)
 
 - New `fastmcp/seat_management/domain/seatrenderer/library_guide_render_test.go`:
