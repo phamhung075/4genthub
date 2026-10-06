@@ -42,6 +42,38 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**omp seats get their MCP servers from the seat render** (2026-10-06, packet 5)
+
+- **The renderer emits ONE `mcpServers` document for every runtime that must carry servers outside a
+  platform fragment type.** claude-code keeps taking it as a `claude_mcp_fragment` runtime resource;
+  an omp seat now gets it as a plain file `runtime/omp-mcp.json` that the client installs as
+  `<seat agent dir>/.mcp.json`, which is the codex-rules precedent applied to a second runtime. A seat
+  with no `mcp` block renders no file, which is the acceptance's "a seat with no mcp block gets none".
+- **The file is the measured shape, not a designed one.** omp was measured on this machine
+  (`MCP-OMP-STEP-A-MEASUREMENT.md`): it reads a project `.mcp.json` at startup, it expands `${VAR}` in an
+  http server's `headers` AND in a stdio server's `env`, and it reads `$PI_CODING_AGENT_DIR/.mcp.json`
+  for the agent itself — so per-seat delivery needs no per-seat `cwd`, the operator's rig-root file keeps
+  contributing its servers, and a `${VAR}` bearer stays a `${VAR}` in the rendered spec (a credential is
+  never written to disk).
+- **Two measured failure modes are recorded with it:** with the variable unset the runtime sends the
+  LITERAL `${AGENTHUB_TOKEN}` and the server is present-but-unauthenticated, so "is the server listed"
+  cannot fail the way a call can; and on a same-named server the agent-dir entry SHADOWS the project
+  entry entirely, so the client that installs this file must never write a name it does not own.
+- **The seat is told what to do with the tools**: a new shared `mcp-usage` instruction module
+  (`shared-modules/mcp-usage.md`) is carried by every seeded seat type and names `manage_context` and
+  `call_seat`, so the guidance a seat starts with matches the configuration it was given — and the text
+  lives in the catalog rather than in the renderer, which keeps the renderer free of a project's tool
+  names.
+- **Proven end-to-end, not by unit tests alone:** a seat created on a throwaway database with `runtime:
+  omp` and one `mcp` block resolved through the real route into `resolved_seats.files` holding exactly
+  `agent.yaml`, `guidance/role.md` and `runtime/omp-mcp.json`; those bytes installed as an agent-dir
+  `.mcp.json` were then read by the real runtime, which expanded the token and authenticated to the MCP
+  endpoint. `OPENRIG_TEST_AGENT_VALIDATE=1` keeps the rendered omp spec valid under `rig agent validate`.
+- **The `mcp` kind is INERT IN PRODUCTION until the owner's decision-9 window**: production holds the
+  five-value `ck_modules_kind` (`PROD-PROBE-kind-read-2026-10-06.md`), so nothing here claims production
+  behaviour.
+
+
 **The friction channel is live: the table lands, both app.go lines return, and the boot check earns its keep** (2026-10-06)
 
 - **`seat_feedback` now exists in both DDL sources** — the `CREATE TABLE` in `seat_management_postgresql.sql` and the `TableDef` + runtime DDL in `seat_tables.go` — with its row struct registered in the DDL guard. Go-dev2's `TestSeatDDLParity` holds the two copies together on columns, references and CHECKs, and the new `TestSeatFeedbackLayerCheckMatchesDomain` checks the layer CHECK against the Go vocabulary the same way the seats table's `permission_policy` CHECK is checked against the resolver.
@@ -179,6 +211,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Established before the change, as the row required: the string was SET in two places and NOTHING asserted it — no Go test pins the constant or the literal, and the Python-side occurrences are the legacy backend's own server name, not consumers of this payload.
 
 ### Changed
+
+**The schema file and the runtime DDL agree on column defaults — ids come from the application** (2026-10-06)
+
+- **The rule, decided from measurement: no `DEFAULT` on `id` in EITHER source.** The runtime TableDefs
+  supply the value in Go (`ColumnDef.Default = taskdb.DefaultUUIDv4`), and the schema FILE's
+  `id ... DEFAULT uuid_generate_v4()` was the side that disagreed — production takes the runtime path, so
+  the file described a default production does not have, and `createAll` never creates `uuid-ossp`, so the
+  default was not honourable on a fresh runtime database at all. The file's 14 `id` columns lose it, and
+  the `CREATE EXTENSION` goes with it.
+- **Why it mattered:** a test's result depended on which path had built the database —
+  `TestRoomSharingVisibilityIntegration` failed on a runtime-built one (`null value in column "id" …
+  violates not-null constraint`, SQLSTATE 23502) and passed on a file-built one. It now passes on BOTH.
+- **`TestSeatDDLParity` compares the DEFAULT expression of every column in both sources** beside the
+  columns, the `REFERENCES` and the `CHECK`s, and it CAUGHT this divergence before the fix — every seat
+  table reported `file: id:uuid_generate_v4()` against `runtime: <absent>`.
+
 
 - **`NEXT_GEN.md`: the socket gap closed by measurement, the five-field socket form, and the vintage clause proving itself twice in an hour (2026-10-06)** — **the closure:** on a binary that **contains** the fix, the session-viewer socket **completes the handshake and closes `1008` with the same required-credential reason as the realtime and connector paths**, in **both auth settings and both token shapes (nine cells, uniform)** — the bare pre-upgrade `403` is gone, **no path is stricter or less legible than its siblings**, and go-dev's fix is confirmed **on the shape it named rather than inferred from its title.** **The method did its work before the probe: the ancestry check showed the fix was newer than both binaries the verifier had run, so the gap was STALE BY CONSTRUCTION** — the **same rule used twice in one hour in opposite directions** (once to stop a false gap being filed, once to close a real one), **the strongest evidence that the vintage clause changes decisions rather than describing them.** **And the standard form now kept for socket claims: FIVE FIELDS PER OBSERVATION — path, port, setting, token shape, and open-versus-closed-with-a-reason** — because all three of tonight's socket disagreements would have been **impossible to state** without them. **One gap remains named and unmeasured: which default the runtime substitutes for an empty model.**
 

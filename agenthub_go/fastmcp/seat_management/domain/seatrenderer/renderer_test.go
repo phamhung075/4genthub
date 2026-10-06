@@ -117,6 +117,19 @@ func mcpServers(t *testing.T, spec *OpenRigSpec) map[string]mcpServerJSON {
 	return doc.MCPServers
 }
 
+// mcpServersAt reads a `{"mcpServers": …}` document from one rendered file. One document has two
+// destinations: a claude-code seat carries it at mcpFragmentPath, an omp seat at ompMCPPath.
+func mcpServersAt(t *testing.T, spec *OpenRigSpec, path string) map[string]mcpServerJSON {
+	t.Helper()
+	var doc struct {
+		MCPServers map[string]mcpServerJSON `json:"mcpServers"`
+	}
+	if err := json.Unmarshal([]byte(fileContent(t, spec, path)), &doc); err != nil {
+		t.Fatalf("parse %s: %v", path, err)
+	}
+	return doc.MCPServers
+}
+
 func filePaths(spec *OpenRigSpec) []string {
 	out := make([]string, len(spec.Files))
 	for i, f := range spec.Files {
@@ -500,18 +513,125 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 		t.Fatalf("codex skill does not name seatcheck send:\n%s", skill)
 	}
 
-	for _, runtime := range []string{"agy", "omp"} {
-		spec, err := RenderSeat(withModules(seatFixture(runtime), modules), testMCPURL)
-		if err != nil {
-			t.Fatalf("%s: %v", runtime, err)
+	// agy has neither a fragment type nor an MCP mechanism: guidance and skills only, no runtime file.
+	agy, err := RenderSeat(withModules(seatFixture("agy"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("agy: %v", err)
+	}
+	for _, path := range filePaths(agy) {
+		if strings.HasPrefix(path, "runtime/") {
+			t.Errorf("agy seat has a runtime file %q", path)
 		}
-		for _, path := range filePaths(spec) {
-			if strings.HasPrefix(path, "runtime/") {
-				t.Errorf("%s seat has a runtime file %q", runtime, path)
-			}
+	}
+	if skill := fileContent(t, agy, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+		t.Fatalf("agy skill does not name seatcheck send:\n%s", skill)
+	}
+
+	// omp gets the seat's MCP servers as ONE file in the render, and NOT the claude fragments a
+	// claude-code seat takes. The platform has no omp MCP runtime-resource type, which is why this
+	// travels with the render — and the runtime DOES read an MCP document (measured 2026-10-06).
+	omp, err := RenderSeat(withModules(seatFixture("omp"), modules), testMCPURL)
+	if err != nil {
+		t.Fatalf("omp: %v", err)
+	}
+	var ompRuntimeFiles []string
+	for _, path := range filePaths(omp) {
+		if strings.HasPrefix(path, "runtime/") {
+			ompRuntimeFiles = append(ompRuntimeFiles, path)
 		}
-		if skill := fileContent(t, spec, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
-			t.Fatalf("%s skill does not name seatcheck send:\n%s", runtime, skill)
+	}
+	if len(ompRuntimeFiles) != 1 || ompRuntimeFiles[0] != ompMCPPath {
+		t.Errorf("omp runtime files = %v, want exactly %q", ompRuntimeFiles, ompMCPPath)
+	}
+	if skill := fileContent(t, omp, "skills/comm-guard-skill/SKILL.md"); !strings.Contains(skill, "seatcheck send") {
+		t.Fatalf("omp skill does not name seatcheck send:\n%s", skill)
+	}
+}
+
+// TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape pins the file an omp seat receives against what
+// the runtime was MEASURED to read (2026-10-06, MCP-OMP-STEP-A-MEASUREMENT.md): a `{"mcpServers": …}`
+// document installed as the seat's agent-dir `.mcp.json`, with the platform URL resolved and every
+// other ${VAR} LEFT for the runtime — which does expand it, in a header and in a stdio server's env.
+func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
+	seat := withModules(seatFixture("omp"), []resolver.ResolvedModule{
+		mcpPlatformModule(), sequentialThinkingModule(),
+	})
+
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(omp): %v", err)
+	}
+	if got := fileContent(t, spec, ompMCPPath); got == "" {
+		t.Fatal("an omp seat with mcp blocks must carry the rendered MCP file")
+	}
+	for _, path := range filePaths(spec) {
+		if path == mcpFragmentPath || path == settingsFragmentPath {
+			t.Fatalf("an omp seat must not carry the claude fragments, found %q", path)
+		}
+	}
+	servers := mcpServersAt(t, spec, ompMCPPath)
+	if len(servers) != 2 {
+		t.Fatalf("omp servers = %+v, want the two the seat mounts", servers)
+	}
+	http := servers["agenthub_http"]
+	if http.Type != "http" || http.URL != testMCPURL {
+		t.Fatalf("agenthub_http = %+v, want type http and the resolved platform url %q", http, testMCPURL)
+	}
+	// The bearer stays a ${VAR}: the runtime expands it (measured), and keeping it unexpanded is what
+	// keeps a credential out of the rendered spec.
+	if want := "Bearer ${AGENTHUB_TOKEN}"; http.Headers["Authorization"] != want {
+		t.Fatalf("agenthub_http Authorization = %q, want %q", http.Headers["Authorization"], want)
+	}
+	if stdio := servers["sequential-thinking"]; stdio.Type != "stdio" || stdio.Command != "npx" {
+		t.Fatalf("sequential-thinking = %+v, want the stdio server unchanged", stdio)
+	}
+
+	// Deterministic: the same seat renders byte-identical twice, so a rebuild is not a diff.
+	again, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(omp) again: %v", err)
+	}
+	if first, second := fileContent(t, spec, ompMCPPath), fileContent(t, again, ompMCPPath); first != second {
+		t.Fatalf("the omp MCP file is not deterministic:\nfirst:\n%s\nsecond:\n%s", first, second)
+	}
+}
+
+// TestRenderSeatOmpWithoutMCPBlocksRendersNoMCPFile is the acceptance's other half: a seat with no mcp
+// block gets NO FILE, rather than an empty document that would look like a server-less configuration.
+func TestRenderSeatOmpWithoutMCPBlocksRendersNoMCPFile(t *testing.T) {
+	withoutMCP := []resolver.ResolvedModule{}
+	for _, m := range seedModules(t, "lead") {
+		if m.Kind != resolver.KindMCP {
+			withoutMCP = append(withoutMCP, m)
+		}
+	}
+	if len(withoutMCP) == 0 {
+		t.Fatal("the fixture has no non-mcp modules, so this test would prove nothing")
+	}
+	spec, err := RenderSeat(withModules(seatFixture("omp"), withoutMCP), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(omp): %v", err)
+	}
+	for _, path := range filePaths(spec) {
+		if strings.HasPrefix(path, "runtime/") {
+			t.Fatalf("an omp seat with no mcp block rendered a runtime file %q", path)
+		}
+	}
+}
+
+// TestRenderSeatGuidanceNamesTheMCPTools is step E of the packet-5 dispatch: the seat's startup
+// guidance tells it to call the platform's MCP tools by name. The text comes from the catalog (the
+// shared `mcp-usage` instruction module), not from a string in the renderer, so this asserts BOTH:
+// the tools are named AND the section is the module's.
+func TestRenderSeatGuidanceNamesTheMCPTools(t *testing.T) {
+	spec, err := RenderSeat(withModules(seatFixture("omp"), seedModules(t, "lead")), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(omp): %v", err)
+	}
+	guidance := fileContent(t, spec, guidancePath)
+	for _, want := range []string{"## mcp-usage", "manage_context", "call_seat"} {
+		if !strings.Contains(guidance, want) {
+			t.Fatalf("seat guidance does not carry %q:\n%s", want, guidance)
 		}
 	}
 }

@@ -52,6 +52,11 @@ var sharedModuleFiles = []struct {
 		"comm-guard-skill", resolver.KindSkill, "comm-guard-skill.md",
 		"agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/comm-guard-skill.md",
 	},
+	// The seat's MCP guidance: what the platform's own server is FOR, and the two tools a seat is
+	// expected to reach for. Carried by every seat type because a seat type that mounts no server is
+	// told so by the render (no file, no tools) rather than by this text being absent — and because a
+	// seat whose blocks change should not need a second edit here to learn what to do with them.
+	{"mcp-usage", resolver.KindInstruction, "mcp-usage.md", ""},
 }
 
 var (

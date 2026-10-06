@@ -74,6 +74,39 @@ Track test suite changes, fixes, and improvements for agenthub.
   restored (the pre-`d41fba79` state) the gated test fails `NewApp: unknown table "seat_feedback"`,
   and the same copy without that line passes.
 
+## 2026-10-06 - omp seats get the seat's MCP servers from the render, and the guidance names the tools (Go)
+
+- `renderer.go`: **ONE `mcpServers` document now serves two destinations.** claude-code keeps taking it
+  as the `claude_mcp_fragment` runtime resource; an omp seat gets the same document as a plain file
+  `runtime/omp-mcp.json` (the codex-rules precedent applied to a second runtime), and a seat with NO
+  `mcp` block renders NO file — the acceptance's "a seat with no mcp block gets none", satisfied by
+  absence rather than by an empty document that would read as configuration.
+- `renderer_test.go`: the cross-runtime test **pinned the OLD contract** ("a runtime file for agy or
+  omp") and now pins the new one — agy still renders no runtime file, omp renders exactly
+  `runtime/omp-mcp.json`. Two new tests pin the file against the MEASURED runtime behaviour (type
+  `http`, the platform URL resolved from the seat's mcp url, the bearer LEFT as the literal
+  `${AGENTHUB_TOKEN}`, a stdio server passed through unchanged, byte-identical across two renders, and
+  no claude fragment or settings file on the seat) and the no-block case (no runtime file at all). A
+  third pins step E: the guidance carries `## mcp-usage`, `manage_context` and `call_seat`, and the
+  section is the MODULE's rather than a renderer string.
+- `seedlibrary.go` + `shared-modules/mcp-usage.md` (new): a shared `instruction` module carried by all
+  nine seeded seat types, telling a seat to sync through `manage_context`, reach another seat with
+  `call_seat`, report what it actually ran, and keep credentials out of a tool call. It arrives through
+  the existing instruction → guidance path, so the seat's startup text matches the configuration it was
+  given.
+- **Proven on the real stack, not only in unit tests:** a booted `cmd/agenthub` on a throwaway Postgres,
+  one published `mcp` block and one seat type, a seat created with `runtime: omp`, and
+  `GET /api/v2/openrig/rooms/mcp/rigspec` forcing a resolve →
+  `resolved_seats.files` = `agent.yaml`, `guidance/role.md`, `runtime/omp-mcp.json`. **Those bytes were
+  then taken from the database, installed as an agent-dir `.mcp.json`, and read by the REAL runtime**,
+  which expanded the token and authenticated: the probe endpoint saw
+  `Authorization: Bearer e2e-token-1234` on 20 requests. The stored file still carries the literal
+  `${AGENTHUB_TOKEN}`, so no credential is on disk.
+- `OPENRIG_TEST_AGENT_VALIDATE=1 go test -count=1 -run TestRenderSeatRigValidate
+  ./fastmcp/seat_management/domain/seatrenderer/` → PASS for claude-code, codex and omp with the real
+  `rig agent validate`. `go test -count=1 ./fastmcp/seat_management/...` → 16 packages green; `gofmt`
+  clean.
+
 ## 2026-10-06 - the schema file and the runtime DDL agree on defaults, so the sharing test is true on BOTH databases (Go)
 
 - **THE DEFECT, REPRODUCED BEFORE THE FIX.** `TestRoomSharingVisibilityIntegration` failed on a
