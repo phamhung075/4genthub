@@ -262,7 +262,16 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 // in the code, which is a separate reading rather than a second copy of this one.
 func (a *App) MCPToolsList() ([]map[string]any, error) {
 	if a.mcpTools == nil {
-		return []map[string]any{}, nil
+		// REFUSED RATHER THAN EMPTY, and the case that decided it is a BUILD-TIME reader, not the
+		// handler: an empty slice and no error is indistinguishable from a platform with no tools, so
+		// a generator that composed an App the cheap way would exit 0 and write an artefact saying the
+		// tool surface is empty. An unbuilt registry is a wiring fault, and a wiring fault that reads
+		// as a fact about the platform is the "looks complete and is not" shape in a new place.
+		return nil, fmt.Errorf(
+			"the MCP tool registry was not composed: this App has no ToolDefinitions, so the tool " +
+				"surface is unknown rather than empty. Wire the registry (the boot path and the test " +
+				"helper both construct it) before asking for the list",
+		)
 	}
 	defs := a.mcpTools.ToolDefinitions()
 	tools := make([]map[string]any, 0, len(defs)+4)
