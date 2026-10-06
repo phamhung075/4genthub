@@ -88,7 +88,7 @@ func ManageSeatInputSchema() *tmentities.OrderedMap[any] {
 	properties.Set("room", seatParam("Room", "[OPTIONAL for list, REQUIRED for get and set_occupant] Room slug", true))
 	properties.Set("seat", seatParam("Seat", "[REQUIRED for get and set_occupant] Seat key", true))
 	properties.Set("runtime", seatParam("Runtime", "[REQUIRED for set_occupant] claude-code, codex, agy or omp", true))
-	properties.Set("model", seatParam("Model", "[OPTIONAL for set_occupant] Model id; empty uses the runtime default", true))
+	properties.Set("model", seatParam("Model", "[OPTIONAL for set_occupant] Model id. Empty means TWO DIFFERENT THINGS depending on the action: on CREATE it uses the runtime default, and on UPDATE it is IGNORED - the stored model is kept unchanged and no error is returned, so an empty value cannot be used to reset a model", true))
 	properties.Set("user_id", seatParam("User Id", "[OPTIONAL] ", true))
 
 	schema := tmentities.NewOrderedMap[any]()
