@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the bridge's defaults are pinned against HOME (python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_bridge.py`: `test_the_path_defaults_do_not_follow_home`
+  loads the module TWICE under two different HOMEs - one of them named like a seat state directory - and
+  asserts `DEFAULT_ENV_FILE`, `DEFAULT_PINS` and `DEFAULT_SYNC_STATE` are EQUAL across the two loads, then
+  that none of them sits under either fake home. The equality across two HOMEs is the shape the sync
+  script's own test uses, and it is what makes the test ask the PROPERTY rather than the wording: anything
+  that follows HOME cannot survive the second load, whatever the implementation looks like.
+- PROVED BY REVERTING ONE SITE, not argued: putting `DEFAULT_PINS` back on `Path.home()` fails it with
+  "DEFAULT_PINS followed HOME: <seat-like>/.openrig/agenthub-seats against <other-home>/.openrig/agenthub-seats",
+  which names the site rather than the line; the site was restored and the file's 55 tests pass again.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q`.
+
 ## 2026-10-06 - the guard that decides which seats get a limits section, pinned on its negative side (Go)
 
 - New `fastmcp/seat_management/domain/seatrenderer/policy_limits_join_test.go`:

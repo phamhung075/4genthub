@@ -480,6 +480,39 @@ def test_machine_id_sanitized():
     assert bridge_mod.sanitize_machine_id("..") == "machine"
 
 
+def test_the_path_defaults_do_not_follow_home(monkeypatch, tmp_path):
+    """The bridge's three machine-level defaults resolve from the ACCOUNT, not from HOME.
+
+    A seat is launched with HOME pointed at its own state directory
+    (/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>), and the bridge is run from a seat in
+    practice rather than by expectation: the owner ran it from their own session, fe-dev ran it
+    from a seat to document the hazard, and go-dev ran its --print from inside this rig. A default
+    built on Path.home() therefore points into the seat's tree while the rest of the mechanism
+    reads the account's, and the two halves disagree about where the data lives.
+
+    Stated as an EQUALITY ACROSS TWO HOMEs - the shape the sync script's own test uses - so
+    anything that follows HOME cannot survive the second load.
+    """
+    seat_like = tmp_path / "4genthub-min-lead@4genthub-min"
+    seat_like.mkdir()
+    monkeypatch.setenv("HOME", str(seat_like))
+    first = _load_module()
+
+    monkeypatch.setenv("HOME", str(tmp_path / "other-home"))
+    second = _load_module()
+
+    for name in ("DEFAULT_ENV_FILE", "DEFAULT_PINS", "DEFAULT_SYNC_STATE"):
+        assert (
+            getattr(first, name) == getattr(second, name)
+        ), f"{name} followed HOME: {getattr(first, name)} against {getattr(second, name)}"
+    # And each one is the ACCOUNT's path, not a path under either fake home.
+    for module in (first, second):
+        for name in ("DEFAULT_ENV_FILE", "DEFAULT_PINS", "DEFAULT_SYNC_STATE"):
+            value = str(getattr(module, name))
+            assert str(seat_like) not in value, f"{name} = {value}"
+            assert "other-home" not in value, f"{name} = {value}"
+
+
 def test_usage_errors_exit_2(monkeypatch):
     monkeypatch.delenv("AGENTHUB_URL", raising=False)
     # `run` reads the machine token, never the user token: one variable must not mean two
