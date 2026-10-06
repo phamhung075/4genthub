@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the client's unported table lost the entry that became real (Go client)
+
+- `cmd/agenthubclient/main_test.go`: `TestUnportedCommandRefusesRatherThanStubbing` listed
+  `{"sync", "status", "4genthub-dev"}` as UNPORTED, which stopped being true in `64f8ecde` when the verb
+  was ported - so the table was pinning a refusal the command no longer gives, and `go test ./...` failed on
+  it. The entry is removed and the ported behaviour takes its place in
+  `TestSyncStatusIsPortedAndRefusesOnTheEnvironment`: no `AGENTHUB_URL` -> exit 2 with "AGENTHUB_URL is not
+  set", nothing on stdout, and explicitly NO "not ported" (a porting note for a ported verb would be a lie).
+  `{"sync", "pull", ...}` STAYS in the table, because pull's positional half is still unported - which is
+  what that test exists to keep honest - and the test's comment now says the table holds only the commands
+  still unported and that an entry leaves it when its verb becomes real.
+- The same two codes are pinned at unit level in `internal/clientsync/statusverb_test.go`
+  (`TestRunStatusVerbMapsFailuresThePythonsWay`: no env -> 2, an unreadable cloud -> 3), so the top-level
+  case is the dispatcher's exit code rather than a second copy of the verb's internals.
+
 ## 2026-10-06 - the snapshot path guards, tested before anything writes (Go client)
 
 - `internal/clientsync/seatfiles_test.go`: `TestSafeRelativeRefusesEveryEscapeThePythonSpecLists` uses the
