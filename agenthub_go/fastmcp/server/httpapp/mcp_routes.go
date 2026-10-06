@@ -52,6 +52,23 @@ type jsonRPCError struct {
 	Data    any    `json:"data,omitempty"`
 }
 
+// mcpProtocolVersion is the MCP protocol revision this server implements, and it is NOT the
+// release identity: a protocol revision names a wire contract, a release names a build.
+//
+// It is 2025-03-26 because that is what the implementation actually matches, measured rather than
+// assumed. Streamable HTTP's single POST+GET endpoint arrived in 2025-03-26 and is what this
+// server serves; 2024-11-05's transport is HTTP+SSE, whose `endpoint` event and separate
+// /messages POST path this server does not implement at all. JSON-RPC batching is accepted here
+// and was removed in 2025-06-18; the `MCP-Protocol-Version` header requirement and structured
+// tool output also arrived in 2025-06-18 and are not implemented. Claiming 2025-06-18 would be a
+// lie to the client; claiming 2024-11-05 promised a transport no client can use against this
+// server.
+//
+// Both places that advertise it read this one literal - the initialize result and the
+// register_mcp_client response - because two surfaces disagreeing is how the version-string
+// defect started.
+const mcpProtocolVersion = "2025-03-26"
+
 func (a *App) registerMCPRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /mcp", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -110,7 +127,11 @@ func (a *App) registerMCPRoutes(mux *http.ServeMux) {
 		if req.ID != nil {
 			_ = json.NewEncoder(w).Encode(resp)
 		} else {
-			w.WriteHeader(http.StatusNoContent)
+			// A POST carrying only notifications or responses MUST be answered 202 Accepted with
+			// no body (Streamable HTTP, 2025-03-26, "Sending Messages to the Server" step 4).
+			// It answered 204, which no revision of the protocol asks for; the revision we now
+			// advertise makes the requirement binding.
+			w.WriteHeader(http.StatusAccepted)
 		}
 	})
 
@@ -158,7 +179,7 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 	switch req.Method {
 	case "initialize":
 		resp.Result = map[string]any{
-			"protocolVersion": "2024-11-05",
+			"protocolVersion": mcpProtocolVersion,
 			"capabilities": map[string]any{
 				"tools":     map[string]any{"listChanged": false},
 				"resources": map[string]any{"listChanged": false},

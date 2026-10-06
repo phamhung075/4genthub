@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the MCP protocol revision is pinned to what the implementation matches (Go)
+
+- `TestProtocolVersionIsOneValueOnEverySurface` (fastmcp/server/httpapp) asserts that `initialize`
+  and `register_mcp_client` advertise the same `mcpProtocolVersion`, that neither advertises the
+  revisions this implementation does not match (`2024-11-05`, `2025-06-18`), and that a protocol
+  revision is never reported as the release identity.
+- `TestNotificationOnlyPostIsAccepted` pins 202 Accepted with an empty body for a POST carrying
+  only notifications, which Streamable HTTP requires and which the server answered 204 until now.
+- `TestMiscRegisterResponse` compares the register advertisement to the constant instead of a
+  literal.
+- **Falsified**: with `register_mcp_client` reverted to `2025-06-18` and the notification status
+  code back to 204, both tests fail - `register protocol_version = 2025-06-18, want "2025-03-26"`
+  and `notification-only POST status = 204, want 202`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet ./fastmcp/server/...`
+  and `go test ./fastmcp/server/...` -> all pass.
+
 ## 2026-10-06 - the release identity and the database flag each get a check that can fail (Go)
 
 - **Version surfaces**: new `TestEveryVersionSurfaceReportsTheOneRelease` (fastmcp/server/httpapp)

@@ -188,7 +188,7 @@ func mcpRegisterResponse(sessionID, baseURL string) *entities.OrderedMap[any] {
 	server := entities.NewOrderedMap[any]()
 	server.Set("name", "agenthub-server")
 	server.Set("version", config.ReleaseVersion)
-	server.Set("protocol_version", "2025-06-18")
+	server.Set("protocol_version", mcpProtocolVersion)
 	out.Set("server", server)
 
 	endpoints := entities.NewOrderedMap[any]()
