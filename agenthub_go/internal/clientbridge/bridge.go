@@ -13,18 +13,6 @@ import (
 	"agenthub/internal/clientcmd"
 )
 
-// Exit codes this package adds to the shared three. The contract fixes ExitOK, ExitUsage and
-// ExitUnavailable, and a REPORTING failure is none of those: the verb exists, the machine can run it,
-// and the cloud or the network refused. The Python bridge used 1 for it and `once` still returns it
-// when nothing was accepted, so the Go side keeps 1 rather than folding a remote failure into a
-// platform refusal. Flagged to the dispatcher's owner because the constant belongs in clientcmd if
-// they agree.
-const (
-	ExitRemote = 1
-	// ExitUsage is re-exported for callers reading this package alone.
-	ExitUsage = clientcmd.ExitUsage
-)
-
 // The wire contract, in the Python bridge's own numbers.
 const (
 	statusPath      = "/api/v2/openrig/seat-status"
@@ -317,7 +305,7 @@ func (b *Bridge) fail(message string) time.Duration {
 }
 
 // Run loops until ctx is done. With once it runs a single cycle and reports whether anything was
-// accepted: EXIT_OK only when nothing is degraded and no backoff is held, ExitRemote otherwise - so a
+// accepted: EXIT_OK only when nothing is degraded and no backoff is held, clientcmd.ExitRemote otherwise - so a
 // one-shot run can be used as a check rather than only as a report.
 func (b *Bridge) Run(ctx context.Context, rig *clientcmd.Rig, once bool) int {
 	for {
@@ -326,7 +314,7 @@ func (b *Bridge) Run(ctx context.Context, rig *clientcmd.Rig, once bool) int {
 			if b.backoff == 0 && !b.stripDetail {
 				return clientcmd.ExitOK
 			}
-			return ExitRemote
+			return clientcmd.ExitRemote
 		}
 		select {
 		case <-ctx.Done():

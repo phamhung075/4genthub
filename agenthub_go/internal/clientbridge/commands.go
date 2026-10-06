@@ -160,7 +160,7 @@ func bridgeOnce(ctx context.Context, rig *clientcmd.Rig, args []string, stdout, 
 		encoded, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
 			_, _ = fmt.Fprintf(stderr, "agenthub-client bridge once: cannot encode the payload: %v\n", err)
-			return ExitRemote
+			return clientcmd.ExitRemote
 		}
 		_, _ = fmt.Fprintf(stdout, "%s\n", encoded)
 		return clientcmd.ExitOK
@@ -198,7 +198,7 @@ func bridgeRegister(args []string, stdout, stderr io.Writer) int {
 	token, err := registerMachine(baseURL, userToken, id)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge: %v\n", err)
-		return ExitRemote
+		return clientcmd.ExitRemote
 	}
 	envFile := values["env-file"]
 	if envFile == "" {
@@ -206,7 +206,7 @@ func bridgeRegister(args []string, stdout, stderr io.Writer) int {
 	}
 	if err := writeEnvFile(envFile, baseURL, token); err != nil {
 		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge: %v\n", err)
-		return ExitRemote
+		return clientcmd.ExitRemote
 	}
 	_, _ = fmt.Fprintf(stdout, "registered machine %q; its token is in %s (mode 0600, not printed). "+
 		"Run the bridge with --machine-id %q so the token and the report agree.\n", id, envFile, id)
@@ -220,7 +220,7 @@ func bridgeInstallService(stdout, stderr io.Writer) int {
 	binary, err := os.Executable()
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge install-service: cannot resolve this binary: %v\n", err)
-		return ExitRemote
+		return clientcmd.ExitRemote
 	}
 	_, _ = fmt.Fprintf(stdout, `[Unit]
 Description=4genthub OpenRig status bridge
