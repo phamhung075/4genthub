@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the binder is exonerated for the wired user_id column (Go, identity split)
+
+- `fastmcp/task_management/infrastructure/repositories/base_orm_repository_test.go`:
+  `TestBindDoesNotCoerceAWiredVarcharUserID` is the discriminator the identity-split investigation needed.
+  It reads the WIRED registry - `database.Tables`, not a file - finds `tasks.user_id`, LOGS its SQLType and
+  asserts `bind()` passes the dev literal through unchanged.
+- WHAT IT SETTLED, and it halved the search space: the wired `tasks.user_id` is **VARCHAR** (logged by the
+  test) and the literal passes through, so the column defs are EXONERATED and the coercion that produces the
+  `uuid5` seen in the statement log happens **upstream of the repository**. The two candidates had been
+  "the wired def is UUID after all" and "something coerced the value before the repository"; this test kills
+  the first. `models_prod.go`'s UUID defs are not the answer either: its own header says its tables are
+  "intentionally not appended to Tables" and nothing references it.
+- The value itself was confirmed rather than assumed, which is why the test could be aimed at all:
+  `uuid5(NAMESPACE_DNS, "dev-user-00000000-0000-0000-0000-000000000000")` equals the `708b1d8f...` bound in
+  the statement log, exactly, with the email and the users-row id checked and ruled out.
+- Commands: `go test ./fastmcp/task_management/infrastructure/repositories/ -count=1` -> ok.
+
 ## 2026-10-06 - the guard's store is a build-time fact, and the fixture stops writing machine state
 
 - `test_openrig_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on
