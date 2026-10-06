@@ -228,6 +228,16 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The block form stops refusing blocks the renderer accepts** - 2026-10-06
+ - The frontend mirror of the Go parser was STRICTER in two places, so it refused blocks the authority accepts -
+ the direction that makes it a defect rather than a note. Go matches object keys to struct tags
+ case-insensitively, and decodes an explicit `null` on an optional field to that field's zero value, i.e. absent;
+ the mirror compared the allowed-key list case-sensitively and treated `null` as invalid. Both now read the way
+ the authority reads, and neither loosening touches the refusals that ARE the authority's.
+ - Measured: with the alignment removed, the new case fails - `{"Name":"probe","Type":"stdio","Command":"npx",
+ "Args":null}` is refused - which is a block the renderer accepts and the form could not submit. The unknown-field
+ refusal keeps its meaning and is now pinned in capitals as well, since matching without case must not turn an
+ unknown field into an allowed one.
 - **The blank-model claim is sourced to the runtime, in every place the frontend made it** - 2026-10-06
  - Four frontend sites carried the clause as if THIS path substituted a default: the doc on `isValidSeatModel`,
  the create form's model hint (user-visible), the topology graph's and seat table's fallback label, and a test

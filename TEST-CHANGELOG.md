@@ -2,6 +2,17 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the block mirror stops being stricter than the authority (frontend)
+
+- `src/tests/utils/mcpBlock.test.ts` adds the two cases that pin the alignment: a block with CAPITALISED tags and
+  an explicit `null` on optional fields parses, because Go matches struct tags case-insensitively and decodes null
+  to the zero value; and an unknown field is still refused when it is written in capitals, so the case-insensitive
+  match cannot turn an unknown field into an allowed one.
+- Proved by removing the alignment: the accept-case fails with "expected false to be true", which is precisely the
+  false refusal it exists to prevent - a block the renderer accepts that the form could not submit.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/utils/mcpBlock.test.ts` -> 29 passed;
+  `npx vitest run` -> 102 files / 1763 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - the blank-model claim is sourced to the runtime (frontend)
 
 - `src/tests/pages/SeatsPage.test.tsx`: the case 'adds a seat with an empty model so the runtime default is

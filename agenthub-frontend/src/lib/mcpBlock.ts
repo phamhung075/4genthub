@@ -45,16 +45,21 @@ export function mcpServerLabel(server: McpServerBlock): string {
   return `${server.name} · ${server.type}`;
 }
 
+/** Go decodes an explicit null to the field's zero value, so for an optional field null means ABSENT. */
+function isAbsent(value: unknown): boolean {
+  return value === undefined || value === null;
+}
+
 function readStringMap(value: unknown): Record<string, string> | null {
-  if (value === undefined) return null;
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (isAbsent(value)) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return null;
   const entries = Object.entries(value as Record<string, unknown>);
   if (entries.some(([, entry]) => typeof entry !== 'string')) return null;
   return Object.fromEntries(entries) as Record<string, string>;
 }
 
 function readArgs(value: unknown): string[] | null {
-  if (value === undefined) return null;
+  if (isAbsent(value)) return null;
   if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) return null;
   return value as string[];
 }
@@ -84,43 +89,58 @@ export function parseMcpBlock(content: string): McpBlockParse {
     return { ok: false, error: 'content is not a server object' };
   }
 
+  // Go's decoder matches object keys to struct tags CASE-INSENSITIVELY, and a later duplicate wins, so a
+  // block the renderer accepts may arrive as {"Name": ...}. Normalise once and read by the tag names; the
+  // unknown-field refusal keeps Go's meaning, compared without case.
   const raw = value as Record<string, unknown>;
-  const unknown = Object.keys(raw).filter((key) => !ALLOWED_KEYS.includes(key));
+  const byKey = new Map<string, unknown>();
+  for (const [key, entry] of Object.entries(raw)) {
+    byKey.set(key.toLowerCase(), entry);
+  }
+  const unknown = Object.keys(raw).filter((key) => !ALLOWED_KEYS.includes(key.toLowerCase()));
   if (unknown.length > 0) {
     return { ok: false, error: `unknown field ${unknown.join(', ')}: a block carries only ${ALLOWED_KEYS.join(', ')}` };
   }
 
-  const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  const name = typeof byKey.get('name') === 'string' ? (byKey.get('name') as string).trim() : '';
   if (name === '') {
     return { ok: false, error: 'field name is required: it becomes the server key in the MCP fragment' };
   }
 
-  const type = typeof raw.type === 'string' && MCP_SERVER_TYPES.includes(raw.type as McpServerType)
-    ? (raw.type as McpServerType)
+  const declaredType = byKey.get('type');
+  const type = typeof declaredType === 'string' && MCP_SERVER_TYPES.includes(declaredType as McpServerType)
+    ? (declaredType as McpServerType)
     : null;
   if (type === null) {
-    return { ok: false, error: `field type must be "http" or "stdio", got ${JSON.stringify(raw.type)}` };
+    return { ok: false, error: `field type must be "http" or "stdio", got ${JSON.stringify(declaredType)}` };
   }
 
-  const args = readArgs(raw.args);
-  if (raw.args !== undefined && args === null) {
+  const rawArgs = byKey.get('args');
+  const args = readArgs(rawArgs);
+  if (!isAbsent(rawArgs) && args === null) {
     return { ok: false, error: 'field args must be an array of strings' };
   }
-  const headers = readStringMap(raw.headers);
-  if (raw.headers !== undefined && headers === null) {
+  const rawHeaders = byKey.get('headers');
+  const headers = readStringMap(rawHeaders);
+  if (!isAbsent(rawHeaders) && headers === null) {
     return { ok: false, error: 'field headers must be an object of strings' };
   }
-  const env = readStringMap(raw.env);
-  if (raw.env !== undefined && env === null) {
+  const rawEnv = byKey.get('env');
+  const env = readStringMap(rawEnv);
+  if (!isAbsent(rawEnv) && env === null) {
     return { ok: false, error: 'field env must be an object of strings' };
   }
 
+  // A string field is read the way Go reads it: null and a wrong type both decode to the zero value, so the
+  // cross-field rules below ask only whether it is empty.
+  const url = typeof byKey.get('url') === 'string' ? (byKey.get('url') as string) : '';
+  const command = typeof byKey.get('command') === 'string' ? (byKey.get('command') as string) : '';
+
   if (type === 'http') {
-    const url = typeof raw.url === 'string' ? raw.url : '';
     if (url === '') {
       return { ok: false, error: 'field url is required for a "http" server' };
     }
-    if ((raw.command !== undefined && raw.command !== '') || (args?.length ?? 0) > 0 || (env && Object.keys(env).length > 0)) {
+    if (command !== '' || (args?.length ?? 0) > 0 || (env && Object.keys(env).length > 0)) {
       return { ok: false, error: 'a "http" server takes url and headers, not command, args or env' };
     }
     const urlError = checkURL(url);
@@ -128,11 +148,10 @@ export function parseMcpBlock(content: string): McpBlockParse {
     return { ok: true, server: { name, type, url, ...(headers ? { headers } : {}) } };
   }
 
-  const command = typeof raw.command === 'string' ? raw.command : '';
   if (command === '') {
     return { ok: false, error: 'field command is required for a "stdio" server' };
   }
-  if ((raw.url !== undefined && raw.url !== '') || (headers && Object.keys(headers).length > 0)) {
+  if (url !== '' || (headers && Object.keys(headers).length > 0)) {
     return { ok: false, error: 'a "stdio" server takes command, args and env, not url or headers' };
   }
   return {
