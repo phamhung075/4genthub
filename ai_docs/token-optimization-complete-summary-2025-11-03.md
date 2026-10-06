@@ -1,5 +1,12 @@
 # Complete Token Optimization Summary - November 3, 2025
 
+> **Historical artifact — pre-Go implementation.** This record maps the **Python** backend's MCP
+> tool controllers (`agenthub_main/src/fastmcp/task_management/interface/mcp_controllers/…`) and
+> the token budget of that stack. The live backend is the Go service (`agenthub_go`), and the
+> six tools counted below are **the tools optimised in that pass, not the whole surface** — the
+> live registry publishes nine (`ai_docs/api-integration/surface-inventory.md` §2). Kept as
+> history only.
+
 ## Overview
 
 This document summarizes the comprehensive token optimization work completed across the MCP (Model Context Protocol) ecosystem, representing **21,000-26,000 tokens saved per Claude session** (~10-12% of 200k context window).

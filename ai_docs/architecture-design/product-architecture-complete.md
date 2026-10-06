@@ -237,7 +237,7 @@ src/
 | **manage_subtask** | Subtask CRUD, progress tracking, completion |
 | **manage_project** | Project lifecycle, health checks, validation |
 | **manage_git_branch** | Branch CRUD, agent assignment, statistics |
-| **manage_context** | 4-tier context hierarchy, inheritance, delegation |
+| **manage_context** | Context records at four levels, inheritance, delegation |
 | **manage_agent** | Agent registry: register, assign, update |
 | **manage_seat** | Seat list/get/set_occupant (Go-only) |
 | **call_seat** | Resolve one seat and its rendered context files (Go-only) |

@@ -182,7 +182,7 @@ class ConditionalMCPProvider(ContextProvider):
 
 ### Optimized Behavior (Compact)
 ```python
-🔧 Dev: React 19 + Python 3.14 | Ports: 3800, 8000
+🔧 Dev: React 19 + Go (agenthub_go) | Ports: 3800, 8000
 💡 Use /dev_env for full details
 ```
 **Token cost**: ~100 tokens (95% reduction)
@@ -201,7 +201,7 @@ class CompactEnvironmentProvider(ContextProvider):
             # Detect only essential info
             info = {
                 'frontend_exists': (project_root / 'agenthub-frontend').exists(),
-                'backend_exists': (project_root / 'agenthub_main').exists(),
+                'backend_exists': (project_root / 'agenthub_go').exists(),
                 'python_version': sys.version.split()[0],
                 'compact_mode': True
             }

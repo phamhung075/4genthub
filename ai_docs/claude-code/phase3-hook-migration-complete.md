@@ -49,7 +49,7 @@ All 8 hook paths updated to use absolute paths pointing to `scripts/claude-hooks
 | **Hook Source Code** | `.claude/hooks/` | 28,684 | **~85,000** | **0** ✅ |
 | **Hook Output** | Execution | - | ~15,000 | 15,000 (Phase 2 pending) |
 | **CLAUDE.local.md** | Root | 300+ | ~10,000 | 10,000 |
-| **Agent System Prompt** | MCP | - | ~8,000 | 8,000 |
+| **Agent System Prompt** | MCP | - | ~8,000 | 8,000 *(retired model — the `call_agent` tool that returned it is gone)* |
 | **Tool Definitions** | MCP | - | ~5,000 | 5,000 |
 
 **Current Startup**: ~66,000 tokens (original measurement)

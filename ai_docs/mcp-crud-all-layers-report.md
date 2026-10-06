@@ -1,5 +1,13 @@
 # MCP CRUD All Layers Test Report
 
+> **Status:** dated run report (2026-10-02) against production's MCP endpoint. Its shape holds —
+> one row per layer × action — but **two action names in it are not operations of the live
+> tools**, and the PASS marks against them are historical: `set_context` (no such action exists
+> in the Go tree at all — `grep -rn '"set_context"' agenthub_go --include='*.go'` returns
+> nothing; context is written through `manage_context`) and the task-layer `assign_agent` rows
+> (that is a `manage_git_branch` operation, not a `manage_task` one). The live tool surface is
+> `ai_docs/api-integration/surface-inventory.md` §2.
+
 **Date**: 2026-10-02 21:16:58 UTC
 **Target**: `https://api.4genthub.com/mcp` (Go FastMCP Production)
 **Run ID**: `d7492b`

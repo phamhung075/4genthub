@@ -510,14 +510,13 @@ if not result.get("success"):
 **Cause**: User lacks required role
 
 **Solution**:
-```python
-# Check user roles
-payload = verify_token(token)
-roles = payload.get("realm_access", {}).get("roles", [])
-
-# Assign required role in Keycloak
-# Users → Select user → Role Mappings → Assign role
 ```
+Check the token's roles in the Keycloak console:
+  Users → Select user → Role Mappings → Assign role
+```
+> The Go server validates the token and maps its roles; a valid token missing the required
+> role is refused with `403`. (The Python `verify_token(token)` helper shown in earlier
+> revisions belonged to the retired Python backend.)
 
 ### "Connection pool exhausted"
 

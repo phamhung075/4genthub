@@ -60,7 +60,7 @@ The docker-menu.sh script provides a sophisticated interactive menu system for D
 - `--no-cache` builds ensure fresh code changes
 - BuildKit optimization with provenance disabled
 - Automatic port conflict resolution (8000, 3800)
-- Python cache clearing
+- Build-cache clearing (the Go build cache and the frontend's build output)
 
 ### Port Management
 - Automatically stops containers using required ports
