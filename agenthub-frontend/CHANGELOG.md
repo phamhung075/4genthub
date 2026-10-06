@@ -181,12 +181,27 @@
     that one case.
 
 ### Changed
+- **The Vite trap is corrected a SECOND time: the export WINS, and the file Vite reads is the root one** - 2026-10-06
+ - A correction of a correction, kept visible because the history is the evidence that the standard is held: 5b9a019f
+ retracted the claim that `VITE_WS_URL` is inert without a frontend `.env` - true as far as it went - and then offered
+ its own wrong trap, that a SHELL EXPORT changes nothing. Measured against Vite itself, its loader writes the FILE
+ values first and then OVERWRITES them from the process environment, and that precedence is documented, so **an
+ export WINS over the file's value**.
+ - What stands, measurements only: (i) the config reads the REPO ROOT env file, because `envDir` is `'..'`; (ii) a
+ shell export overrides that file's value; (iii) the running client logged the variable as NOT SET and fell back to
+ the page origin, and the mechanism for THAT is not established - three candidates, none chosen. The false trap WAS
+ an explanation offered for (iii), and a fourth explanation would repeat the error exactly.
+ - Every home is swept and every remaining copy of the false mechanism is marked RETRACTED rather than deleted, since
+ these are dated records: this file in three places, the setup guide (another seat's second pass, which reverses the
+ first), and the root changelog. The Go backlog carries no copy - searched, zero matches for the trap text.
 - **The socket rationale is corrected, and the trap narrowed to what was measured** - 2026-10-06
  - The earlier line said `VITE_WS_URL` had no effect because the frontend has no `.env`. That is wrong twice
  over: `vite.config.ts` sets `envDir: '..'`, so the REPO ROOT `.env` IS the file Vite reads - measured through
  Vite's own resolver, which returns `VITE_WS_URL=ws://localhost:8000` from it - and this directory holds only
- `.env.sample`. The trap that survives is narrower: a SHELL EXPORT changes nothing, because Vite reads files
- and not the process environment.
+ `.env.sample`. The trap it then offered is WRONG AND IS RETRACTED HERE: it said a SHELL EXPORT changes nothing,
+ but **an export WINS over the file's value in Vite**, because variables already present when Vite runs have the
+ highest priority. Corrected statement, measurements only: the config reads the REPO ROOT env file, and an export
+ overrides that file.
  - What the correction does NOT claim is that the variable reaches the app, because it does not: the running
  client logs `VITE_WS_URL: NOT_SET` and dials the page origin, which is why the `/ws` proxy is what carries the
  socket to the API. The delivery of `VITE_*` to the dev client is unexplained here and is recorded as a gap
@@ -194,10 +209,12 @@
 - **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
  - The file still carried the Create React App defaults (`pnpm start`, port 3000); this project runs
  `npm start` on port 3800 through Vite, which proxies `/api` and now `/ws` to the backend on :8000.
- - It also records the trap that cost an hour tonight: `VITE_WS_URL` is inert in development unless it is in
- a `.env` file, because Vite reads only `.env` files and not the process environment - so the socket reaches
- the API through the `/ws` proxy, and without that proxy the dev server accepts the upgrade itself and the
- UI reports Live with no backend behind it.
+ - It also recorded a trap that is RETRACTED (2026-10-06, see the entry above): it said `VITE_WS_URL` is inert in
+ development unless it is in a `.env` file. **That is false.** The config reads the REPO ROOT `.env` (`envDir`
+ `'..'`), and a SHELL EXPORT overrides even that file's value. What stays true is why the proxy exists: in this
+ dev setup the client logs the variable as NOT SET and dials the page origin, so the socket reaches the API
+ through `/ws`, and without that proxy the dev server accepts the upgrade itself and the UI reports Live with no
+ backend behind it.
 - **The frontend speaks the seat model, not the retired agent library (owner directive C)** - 2026-10-05
   - Read-only inventory first: every claim the frontend makes about the API it calls and about the agent model, with
     file:line and a class (matches / stale / retired-as-live). Result: no retired-as-live HTTP call survived - the
@@ -285,9 +302,9 @@
  the dev origin with no token gets the backend's own refusal (`close 1008`, "Authentication required: pass a
  bearer token in the token query parameter or the Authorization header") instead of an open socket.
  - `VITE_WS_URL` was said here to have no effect unless it is in a frontend `.env`. WRONG, and corrected in the
- entry above: the config sets `envDir: '..'`, so the REPO ROOT `.env` is the file Vite reads, and what remains
- true is narrower - a shell export changes nothing, because Vite reads files rather than the process
- environment.
+ entry above: the config sets `envDir: '..'`, so the REPO ROOT `.env` is the file Vite reads. What was then
+ offered as the surviving trap - that a shell export changes nothing - IS ALSO WRONG and retracted: an export
+ WINS over the file in Vite.
  - The status chip the task and project headers share now carries what the client records and used to drop:
  `Reconnecting…` while a retry is in progress rather than the same "Offline" as having given up, and the
  recorded error as the chip's title - which for an authentication refusal is the SERVER'S reason string,

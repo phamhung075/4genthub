@@ -1,7 +1,7 @@
 # Local Environment Setup for Frontend
 
 ## Problem
-The frontend shows "Backend not connected" because there's no `.env` file with the correct environment variables.
+The frontend shows "Backend not connected" when the environment file Vite actually reads is missing or incomplete — the **REPO ROOT `.env`**, not one inside `agenthub-frontend` (see the correction under Solution).
 
 ## Solution
 Create (or edit) the **PARENT `.env` — the repository root** — with the following content. **`agenthub-frontend/vite.config.ts:201` sets `envDir: '..'`, so the file Vite actually loads is the ROOT `.env`, not one inside `agenthub-frontend`** (corrected 2026-10-06; the earlier version of this page said the frontend directory, which Vite never reads):
@@ -51,11 +51,15 @@ After creating the .env file and restarting:
 - The login page shows a version badge with the frontend and backend versions — the `v0.0.3b` pair recorded here on 2026-10-04 is dated: the frontend is at **`0.0.6`** (`package.json`) and the backend marker is **`0.0.20`** in the current packet
 - No more "Backend not connected" message
 
-## The knob that looks wired and is not — what is inert is a SHELL export, not the variable (corrected 2026-10-06)
+## The knob that looks wired and is not — CORRECTED TWICE, AND THIS SECOND PASS REVERSES THE FIRST (2026-10-06)
 
-**Exporting `VITE_WS_URL` in the shell before the start command changes NOTHING in development.** Vite reads **env FILES** rather than the process environment (`src/config/environment.ts:88` reads it through `getEnvVar`), so a null result from that experiment is the **tool**, not the setting.
+**A SHELL EXPORT WINS, and this section said the opposite an hour ago.** Vite's loader writes the **file** values first and then **overwrites them from the process environment** (`vite/dist/node/chunks/dep-Bm2ujbhY.js:12563` reads the parsed files into the env object, and `:12564` then runs `for (const key in process.env)` over the same prefix namespace) — and that precedence is documented — so **exporting `VITE_WS_URL` before the start command DOES take effect.**
 
-**AND THE FIRST VERSION OF THIS SECTION WAS WRONG BY ONE LAYER, corrected here rather than left standing:** it said the variable is inert *unless it sits in a frontend `.env` file*, and that there is none. **Both halves are false, measured: `vite.config.ts:201` sets `envDir: '..'`, so Vite loads the PARENT directory's `.env`, and the root `.env` CARRIES `VITE_WS_URL` — that is the value IN FORCE.** What is inert is an **export in the shell**, which is exactly what the original observation measured. **The shape, worth more than the fact: a configuration LOAD PATH was documented without reading the configuration that decides it** — the same defect as a route described without checking its registration.
+**WHAT STANDS FROM THE FIRST PASS:** the config's env directory is the **PARENT** (`vite.config.ts:201`, `envDir: '..'`), so the file Vite reads is the **REPO ROOT `.env`**, and a `.env` inside `agenthub-frontend` is not read at all.
+
+**WHAT THIS PASS RETRACTS:** the sentence *"an export in the shell changes nothing"* — written to replace the ORIGINAL wrong claim and itself wrong, in the opposite direction. **The shape is therefore the stricter one: a configuration LOAD PATH was documented without reading the configuration that decides it, and then a CORRECTION to it was written without reading the LOADER that decides the precedence.**
+
+**AND THE LIVE QUESTION, which the false trap had been covering: why the original export experiment returned nothing, given that the export wins.** That gap is **open and assigned**, not explained by this section.
 
 **Why it matters for the socket and not only the URL (measured 2026-10-06, `c69d128a`):** with `/api` proxied but **no `/ws` entry**, the dev server accepted the websocket upgrade itself, so the app reported **CONNECTED / Live** against a socket that never reached the backend — while the reported symptom looked like the opposite, a bare **Offline**. The discriminator was the **no-token** case: only the real backend answers with close **1008** and its own reason text. **A surface reporting healthy is not evidence that it reached the thing it names.**
 
