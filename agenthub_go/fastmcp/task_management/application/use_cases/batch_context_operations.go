@@ -54,9 +54,9 @@ type BatchOperationResult struct {
 }
 
 // BatchContextService is the UnifiedContextService surface used by the batch
-// operations. unified_context_service.py is not ported to Go yet. The Python module
-// calls it with context_level=... and awaits a synchronous method, so the real
-// Python call raises TypeError; the port keeps the call shape.
+// operations. The Python module calls it with context_level=... and awaits a
+// synchronous method, so the real Python call raises TypeError; the port keeps the
+// call shape.
 type BatchContextService interface {
 	CreateContext(ctx context.Context, contextLevel value_objects.ContextLevel, contextID string, data map[string]any, userID, projectID, gitBranchID *string) (map[string]any, error)
 	UpdateContext(ctx context.Context, contextLevel value_objects.ContextLevel, contextID string, data map[string]any, userID *string, propagateChanges bool) (map[string]any, error)

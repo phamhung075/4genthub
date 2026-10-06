@@ -13,7 +13,7 @@ import (
 )
 
 // UnifiedContextService is the consumer-side port of
-// application/services/unified_context_service.py (not ported yet). The Python service is
+// application/services/unified_context_service.go. The Python service is
 // synchronous and raises the domain exceptions caught by the facade; the Go methods are
 // ctx-first because they touch storage and return the Python exception as an error.
 // Response dicts whose key order is observable are OrderedMaps.
