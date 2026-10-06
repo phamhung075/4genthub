@@ -173,6 +173,7 @@ def grid(a: argparse.Namespace) -> None:
             f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
             + (" --detail" if a.detail else "")
         )
+        herdr("pane", "rename", pane, seat)
         herdr("pane", "send-text", pane, cmd)
         herdr("pane", "send-keys", pane, "Enter")
     herdr("workspace", "focus", root.split(":")[0])
@@ -211,12 +212,15 @@ def feed(a: argparse.Namespace) -> None:
 
     def show(seat, line):
         stamp = time.strftime("%H:%M:%S")
+        # One seat in view (a grid pane): its name is the pane's title, not a column on every line.
+        name = "" if len(seats) == 1 else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
         for text in events(line, a.width, a.detail):
-            print(
-                f"{fg(STAMP_COLOR)}{stamp}{RESET} {BOLD}{fg(color[seat])}{seat:<12}{RESET} {text}",
-                flush=True,
-            )
+            print(f"{fg(STAMP_COLOR)}{stamp}{RESET} {name}{text}", flush=True)
 
+    if len(seats) == 1:
+        print(f"{BOLD}{fg(color[seats[0]])}== {seats[0]} =={RESET}", flush=True)
+    else:
+        print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     for seat in seats:
         f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")
         if f is None:
@@ -228,7 +232,6 @@ def feed(a: argparse.Namespace) -> None:
         for ln in shown:
             show(seat, ln)
         pos[seat] = (f, f.stat().st_size)
-    print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     while True:
         for seat in seats:
             f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")

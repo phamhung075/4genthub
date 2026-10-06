@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **Watch grid saves width**: a feed that follows one seat (each grid pane) no longer repeats the seat name on every line; the name is the herdr pane title plus a `== seat ==` header at the top. The merged feed keeps the name column. Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`.
+
 - **Watch colours readable on a black background**: `scripts/openrig_watch_tools.py` uses light 256-colour tones only (seat names, tool kinds, result, reasoning, speech, incoming); the dim style and the dark ANSI blue and magenta are gone, the palette is named constants at the top of the file. Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`, `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`.
 
 - **The watch shows reasoning, speech and incoming messages**: `scripts/openrig_watch_tools.py` gains `--detail` (on by default in `grid`): `~ think` (reasoning), `▸ say` (what the agent writes), `◂ in` (what it receives). Measured first against OpenRig's own views: the omp runner mirrors only text, one-line tool summaries, incoming messages and errors into the pane, so reasoning and full tool arguments exist only in the session log. Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`, `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`. Also records the one-client directive in `agenthub_go/NEXT_GEN.md`.

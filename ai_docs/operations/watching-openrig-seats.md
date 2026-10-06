@@ -22,7 +22,7 @@ columns top to bottom, left to right. With the default 2 columns for `4genthub-m
 | go-dev | web-dev |
 | go-dev2 | writer |
 
-Every line carries the seat name, so the position never matters.
+Each pane is named after its seat (herdr pane title) and starts with a `== seat ==` header; its lines carry no seat name, to save width. The merged `feed` (several seats in one stream) still puts the seat name on every line.
 
 Options: `--rig <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
 at start, default 4), `--width N` (characters of each command or result, default 110).
