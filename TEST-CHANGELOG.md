@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the upgrade path's in-process idempotence is now a check (Go)
+
+- `agenthub_go/fastmcp/server/httpapp/migration_idempotence_test.go` (new): runs the migration path a
+  SECOND time against an already-migrated throwaway database and requires no error and an unchanged
+  schema — a full fingerprint of every column, index and constraint in the public schema, compared
+  item by item — plus the presence of the objects the upgrade is supposed to have produced
+  (`seat_feedback`, `rooms.team_id`, `ix_rooms_team_id`, `rooms_team_id_fkey`,
+  `ck_seat_feedback_layer`).
+- It gets its database from the bring-up this package already had (`newMissedNotificationAppEnv`,
+  which skips loudly without `AGENTHUB_TEST_PG_URL`) and reaches that config through the existing
+  singleton, so there is ONE bring-up in the package, not two. The gated run: `AGENTHUB_TEST_PG_URL=…
+  go test ./fastmcp/server/httpapp/ -run TestSchemaMigrationIsIdempotentInProcess` -> **PASS**;
+  ungated -> **SKIP** with the reason printed.
+- **Falsified to prove it can fail**, in a fresh export: with `IF NOT EXISTS` removed from the
+  `team_id` ensurer the second run fails with `ERROR: column "team_id" of relation "rooms" already
+  exists (SQLSTATE 42701)`, and the unmodified export passes — so the check detects a non-idempotent
+  migration rather than merely passing.
+- Scope, stated: this is the IN-PROCESS half. The two-binary procedure (old binary, new binary, new
+  binary again) is the writer's documented step; between them they are the owner's upgrade test.
+
 ## 2026-10-06 - the per-seat omp MCP install is pinned five ways (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained five tests over the existing rig

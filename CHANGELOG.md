@@ -54,6 +54,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **Two practical facts, verified on this box rather than relayed: there is no `psql`, `createdb` or `dropdb` on `PATH`** (the server binaries exist only in `/home/daihu/.cache/agenthub-testpg/bin/`) **while `psycopg2` 2.9.11 is installed**, so the recipe drives Postgres **through Python**; and the drop-afterwards rule.
 - `ai_docs/verification/of4-local-stack.md` links to it, and the procedure is **deliberately not copied into the product's documentation** — the owner asked for it on the gate list.
 
+**The schema-upgrade gate gains its in-process idempotence half** (2026-10-06, owner instruction after packet 4)
+
+- The owner asked, in writing, for an upgrade test on the gate list of any packet that changes schema, because the boot a packet used to get runs the NEW binary against a **fresh** database with `AUTO_MIGRATE=false` — proving the binary runs and proving **nothing** about migrations — while production runs `AUTO_MIGRATE=true` against an **existing** one.
+- The two-binary procedure is the writer's half, documented as a required step. **This is the in-process half:** `TestSchemaMigrationIsIdempotentInProcess` runs the SAME migration path a second time inside one process — `CreateTables`, which is `createAll` + the AI columns + the registered column ensurers — and requires **no error and an unchanged schema**, compared as a full column/index/constraint fingerprint of the public schema.
+- It also asserts the objects the upgrade must have produced — `seat_feedback`, `rooms.team_id`, `ix_rooms_team_id`, `rooms_team_id_fkey` and `ck_seat_feedback_layer` — the same list the manual procedure checks by hand after its second step.
+- **It reuses the bring-up this package already had** rather than opening its own database: a test that boots its own way proves nothing about the way production boots. That bring-up — and therefore this test — skips loudly without `AGENTHUB_TEST_PG_URL`.
+- Proved able to fail, in a fresh export: with `IF NOT EXISTS` removed from the `team_id` ensurer the second run fails with `ERROR: column "team_id" of relation "rooms" already exists (SQLSTATE 42701)`. Control in the same export: green.
+
 **The client installs the rendered omp MCP document per seat** (2026-10-06, packet 5 step D)
 
 - `openrig_seat_sync.py rig` now installs the render's **`runtime/omp-mcp.json`** as **`<seat agent dir>/.mcp.json`** — the per-seat location step A measured: the agent-dir file and the project-root file **compose** when their server names differ, and the **agent-dir entry wins** on a collision.
