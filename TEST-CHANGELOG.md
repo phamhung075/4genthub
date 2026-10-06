@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the cloud half of the status path, with every refusal pinned (Go client)
+
+- `internal/clientsync/rigspec_test.go`: `TestFetchRigspecPinsTheFourTransportRefusals` covers SEVEN cases
+  across the two layers, every one of them a refusal - HTTP status with the body's first 300 characters,
+  invalid JSON, **a JSON list refused as a "malformed response" rather than invalid JSON** (the Python's
+  `json.load` succeeds there and its `isinstance(dict)` check refuses it, so decoding into a Go map would
+  report the wrong refusal), `success: false`, a MISSING `success` key (not True either), no `rigspec`, and
+  a `rigspec` that is a list. Each asserts the message AND the exit code, because a caller reading only
+  prose would keep going on a failure.
+- `TestFetchRigspecSendsTheTokenAndThePath` pins the request half: the bearer token, `Accept:
+  application/json`, and the path with a trailing slash on the base URL (it must not double) - a port that
+  quietly sent no token would look identical against a permissive dev stack.
+- `TestCloudHashesKeepsTheCloudOrderAndRefusesAMalformedEntry` pins the cloud's ORDER travelling beside the
+  map (the Python's dict keeps it, Go's does not, so the status core takes it as an argument) and three
+  malformed entries reported at ExitFailed's number (3, this client's ExitUnavailable) rather than skipped -
+  skipping would answer "all in sync" for a rigspec nobody could have meant.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok (23 subtests across the two units);
+  `go vet ./internal/clientsync/` -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - an unrouted error frame is reported, so a server refusal stops being invisible (Frontend)
 
 - `agenthub-frontend/src/tests/services/WebSocketAnimationService.test.ts`: three cases over the service's routing.
