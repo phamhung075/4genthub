@@ -130,6 +130,22 @@ graph TD
 - 🌐 **Web Dashboard**: React-based interface optimized for human-AI collaboration
 - 🐳 **Docker Infrastructure**: Multi-mode containerized deployment with one-click setup
 
+### 🔌 **Rig and OpenRig workflow**
+
+**OpenRig is the client and runtime; 4genthub is the cloud data for orchestration.** The installed `rig` CLI launches and supervises seats on your machine; this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
+
+Three client-side scripts carry the traffic. Each holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
+
+| Script | What it does |
+|---|---|
+| `scripts/openrig_seat_sync.py` | **Pulls** a room's resolved seats and lays each one out on disk for OpenRig from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
+| `scripts/openrig_bridge.py` | **Pushes observations up**: OpenRig seat status and herdr agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
+| `scripts/openrig_team_setup.py` | **Applies** a team definition (modules, room, seats, links, overlays) through the same publish path the UI uses; `apply` is idempotent. |
+
+The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
+
+**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and `scripts/seat_feedback.sh` for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
+
 ## 🤖 **Agent Registry & Seat Model**
 
 > **The Python agent library is retired.** The 32 agent templates, the `agent_templates` / `user_agent_instances` tables that backed them, and the `call_agent` MCP tool were removed. The live surface is the `agents` registry table plus the `manage_agent` MCP tool (register, assign, get, list, update, unassign, unregister, rebalance), which keeps `call_agent` only as an optional data field.
@@ -408,7 +424,7 @@ That is the **context API**, not the platform's composition model. How a seat is
 
 <div align="center">
 
-### **9 Published MCP Tools • JSON-RPC + SSE • Endless Possibilities**
+### **10 Published MCP Tools • JSON-RPC + SSE • Endless Possibilities**
 
 </div>
 
@@ -422,6 +438,7 @@ That is the **context API**, not the platform's composition model. How a seat is
 - Project hierarchy management
 - Git branch coordination
 - Dependency management
+- AI task actions **refuse legibly** when the AI integration seam is unwired — the caller gets the reason, not a generic error
 
 </td>
 <td width="33%">
@@ -430,6 +447,7 @@ That is the **context API**, not the platform's composition model. How a seat is
 - Agent registration & management (`manage_agent`)
 - Seat list/get/set_occupant (`manage_seat`)
 - Seat resolution (`call_seat`)
+- Seat friction reporting (`submit_feedback`)
 - Workflow coordination
 - Context sharing between agents
 
@@ -520,7 +538,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
 | 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Current Version** | v0.0.2 - Production NOT Ready | [Latest Release](CHANGELOG.md#unreleased) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version. The tree carries **0.0.22** (`agenthub_go/fastmcp/server/httpapp/http.go:159`); the last deploy recorded in this repo is **0.0.21** (packet 3, `0018c644`). The newest *released* section of the changelog is **0.0.5** (2025-09-26) — the two numbering schemes are separate, so this row carries the deploy marker and links the release history. | [CHANGELOG.md](CHANGELOG.md) |
 
 ### 🚀 **Latest Releases**
 
@@ -646,6 +664,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**agenthub v0.0.2** • **Production NOT Ready** • **Built with ❤️ for Human-AI Collaboration**
+**agenthub** • deploy marker **0.0.22** in the tree (`GET /health`; last deploy recorded: **0.0.21**) • **Built with ❤️ for Human-AI Collaboration**
 
 </div>
