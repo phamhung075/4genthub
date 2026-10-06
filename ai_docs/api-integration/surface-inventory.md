@@ -27,7 +27,7 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts (DATED — carry the date and the pattern, per the counting rule).** At HEAD **2026-10-06**, the same pattern gives **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **124** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **144 total.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
@@ -296,6 +296,19 @@ within the caller's memberships.
 | POST | `/api/v2/openrig/teams/{team}/members` | `handleAddTeamMember` | `team_mount.go:87` |
 | PATCH | `/api/v2/openrig/teams/{team}/members/{user}` | `handleUpdateTeamMember` | `team_mount.go:90` |
 | DELETE | `/api/v2/openrig/teams/{team}/members/{user}` | `handleRemoveTeamMember` | `team_mount.go:93` |
+
+### 1.21 Friction channel — base `/api/v2/openrig/feedback` (`seat_feedback_mount.go`)
+
+**Added to this inventory on 2026-10-06 (docs duty pass 3): these two registrations were MOUNTED and were not documented here**, which is what made §1's count two short (§1's corrected counts paragraph carries the measurement).
+
+| Method | Path | Handler | Registration |
+|---|---|---|---|
+| POST | `/api/v2/openrig/feedback` | `handleSubmitSeatFeedback` (inline closure behind `seatFeedbackAuthed`) | `seat_feedback_mount.go:73` |
+| GET | `/api/v2/openrig/feedback` | `handleListSeatFeedback` (inline closure behind `authed`) | `seat_feedback_mount.go:76` |
+
+**Auth — read from the mount rather than assumed.** The **POST accepts a machine token OR a user token** (`seat_feedback_mount.go:7` states the pair, `:18-21` states why: the row is written under the token's own user id, so a machine token cannot write outside its tenant), and the order is load-bearing: `seatFeedbackAuthed` (`:91`) tries the machine-token store first (`:100`), because a machine token is an exact hash match while the user path can resolve a token that is not a user token when the auth layer's development fallback is running (`:83-89`); an invalid machine token **falls through to the user path** (`:110`, "Not a machine token: the user path gets it"), while a machine-token **lookup failure is an error** (`:112`) rather than a fall-through. The **GET takes a user token** only (`authed`).
+
+**Request shape — defined at `seat_feedback_mount.go:64-70`** (`seatFeedbackSubmission`: `room`, `seat`, `layer`, `text` required; `session` optional). The `layer` vocabulary is the DDL's closed set (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`) rather than a list in this document; the credential scan and the page that groups by layer are described once in `README.md`'s *Rig and OpenRig workflow* section. **The third door onto the same writer is the MCP tool `submit_feedback` (§2.3) and the fourth is `scripts/seat_feedback.sh`.**
 
 ---
 
