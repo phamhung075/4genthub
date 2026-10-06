@@ -2,6 +2,35 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - block provenance: computed on the library side, recorded for the migration (Go, packet 6)
+
+- New `fastmcp/seat_management/domain/seedlibrary/blockprovenance.go`, `blockprovenance_test.go` and
+  `guides.lock.json`. The LIBRARY side needs nothing stored: `BlockProvenanceTable()` computes, for
+  every file the shelf carries (17 - thirteen under `blocks/`, four shared), its repository-relative
+  path and the sha256 of the bytes the binary holds. The MIGRATION side is what needs recording:
+  `guides.lock.json` holds the eleven guide blocks with the interim file each was copied from and that
+  file's digest, because while both copies exist nothing else compares them, so a hand-edit to a
+  source file is invisible by construction.
+- `VerifyGuidePairing()` runs from `Load()` and refuses a shelf whose bytes disagree with its lock, or
+  a lock naming a block the shelf does not carry. It is deliberately NOT in `LoadFS`: that loads
+  whatever filesystem a caller hands it, and the lock is a fact about the shipped library - putting it
+  there broke twelve existing tests, which is how the mistake was found rather than reasoned about.
+- `CheckBlockDrift(root)` reports all four ways a file can move: a library block `differs`, a library
+  block `missing`, a source `source-differs`, and a source `source-gone` - the last being the intended
+  state after the migration rather than a failure. A root that does not hold the library is an ERROR,
+  not an empty result, so a wrong root cannot read as "in step".
+- **Falsified in a clean export, both directions, with the counts closing**: a root holding the library
+  and all eleven sources → 0 divergences; one source hand-edited → exactly 1, naming `guide-go-dev:
+  ai_docs/operations/seat-guides/go-dev.md source-differs; recorded e9ae5fdf8c65, found 8ca0cd5d17bb`;
+  the library file edited as well → exactly 2, naming both.
+- **The first cut of this was BLIND and the demonstration caught it**: it compared the embedded bytes
+  against the tree they were embedded FROM, so `go run` re-embedded the edited file and both sides
+  moved together - 0 divergences after a hand-edit. That is why the lock exists: a check on the
+  migration window has to have the pairing RECORDED, not computed.
+- Commands: `gofmt -l` on the package → empty; `go vet ./fastmcp/seat_management/domain/seedlibrary/`
+  → exit 0; `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/` → ok.
+
+
 ## 2026-10-06 - the fold and the two emissions: one parse feeds the runtime document and the seat's words (Go, packet 6 step 2, second slice)
 
 - New `fastmcp/seat_management/domain/seatrenderer/policy_fold.go`: `FoldPolicies` unions the deny lists

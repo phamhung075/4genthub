@@ -85,8 +85,14 @@ type seatTypeFile struct {
 	OutputFormat   string     `yaml:"output_format"`
 }
 
-// Load returns the seeds of the embedded seat types, sorted by slug.
+// Load returns the seeds of the embedded seat types, sorted by slug. It first checks the shelf's
+// recorded provenance pairing, so a library whose bytes no longer match what the lock says is
+// refused here rather than discovered by a drift check that would then be comparing against a
+// pairing already known to be wrong.
 func Load() ([]seedmap.Seed, error) {
+	if err := VerifyGuidePairing(); err != nil {
+		return nil, err
+	}
 	return LoadFS(embedded)
 }
 
