@@ -211,6 +211,14 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A live refresh cookie is used instead of demanding a sign-in** - 2026-10-06
+ - `setTokens` writes the access cookie for 7 days and the refresh cookie for 30, so a user returning on
+ day 8 held a VALID refresh cookie with no access cookie - and the mount path required both, so it
+ declined the refresh it could still use and asked for a sign-in nobody should need. A refresh-cookie-
+ only mount now attempts the refresh before deciding the session is absent, so the session is restored.
+ - An explicit sign-out still clears both cookies and is NOT undone: the branch only runs when a refresh
+ cookie is present, and logout leaves neither. A refresh that fails still ends on the login form, with
+ the dead refresh cookie cleared rather than retried on every load.
 - **A seat that cannot be resolved no longer renders as a working seat** - 2026-10-06
  - The seat page read the resolve (`GET /api/v2/openrig/seats/{room}/{seat}`) only inside the Preview tab
  and rendered its ordinary panels whatever that read answered, so a refused resolve - measured with a

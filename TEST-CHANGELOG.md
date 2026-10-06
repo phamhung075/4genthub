@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a live refresh cookie is used instead of demanding a sign-in (frontend)
+
+- `src/tests/contexts/AuthContext.test.tsx` adds the three cases the ruling asks for: a refresh-cookie-
+  only mount restores the session through POST /api/auth/refresh and shows the user; neither cookie
+  present still lands on the login form and does NOT reach the refresh endpoint; and an explicit
+  sign-out removes BOTH cookies, clears the session, and is not undone. The sign-out case models the
+  cookie jar's removal, so "signed out" is read back through Cookies.get instead of being asserted by
+  hand.
+- Two existing cases needed their scaffolding changed rather than their claims, both because their setup
+  was exactly the refresh-cookie-only state that is now restored on mount: `should refresh token
+  successfully` now has a persistent fetch response (the mount consumes one, the explicit call under
+  test the next), and `should console error on token refresh failure` now sets BOTH cookies so the mount
+  does not refresh at all. The second mattered: with its old setup the mount ate the queued rejection
+  and the explicit call reached an unmocked fetch, which surfaced as a vitest unhandled rejection
+  ("expected [Function] to throw error including 'Network error' but got 'Cannot read properties of
+  undefined (reading ok)'") WHILE EVERY TEST STILL REPORTED PASSED - a green count with an Errors line
+  is not green, and the Errors line is where a mount-time change hides.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/contexts/AuthContext.test.tsx` -> 39
+  passed, 0 errors; `npx vitest run` -> 102 files / 1755 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - a seat that cannot resolve stops looking healthy (frontend)
 
 - `src/tests/pages/SeatDetailPage.test.tsx` adds a case with a rejected resolve read: the reason the API
