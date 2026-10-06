@@ -149,6 +149,64 @@ func filePaths(spec *OpenRigSpec) []string {
 	return out
 }
 
+// guideModule renders a library guide block the way the seed library now ships them: kind
+// instruction, and its OWN "## Guide: <seat>" heading inside the content.
+func guideModule(slug, content string) resolver.ResolvedModule {
+	return resolver.ResolvedModule{Slug: slug, Version: "1.0.0", Kind: resolver.KindInstruction, Content: content}
+}
+
+// Packet 6, step 1: the guides are library blocks, and the render writes them where omp reads them.
+//
+// THE SPLIT IS THE TEST: a guide block goes to AGENTS.md and NOT to the guidance channel, so the same
+// text is delivered once; a non-guide instruction module keeps its place in guidance/role.md, which
+// shows the split is by the guide naming rather than by kind.
+func TestRenderSeatWritesTheGuidesIntoAgentsMDOnce(t *testing.T) {
+	seat := withMCP(seatFixture("omp"),
+		guideModule("guide-common", "## Guide: every seat\n\nshared words\n"),
+		guideModule("guide-go-dev", "## Guide: go-dev\n\nits own words\n"),
+	)
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+
+	agents := fileContent(t, spec, "AGENTS.md")
+	for _, want := range []string{"## Guide: every seat", "shared words", "## Guide: go-dev", "its own words"} {
+		if !strings.Contains(agents, want) {
+			t.Errorf("AGENTS.md lacks %q", want)
+		}
+	}
+	// The heading is the BLOCK's. A renderer that re-heads a block which heads itself would deliver
+	// the heading twice, which is the duplication this step removes rather than relocates.
+	if got := strings.Count(agents, "## Guide: go-dev"); got != 1 {
+		t.Errorf("the guide heading appears %d times, want the block's own heading exactly once", got)
+	}
+
+	guidance := fileContent(t, spec, "guidance/role.md")
+	for _, absent := range []string{"## Guide: every seat", "shared words", "its own words"} {
+		if strings.Contains(guidance, absent) {
+			t.Errorf("guidance/role.md carries %q: a guide has ONE destination", absent)
+		}
+	}
+	if !strings.Contains(guidance, "Base instruction.") {
+		t.Error("a non-guide instruction module must keep its place in the guidance channel")
+	}
+}
+
+// A seat whose resolution carries no guide gets NO AGENTS.md. Absence is the signal - the same rule the
+// MCP document follows - rather than an empty file that reads as a rendered one.
+func TestRenderSeatOmitsAgentsMDWhenNoGuideResolves(t *testing.T) {
+	spec, err := RenderSeat(seatFixture("omp"), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+	for _, p := range filePaths(spec) {
+		if p == "AGENTS.md" {
+			t.Fatal("a seat with no guide block rendered an AGENTS.md")
+		}
+	}
+}
+
 func fileContent(t *testing.T, spec *OpenRigSpec, path string) string {
 	t.Helper()
 	for _, f := range spec.Files {

@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the guides reach a seat through the render, and a guide has ONE destination (Go, packet 6 step 1)
+
+- `fastmcp/seat_management/domain/seatrenderer/renderer_test.go`:
+  `TestRenderSeatWritesTheGuidesIntoAgentsMDOnce` - the guide blocks land in `AGENTS.md` carrying the
+  block's OWN heading exactly once (a renderer that re-headed a block that heads itself would double the
+  heading, which is the duplication this step removes rather than relocates), they do NOT appear in
+  `guidance/role.md`, and a non-guide instruction module keeps its place there, which shows the split is
+  by the guide naming rather than by kind. `TestRenderSeatOmitsAgentsMDWhenNoGuideResolves` - a seat whose
+  resolution carries no guide renders NO `AGENTS.md`; absence is the signal, the same rule the MCP
+  document follows, rather than an empty file that reads as a rendered one.
+- **Falsified both halves separately**: removing the `AGENTS.md` emission fails with
+  `file "AGENTS.md" not rendered`; removing the guidance skip fails with
+  `guidance/role.md carries "## Guide: every seat": a guide has ONE destination` (three assertions fire).
+- The existing exact file-set assertions for claude/agy/omp are untouched and pass, because a seat with no
+  guide block renders no `AGENTS.md`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet
+  ./fastmcp/seat_management/domain/seatrenderer/` -> clean; `go test -count=1
+  ./fastmcp/seat_management/domain/seatrenderer/` -> ok.
+
 ## 2026-10-06 - the seat guides load as instruction blocks (Go, packet 6 step 1)
 
 - New `fastmcp/seat_management/domain/seedlibrary/guides_test.go`, five tests:

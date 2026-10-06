@@ -19,6 +19,15 @@ import (
 const (
 	agentYAMLPath        = "agent.yaml"
 	guidancePath         = "guidance/role.md"
+	// agentsMDPath is the seat's guide document, the file omp loads into every session from the
+	// agent directory. Packet 6 step 1 moved the guides out of a script that wrote it by hand and
+	// into library blocks, so the render writes it from those blocks; a seat whose resolution carries
+	// no guide block gets NO file, the same absence rule as the MCP document.
+	agentsMDPath = "AGENTS.md"
+	// guideSlugPrefix is what makes a block a guide: the guides are `instruction` modules named
+	// `guide-common` and `guide-<seat>`, and their destination is AGENTS.md rather than the guidance
+	// channel. One destination per module - a guide in both places would be the same text twice.
+	guideSlugPrefix = "guide-"
 	skillFileName        = "SKILL.md"
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
@@ -184,6 +193,13 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 			Content: block.Content,
 		})
 	}
+	if guides := guideModules(seat); len(guides) > 0 {
+		// The guides the library ships, written where omp reads them. The renderer decides nothing
+		// about WHO receives a guide - the seat's resolution does that, whether from its pinned type
+		// version or from an overlay - only how the guides it receives are laid out. A seat whose
+		// resolution carries no guide block gets NO file, the same absence rule as the MCP document.
+		files = append(files, OpenRigSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat)})
+	}
 	if receivesClaudeFragments(seat.Runtime) {
 		if mcpFragment != "" {
 			files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
@@ -269,13 +285,46 @@ func renderAgentYAML(seat resolver.ResolvedSeat, runtimeResources []runtimeResou
 	return buf.String(), nil
 }
 
+// guideModules returns the seat's guide blocks, in resolution order.
+func guideModules(seat resolver.ResolvedSeat) []resolver.ResolvedModule {
+	var out []resolver.ResolvedModule
+	for _, m := range modulesOfKind(seat.Modules, resolver.KindInstruction) {
+		if strings.HasPrefix(m.Slug, guideSlugPrefix) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// renderAgentsMD lays the seat's guides out as the one document omp loads into every session.
+//
+// The blocks already carry their own headings (each guide is written as `## Guide: <seat>`), so this
+// adds provenance and separating newlines and NOT a second heading - a renderer that re-heads a block
+// that heads itself is the duplication this step exists to remove.
+func renderAgentsMD(seat resolver.ResolvedSeat) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
+	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
+	b.WriteString("<!-- rendered from this seat's guide blocks; edits here are overwritten -->\n")
+	for _, m := range guideModules(seat) {
+		b.WriteString("\n")
+		b.WriteString(strings.TrimRight(m.Content, "\n"))
+		b.WriteString("\n")
+	}
+	return b.String()
+}
+
 // renderGuidance writes the startup prompt: the seat hash and version stamp,
-// then instruction, document, and memory modules under per-kind headings.
+// then instruction, document, and memory modules under per-kind headings. A guide block is NOT
+// written here: its destination is AGENTS.md, so the same text is never delivered twice.
 func renderGuidance(seat resolver.ResolvedSeat) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
 	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindInstruction) {
+		if strings.HasPrefix(m.Slug, guideSlugPrefix) {
+			continue // a guide's destination is AGENTS.md; see guideSlugPrefix
+		}
 		writeGuidanceSection(&b, "## "+m.Slug, m.Content)
 	}
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindDocument) {
