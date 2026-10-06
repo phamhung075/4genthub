@@ -196,9 +196,9 @@ func DuplicateMessage(room, seat string, pods []string) string {
 	}
 	sortStrings(names)
 	if len(names) == 1 {
-		return fmt.Sprintf("seat %q in rig %s is listed twice in pod %s; rename one", seat, room, names[0])
+		return fmt.Sprintf("seat '%s' in rig %s is listed twice in pod %s; rename one", seat, room, names[0])
 	}
-	return fmt.Sprintf("seat %q in rig %s exists in pods %s and %s; rename one",
+	return fmt.Sprintf("seat '%s' in rig %s exists in pods %s and %s; rename one",
 		seat, room, strings.Join(names[:len(names)-1], ", "), names[len(names)-1])
 }
 
