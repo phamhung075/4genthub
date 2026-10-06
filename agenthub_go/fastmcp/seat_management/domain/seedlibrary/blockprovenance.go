@@ -100,7 +100,11 @@ func verifyGuideLocks(digests map[string]string) error {
 			return fmt.Errorf("guides.lock.json names %s, which the shelf does not carry", slug)
 		}
 		if got != entry.SHA256 {
-			return fmt.Errorf("%s: the shelf carries %s but guides.lock.json records %s; re-copy the block and re-record the pairing", slug, got[:12], entry.SHA256[:12])
+			// short(), never got[:12]: a caller handing a value that is not a digest must get a
+			// refusal, not a panic. Found by a test that hands one in - the assertion caught a crash
+			// rather than the message it expected, which is what a bounded slice on untrusted input
+			// does.
+			return fmt.Errorf("%s: the shelf carries %s but guides.lock.json records %s; re-copy the block and re-record the pairing", slug, short(got), short(entry.SHA256))
 		}
 	}
 	return nil

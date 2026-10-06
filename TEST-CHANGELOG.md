@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the provenance checker's panic, found by its own assertion (Go, packet 6)
+
+- `verifyGuideLocks` sliced `got[:12]` to name a digest in its refusal, so a caller handing a value
+  that is not a digest got a **panic** rather than the refusal: `slice bounds out of range [:12] with
+  length 10`. It came in with 4ca19a01 and was found because branch 1 of
+  `TestGuidePairingRefusesAStaleRecord` hands such a value in ON PURPOSE - the assertion reported a
+  CRASH instead of the message it expected, which is what a bounded slice on untrusted input does.
+  Fixed with the existing `short()` helper, and the test deliberately keeps the non-digest so the
+  guard is pinned rather than removed.
+- The same test was also ORDER-DEPENDENT: branch 2's expected refusal could be shadowed by branch 1's
+  mutation depending on Go's map iteration order. It now undoes the first mutation before the second,
+  and that is verified by running the package **five times** rather than once.
+- A process note kept rather than tidied: the comment-only commit `e3e983a6` was made in the same
+  command whose gate had already printed a failure. The change itself was comment-only and harmless,
+  but committing over a red is the habit this repository spends the most words preventing, so the
+  fix commit records it.
+- Commands: `go test -count=1 ./fastmcp/seat_management/...` → 18 packages ok; the package alone run
+  five times → ok each time; `gofmt -l` on the package → empty; `go vet` → exit 0.
+
+
 ## 2026-10-06 - block provenance: computed on the library side, recorded for the migration (Go, packet 6)
 
 - New `fastmcp/seat_management/domain/seedlibrary/blockprovenance.go`, `blockprovenance_test.go` and

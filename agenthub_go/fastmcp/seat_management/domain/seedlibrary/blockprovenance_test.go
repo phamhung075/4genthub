@@ -89,8 +89,11 @@ func TestGuidePairingRefusesAStaleRecord(t *testing.T) {
 		digests[e.Slug] = e.SHA256
 	}
 
-	// Branch 1: the shelf carries bytes the lock does not record.
-	digests["guide-lead"] = strings.Repeat("0", 64)
+	// Branch 1: the shelf carries bytes the lock does not record. The mutation is a value that is
+	// NOT a digest on purpose: a caller handing one must get a refusal, not a panic, and a bounded
+	// slice on that input is exactly how the panic got in the first time.
+	original := digests["guide-lead"]
+	digests["guide-lead"] = "not-a-digest"
 	err = verifyGuideLocks(digests)
 	if err == nil {
 		t.Fatal("a shelf disagreeing with the lock was accepted")
@@ -101,8 +104,10 @@ func TestGuidePairingRefusesAStaleRecord(t *testing.T) {
 	t.Logf("stale bytes refused: %v", err)
 
 	// Branch 2: the lock names a block the shelf does not carry - the same failure from the other
-	// side, because the check would compare against a pairing that is already wrong.
-	digests["guide-lead"] = "irrelevant"
+	// side, because the check would compare against a pairing that is already wrong. The first
+	// mutation is undone so exactly one refusal is possible and the assertion cannot depend on Go's
+	// map order.
+	digests["guide-lead"] = original
 	delete(digests, "guide-common")
 	err = verifyGuideLocks(digests)
 	if err == nil {
