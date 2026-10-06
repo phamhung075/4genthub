@@ -16,6 +16,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Stale bytecode for the deleted Python sources (`agent_routes`, `agent_invocation_handler`, `agent_doc_generator`) removed; all three are untracked and gitignored (`__pycache__/`), so nothing tracked was deleted as a side effect.
 - Before and after, same package: the entities tests report **34 results with 1 SKIP -> 33 results with 0 SKIP**; the whole `task_management` tree passes, `go vet` and `go build` are clean, and `gofmt` reports nothing on the touched files.
 
+**`healthVersion` 0.0.22 — the deploy marker for packet 4** (2026-10-06)
+
+- Bumped from 0.0.21 in `agenthub_go/fastmcp/server/httpapp/http.go`. Packet 4 is no longer comment-only: it carries the AI-refusal surfacing, the pin label wording and the feedback channel, so a push without a marker could not be confirmed from outside. After the push, production must report **0.0.22**; the dashboard bundle hash must also move off `index-DQeJSJ5C.js`, and both containers must be replaced.
+- Validated at the pre-bump tip in a separate worktree: `go build ./...` clean, `go vet ./fastmcp/server/...` clean, `go test ./...` -> 137 packages ok, 0 failed.
+
 **`healthVersion` 0.0.21 — the deploy marker for this packet** (2026-10-06)
 
 - Bumped from 0.0.20 in `agenthub_go/fastmcp/server/httpapp/http.go`. `/health` reporting the new value is the only external proof a deploy landed (the Docker build context has no `.git`, so no commit id can be embedded): after the push, production must read **0.0.21**. Packet 2 is the evidence that this is a check rather than a ceremony — it was confirmed from outside in seconds by reading the version, which a push without the bump could not have been.
