@@ -35,6 +35,23 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Commands: `go test ./internal/clientsync/ -count=1` -> ok; `go test ./...` -> ok packages 143, FAIL lines
   0; `go vet` -> 0 bytes, exit 0; `gofmt -l` -> empty.
 
+## 2026-10-06 - the seatcheck store resolution is pinned, where every other test stubbed it
+
+- `cmd/seatcheck/main_test.go`: `TestDefaultPinsDoesNotFollowHome` is the only case in the file that exercises the
+  REAL `defaultPins` - every other test replaces `pinsDir` through `seatEnv`, so the store resolution was
+  invisible to the whole suite. It asserts the store is NOT under a seat-like `HOME`, is the SAME under two
+  different `HOME`s (the independence stated as an equality, as the python side's
+  `test_the_default_state_root_is_the_same_under_any_HOME` states it), and that a send driven through the real
+  resolver with no policy is refused CLOSED - exit 2, no delivery - naming the exact path that was missing.
+- Load-bearing by mutation: resolving `$HOME` first fails this case at `main_test.go:191`, naming the seat
+  directory in the failure, while the other 620 lines pass unchanged. A first attempt at the mutation did not
+  compile (`os/user` unused), which is a build failure rather than the property being exercised, so it was redone.
+- Commands: `go test -count=1 ./cmd/seatcheck/` -> ok 0.133s (FAIL with the mutation); `go vet ./cmd/seatcheck/`
+  -> no output, exit 0; `gofmt -l ./cmd/seatcheck/` -> empty. Driven against the built binary from inside a seat:
+  allow exit 0, deny exit 3 (`denied: no link`), missing policy exit 2, unreadable policy (mode 000) exit 2 - and
+  after the fix the missing-policy message names `/home/daihu/.openrig/agenthub-seats/<rig>/<member>/policy.json`
+  rather than the seat's own state directory.
+
 ## 2026-10-06 - the state root's default is pinned as a RESOLVED PATH (python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and

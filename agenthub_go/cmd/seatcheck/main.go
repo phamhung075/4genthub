@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -74,11 +75,23 @@ var (
 )
 
 func defaultPins() (string, error) {
-	home, err := os.UserHomeDir()
+	home, err := realHome()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(home, defaultPinsDir), nil
+}
+
+// realHome is the account's home directory from the passwd entry, NOT the HOME variable: a seat
+// is launched with HOME pointed at its own state directory, so resolving from the environment
+// makes the store a function of who invokes the guard - the seat would look somewhere the
+// client never writes, and a policy that was installed would read as never installed. This is
+// the same resolution as real_home() in scripts/openrig_seat_policy.py, one language over.
+func realHome() (string, error) {
+	if u, err := user.Current(); err == nil && u.HomeDir != "" {
+		return u.HomeDir, nil
+	}
+	return os.UserHomeDir()
 }
 
 func runSend(args []string, stdout, stderr io.Writer) int {

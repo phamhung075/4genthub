@@ -174,16 +174,38 @@ func TestSendPolicyMissingOrCorruptFailsClosed(t *testing.T) {
 	}
 }
 
-// The store is the seat's own home-relative pins directory, so the SEAT'S environment decides
-// where the guard looks. Every other test replaces pinsDir through seatEnv, which is why this
-// one exercises the real resolver and pins the location a writer must satisfy. A store the
-// guard cannot reach fails CLOSED - exit 2, no delivery, no audit line - and the message names
-// the path it looked for, so a seat that was never given a policy is refused rather than left
-// silently unguarded.
-func TestDefaultPinsIsHomeRelativeAndFailsClosedWhenAbsent(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
+// The store does NOT follow HOME. A seat is launched with HOME pointed at its own state
+// directory, so a store resolved from the environment is a function of who invokes the guard:
+// the seat looks somewhere the client never writes and a policy that WAS installed reads as
+// never installed. Every other test replaces pinsDir through seatEnv, so this one is the only
+// place the real resolver is exercised at all.
+func TestDefaultPinsDoesNotFollowHome(t *testing.T) {
+	seatHome := t.TempDir()
+	t.Setenv("HOME", seatHome)
 
+	first, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.HasPrefix(first, seatHome) {
+		t.Fatalf("the store followed HOME into the seat's own directory: %s", first)
+	}
+	if !strings.HasSuffix(first, filepath.Join(".openrig", "agenthub-seats")) {
+		t.Fatalf("the store is not the pins directory: %s", first)
+	}
+
+	other := t.TempDir()
+	t.Setenv("HOME", other)
+	second, err := defaultPins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first != second {
+		t.Fatalf("the store depends on HOME: %q then %q", first, second)
+	}
+
+	// Driven through the real resolver and no stubs: a seat with no policy is refused CLOSED and
+	// is told the exact path that was missing, which is the store a writer must fill.
 	oldPins, oldIdentify, oldDeliver := pinsDir, identify, deliver
 	got := &delivery{}
 	pinsDir = defaultPins
@@ -197,24 +219,13 @@ func TestDefaultPinsIsHomeRelativeAndFailsClosedWhenAbsent(t *testing.T) {
 	}
 	t.Cleanup(func() { pinsDir, identify, deliver = oldPins, oldIdentify, oldDeliver })
 
-	wantPath := filepath.Join(home, ".openrig", "agenthub-seats", testRig, testMember, "policy.json")
-
 	code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi")
 	if code != 2 || got.calls != 0 {
 		t.Fatalf("no policy: exit = %d, calls = %d, stderr %q, want a closed refusal with no delivery", code, got.calls, stderr)
 	}
+	wantPath := filepath.Join(first, testRig, testMember, "policy.json")
 	if !strings.Contains(stderr, wantPath) {
 		t.Fatalf("the refusal must name the path it looked for:\n got %q\nwant it to contain %q", stderr, wantPath)
-	}
-
-	if err := os.MkdirAll(filepath.Dir(wantPath), 0700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(wantPath, []byte(allowPolicy), 0600); err != nil {
-		t.Fatal(err)
-	}
-	if code, _, stderr := send("--to", "b", "--intent", "task", "--", "hi"); code != 0 || got.calls != 1 {
-		t.Fatalf("policy at the contracted path: exit = %d, calls = %d, stderr %q, want one delivery", code, got.calls, stderr)
 	}
 }
 
