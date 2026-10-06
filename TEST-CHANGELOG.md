@@ -2,6 +2,31 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the pull path ported with all three Python specs (Go client)
+
+- `internal/clientsync/pull_test.go` ports the Python's three pull specs one for one, each over a fake
+  cloud whose hash and files the test changes between calls (the fixture's `env.set_seat`):
+  `test_pull_writes_files_and_creates_lock` (exit 0, stdout EXACTLY `path:<store>/<hash>`, stderr EMPTY,
+  files written through nested directories, the lock carrying hash and snapshot path, the policy written),
+  `test_second_pull_keeps_lock_and_prints_notice` (a newer hash without `--update`: exit 0, stdout the
+  PINNED path, stderr exactly the notice, the pin unmoved, the new hash directory NOT created, the pinned
+  file unchanged) and `test_update_moves_lock_and_materializes_new_hash` (`--update`: exit 0, stdout the
+  new path, stderr empty, the pin moved, and **the PREVIOUS snapshot still on disk with its original
+  content** - the immutability that lets a running seat keep reading what it was launched with).
+- Plus `TestPullRefusesWhenThePinnedDirectoryIsGone`, the refusal the path promises: a pin whose snapshot
+  is missing is exit 2 with "pinned seat directory is missing … refusing silent fallback", and nothing on
+  stdout - never a silent fall back to a different snapshot.
+- `cmd/agenthubclient/main_test.go`: pull's entry left the unported table the same way status's did, and
+  `TestPortedVerbsRefuseOnTheEnvironment` now covers BOTH ported verbs (exit 2 and "AGENTHUB_URL is not
+  set", no "not ported" for a verb that is), with `sync bundle` taking pull's place in the table so the
+  table keeps naming something that really is unported.
+- SMOKE, the REAL BINARY against a tiny HTTP cloud: the first pull printed `path:<store>/room1/seat1/h1a2b3c4`
+  and wrote the two files, the lock and the policy; the second printed the notice on stderr and the PINNED
+  path with exit 0; `--update` printed the new path and left the old snapshot reading "hello" against the
+  new "newer".
+- Commands: `go test ./...` in agenthub_go with GOCACHE/TMPDIR inside `.gocache`/`.gotmp` -> ok packages 142,
+  FAIL lines 0; `go vet` over the touched packages -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the client's unported table lost the entry that became real (Go client)
 
 - `cmd/agenthubclient/main_test.go`: `TestUnportedCommandRefusesRatherThanStubbing` listed

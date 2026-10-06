@@ -37,9 +37,13 @@ func (syncCommand) Run(ctx context.Context, _ *clientcmd.Rig, args []string, std
 		fmt.Fprintf(stderr, "agenthub-client sync: pick a verb: %s\n", verbList())
 		return clientcmd.ExitUsage
 	}
-	// status is ported: it compares each seat's local pin with the hash the cloud would serve now.
-	if args[0] == "status" {
+	// status and pull are ported: status compares each seat's local pin with the cloud's hash, and pull
+	// writes the snapshot and moves the pin.
+	switch args[0] {
+	case "status":
 		return RunStatusVerb(ctx, args[1:], stdout, stderr)
+	case "pull":
+		return RunPullVerb(ctx, args[1:], stdout, stderr)
 	}
 	want := args[0]
 	for _, verb := range syncVerbs {
