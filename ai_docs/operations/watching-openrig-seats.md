@@ -25,7 +25,7 @@ columns top to bottom, left to right. With the default 2 columns for `4genthub-m
 Each pane is named after its seat (herdr pane title) and starts with a `== seat ==` header; its lines carry no seat name, to save width. The merged `feed` (several seats in one stream) still puts the seat name on every line.
 
 Options: `--rig <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
-at start, default 40; a pane holds only what was printed since it started, so raise this to see older work), `--width N` (characters of each command or result, default 110).
+at start, default 40; a pane holds only what was printed since it started, so raise this to see older work), `--width N` (characters kept of each line, default 200), `--lines N` (lines shown of each call, result or message, default 25).
 
 Run it again for a fresh grid. It does not reuse or close an earlier one; close the old workspace
 in herdr (`herdr workspace close <id>`).
@@ -33,7 +33,7 @@ in herdr (`herdr workspace close <id>`).
 ## Feed: one merged stream
 
 ```bash
-python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] [--width 170]
+python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] [--width 170] [--lines 25]
 ```
 
 All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or without herdr.
@@ -57,7 +57,11 @@ herdr keeps 10 MB of scrollback per pane. Scroll with the mouse wheel (3 lines a
 ## Reading a line
 
 ```
-21:01:20 lead   → bash command=cd … ⏎ rig queue … (+cwd, timeout)
+21:01:20 lead   → bash (+cwd, timeout) command=cd /home/daihu/…
+                rig queue list --json
+21:01:20 lead   ← {
+                  "success": true,
+                  …
 21:01:20 lead   ← Sent to 4genthub-min-reviewer@4genthub-min
 ```
 
@@ -67,7 +71,8 @@ herdr keeps 10 MB of scrollback per pane. Scroll with the mouse wheel (3 lines a
 | `← text` | the tool's result, dim |
 | `✗ text` | an error result, red |
 | `✗ BLOCKED` (white on a red block) | the seat's policy refused the call (`scripts/openrig_seat_policy.py`) |
-| `⏎` | a line break inside a command or result |
+| indented lines below a mark | the rest of that call, result or message, as real lines; a compact JSON result is shown indented |
+| `… +N more lines` | N lines beyond `--lines` were not shown (nothing is dropped silently) |
 
 All colours are light 256-colour tones chosen for a black terminal background; none uses the dim style or the dark ANSI blues and magentas (change the palette at the top of the script).
 

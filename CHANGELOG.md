@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **Watch shows results as real lines**: `scripts/openrig_watch_tools.py` no longer joins a result into one line with a marker and cuts it; a call, result, reasoning, speech or incoming message is shown as indented lines, a compact JSON result is pretty-printed, each line is cut at `--width`, at most `--lines` (default 25) lines are shown and the rest is counted (`… +N more lines`). Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`, `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py` (10 pass).
+
 - **Watch grid starts with 40 events of history per seat** (was 4): the owner could not scroll up to older work because a pane only holds what it has printed. The doc now says how to scroll (wheel, `prefix+[` copy mode) and names the herdr settings. Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`.
 
 - **Watch grid saves width**: a feed that follows one seat (each grid pane) no longer repeats the seat name on every line; the name is the herdr pane title plus a `== seat ==` header at the top. The merged feed keeps the name column. Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`.
