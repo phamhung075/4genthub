@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the library's own guide, through the real render (Go, packet 6 step 1)
+
+- New `fastmcp/seat_management/domain/seatrenderer/library_guide_render_test.go`:
+  `TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD` renders a seat whose ONLY module is the shared guide
+  taken from `seedlibrary.Load()` — the library's own text, not a fixture — and asserts that AGENTS.md
+  carries three headings that exist nowhere but in the shipped file (`Working procedure`,
+  `How to call a tool`, `The loop, in order`) plus one real sentence of it, and that `guidance/role.md`
+  carries none of it. It lives in package `seatrenderer` because that package's test already imports
+  `seedlibrary`; the loader must never import anything that reaches `seatrenderer`, because that closes
+  the import cycle step 1 refused (the reason is written at `seedlibrary.validateBlockContent`).
+- The entry below pins the SPLIT — a guide goes to AGENTS.md and not to guidance. This pins that what the
+  split delivers is the **shipped** text, because a render path tested only against hand-built blocks
+  cannot tell you the real guide survives load, resolve and render.
+- **Falsified rather than assumed**: in a clean export of HEAD, one assertion was re-pointed at a phrase
+  the shipped guide does not contain, and the test failed on exactly that line — `AGENTS.md does not carry
+  the shipped guide's own sentence about calling a tool` — while the control run on the same tree passed.
+- Commands: `GOFLAGS=-mod=mod go test -count=1 -run TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD
+  ./fastmcp/seat_management/domain/seatrenderer/` → ok; `go test -count=1
+  ./fastmcp/seat_management/domain/seatrenderer/` → ok; `go vet` on the package → exit 0.
+
 ## 2026-10-06 - the guides reach a seat through the render, and a guide has ONE destination (Go, packet 6 step 1)
 
 - `fastmcp/seat_management/domain/seatrenderer/renderer_test.go`:
