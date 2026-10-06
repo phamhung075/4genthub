@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Added
+- **The generated reference's type - the docs page's own seam (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
+  - `src/types/apiReference.ts` is the SINGLE definition of the reference tier's shape: `ApiReference`
+  (`{ routes: ApiRouteEntry[]; tools: ApiToolEntry[] }`), `ApiRouteEntry` (`method`, `path`, `pathParams`,
+  `handler`, `description`) and `ApiToolEntry` (`name`, `description`, `parameters`, `actions`).
+  - THE GENERATOR EMITS DATA AND IMPORTS THESE TYPES: go-dev2 declares nothing, so the generated module in
+  `src/docs` exports one const typed from here and the page's component takes that const as a prop. One
+  definition, and the generator cannot drift away from the page without a compile error. The alternative - the
+  module exporting its own type and the page mirroring it - was rejected as two definitions of one concept.
+  - Two states are LEGITIMATE rather than missing, and the types say so: `handler` is empty when a mount
+  registers an inline closure, and `actions` is empty when a tool takes no `action` parameter. `parameters`
+  carries the server's JSON schema object verbatim, so the page cannot document a shape the server does not accept.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors.
 - **The friction channel's read side: a page grouped by layer (Directive H)** - 2026-10-06
   - THREE STATES, NOT TWO, and this is the page's integrity rule rather than a nicety: "nothing reported for this layer"
   is a claim the SERVER made, while a failed read is a claim nobody can make. So the page distinguishes "loaded and
