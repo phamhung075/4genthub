@@ -303,6 +303,10 @@ Two demands from the owner, recorded with the facts supplied and their date. **T
 
 **Acceptance:** `agenthub-client sync status 4genthub-dev` gives the same answer on Linux, WSL2 and native Windows (three outputs attached); `bridge once --print` equals the Python bridge's output for the same `rig ps` input; a Windows machine without OpenRig exits non-zero with one clear message for `bridge`; no token appears in a log or process listing. Compiling for Windows without running it there is not proof.
 
+## Owner directive (2026-10-06) — a DOCS PAGE in the frontend as the single source of truth between AI and humans
+
+**The owner's words:** for ai_docs and the other docs, add a documentation page on the frontend that explains how the application works (API, MCP, everything), and make it the SINGLE SOURCE OF TRUTH for every future update between AI and humans. **Design: two tiers on one page.** (1) A REFERENCE tier generated from the code (every mounted route, every MCP tool) with a drift test, so it cannot go stale; (2) a GUIDE tier of versioned cloud `document` modules that a human edits in the page and an AI edits through a `manage_document` MCP tool, both writing the same row. **Existing:** `/docs` renders one hand-written `src/docs/api-reference.en.md`; `ai_docs/` holds 71 files. **Two owner decisions are flagged, not assumed:** where the guides live (recommended: the cloud) and whether `ai_docs/` and its hooks are retired once imported (a change to the owner's own rules; only on the owner's word). Build order, rules and acceptance are in the lead's `DOCS-PAGE.md`; step 1 (the generated reference and its drift test) needs no decision.
+
 ## Rig capacity (2026-10-05)
 
 The rig grew from four seats to **seven**. Original four: `lead`, `go-dev` (backend), `fe-dev` (frontend), `reviewer`. Added: `web-dev` (second frontend seat), `writer` (documentation), `go-dev2` (second backend). Both rig spec files (`rig-omp.yaml`, `rig-claude.yaml`) declare all seven, so a restore or the Claude switch-back keeps them.
