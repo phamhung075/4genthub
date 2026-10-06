@@ -84,3 +84,35 @@ def test_detail_adds_reasoning_what_the_agent_says_and_what_it_is_told_and_nothi
 def test_a_single_character_reply_is_not_shown_as_something_said():
     dot = line("assistant", [{"type": "text", "text": "."}])
     assert list(watch.events(dot, 200, detail=True)) == []
+
+
+def result(text: str) -> str:
+    (out,) = watch.events(
+        line("toolResult", [{"type": "text", "text": text}]), 200, lines=5
+    )
+    return out
+
+
+def test_a_multi_line_result_is_shown_as_lines_not_joined_with_a_marker():
+    out = result("first\nsecond\nthird")
+    assert "⏎" not in out
+    assert out.count("\n") == 2
+
+
+def test_lines_beyond_the_cap_are_counted_not_dropped_silently():
+    out = result("\n".join(f"row {n}" for n in range(12)))
+    assert "row 4" in out and "row 5" not in out
+    assert "+7 more lines" in out
+
+
+def test_a_compact_json_result_is_shown_indented():
+    out = result('{"success":true,"data":{"task":{"id":"abc"}}}')
+    assert '  "success": true' in out
+    assert out.count("\n") >= 4
+
+
+def test_a_long_line_is_cut_at_the_width_but_the_other_lines_stay():
+    (out,) = watch.events(
+        line("toolResult", [{"type": "text", "text": "x" * 500 + "\nsecond"}]), 50
+    )
+    assert "x" * 50 in out and "x" * 51 not in out and "second" in out
