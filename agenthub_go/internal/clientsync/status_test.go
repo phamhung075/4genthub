@@ -19,7 +19,10 @@ import (
 func TestASeatIsBehindWhenItsPinDiffersOrIsMissing(t *testing.T) {
 	order := []string{"lead", "go-dev", "writer"}
 	cloud := map[string]string{"lead": "h2", "go-dev": "h1", "writer": "h3"}
-	pinned := map[string]string{"lead": "h1", "go-dev": "h1", "writer": ""}
+	// The Python's `writer: None` is an ABSENT key here, not an empty string: absence is what
+	// pinned_hashes produces for a seat with no lock file, and an empty pin is a different thing (see
+	// TestAnEmptyPinIsBehindRatherThanNotPulled).
+	pinned := map[string]string{"lead": "h1", "go-dev": "h1"}
 
 	got := SeatsBehind(order, cloud, pinned)
 	if len(got) != 2 || got[0] != "lead" || got[1] != "writer" {
@@ -34,12 +37,32 @@ func TestASeatIsBehindWhenItsPinDiffersOrIsMissing(t *testing.T) {
 	}
 }
 
+// TestAnEmptyPinIsBehindRatherThanNotPulled pins the distinction the Python draws with `pinned is None`:
+//
+//	state = "in sync" if seat not in behind else ("not pulled" if pinned is None else "BEHIND")
+//
+// A lock file carrying `"hash": ""` passes read_lock - "" is a string, and read_lock validates nothing
+// else - so it reaches the status line as an EMPTY PIN and the Python renders BEHIND. Only a MISSING
+// entry, which is what no lock file at all produces, is "not pulled". Folding the two together reads a
+// malformed-but-valid lock as a seat that was never pulled, which is the wrong story to give an operator.
+func TestAnEmptyPinIsBehindRatherThanNotPulled(t *testing.T) {
+	cloud := map[string]string{"seat": "h1"}
+	if got := StatusState("seat", cloud, map[string]string{"seat": ""}); got != "BEHIND" {
+		t.Errorf("StatusState with an empty pin = %q, want BEHIND (Python's `pinned is None` is false here)", got)
+	}
+	if got := StatusState("seat", cloud, map[string]string{}); got != "not pulled" {
+		t.Errorf("StatusState with no entry = %q, want not pulled (that is the Python's None)", got)
+	}
+}
+
 // TestStatusRendersThePythonsColumns: the parity is the LINE, not only the word beside it - the seat
 // padded to 14, the pin truncated to 12 with "None" for a missing one, the cloud hash likewise.
 func TestStatusRendersThePythonsColumns(t *testing.T) {
 	order := []string{"lead", "writer"}
 	cloud := map[string]string{"lead": "aaaaaaaaaaaa9999", "writer": "bbbbbbbbbbbb8888"}
-	pinned := map[string]string{"lead": "aaaaaaaaaaaa1111", "writer": ""}
+	// writer is ABSENT, which is the Python's None and therefore the row that renders "None" and "not
+	// pulled"; an empty pin is BEHIND, pinned separately.
+	pinned := map[string]string{"lead": "aaaaaaaaaaaa1111"}
 
 	var out bytes.Buffer
 	if code := RunStatus(&out, order, cloud, pinned); code != clientcmd.ExitBehind {

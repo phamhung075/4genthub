@@ -2,6 +2,29 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - `sync status <room>` runs, and its two ported subtleties are pinned (Go client)
+
+- `internal/clientsync/statusverb_test.go`: `TestRunStatusVerbMapsFailuresThePythonsWay` pins the mapping a
+  port gets wrong - the helpers raise with `EXIT_REMOTE` (1) and the CLIENT's main maps everything that is
+  not `EXIT_USAGE` (2) to `EXIT_FAILED` (3), so a cloud that cannot be read exits **3**; the tempting
+  `clientcmd.CodeOf(err, ...)` would return the helper's own 1, and this case catches it. A missing
+  `AGENTHUB_URL` is a USAGE error with the Python's message ("AGENTHUB_URL is not set").
+  `TestPinnedHashesAbsenceAndEmpty` pins the other subtlety: ABSENT means "not pulled" while an EMPTY pin
+  means BEHIND, which is the Python's `pinned is None` distinction - and
+  `TestAnEmptyPinIsBehindRatherThanNotPulled` corrects an earlier version of the Go status core that folded
+  them together. Two cases of that earlier core were passing *because* their data used `""` where the
+  Python's spec has `None`; the data is now the absent key it should be.
+- `TestParseStatusArgsMirrorsTheSubparser` and `TestRunStatusVerbEndToEnd` cover the verb's surface: the
+  positional room, `--out`, a repeatable `--seat` (a filter that narrows both the rows and the exit), and
+  six usage refusals (no room, two positionals, an unknown flag, a flag with no value).
+- SMOKE, the REAL BINARY against a real (tiny) HTTP cloud rather than only the unit fakes: `sync status cd`
+  printed the Python's own table (`writer pinned None cloud h3 not pulled`, `lead pinned h2 cloud h2 in
+  sync`) and exited 4; `--seat lead` exited 0; a 404 cloud printed `GET
+  /api/v2/openrig/rooms/nope/rigspec failed: HTTP 404` and exited 3; and without the env var it printed
+  `AGENTHUB_URL is not set` and exited 2.
+- Commands: `go test ./internal/clientsync/ ./internal/clientcmd/ -count=1` -> ok (16 tests);
+  `go vet` over both -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the cloud half of the status path, with every refusal pinned (Go client)
 
 - `internal/clientsync/rigspec_test.go`: `TestFetchRigspecPinsTheFourTransportRefusals` covers SEVEN cases

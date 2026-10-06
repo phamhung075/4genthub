@@ -32,10 +32,14 @@ func (syncCommand) Name() string    { return "sync" }
 func (syncCommand) Summary() string { return "pull and inspect resolved seats (" + verbList() + ")" }
 func (syncCommand) NeedsRig() bool  { return false }
 
-func (syncCommand) Run(_ context.Context, _ *clientcmd.Rig, args []string, _, stderr io.Writer) int {
+func (syncCommand) Run(ctx context.Context, _ *clientcmd.Rig, args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		fmt.Fprintf(stderr, "agenthub-client sync: pick a verb: %s\n", verbList())
 		return clientcmd.ExitUsage
+	}
+	// status is ported: it compares each seat's local pin with the hash the cloud would serve now.
+	if args[0] == "status" {
+		return RunStatusVerb(ctx, args[1:], stdout, stderr)
 	}
 	want := args[0]
 	for _, verb := range syncVerbs {

@@ -33,12 +33,20 @@ func SeatsBehind(order []string, cloud map[string]string, pinned map[string]stri
 }
 
 // StatusState is the word the status line carries for one seat.
+//
+// THE "not pulled" CASE IS ABSENCE, NOT AN EMPTY PIN, and that is the Python's own distinction:
+//
+//	state = "in sync" if seat not in behind else ("not pulled" if pinned is None else "BEHIND")
+//
+// An empty-string pin is what a lock file carrying `"hash": ""` yields, and the Python renders that as
+// BEHIND - only a MISSING entry is None. An earlier version of this function folded the two together,
+// which read a malformed-but-valid lock as a seat that was never pulled.
 func StatusState(seat string, cloud map[string]string, pinned map[string]string) string {
 	pin, present := pinned[seat]
 	switch {
 	case present && pin == cloud[seat]:
 		return "in sync"
-	case !present || pin == "":
+	case !present:
 		return "not pulled"
 	default:
 		return "BEHIND"
