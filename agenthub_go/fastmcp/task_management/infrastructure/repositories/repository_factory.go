@@ -2,10 +2,10 @@ package repositories
 
 // Central Repository Factory (Python infrastructure/repositories/repository_factory.py):
 // environment-based repository selection. The Go form carries the environment and session
-// manager on an instance. Mock construction (mock_repository_factory.py is not ported) goes
-// through injectable hooks; when a hook is missing the caller gets a ConfigurationException
-// instead. The Python `sys.exit(1)` for an unknown database type becomes an error (the
-// supported types are validated before reaching it, so the path is unreachable).
+// manager on an instance. Mock construction goes through injectable hooks; when a hook is
+// missing the caller gets a ConfigurationException instead. The Python `sys.exit(1)` for an
+// unknown database type becomes an error (the supported types are validated before reaching
+// it, so the path is unreachable).
 
 import (
 	"os"

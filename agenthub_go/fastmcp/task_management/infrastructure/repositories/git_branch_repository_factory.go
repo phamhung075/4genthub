@@ -3,9 +3,9 @@ package repositories
 // Git Branch Repository Factory (Python
 // infrastructure/repositories/git_branch_repository_factory.py). The Python class-level caches
 // and os.environ probing are represented by an injectable factory instance. Creation goes
-// through the central RepositoryFactory (repository_factory.py), which is not ported yet, so
-// it is represented by the GitBranchRepositoryFactoryBackend hook; the MockGitBranchRepository
-// module is likewise not ported, and its registered builder reports that.
+// through the central RepositoryFactory (repository_factory.py), represented by the
+// GitBranchRepositoryFactoryBackend hook and the registered MockGitBranchRepository
+// builder.
 
 import (
 	"os"
@@ -29,8 +29,7 @@ const (
 // repository class).
 type GitBranchRepositoryBuilder func(userID *string, kwargs Kwargs) (domainrepos.GitBranchRepository, error)
 
-// GitBranchRepositoryFactoryBackend is central RepositoryFactory.get_git_branch_repository
-// (not yet ported).
+// GitBranchRepositoryFactoryBackend is central RepositoryFactory.get_git_branch_repository.
 type GitBranchRepositoryFactoryBackend interface {
 	GetGitBranchRepository(userID *string) (domainrepos.GitBranchRepository, error)
 }

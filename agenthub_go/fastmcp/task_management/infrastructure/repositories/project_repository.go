@@ -5,9 +5,8 @@ package repositories
 // CacheInvalidationMixin side effects are dropped like logging; audit logging (log_access)
 // is dropped too.
 //
-// The ContextFieldSelector (application/services/context_field_selector.py) is not ported
-// yet, so the selective-field methods go through the small ProjectRepoFieldSelector
-// interface declared here.
+// The selective-field methods go through the small ProjectRepoFieldSelector interface
+// declared here.
 
 import (
 	"context"

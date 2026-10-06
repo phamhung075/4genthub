@@ -3,8 +3,7 @@ package repositories
 // ORM Task Repository (Python infrastructure/repositories/orm/task_repository.py): the
 // SQLAlchemy task repository ported over database/sql + pgx.
 //
-// The ContextFieldSelector (application/services/context_field_selector.py) is not ported
-// yet, so the selective-field methods go through the small TaskRepoFieldSelector interface
+// The selective-field methods go through the small TaskRepoFieldSelector interface
 // declared here (nil when none is configured). Logging and the cache/performance-cache
 // side effects are dropped; the performance-mode query shape (selectinload) does not change
 // results. Relationship eager-loading (joinedload/selectinload) is reproduced with explicit

@@ -2,7 +2,7 @@ package repositories
 
 // Repository utilities (Python repositories/utils.py): configuration validation, timestamp
 // validation, query-parameter normalization and repository metrics. The functions that need
-// database_utils (not yet ported) go through the RepositoryDatabaseUtils hook declared here.
+// database_utils go through the RepositoryDatabaseUtils hook declared here.
 
 import (
 	"fmt"

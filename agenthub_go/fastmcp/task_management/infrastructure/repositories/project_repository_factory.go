@@ -2,9 +2,8 @@ package repositories
 
 // Project Repository Factory (Python infrastructure/repositories/project_repository_factory.py).
 // Python class-level caches and os.environ probing are represented by an injectable factory
-// instance; the MockProjectRepository module is not ported yet, so mock construction goes
-// through the MockFactory hook. The per-db_path environment juggling is not reproduced (the Go
-// database configuration is process-wide).
+// instance; mock construction goes through the MockFactory hook. The per-db_path environment
+// juggling is not reproduced (the Go database configuration is process-wide).
 
 import (
 	"os"

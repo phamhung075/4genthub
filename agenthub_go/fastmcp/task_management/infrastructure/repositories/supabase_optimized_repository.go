@@ -4,9 +4,8 @@ package repositories
 // (Python repositories/orm/supabase_optimized_repository.py): minimal single-query task
 // reads tuned for cloud latency.
 //
-// Python's class extends ORMTaskRepository. That module is not ported yet, so this Go
-// type carries only the state and methods this module owns (Sessions, GitBranchID and its
-// four methods); the inherited task-repository methods will arrive with task_repository.go.
+// Python's class extends ORMTaskRepository, so this Go type carries only the state and
+// methods this module owns (Sessions, GitBranchID and its four methods).
 
 import (
 	"context"
