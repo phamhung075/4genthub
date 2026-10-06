@@ -181,6 +181,16 @@
     that one case.
 
 ### Changed
+- **The socket rationale is corrected, and the trap narrowed to what was measured** - 2026-10-06
+ - The earlier line said `VITE_WS_URL` had no effect because the frontend has no `.env`. That is wrong twice
+ over: `vite.config.ts` sets `envDir: '..'`, so the REPO ROOT `.env` IS the file Vite reads - measured through
+ Vite's own resolver, which returns `VITE_WS_URL=ws://localhost:8000` from it - and this directory holds only
+ `.env.sample`. The trap that survives is narrower: a SHELL EXPORT changes nothing, because Vite reads files
+ and not the process environment.
+ - What the correction does NOT claim is that the variable reaches the app, because it does not: the running
+ client logs `VITE_WS_URL: NOT_SET` and dials the page origin, which is why the `/ws` proxy is what carries the
+ socket to the API. The delivery of `VITE_*` to the dev client is unexplained here and is recorded as a gap
+ rather than smoothed over; a raw probe through the dev origin still returns the backend's own refusal.
 - **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
  - The file still carried the Create React App defaults (`pnpm start`, port 3000); this project runs
  `npm start` on port 3800 through Vite, which proxies `/api` and now `/ws` to the backend on :8000.

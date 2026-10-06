@@ -8,12 +8,13 @@ The script notes below are the Create React App defaults and do not match this p
 `npm start` on **port 3800** (see `vite.config.ts`), and Vite proxies `/api` and `/ws` to the backend on
 `:8000`.
 
-The realtime socket is the part that bites: the app builds its URL from `VITE_WS_URL` when that variable
-is set, and otherwise, in development, from the page origin. **Exporting `VITE_WS_URL` before `npm start`
-has no effect** - Vite reads `.env` files only, never the process environment - so in development the
-socket is aimed at this dev server, and the `/ws` proxy is what carries it to the API. Without that proxy
-the dev server's own websocket server accepts the upgrade, and the UI reports **Live with no backend
-behind it** rather than connecting to nothing.
+The realtime socket is the part that bites. Vite reads env FILES, so **a shell export of `VITE_WS_URL`
+before `npm start` changes nothing**, and the file it reads is the REPO ROOT's `.env`, because
+`vite.config.ts` sets `envDir: '..'` - this directory holds only `.env.sample`. Measured, and the two
+halves do not agree: the config resolves `VITE_WS_URL=ws://localhost:8000` from that file, while the
+running app logs `VITE_WS_URL: NOT_SET` and dials the page origin. So in this dev setup the socket
+reaches the API through the `/ws` proxy above; without it, the dev server's own websocket server accepts
+the upgrade and the UI reports **Live with no backend behind it**.
 
 ## Available Scripts
 
