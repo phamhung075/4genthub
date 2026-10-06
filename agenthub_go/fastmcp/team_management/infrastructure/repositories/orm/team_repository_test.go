@@ -168,3 +168,55 @@ func TestTeamRepositoryIntegration(t *testing.T) {
 		t.Fatalf("member rows after Delete = %+v, %v", member, err)
 	}
 }
+
+// TestTeamDeleteClearsRoomSharingIntegration covers the D5 wiring half of the delete: rooms.team_id
+// references teams (id) with NO ON DELETE CASCADE (the cascade is application-layer), so without
+// the clearing inside Delete this delete would be REFUSED by the foreign key and a shared room
+// could never be released. The room must survive, private to its owner again.
+func TestTeamDeleteClearsRoomSharingIntegration(t *testing.T) {
+	sessions := newTeamTestEnv(t)
+	repo, err := NewORMTeamRepository(sessions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	owner := fmt.Sprintf("team-del-owner-%d", time.Now().UnixNano())
+	viewer := owner + "-viewer"
+
+	team, err := repo.Create(ctx, "eng", "Engineering", owner)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if _, err := repo.AddMember(ctx, team.ID, viewer, domainrepo.RoleViewer); err != nil {
+		t.Fatalf("AddMember: %v", err)
+	}
+
+	// A room shared with the team. The id is a literal because the runtime DDL creates rooms
+	// without a database default for it; the seat room repository has its own integration test.
+	const roomID = "8a4f2f2e-6f2b-4a1e-9d5c-2b8f0a7c1d3e"
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`INSERT INTO rooms (id, user_id, slug, name, team_id) VALUES ($1, $2, 'dev', 'Dev', $3)`,
+			roomID, owner, team.ID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := repo.Delete(ctx, team.ID); err != nil {
+		t.Fatalf("Delete with a shared room: %v", err)
+	}
+
+	var sharedTeam *string
+	if err := sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx, `SELECT team_id::text FROM rooms WHERE id = $1`, roomID).Scan(&sharedTeam)
+	}); err != nil {
+		t.Fatalf("room after Delete: %v", err)
+	}
+	if sharedTeam != nil {
+		t.Fatalf("room still points at the deleted team: %q", *sharedTeam)
+	}
+	if members, err := repo.ListMembers(ctx, team.ID); err != nil || len(members) != 0 {
+		t.Fatalf("member rows after Delete = %+v, %v", members, err)
+	}
+}

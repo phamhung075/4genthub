@@ -55,12 +55,14 @@ type SeatTypeVersionORM struct {
 	CreatedAt      time.Time       `db:"created_at"`
 }
 
-// RoomORM is a row of rooms.
+// RoomORM is a row of rooms. TeamID nil means the room is private to its owner; set, it
+// shares the room read-only with that team's members (the NEXT_GEN D5 wiring).
 type RoomORM struct {
 	ID        string    `db:"id"`
 	UserID    string    `db:"user_id"`
 	Slug      string    `db:"slug"`
 	Name      string    `db:"name"`
+	TeamID    *string   `db:"team_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }

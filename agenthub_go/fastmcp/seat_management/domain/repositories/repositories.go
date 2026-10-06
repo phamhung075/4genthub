@@ -58,6 +58,11 @@ type ModuleRepository interface {
 	ListLatest(ctx context.Context, userID string) ([]ModuleVersion, error)
 }
 
+// ErrRoomNotOwned means the room could not be updated as the caller's own: it does not exist,
+// or the caller is a member of the room's team rather than its owner. Pages that resolve the
+// room first turn it into a 404.
+var ErrRoomNotOwned = errors.New("room is not owned by the caller")
+
 // SeatType is a tenant-scoped template for a seat.
 type SeatType struct {
 	ID          string
@@ -95,22 +100,36 @@ type SeatTypeRepository interface {
 // this is the only limit; ValidateRoomName enforces it.
 const MaxRoomNameLength = 200
 
-// Room is a tenant-scoped grouping of seats.
+// Room is a tenant-scoped grouping of seats. TeamID is the team the room is shared with,
+// read-only, or empty while the room is private to its owner (the NEXT_GEN D5 wiring).
 type Room struct {
 	ID        string
 	UserID    string
 	Slug      string
 	Name      string
+	TeamID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 // RoomRepository stores rooms.
+//
+// Two read methods are deliberately narrower than the rest: GetBySlug and GetByID return the
+// CALLER'S OWN room only. Every write path resolves the room through them, so a row the
+// caller cannot own can never be reached by a mutation; the widening below is read-only.
 type RoomRepository interface {
 	Save(ctx context.Context, userID string, room Room) (*Room, error)
 	GetBySlug(ctx context.Context, userID, slug string) (*Room, error)
 	GetByID(ctx context.Context, userID, roomID string) (*Room, error)
+	// List returns the caller's own rooms plus the rooms shared with a team the caller
+	// belongs to, ordered by slug.
 	List(ctx context.Context, userID string) ([]Room, error)
+	// GetVisibleBySlug returns the caller's own room with the slug, or a room shared with a
+	// team the caller belongs to, or nil when the caller has neither.
+	GetVisibleBySlug(ctx context.Context, userID, slug string) (*Room, error)
+	// SetTeam shares the room with teamID, or makes it private again when teamID is empty.
+	// It matches the room's owner, so a viewer cannot re-share what it was given.
+	SetTeam(ctx context.Context, userID, roomID, teamID string) error
 	Delete(ctx context.Context, userID, roomID string) error
 }
 

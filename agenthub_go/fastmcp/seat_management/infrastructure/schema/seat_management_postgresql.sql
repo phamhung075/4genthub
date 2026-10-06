@@ -90,20 +90,71 @@ CREATE TABLE IF NOT EXISTS seat_type_versions (
 CREATE INDEX IF NOT EXISTS ix_seat_type_versions_user_id ON seat_type_versions (user_id);
 CREATE INDEX IF NOT EXISTS ix_seat_type_versions_seat_type_id ON seat_type_versions (seat_type_id);
 
--- Table: rooms
--- A tenant-scoped grouping of seats.
--- rooms.name is unbounded TEXT; its length limit is repositories.MaxRoomNameLength (domain/repositories/repositories.go).
-CREATE TABLE IF NOT EXISTS rooms (
+-- ================================================================================
+-- TEAMS (NEXT_GEN D5) — the account boundary for sharing
+-- ================================================================================
+-- A team is the tenant whose data its members share. The user who creates the team
+-- (teams.user_id) is its one owner, and team_members.role is 'owner' for that row and
+-- 'viewer' for every other member. team_members.team_id dates from slice 1; the WIRING
+-- column is rooms.team_id below, which shares one room with one team. No foreign key CASCADE.
+--
+-- THIS SECTION COMES BEFORE rooms ON PURPOSE: rooms.team_id references teams (id), and this
+-- file is applied top-down, so the referenced table must exist first. seat_tables.go
+-- registers these two tables first for the same reason, and the two orders must agree.
+
+-- Table: teams
+-- A team. user_id is the owning user and the tenant column, matching every other table.
+CREATE TABLE IF NOT EXISTS teams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id TEXT NOT NULL,
     slug TEXT NOT NULL,
     name TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT uq_teams_user_slug UNIQUE (user_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams (user_id);
+
+-- Table: team_members
+-- One user's membership in one team, with the role that user holds.
+CREATE TABLE IF NOT EXISTS team_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    team_id UUID NOT NULL REFERENCES teams (id),
+    user_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    CONSTRAINT uq_team_members_team_user UNIQUE (team_id, user_id),
+    CONSTRAINT ck_team_members_role CHECK (role IN ('owner', 'viewer'))
+);
+
+CREATE INDEX IF NOT EXISTS ix_team_members_team_id ON team_members (team_id);
+CREATE INDEX IF NOT EXISTS ix_team_members_user_id ON team_members (user_id);
+
+-- At most one owner per team. The service also refuses a second owner, but the schema holds
+-- the invariant: two owner rows would let both be demoted and leave the team ownerless.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner';
+
+-- Table: rooms
+-- A tenant-scoped grouping of seats.
+-- rooms.name is unbounded TEXT; its length limit is repositories.MaxRoomNameLength (domain/repositories/repositories.go).
+-- team_id NULL means the room is private to its owner. A non-NULL team_id shares the room,
+-- read-only, with that team's members (the NEXT_GEN D5 wiring): every read of the room and of
+-- what hangs off it admits a member of that team, and every write still matches user_id, so a
+-- viewer cannot mutate. Plain REFERENCES, no CASCADE: the application clears the column.
+CREATE TABLE IF NOT EXISTS rooms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    name TEXT NOT NULL,
+    team_id UUID REFERENCES teams (id),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     CONSTRAINT uq_rooms_user_slug UNIQUE (user_id, slug)
 );
 
 CREATE INDEX IF NOT EXISTS ix_rooms_user_id ON rooms (user_id);
+CREATE INDEX IF NOT EXISTS ix_rooms_team_id ON rooms (team_id);
 
 -- Table: seats
 -- A seat inside a room. seat_key is the OpenRig member id.
@@ -244,44 +295,3 @@ CREATE TABLE IF NOT EXISTS seat_status (
     reported_at TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (user_id, machine_id, room, seat)
 );
-
--- ================================================================================
--- TEAMS (NEXT_GEN D5, slice 1) — the account boundary for sharing
--- ================================================================================
--- A team is the tenant whose data its members share. Slice 1 is single-owner: the user who
--- creates the team (teams.user_id) is its one owner, and team_members.role is 'owner' for
--- that row and 'viewer' for every other member. team_members.team_id is the team_id on the
--- account boundary: it binds each user account to a team with a role. No foreign key CASCADE.
-
--- Table: teams
--- A team. user_id is the owning user and the tenant column, matching every other table.
-CREATE TABLE IF NOT EXISTS teams (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id TEXT NOT NULL,
-    slug TEXT NOT NULL,
-    name TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT uq_teams_user_slug UNIQUE (user_id, slug)
-);
-
-CREATE INDEX IF NOT EXISTS ix_teams_user_id ON teams (user_id);
-
--- Table: team_members
--- One user's membership in one team, with the role that user holds.
-CREATE TABLE IF NOT EXISTS team_members (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    team_id UUID NOT NULL REFERENCES teams (id),
-    user_id TEXT NOT NULL,
-    role TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    CONSTRAINT uq_team_members_team_user UNIQUE (team_id, user_id),
-    CONSTRAINT ck_team_members_role CHECK (role IN ('owner', 'viewer'))
-);
-
-CREATE INDEX IF NOT EXISTS ix_team_members_team_id ON team_members (team_id);
-CREATE INDEX IF NOT EXISTS ix_team_members_user_id ON team_members (user_id);
-
--- At most one owner per team. The service also refuses a second owner, but the schema holds
--- the invariant: two owner rows would let both be demoted and leave the team ownerless.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_team_members_one_owner ON team_members (team_id) WHERE role = 'owner';

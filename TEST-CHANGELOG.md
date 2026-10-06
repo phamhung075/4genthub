@@ -2,6 +2,61 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the team-sharing wiring is pinned at both DDL sources, on PostgreSQL, and at the mount (Go)
+
+- `agenthub_go/fastmcp/seat_management/infrastructure/database/seat_ddl_parity_test.go` (new) is the
+  second half of the DDL guard: `seat_orm_test.go` compares the schema FILE with the row STRUCTS
+  (column names), and this compares the two DDL SOURCES with each other — column names, the
+  referenced-table multiset and the CHECK expressions, per registered table. Primary-key and DEFAULT
+  spellings legitimately differ between the two, so those are deliberately not compared.
+  **Falsified rather than assumed: dropping `REFERENCES teams (id)` from the runtime DDL alone makes
+  it FAIL with "table rooms: referenced tables differ between the schema file and the runtime DDL"**
+  (restored immediately; the guard is back to green).
+- `agenthub_go/fastmcp/seat_management/infrastructure/database/ensure_seat_columns_test.go` (new)
+  proves the migration an existing database needs, on its own throwaway database (the premise is a
+  `rooms` table WITHOUT the column): creates the pre-wiring `teams` + `rooms`, runs
+  `EnsureSeatColumnsExist` twice, then asserts the column is `uuid` and nullable, that
+  `rooms_team_id_fkey` targets `teams`, that a `team_id` naming no team is REFUSED by the database,
+  and that `ix_rooms_team_id` exists. The double run is the idempotency half.
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/room_sharing_integration_test.go`
+  (new) runs the visibility rules against a real PostgreSQL: a member of the room's team reads the
+  OWNER's room through `GetVisibleBySlug` and sees it in `List`; the strict `GetBySlug` every write
+  path uses still returns nil for that member; the owner's own list is unchanged; a stranger sees
+  nothing in either read; an unshared room stays private; **when the member owns a room with the same
+  slug, the member's own room wins** (the tie-break is asserted rather than left to chance); a viewer's
+  `SetTeam` is `ErrRoomNotOwned` for both sharing and unsharing; a `team_id` that names no team is
+  refused by the foreign key; and unsharing removes the room from the member's list.
+- `agenthub_go/fastmcp/team_management/infrastructure/repositories/orm/team_repository_test.go` gained
+  `TestTeamDeleteClearsRoomSharingIntegration`: it inserts a room pointing at the team and asserts the
+  delete SUCCEEDS (it would be refused by the new foreign key without the cascade), that the room
+  survives with `team_id` NULL, and that the member rows are gone.
+- `agenthub_go/fastmcp/server/httpapp/seat_admin_team_sharing_test.go` (new) pins the route behaviour
+  the acceptance names, over the mount's own fake extended with teams: the VIEWER path asserts **every
+  read was asked for the owner's id** (the fake journals the scope it was called with, so "reads as the
+  owner" is measured, not assumed), a nine-case table proves a member cannot mutate anything (occupant,
+  permission policy, room overlay, seat overlay, links upsert and delete, seat delete, room delete,
+  seat create) and that no state moved, a non-member gets 404 on four reads and two writes, the
+  owner's path returns the same rows with an empty `team_id` and can still mutate, and the share route
+  sets, clears and refuses (a team the caller is not in is 404, a viewer's attempt is 404 and changes
+  nothing). `fakeSeatAdmin` gained the two new port methods (`GetVisibleRoomBySlug`, `SetRoomTeam`) and
+  the rigspec fake's lookup was renamed to the widened one.
+- `agenthub_go/fastmcp/seat_management/infrastructure/repositories/orm/orm_repositories_test.go`:
+  `TestRoomStatementsAreTenantScoped` was updated for the new column count and extended to the new
+  statements, so the tenant-scoping contract now covers `GetVisibleBySlug` and `SetTeam` as well —
+  both still carry the `user_id` filter the test exists to assert.
+- Commands and results: `go build ./...` clean; `go vet ./fastmcp/seat_management/...
+  ./fastmcp/team_management/... ./fastmcp/server/httpapp/` clean; `gofmt -l` empty on the touched
+  files; `SEAT_TEST_DATABASE_URL=... AGENTHUB_TEST_PG_URL=... go test -count=1
+  ./fastmcp/seat_management/... ./fastmcp/team_management/... ./fastmcp/task_management/infrastructure/database/...`
+  all green, and `./fastmcp/server/httpapp/` green except `TestMissedNotificationStoredOfflineAndReplayedOnce`,
+  which fails on another seat's in-flight `seat_feedback` table (`NewApp: unknown table "seat_feedback"`)
+  and is untouched by this change. `/tmp/d5pg` held the throwaway PostgreSQL (port 54339).
+- Live smoke with the real binary: a database holding ONLY the pre-wiring `teams`, `team_members` and
+  `rooms` (no `team_id`), booted with `AUTO_MIGRATE=true` — after boot `rooms.team_id` is `uuid`
+  nullable with `rooms_team_id_fkey -> teams` and `ix_rooms_team_id`, all 38 registered tables exist,
+  `/health` is 200, and `PUT /api/v2/openrig/rooms/dev/team` answers 403 `{"detail":"Not authenticated"}`
+  (mounted and behind auth) rather than 404.
+
 ## 2026-10-06 - the rig build's delete of operator files is pinned from both sides (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained two tests over the existing

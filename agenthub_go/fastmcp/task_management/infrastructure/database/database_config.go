@@ -440,5 +440,5 @@ func (c *DatabaseConfig) CreateTables(ctx context.Context) error {
 		}
 	}
 	EnsureAIColumnsExist(ctx, c.Engine.DB)
-	return nil
+	return RunColumnEnsurers(ctx, c.Engine.DB)
 }

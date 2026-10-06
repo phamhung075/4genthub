@@ -999,11 +999,11 @@ func assertTenantScoped(t *testing.T, f *fakeDriver, table string) {
 func TestRoomStatementsAreTenantScoped(t *testing.T) {
 	ctx := context.Background()
 	now := time.Now().UTC()
-	roomCols := []string{"id", "user_id", "slug", "name", "created_at", "updated_at"}
+	roomCols := []string{"id", "user_id", "slug", "name", "team_id", "created_at", "updated_at"}
 	f := &fakeDriver{}
 	f.respond = func(q string, args []driver.Value) ([]string, [][]driver.Value, error) {
 		if strings.Contains(q, `FROM "rooms"`) {
-			return roomCols, [][]driver.Value{fakeRow(testRoomID, testUser, "eng", "Engineering", now, now)}, nil
+			return roomCols, [][]driver.Value{fakeRow(testRoomID, testUser, "eng", "Engineering", nil, now, now)}, nil
 		}
 		return nil, nil, nil
 	}
@@ -1016,6 +1016,15 @@ func TestRoomStatementsAreTenantScoped(t *testing.T) {
 	}
 	if _, err := repo.GetBySlug(ctx, testUser, "eng"); err != nil {
 		t.Fatalf("GetBySlug: %v", err)
+	}
+	// The sharing reads and the sharing write are covered by the same rule: GetVisibleBySlug
+	// widens by the caller's memberships and SetTeam matches the owner, and both still carry the
+	// user_id filter this test asserts.
+	if _, err := repo.GetVisibleBySlug(ctx, testUser, "eng"); err != nil {
+		t.Fatalf("GetVisibleBySlug: %v", err)
+	}
+	if err := repo.SetTeam(ctx, testUser, testRoomID, testRoomID); err != nil {
+		t.Fatalf("SetTeam: %v", err)
 	}
 	if err := repo.Delete(ctx, testUser, testRoomID); err != nil {
 		t.Fatalf("Delete: %v", err)

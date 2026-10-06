@@ -24,7 +24,9 @@ type fakeSeatRigSpec struct {
 	resolveErr error
 }
 
-func (f *fakeSeatRigSpec) GetRoomBySlug(_ context.Context, _, slug string) (*repositories.Room, error) {
+// GetVisibleRoomBySlug answers for every caller: the fake models the room lookup, not the sharing
+// predicate (sharing is proven in the ORM integration test and at the admin mount).
+func (f *fakeSeatRigSpec) GetVisibleRoomBySlug(_ context.Context, _, slug string) (*repositories.Room, error) {
 	if f.roomErr != nil {
 		return nil, f.roomErr
 	}

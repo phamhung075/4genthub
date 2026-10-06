@@ -5,6 +5,7 @@ package httpapp
 //	POST   /api/v2/openrig/rooms
 //	GET    /api/v2/openrig/rooms
 //	DELETE /api/v2/openrig/rooms/{room}
+//	PUT    /api/v2/openrig/rooms/{room}/team
 //	GET    /api/v2/openrig/seat-types
 //	POST   /api/v2/openrig/seat-types
 //	POST   /api/v2/openrig/seat-types/{slug}/versions
@@ -48,6 +49,8 @@ import (
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/infrastructure/database"
+	teamrepositories "agenthub/fastmcp/team_management/domain/repositories"
+	teamorm "agenthub/fastmcp/team_management/infrastructure/repositories/orm"
 )
 
 // seatAdminSource is the seat repository surface these routes use.
@@ -55,6 +58,8 @@ type seatAdminSource interface {
 	SaveRoom(ctx context.Context, userID string, room repositories.Room) (*repositories.Room, error)
 	ListRooms(ctx context.Context, userID string) ([]repositories.Room, error)
 	GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
+	GetVisibleRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error)
+	SetRoomTeam(ctx context.Context, userID, roomID, teamID string) error
 	ListSeatTypes(ctx context.Context, userID string) ([]repositories.SeatType, error)
 	SaveSeatType(ctx context.Context, userID string, seatType repositories.SeatType) (*repositories.SeatType, error)
 	LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error)
@@ -153,6 +158,14 @@ func (s *seatAdminRepos) ListRooms(ctx context.Context, userID string) ([]reposi
 
 func (s *seatAdminRepos) GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
 	return s.rooms.GetBySlug(ctx, userID, slug)
+}
+
+func (s *seatAdminRepos) GetVisibleRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
+	return s.rooms.GetVisibleBySlug(ctx, userID, slug)
+}
+
+func (s *seatAdminRepos) SetRoomTeam(ctx context.Context, userID, roomID, teamID string) error {
+	return s.rooms.SetTeam(ctx, userID, roomID, teamID)
 }
 
 func (s *seatAdminRepos) LatestSeatTypeVersion(ctx context.Context, userID, slug string) (*repositories.SeatTypeVersion, error) {
@@ -284,6 +297,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	}))
 	mux.HandleFunc("DELETE /api/v2/openrig/rooms/{room}", authed(seatMutation("room", "deleted", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleDeleteRoom(w, r, u, sessions)
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/team", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSetRoomTeam(w, r, u, sessions)
 	})))
 	mux.HandleFunc("GET /api/v2/openrig/seat-types", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListSeatTypes(w, r, u, sessions)
@@ -491,6 +507,9 @@ func decodeSeatAdminBody(w http.ResponseWriter, r *http.Request, target any) boo
 	return true
 }
 
+// seatAdminRoom resolves a room the CALLER OWNS. Every mutation and every sharing change goes
+// through it, so a row the caller does not own can never be reached by a write: a viewer asking
+// for a shared room's mutation gets the same 404 as a non-member.
 func seatAdminRoom(w http.ResponseWriter, r *http.Request, source seatAdminSource, u *authdomain.User, slug string) (*repositories.Room, bool) {
 	room, err := source.GetRoomBySlug(r.Context(), userID(u), slug)
 	if err != nil {
@@ -504,8 +523,38 @@ func seatAdminRoom(w http.ResponseWriter, r *http.Request, source seatAdminSourc
 	return room, true
 }
 
-func seatAdminSeat(w http.ResponseWriter, r *http.Request, source seatAdminSource, u *authdomain.User, roomID, seatKey string) (*repositories.Seat, bool) {
-	seat, err := source.FindSeat(r.Context(), userID(u), roomID, seatKey)
+// seatAdminVisibleRoom resolves a room the caller may READ: their own, or one shared with a team
+// they belong to (the NEXT_GEN D5 wiring). A caller with neither gets the same 404 as before, so
+// sharing widens what a member sees and nothing else.
+func seatAdminVisibleRoom(w http.ResponseWriter, r *http.Request, source seatAdminSource, u *authdomain.User, slug string) (*repositories.Room, bool) {
+	room, err := source.GetVisibleRoomBySlug(r.Context(), userID(u), slug)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return nil, false
+	}
+	if room == nil {
+		writeDetail(w, http.StatusNotFound, "room \""+slug+"\" not found")
+		return nil, false
+	}
+	return room, true
+}
+
+// seatAdminScope is the user id whose rows a READ may see: the caller's own, or — when the caller
+// is a viewer on the room's team — the room owner's, because the shared resource IS the owner's
+// data. A viewer's writes never take this path: they resolve the room with seatAdminRoom and act
+// as the caller, so this scope is read-only by construction.
+func seatAdminScope(u *authdomain.User, room *repositories.Room) string {
+	if room != nil && room.UserID != "" && room.UserID != userID(u) {
+		return room.UserID
+	}
+	return userID(u)
+}
+
+// seatAdminSeat resolves a seat inside a room the request has already been allowed to use.
+// scopeID is the user whose rows the caller may read — userID(u), or the room owner's through
+// seatAdminScope when the caller is a viewer on the room's team.
+func seatAdminSeat(w http.ResponseWriter, r *http.Request, source seatAdminSource, scopeID, roomID, seatKey string) (*repositories.Seat, bool) {
+	seat, err := source.FindSeat(r.Context(), scopeID, roomID, seatKey)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return nil, false
@@ -580,6 +629,98 @@ func handleListRooms(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("rooms", out)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// seatAdminRoomTeamRequest is the sharing body: the team SLUG to share the room with, or an
+// empty team to make the room private again.
+type seatAdminRoomTeamRequest struct {
+	Team string `json:"team"`
+}
+
+// seatAdminTeamSource is the slice of the teams domain this route needs. FindForMember resolves a
+// slug INSIDE the caller's memberships, so it is also the membership check: a room cannot be
+// shared with a team the caller does not belong to.
+type seatAdminTeamSource interface {
+	FindForMember(ctx context.Context, userID, slug string) (*teamrepositories.Team, error)
+}
+
+type seatAdminTeamRepos struct {
+	teams teamrepositories.TeamRepository
+}
+
+func (s *seatAdminTeamRepos) FindForMember(ctx context.Context, userID, slug string) (*teamrepositories.Team, error) {
+	return s.teams.FindForMember(ctx, userID, slug)
+}
+
+// newSeatAdminTeamSource is a package variable so tests can substitute a fake without a database.
+var newSeatAdminTeamSource = func(sessions *database.SessionManager) (seatAdminTeamSource, error) {
+	repo, err := teamorm.NewORMTeamRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatAdminTeamRepos{teams: repo}, nil
+}
+
+func seatAdminTeamSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (seatAdminTeamSource, bool) {
+	source, err := newSeatAdminTeamSource(sessions)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return nil, false
+	}
+	return source, true
+}
+
+// handleSetRoomTeam shares one room with one team, read-only, or makes it private again (an empty
+// team). Only the room's OWNER may set it — seatAdminRoom resolves the owner's room — and the
+// caller must be a member of that team. The NEXT_GEN D5 acceptance rests on this route: without a
+// way to set it, the sharing column is inert on every database.
+func handleSetRoomTeam(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	teams, ok := seatAdminTeamSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminRoomTeamRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	if !ok {
+		return
+	}
+	teamID := ""
+	if strings.TrimSpace(req.Team) != "" {
+		team, err := teams.FindForMember(r.Context(), userID(u), req.Team)
+		if err != nil {
+			writeDetail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if team == nil {
+			writeDetail(w, http.StatusNotFound, "team \""+req.Team+"\" not found")
+			return
+		}
+		teamID = team.ID
+	}
+	if err := source.SetRoomTeam(r.Context(), userID(u), room.ID, teamID); err != nil {
+		if errors.Is(err, repositories.ErrRoomNotOwned) {
+			writeDetail(w, http.StatusNotFound, "room \""+room.Slug+"\" not found")
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	updated, err := source.GetRoomBySlug(r.Context(), userID(u), room.Slug)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("room", seatAdminRoomBody(updated))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -923,16 +1064,18 @@ func handleListSeats(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	if !ok {
 		return
 	}
-	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	room, ok := seatAdminVisibleRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
 		return
 	}
-	seats, err := source.ListSeats(r.Context(), userID(u), room.ID)
+	// A viewer on the room's team reads the owner's rows; for the owner this is the caller's own id.
+	scope := seatAdminScope(u, room)
+	seats, err := source.ListSeats(r.Context(), scope, room.ID)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	seatTypes, err := source.ListSeatTypes(r.Context(), userID(u))
+	seatTypes, err := source.ListSeatTypes(r.Context(), scope)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1117,7 +1260,7 @@ func handleSeatOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	if !ok {
 		return
 	}
-	seat, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
+	seat, ok := seatAdminSeat(w, r, source, userID(u), room.ID, r.PathValue("seat"))
 	if !ok {
 		return
 	}
@@ -1159,11 +1302,11 @@ func handleGetRoomOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if !ok {
 		return
 	}
-	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	room, ok := seatAdminVisibleRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
 		return
 	}
-	overlay, err := source.FindOverlay(r.Context(), userID(u), repositories.ScopeRoom, room.ID, "")
+	overlay, err := source.FindOverlay(r.Context(), seatAdminScope(u, room), repositories.ScopeRoom, room.ID, "")
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1176,15 +1319,16 @@ func handleGetSeatOverlay(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if !ok {
 		return
 	}
-	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	room, ok := seatAdminVisibleRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
 		return
 	}
-	seat, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
+	scope := seatAdminScope(u, room)
+	seat, ok := seatAdminSeat(w, r, source, scope, room.ID, r.PathValue("seat"))
 	if !ok {
 		return
 	}
-	overlay, err := source.FindOverlay(r.Context(), userID(u), repositories.ScopeSeat, "", seat.ID)
+	overlay, err := source.FindOverlay(r.Context(), scope, repositories.ScopeSeat, "", seat.ID)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1290,7 +1434,7 @@ func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 		return
 	}
 	seatKey := r.PathValue("seat")
-	from, ok := seatAdminSeat(w, r, source, u, room.ID, seatKey)
+	from, ok := seatAdminSeat(w, r, source, userID(u), room.ID, seatKey)
 	if !ok {
 		return
 	}
@@ -1306,7 +1450,7 @@ func handleUpsertSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 		writeDetail(w, http.StatusBadRequest, "kind \""+req.Kind+"\" is not a seat link kind")
 		return
 	}
-	to, ok := seatAdminSeat(w, r, source, u, room.ID, req.ToSeat)
+	to, ok := seatAdminSeat(w, r, source, userID(u), room.ID, req.ToSeat)
 	if !ok {
 		return
 	}
@@ -1360,7 +1504,7 @@ func handleDeleteSeatLink(w http.ResponseWriter, r *http.Request, u *authdomain.
 	if !ok {
 		return
 	}
-	from, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
+	from, ok := seatAdminSeat(w, r, source, userID(u), room.ID, r.PathValue("seat"))
 	if !ok {
 		return
 	}
@@ -1393,15 +1537,16 @@ func handleListSeatLinks(w http.ResponseWriter, r *http.Request, u *authdomain.U
 	if !ok {
 		return
 	}
-	room, ok := seatAdminRoom(w, r, source, u, r.PathValue("room"))
+	room, ok := seatAdminVisibleRoom(w, r, source, u, r.PathValue("room"))
 	if !ok {
 		return
 	}
-	seat, ok := seatAdminSeat(w, r, source, u, room.ID, r.PathValue("seat"))
+	scope := seatAdminScope(u, room)
+	seat, ok := seatAdminSeat(w, r, source, scope, room.ID, r.PathValue("seat"))
 	if !ok {
 		return
 	}
-	links, err := source.ListSeatLinks(r.Context(), userID(u), seat.ID)
+	links, err := source.ListSeatLinks(r.Context(), scope, seat.ID)
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
@@ -1468,6 +1613,10 @@ func seatAdminRoomBody(room *repositories.Room) *entities.OrderedMap[any] {
 	body.Set("id", room.ID)
 	body.Set("slug", room.Slug)
 	body.Set("name", room.Name)
+	// team_id is the sharing state of the room: empty while the room is private to its owner.
+	// The raw id is emitted rather than the slug so a list stays one query; the palette already
+	// reads GET /api/v2/openrig/teams for the slugs.
+	body.Set("team_id", room.TeamID)
 	return body
 }
 
