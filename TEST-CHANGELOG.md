@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the one-client skeleton: the contract, the platform matrix, refusals instead of stubs (Go)
+
+- New `cmd/agenthubclient` (thin dispatcher), `internal/clientcmd` (the shared contract and the platform
+  matrix) and `internal/clientsync` (the sync verb package). The dispatcher reads argv[0] and the first
+  argument, resolves rig ONCE through `clientcmd.RequireRig`, and calls `Command.Run`; it knows nothing
+  about what any verb does.
+- **The interface a subcommand package implements is `clientcmd.Command`**: `Name()`, `Summary()`,
+  `NeedsRig()`, `Run(ctx, *Rig, args, stdout, stderr) int` - with `Rig.Run` as the ONE place an external
+  command is started (argument list, never a shell string). It lives outside `cmd/` because a main
+  package cannot be imported.
+- **The platform matrix is one function**, `RequireRig`: rig on PATH → use it; native Windows → the error
+  names the supported `wsl.exe -e rig` route; otherwise → the error names what is missing. Asserted by
+  SHAPE (non-zero, exactly ONE line, the reason named); the falsification removes the refusal and the
+  Windows branch and both tests fail.
+- **An unported command REFUSES by name and exits 3** rather than answering something plausible, and an
+  unknown verb exits 2 so a typo does not read as a missing feature - both pinned, because "looks
+  complete and is not" is this evening's recurring shape.
+- Commands: `go vet` (0 bytes) and `go test -count=1` (ok) for the three packages; the built binary
+  exercised for real - `version`/`help` → 0, `bridge once` → 3, `sync status …` → 3, `sync nonsense` → 2.
+
 ## 2026-10-06 - every refusal the guide-lock parser owns, driven with hostile input (Go, packet 6)
 
 - `guides.lock.json` parsing moved behind `parseGuideLock(data []byte)` so its refusals are testable,
