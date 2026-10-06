@@ -21,6 +21,10 @@ func SeedSeatTypes(ctx context.Context, userID string, seeds []seedmap.Seed, mod
 		// EVERY module of the seed is validated BEFORE any of them is written, so a seed carrying one
 		// unrenderable module is refused whole rather than half-stored - the same shape as the ref
 		// check below, which verifies what the version references before writing the version.
+		//
+		// THE BOUNDARY OF THAT GUARANTEE IS PER SEED, NOT PER CALL: the check sits inside the loop
+		// over seeds, so a bad SECOND seed leaves the first already written. Stated here because "a
+		// refused seed writes nothing" otherwise reads as if it covered the whole call.
 		for _, m := range seed.Modules {
 			if err := ValidateModuleContent(m.Kind, m.Content); err != nil {
 				return fmt.Errorf("seed %s: module %s@%s: %w", seed.SeatTypeSlug, m.Slug, m.Version, err)
