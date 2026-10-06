@@ -86,9 +86,15 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
             errorMessage.includes('invalid') ||
             errorMessage.includes('401')) {
           logger.error('V2 API: Refresh token invalid, logging out user');
-          Cookies.remove('access_token');
-          Cookies.remove('refresh_token');
-          window.dispatchEvent(new CustomEvent('auth-logout'));
+          // Browser-only globals, in an ASYNC CONTINUATION: this branch resumes after the
+          // refresh round-trip, so it can run when the DOM is already gone (a torn-down test
+          // environment) and the dereference throws "window is not defined". Guarding it is
+          // behaviour-preserving in a browser, where window and document always exist.
+          if (typeof window !== 'undefined') {
+            Cookies.remove('access_token');
+            Cookies.remove('refresh_token');
+            window.dispatchEvent(new CustomEvent('auth-logout'));
+          }
         } else {
           logger.warn('V2 API: Token refresh failed due to network/backend issue, keeping user logged in');
         }
