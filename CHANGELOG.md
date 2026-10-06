@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **`scripts/openrig_watch_tools.py`**: read-only live view of what each seat of an OpenRig rig is doing. `grid` opens a herdr workspace with one pane per seat; `feed` merges all seats into one stream. Tool calls and results are coloured by kind, policy refusals shown white-on-red. Documented in `ai_docs/operations/watching-openrig-seats.md`. Tested by `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py` (4 tests pass; the grid command was run against the live herdr).
+
 **The rendered seat carries the deepseek offload bridge, so the per-seat MCP file is no longer hand-written** (2026-10-06)
 
 - The seat library ships a `deepseek-offload` mcp block and **all nine seeded seat types mount it**, so an omp seat's rendered MCP file carries both servers the owner had been writing by hand: `agenthub_http` (url resolved from the deployment, `Authorization: Bearer ${AGENTHUB_TOKEN}` left for the runtime) and `deepseek` (stdio, `node ${DEEPSEEK_MCP_SERVER}`, env carrying `DSH_ROOT`, `DSH_HOME`, `DEEPSEEK_MCP_DEFAULT_CWD`, plus the fixed `DEEPSEEK_WORKSPACE_ATTACH=1` and `DEEPSEEK_MCP_PERMISSION=allow`).

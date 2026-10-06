@@ -1694,6 +1694,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ### Added
 
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 4 tests for how a session log line becomes a feed line (tool call, policy refusal vs quoted text, non-events, MCP colour).
 - Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
 - Frontend: `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (6) and `SeatDetailPage.test.tsx` (3). The rest of the frontend suite already had 710 failing tests before this change (59 files); the count is unchanged.
 - Python: `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (22 unit tests for `scripts/openrig_seat_sync.py`).
