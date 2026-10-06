@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - an unrouted error frame is reported, so a server refusal stops being invisible (Frontend)
+
+- `agenthub-frontend/src/tests/services/WebSocketAnimationService.test.ts`: three cases over the service's routing.
+  `reports the server's own explanation instead of dropping it` drives the REAL frame the server sends for a refused task
+  notification - `type: 'error'`, `entity: 'system'`, `action: 'notification_blocked'`, a primary carrying
+  `code: 'NOT_AUTHORIZED'`, `entity_type: 'task'`, `entity_id`, `event_type: 'updated'` - and asserts the logger is called
+  ONCE carrying that code and that entity id, and that no animation was attempted.
+  `does NOT report a heartbeat, which is also entity system` and `does NOT report an ordinary frame it routes, like a task
+  update` pin the DISCRIMINATOR: the new branch keys on `type === 'error'` rather than `entity === 'system'`, because
+  heartbeat replies are also `entity: 'system'` (action `pong`) and keying on the entity would report every heartbeat.
+- THE FRAME IS COPIED FROM A LIVE CAPTURE rather than invented, so the shape under test is the server's. WHAT THE THREE
+  CASES DO NOT COVER, stated rather than implied: nothing asserts the message TEXT - the property is that the server's
+  reason reaches the console at all, and pinning the wording would make the next person fight the test to improve it.
+- Commands: `npx vitest run` on `WebSocketAnimationService.test.ts`, `WebSocketAnimationService.unified.test.ts`,
+  `WebSocketClient.test.ts`, `test_useRealtimeSync_task.test.tsx`, `test_useRealtimeSync_seat.test.tsx`,
+  `test_useRealtimeSync_notification.test.tsx` -> 6 files, 136 passed (133 before these three); `npx tsc --noEmit -p .` ->
+  exit 0, 0 errors.
+
 ## 2026-10-06 - the task notifier is wired in production, and the constructor is pinned (Go)
 
 - `fastmcp/server/httpapp/app_boot_test.go`: `TestTaskNotifierIsWired` asserts the notifier the composition

@@ -363,6 +363,23 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A refused notification was invisible on the client: an error frame with no animation route was dropped in silence** - 2026-10-06
+  - `src/services/WebSocketAnimationService.ts` `handleWebSocketMessage` routed task/subtask/branch/project and had NO branch
+    for anything else, so every error frame the server sends was discarded without a trace. THE FRAME THAT FOUND IT, from a
+    live capture after the server's notifier was repaired: `type: 'error'`, `payload.entity: 'system'`, `payload.action:
+    'notification_blocked'`, `data.primary: { code: 'NOT_AUTHORIZED', message: "Notification blocked: You don't have access to
+    this task", entity_type: 'task', entity_id: <id>, event_type: 'updated', reason: 'Authorization check failed' }`. The
+    server was explaining a refusal and the client was throwing the explanation away, which made a REFUSED animation
+    indistinguishable from one that never fired - the same silent-absence shape the Changed section logs on the client side,
+    at the other end of the same pipe.
+  - The unrouted error frame is now reported at `warn` with the code, the message and the entity the server was talking
+    about, so the console carries the server's own reason instead of an absence.
+  - THE DISCRIMINATOR IS `type === 'error'` AND NOT `entity === 'system'`, deliberately and pinned by test: heartbeat replies
+    are also `entity: 'system'` (action `pong`), so keying on the entity would report every heartbeat.
+  - Tests: three cases in `src/tests/services/WebSocketAnimationService.test.ts` - an error frame is reported with its code
+    and entity, a heartbeat is not, and an ordinary routed task update is not.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; the three animation suites and the three `useRealtimeSync` suites ->
+    6 files, 136 passed.
 - **An async continuation that outlives its component — the flake's class — fixed at the two sites that reported it** - 2026-10-06
   - THE FLAKE IS NOW REPRODUCED, not argued: a single-file loop of `src/tests/components/auth/LoginForm.test.tsx` hit it on
     **run 11**, exit 1, with an uncaught `ReferenceError: window is not defined` at

@@ -56,6 +56,30 @@ class WebSocketAnimationService {
       this.triggerBranchAnimation(action, message);
     } else if (entity === 'project') {
       this.triggerProjectAnimation(action, message);
+    } else if (message.type === 'error') {
+      // NO ANIMATION ROUTE FOR THIS FRAME, AND THAT USED TO BE SILENT - which is how a notification the
+      // server REFUSED became invisible on the client. The server explains refusals here: the frame carries
+      // payload.entity 'system', a code such as NOT_AUTHORIZED, and the entity it was about, so dropping it
+      // left a missing animation looking like a client-side absence rather than a refusal nobody could see.
+      // THE DISCRIMINATOR IS `type === 'error'` AND NOT `entity === 'system'`: heartbeat replies are also
+      // entity 'system' (action 'pong'), so keying on the entity would report every heartbeat.
+      const primary = payload?.data?.primary;
+      const detail = primary && !Array.isArray(primary) ? primary : undefined;
+      logger.warn(
+        '[WebSocketAnimationService] Server frame carried no animation route',
+        {
+          entity,
+          action,
+          type: message.type,
+          code: detail?.code,
+          serverMessage: detail?.message,
+          entity_type: detail?.entity_type,
+          entity_id: detail?.entity_id,
+          event_type: detail?.event_type,
+          reason: detail?.reason
+        },
+        'WebSocketAnimationService.ts'
+      );
     }
   }
 

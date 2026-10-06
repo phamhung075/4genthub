@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { webSocketAnimationService } from '../../services/WebSocketAnimationService';
 import { animationFactory } from '../../services/AnimationFactory';
 import type { WSMessage } from '../../types/websocketTypes';
+import logger from '../../utils/logger';
 
 // Mock dependencies
 vi.mock('../../services/AnimationFactory', () => ({
@@ -621,6 +622,64 @@ describe('WebSocketAnimationService', () => {
 
       expect(animationFactory.animate).toHaveBeenCalledWith('task-delete-1', 'delete', 'websocket');
       expect(animationFactory.animate).toHaveBeenCalledWith('task-delete-2', 'delete', 'websocket');
+    });
+  });
+
+  describe('a frame the service has no animation route for', () => {
+    // The server reports a REFUSED notification as an error frame: payload.entity 'system' with a code
+    // (NOT_AUTHORIZED, notification_blocked) and the entity it was about. Dropping it in silence is how a
+    // server-side refusal became indistinguishable, on the client, from an animation that never fired.
+    const errorFrame = {
+      type: 'error',
+      payload: {
+        entity: 'system',
+        action: 'notification_blocked',
+        data: {
+          primary: {
+            code: 'NOT_AUTHORIZED',
+            message: "Notification blocked: You don't have access to this task",
+            entity_type: 'task',
+            entity_id: 'task-refused-1',
+            event_type: 'updated',
+            reason: 'Authorization check failed'
+          }
+        }
+      },
+      metadata: { source: 'system' }
+    } as unknown as WSMessage;
+
+    it('reports the server\'s own explanation instead of dropping it', () => {
+      webSocketAnimationService.handleWebSocketMessage(errorFrame);
+
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      const [, context] = vi.mocked(logger.warn).mock.calls[0];
+      expect(context).toMatchObject({
+        code: 'NOT_AUTHORIZED',
+        entity_id: 'task-refused-1',
+        entity_type: 'task',
+        event_type: 'updated'
+      });
+      expect(animationFactory.animate).not.toHaveBeenCalled();
+    });
+
+    it('does NOT report a heartbeat, which is also entity system', () => {
+      webSocketAnimationService.handleWebSocketMessage({
+        type: 'heartbeat',
+        payload: { entity: 'system', action: 'pong', data: { primary: { status: 'alive' } } },
+        metadata: { source: 'system' }
+      } as unknown as WSMessage);
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('does NOT report an ordinary frame it routes, like a task update', () => {
+      webSocketAnimationService.handleWebSocketMessage({
+        type: 'update',
+        payload: { entity: 'task', action: 'updated', data: { primary: { id: 'task-ok-1' } } },
+        metadata: { source: 'user' }
+      } as unknown as WSMessage);
+
+      expect(logger.warn).not.toHaveBeenCalled();
     });
   });
 });
