@@ -9,11 +9,29 @@ import { LandingPage, PAGE_TITLE, PAGE_DESCRIPTION } from '../../pages/LandingPa
 //  - the static head describes the same product as the page body;
 //  - no number appears without a measurement behind it;
 //  - the removed fabricated values stay removed.
+//  - and the CLASS rules below, because the list above is a deny-list and a deny-list
+//    only catches what someone thought to list: "thousands of developers" survived it.
+//    Each class rule states what kind of claim it forbids, so a new claim of that kind
+//    fails without anyone adding its exact wording.
 //
 // index.html cannot import the page's constants, so this test reads the file and
 // compares, which is the point: hand-maintained copies of one sentence are what
 // the criterion exists to catch.
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+
+// document.body.textContent glues adjacent elements together - "Build Faster" followed by
+// "Professional-grade" reads as "Build FasterPr" - so a rule anchored on word boundaries
+// silently misses a claim that sits at an element edge. Read the text nodes and join them
+// with a separator, which gives every element edge a boundary.
+function pageText(): string {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const parts: string[] = [];
+  while (walker.nextNode()) {
+    const value = walker.currentNode.textContent;
+    if (value) parts.push(value);
+  }
+  return parts.join('\n');
+}
 
 describe('the static head and the page agree', () => {
   it('carries the same title and description as the page sets at runtime', () => {
@@ -78,7 +96,7 @@ describe('the page body claims only what ships', () => {
   });
 
   it('does not carry the fabricated numbers or the retired claims', () => {
-    const text = document.body.textContent ?? '';
+    const text = pageText();
     for (const removed of [
       '10x', // no measurement
       '2 minutes', // no measurement
@@ -92,8 +110,65 @@ describe('the page body claims only what ships', () => {
     }
   });
 
+  // The class rules. Each one would have caught a residual WITHOUT it being listed:
+  // a quantifier needs a measurement behind it, a vendor belongs to its vendor, an
+  // adjective for an unshipped capability is a promise, and a compatibility claim about
+  // unnamed third parties is a claim about someone else's software.
+  const UNMEASURED_QUANTIFIERS = [
+    /\bthousands\b/i, // "Join thousands of developers" carried no measurement
+    /\bmillions\b/i,
+    /\bhundreds of\b/i,
+    /\bworldwide\b/i, // "developers worldwide" is a universal nobody measured
+    /\bglobally\b/i,
+    /\b\d+(\.\d+)?x\b/i, // the removed "10x"; a multiplier is a measurement claim
+    /\b\d+(\.\d+)?\s?%/i, // the removed "99.9%"; no SLA exists
+    /\b(faster|quicker|cheaper)\b/i, // "build faster and smarter" measured nothing
+  ];
+  const THIRD_PARTY_PRODUCTS = [
+    'Cursor',
+    'GPT-4',
+    'Gemini',
+    'Llama',
+    'Mistral',
+    'Qwen',
+    'OpenAI',
+    'Anthropic',
+    'Copilot',
+  ];
+  const UNEARNED_POSITIONING = [
+    /enterprise/i,
+    /professional-grade/i, // "Professional-grade tools" asserts a grade nobody graded
+    /battle-tested/i,
+    /industrial-strength/i,
+  ];
+  const THIRD_PARTY_COMPATIBILITY = [/compatible with any/i, /any AI (client|model|tool)/i, /AI-agnostic/i];
+
+  it('rule: no unmeasured quantifier, multiplier, percentage or comparative', () => {
+    const text = pageText();
+    expect(UNMEASURED_QUANTIFIERS.filter((pattern) => pattern.test(text)).map((p) => p.source)).toEqual([]);
+  });
+
+  it('rule: no third-party product is advertised as our capability', () => {
+    const text = pageText();
+    // claude-code, codex, agy and omp are the occupant runtimes the registry defines, so
+    // they are ours to name; another vendor's editor or model list is not a claim we can keep.
+    const claimed = THIRD_PARTY_PRODUCTS.filter((name) => text.includes(name));
+    expect(claimed).toEqual([]);
+    expect(/\bo1\b/.test(text)).toBe(false);
+  });
+
+  it('rule: no positioning adjective for a capability that does not ship', () => {
+    const text = pageText();
+    expect(UNEARNED_POSITIONING.filter((pattern) => pattern.test(text)).map((p) => p.source)).toEqual([]);
+  });
+
+  it('rule: no compatibility claim naming unnamed third parties', () => {
+    const text = pageText();
+    expect(THIRD_PARTY_COMPATIBILITY.filter((pattern) => pattern.test(text)).map((p) => p.source)).toEqual([]);
+  });
+
   it('one number survives because it is checkable, and the card agrees with it', () => {
-    const text = document.body.textContent ?? '';
+    const text = pageText();
     // runtime.go:16-19 is the one runtime list: claude-code, codex, agy, omp.
     expect(text).toContain('Claude Code, codex, agy or omp');
     expect(text).toContain('Occupant Runtimes');

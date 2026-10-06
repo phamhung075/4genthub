@@ -3,6 +3,7 @@ package config
 import (
 	"bufio"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -74,16 +75,12 @@ func NewCORSMiddleware(o CORSOptions) func(http.Handler) http.Handler {
 	allowAllHeaders := contains(o.AllowHeaders, "*")
 	preflightExplicitOrigin := !allowAllOrigins || o.AllowCredentials
 
-	simple := map[string]string{}
-	if allowAllOrigins {
-		simple["Access-Control-Allow-Origin"] = "*"
-	}
-	if o.AllowCredentials {
-		simple["Access-Control-Allow-Credentials"] = "true"
-	}
-	if len(o.ExposeHeaders) > 0 {
-		simple["Access-Control-Expose-Headers"] = strings.Join(o.ExposeHeaders, ", ")
-	}
+	// Simple (non-preflight) responses never carry the bare wildcard together with
+	// credentials: browsers reject "Access-Control-Allow-Origin: *" +
+	// "Access-Control-Allow-Credentials: true" (see the Fetch CORS protocol). A
+	// credentialed response echoes the concrete origin in apply below, and a
+	// non-allowlisted origin gets no Access-Control-Allow-Origin and no
+	// Access-Control-Allow-Credentials at all.
 
 	preflight := map[string]string{}
 	if preflightExplicitOrigin {
@@ -174,14 +171,33 @@ func NewCORSMiddleware(o CORSOptions) func(http.Handler) http.Handler {
 				return
 			}
 			cw := &corsWriter{ResponseWriter: w, apply: func(h http.Header) {
-				for k, v := range simple {
-					h.Set(k, v)
+				if !isAllowed(requestedOrigin) {
+					// Non-allowlisted origin: grant nothing - neither
+					// Access-Control-Allow-Origin nor Access-Control-Allow-Credentials - so
+					// the browser blocks the call. The request is still processed (CORS is
+					// browser-enforced; non-browser clients that send an Origin header keep
+					// working); we only record the rejected origin so the silent fallback is
+					// visible to an operator.
+					slog.Warn("CORS: request from non-allowlisted origin",
+						"origin", requestedOrigin, "method", r.Method, "path", r.URL.Path)
+					return
 				}
 				_, hasCookie := r.Header["Cookie"]
-				if allowAllOrigins && hasCookie {
+				if allowAllOrigins && !o.AllowCredentials && !hasCookie {
+					// Wildcard without credentials: the bare "*" is safe here, the browser
+					// will not send credentials alongside it.
+					h.Set("Access-Control-Allow-Origin", "*")
+				} else {
+					// Credentialed (or explicit-list) response: echo the concrete origin
+					// rather than "*", and add Vary: Origin so a cache cannot serve one
+					// origin's response to a different origin.
 					explicit(h, requestedOrigin)
-				} else if !allowAllOrigins && isAllowed(requestedOrigin) {
-					explicit(h, requestedOrigin)
+					if o.AllowCredentials {
+						h.Set("Access-Control-Allow-Credentials", "true")
+					}
+				}
+				if len(o.ExposeHeaders) > 0 {
+					h.Set("Access-Control-Expose-Headers", strings.Join(o.ExposeHeaders, ", "))
 				}
 			}}
 			next.ServeHTTP(cw, r)

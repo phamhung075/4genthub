@@ -12,8 +12,6 @@ package httpapp
 import (
 	"context"
 
-	"os"
-
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
 	domainrepos "agenthub/fastmcp/task_management/domain/repositories"
@@ -68,6 +66,27 @@ func (f mcpContextFacadeFactory) CreateFacade(userID, projectID, gitBranchID *st
 
 // mcpTokenFacadeFactory is services.FacadeService's token factory over
 // infrarepos.NewTokenRepository and facades.NewTokenApplicationFacade.
+//
+// JWT_SECRET_KEY is REQUIRED here and is read from the environment by
+// facades.NewTokenApplicationFacade, which refuses an unset secret with
+// "JWT_SECRET_KEY must be set in environment". That is the SAME decision
+// providers.NewJWTBearerAuthProvider makes (it refuses to construct without a
+// secret), so both components agree that "unset" means "refuse".
+//
+// This factory used to invent a value first: when the variable was empty it ran
+// os.Setenv("JWT_SECRET_KEY", "default-jwt-secret-key-for-token-facade-32b")
+// before building the facade. That made the secret PROCESS-LOCAL state: the
+// process that minted a token had the default in its environment and its
+// validators accepted the token, while every replica that never minted kept an
+// empty environment and refused it. The same token then returned 101 from one
+// process and 403 from the others. The default is gone; one decision about the
+// secret is used everywhere, so nothing is minted unless the operator set the
+// variable.
+//
+// Operational consequence (do not carry a minted token across a restart): a
+// token is only valid where the SAME JWT_SECRET_KEY is configured. That is a
+// deployment property, not a database one - the token row stores no secret and
+// cannot record it - so the rule lives with the variable in .env.sample.
 type mcpTokenFacadeFactory struct {
 	sessions *database.SessionManager
 }
@@ -80,9 +99,6 @@ func (f mcpTokenFacadeFactory) CreateTokenFacade() (any, error) {
 			return nil, err
 		}
 		repo = r
-	}
-	if os.Getenv("JWT_SECRET_KEY") == "" {
-		_ = os.Setenv("JWT_SECRET_KEY", "default-jwt-secret-key-for-token-facade-32b")
 	}
 	return facades.NewTokenApplicationFacade(repo)
 }

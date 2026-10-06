@@ -384,13 +384,17 @@ func TestConnectorReadIsBoundedInBytes(t *testing.T) {
 
 // ---- the ingest flow, ported from the Python client tests ----
 
-// Python: test_connector_rejects_bad_token_and_missing_scope. A real client sees the
-// handshake refused (Python closes before accept, which the ASGI server turns into an
-// HTTP 403 too); the missing-scope half is TestMountWebSocketsConnectorRequiresScope.
+// Python: test_connector_rejects_bad_token_and_missing_scope. The refusal now COMPLETES the
+// handshake and closes with 1008 plus the auth reason, not a pre-upgrade 403 (which a browser
+// sees as 1006 with no reason); the missing-scope half is TestMountWebSocketsConnectorRequiresScope.
 func TestConnectorRejectsABadToken(t *testing.T) {
-	env := newStreamEnv(t, nil)
-	if status := wsTestDialStatus(t, env.server.URL, "/ws/connector?token=nope"); status != http.StatusForbidden {
-		t.Fatalf("handshake with a bad token = %d, want 403", status)
+	c := newStreamEnv(t, nil).dial(t, "/ws/connector", "nope")
+	code, reason := c.recvClose()
+	if code != wsClosePolicyViolation {
+		t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+	}
+	if reason != wsAuthInvalidTokenReason {
+		t.Fatalf("close reason = %q, want %q", reason, wsAuthInvalidTokenReason)
 	}
 }
 

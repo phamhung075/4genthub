@@ -25,10 +25,7 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts:** **120** registrations in `fastmcp/server/httpapp/**` + **20** in
-`fastmcp/auth/{interface,api}` = **140 total registrations**. No routes are registered
-outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls
-`app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:291`) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
@@ -43,12 +40,12 @@ Both forms point at the same kind of thing — the line that registers the route
 | Method | Path | Handler | Registration |
 |---|---|---|---|
 | GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:112` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:134` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:147` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:155` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:163` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:184` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:192` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:135` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:148` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:156` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:164` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:185` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:193` |
 
 `App.Handler` (`app.go:111`) is the sole mux builder; it calls `mountRoutes`,
 `mountWebSockets`, the five `mountSeat*`/`mountMachineToken` functions, `mountMiscRoutes`,
@@ -202,30 +199,33 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:273` |
-| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:276` |
-| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:279` |
-| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:282` |
-| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:285` |
-| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:288` |
-| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:291` |
-| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:294` |
-| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:297` |
-| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:300` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:303` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:306` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:309` |
-| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:312` |
-| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:315` |
-| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:318` |
-| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:321` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:324` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:327` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:330` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:333` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:336` |
-| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:339` |
-| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:342` |
+| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:279` |
+| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:282` |
+| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:285` |
+| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:288` |
+| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:291` |
+| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:294` |
+| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:297` |
+| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:300` |
+| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:303` |
+| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:306` |
+| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:309` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:312` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:315` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:318` |
+| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:321` |
+| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:324` |
+| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:327` |
+| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:330` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:333` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:336` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:339` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:342` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:345` |
+| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:348` |
+| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:351` |
+
+**Update 2026-10-05 (docs truth-audit).** The `POST /api/v2/openrig/seat-types` row was **missing** (the D3 create-a-seat-type route, `seat_admin_mount.go:291`) and every Registration line in this section was stale by the insertion; both are corrected here from the source at HEAD, which is why this section went from 24 to 25 rows.
 
 Note: the mutating rows are wrapped in `seatMutation(kind, action, fn)` (a broadcast +
 audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
@@ -234,8 +234,8 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:98` |
-| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:101` |
+| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:111` |
+| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:114` |
 | GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:107` |
 | POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:35` |
 | DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:38` |

@@ -35,8 +35,10 @@ func NewRoomDeletionService(store RoomDeletionStore) *RoomDeletionService {
 	return &RoomDeletionService{store: store}
 }
 
-// DeleteRoom hard-deletes the room and everything under it, including the room's reported
-// seat statuses, in one transaction. An absent room is ErrRoomNotFound.
+// DeleteRoom hard-deletes an empty room: its room overlay, its reported seat statuses and the
+// room row, in one transaction. A room that still holds seats is refused with ErrRoomNotEmpty
+// naming how many remain, so seats are never cascaded away; remove them with RemoveSeat first.
+// An absent room is ErrRoomNotFound.
 func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug string) error {
 	room, err := s.store.GetRoomBySlug(ctx, userID, roomSlug)
 	if err != nil {
@@ -50,10 +52,8 @@ func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug s
 		if err != nil {
 			return err
 		}
-		for _, seat := range seats {
-			if err := s.deleteSeatRows(ctx, userID, seat.ID); err != nil {
-				return err
-			}
+		if len(seats) > 0 {
+			return fmt.Errorf("%w: room %q still holds %d seat(s); remove them first", ErrRoomNotEmpty, roomSlug, len(seats))
 		}
 		if err := s.store.DeleteRoomOverlay(ctx, userID, room.ID); err != nil {
 			return err

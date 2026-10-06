@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	"os"
@@ -16,6 +17,8 @@ import (
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedlibrary"
+	"agenthub/fastmcp/seat_management/domain/seedmap"
+	"agenthub/fastmcp/seat_management/domain/skillblock"
 	seatorm "agenthub/fastmcp/seat_management/infrastructure/repositories/orm"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -63,6 +66,7 @@ func TestSeatResolutionEndToEnd(t *testing.T) {
 
 	seeds, err := seedlibrary.Load()
 	must(t, err)
+	seedFixtureCatalogRefs(t, ctx, user, seeds, modules)
 	must(t, services.SeedSeatTypes(ctx, user, seeds, modules, seatTypes))
 	must(t, services.SeedSeatTypes(ctx, user, seeds, modules, seatTypes)) // idempotent
 
@@ -158,6 +162,51 @@ func must(t *testing.T, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+// seedFixtureCatalogRefs stores a module version for every ref the embedded library carries that
+// the library does not author itself.
+//
+// Those refs are the curated OpenRig catalog skills (queue-handoff@1.0.0,
+// test-driven-development@1.0.0, ...): they live in the OpenRig catalog, published there by
+// `scripts/openrig_team_setup.py publish-skills`, not in this repository. The seeder refuses a ref
+// it cannot resolve, so without them this test cannot seed at all.
+//
+// The bodies are FIXTURES, not product data: one valid skill block per ref, so the seed and the
+// resolve can be exercised end to end on a machine with no OpenRig checkout. The slug and version
+// are the library's own, so what resolves is the ref the catalog would really satisfy.
+func seedFixtureCatalogRefs(t *testing.T, ctx context.Context, user string, seeds []seedmap.Seed, modules repositories.ModuleRepository) {
+	t.Helper()
+	authored := map[string]bool{}
+	for _, seed := range seeds {
+		for _, module := range seed.Modules {
+			authored[module.Slug] = true
+		}
+	}
+	done := map[string]bool{}
+	for _, seed := range seeds {
+		for _, ref := range seed.ModuleRefs {
+			if authored[ref.Slug] || done[ref.Slug] {
+				continue
+			}
+			done[ref.Slug] = true
+			body := "# " + ref.Slug + "\n\nFixture skill body: this ref is satisfied so the seat renders a complete spec.\n"
+			block, err := skillblock.Marshal(skillblock.Block{
+				Content:    body,
+				SourcePath: "skills/" + ref.Slug + "/SKILL.md",
+				SHA256:     fmt.Sprintf("%x", sha256.Sum256([]byte(body))),
+			})
+			if err != nil {
+				t.Fatalf("fixture skill block %s: %v", ref.Slug, err)
+			}
+			if _, err := modules.SaveModule(ctx, user, ref.Slug, resolver.KindSkill); err != nil {
+				t.Fatalf("fixture module %s: %v", ref.Slug, err)
+			}
+			if _, err := modules.AddVersion(ctx, user, ref.Slug, ref.Version, block); err != nil {
+				t.Fatalf("fixture module version %s@%s: %v", ref.Slug, ref.Version, err)
+			}
+		}
 	}
 }
 

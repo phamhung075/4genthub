@@ -2,6 +2,7 @@ package httpapp
 
 import (
 	"context"
+	"os"
 	"strings"
 	"testing"
 
@@ -12,12 +13,27 @@ import (
 
 const facadeWiringUserID = "3f0d8f7a-1b2c-4d5e-8f90-1234567890ab"
 
+const facadeWiringJWTSecret = "wiring-test-jwt-secret-32-bytes-min!!"
+
+func TestCreateTokenFacadeRefusesUnsetSecret(t *testing.T) {
+	t.Setenv("JWT_SECRET_KEY", "")
+	if _, err := (mcpTokenFacadeFactory{}).CreateTokenFacade(); err == nil {
+		t.Fatal("CreateTokenFacade with an unset JWT_SECRET_KEY: expected refusal")
+	} else if !strings.Contains(err.Error(), "JWT_SECRET_KEY must be set in environment") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := os.Getenv("JWT_SECRET_KEY"); got != "" {
+		t.Fatalf("CreateTokenFacade mutated JWT_SECRET_KEY to %q; unset must stay unset", got)
+	}
+}
+
 // TestBuildMCPFacadeFactoriesWireTypedFacades proves the four factories
 // returned by buildMCPFacadeFactories are accepted by
 // services.NewFacadeService (the unexported interface check) and that the MCP
 // controllers' type assertions succeed. The ORM constructors do not touch the
 // database, so nil sessions is enough.
 func TestBuildMCPFacadeFactoriesWireTypedFacades(t *testing.T) {
+	t.Setenv("JWT_SECRET_KEY", facadeWiringJWTSecret)
 	ctx := context.Background()
 	ctxFactory := factories.NewUnifiedContextFacadeFactory(ctx, nil)
 	project, branch, agent, unifiedContext, token := buildMCPFacadeFactories(ctx, nil, ctxFactory)

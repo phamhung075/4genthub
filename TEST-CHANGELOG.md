@@ -2,6 +2,131 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the gated real-PostgreSQL seat suite, and the trap a reused test database sets (Go)
+
+- Ran the whole `./fastmcp/seat_management/...` tree WITH `SEAT_TEST_DATABASE_URL` set, which the ungated runs never exercise: on a fresh database exactly one test fails, `TestSeatResolutionEndToEnd`, at the seed, naming the cause — `seed architect: module ref queue-handoff@1.0.0 does not exist — publish the catalog before seeding the seat types`. Everything else, including `TestSeatRepositoriesIntegration` in the orm package, passes against the real database.
+- That test was ALREADY RED before this change; the change moved the failure to the point of cause. Swapping only `seat_seeder.go` back to its parent and re-running on the same fresh database: the seed succeeds (silently, as designed then) and the FIRST resolve fails at `seat_resolution_integration_test.go:81` with `module test-driven-development@1.0.0 not found in catalog` — the 404 three steps downstream that the seeder check now reports up front.
+- REPAIRED, by the lead's ruling (stub fixtures, not a shim): `seedFixtureCatalogRefs` in `seat_resolution_integration_test.go` writes a module version for every ref the library carries that the library does not author — one valid skill block per ref, the library's own slug@version, named in the comment as FIXTURES that exist so the seed and the resolve can be exercised without an OpenRig checkout. With them the test PASSES against real PostgreSQL: it seeds the nine seat types, creates the room and seats, resolves, and the resolve writes `resolved_seats` (5 snapshots for that run's user in the test database), which is the drift path's precondition. The whole gated seat tree is green on a fresh database.
+- TRAP, worth knowing before running these tests: they apply their schema with `CREATE TABLE IF NOT EXISTS`, so a test database created before `ck_modules_kind` gained `'mcp'` keeps the old constraint and rejects an mcp block with `violates check constraint "ck_modules_kind"` — a failure that looks like bad seed data but is a stale table. Use a fresh database per run (or drop the stale tables first).
+
+## 2026-10-06 — the seeder verifies the refs it writes (Go)
+
+- `fastmcp/seat_management/application/services/seat_seeder_test.go` (new) pins both directions with in-memory `ModuleRepository`/`SeatTypeRepository` fakes: a seed carrying a curated ref the catalog lacks is refused with the ref and the seat type named, and writes no seat type or version; the identical seed succeeds once the catalog holds the refs, with all three refs on the version; and a seed whose refs are exactly its own authored modules seeds against an empty catalog.
+- The refusal mirrors the HTTP publish path (`seat_admin_service.go:212`), and the check relies on `ORMModuleRepository.GetVersion` returning `nil` when a version is absent (`module_repository.go:99`) — the same contract that path already relies on.
+- Commands: `gofmt -l` on the package -> empty; `go vet ./fastmcp/seat_management/application/services/` -> 0; `go test -count=1 -run TestSeedSeatTypes -v ./fastmcp/seat_management/application/services/` -> 3 passed; `go test -count=1 ./fastmcp/seat_management/...` -> all green.
+
+## 2026-10-06 — the missed third pin of the blank-clears rule (Go)
+
+- `fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller_test.go` pinned the OLD behaviour on the MCP manage-seat surface, which calls the same `SeatAdminService` as the HTTP route: `set_occupant` with an omitted model asserted the stored model was CLEARED. `cc4fcf25` moved that expectation in the HTTP surface and missed this one, leaving the `mcp_controllers` package red from that commit. The case now asserts an omitted model KEEPS the stored `gpt-5.1`, on both the rendered seat and the store.
+- Found while running `go test -count=1 ./fastmcp/seat_management/...` for the seeder row; not the seeder change's doing.
+
+## 2026-10-06 - a token that cannot name a user is reported, not cleared (frontend)
+
+- `src/tests/contexts/AuthContext.test.tsx` adds two cases for a stored token that decodes, is unexpired
+  and cannot start a session: one declaring `type: "api_token"` (what `POST /api/v2/tokens` mints) and
+  one with neither a declared type nor an `email` claim. Each asserts no cookie is removed, no
+  `POST /api/auth/refresh` is sent, `isAuthenticated` stays false, and `authError` names the reason.
+- The api_token case pins the ORDER of the classification, measured rather than argued: with the type
+  check moved after the email check it fails, because the refusal then reasons from absence ("carries no
+  email claim and declares no type") where the token's own declaration ("declares type \"api_token\"")
+  is the true cause. The order was restored and it passes - a later token class that happens to lack
+  email will not inherit this reason.
+- The non-destructive half was proved the same way first: with the guard branch deleted, the older case
+  failed at `Cookies.remove` (called 8 times - the refresh/logout loop) and passed once it was restored.
+- `src/tests/components/auth/LoginForm.test.tsx` adds a case that the reason on the context is rendered
+  on the form a user lands on, mocking the full context value rather than a partial one.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/contexts/AuthContext.test.tsx
+  src/tests/components/auth/LoginForm.test.tsx` -> 49 passed; `npx vitest run` -> 102 files / 1749 tests
+  passed; `npx vite build` -> ok.
+
+## 2026-10-05 — a blank field never clears a field on the occupant PUT (Go)
+
+- `fastmcp/server/httpapp/seat_occupant_runtime_test.go` gains the case fe-dev measured on the real stack: a runtime-only PUT changes the runtime and KEEPS the model. Plus an explicit-empty-model case (indistinguishable from an omission, so it keeps too), an all-blank no-op case, and an explicit-model case. `fastmcp/seat_management/application/services/seat_admin_service_test.go` gains `TestSeatAdminServiceSetOccupantBlankModelKeepsIt`.
+- One obsolete expectation moved with the ruling, named because a test change is a finding: `TestSeatAdminSetOccupant` asserted a blank model CLEARS to `""`; it now asserts the model is kept, with the ruling and the new pin in the comment.
+- Commands: `gofmt -l` clean on both packages; `go vet ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` exit 0; `go test -count=1 ./fastmcp/seat_management/application/services/` ok; the eleven occupant cases in httpapp all PASS when selected. NOTE: the full httpapp package currently fails `TestRoomRigSpecDerivesPublicURLFromRequest` from another seat's uncommitted rigspec edits in the same package — the case passes at HEAD and when run alone, so it is not this change.
+
+## 2026-10-06 - the link delete asks first (frontend)
+
+- `src/tests/pages/SeatDetailPage.test.tsx` updates the two existing delete tests to the confirmed flow - they still
+  assert the same call (`deleteLink('dev', 'alice', 'bob', 'delegates_to')`) and the same surfaced error - and adds two:
+  the confirm names the seat, the target, the kind and the allow state as the row reads it while Cancel deletes nothing,
+  and Escape closes the confirm with the mutation uncalled.
+- Escape was exercised because `dialog.tsx` carries a known defect: its document keydown listener closes every OPEN
+  dialog. `SeatDetailPage.tsx` has exactly one dialog (it had none before this change), so what was observed is the
+  intended close with nothing deleted, not the defect.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatDetailPage.test.tsx` -> 19 passed;
+  `npx vitest run` -> 102 files / 1746 tests passed; `npx vite build` -> ok.
+
+## 2026-10-05 — the bridge's machine token and register step (scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_bridge.py` gains eight cases and a body slot on its fake HTTP server (so a register response can carry a token). `test_sender_reads_the_machine_token_not_the_user_token` (the bearer is `AGENTHUB_MACHINE_TOKEN`, never the user token); `test_sender_without_the_machine_token_exits_2_naming_it` (loud usage failure naming the variable); `test_401_names_the_register_step` (the cycle reports the 401 and the register command); `test_register_writes_env_file_0600_and_never_prints_the_token` (the POST carries the user bearer and `{"machine_id": ...}`, the file is mode 0600, and the token appears in neither stdout nor stderr); `test_register_preserves_other_env_lines_and_replaces_the_token` (merge, not overwrite); `test_register_refused_is_loud_and_writes_nothing` (a 401 from the register route exits 1 and leaves no file); `test_register_without_the_user_token_is_a_usage_error` (exit 2). `test_usage_errors_exit_2` now clears `AGENTHUB_MACHINE_TOKEN`, which is the variable `run` actually reads.
+- Commands: `python3 -m py_compile` on the script and the test file OK; `ruff check` All checks passed; `ruff format --check` clean; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_bridge.py -q` -> 48 passed (was 40 before these eight).
+
+## 2026-10-05 — occupant PUT keeps the runtime when it is blank (Go)
+
+- `fastmcp/server/httpapp/seat_occupant_runtime_test.go` (new): five handler cases over the seat-admin mux. A BLANK runtime keeps the seat's runtime while the model still changes (this is the case that fails if blank goes back to a 400); an OMITTED runtime does the same; an explicit runtime wins; an explicit bogus runtime is still 400; and a blank runtime never inherits the seat type version's default (the seat runs claude-code while its type version default is codex, and it stays claude-code). Service-level companion: `TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt` in `seat_admin_service_test.go`.
+- Two obsolete expectations moved with the contract, named because a test change is a finding: `TestSeatAdminSetOccupantRejectsInvalidInput` dropped `{"runtime":""}` and `{"model":"sonnet"}`, and `TestSeatAdminServiceSetOccupantErrors` dropped `{"", ""}` — all three were valid only under the old 400, so leaving them would have encoded a contradiction. Each removal carries a comment naming the ruling and the test that now pins the behaviour.
+- Commands: `gofmt -l` clean; `go vet ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` exit 0; `go test -count=1` on both packages ok (services 0.006s, httpapp 0.904s).
+
+## 2026-10-06 — Wildcard+credentials CORS combination removed (local-stack fallback)
+
+- `cors_test.go`: `TestWithCORSSimpleRequestDefaultWildcardWithoutCookie` (which pinned `Access-Control-Allow-Origin: *` with `Access-Control-Allow-Credentials: true`) is replaced by `TestWithCORSSimpleRequestDefaultWildcardEchoesOrigin`: with `CORS_ORIGINS` unset and credentials on, the actual response echoes the concrete origin, sets `Access-Control-Allow-Credentials: true` and `Vary: Origin`, and never `*`. New `TestWithCORSSimpleRequestDisallowedOrigin`: an explicit allowlist that omits the origin yields no `Access-Control-Allow-Origin`, no `Access-Control-Allow-Credentials` and no `Access-Control-Expose-Headers`, while the handler still runs (204). `TestWithCORSSimpleRequestAllowedOrigin` and `TestWithCORSPreflightAllowedOrigin` gained `Vary: Origin` and never-`*` assertions; both preflight cases are otherwise unchanged.
+- `testdata/cors_cases.json`: 120 non-preflight outputs for non-allowlisted origins dropped `access-control-allow-credentials` and `access-control-expose-headers`. This is an intentional divergence from Starlette's `CORSMiddleware`, which emits its `simple_headers` (credentials, expose) regardless of origin; a header that grants a permission the origin does not have is the defect. The change is removal-only (no added keys, request/config fields untouched).
+- Real stack (fresh build of `cmd/agenthub`, `CORS_ORIGINS` unset, origin `http://localhost:3800`): actual response `Access-Control-Allow-Origin: http://localhost:3800`, `Access-Control-Allow-Credentials: true`, `Vary: Origin` (before: `*` + credentials); with `CORS_ORIGINS=http://localhost:3800`, the actual response from `https://evil.example` carries no `Access-Control-*` headers and logs `WARN CORS: request from non-allowlisted origin origin=https://evil.example method=GET path=…`.
+- Commands: `gofmt -l` (touched) empty; `go vet ./fastmcp/config/ ./fastmcp/server/httpapp/` clean; `go test -count=1 ./fastmcp/config/` ok; `go test -count=1 ./fastmcp/server/httpapp/` ok; `go build ./...` ok.
+
+## 2026-10-06 — the home page's claim rules are a class, not a list (frontend)
+
+- `src/tests/pages/LandingPage.head.test.tsx` gains four class rules BESIDE the existing removed list: no unmeasured
+  quantifier, multiplier, percentage or comparative (`thousands`, `worldwide`, `globally`, `\d+x`, `%`, `faster`); no
+  third-party product name (`Cursor`, `GPT-4`, `o1`, `Gemini`, `Llama`, `Mistral`, `Qwen`, `OpenAI`, `Anthropic`,
+  `Copilot`); no unearned positioning adjective (`enterprise`, `professional-grade`, `battle-tested`,
+  `industrial-strength`); and no compatibility claim about unnamed third parties (`compatible with any`,
+  `any AI client|model|tool`, `AI-agnostic`).
+- The rules read the page through a new `pageText()` helper that joins the body's text NODES with a separator instead of
+  reading `textContent`: adjacent elements are glued together ("Build Faster" followed by "Professional-grade" reads as
+  "Build FasterPr"), so a word-boundary-anchored rule silently missed the claims it was written for. Measured with a
+  temporary diagnostic that printed the slice and `false` from the same regex against text containing the phrase.
+- Mutation proof, both directions: against the pre-fix copy the new rules fail (rule 1 on `worldwide` and `faster`, rule 3
+  on `professional-grade`) while the OLD deny-list test still passes on that same copy; re-injecting the removed wording
+  fails exactly those four rules and nothing else.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/LandingPage.head.test.tsx` -> 12 passed;
+  `npx vitest run` -> 102 files / 1744 tests passed; `npx vite build` -> ok.
+
+## 2026-10-06 — seatcheck acceptance end-to-end against a pulled seat (scripts)
+
+- New `agenthub_main/src/tests/scripts/test_openrig_seatcheck_guard.py`: three cases that run the REAL binary `install-checker` builds and links (`<store>/bin/seatcheck` via `~/.local/bin`) against a seat `pull` materialized, so the pinned policy and the guard are exercised together rather than stubbed: `test_linked_guard_delivers_to_an_allowed_peer` (PERMITTED — exit 0, `rig send` argv carries the message, audit decision line plus `delivered` outcome); `test_linked_guard_refuses_a_disallowed_peer_and_audits_it` (REFUSED with an audit row — exit 3, `denied: no link`, nothing sent, exactly one denied record); `test_audit_scan_detects_a_forged_direct_rig_send` (DETECTED, not prevented — a direct `rig send` writes no audit row, so `audit-scan` flags the observed line and exits 4 while a `seatcheck send` line stays clean). The file is self-contained (its own stub server, `env` and `installed_checker` fixtures) and skips when `go` is absent, since the binary is the artifact under test.
+- These are acceptance tests for the mechanism, not units of `openrig_seat_sync.py`, so they live in their own file; `test_openrig_seat_sync.py` is unchanged. This completes, at the connection level, coverage that existed only as units: `test_pull_and_rig_fail_loudly_without_the_link` (a) and the Go cases `TestSendAllowedDelivers`, `TestSendDeniedWritesAuditAndSkipsDelivery`, `TestAuditScanFindsBypassAndSkipsKnownWrapper`.
+- Commands: `ruff format --check` -> 2 files already formatted; `ruff check` -> All checks passed; `python3 -m py_compile` on both -> OK; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 205 passed; `go test -count=1 ./cmd/seatcheck ./fastmcp/seat_management/domain/commpolicy` -> ok (unchanged).
+
+## 2026-10-05 — context-pack algebra (Go, NEXT_GEN F2)
+
+- New `fastmcp/seat_management/domain/contextpacks/` with 24 tests over six files. Acceptance clauses: each of the three modes composed from a real markdown fixture (`TestComposeProfileThreeModes`, which also pins the full-span rule — `alpha`'s piece carries its H3 child and stops before the next H2); determinism (`TestComposeProfileIsDeterministic`: two composes deep-equal, and the walk is ordered by `Order`); the token estimate is monotonic in content (`TestEstimateTokensIsMonotonicInContent`, over 200 growing inputs) and is a byte projection, not a rune count; and a dangling address is rejected rather than dropped (`TestComposeRejectsDanglingAddress` at the compose, `TestAssertSafePackRefRejectsRatherThanDrops` at the ref gate).
+- Also covered: closure over `requires` including the loud missing-dependency and runtime-excluded cases, the runtime filter, `profileOnly` exclusion, the budget report's drop order with no truncation, named profiles (atom vs context phases; missing context, missing atom, wrong situation), source labelling, address parse/resolve errors (ambiguity, no-match candidates, empty path), fenced headers, addressability findings, plain and framed bundle assembly (missing files, read error), and the recap chain, contract and write gate.
+- Two defects were caught by the tests: a fence capture-group index bug in `scanHeaders` (a panic on any fenced document) and a wrong expectation of mine about `_` in slugify (the markdown markers `*_~` are stripped, so `and_text` slugifies to `andtext`).
+- Commands: `gofmt -l` clean; `go vet ./fastmcp/seat_management/domain/contextpacks/` exit 0; `go build ./...` exit 0; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` ok.
+- Nothing is wired to a route or repository yet; no existing file changed.
+
+## 2026-10-05 — seat creation inherits the version's default runtime (Go)
+
+- `fastmcp/server/httpapp/seat_create_runtime_fallback_test.go` (new): six route tests over the seat-admin mux and its fake source. Omitting `runtime` creates the seat with the chosen version's `default_runtime`; an explicit `runtime` wins over that default; an invalid explicit runtime still 400s; a version whose default is empty and no explicit runtime still 400s; an omitted runtime with an unknown seat type is still 404 (no invented default); and an inherited runtime still validates the model (codex with a `claude-` model is 400).
+- Before-evidence is a live observation rather than a claimed mutation: on the real server over the throwaway PostgreSQL, the omitted-`runtime` request returned `400 unsupported runtime ""` before this change (recorded in `D3-CUSTOM-SEAT-VERIFICATION-2026-10-05.md`) and creates the seat after it.
+- Commands: `gofmt -l` on the touched files clean; `go vet ./fastmcp/server/httpapp/` exit 0; `go build ./...` exit 0; `go test -count=1 ./fastmcp/server/httpapp/` ok (0.951s); `-run TestSeatAdminCreateSeat -v` all PASS, including the six new cases.
+
+## 2026-10-05 — the TS mcp parse mirror matches Go on emptiness (frontend)
+
+- `src/tests/utils/mcpBlock.test.ts` gains two cases pinned to the authority's rule: an EMPTY string on the transport a
+  block does not use (`{"type":"stdio","command":"x","url":""}` and
+  `{"type":"http","url":"https://x.test","command":""}`) is accepted, because `mcpblock.Parse` tests
+  `server.Command != ""` and `server.URL != ""` rather than presence; the NON-empty forms on the wrong transport are
+  still refused. The control - a stdio block with an EMPTY `headers` object, which Go accepts because
+  `len(server.Headers) > 0` is false for `{}` - keeps agreeing, which is what shows the rule is about emptiness rather
+  than about optional fields.
+- Mutation proof: reverting both predicates in `src/lib/mcpBlock.ts` fails exactly the new "accepts an EMPTY string"
+  case (`expected false to be true`) with the other 26 passing in that file; restoring gives 27 passed.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/utils/mcpBlock.test.ts` -> 27 passed;
+  `npx vitest run` -> 102 files / 1740 tests passed; `npx vite build` -> ok. Found by the gate on `88fe3852`.
+
 ## 2026-10-05 — publish-skills + skill blocks (scripts + Go seeds/renderer)
 
 - `agenthub_main/src/tests/scripts/test_openrig_team_setup.py` gains six cases for `publish-skills` over a fixture library (a canonical-only skill, a plugin-only skill, and a canonical/plugin overlap), reusing the file's recording HTTP server: one block per skill with the exact provenance dict; the plugin-only skill sources from the plugin path with no mirror; the overlap is ONE module carrying canonical `source_path`/`sha256` plus `mirror_path`/`mirror_sha256` (three PUTs, not four); a re-run skips all three with no request; changed content lands at the next patch; a credential-shaped literal is refused with exit 2 and zero requests; a source file that no longer matches the inventory digest is refused as stale; a missing `--source-root`/`OPENRIG_SKILLS_ROOT` is a usage error. The two `import-project` skill assertions now check the block shape and its computed digest.

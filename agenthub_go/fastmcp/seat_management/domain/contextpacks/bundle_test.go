@@ -1,0 +1,77 @@
+package contextpacks
+
+import (
+	"errors"
+	"strings"
+	"testing"
+)
+
+func TestAssemblePlainFiles(t *testing.T) {
+	alpha, beta := "alpha", "beta"
+	got := AssemblePlainFiles([]PlainFileInput{
+		{Path: "a.md", Content: &alpha},
+		{Path: "missing.md", Content: nil},
+		{Path: "b.md", Content: &beta},
+	})
+	if got.Text != "alpha\n\nbeta" {
+		t.Errorf("text = %q, want the two present members joined by a blank line", got.Text)
+	}
+	if len(got.Files) != 2 || got.Files[0].Path != "a.md" || got.Files[0].EstimatedTokens != EstimateTokensFromBytes(5) {
+		t.Errorf("files = %+v", got.Files)
+	}
+	if len(got.MissingFiles) != 1 || got.MissingFiles[0] != "missing.md" {
+		t.Errorf("missing = %+v", got.MissingFiles)
+	}
+	if got.EstimatedTokens != EstimateTokensOf(got.Text) {
+		t.Errorf("estimate = %d, want %d", got.EstimatedTokens, EstimateTokensOf(got.Text))
+	}
+}
+
+func TestAssembleBundleFramesAndSkipsMissing(t *testing.T) {
+	abs := "/p/a.md"
+	pack := BundlePack{
+		ID: "context-pack:x:1", Name: "x", Version: "1.0.0", Purpose: "  a purpose  ",
+		Files: []BundleFile{
+			{Path: "a.md", Role: "prd", Summary: "the prd", AbsolutePath: &abs},
+			{Path: "gone.md", Role: "evidence", AbsolutePath: nil},
+		},
+	}
+	read := func(p string) (string, error) {
+		if p != "/p/a.md" {
+			return "", errors.New("unexpected path")
+		}
+		return "body text\n\n", nil
+	}
+	got, err := AssembleBundle(pack, read)
+	if err != nil {
+		t.Fatalf("assemble: %v", err)
+	}
+	if !strings.HasPrefix(got.Text, "# OpenRig Context Pack: x v1.0.0\n\n") {
+		t.Errorf("bundle does not lead with the pack frame: %q", got.Text[:40])
+	}
+	if !strings.Contains(got.Text, "a purpose") {
+		t.Errorf("purpose missing (or untrimmed): %q", got.Text)
+	}
+	if !strings.Contains(got.Text, "## File: a.md (role: prd) — the prd") {
+		t.Errorf("file header missing the role/summary: %q", got.Text)
+	}
+	if strings.Contains(got.Text, "gone.md") {
+		t.Errorf("a missing file was framed into the bundle: %q", got.Text)
+	}
+	if !strings.HasSuffix(got.Text, "body text\n") {
+		t.Errorf("the trailing blank of the content was not trimmed before the join: %q", got.Text)
+	}
+	if len(got.MissingFiles) != 1 || got.MissingFiles[0].Path != "gone.md" {
+		t.Errorf("missing files = %+v", got.MissingFiles)
+	}
+}
+
+func TestAssembleBundleReadErrorIsLoud(t *testing.T) {
+	abs := "/p/a.md"
+	pack := BundlePack{Name: "x", Version: "1", Files: []BundleFile{{Path: "a.md", Role: "prd", AbsolutePath: &abs}}}
+	_, err := AssembleBundle(pack, func(string) (string, error) { return "", errors.New("boom") })
+	var packErr *ContextPackError
+	if !errors.As(err, &packErr) || packErr.Code != CodeFileReadFailed {
+		t.Fatalf("error = %v, want a %s ContextPackError", err, CodeFileReadFailed)
+	}
+}

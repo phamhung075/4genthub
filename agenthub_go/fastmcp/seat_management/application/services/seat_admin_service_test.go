@@ -166,10 +166,51 @@ func TestSeatAdminServiceSetOccupantKeepsPin(t *testing.T) {
 	}
 }
 
+// A blank runtime keeps the seat's runtime; it never inherits the type version's default_runtime,
+// because that would silently reset a live seat's runtime on a model change.
+func TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt(t *testing.T) {
+	service, store := newSeatAdminFixture()
+	view, err := service.SetOccupant(context.Background(), "u", "dev", "alice", "", "opus")
+	if err != nil {
+		t.Fatalf("blank runtime: %v", err)
+	}
+	if view.Seat.Runtime != "claude-code" || view.Seat.Model != "opus" {
+		t.Fatalf("blank runtime did not keep the runtime while changing the model: %+v", view.Seat)
+	}
+	if got := store.seats[0]; got.Runtime != "claude-code" || got.Model != "opus" {
+		t.Fatalf("stored seat = %+v", got)
+	}
+	// And the explicit path still wins over the kept value.
+	if _, err := service.SetOccupant(context.Background(), "u", "dev", "alice", "codex", "gpt"); err != nil {
+		t.Fatalf("explicit runtime: %v", err)
+	}
+	if got := store.seats[0]; got.Runtime != "codex" || got.Model != "gpt" {
+		t.Fatalf("explicit runtime did not win: %+v", got)
+	}
+}
+
+// A blank field never clears a field: a runtime-only change leaves the model alone.
+func TestSeatAdminServiceSetOccupantBlankModelKeepsIt(t *testing.T) {
+	service, store := newSeatAdminFixture()
+	view, err := service.SetOccupant(context.Background(), "u", "dev", "alice", "codex", "")
+	if err != nil {
+		t.Fatalf("runtime-only change: %v", err)
+	}
+	if view.Seat.Runtime != "codex" || view.Seat.Model != "sonnet" {
+		t.Fatalf("runtime-only change = %+v, want runtime codex and the model kept", view.Seat)
+	}
+	if got := store.seats[0]; got.Runtime != "codex" || got.Model != "sonnet" {
+		t.Fatalf("stored seat = %+v", got)
+	}
+}
+
 func TestSeatAdminServiceSetOccupantErrors(t *testing.T) {
 	service, store := newSeatAdminFixture()
 	ctx := context.Background()
-	invalid := [][2]string{{"gemini", ""}, {"", ""}, {"codex", "-bad"}, {"codex", "a b"}, {"codex", "claude-sonnet-5-5"}}
+	// {"", ""} is deliberately NOT in this list any more: a blank runtime keeps the seat's current
+	// runtime (owner ruling, 2026-10-05), so an empty occupant means "keep the runtime, clear the
+	// model" and is accepted. Pinned by TestSeatAdminServiceSetOccupantBlankRuntimeKeepsIt.
+	invalid := [][2]string{{"gemini", ""}, {"codex", "-bad"}, {"codex", "a b"}, {"codex", "claude-sonnet-5-5"}}
 	for _, c := range invalid {
 		if _, err := service.SetOccupant(ctx, "u", "dev", "alice", c[0], c[1]); !errors.Is(err, ErrInvalidOccupant) {
 			t.Errorf("SetOccupant(%q, %q) error = %v, want ErrInvalidOccupant", c[0], c[1], err)

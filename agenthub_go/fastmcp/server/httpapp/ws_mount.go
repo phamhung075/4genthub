@@ -28,6 +28,7 @@ import (
 
 	"agenthub/fastmcp/auth"
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	authinterface "agenthub/fastmcp/auth/interface"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -47,6 +48,12 @@ const (
 
 	// wsGUID is the RFC 6455 handshake magic string.
 	wsGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+	// wsClosePolicyViolation is the close code a rejected upgrade carries. The browser
+	// WebSocket API exposes neither the HTTP status nor the body of a refused handshake, so a
+	// bare 403 reaches the client as 1006 with no reason - indistinguishable from a network
+	// drop. The upgrade is therefore completed and closed with this code and a reason the
+	// client can read (WebSocketClient.ts handles 1008 as an authentication failure).
+	wsClosePolicyViolation = 1008
 	// wsMaxMessageBytes bounds one message (all its fragments together) so a bad client
 	// cannot force an unbounded allocation. It is the most bytes the connector's limit of
 	// SessionStreamMaxMsgChars characters can take (4 bytes per character in UTF-8); the
@@ -63,16 +70,79 @@ func mountWebSockets(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("GET /ws/sessions/{id}", handleSessionViewer(sessionStreamStore{sessions}))
 }
 
-// handleRealtime ports realtime_updates: authenticate from ?token=, accept, send the
-// welcome frame, replay missed notifications, then answer ping/heartbeat/subscribe.
+// wsAuthMissingTokenReason / wsAuthInvalidTokenReason are what a rejected upgrade tells the
+// client it wanted. A refused handshake's body never reaches a browser, so each reason stands
+// alone: it names the credential and where the server reads it.
+const (
+	wsAuthMissingTokenReason = "Authentication required: pass a bearer token in the token query parameter or the Authorization header"
+	wsAuthInvalidTokenReason = "Invalid or expired token: supply a valid Keycloak, API or MCP bearer token"
+)
+
+// wsScopeMissingReason is the connector's OTHER refusal: the credential was accepted but the
+// token does not grant sessions:write. It is deliberately its own string, NOT one of the auth
+// reasons above, because authentication and authorization are different events for the caller.
+// An authentication refusal means "come back with a token at all"; this one means "come back
+// with a better token". The authorization refusal is a LEGITIMATE outcome, not a credential
+// failure, so it must not read as one: a client told its credential is bad discards a token
+// that is actually fine. Collapsing both refusals into a single "rejected" reason is the
+// natural result of treating "refused" as one case, and is exactly how a fix inherits the
+// defect it was sent to close. Like the auth reasons it stays under the RFC 6455 123-byte
+// control-frame limit (pinned by TestWebSocketRejectionReasonsFitControlFrame).
+const wsScopeMissingReason = "Missing scope " + routes.SessionStreamWriteScope +
+	": the credential is valid but this token must also grant session streaming"
+
+// wsAuthenticateRealtime resolves the socket identity under the SAME decision the REST routes
+// apply instead of giving the socket a rule of its own. Every REST route authenticates through
+// http.go currentUser -> authinterface.GetCurrentUser, which with AUTH_ENABLED=false resolves
+// the development identity for whatever bearer arrived without validating it (and, in the
+// stack's dev environment, falls back to the development user when the provider cannot be
+// consulted). This calls that same helper for the disabled case, so the two surfaces cannot
+// drift; with auth on it keeps auth.ValidateTokenUniversal, which additionally accepts the
+// generated MCP tokens the socket has always accepted.
+//
+// A non-empty second return is the reason the credential was refused.
+func wsAuthenticateRealtime(ctx context.Context, token string) (auth.UnifiedAuthResult, string) {
+	if token == "" {
+		return auth.UnifiedAuthResult{}, wsAuthMissingTokenReason
+	}
+	if !auth.AuthEnabled() {
+		user, err := authinterface.GetCurrentUser(ctx, &token, nil)
+		if err != nil || user == nil || user.ID == nil || *user.ID == "" {
+			return auth.UnifiedAuthResult{}, wsAuthInvalidTokenReason
+		}
+		email := user.Email
+		return auth.UnifiedAuthResult{Valid: true, UserID: user.ID, Email: &email}, ""
+	}
+	result := auth.ValidateTokenUniversal(ctx, token, nil)
+	if !result.Valid || result.UserID == nil || *result.UserID == "" {
+		return auth.UnifiedAuthResult{}, wsAuthInvalidTokenReason
+	}
+	return result, ""
+}
+
+// wsRejectUpgrade refuses an upgrade by completing the handshake and immediately closing with
+// wsClosePolicyViolation and reason. Completing the handshake first is deliberate: a plain 403
+// reaches a browser as close code 1006 with no reason, so the client cannot tell a rejected
+// credential from a network drop. Nothing is registered or served in between.
+func wsRejectUpgrade(w http.ResponseWriter, r *http.Request, reason string) {
+	conn, err := wsUpgrade(w, r)
+	if err != nil {
+		return
+	}
+	_ = conn.Close(context.Background(), wsClosePolicyViolation, reason)
+}
+
+// handleRealtime ports realtime_updates: resolve the caller from ?token=/bearer under the
+// same AUTH_ENABLED decision every REST route applies (wsAuthenticateRealtime), accept, send
+// the welcome frame, replay missed notifications, then answer ping/heartbeat/subscribe.
 func handleRealtime(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
 		token = wsBearerToken(r)
 	}
-	result := auth.ValidateTokenUniversal(r.Context(), token, nil)
-	if !result.Valid || result.UserID == nil || *result.UserID == "" {
-		http.Error(w, "Authentication required", http.StatusForbidden)
+	result, reason := wsAuthenticateRealtime(r.Context(), token)
+	if reason != "" {
+		wsRejectUpgrade(w, r, reason)
 		return
 	}
 
@@ -169,19 +239,29 @@ func wsReplayMissedNotifications(ctx context.Context, conn *wsConn, userID strin
 
 // handleConnector ports connector_ingest: authenticate from ?token= or the bearer
 // header, require the sessions:write scope, accept, then serve hello/session/events.
+// Both refusals COMPLETE the handshake and close with 1008 plus a reason (wsRejectUpgrade):
+// a pre-upgrade 403 reaches a browser as close code 1006 with no reason. Authentication and
+// authorization keep distinct reasons - see wsScopeMissingReason.
 func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
 		if token == "" {
 			token = wsBearerToken(r)
 		}
-		result := auth.ValidateTokenUniversal(r.Context(), token, nil)
-		if !result.Valid || result.UserID == nil || *result.UserID == "" {
-			http.Error(w, "Authentication required", http.StatusForbidden)
+		// The connector applies the SAME decision as every REST route and the realtime socket
+		// (wsAuthenticateRealtime), rather than a ValidateTokenUniversal call of its own that
+		// would demand a provider-minted token even with AUTH_ENABLED=false.
+		result, reason := wsAuthenticateRealtime(r.Context(), token)
+		if reason != "" {
+			wsRejectUpgrade(w, r, reason)
 			return
 		}
-		if !wsHasScope(result, routes.SessionStreamWriteScope) {
-			http.Error(w, "Missing scope "+routes.SessionStreamWriteScope, http.StatusForbidden)
+		// Authorization is a separate, legitimate refusal. It is only decidable when auth is on:
+		// with AUTH_ENABLED=false the shared decision resolves the development identity WITHOUT
+		// reading the token, so no token-derived scope set exists to check and the socket must
+		// not impose a scope rule the single decision never consulted.
+		if auth.AuthEnabled() && !wsHasScope(result, routes.SessionStreamWriteScope) {
+			wsRejectUpgrade(w, r, wsScopeMissingReason)
 			return
 		}
 

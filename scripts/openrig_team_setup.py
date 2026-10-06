@@ -578,23 +578,35 @@ def outcome(method: str, status: int, text: str, tolerate_exists: bool) -> str:
     raise SetupError(f"HTTP {status} {text[:300]}", EXIT_REMOTE)
 
 
-def run_steps(steps: list, dry_run: bool) -> None:
-    """Print a dry-run plan, or send every non-skip step in order and report each outcome."""
+def run_steps(steps: list, dry_run: bool, collect_failures: bool = False) -> list:
+    """Print a dry-run plan, or send every non-skip step in order and report each outcome.
+
+    With ``collect_failures``, a step that fails does not abort the run: every remaining step is
+    attempted and the failures come back as ``(label, reason)`` pairs. That is for callers whose
+    steps are independent, where stopping at the first error would leave the rest unattempted and
+    unnamed — a 52-block publish that dies at block 30 looks like a 30-block inventory.
+    """
     if dry_run:
         for label, method, path, _, _ in steps:
             print(f"plan: {label} ({method} {path})")
-        return
+        return []
     base_url, token = _credentials()
+    failures = []
     for label, method, path, body, tolerate_exists in steps:
         if method == SKIP:
             print(f"{label}: skipped (identical content already stored)")
             continue
-        status, text = send(base_url, token, method, path, body)
         try:
+            status, text = send(base_url, token, method, path, body)
             result = outcome(method, status, text, tolerate_exists)
         except SetupError as err:
-            raise SetupError(f"{label}: {method} {path}: {err}", err.code)
+            if not collect_failures:
+                raise SetupError(f"{label}: {method} {path}: {err}", err.code)
+            failures.append((label, f"{method} {path}: {err}"))
+            print(f"{label}: FAILED {err}")
+            continue
         print(f"{label}: {result}")
+    return failures
 
 
 def cmd_apply(args) -> None:
@@ -731,7 +743,21 @@ def cmd_publish_skills(args) -> None:
     resolved = resolve_modules(modules, args.version, base_url, token)
     counts = {action: sum(e["action"] == action for e in resolved) for action in (PUSH, NEW_VERSION, SKIP)}
     print(f"publishing {len(modules)} skill block(s) from {args.inventory}")
-    run_steps(resolved_steps(resolved), args.dry_run)
+    failures = run_steps(resolved_steps(resolved), args.dry_run, collect_failures=True)
+    if failures:
+        # Attempt every entry rather than stopping at the first refusal: a publish that dies at
+        # block 30 of 52 leaves 22 unattempted and reads as a 30-block inventory. The failures are
+        # named here and carried into the exit error, so a partial publish is visible as partial.
+        pushed = counts[PUSH] + counts[NEW_VERSION] - len(failures)
+        print(
+            f"publish summary: {pushed} of {counts[PUSH] + counts[NEW_VERSION]} block(s) pushed, "
+            f"{len(failures)} FAILED, {counts[SKIP]} skipped"
+        )
+        raise SetupError(
+            f"{len(failures)} skill block(s) not published: "
+            + "; ".join(f"{label}: {reason}" for label, reason in failures),
+            EXIT_REMOTE,
+        )
     print(
         f"publish summary: {counts[PUSH]} pushed, {counts[NEW_VERSION]} new version(s), "
         f"{counts[SKIP]} skipped"

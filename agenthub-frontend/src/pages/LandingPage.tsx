@@ -287,7 +287,7 @@ export const LandingPage: React.FC = () => {
               </span>
             </h1>
             <p className="text-xl sm:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-              Enterprise-grade MCP platform that turns your workflow into rooms, seats and modules - each seat a durable position you can staff, version and link
+              Cloud state for your rooms, seats and modules - each seat a durable position you can staff, version and link
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/register">
@@ -323,54 +323,42 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center text-white">
             <h2 className="text-3xl font-bold mb-4">
-              🤖 Works with Your Favorite AI Tools
+              🤖 The seats run on your machine
             </h2>
             <p className="text-lg text-purple-100 mb-8 max-w-3xl mx-auto">
-              4genthub is <strong>AI-agnostic</strong> and compatible with any AI client that supports MCP (Model Context Protocol)
+              4genthub keeps the seat model in the cloud. OpenRig is the client that launches and supervises each seat on your machine; the runtime a seat runs on is one of the four occupant runtimes.
             </p>
 
             <div className="grid md:grid-cols-3 gap-6 mb-8">
               <Card className="p-6 bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 transition-all">
                 <div className="flex items-center justify-center gap-3 mb-3">
-                  <Terminal className="h-8 w-8 text-white" />
-                  <h3 className="text-xl font-bold text-white">Claude Code</h3>
+                  <Globe className="h-8 w-8 text-white" />
+                  <h3 className="text-xl font-bold text-white">What lives in the cloud</h3>
                 </div>
                 <p className="text-sm text-purple-100">
-                  Official Anthropic CLI with full MCP support and hook system integration
+                  Rooms, seats, seat types, modules, overlays and links are stored and versioned here.
                 </p>
               </Card>
 
               <Card className="p-6 bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 transition-all">
                 <div className="flex items-center justify-center gap-3 mb-3">
-                  <Code className="h-8 w-8 text-white" />
-                  <h3 className="text-xl font-bold text-white">Cursor IDE</h3>
+                  <Terminal className="h-8 w-8 text-white" />
+                  <h3 className="text-xl font-bold text-white">What runs locally</h3>
                 </div>
                 <p className="text-sm text-purple-100">
-                  AI-powered code editor with native MCP tool integration
+                  OpenRig launches each seat in its own terminal on your machine and reports its state back.
                 </p>
               </Card>
 
               <Card className="p-6 bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 transition-all">
                 <div className="flex items-center justify-center gap-3 mb-3">
                   <Cpu className="h-8 w-8 text-white" />
-                  <h3 className="text-xl font-bold text-white">OpenAI Codex</h3>
+                  <h3 className="text-xl font-bold text-white">What a seat runs on</h3>
                 </div>
                 <p className="text-sm text-purple-100">
-                  GPT-4, o1, and all OpenAI models with tool/function calling capabilities
+                  One of four occupant runtimes: claude-code, codex, agy or omp.
                 </p>
               </Card>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-lg p-6">
-              <h4 className="font-bold text-lg mb-3 flex items-center justify-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Universal AI Model Support
-              </h4>
-              <p className="text-purple-100 text-sm max-w-3xl mx-auto">
-                Compatible with <strong>any AI model</strong> that supports tool/function calling:
-                GPT-4, Claude 3.5, Gemini, Llama 3, Mistral, Qwen, and more.
-                If your AI can use tools, it can use 4genthub!
-              </p>
             </div>
           </div>
         </div>
@@ -381,10 +369,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Everything You Need to Build Faster
+              Compose Rooms, Staff Seats
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300">
-              Professional-grade tools trusted by developers worldwide
+              Building blocks for rooms, seats and modules
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -498,7 +486,7 @@ export const LandingPage: React.FC = () => {
                 </h3>
                 <p className="text-gray-300 dark:text-gray-400 mb-4">
                   4genthub is <strong>publicly shared</strong> and open to contributions! Help improve the codebase,
-                  report bugs, suggest features, and collaborate with developers worldwide.
+                  report bugs, suggest features, and collaborate with other developers.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <a href="https://github.com/phamhung075/4genthub-hooks" target="_blank" rel="noopener noreferrer">
@@ -819,7 +807,7 @@ export const LandingPage: React.FC = () => {
             Ready to Transform Your Development Workflow?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of developers using 4genthub to build faster and smarter
+            Create a room, staff the seats, and launch them with OpenRig.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/register">
@@ -844,7 +832,7 @@ export const LandingPage: React.FC = () => {
             <div>
               <h3 className="text-white dark:text-gray-100 font-bold text-xl mb-4">4genthub</h3>
               <p className="text-sm">
-                Enterprise AI platform for composing rooms, seats and modules for modern development teams.
+                Rooms, seats and modules for modern development teams, kept in the cloud.
               </p>
             </div>
             <div>

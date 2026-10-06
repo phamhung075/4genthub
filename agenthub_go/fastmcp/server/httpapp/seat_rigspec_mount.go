@@ -12,9 +12,7 @@ package httpapp
 import (
 	"context"
 	"net/http"
-	"os"
 	"sort"
-	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	seatservices "agenthub/fastmcp/seat_management/application/services"
@@ -109,13 +107,8 @@ func mountSeatRigSpecRoutes(mux *http.ServeMux, sessions *database.SessionManage
 	}))
 }
 
-func seatRigSpecSourceFor(w http.ResponseWriter, sessions *database.SessionManager) (seatRigSpecSource, bool) {
-	publicURL := strings.TrimRight(os.Getenv(publicURLEnv), "/")
-	if publicURL == "" {
-		writeDetail(w, http.StatusInternalServerError, publicURLEnv+" is not set")
-		return nil, false
-	}
-	source, err := newSeatRigSpecSource(sessions, publicURL+"/mcp")
+func seatRigSpecSourceFor(w http.ResponseWriter, r *http.Request, sessions *database.SessionManager) (seatRigSpecSource, bool) {
+	source, err := newSeatRigSpecSource(sessions, seatMCPURL(r, r.Context()))
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return nil, false
@@ -124,7 +117,7 @@ func seatRigSpecSourceFor(w http.ResponseWriter, sessions *database.SessionManag
 }
 
 func handleRoomRigSpec(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
-	source, ok := seatRigSpecSourceFor(w, sessions)
+	source, ok := seatRigSpecSourceFor(w, r, sessions)
 	if !ok {
 		return
 	}

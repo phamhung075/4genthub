@@ -2,6 +2,7 @@ package httpapp
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -98,11 +99,89 @@ func TestResolveSeatStatusMapping(t *testing.T) {
 	}
 }
 
-func TestSeatRoutesNeedPublicURLAndAuth(t *testing.T) {
+// capturedSeatMux is seatTestMux with the mcpURL newSeatSource is constructed with captured,
+// so a test can assert which origin a rendered seat rewrites its MCP server URL to.
+func capturedSeatMux(t *testing.T, source seatSource) (*http.ServeMux, *string) {
+	t.Helper()
+	var mcpURL string
+	previous := newSeatSource
+	newSeatSource = func(_ *database.SessionManager, u string) (seatSource, error) {
+		mcpURL = u
+		return source, nil
+	}
+	t.Cleanup(func() { newSeatSource = previous })
+	authenticateTestUser(t)
+	mux := http.NewServeMux()
+	mountSeatRoutes(mux, nil)
+	return mux, &mcpURL
+}
+
+// authedSeatRequest is a seat GET with the given public origin signals and a bearer token.
+func authedSeatRequest(host string, tlsTerminated bool, headers map[string]string) *http.Request {
+	req := httptest.NewRequest(http.MethodGet, "/api/v2/openrig/seats/dev/coder", nil)
+	if host != "" {
+		req.Host = host
+	}
+	if tlsTerminated {
+		req.TLS = &tls.ConnectionState{}
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("Authorization", "Bearer test-token")
+	return req
+}
+
+func TestResolveSeatDerivesPublicURLFromRequest(t *testing.T) {
 	t.Setenv(publicURLEnv, "")
-	mux := seatTestMux(t, &fakeSeatSource{})
-	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != http.StatusInternalServerError {
-		t.Errorf("without %s: status = %d", publicURLEnv, rec.Code)
+	mux, mcpURL := capturedSeatMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, authedSeatRequest("seats.example.test", true, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("without %s: status = %d, want 200: %s", publicURLEnv, rec.Code, rec.Body.String())
+	}
+	if *mcpURL != "https://seats.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the request origin", *mcpURL)
+	}
+}
+
+func TestResolveSeatPinnedURLWinsOverRequestHost(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://pinned.example.test/")
+	mux, mcpURL := capturedSeatMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, authedSeatRequest("seats.example.test", true, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	if *mcpURL != "https://pinned.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the pinned override", *mcpURL)
+	}
+}
+
+func TestResolveSeatTrustsForwardedOrigin(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
+	mux, mcpURL := capturedSeatMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, authedSeatRequest("internal:8000", false, map[string]string{
+		"X-Forwarded-Proto": "https",
+		"X-Forwarded-Host":  "public.example.test, internal",
+	}))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	if *mcpURL != "https://public.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the forwarded origin", *mcpURL)
+	}
+}
+
+func TestSeatRoutesDerivePublicURLAndRequireAuth(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
+	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+	if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != http.StatusOK {
+		t.Errorf("without %s: status = %d, want 200", publicURLEnv, rec.Code)
 	}
 	bare := httptest.NewRecorder()
 	mux.ServeHTTP(bare, httptest.NewRequest(http.MethodGet, "/api/v2/openrig/seats/dev/x", nil))

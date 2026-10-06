@@ -211,6 +211,73 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A token that cannot start a session is reported, not silently cleared** - 2026-10-06
+ - A token minted by `POST /api/v2/tokens` decodes but carries no `email` claim. The token decoder built
+ the username from that claim, so it threw, returned null exactly like an expired token, and the mount
+ path read that as expiry: it refreshed, the refresh failed, and logout cleared both cookies. The user
+ landed on the login screen with no explanation, and the measured end state was an empty session whose
+ every request returned 403.
+ - The decoder is now `classifyToken`, which reads what the token SAYS IT IS before looking at what it
+ carries: a token whose `type` claim is not `access` is refused because it declares itself something
+ else - `api_token` is what `POST /api/v2/tokens` mints (`jwt_service.go` `GenerateToken`), while a
+ login's session token declares `access` - and only an `access` token that then lacks an email claim
+ is treated as malformed. It returns `undecodable`, `expired` or `not-a-session-token` instead of a
+ bare null, so outcomes that were one are no longer one. A token that cannot start a session is not a
+ dead session: the mount path reports it through the new `authError` field on the context and leaves
+ the stored credentials alone - no refresh, no cookie removal - while `expired` and `undecodable` keep
+ the existing refresh path. A username is never invented from a missing claim, and the refusal names
+ the declared type when the token declares one.
+ - The login screen renders `authError` above the form, so someone who lands there holding an unusable
+ token is told why rather than seeing a logout nobody asked for.
+- **Deleting a link now says what it removes before it removes it** - 2026-10-06
+  - The trash button in the seat page's outgoing-links panel called the delete mutation on one click: it removes an
+    enforced communication permission or deny with no confirmation and no way back except re-creating it. It now opens
+    the existing dialog primitive first (`SeatDetailPage.tsx`), naming the seat, the target, the kind and the allow state
+    as the row reads it ("Removes the delegates_to link from alice to bob. The row currently allows it."), with Cancel and
+    Escape both leaving the link alone; the mutation runs only on the confirm.
+  - It uses the same service layer as link creation (`useDeleteSeatLink` -> `seatApi.deleteLink`, beside
+    `useUpsertSeatLink` -> `seatApi.putLink`) rather than a second call path, and it is the page's only dialog, so the
+    known `dialog.tsx` Escape behaviour (its document keydown listener closes every OPEN dialog) has nothing else to close.
+  - Tests: the two existing delete tests now go through the confirm (the same call args and the same error path are still
+    asserted), plus two new ones - the confirm's wording with Cancel deleting nothing, and Escape closing it with the
+    mutation uncalled.
+- **The home page's remaining claim classes are gone, and the guard is a class rather than a list** - 2026-10-06
+  - Directive (G) was delivered and pinned by a deny-list, and a deny-list only catches what someone listed: five claims
+    of the same class survived it. The band framed 4genthub as "AI-agnostic and compatible with any AI client that
+    supports MCP" with vendor cards for Claude Code, Cursor IDE and OpenAI Codex; a box promised "any AI model" support
+    ("GPT-4, Claude 3.5, Gemini, Llama 3, Mistral, Qwen, and more. If your AI can use tools, it can use 4genthub!");
+    the CTA said "Join thousands of developers using 4genthub to build faster and smarter"; the hero and footer carried
+    "Enterprise-grade MCP platform" and "Enterprise AI platform"; the features heading said "Everything You Need to
+    Build Faster" over "Professional-grade tools trusted by developers worldwide"; the community line said "developers
+    worldwide".
+  - Replaced with what ships and greps: the band says 4genthub keeps the seat model in the cloud and OpenRig is the
+    client that launches and supervises each seat, with the runtime a seat runs on being one of the four occupant
+    runtimes, and its three cards state what lives in the cloud, what runs locally and the runtime list (runtime.go:16-19);
+    the model-support box is deleted; the CTA names the first steps; the hero reads "Cloud state for your rooms, seats and
+    modules"; the footer "Rooms, seats and modules for modern development teams, kept in the cloud"; the features heading
+    "Compose Rooms, Staff Seats" over "Building blocks for rooms, seats and modules"; the community line "collaborate with
+    other developers."
+  - The guard is now a class: `LandingPage.head.test.tsx` gains four rules (no unmeasured quantifier, multiplier,
+    percentage or comparative; no third-party product name; no unearned positioning adjective; no compatibility claim
+    about unnamed third parties), and they read the body through a `pageText()` helper that joins text NODES with a
+    separator - because `document.body.textContent` glues adjacent elements together ("Build Faster" followed by
+    "Professional-grade" reads as "Build FasterPr"), so a word-boundary rule silently missed the claims it was written
+    for. That defect bit the check rather than the copy, and it was measured before it was fixed.
+  - Mutation proof both ways: against the pre-fix copy the new rules fail (rule 1 on `worldwide` and `faster`, rule 3 on
+    `professional-grade`) while the OLD deny-list test still passes on that same copy; re-injecting the removed wording
+    fails exactly the four rules and nothing else. Found by the writer's copy review.
+- **The mcp parse mirror tests non-emptiness, as Go does** - 2026-10-05
+  - `src/lib/mcpBlock.ts` refused two blocks the server accepts: it tested PRESENCE (`raw.command !== undefined` on an
+    http block, `raw.url !== undefined` on a stdio block) where `mcpblock.Parse` tests NON-EMPTINESS
+    (`server.Command != ""`, `server.URL != ""`). So `{"name":"a","type":"stdio","command":"x","url":""}` and
+    `{"name":"a","type":"http","url":"https://x.test","command":""}` came back as an error from the preview and `nil`
+    from the authority.
+  - Both checks now test non-emptiness: an empty string on the transport a block does not use is accepted, a NON-empty
+    field on the wrong transport is still refused, and the empty-`headers` control still agrees because Go's
+    `len(server.Headers) > 0` is false for `{}`. Found by the gate on `88fe3852`; the divergence was one-directional
+    with TS the stricter side, so the failure mode was a user-visible false refusal rather than a false accept.
+  - Tests: the two differential cases and the control are pinned in `src/tests/utils/mcpBlock.test.ts` (27 in the
+    file); reverting both predicates fails exactly the new case and nothing else.
 - **Runaway frontend test run drained the machine** - 2026-10-05
   - `package.json` declared `"test": "vitest"`, which starts Vitest in **watch mode** — a plain `npm test` never exits,
     so a forgotten run keeps its jsdom workers alive. It is now `"test": "vitest run"`, with `"test:watch": "vitest"`

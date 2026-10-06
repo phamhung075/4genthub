@@ -10,6 +10,29 @@ import type { AuthContextType } from '../types/componentTypes';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** What a token can and cannot become. `not-a-session-token` decodes but is not a session access token. */
+type TokenIdentity =
+  | { ok: true; user: User }
+  | { ok: false; reason: 'undecodable' | 'expired' }
+  | { ok: false; reason: 'not-a-session-token'; declaredType: string | null };
+
+/**
+ * The user-facing reason a stored token cannot start a session, or null when there is nothing to say.
+ * The token's own `type` claim is a DECLARATION of what it is - the mint endpoint writes `api_token`,
+ * a login writes `access` - so when it is present the refusal names it. When it is absent the refusal
+ * is an INFERENCE from the absent identity claim instead, and the wording says that rather than
+ * claiming to know what the token is.
+ */
+const sessionRefusal = (identity: TokenIdentity): string | null => {
+  if (identity.ok || identity.reason !== 'not-a-session-token') {
+    return null;
+  }
+  if (identity.declaredType) {
+    return `The token stored for this browser is not a session token: it declares type "${identity.declaredType}". Sign in again, or use it against the API instead of as a session token.`;
+  }
+  return 'The token stored for this browser cannot start a session: it carries no email claim and declares no type. Sign in again, or use it against the API instead of as a session token.';
+};
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -27,6 +50,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   userRef.current = user;
   const [tokens, setTokensState] = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // A token that could not form a session is reported here rather than by clearing the session
+  // silently; null when there is nothing to explain.
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Only initialize WebSocket when we have valid user and token
   const shouldConnectWebSocket = !!(user?.id && tokens?.access_token);
@@ -41,26 +67,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokens?.access_token || ''
   );
 
-  // Decode JWT token to extract user information
-  const decodeToken = (token: string): User | null => {
+  // A session is built from the token's claims: `sub` is the identity and `email` names it. The token
+  // also declares what it IS in its `type` claim, which is the honest thing to read first: a token
+  // minted by POST /api/v2/tokens says `type: api_token` while a login's token says `type: access`.
+  // Only when there is no declaration does this fall back to the absent claim.
+  const classifyToken = (token: string): TokenIdentity => {
+    let decoded: JWTPayload;
     try {
-      const decoded = jwtDecode<JWTPayload>(token);
+      decoded = jwtDecode<JWTPayload>(token);
+    } catch (error) {
+      logger.error('Error decoding token:', error);
+      return { ok: false, reason: 'undecodable' };
+    }
 
-      // Check if token is expired
-      if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-        return null;
-      }
+    // Check if token is expired
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      return { ok: false, reason: 'expired' };
+    }
 
-      return {
+    if (decoded.type && decoded.type !== 'access') {
+      return { ok: false, reason: 'not-a-session-token', declaredType: decoded.type };
+    }
+
+    // No declaration says otherwise, so this is an INFERENCE FROM ABSENCE: the app builds a username
+    // from the email claim, and a token without one cannot name a user. It is not evidence of what
+    // the token is - only the `type` check above reads that.
+    if (typeof decoded.email !== 'string' || decoded.email === '') {
+      return { ok: false, reason: 'not-a-session-token', declaredType: null };
+    }
+
+    return {
+      ok: true,
+      user: {
         id: decoded.sub,
         email: decoded.email,
         username: decoded.username || decoded.email.split('@')[0],
         roles: decoded.roles || ['user']
-      };
-    } catch (error) {
-      logger.error('Error decoding token:', error);
-      return null;
-    }
+      }
+    };
   };
 
   // Set tokens and update user state
@@ -80,9 +124,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       secure: import.meta.env.MODE === 'production'
     });
 
-    // Decode and set user
-    const userData = decodeToken(tokens.access_token);
-    setUser(userData);
+    // Classify and set user
+    const identity = classifyToken(tokens.access_token);
+    setUser(identity.ok ? identity.user : null);
+    setAuthError(sessionRefusal(identity));
   }, []);
 
   // An identity boundary: a new identity's tokens are arriving, so anything cached for the previous
@@ -130,9 +175,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           refresh_token: data.refresh_token
         });
         // Decode and set user from token
-        const userData = decodeToken(data.access_token);
-        if (userData) {
-          setUser(userData);
+        const identity = classifyToken(data.access_token);
+        setAuthError(sessionRefusal(identity));
+        if (identity.ok) {
+          setUser(identity.user);
 
           // Connect WebSocket with the new access token for real-time updates
           // WebSocket connection handled by useWebSocket hook
@@ -189,9 +235,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           refresh_token: data.refresh_token
         });
         // Decode and set user from token
-        const userData = decodeToken(data.access_token);
-        if (userData) {
-          setUser(userData);
+        const identity = classifyToken(data.access_token);
+        setAuthError(sessionRefusal(identity));
+        if (identity.ok) {
+          setUser(identity.user);
         }
       }
 
@@ -219,6 +266,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Clear authentication state
     setUser(null);
     setTokensState(null);
+    setAuthError(null);
     Cookies.remove('access_token');
     Cookies.remove('refresh_token');
 
@@ -288,7 +336,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         refresh_token: data.refresh_token || refresh_token  // Use existing if not provided
       };
 
-      const userData = decodeToken(data.access_token);
+      const identity = classifyToken(data.access_token);
+      setAuthError(sessionRefusal(identity));
+      const userData = identity.ok ? identity.user : null;
 
       // A refresh can come back with a DIFFERENT identity: these are plain same-origin document
       // cookies shared by every tab, so if another tab logged out and signed in as someone else,
@@ -335,14 +385,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const refresh_token = Cookies.get('refresh_token');
 
     if (access_token && refresh_token) {
-      const userData = decodeToken(access_token);
+      const identity = classifyToken(access_token);
 
-      if (userData) {
-        setUser(userData);
+      if (identity.ok) {
+        setUser(identity.user);
         setTokensState({ access_token, refresh_token });
-
-      } else if (refresh_token) {
-        // Token expired, try to refresh
+        setAuthError(null);
+      } else if (identity.reason === 'not-a-session-token') {
+        // NON-DESTRUCTIVE by design: a token that cannot form a session is not a dead session.
+        // Report why and leave the stored credentials alone - refreshing and then logging out turns
+        // "this token is unusable" into a silent logout that clears the cookies and every call 403.
+        setAuthError(sessionRefusal(identity));
+        logger.warn('Stored token is not a session token; leaving the stored credentials alone');
+      } else {
+        // Expired or undecodable: the ordinary expiry path, try the refresh token.
         refreshToken().catch(() => {
           logout();
         });
@@ -420,6 +476,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     tokens,
     isAuthenticated: !!user,
     isLoading,
+    authError,
     login,
     signup,
     logout,

@@ -37,6 +37,27 @@ describe('LoginForm', () => {
     (useNavigate as any).mockReturnValue(mockNavigate);
   });
 
+  // The user lands on this form when a stored token cannot form a session; the reason comes from
+  // AuthContext.authError, which is why it must be rendered rather than only held in state.
+  it('says why a stored token could not start a session', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      user: null,
+      tokens: null,
+      isAuthenticated: false,
+      isLoading: false,
+      authError: 'The token stored for this browser cannot start a session: it carries no email claim.',
+      login: mockLogin,
+      signup: vi.fn(),
+      logout: vi.fn(),
+      refreshToken: vi.fn(),
+      setTokens: vi.fn(),
+    });
+
+    renderLoginForm();
+
+    expect(screen.getByText(/cannot start a session/i)).toBeInTheDocument();
+  });
+
   it('renders login form with all elements', () => {
     renderLoginForm();
 

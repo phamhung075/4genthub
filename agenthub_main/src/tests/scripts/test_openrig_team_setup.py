@@ -985,6 +985,35 @@ def test_publish_skills_emits_one_block_per_skill_with_provenance(
     assert "publish summary: 3 pushed, 0 new version(s), 0 skipped" in out
 
 
+def test_publish_skills_attempts_every_entry_and_names_every_failure(
+    server, env, capsys, library
+):
+    """A refused block must not hide the rest: every entry is attempted, every failure is named
+    with its reason, and the exit is non-zero - never a silent partial publish."""
+    # the way the server refuses an oversized block (measured: openrig-user/SKILL.md, 67595 bytes)
+    server.overrides[("PUT", "/api/v2/openrig/modules/beta-skill/versions/1.0.0")] = (
+        400,
+        '{"detail": "content must be 1 to 65536 bytes"}',
+    )
+
+    code, out, err = _publish(capsys, library)
+
+    assert code == 1
+    attempted = [
+        r["path"].split("/")[5] for r in server.requests if r["method"] == "PUT"
+    ]
+    # every entry was attempted, including the ones ordered after the failure
+    assert sorted(attempted) == sorted(LIBRARY_TEXTS)
+    assert "module alpha-skill@1.0.0: applied" in out
+    assert "module beta-skill@1.0.0: FAILED" in out
+    assert "module gamma-skill@1.0.0: applied" in out
+    # the reason travels with the failure, on stdout and in the exit error
+    assert "content must be 1 to 65536 bytes" in out
+    assert "beta-skill" in err and "content must be 1 to 65536 bytes" in err
+    # and the summary reads as partial rather than as a short inventory
+    assert "publish summary: 2 of 3 block(s) pushed, 1 FAILED, 0 skipped" in out
+
+
 def test_publish_skills_rerun_skips_identical_blocks(server, env, capsys, library):
     assert _publish(capsys, library)[0] == 0
     _store_pushes(server)

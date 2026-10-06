@@ -70,6 +70,33 @@ describe('parseMcpBlock', () => {
     expect(result.error).toContain(expected);
   });
 
+  it('accepts an EMPTY string on the transport the block does not use, as the Go parser does', () => {
+    // Go tests server.Command != "" and server.URL != "", so an empty string on the
+    // unused transport is not a contradiction. Presence alone was the TS divergence.
+    const stdioWithEmptyUrl = parseMcpBlock(
+      JSON.stringify({ name: 'a', type: 'stdio', command: 'x', url: '' })
+    );
+    expect(stdioWithEmptyUrl.ok).toBe(true);
+
+    const httpWithEmptyCommand = parseMcpBlock(
+      JSON.stringify({ name: 'a', type: 'http', url: 'https://x.test', command: '' })
+    );
+    expect(httpWithEmptyCommand.ok).toBe(true);
+  });
+
+  it('still refuses a NON-empty field on the wrong transport, and the empty-headers control keeps agreeing', () => {
+    expect(
+      parseMcpBlock(JSON.stringify({ name: 'a', type: 'stdio', command: 'x', url: 'https://x.test' })).ok
+    ).toBe(false);
+    expect(
+      parseMcpBlock(JSON.stringify({ name: 'a', type: 'http', url: 'https://x.test', command: 'npx' })).ok
+    ).toBe(false);
+    // The control: Go's len(server.Headers) > 0 is false for {}, so this agrees.
+    expect(
+      parseMcpBlock(JSON.stringify({ name: 'a', type: 'stdio', command: 'x', headers: {} })).ok
+    ).toBe(true);
+  });
+
   it('refuses a credential-shaped value with the reference-a-secret message', () => {
     const result = parseMcpBlock(
       JSON.stringify({ name: 'a', type: 'http', url: 'https://x.test', headers: { Authorization: 'Bearer sk-abcdefghijklmnopqrstuvwx' } })

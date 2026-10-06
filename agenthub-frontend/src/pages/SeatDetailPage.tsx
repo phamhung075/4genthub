@@ -34,6 +34,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Checkbox } from '../components/ui/checkbox';
 import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select-simple';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Textarea } from '../components/ui/textarea';
@@ -387,6 +395,9 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
   const [target, setTarget] = useState('');
   const [kind, setKind] = useState<SeatLinkKind>('delegates_to');
   const [allow, setAllow] = useState(true);
+  // The link awaiting confirmation. Its allow state travels with it so the confirm states
+  // what is about to be removed rather than asking a bare yes/no.
+  const [pendingDelete, setPendingDelete] = useState<{ to: string; kind: SeatLinkKind; allow: boolean } | null>(null);
 
   const others = roomSeats.filter(candidate => candidate.seat_key !== seat);
   const seatKeyById = useMemo(() => {
@@ -459,7 +470,7 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
                       size="sm"
                       aria-label={`Delete ${targetKey} (${link.kind})`}
                       disabled={deleteLink.isPending}
-                      onClick={() => deleteLink.mutate({ to: targetKey, kind: link.kind })}
+                      onClick={() => setPendingDelete({ to: targetKey, kind: link.kind, allow: link.allow })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -475,6 +486,45 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={open => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delete this link?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete
+                ? `Removes the ${pendingDelete.kind} link from ${seat} to ${pendingDelete.to}. The row currently ${
+                    pendingDelete.allow ? 'allows' : 'denies'
+                  } it.`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteLink.isPending}
+              onClick={() => {
+                if (!pendingDelete) {
+                  return;
+                }
+                deleteLink.mutate({ to: pendingDelete.to, kind: pendingDelete.kind });
+                setPendingDelete(null);
+              }}
+            >
+              Delete link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>

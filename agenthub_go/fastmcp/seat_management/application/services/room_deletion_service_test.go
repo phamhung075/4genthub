@@ -81,15 +81,35 @@ func (f *fakeRoomDeletionStore) InTransaction(ctx context.Context, fn func(ctx c
 	return err
 }
 
-func TestDeleteRoomRemovesDependentsBeforeParents(t *testing.T) {
+// A room that still holds seats is refused, naming how many, and not one dependent row is
+// touched: deleting a room never cascades its seats away.
+func TestDeleteRoomRefusesARoomThatHoldsSeats(t *testing.T) {
 	store := &fakeRoomDeletionStore{
 		room:  &repositories.Room{ID: "r1", Slug: "dev"},
 		seats: []repositories.Seat{{ID: "s1"}, {ID: "s2"}},
 	}
+	err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev")
+	if !errors.Is(err, ErrRoomNotEmpty) {
+		t.Fatalf("err = %v, want ErrRoomNotEmpty", err)
+	}
+	if !strings.Contains(err.Error(), `room "dev" still holds 2 seat(s)`) {
+		t.Errorf("err = %q, want it to name the count", err)
+	}
+	for _, call := range store.calls {
+		if call != "tx-begin" && call != "tx-end" {
+			t.Errorf("a refused delete touched rows: %v", store.calls)
+		}
+	}
+}
+
+// An empty room deletes its room overlay, its reported statuses and itself, in one
+// transaction, and nothing else.
+func TestDeleteRoomDeletesAnEmptyRoom(t *testing.T) {
+	store := &fakeRoomDeletionStore{room: &repositories.Room{ID: "r1", Slug: "dev"}}
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
 	}
-	want := "tx-begin,links:s1,overlay:s1,resolved:s1,seat:s1,links:s2,overlay:s2,resolved:s2,seat:s2,room-overlay:r1,status:dev,room:r1,tx-end"
+	want := "tx-begin,room-overlay:r1,status:dev,room:r1,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}
@@ -103,19 +123,22 @@ func TestDeleteRoomAbsentRoom(t *testing.T) {
 	}
 }
 
+// A failing delete in the empty-room transaction stops the remaining deletes and propagates, so
+// InTransaction rolls back whatever came before and the room row is never removed.
 func TestDeleteRoomStopsAtFirstFailure(t *testing.T) {
 	boom := errors.New("boom")
-	store := &fakeRoomDeletionStore{
-		room:   &repositories.Room{ID: "r1"},
-		seats:  []repositories.Seat{{ID: "s1"}},
-		failOn: "seat:s1", failErr: boom,
-	}
-	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); !errors.Is(err, boom) {
-		t.Fatalf("err = %v, want boom", err)
-	}
-	for _, call := range store.calls {
-		if strings.HasPrefix(call, "room") {
-			t.Errorf("room rows deleted after a failure: %v", store.calls)
+	for _, failOn := range []string{"room-overlay:r1", "status:dev"} {
+		store := &fakeRoomDeletionStore{
+			room:   &repositories.Room{ID: "r1", Slug: "dev"},
+			failOn: failOn, failErr: boom,
+		}
+		if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); !errors.Is(err, boom) {
+			t.Fatalf("fail on %s: err = %v, want boom", failOn, err)
+		}
+		for _, call := range store.calls {
+			if call == "room:r1" {
+				t.Errorf("fail on %s: the room row was deleted after a failure: %v", failOn, store.calls)
+			}
 		}
 	}
 }

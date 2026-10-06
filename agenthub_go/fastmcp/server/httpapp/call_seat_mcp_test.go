@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
 	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/infrastructure/database"
 	interfacelayer "agenthub/fastmcp/task_management/interface"
 )
 
@@ -153,4 +155,60 @@ func TestMCPCallSeatReportsAResolverFailure(t *testing.T) {
 	if result.Success || result.Error != "room ghost not found" {
 		t.Errorf("result = %+v", result)
 	}
+}
+
+// The call_seat resolver takes its MCP URL from the request origin dispatchMCPTool put on
+// ctx, so a self-hosted stack with no AGENTHUB_PUBLIC_URL renders the caller's own URL.
+func TestCallSeatWiringDerivesMCPURLFromRequestContext(t *testing.T) {
+	t.Setenv(publicURLEnv, "")
+	mcpURL := capturedCallSeatMCPURL(t, authedMCPRequest("internal:8000", map[string]string{
+		"X-Forwarded-Proto": "https",
+		"X-Forwarded-Host":  "mcp.example.test, internal",
+	}))
+
+	if mcpURL != "https://mcp.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the forwarded request origin", mcpURL)
+	}
+}
+
+// A pinned AGENTHUB_PUBLIC_URL still wins over the request the tool call arrived on.
+func TestCallSeatWiringPinnedURLWinsOverRequestContext(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://pinned.example.test/")
+	mcpURL := capturedCallSeatMCPURL(t, authedMCPRequest("internal:8000", nil))
+
+	if mcpURL != "https://pinned.example.test/mcp" {
+		t.Errorf("rendered MCP URL = %q, want the pinned override", mcpURL)
+	}
+}
+
+// capturedCallSeatMCPURL runs one successful call_seat through newCallSeatController with
+// newSeatSource stubbed, and returns the MCP URL the resolver built the source with.
+func capturedCallSeatMCPURL(t *testing.T, req *http.Request) string {
+	t.Helper()
+	var mcpURL string
+	previous := newSeatSource
+	newSeatSource = func(_ *database.SessionManager, u string) (seatSource, error) {
+		mcpURL = u
+		return &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc123", Runtime: "omp"}}, nil
+	}
+	t.Cleanup(func() { newSeatSource = previous })
+
+	uid := "11111111-1111-4111-8111-111111111111"
+	room, seat := "dev", "coder"
+	result := newCallSeatController(nil).CallSeat(withRequestPublicOrigin(context.Background(), req), &room, &seat, &uid)
+	if success, _ := result.Get("success"); success != true {
+		t.Fatalf("call_seat failed: %v", result)
+	}
+	return mcpURL
+}
+
+func authedMCPRequest(host string, headers map[string]string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/mcp", nil)
+	if host != "" {
+		req.Host = host
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	return req
 }

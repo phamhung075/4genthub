@@ -30,13 +30,16 @@ export interface SignupResult {
 
 export interface JWTPayload {
   sub: string;
-  email: string;
+  /** Absent on a token that declares another type (a minted `api_token`); a session needs it. */
+  email?: string;
   exp?: number;
   username?: string;
   roles?: string[];
   iat?: number;
   iss?: string;
   aud?: string | string[];
+  /** The token's own declaration of what it is: 'access', 'refresh', 'reset' or 'api_token'. */
+  type?: string;
   // Add other JWT payload fields as needed
 }
 
