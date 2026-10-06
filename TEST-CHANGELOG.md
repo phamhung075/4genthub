@@ -2,6 +2,17 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a deliberate socket close is not a failure (frontend)
+
+- `src/tests/services/WebSocketClient.test.ts` adds the case that DRIVES the deliberate close: connect, open, then
+  `disconnect()` against the mock socket, whose `close()` fires `onclose` synchronously - asserting `disconnected`
+  fired and `reconnectFailed` did NOT. Proved by removing the branch: the case then fails with `reconnectFailed`
+  called once, which is the false failure reproduced as a test. The give-up path keeps its own case
+  ('should emit reconnectFailed after max attempts'), untouched and still passing.
+- Counts: that file 28 -> 29; the full suite 1763 -> 1764, 0 errors.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/services/WebSocketClient.test.ts` -> 29 passed;
+  `npx vitest run` -> 102 files / 1764 passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - the block mirror stops being stricter than the authority (frontend)
 
 - `src/tests/utils/mcpBlock.test.ts` adds the two cases that pin the alignment: a block with CAPITALISED tags and

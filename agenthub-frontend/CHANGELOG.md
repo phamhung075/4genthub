@@ -245,6 +245,16 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A deliberate disconnect stops reporting a reconnection failure** - 2026-10-06
+ - `disconnect()` raises the attempt counter to its maximum to suppress auto-reconnect and then closes the socket,
+ and `handleClose` could not tell that state from having EXHAUSTED retries - so it took its give-up branch and
+ emitted `reconnectFailed`, whose message is "Failed to reconnect to WebSocket server", for a close the user asked
+ for. The retry flag was already correct on that path, so no retry was promised; the ERROR STRING was what lied.
+ - The intent is now recorded where it is decided - `closingIntentionally`, set by `disconnect()` and cleared by
+ `connect()` - and `handleClose` short-circuits on it. A server-initiated close still retries, and still reports
+ a failure when retries run out: that path's own case is untouched and still passes.
+ - Measured: with the branch removed, the new case fails with `reconnectFailed` called once, which is the false
+ failure reproduced as a test.
 - **Two transitive advisories closed, and the lockfile question answered** - 2026-10-06
   - `source-map-js` 1.2.1 -> **1.2.2** and `brace-expansion` 2.0.2 -> **2.1.7**. Both are TRANSITIVE - the first through
     `postcss` (and `tailwindcss > postcss-nested > postcss`), the second through `tailwindcss > sucrase > glob > minimatch` -

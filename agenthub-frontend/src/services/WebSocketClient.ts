@@ -22,6 +22,8 @@ export class WebSocketClient extends EventEmitter {
   private aiBufferTimer: NodeJS.Timeout | null = null;
   private sequenceNumber = 0;
   private isConnecting = false;
+  /** Set by disconnect() so handleClose can tell a close we asked for from one that failed. */
+  private closingIntentionally = false;
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private processedMessages = new Set<string>();
   private readonly MAX_PROCESSED_MESSAGES = 1000;
@@ -53,6 +55,7 @@ export class WebSocketClient extends EventEmitter {
     }
 
     this.isConnecting = true;
+    this.closingIntentionally = false;
     // Use configuration instead of direct environment access
     let wsBaseUrl = config.websocket.url;
 
@@ -303,6 +306,15 @@ export class WebSocketClient extends EventEmitter {
     this.stopHeartbeat();
     this.emit('disconnected');
 
+    // A close the client ASKED FOR is not a failure. disconnect() raises the attempt count to suppress
+    // auto-reconnect, which would otherwise land in the give-up branch below and report a reconnection
+    // failure for a deliberate close - a state reporting something that did not happen.
+    if (this.closingIntentionally) {
+      this.closingIntentionally = false;
+      logger.debug('[WebSocket v2.0] Intentional close - no reconnect, no failure reported');
+      return;
+    }
+
     // Check for authentication failure (code 1008 or 4001-4003)
     if (event?.code === 1008 || (event?.code && event.code >= 4001 && event.code <= 4003)) {
       logger.error('[WebSocket] Authentication failed - not attempting reconnect');
@@ -386,6 +398,9 @@ export class WebSocketClient extends EventEmitter {
     });
 
     this.reconnectAttempts = this.wsConfig.maxReconnectAttempts; // Prevent auto-reconnect
+    // The attempt count above is what suppresses reconnection, and handleClose cannot tell it apart from
+    // having exhausted retries - so the intent is recorded here rather than inferred there.
+    this.closingIntentionally = true;
 
     if (this.ws) {
       this.ws.close();
