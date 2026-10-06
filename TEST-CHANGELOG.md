@@ -2,6 +2,27 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the kind set gets a guard on the axis that drifts: the DDL against the enum (Go, found by fe-dev while checking a gate)
+
+- New `TestSeatKindConstraintTracksTheAcceptedKinds` (`infrastructure/database`): each DDL source's
+  `ck_modules_kind` set must EQUAL `resolver.Kinds()`, in BOTH directions - a kind the enum accepts and
+  the DDL refuses is a module that validates, publishes, seeds and then fails an INSERT on the
+  constraint; a kind the DDL allows and the enum refuses is a constraint wider than the language. The
+  failure message prints both sets.
+- Why it exists BESIDE `TestSeatDDLParity`: that guard compares the two DDL SOURCES with each other -
+  the drift that HAD happened - while the kind set is known in a THIRD place, so a kind added to the
+  enum alone passed every application check and nothing between the three places said so. This is the
+  same remediation the other two seats found today: compare against something that does not move with
+  the thing being checked.
+- `resolver.Kinds()` is now the ONE enumeration of the kind set, and `modulecontent`'s
+  `TestEveryValidKindHasARule` reads it instead of writing the list a third time.
+- **Falsified**: dropping a kind from EITHER side fails the guard with
+  `constrains [...] while resolver.Kinds() accepts [...]`.
+- Commands: `cd agenthub_go && go vet` (0 bytes) and `go test -count=1` (ok) for
+  `./fastmcp/seat_management/infrastructure/database/`, `./fastmcp/seat_management/domain/modulecontent/`
+  and `./fastmcp/seat_management/domain/resolver/`.
+
+
 ## 2026-10-06 - the provenance checker's panic, found by its own assertion (Go, packet 6)
 
 - `verifyGuideLocks` sliced `got[:12]` to name a digest in its refusal, so a caller handing a value

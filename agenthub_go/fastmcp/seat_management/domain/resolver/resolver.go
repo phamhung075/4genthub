@@ -38,6 +38,19 @@ func ValidKind(kind ModuleKind) bool {
 	return false
 }
 
+// Kinds is the kind set, enumerated ONCE, in the order the switch above lists it.
+//
+// It exists because the set is known in more than one place and they must not drift: the enum here,
+// and the `kind IN (...)` CHECK constraint the database enforces in two DDL sources. A kind added to
+// ValidKind and not to the constraint passes every application check and then fails an INSERT, which
+// is how the policy kind arrived - so the DDL guard asks THIS function what the accepted set is
+// rather than repeating the list a third time.
+func Kinds() []ModuleKind {
+	return []ModuleKind{
+		KindInstruction, KindDocument, KindSkill, KindTool, KindMCP, KindMemory, KindPolicy,
+	}
+}
+
 type ModuleVersion struct {
 	Slug    string
 	Version string

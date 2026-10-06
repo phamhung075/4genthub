@@ -75,15 +75,12 @@ func TestValidatePerKind(t *testing.T) {
 }
 
 // Every kind the resolver accepts has a rule here. A kind added to resolver.ValidKind without one
-// fails this test rather than reaching production as a silent pass.
+// fails this test rather than reaching production as a silent pass. The list comes from
+// resolver.Kinds() rather than being written a third time, so THERE IS ONE ENUMERATION of the kind set.
 func TestEveryValidKindHasARule(t *testing.T) {
-	kinds := []resolver.ModuleKind{
-		resolver.KindInstruction, resolver.KindDocument, resolver.KindSkill,
-		resolver.KindTool, resolver.KindMCP, resolver.KindMemory, resolver.KindPolicy,
-	}
-	for _, kind := range kinds {
+	for _, kind := range resolver.Kinds() {
 		if !resolver.ValidKind(kind) {
-			t.Fatalf("%q is not a valid kind: this list must track resolver.ValidKind", kind)
+			t.Fatalf("%q is not a valid kind: resolver.Kinds must track resolver.ValidKind", kind)
 		}
 		if err := Validate(kind, "probe"); errors.Is(err, ErrNoRule) {
 			t.Errorf("kind %q has no content rule: state one in Validate", kind)
