@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the bundle build's silence about a missing pin is pinned three ways (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained three tests over the existing
+  bundle fixture (stubbed `subprocess.run`, real `cmd_bundle` path):
+  `test_bundle_warns_when_the_rig_root_carries_no_pin` (warning on stderr naming the seat and
+  `no policy.json in agents/seat1`, while stdout stays exactly the bundle path and the exit is 0),
+  `test_bundle_warns_when_the_pin_belongs_to_another_seat` (the shared-seat-type case: the check
+  names the seat the policy actually belongs to), and
+  `test_bundle_says_nothing_when_the_pin_is_this_seats` (no noise when the rig root is correct).
+- Proved by reverting the change: with the warning removed the two warning tests fail and the
+  no-noise test passes, which is the expected split — one test pins the new signal and one pins the
+  absence of a false one.
+- The real-invocation evidence the row asks for is separate from these tests and was run with the
+  actual `rig bundle create`: `Bundle created` + `Integrity: PASS` + `policy.json members: 0` with no
+  warning before, and the same command printing one warning line after, with the exit still 0.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **93 passed** (90 before these three).
+
 ## 2026-10-06 - the friction table lands, and the class no gate saw gets its guard (Go)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go` (new,

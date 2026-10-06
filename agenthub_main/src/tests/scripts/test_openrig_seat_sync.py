@@ -630,6 +630,108 @@ def test_rig_build_replaces_its_own_rendered_content(env, tmp_path, capsys):
     assert "kept" not in err
 
 
+BUNDLE_RIG_YAML = (
+    'version: "0.2"\n'
+    "name: room1\n"
+    "pods:\n"
+    "  - id: room1\n"
+    "    members:\n"
+    "      - id: seat1\n"
+    "        agent_ref: local:agents/seat1\n"
+)
+
+
+def _bundle_fixture(monkeypatch, tmp_path, policy=None):
+    """A pinned seat in a scratch store, plus a rig root whose agent dir may carry a policy."""
+    seats = tmp_path / "seats"
+    seat_dir = seats / "room1" / "seat1"
+    seat_dir.mkdir(parents=True)
+    (seat_dir / "pinned.json").write_text(
+        json.dumps({"hash": HASH_LONG, "path": str(seat_dir / HASH_LONG)})
+    )
+    monkeypatch.setattr(seat_sync, "DEFAULT_OUT", seats)
+
+    rig_yaml = tmp_path / "rig.yaml"
+    rig_yaml.write_text(BUNDLE_RIG_YAML)
+    agent_dir = tmp_path / "rig-root" / "agents" / "seat1"
+    agent_dir.mkdir(parents=True)
+    (agent_dir / "agent.yaml").write_text('name: seat1\nversion: "1.0.0"\n')
+    if policy is not None:
+        (agent_dir / "policy.json").write_text(json.dumps(policy))
+
+    monkeypatch.setattr(
+        seat_sync.subprocess,
+        "run",
+        lambda command, **kwargs: subprocess.CompletedProcess(command, 0),
+    )
+    return rig_yaml, tmp_path / "rig-root", tmp_path / "bundles"
+
+
+def _run_bundle(rig_yaml, rig_root, out_dir):
+    return run_cli(
+        [
+            "bundle",
+            "room1",
+            "seat1",
+            "--rig-yaml",
+            str(rig_yaml),
+            "--rig-root",
+            str(rig_root),
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+
+
+def test_bundle_warns_when_the_rig_root_carries_no_pin(monkeypatch, tmp_path, capsys):
+    """The build used to say nothing: `rig bundle create` answered Bundle created, the artifact
+    passed its own integrity check, and the first sign of trouble was offline-install refusing it
+    later. The operator is now told at BUILD time what the bundle does not contain."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(monkeypatch, tmp_path, policy=None)
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    # stdout stays exactly the machine-readable line callers parse.
+    assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
+    assert "warning:" in err
+    assert "seat1" in err and "no policy.json in agents/seat1" in err
+    assert "offline install will refuse it" in err
+
+
+def test_bundle_warns_when_the_pin_belongs_to_another_seat(
+    monkeypatch, tmp_path, capsys
+):
+    """Two seats sharing one seat type share one agent directory in a bundle, so only one of their
+    policies can ride there. The seat that lost is named, with the reason, rather than being left
+    to offline-install's refusal."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(
+        monkeypatch, tmp_path, policy={"Seat": "someone-else", "Links": []}
+    )
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "warning:" in err
+    assert "belongs to seat 'someone-else'" in err
+
+
+def test_bundle_says_nothing_when_the_pin_is_this_seats(monkeypatch, tmp_path, capsys):
+    """No noise: a rig root that carries this seat's own policy produces no warning at all."""
+    rig_yaml, rig_root, out_dir = _bundle_fixture(
+        monkeypatch, tmp_path, policy={"Seat": "seat1", "Links": []}
+    )
+
+    code = _run_bundle(rig_yaml, rig_root, out_dir)
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert err == ""
+    assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
+
+
 def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     env.set_seat(HASH_A)

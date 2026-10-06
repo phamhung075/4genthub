@@ -664,6 +664,55 @@ def cmd_rig(args: argparse.Namespace) -> None:
     print(f"rig:{rig_dir / 'rig.yaml'}")
 
 
+def unpinned_seats(rig_yaml: Path, rig_root: Path) -> list[tuple[str, str]]:
+    """Seats of a rig spec whose agent directory in the rig root carries no usable pinned policy.
+
+    A bundle copies ``<rig-root>/agents/<agent>/`` verbatim, and ``seatcheck`` reads its policy
+    from the pin that directory is supposed to hold - so a bundle built from a rig root without it
+    holds seats that cannot decide or audit offline. Until now the build said nothing about that:
+    ``rig bundle create`` answers "Bundle created" and the artifact passes its own integrity check,
+    while the first sign of trouble is ``offline-install`` refusing the bundle later
+    ("no pinned policy found under .../agents").
+
+    Returns ``(seat, reason)`` pairs, and an empty list when there is nothing true to say: if the
+    spec or the root is unreadable the build that got this far had a spec the CLI could read, so a
+    warning about the check itself would be noise rather than a signal.
+    """
+    try:
+        import yaml  # lazy: the other subcommands stay dependency-free
+    except ImportError:  # pragma: no cover - environment dependent
+        return []
+    try:
+        spec = yaml.safe_load(Path(rig_yaml).read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError):
+        return []
+    if not isinstance(spec, dict):
+        return []
+
+    missing: list[tuple[str, str]] = []
+    for pod in spec.get("pods") or []:
+        for member in (pod or {}).get("members") or []:
+            seat = str((member or {}).get("id") or "")
+            ref = str((member or {}).get("agent_ref") or "")
+            agent = ref.partition("local:agents/")[2]
+            if not seat or not agent or not safe_relative(agent):
+                continue
+            policy = Path(rig_root) / "agents" / agent / "policy.json"
+            if not policy.is_file():
+                missing.append((seat, f"no policy.json in agents/{agent}"))
+                continue
+            try:
+                claimed = json.loads(policy.read_text(encoding="utf-8")).get("Seat")
+            except (OSError, ValueError):
+                missing.append((seat, f"the policy in agents/{agent} is unreadable"))
+                continue
+            # Two seats sharing one seat type share one agent directory, so only one of their
+            # policies can travel; the other seat is here.
+            if isinstance(claimed, str) and claimed != seat:
+                missing.append((seat, f"the policy in agents/{agent} belongs to seat {claimed!r}"))
+    return missing
+
+
 def cmd_bundle(args: argparse.Namespace) -> None:
     room = validate_name("room", args.room)
     seat = validate_name("seat", args.seat)
@@ -705,6 +754,22 @@ def cmd_bundle(args: argparse.Namespace) -> None:
     except subprocess.CalledProcessError as err:
         raise SyncError(
             f"rig bundle create failed with exit code {err.returncode}", EXIT_REMOTE
+        )
+
+    # The build succeeded and the artifact passes its own integrity check, so this is the only
+    # place the operator can be told what it does NOT contain. WARNED rather than refused: a
+    # bundle without a pin is still complete for everything that does not enforce or audit, and
+    # `offline-install` already refuses it with a precise message - what was missing was the
+    # SIGNAL AT BUILD TIME, which is what this adds.
+    missing = unpinned_seats(args.rig_yaml, args.rig_root)
+    if missing:
+        detail = "; ".join(f"{seat} ({reason})" for seat, reason in missing)
+        print(
+            f"warning: {len(missing)} seat(s) in this bundle have no usable pinned policy, so a "
+            f"seat launched from it offline cannot decide or audit and an offline install will "
+            f"refuse it - {detail}. Build the rig root with `{Path(__file__).name} rig <room>`, "
+            "which materializes each seat's policy.json into its agent directory.",
+            file=sys.stderr,
         )
     print(str(bundle_path))
 
