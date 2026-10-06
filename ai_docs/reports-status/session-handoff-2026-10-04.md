@@ -9,6 +9,11 @@ purpose; do not treat a pending item as done because it is written down.
 1. **Push to production.** Owner approved it on 2026-10-04. Two `git push origin main` attempts
    were refused by the harness classifier (stage-2 transient error, not a policy denial), so the
    push was left to the owner. The range is ~67 commits.
+   **Update (later, 2026-10-06): LANDED — this item is CLOSED, not still waiting on the owner.**
+   The push HAPPENED: `origin/main` = **1b4ce29b** (measured with `git ls-remote origin main`), and
+   production `/health` reported **0.0.19 healthy** with the dashboard bundle moving to
+   `assets/index-C6aQWb05.js`. The paragraph above is kept AS WRITTEN so the transition stays
+   visible — pending, then landed — the same shape items 2 (T6) and 5 (`call_seat`) already use.
    **Preconditions are VERIFIED, not assumed:** production `seats` has **no** `status` column and
    **has** `permission_policy` (the two G1a requirements that would otherwise make create-seat
    return 500), read from `srv-captain--4genthubdb.1.73k3ki67xpxx27sj5mejo9ueq` on host `4genthub`
