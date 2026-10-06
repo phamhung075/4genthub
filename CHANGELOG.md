@@ -37,6 +37,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+**The OF4 local verification stack, written down (2026-10-06)**
+
+- A new page, `ai_docs/verification/of4-local-stack.md`, records what fe-dev had to re-derive: the exact bring-up (Postgres on `:54331` with its data dir and `-k` socket, the Go server's full env block on `:8000`, Vite on `:3800` with `vite.of4.config.mjs` and why that file is untracked), and the two facts that are not guessable.
+- **`VITE_DISABLE_AUTH=true` bypasses ONLY the route guard** — read at `agenthub-frontend/src/config/environment.ts:70`, consumed at `src/components/auth/ProtectedRoute.tsx:19-22` — while `src/services/apiV2.ts:14-16` takes the bearer from the **`access_token` cookie**, so every page renders "Not authenticated" until that cookie exists. The remedy, and why any bearer is accepted (`AUTH_ENABLED=false` resolves the development identity for whatever bearer arrived, without validating it — `httpapp/ws_mount.go:94-100`, `auth/keycloak_dependencies.go:571-582`), are both cited to code.
+- **A second Postgres cluster against the same data directory kills the first** (`pre-existing shared memory block … is still in use`, then an immediate shutdown), **after which the Go server hangs on dead connections while `/health` still answers 200.** The mechanism is verified rather than relayed: `handleHealth` (`fastmcp/server/httpapp/http.go:162-183`) reads no database at all, so `/health` is a process-liveness signal and can never be a readiness one — the page states the debug rule that follows.
+- The page also carries the session-scope facts (the server and Vite die with the seat's session; `/tmp/of4pg` outlives a machine stop), the launch commands, and four operational limits: the `--out` store a per-seat `HOME` breaks, the rig build deleting operator-placed files, a model the page accepts that the runtime cannot authenticate (`resolver.CheckRuntime`, `seat_management/domain/resolver/runtime.go:23`, validates the runtime only), and the seats route carrying no `model` field.
+
 **The bridge records the expected hash it was last in sync with, so a drift is visible on the operator's own machine** (2026-10-06)
 
 - Drift was only ever visible SERVER-side: `GET /api/v2/openrig/machines` derives `expected_hash` from the seat's newest stored snapshot and renders `sync` (`in_sync` / `drift` / `unknown`), but that list takes a USER token and a bridge deliberately holds only its MACHINE token — so the machine's own view had nothing to compare its running hash against. The client half of drift visibility was missing, not the server half.

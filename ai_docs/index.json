@@ -508,9 +508,22 @@
         }
       ],
       "path": "troubleshooting-guides"
+    },
+    "verification": {
+      "count": 1,
+      "files": [
+        {
+          "hash": "b1c7485900d40651722fbbf75bc30985",
+          "modified": "2026-10-06T18:43:39.151387",
+          "name": "of4-local-stack.md",
+          "path": "verification/of4-local-stack.md",
+          "size": 9310
+        }
+      ],
+      "path": "verification"
     }
   },
-  "generated_at": "2026-10-06T18:36:42.727453",
+  "generated_at": "2026-10-06T18:43:39.403166",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -644,8 +657,13 @@
       "files": [
         "complete-troubleshooting-guide.md"
       ]
+    },
+    "verification": {
+      "files": [
+        "of4-local-stack.md"
+      ]
     }
   },
-  "total_directories": 20,
-  "total_files": 55
+  "total_directories": 21,
+  "total_files": 56
 }
