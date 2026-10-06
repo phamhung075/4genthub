@@ -14,6 +14,9 @@ do it silently because every field would be filled in.
 texts are a **pure copy** of the seed-library blocks, verified byte-identical to the digests recorded
 in `seedlibrary/guides.lock.json`, 11 of 11.
 
+*Measured 2026-10-06: the sha256 of each text file compared with its entry in that lock — 11 of 11 — at
+the commit that created this directory (`10e5222b`), and again after the note edits.*
+
 ## The seat types: seven clean, three flagged (7 + 3 = 10)
 
 | seats | seat_type | why |
@@ -25,6 +28,11 @@ in `seedlibrary/guides.lock.json`, 11 of 11.
 Seven seats match a seeded type by name — `lead`, `reviewer`, `writer`, `go-dev`, `go-dev2`, `fe-dev`,
 `web-dev` — and three do not: `skills-dev`, `context-dev`, `feedback-dev`. Seven plus three is the ten
 seats in `team.json`, which is the check to run on this paragraph rather than counting table rows.
+
+*Measured 2026-10-06: `resolved_spec_name` per seat from the OpenRig ledger (`nodes`, rig
+`01M447FRCC0P2WBKPA45R21M8N`) compared against the nine files in `seedlibrary/seat-types/`. NOT from
+`team.json` — that file states `developer` for the three, so a check reading it would be comparing the
+file with itself, which is how a first version of this check answered ten and zero and looked right.*
 
 The three flagged seats are a **product choice still open with the owner**: either `orchestrator`
 becomes a tenth seed type — which means a new `seat-types/orchestrator.yaml` in the seed library, and
