@@ -44,12 +44,26 @@ export const TaskEditDialog: React.FC<TaskEditDialogProps> = ({
 
   // Load available seats on mount
   React.useEffect(() => {
+    // This component is rendered conditionally, so closing the dialog while the load is still in
+    // flight unmounts it and the continuation would write state on a component that is gone. React
+    // ignores such a write, so nothing crashes here - the flag keeps the write from being made at
+    // all, which is the shape used at the one site where a late write did throw.
+    let cancelled = false;
+
     getAvailableAgents()
-      .then(setAvailableSeats)
+      .then(seats => {
+        if (cancelled) return;
+        setAvailableSeats(seats);
+      })
       .catch(error => {
+        if (cancelled) return;
         logger.error('Error loading seats for the assignee picker:', error);
         setAvailableSeatsError(true);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Handle click outside to close dropdown
