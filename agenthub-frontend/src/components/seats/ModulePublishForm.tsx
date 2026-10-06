@@ -21,6 +21,7 @@ import {
   MODULE_VERSION_PATTERN,
 } from '../../lib/seatNames';
 import { SEAT_MODULE_KINDS } from '../../types/seatTypes';
+import { parseMcpBlock } from '../../lib/mcpBlock';
 import type { SeatModuleKind } from '../../types/seatTypes';
 
 const EMPTY_FORM = { slug: '', version: '', kind: 'instruction' as SeatModuleKind, content: '' };
@@ -33,7 +34,13 @@ export const ModulePublishForm: React.FC = () => {
   const versionValid = MODULE_VERSION_PATTERN.test(form.version);
   const contentBytes = new TextEncoder().encode(form.content).length;
   const contentValid = contentBytes > 0 && contentBytes <= MODULE_CONTENT_MAX_BYTES;
-  const valid = slugValid && versionValid && contentValid;
+  // An mcp module's content is ONE server block that the renderer parses, and the publish route only
+  // checks the kind, not the block - measured: `{"kind":"mcp","content":"not a block"}` is accepted
+  // (200). So a plain-text publish here would be refused later, by some seat's resolve. The same mirror
+  // the MCP block form uses decides it before the request.
+  const mcpBlock = form.kind === 'mcp' ? parseMcpBlock(form.content) : null;
+  const blockValid = mcpBlock === null || mcpBlock.ok;
+  const valid = slugValid && versionValid && contentValid && blockValid;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -118,6 +125,9 @@ export const ModulePublishForm: React.FC = () => {
               <p className="text-xs text-destructive">
                 Content is {contentBytes} bytes; the limit is {MODULE_CONTENT_MAX_BYTES}.
               </p>
+            )}
+            {mcpBlock && !mcpBlock.ok && (
+              <p className="text-xs text-destructive">Not a server block: {mcpBlock.error}</p>
             )}
           </div>
           {publish.isError && (

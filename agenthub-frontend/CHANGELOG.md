@@ -218,6 +218,16 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The module form refuses an mcp block the renderer would refuse** - 2026-10-06
+ - An mcp module's content is ONE whole server block that the renderer PARSES, and the publish route checks
+ the KIND rather than the block: measured on the running backend, `{"kind":"mcp","content":"not a block"}`
+ is accepted with 200. The generic publish form therefore let a plain-text mcp module through, and the
+ refusal landed later, on some seat's resolve, where it reads as a broken seat rather than a bad publish.
+ The form now parses the block with the same mirror the MCP block form uses (`lib/mcpBlock`), keeps Publish
+ disabled when the content is not one server block, and says why under the field.
+ - The kind union is unchanged - `mcp` is still offered, and the existing case that pins that union still
+ passes. The first version of this fix hid the kind instead and broke that case, which is how the pinned
+ decision surfaced; refusing the SHAPE is the fix, not removing the option.
 - **The seat LLM panel no longer promises an effect an update does not apply** - 2026-10-06
  - Its model hint read "Empty uses the runtime default", which is the CREATE semantics. On an update an
  emptied box KEEPS the stored model - a blank field never clears a field - so the sentence said the model

@@ -2,6 +2,19 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the module form refuses an mcp block the renderer would refuse (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` adds the pair: with kind mcp and plain-text content, Publish is
+  disabled and the field says the content is not one server block; replacing that text with one block enables
+  Publish. Proved by removing the gate from the form's validity expression - the case then fails with
+  "Received element is not disabled", which is precisely the plain-text publish the route would have accepted.
+- The file's existing case asserting that mcp IS offered in the kind union is untouched and still passes. The
+  first version of this fix DELETED mcp from the union and broke it, which is how the pinned decision surfaced:
+  the union's membership is deliberate, so the fix moved to refusing the SHAPE of the content rather than
+  hiding the kind.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
+  passed; `npx vitest run` -> 102 files / 1760 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - the socket's dev wiring, and the reason it records (frontend)
 
 - `src/tests/components/ProjectList/components/ProjectListHeader.test.tsx` pins the two facts the surface
