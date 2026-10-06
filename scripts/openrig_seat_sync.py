@@ -98,6 +98,13 @@ CHECKER_NAME = "seatcheck"
 OMP_MCP_RENDER_PATH = PurePosixPath("runtime/omp-mcp.json")
 OMP_MCP_INSTALL_NAME = ".mcp.json"
 
+# The second rendered file, and it is NOT the same kind of thing as the first. `runtime/omp-mcp.json`
+# is wholly the render's document, so it installs verbatim; `runtime/omp-config.yml` carries one
+# setting for a file that is OMP'S OWN (the agent directory's `config.yml`, which may already hold
+# other settings), so it is merged AT THE KEY LEVEL and never copied over the file.
+OMP_CONFIG_RENDER_PATH = PurePosixPath("runtime/omp-config.yml")
+OMP_CONFIG_INSTALL_NAME = "config.yml"
+
 # Where omp keeps per-seat state: the runner's --state-root default, plus the session name. A module
 # constant like DEFAULT_OUT, so a test can point it at a scratch tree. A launch that overrides
 # --state-root cannot be followed from here - the install refuses legibly instead of missing quietly.
@@ -642,7 +649,7 @@ def cmd_rig(args: argparse.Namespace) -> None:
 
     # Resolve and validate every omp MCP install BEFORE the build writes anything, so a rig whose
     # seats have not been launched yet refuses with nothing half-applied.
-    omp_installs = omp_mcp_installs(pinned, room, yaml_text)
+    omp_installs, render_gaps = omp_render_installs(pinned, room, yaml_text)
 
     room_dir = out / room
     room_dir.mkdir(parents=True, exist_ok=True)
@@ -670,9 +677,21 @@ def cmd_rig(args: argparse.Namespace) -> None:
         )
     # The rendered omp MCP documents, once the build is in place. Written VERBATIM and only when
     # they differ, so a rebuild is not a diff; the operator's rig-root .mcp.json is never opened.
-    for rendered, destination in omp_installs:
-        if write_bytes_if_changed(rendered.read_bytes(), destination):
+    for rendered, destination, mode in omp_installs:
+        if mode == "verbatim":
+            changed = write_bytes_if_changed(rendered.read_bytes(), destination)
+        else:
+            changed = merge_config_key(rendered.read_bytes(), destination)
+        if changed:
             print(f"installed {destination}", file=sys.stderr)
+    for seat, missing in render_gaps:
+        print(
+            f"warning: {room}/{seat} rendered no {missing}, so that seat gets HALF of its omp MCP "
+            "setup - a document without the startup setting mounts servers omp may not wait for, "
+            "and the setting without a document waits for servers the seat has none of. A render "
+            "that predates the setting produces the first case.",
+            file=sys.stderr,
+        )
     print(f"rig:{rig_dir / 'rig.yaml'}")
 
 
@@ -708,63 +727,160 @@ def write_bytes_if_changed(data: bytes, target: Path) -> bool:
     return True
 
 
-def omp_mcp_installs(
-    snapshots: dict[str, Path], rig: str, rig_yaml_text: str
-) -> list[tuple[Path, Path]]:
-    """Resolve ``(rendered document, destination)`` for every seat whose render carries one.
+def _merged_config(rendered: dict, existing: dict) -> dict:
+    """``existing`` with the RENDERED keys set on top: mappings merge, leaves overwrite."""
+    out = dict(existing)
+    for key, value in rendered.items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = _merged_config(value, out[key])
+        else:
+            out[key] = value
+    return out
 
-    A seat with no ``mcp`` block renders NO file, so it appears in no pair here and nothing is
-    written for it - that is half the acceptance, satisfied by absence.
+
+def merge_config_key(fragment: bytes, target: Path) -> bool:
+    """Set the rendered keys in ``target``, preserving every other key. True when the file changed.
+
+    THE MERGE IS THE POINT. ``target`` is OMP'S OWN settings file for that agent directory, not a
+    document the render owns: it may already hold settings an operator or another seat put there.
+    **Copying the rendered file over it would delete them** - the same destructive failure the
+    composition rule prevents one layer down - so the rendered keys are SET and the rest is kept.
+    The runtime's own `omp config set` was measured to merge at exactly this level; this is the
+    equivalent, done without shelling out.
+
+    IDEMPOTENCE IS SEMANTIC, NOT TEXTUAL: if the target already carries every rendered key at the
+    rendered value, nothing is written and the mtime is untouched, so a rebuild is not a diff. A
+    file that does NOT exist yet is written with the render's own bytes, so a fresh seat gets exactly
+    what the renderer produced.
+
+    NAMED LIMITATION: when a write IS needed the file is re-serialised, so comments and blank lines
+    in the target are not preserved. The alternative - shelling out to the runtime's verb - rewrites
+    the file the same way, and today every seat already carries the key, so the rewrite is the rare
+    path rather than the normal one.
+    """
+    try:
+        import yaml
+    except ImportError as err:  # pragma: no cover - environment dependent
+        raise SyncError(
+            f"PyYAML is required to merge the rendered omp config: {err}", EXIT_USAGE
+        ) from err
+    try:
+        rendered = yaml.safe_load(fragment.decode("utf-8"))
+    except (UnicodeDecodeError, yaml.YAMLError) as err:
+        raise SyncError(f"the rendered omp config is not readable YAML: {err}", EXIT_USAGE) from err
+    if not isinstance(rendered, dict):
+        raise SyncError("the rendered omp config is not a mapping", EXIT_USAGE)
+
+    if not target.is_file():
+        target.write_bytes(fragment)
+        return True
+
+    try:
+        existing = yaml.safe_load(target.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as err:
+        raise SyncError(
+            f"refusing to set the rendered keys in {target}: it is not readable YAML ({err}). "
+            "This merge must not clobber a file it cannot read.",
+            EXIT_USAGE,
+        ) from err
+    if existing is None:
+        existing = {}
+    if not isinstance(existing, dict):
+        raise SyncError(
+            f"refusing to set the rendered keys in {target}: its top level is not a mapping",
+            EXIT_USAGE,
+        )
+
+    merged = _merged_config(rendered, existing)
+    if merged == existing:
+        return False
+    target.write_text(
+        yaml.safe_dump(merged, sort_keys=False, default_flow_style=False), encoding="utf-8"
+    )
+    return True
+
+
+def omp_render_installs(
+    snapshots: dict[str, Path], rig: str, rig_yaml_text: str
+) -> tuple[list[tuple[Path, Path, str]], list[tuple[str, str]]]:
+    """Resolve ``(rendered, destination, mode)`` for every seat's render, plus the half-renders.
+
+    Two files, installed under different names and treated differently:
+
+    - ``runtime/omp-mcp.json`` -> ``<agent dir>/.mcp.json``, mode ``verbatim``: the file is wholly
+      the render's document, and its ``Bearer ${AGENTHUB_TOKEN}`` stays literal text because the
+      renderer resolves only the platform URL and leaves the rest for the runtime (step A measured
+      the runtime expanding it, and sending the literal when the variable is unset).
+    - ``runtime/omp-config.yml`` -> ``<agent dir>/config.yml``, mode ``merge``: one setting for a
+      file that is omp's own, so the keys are SET and everything else in it survives.
+
+    A seat with no ``mcp`` block renders NEITHER file, so it appears in no triple and nothing is
+    written for it - absence is the signal rather than an empty file.
 
     **Every destination is resolved and validated before anything is written**, which is why this is
     separate from the writing loop: a rig whose seats have not been launched yet must refuse without
     having installed a file for the seats that happen to be up.
 
-    The document is installed VERBATIM. Its ``Bearer ${AGENTHUB_TOKEN}`` stays literal text: the
-    renderer resolves only the platform URL and leaves every other variable for the runtime, which
-    step A measured the runtime expanding (and, when the variable is unset, sending as the literal -
-    a server that is present but unauthenticated).
+    The second return value names the seats whose render carries ONE of the two files: that is the
+    state the caller must not leave silent, because a document without the config mounts servers the
+    runtime may not wait for, and a config without the document waits for servers the seat has no
+    document for.
     """
-    rendered_by_seat = {
-        seat: snapshot / OMP_MCP_RENDER_PATH
-        for seat, snapshot in snapshots.items()
-        if (snapshot / OMP_MCP_RENDER_PATH).is_file()
-    }
-    if not rendered_by_seat:
-        return []
+    renders_by_seat: dict[str, dict[str, Path]] = {}
+    for seat, snapshot in snapshots.items():
+        present = {
+            mode: snapshot / path
+            for mode, path in (
+                ("verbatim", OMP_MCP_RENDER_PATH),
+                ("merge", OMP_CONFIG_RENDER_PATH),
+            )
+            if (snapshot / path).is_file()
+        }
+        if present:
+            renders_by_seat[seat] = present
+    if not renders_by_seat:
+        return [], []
 
     try:
-        import yaml  # lazy: only a rig that actually rendered an omp MCP file needs the spec
+        import yaml  # lazy: only a rig that actually rendered an omp file needs the spec
     except ImportError as err:  # pragma: no cover - environment dependent
         raise SyncError(
-            f"PyYAML is required to install a rendered omp MCP file: {err}", EXIT_USAGE
+            f"PyYAML is required to install a rendered omp file: {err}", EXIT_USAGE
         ) from err
     try:
         spec = yaml.safe_load(rig_yaml_text)
     except yaml.YAMLError as err:
-        raise SyncError(f"cannot read the rig spec to place the omp MCP file: {err}", EXIT_USAGE) from err
+        raise SyncError(f"cannot read the rig spec to place the omp files: {err}", EXIT_USAGE) from err
     if not isinstance(spec, dict):
-        raise SyncError("cannot read the rig spec to place the omp MCP file", EXIT_USAGE)
+        raise SyncError("cannot read the rig spec to place the omp files", EXIT_USAGE)
 
-    installs: list[tuple[Path, Path]] = []
+    installs: list[tuple[Path, Path, str]] = []
+    gaps: list[tuple[str, str]] = []
     for pod in spec.get("pods") or []:
         pod_id = str((pod or {}).get("id") or "")
         for member in (pod or {}).get("members") or []:
             member_id = str((member or {}).get("id") or "")
-            if not pod_id or not member_id or member_id not in rendered_by_seat:
+            if not pod_id or not member_id or member_id not in renders_by_seat:
                 continue
+            present = renders_by_seat[member_id]
             agent_dir = omp_agent_dir(session_name(pod_id, member_id, rig))
             if not agent_dir.is_dir():
                 raise SyncError(
-                    f"cannot install the rendered omp MCP file for {rig}/{member_id}: "
+                    f"cannot install the rendered omp files for {rig}/{member_id}: "
                     f"{agent_dir} does not exist. That directory appears once the seat has been "
                     f"launched, so on a rig that has never been up run the client again after the "
                     f"seats exist. If the seats ARE running, this launch used a different "
                     f"--state-root than {OMP_STATE_ROOT}.",
                     EXIT_USAGE,
                 )
-            installs.append((rendered_by_seat[member_id], agent_dir / OMP_MCP_INSTALL_NAME))
-    return installs
+            if "verbatim" in present:
+                installs.append((present["verbatim"], agent_dir / OMP_MCP_INSTALL_NAME, "verbatim"))
+            if "merge" in present:
+                installs.append((present["merge"], agent_dir / OMP_CONFIG_INSTALL_NAME, "merge"))
+            if len(present) == 1:
+                missing = OMP_CONFIG_RENDER_PATH if "verbatim" in present else OMP_MCP_RENDER_PATH
+                gaps.append((member_id, str(missing)))
+    return installs, gaps
 
 
 def unpinned_seats(rig_yaml: Path, rig_root: Path) -> list[tuple[str, str]]:

@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the omp startup setting's install is pinned, including the clobber it must not do (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained four tests over the existing omp
+  fixture, which now renders BOTH files (the shape the render has since `9b0e55ac`):
+  `test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys` (a pre-existing `config.yml`
+  holding an unrelated nested key AND an unrelated top-level key keeps both while gaining the rendered
+  one — the destructive-failure test),
+  `test_rig_writes_the_omp_config_verbatim_when_the_seat_has_none` (a seat with no config file gets
+  the render's own bytes, trailing newline included),
+  `test_rig_omp_config_merge_is_idempotent` (content AND mtime unchanged on a second run, because
+  idempotence for this file is semantic — the key already holds the rendered value),
+  and `test_rig_warns_when_only_half_the_omp_render_is_present` (a render carrying the document but
+  not the setting installs the half it has and warns, naming the missing file).
+- **FALSIFIED to prove the destructive test can fail**: in an export with the merge replaced by a
+  verbatim copy, `test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys` fails with
+  `KeyError: 'renderMarkdownResults'` — the unrelated key is gone, which is exactly the failure the
+  correction forbids. The other three pass either way.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **103 passed**.
+
 ## 2026-10-06 - the upgrade path's in-process idempotence is now a check (Go)
 
 - `agenthub_go/fastmcp/server/httpapp/migration_idempotence_test.go` (new): runs the migration path a

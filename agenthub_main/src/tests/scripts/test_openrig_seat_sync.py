@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
+import yaml
 
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
@@ -780,6 +781,10 @@ OMP_MCP_DOCUMENT = {
     }
 }
 
+# Exactly what the renderer emits for the omp startup setting (renderer.go's
+# ompMCPStartupTimeoutConfig), trailing newline included.
+OMP_CONFIG_FRAGMENT = "mcp:\n  startupTimeoutMs: 0\n"
+
 # RIG_YAML is `pods: [{id: main, members: [{id: seat1}]}]` under `name: room1`, so the session is
 # main-seat1@room1 - and this is what pins the POD-id derivation rather than the rig name, which
 # would give room1-seat1@room1.
@@ -790,8 +795,14 @@ def _omp_agent_dir(tmp_path):
     return tmp_path / "ompstate" / OMP_SESSION / "agent"
 
 
-def _omp_rig(env, monkeypatch, tmp_path, with_render=True, make_agent_dir=True):
-    """A rig whose seat render may carry the omp MCP document, plus a state root for the seat."""
+def _omp_config_path(tmp_path):
+    return _omp_agent_dir(tmp_path) / "config.yml"
+
+
+def _omp_rig(
+    env, monkeypatch, tmp_path, with_render=True, with_config=True, make_agent_dir=True
+):
+    """A rig whose seat render may carry either or both omp files, plus a state root for the seat."""
     monkeypatch.setattr(seat_sync, "OMP_STATE_ROOT", tmp_path / "ompstate")
     env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
     files = list(FILES)
@@ -799,6 +810,8 @@ def _omp_rig(env, monkeypatch, tmp_path, with_render=True, make_agent_dir=True):
         files.append(
             {"path": "runtime/omp-mcp.json", "content": json.dumps(OMP_MCP_DOCUMENT)}
         )
+    if with_config:
+        files.append({"path": "runtime/omp-config.yml", "content": OMP_CONFIG_FRAGMENT})
     env.set_seat(HASH_A, files=files)
     if make_agent_dir:
         agent_dir = _omp_agent_dir(tmp_path)
@@ -849,6 +862,81 @@ def test_rig_leaves_the_operators_rig_root_mcp_json_alone(
     assert operator_file.read_bytes() == before
 
 
+def test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys(
+    env, tmp_path, capsys, monkeypatch
+):
+    """THE MERGE, and this is the destructive-failure test.
+
+    `<agent dir>/config.yml` is OMP'S OWN settings file, so it may already hold settings an operator
+    or another seat put there. Copying the rendered file over it would delete them - the runtime's own
+    `omp config set` was measured to merge at the KEY level and leave an unrelated key alone, and this
+    install has to do the same.
+    """
+    _omp_rig(env, monkeypatch, tmp_path)
+    config = _omp_config_path(tmp_path)
+    config.write_text("mcp:\n  renderMarkdownResults: true\nmodel: something-else\n")
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    merged = yaml.safe_load(config.read_text())
+    assert merged["mcp"]["startupTimeoutMs"] == 0, "the rendered key was not set"
+    assert (
+        merged["mcp"]["renderMarkdownResults"] is True
+    ), "an unrelated nested key was lost"
+    assert merged["model"] == "something-else", "an unrelated top-level key was lost"
+    assert str(config) in err
+
+
+def test_rig_writes_the_omp_config_verbatim_when_the_seat_has_none(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat with no config file gets the render's own bytes in a new file, not a re-serialised
+    equivalent: the fresh case is byte-exact."""
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    assert _omp_config_path(tmp_path).read_text() == OMP_CONFIG_FRAGMENT
+
+
+def test_rig_omp_config_merge_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """Idempotence is SEMANTIC for this file: when the key already has the rendered value nothing is
+    written and the mtime is untouched, so a rebuild is not a diff."""
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    config = _omp_config_path(tmp_path)
+    before = config.read_bytes()
+    stamp = config.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert config.read_bytes() == before
+    assert config.stat().st_mtime_ns == stamp
+    assert str(config) not in err
+
+
+def test_rig_warns_when_only_half_the_omp_render_is_present(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The asymmetry between the two files must never be silent: a render carrying the document but
+    not the startup setting mounts servers omp may not wait for (the pre-9b0e55ac shape), and the
+    other direction waits for servers the seat has no document for."""
+    installed = _omp_rig(env, monkeypatch, tmp_path, with_config=False)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert installed.exists(), "the half that IS rendered must still be installed"
+    assert not _omp_config_path(tmp_path).exists()
+    assert "warning:" in err and "runtime/omp-config.yml" in err and "HALF" in err
+
+
 def test_rig_install_is_idempotent(env, tmp_path, capsys, monkeypatch):
     """A rebuild that renders the same document must not rewrite the file: a rebuild is not a diff."""
     installed = _omp_rig(env, monkeypatch, tmp_path)
@@ -870,7 +958,9 @@ def test_rig_writes_nothing_for_a_seat_with_no_mcp_block(
 ):
     """A seat with no mcp block renders no document, so nothing is installed for it - the second half
     of the acceptance, satisfied by absence rather than by an empty file."""
-    installed = _omp_rig(env, monkeypatch, tmp_path, with_render=False)
+    installed = _omp_rig(
+        env, monkeypatch, tmp_path, with_render=False, with_config=False
+    )
 
     code = run_cli(["rig", "room1", "--out", str(tmp_path)])
     out, err = capsys.readouterr()
