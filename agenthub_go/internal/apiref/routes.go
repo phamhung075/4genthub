@@ -137,9 +137,15 @@ func routesInSource(filename string, source []byte) ([]RouteEntry, error) {
 			candidates++
 			pattern, ok := resolvePattern(typed.Args[0], bases)
 			if !ok {
+				// THE REFUSAL MUST BE A STARTING POINT RATHER THAN A PUZZLE: the file and the LINE,
+				// then what this parser can read and therefore what shape it just met. A guard whose
+				// output does not say where costs the next reader the same hunt twice.
 				walkErr = fmt.Errorf(
-					"%s: cannot resolve the pattern of a %s call (only string literals, concatenations "+
-						"and identifiers assigned earlier in the file are read)", filename, selector.Sel.Name)
+					"%s: cannot resolve the pattern of the %s call at %s: this parser reads string "+
+						"literals, + concatenations of them, and identifiers declared by const, var or "+
+						"assignment EARLIER IN THE SAME FILE - so the shape here is a helper call, a "+
+						"value declared elsewhere, or a declaration this walk does not record",
+					filename, selector.Sel.Name, fileSet.Position(typed.Pos()))
 				return false
 			}
 			method, path, params, err := splitPattern(pattern)
