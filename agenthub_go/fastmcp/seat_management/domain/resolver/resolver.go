@@ -22,12 +22,17 @@ const (
 	// permissions within a server that a KindMCP block mounted.
 	KindMCP    ModuleKind = "mcp"
 	KindMemory ModuleKind = "memory"
+	// KindPolicy is the seat's limits as data: the role, the runtime settings those limits need, and
+	// the rules the runtime enforces. It is its own kind rather than a richer `tool` because `tool`
+	// already means a Claude settings fragment, and one kind carrying two parse rules is the
+	// duplicate-rule shape this codebase keeps removing.
+	KindPolicy ModuleKind = "policy"
 )
 
 // ValidKind reports whether kind is one of the module kinds.
 func ValidKind(kind ModuleKind) bool {
 	switch kind {
-	case KindInstruction, KindDocument, KindSkill, KindTool, KindMCP, KindMemory:
+	case KindInstruction, KindDocument, KindSkill, KindTool, KindMCP, KindMemory, KindPolicy:
 		return true
 	}
 	return false
@@ -253,8 +258,12 @@ func kindRank(kind ModuleKind) int {
 	// memory stays the last guidance section.
 	case KindMCP:
 		return 4
-	case KindMemory:
+	// policy is runtime configuration like tool and mcp, and it sorts after them so the fold sees
+	// every rule before anything reads the merged limits.
+	case KindPolicy:
 		return 5
+	case KindMemory:
+		return 6
 	default:
 		return 6
 	}

@@ -44,6 +44,9 @@ func TestValidatePerKind(t *testing.T) {
 		{"tool settings object", resolver.KindTool, `{"permissions":{"deny":["Bash(git push:*)"]}}`, true, ""},
 		{"tool not json", resolver.KindTool, "not json", false, "tool content: content is not a JSON object"},
 		{"tool json array", resolver.KindTool, `[]`, false, "tool content: content is not a JSON object"},
+		{"policy block", resolver.KindPolicy, `{"role":"dev","bash":{"patterns":[{"match":"sudo *","approval":"deny","sibling":"ask the lead"}]}}`, true, ""},
+		{"policy not json", resolver.KindPolicy, "not json", false, "policy content: content is not a JSON object"},
+		{"policy denial with no sibling", resolver.KindPolicy, `{"role":"dev","bash":{"patterns":[{"match":"sudo *","approval":"deny"}]}}`, false, "policy content:"},
 		{"instruction text", resolver.KindInstruction, "any text at all\n", true, ""},
 		{"document text", resolver.KindDocument, "any text at all\n", true, ""},
 		{"memory text", resolver.KindMemory, "any text at all\n", true, ""},
@@ -76,7 +79,7 @@ func TestValidatePerKind(t *testing.T) {
 func TestEveryValidKindHasARule(t *testing.T) {
 	kinds := []resolver.ModuleKind{
 		resolver.KindInstruction, resolver.KindDocument, resolver.KindSkill,
-		resolver.KindTool, resolver.KindMCP, resolver.KindMemory,
+		resolver.KindTool, resolver.KindMCP, resolver.KindMemory, resolver.KindPolicy,
 	}
 	for _, kind := range kinds {
 		if !resolver.ValidKind(kind) {

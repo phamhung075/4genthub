@@ -2,6 +2,33 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the policy kind and its parse, with the sibling rule where rules are declared (Go, packet 6 step 2, first slice)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy.go`: `ParsePolicyModule` reads a `policy` block
+  - the seat's role, the runtime setting its limits need, and the rules it enforces - and `PolicyRule`
+  carries each denial **with its sibling**.
+- **The sibling rule is enforced at parse time**, which is the layer where rules are DECLARED: a denial
+  with a named sibling is a rule, a denial without one is a trap - it tells a seat what it may not do and
+  leaves it to guess what it may. `TestParsePolicyModuleRefusesADenialWithoutASibling` asserts the refusal
+  names the sibling and why; `TestParsePolicyModuleNamesWhatItRefuses` covers a non-object, a missing and
+  a blank role, an unknown approval (`ask` is refused BY NAME rather than ignored), a rule with no match,
+  and a negative startup window. `TestParsePolicyModuleReadsTheBlock` also pins that an ABSENT startup
+  setting parses as nil rather than 0 - a different fact, kept different.
+- `resolver.KindPolicy` added to `ValidKind` and to `kindRank`, and `modulecontent.Validate` delegates the
+  kind to the renderer's own parse (`policy content: …`), so the one place that maps kinds to rules stays
+  the only map. `TestEveryValidKindHasARule` now tracks the new kind, and `TestValidatePerKind` gains the
+  accepted block, the non-JSON refusal and the siblingless refusal.
+- `TestValidateModuleContentCoversThePolicyKindBothWritersCall` (services): the kind added AFTER the gate
+  was unified is enforced for both writers without either being told about it - the property the gate
+  exists for.
+- **Falsified**: removing the sibling requirement fails `TestParsePolicyModuleRefusesADenialWithoutASibling`
+  with `a denial with no sibling was accepted` AND the gate test with
+  `a policy whose denial has no sibling was accepted: <nil>`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet` (0 bytes) and
+  `go test -count=1` (ok) for `./fastmcp/seat_management/domain/seatrenderer/`,
+  `./fastmcp/seat_management/domain/modulecontent/`, `./fastmcp/seat_management/domain/resolver/` and
+  `./fastmcp/seat_management/application/services/`.
+
 ## 2026-10-06 - the ten guide ops, proven by their effect with the real blocks (Go, packet 6 step 1b)
 
 - New `fastmcp/seat_management/domain/seedlibrary/guides_render_test.go`:

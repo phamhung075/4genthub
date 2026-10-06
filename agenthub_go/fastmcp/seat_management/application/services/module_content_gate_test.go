@@ -51,6 +51,20 @@ func TestValidateModuleContentIsTheGateBothWritersCall(t *testing.T) {
 	}
 }
 
+// THE NEW KIND IS COVERED BY THE SAME GATE, which is the property the gate's own existence buys: the
+// policy kind was added after the gate was unified, and it is enforced for BOTH writers - the publish
+// route and the seeder - without either of them being told about it.
+func TestValidateModuleContentCoversThePolicyKindBothWritersCall(t *testing.T) {
+	good := `{"role":"dev","bash":{"patterns":[{"match":"sudo *","approval":"deny","sibling":"ask the lead"}]}}`
+	if err := ValidateModuleContent(resolver.KindPolicy, good); err != nil {
+		t.Fatalf("a readable policy block was refused: %v", err)
+	}
+	err := ValidateModuleContent(resolver.KindPolicy, `{"role":"dev","bash":{"patterns":[{"match":"x","approval":"deny"}]}}`)
+	if err == nil || !strings.Contains(err.Error(), "sibling") {
+		t.Fatalf("a policy whose denial has no sibling was accepted: %v", err)
+	}
+}
+
 // The secret case is the ONE refusal a caller maps to its own surface (the route answers 422 for it),
 // so it is an error the caller can recognise rather than a message to match on.
 func TestValidateModuleContentNamesTheSecretCaseForTheCaller(t *testing.T) {

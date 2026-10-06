@@ -49,6 +49,10 @@ func Validate(kind resolver.ModuleKind, content string) error {
 		if _, err := seatrenderer.ParseToolSettings(content); err != nil {
 			return fmt.Errorf("tool content: %w", err)
 		}
+	case resolver.KindPolicy:
+		if _, err := seatrenderer.ParsePolicyModule(content); err != nil {
+			return fmt.Errorf("policy content: %w", err)
+		}
 	case resolver.KindInstruction, resolver.KindDocument, resolver.KindMemory:
 		// Rendered verbatim into the seat's guidance, so any text renders. The publish route
 		// already refuses an empty content, which is the only shape rule these kinds have.
