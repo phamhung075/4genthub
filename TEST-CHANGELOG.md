@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the docs page's generated tier is mounted, and its two cases are pinned by removal (frontend)
+
+- `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: two cases over the MOUNT, not over the view's internals - those are
+  web-dev's seven, in the component's own file. `renders the generated tier from the imported reference, counts included`
+  drives the page with the module MOCKED (the pattern this file already used for the markdown) and asserts the counts come
+  from the reference's own length, so the page cannot print a number the data does not support. `still renders the
+  hand-written document beside it` pins the lead's mount-alongside ruling AND its date: it is a ruled cost rather than an
+  oversight, and it goes with the markdown tier when follow-up `cd77527c` retires it.
+- PROVED SENSITIVE BY REMOVAL: with the mount's `data-testid` taken out, exactly those two fail ("Unable to find an element by:
+  [data-testid=api-docs-reference]") while the seven existing cases stay green - so they detect the mount rather than passing
+  beside it. The testid was restored and the file re-run green.
+- WHAT THESE TWO DO NOT COVER, stated rather than implied: nothing here renders the REAL 144-route artefact, because the
+  module is mocked. That is deliberate - a fixture proves the mount, and a test over generated content would pin the
+  generator's output rather than the page's behaviour - so the real surface is covered by a browser smoke instead: `/docs`
+  renders the real counts (144 routes, 10 tools) and the auth family.
+- Commands: `npx vitest run src/tests/pages/ApiDocsPage.test.tsx src/tests/pages/ApiDocsPage.mcpConfig.test.tsx` -> 2 files,
+  10 passed (8 before these two); `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> green.
+
 ## 2026-10-06 - the pin label's property rather than its wording (frontend)
 
 - `src/tests/pages/SeatAuthoringPage.test.tsx` gains four cases in the composer describe, and they exist because the

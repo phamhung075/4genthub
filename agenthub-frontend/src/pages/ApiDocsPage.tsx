@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Markdown from '../components/Markdown';
+import { ApiReferenceView } from '../components/docs/ApiReferenceView';
 import { API_BASE_URL, MCP_URL } from '../config/environment';
+// The generated reference tier (DOCS-PAGE.md step 1). A BUILD-TIME import, like the document
+// below: the module is produced from the running code by the generator, so this page renders
+// what the server advertises rather than a table someone typed. An absent module is a compile
+// error at this import, which is why neither this page nor the view has a loading or a failure
+// state - there is no runtime step in which the reference can be missing.
+import { apiReference } from '../docs/apiReference';
 // The document is imported raw from the app source tree, so the reviewed file IS
 // the rendered page: no copy step and no generated artefact to fall out of date.
 // It must live inside this tree because the production image copies only
@@ -127,6 +134,25 @@ export function ApiDocsPage() {
           {version ?? `{{${TOKEN_VERSION}}}`}
         </code>
       </div>
+
+      {/* THE GENERATED REFERENCE TIER, FIRST, because it is the tier produced FROM THE CODE and
+          cannot go stale the way a hand-written table does: every mounted route and every MCP
+          tool, read out of the running server by the generator. The view takes the reference as
+          a REQUIRED prop, so there is no loading state and no failure state to write here - an
+          absent reference is a compile error at the import above, not a runtime branch. */}
+      <section
+        className="mb-10"
+        aria-labelledby="api-docs-generated-reference"
+        data-testid="api-docs-reference"
+      >
+        <h2
+          id="api-docs-generated-reference"
+          className="mb-3 text-xl font-semibold text-base-primary"
+        >
+          Generated reference
+        </h2>
+        <ApiReferenceView reference={apiReference} />
+      </section>
 
       <div className="flex flex-col gap-8 lg:flex-row">
         {toc.length > 0 && (
