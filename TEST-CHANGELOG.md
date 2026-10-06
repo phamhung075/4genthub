@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the pin label's property rather than its wording (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains four cases in the composer describe, and they exist because the
+  cases before them pinned the WORDING for one scope (`pinned at company`): the property is a relation and a negative,
+  driven at ALL THREE SCOPES because a property written against one literal holds for the scope the author had in mind
+  and not necessarily for the family.
+- Per scope (company, room, seat): the label NAMES the scope it is pinned at (`toContain(scope)`, derived per scope),
+  CLAIMS NO PROTECTION by vocabulary with word boundaries, renders NO lock glyph in the row, and leaves the removal
+  control ENABLED. Plus one relation case: the three labels normalise to ONE TEMPLATE, so a divergence in any scope
+  fails even when no protection word is involved.
+- THE BOUNDARY IS THE POINT OF THE VOCABULARY CHECK: a bare `lock` matches `block`, so the boundary-free form would
+  pass on any code at all while reading like a check. The pattern is `\block(?:s|ed|ing)?\b|\bprotect(?:s|ed|ing|ion)?\b|\bread-?only\b|\bimmutable\b`.
+- PROVED BY PROBE, both directions: `locked at <scope>` fails the three per-scope cases on the vocabulary
+  (`expected 'locked at company' not to match /.../`); `pin at <scope>` at the seat scope fails ONLY the relation case
+  (`expected 'pin at <scope>' to be 'pinned at <scope>'`). The second probe is the evidence that the two clauses are
+  independent detectors rather than one check written twice.
+- Counts: that file 22 -> 26. Commands: `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 26 passed;
+  `npx tsc --noEmit -p .` -> 0 errors; the full suite and `npx vite build` green in the commit notes.
+
 ## 2026-10-07 - the binder is exonerated for the wired user_id column (Go, identity split)
 
 - `fastmcp/task_management/infrastructure/repositories/base_orm_repository_test.go`:

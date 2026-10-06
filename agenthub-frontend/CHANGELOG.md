@@ -3,6 +3,24 @@
 ## [Unreleased]
 
 ### Added
+- **The pin label's PROPERTY is pinned by test, at every scope, rather than its wording (PIN semantics A, part 4)** - 2026-10-06
+  - The label change itself landed earlier tonight (`6ec69c5c`: the badge reads `pinned at <scope>` with no glyph, and a
+  pinned row carries the sentence that a pin sets a version and is not a lock), with its assertions in `5aada744` and
+  `9137f657`. THIS is the row's fourth requirement - a test that pins the property - and it needed one invisible hook:
+  `data-pinned-at={block.pinnedAt}` on the badge, an automation attribute rather than user-facing copy, so the phrasing
+  stays free to change without rewriting the test.
+  - FOUR CLAUSES, ALL EXPRESSED, NONE DROPPED: (1) the label NAMES the scope it is pinned at, asserted per scope across
+  company, room and seat rather than against one literal; (2) it CLAIMS NO PROTECTION by vocabulary, WITH WORD
+  BOUNDARIES - `\block(?:s|ed|ing)?\b`, `\bprotect(?:s|ed|ing|ion)?\b`, `read-?only`, `immutable` - and the boundary is
+  not decoration: a bare `lock` matches `block`, so the boundary-free form would pass on any code at all while looking
+  like a check; (3) no lock GLYPH anywhere in the row; (4) a removal stays ALLOWED, asserted by the Remove here control
+  being ENABLED. A fifth case pins the RELATION: the three scopes' labels normalise to ONE TEMPLATE, so a divergence in
+  any scope fails even where no protection word is involved.
+  - BOTH CLAUSES PROVED BY PROBE RATHER THAN ARGUED: with the copy changed to `locked at <scope>` the three per-scope
+  cases fail on the vocabulary (`expected 'locked at company' not to match /.../`), and with the seat scope changed to
+  `pin at <scope>` ONLY the relation case fails (`expected 'pin at <scope>' to be 'pinned at <scope>'`) - which is what
+  makes them independent detectors rather than one check written twice. Both probes reverted; the component's diff is
+  the hook and its comment.
 - **The docs page's reference tier renderer (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
   - `src/components/docs/ApiReferenceView.tsx` renders the generated reference: every mounted HTTP route
   (method, path as registered, the handler when the mount names one, that handler's doc comment) and every MCP

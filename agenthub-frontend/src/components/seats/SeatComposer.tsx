@@ -179,7 +179,12 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   </Badge>
                   {mcpLabel && <Badge variant="outline">{mcpLabel}</Badge>}
                   {block.pinnedAt && (
-                    <Badge variant="outline">pinned at {originLabel(block.pinnedAt)}</Badge>
+                    // `data-pinned-at` is an automation hook, not user-facing copy: the property
+                    // test asserts WHICH SCOPE the label names and that it claims nothing more,
+                    // so the wording itself stays free to change without rewriting the test.
+                    <Badge variant="outline" data-pinned-at={block.pinnedAt}>
+                      pinned at {originLabel(block.pinnedAt)}
+                    </Badge>
                   )}
                   {block.overridden && <Badge variant="outline">overridden</Badge>}
                   <Button
