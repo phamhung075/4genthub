@@ -14,9 +14,17 @@ import (
 // "this must land WITH the policy modules", and the evidence for it is that the same seat, rendered
 // twice, differs in exactly that section.
 //
-// It is the GUARD that is pinned here rather than the emitter: policy_fold_test.go already tests
-// RenderPolicyLimits as a function, but renderAgentsMD has one caller and no test reached it, so the
-// statement "the limits land in the rendered AGENTS.md" had never run in this repo.
+// It is the GUARD that is pinned here, and the positive half is not new: policy_fold_test.go's
+// TestRenderSeatEmitsBothArtifactsFromOneFold already drives RenderSeat with a policy module and
+// asserts the refusals appear in AGENTS.md. Measured, not assumed - a `-skip` run of this file covers
+// the identical block set as a run without it (204 blocks either way), so this file adds no coverage.
+// A grep for `renderAgentsMD` finds only its one code caller (renderer.go:206), which is why "no test
+// calls it" was the wrong conclusion to draw: tests reach it THROUGH RenderSeat.
+//
+// WHAT THIS FILE ADDS is the other half of the guard - no other test asserts that a guide-carrying seat
+// WITHOUT a policy module gets a document with no limits section. The positive half below is the CONTROL
+// that makes that absence mean something; on its own the absence would also be satisfied by a policy
+// path that is simply broken.
 func TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule(t *testing.T) {
 	guide := guideModule("guide-common", "## Guide: every seat\n\nshared words\n")
 	policy := policyModule("policy.dev", `{"role":"dev","bash":{"patterns":[{"match":"sudo *","approval":"deny","sibling":"ask the lead"}]}}`)

@@ -2,7 +2,7 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-06 - the limits-into-AGENTS.md join is pinned, because a withdrawal rests on it (Go)
+## 2026-10-06 - the guard that decides which seats get a limits section, pinned on its negative side (Go)
 
 - New `fastmcp/seat_management/domain/seatrenderer/policy_limits_join_test.go`:
   `TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule` renders the SAME seat twice, with and
@@ -10,12 +10,17 @@ Track test suite changes, fixes, and improvements for agenthub.
   (`## Your limits as seat (dev)`, `### Refused shell commands`, and the rule with its sibling) and is
   ABSENT in the second while the guide is still written - so the section's presence is attributable to the
   policy module rather than to the render in general.
-- WHY IT EXISTS: Packet 6 retires the seat-limits generator on the claim that "the render carries the
-  limits", and that join had never run. `RenderPolicyLimits` is tested as a function (`policy_test.go`,
-  `policy_fold_test.go:189`) while `renderAgentsMD` has exactly one caller (`renderer.go:206`) that no test
-  reached. The guard is `policySet.Role != ""` fed by `FoldPolicies`, which reads only `kind: policy`
-  modules (`policy_fold.go:37`), and no policy module exists in this tree - so for every seat today the
-  render's document is guides-only, which is what the retirement's fourth sentence must say.
+- WHY IT EXISTS, CORRECTED BY MEASUREMENT AFTER THE FIRST VERSION OF THIS ENTRY WAS WRONG: the claim it
+  was written on - that "the render carries the limits into AGENTS.md" had never run - is FALSE, and the
+  instrument that refuted it is coverage rather than grep. `policy_fold_test.go`'s
+  `TestRenderSeatEmitsBothArtifactsFromOneFold` already drives `RenderSeat` with a policy module and
+  asserts the refusals appear in `AGENTS.md`; a `-skip` run of the new file covers the identical block set
+  (204 blocks either way), so the new test adds NO coverage. What misled the first version: `renderAgentsMD`
+  has exactly one code caller (`renderer.go:206`) and a grep for the private name finds no test - because
+  tests reach it THROUGH the exported `RenderSeat`. WHAT THE FILE ACTUALLY ADDS is the other half of the
+  guard (`policySet.Role != ""`, fed by `FoldPolicies`, which reads only `kind: policy`, `policy_fold.go:37`):
+  no other test asserts that a guide-carrying seat WITHOUT a policy module gets a document with no limits
+  section, and the positive branch is the control that makes that absence mean something.
 - Commands: `go test ./fastmcp/seat_management/domain/seatrenderer/ -run TestRenderSeatCarriesTheLimitsOnlyWhenTheSeatHasAPolicyModule -v`
   -> PASS (0.00s); `go test ./fastmcp/seat_management/domain/seatrenderer/` -> ok (0.036s); `gofmt -l` on the
   new file -> empty; `go vet ./fastmcp/seat_management/domain/seatrenderer/` -> exit 0.
