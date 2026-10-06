@@ -4,6 +4,8 @@ They render and apply to a temporary state root; no seat, daemon or omp process 
 """
 
 import importlib.util
+import os
+import pwd
 from pathlib import Path
 
 import pytest
@@ -208,3 +210,43 @@ def test_a_seat_without_a_guide_file_is_an_error(tmp_path, monkeypatch):
     (tmp_path / "_common.md").write_text("common\n")
     with pytest.raises(SystemExit):
         policy.render_guide("lead")
+
+
+def machine_state_root() -> Path:
+    """The state root the DEFAULT must resolve to: the real user's home, from the passwd
+    database, which is the one source that is the same inside and outside a seat."""
+    return Path(pwd.getpwuid(os.getuid()).pw_dir) / ".openrig" / "state" / "omp"
+
+
+def test_the_default_state_root_survives_a_home_that_points_at_a_seat(monkeypatch):
+    """INSIDE A SEAT, HOME *IS* THE SEAT'S STATE DIRECTORY.
+
+    OpenRig launches a seat with HOME=/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>, so a
+    default built on ``Path.home()`` appended the state root to itself and the documented
+    ``apply --rig RIG --check`` reported every seat "no agent directory at ...<seat state>/
+    .openrig/state/omp/<rig>-<seat>@<rig>/agent" and exited 2. The assertion is the RESOLVED
+    PATH rather than a message: with HOME at a seat's own state directory the default must
+    still be the machine-level state root under the REAL user's home, and the seat's own
+    directory must not appear in it."""
+    seat_state = machine_state_root() / f"{RIG}-web-dev@{RIG}"
+    monkeypatch.setenv("HOME", str(seat_state))
+
+    reloaded = load_module()
+
+    assert reloaded.DEFAULT_STATE_ROOT == machine_state_root()
+    # THE DOUBLING, as a path assertion: the seat's own state dir must not be a prefix.
+    assert str(seat_state) not in str(reloaded.DEFAULT_STATE_ROOT)
+    # And the path the tool actually uses for a seat is single-nested under that root.
+    assert reloaded.notice_path(reloaded.DEFAULT_STATE_ROOT, RIG, "web-dev") == (
+        machine_state_root() / f"{RIG}-web-dev@{RIG}" / "agent" / "AGENTS.md"
+    )
+
+
+def test_the_default_state_root_is_the_same_under_any_HOME(monkeypatch, tmp_path):
+    """Independence stated as an equality: two different HOMEs, one resolved default."""
+    monkeypatch.setenv("HOME", str(tmp_path / "elsewhere"))
+    outside_a_seat = load_module().DEFAULT_STATE_ROOT
+    monkeypatch.setenv("HOME", str(machine_state_root() / f"{RIG}-lead@{RIG}"))
+    inside_a_seat = load_module().DEFAULT_STATE_ROOT
+
+    assert outside_a_seat == inside_a_seat == machine_state_root()

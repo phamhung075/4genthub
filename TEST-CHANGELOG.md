@@ -2,6 +2,27 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the state root's default is pinned as a RESOLVED PATH (python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and
+  failing on the unfixed script with the doubled path visible in the assertion -
+  `PosixPath('/home/daihu/.openrig/state/omp/4genthub-min-web-dev@4genthub-min/.openrig/state/omp')` against the
+  expected `/home/daihu/.openrig/state/omp`:
+  `test_the_default_state_root_survives_a_home_that_points_at_a_seat` sets HOME to a seat's own state directory,
+  reloads the module, and asserts the RESOLVED PATH equals the passwd-derived state root, that the seat's own
+  directory is not a prefix of it, and that `notice_path` is single-nested under it;
+  `test_the_default_state_root_is_the_same_under_any_HOME` states the independence as an equality across two
+  different HOMEs.
+- The assertion is a path rather than a message on purpose: a case pinning the wording would be a wording test,
+  and the defect was in what the path RESOLVED to.
+- Commands: `cd agenthub_main && python3 -m pytest src/tests/scripts/test_openrig_seat_policy.py -q` -> 18 passed
+  (16 before, 2 new); `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> 276 passed,
+  2 failed, and NEITHER FAILURE IS THIS CHANGE: both are
+  `test_openrig_team_setup.py::test_context_files_respect_word_limits[mission-4genthub]`, which asserts the word
+  count of `scripts/team/4genthub/mission.md` is within (350, 520) while the file now measures 544 words - the
+  writer's stale-baseline correction (`1f0b177a`) is what moved it, and that test file does not reference
+  `openrig_seat_policy` at all.
+
 ## 2026-10-06 - the pull path ported with all three Python specs (Go client)
 
 - `internal/clientsync/pull_test.go` ports the Python's three pull specs one for one, each over a fake
