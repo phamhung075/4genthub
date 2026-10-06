@@ -217,11 +217,17 @@ def real_checker_requirement(monkeypatch):
 
 @pytest.fixture
 def checker_home(monkeypatch, tmp_path):
-    """A temp HOME whose ~/.local/bin is the only PATH entry."""
+    """A temp ~/.local/bin for the checker link, and the only PATH entry.
+
+    The link location is MACHINE-LEVEL and now resolves from the passwd entry rather than from
+    HOME, so a temp HOME can no longer redirect it - on a machine where the real link exists,
+    "the link is missing" would stop being simulable at all. The fixture patches the resolution
+    where it is used, which is the same seam the other path defaults are stubbed through.
+    """
     home = tmp_path / "home"
     link_dir = home / ".local" / "bin"
     link_dir.mkdir(parents=True)
-    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(seat_sync, "checker_link", lambda: link_dir / "seatcheck")
     monkeypatch.setenv("PATH", str(link_dir))
     return link_dir
 
@@ -2135,3 +2141,33 @@ def test_offline_install_without_any_policy_fails_loudly(tmp_path, capsys):
     err = capsys.readouterr().err
     assert code == 2
     assert "no pinned policy found" in err
+
+
+def test_the_store_and_state_root_do_not_follow_home(monkeypatch, tmp_path):
+    """The defaults resolve from the ACCOUNT, not from HOME.
+
+    A seat is launched with HOME pointed at its own state directory
+    (/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>), so a default built on Path.home()
+    appends the state root to itself: the client writes into the seat's own tree while the send
+    guard reads the account home, and the two halves of one mechanism disagree about where the
+    data lives. Stated as an equality across two HOMEs, the shape the guard's own test uses.
+    """
+    seat_like = tmp_path / "4genthub-min-lead@4genthub-min"
+    seat_like.mkdir()
+    monkeypatch.setenv("HOME", str(seat_like))
+    first = _load_module()
+
+    assert not str(first.DEFAULT_OUT).startswith(str(seat_like))
+    assert not str(first.OMP_STATE_ROOT).startswith(str(seat_like))
+    assert not str(first.checker_link()).startswith(str(seat_like))
+    assert str(first.DEFAULT_OUT).endswith("agenthub-seats")
+
+    other = tmp_path / "another-home"
+    other.mkdir()
+    monkeypatch.setenv("HOME", str(other))
+    second = _load_module()
+
+    assert second.DEFAULT_OUT == first.DEFAULT_OUT
+    assert second.OMP_STATE_ROOT == first.OMP_STATE_ROOT
+    assert second.checker_link() == first.checker_link()
+    assert second.real_home() == first.real_home()

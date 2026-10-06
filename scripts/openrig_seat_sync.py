@@ -87,7 +87,45 @@ import urllib.error
 import urllib.request
 from pathlib import Path, PurePosixPath
 
-DEFAULT_OUT = Path.home() / ".openrig" / "agenthub-seats"
+EXIT_OK = 0
+EXIT_REMOTE = 1
+EXIT_USAGE = 2
+
+
+class SyncError(Exception):
+    """A failure that maps to one of the documented process exit codes."""
+
+    def __init__(self, message: str, code: int):
+        super().__init__(message)
+        self.code = code
+
+
+# The per-seat policy module carries the ONE home resolution this tree has: real_home() answers
+# from the passwd entry, because HOME inside a seat points at the seat's own state directory.
+# Loaded by path for the same reason the policy document is - a sibling module is not importable
+# by name from every caller, as this module's own tests demonstrate.
+SEAT_POLICY_MODULE_PATH = Path(__file__).resolve().parent / "openrig_seat_policy.py"
+
+
+def load_seat_policy():
+    """Import the policy module by path - the same load its own tests use."""
+    if not SEAT_POLICY_MODULE_PATH.is_file():
+        raise SyncError(
+            f"the per-seat policy module is missing: {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE
+        )
+    spec = importlib.util.spec_from_file_location("openrig_seat_policy", SEAT_POLICY_MODULE_PATH)
+    if spec is None or spec.loader is None:  # pragma: no cover - path exists by the check above
+        raise SyncError(f"cannot load {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# The ONE home resolution, taken from the module above rather than restated: every default that
+# names the account home is built from this, so a seat and an operator resolve the same store.
+real_home = load_seat_policy().real_home
+
+DEFAULT_OUT = real_home() / ".openrig" / "agenthub-seats"
 AGENTHUB_GO_DIR = Path(__file__).resolve().parent.parent / "agenthub_go"
 CHECKER_NAME = "seatcheck"
 
@@ -115,13 +153,9 @@ AGENTS_MD_INSTALL_NAME = "AGENTS.md"
 # Where omp keeps per-seat state: the runner's --state-root default, plus the session name. A module
 # constant like DEFAULT_OUT, so a test can point it at a scratch tree. A launch that overrides
 # --state-root cannot be followed from here - the install refuses legibly instead of missing quietly.
-OMP_STATE_ROOT = Path.home() / ".openrig" / "state" / "omp"
+OMP_STATE_ROOT = real_home() / ".openrig" / "state" / "omp"
 SEATS_PATH = "/api/v2/openrig/seats"
 ROOMS_PATH = "/api/v2/openrig/rooms"
-
-EXIT_OK = 0
-EXIT_REMOTE = 1
-EXIT_USAGE = 2
 
 NAME_RE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*")
 MODEL_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}")
@@ -136,14 +170,6 @@ RESPAWN_POLL_SECONDS = 5.0
 # yet reports reason null and stays unknown. So one reading is never enough, and this hold must
 # not be shortened without re-measuring per runtime.
 DEFAULT_RESPAWN_AFTER_SECONDS = 30.0
-
-
-class SyncError(Exception):
-    """A failure that maps to one of the documented process exit codes."""
-
-    def __init__(self, message: str, code: int):
-        super().__init__(message)
-        self.code = code
 
 
 def require_env(name: str) -> str:
@@ -359,7 +385,7 @@ def checker_binary(out: Path) -> Path:
 
 
 def checker_link() -> Path:
-    return Path.home() / ".local" / "bin" / CHECKER_NAME
+    return real_home() / ".local" / "bin" / CHECKER_NAME
 
 
 TMUX_TIMEOUT_SECONDS = 5
@@ -869,23 +895,6 @@ def merge_config_key(fragment: bytes, target: Path) -> bool:
 # WHAT A SEAT OUTSIDE THE TABLE GETS: nothing, reported. The table's own stance is that an unlisted
 # rig or seat is an error rather than a permissive default, so the client says so per seat and
 # continues installing the rest - a rig with one unlisted seat must not stop the others syncing.
-SEAT_POLICY_MODULE_PATH = Path(__file__).resolve().parent / "openrig_seat_policy.py"
-
-
-def load_seat_policy():
-    """Import the policy module by path - the same load its own tests use."""
-    if not SEAT_POLICY_MODULE_PATH.is_file():
-        raise SyncError(
-            f"the per-seat policy module is missing: {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE
-        )
-    spec = importlib.util.spec_from_file_location("openrig_seat_policy", SEAT_POLICY_MODULE_PATH)
-    if spec is None or spec.loader is None:  # pragma: no cover - path exists by the check above
-        raise SyncError(f"cannot load {SEAT_POLICY_MODULE_PATH}", EXIT_USAGE)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def policy_document(policy_module, rig: str, member: str):
     """The seat's policy document, or None when the table has no role for it."""
     roles = getattr(policy_module, "SEAT_ROLES", {}).get(rig)
@@ -1178,7 +1187,7 @@ def cmd_offline_install(args: argparse.Namespace) -> None:
     if not isinstance(spec, dict):
         raise SyncError(f"{spec_path} is not a rig spec", EXIT_USAGE)
     rig = validate_name("room", str(spec.get("name") or ""))
-    home = Path(args.home).expanduser().resolve() if args.home else Path.home()
+    home = Path(args.home).expanduser().resolve() if args.home else real_home()
     store = home / ".openrig" / "agenthub-seats"
 
     installed: list[str] = []

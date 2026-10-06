@@ -40,6 +40,24 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Commands: `go test ./internal/clientsync/ -count=1` -> ok; `go test ./...` -> ok packages 143, FAIL lines
   0; `go vet` -> 0 bytes, exit 0; `gofmt -l` -> empty.
 
+## 2026-10-06 - the client's path defaults are pinned to the account, not HOME (python scripts)
+
+- `test_openrig_seat_sync.py`: `test_the_store_and_state_root_do_not_follow_home` reloads the module under
+  two different HOMEs and states the independence as an EQUALITY - the same assertion shape as the guard's
+  `TestDefaultPinsDoesNotFollowHome` and the sibling's `test_the_default_state_root_is_the_same_under_any_HOME`
+  - covering `DEFAULT_OUT`, `OMP_STATE_ROOT` and `checker_link()`.
+- The `checker_home` fixture now patches `seat_sync.checker_link` instead of setting HOME: the link location is
+  machine-level, so on a machine where the real `~/.local/bin/seatcheck` exists a temp HOME can no longer
+  simulate its absence. The four cases that use it (`test_pull_and_rig_fail_loudly_without_the_link` twice,
+  `test_pull_fails_when_seatcheck_resolves_elsewhere`, `test_pull_runs_when_the_link_points_at_the_store_binary`)
+  keep every assertion; only the seam they simulate through changed.
+- Load-bearing by mutation: `DEFAULT_OUT` restored to `Path.home()` fails the new case with the doubled path
+  visible in the assertion, and nothing else in the file changes verdict.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_sync.py
+  src/tests/scripts/test_openrig_seat_policy.py -q` from `agenthub_main` -> 129 passed, 2 warnings, 42s (with the
+  mutation: 1 failed). Driven by hand: `python3 scripts/openrig_seat_sync.py pull --help` prints
+  `/home/daihu/.openrig/agenthub-seats` from inside a seat and from the operator shell alike.
+
 ## 2026-10-06 - the seatcheck store resolution is pinned, where every other test stubbed it
 
 - `cmd/seatcheck/main_test.go`: `TestDefaultPinsDoesNotFollowHome` is the only case in the file that exercises the
