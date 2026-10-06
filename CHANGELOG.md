@@ -90,6 +90,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The rig build's preserve set is derived at swap time, which closes a measured window and deletes the blacklist** (2026-10-06)
+
+- Follow-up to the entry below, and it closes a **window rather than a tidiness**: the rig build used to read the operator's entries once and pass them to the swap, so a file that landed **after that read and before the swap** was in neither the old list nor the new directory and was deleted — by a build whose promise is that the operator's files survive.
+- **The row's account of the timing is imprecise, and the measurement corrects it rather than repeating it:** the read is not before the seat pulls. `cmd_rig` reads the rig directory **after** the pull loop and **before** staging materializes, so the window is the materialization — a copy per seat — and not minutes of pulling. Measured with a hook in both phases: a file dropped during the pulls survives under **both** the old and the new code; a file dropped during materialization is **deleted by the old code and kept by the new**.
+- **The fix is the reviewer's shape:** `swap_dir` no longer takes a preserve list at all. It computes what the caller wrote as the entries of the **new** directory and carries over every entry of the old one that is not among them — moved, so a symlink stays a symlink, with a name the build wrote winning. **Deriving it at swap time is what makes the promise independent of when the file arrived.**
+- **The blacklist goes with it** (`RIG_BUILD_ENTRIES` = `rig.yaml`, `agents/`), so a future renderer that adds a third artifact needs no bookkeeping here — and the module docstring now states the rule as "everything the build did not write is carried over" rather than as a list of what the build owns.
+- The mirrored half is unchanged and still pinned: `agents/` is replaced by each build, so a seat the room no longer lists does not survive.
+
 **The bundle build now tells the truth when the rig root carries no pin** (2026-10-06)
 
 - **The defect, measured:** `openrig_seat_sync.py bundle` shells out to `rig bundle create`, which answers `Bundle created:` with `Integrity: PASS`, while the artifact holds **zero `policy.json` members** — and `seatcheck` reads its policy from that pin. The first sign was `offline-install` refusing the bundle much later (`no pinned policy found under .../agents`, exit 2), so a build that looked successful produced an artifact whose seats cannot decide or audit offline. **Every rig root predating 2026-10-05 produces one of these.**

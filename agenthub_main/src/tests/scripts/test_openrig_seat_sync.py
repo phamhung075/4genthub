@@ -600,6 +600,44 @@ def test_rig_build_keeps_operator_files_it_did_not_create(env, tmp_path, capsys)
     assert "operator-link" in err and "operator-notes.txt" in err
 
 
+def test_rig_build_keeps_a_file_placed_while_it_materializes(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The window the preserve list used to leave open.
+
+    cmd_rig reads the rig directory, then materializes the staging tree, then swaps. A file that
+    lands in between is in neither the old list nor the new directory — so a build that promises
+    the operator their files survive used to delete it. The preserved set is now derived from the
+    directories AT SWAP TIME, which makes the promise independent of when the file arrived.
+
+    MEASURED, both ways, with this exact hook: reverting the derivation (a list read before the
+    swap) makes this test fail with the marker gone.
+    """
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    env.set_seat(HASH_A)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    rig_dir = tmp_path / "room1" / "rig"
+    original = seat_sync.materialize_agent
+
+    def materialize_then_drop(source, seat_dir, target):
+        original(source, seat_dir, target)
+        if rig_dir.is_dir():
+            (rig_dir / "dropped-while-building.txt").write_text("landed mid-build\n")
+
+    monkeypatch.setattr(seat_sync, "materialize_agent", materialize_then_drop)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert (rig_dir / "dropped-while-building.txt").read_text() == "landed mid-build\n"
+    assert "dropped-while-building.txt" in err
+    # The build's own content is still the build's.
+    assert (rig_dir / "rig.yaml").read_text() == RIG_YAML
+
+
 def test_rig_build_replaces_its_own_rendered_content(env, tmp_path, capsys):
     """The other half of the same rule, so a future 'preserve everything' change fails here.
 

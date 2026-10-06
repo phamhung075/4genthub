@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the rig build's preserve window is pinned with a mid-build drop (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained
+  `test_rig_build_keeps_a_file_placed_while_it_materializes`: it hooks `materialize_agent` — the
+  moment between the old preserve read and the swap — and drops a file into the rig directory
+  there, then asserts the file survives, that stderr names it, and that the build's own `rig.yaml`
+  is still the build's.
+- MEASURED BOTH WAYS: with the derivation reverted to a list read before the swap the test fails
+  with the marker gone, and an independent driver over the real `cmd_rig` shows the same split
+  (pre-fix: `survives: False`, post-fix: `survives: True`). **The same driver also corrected the
+  row's premise**: a file dropped during the seat PULLS survives under both versions, because the
+  read was never before the pulls — the window is the materialization between the read and the
+  swap. The test therefore hooks the materialization, which is where the window actually is.
+- The two preservation tests and the counterweight test from the earlier entry are unchanged and
+  still pass.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **94 passed**.
+
 ## 2026-10-06 - the bundle build's silence about a missing pin is pinned three ways (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained three tests over the existing
