@@ -32,7 +32,7 @@ type TaskWorkflowHandler interface {
 
 // Constructor hooks for the search/workflow handlers.
 var (
-	NewSearchHandler   = func(responseFormatter ResponseFormatter) TaskSearchHandler { return nil }
+	NewSearchHandler = func(responseFormatter ResponseFormatter) TaskSearchHandler { return nil }
 	// NewWorkflowHandler's default returns nil, and task_mcp_controller/handler_adapters.go
 	// ASSIGNS the real handler at initialisation (:44), so a running server never holds the
 	// nil. Read that assignment before treating this hook as unfilled.
