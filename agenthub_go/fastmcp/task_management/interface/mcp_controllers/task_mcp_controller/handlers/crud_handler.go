@@ -30,11 +30,9 @@ type ResponseFormatter interface {
 	GetTimestamp() string
 }
 
-// TaskFacade is the TaskApplicationFacade surface used by the handlers. The
-// Python facade methods create_task/update_task/get_task/delete_task/
-// complete_task/add_dependency/remove_dependency are not ported yet, so the
-// interface is declared here and reported as a dependency. GetTask keeps the
-// (result, error) shape required by use_cases.AITaskFacade.
+// TaskFacade is the TaskApplicationFacade surface used by the handlers, declared
+// here and reported as a dependency. GetTask keeps the (result, error) shape
+// required by use_cases.AITaskFacade.
 type TaskFacade interface {
 	CreateTask(ctx context.Context, request *dtostask.CreateTaskRequest) *entities.OrderedMap[any]
 	UpdateTask(ctx context.Context, request *dtostask.UpdateTaskRequest) *entities.OrderedMap[any]

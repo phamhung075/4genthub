@@ -27,7 +27,7 @@ type SearchResponseFormatter interface {
 }
 
 // TaskSearchFacade is the subset of TaskApplicationFacade used by the search
-// handler. ListTasks/SearchTasks are not ported yet; CountTasks exists.
+// handler.
 type TaskSearchFacade interface {
 	ListTasks(ctx context.Context, request *task.ListTasksRequest) *entities.OrderedMap[any]
 	SearchTasks(ctx context.Context, request *task.SearchTasksRequest) *entities.OrderedMap[any]

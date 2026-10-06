@@ -10,8 +10,8 @@ import (
 )
 
 // zpGitBranchContextService is the consumer-side port of the UnifiedContextService
-// methods GitBranchService calls. Python imports UnifiedContextService (not ported) and
-// falls back to FacadeService.get_unified_context_facade; the Go caller supplies the
+// methods GitBranchService calls. Python falls back to
+// FacadeService.get_unified_context_facade; the Go caller supplies the
 // facade. Only create_context and delete_context are used, and both are synchronous in
 // Python (storage-touching, so ctx comes first here). The return value is the Python
 // dict; key order is only read through get(), so it is an OrderedMap.
