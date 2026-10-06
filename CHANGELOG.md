@@ -186,6 +186,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The mechanism comment the omp MCP fix ships with now matches the refined measurement** (2026-10-06)
+
+- The comment beside `ompMCPStartupTimeoutConfig` said the 250 ms default is why a seat needs a RELAUNCH, "not an asynchronous mount". **The second clause was stale**: the reviewer's own seat showed the device appearing between two attempts with **no relaunch**, so **the default DELAYS the mount rather than preventing it**. The comment now states the mechanism the setting actually changes — a seat WAITS for its connections at startup, **deterministic instead of eventual** — and leaves the relaunch where it belongs: what makes an already-**running** seat READ the setting, since the config file is read at process start. A comment is where the next reader of that file learns the mechanism and nothing gates a comment, which is why this is a fix rather than a wording preference.
+
 **The registry parity guard no longer races the build it runs inside** (2026-10-06)
 
 - **Symptom, measured at the tip under the project's own documented invocation:** `go test ./...` from `agenthub_go` with `GOCACHE` and `TMPDIR` inside `.gocache`/`.gotmp` produced one failing test — `TestORMRepositoriesAskForRegisteredTables` — with `scan …: open …/.gotmp/go-build…/b563: no such file or directory`. The same package run **alone** passed every time, which is what made it look like a flake.

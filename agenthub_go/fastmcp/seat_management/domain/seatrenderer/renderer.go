@@ -485,8 +485,11 @@ func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string
 // defaults to 250 ms — "wait this many milliseconds for initial MCP tool discovery; 0 waits until
 // connections settle". A LOCAL stdio server (the deepseek bridge) connects inside that window; a
 // REMOTE HTTPS server does not, so a seat's first turn started with the local server only and its
-// device list showed no agenthub tools. The timeout is why a seat needs a RELAUNCH to pick the
-// server up, not an asynchronous mount — "asynchronous" described the symptom.
+// device list showed no agenthub tools. **THE DEFAULT DELAYS THE MOUNT RATHER THAN PREVENTING IT**
+// (measured on the reviewer's own seat: the device appeared between two attempts with NO relaunch), so
+// this setting is what makes a seat WAIT for its connections at STARTUP — DETERMINISTIC INSTEAD OF
+// EVENTUAL — and the relaunch is what makes an already-RUNNING seat read the setting at all, because
+// the config file is read when the process starts.
 //
 // 0 is the value that means WAIT UNTIL CONNECTIONS SETTLE; it is not "no timeout" and it is not a
 // disabled setting.
