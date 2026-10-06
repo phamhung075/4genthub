@@ -17,9 +17,9 @@ type Reference struct {
 	Tools  []ToolEntry  `json:"tools"`
 }
 
-// Entries is THE PRODUCER: the routes read from the mount files' source text plus the tools read by
-// calling the server's own builder. The drift test is the WITNESS and must read the code
-// independently rather than call this - see the package doc.
+// Entries is THE PRODUCER: the routes read from the mount directory and every package it mounts
+// routes from, plus the tools read by calling the server's own builder. The drift test is the WITNESS
+// and must read the code independently rather than call this - see the package doc.
 //
 // AN EMPTY RESULT IS A FAILURE, NOT A DOCUMENT. Zero routes or zero tools returns an error and no
 // value, because a module that says the platform mounts nothing or offers no tools is worse than no
@@ -27,7 +27,7 @@ type Reference struct {
 // layer, and it holds whatever the first one did - a mount directory that moved, a parse that matched
 // nothing and a registry that was never composed all reach this point as nothing.
 func Entries(mountDir string) (Reference, error) {
-	routes, err := routesFromDir(mountDir)
+	routes, err := routesFromTree(mountDir)
 	if err != nil {
 		return Reference{}, err
 	}

@@ -35,9 +35,6 @@ import (
 	"agenthub/internal/apiref"
 )
 
-// mountDir is the family this test witnesses. It is one directory because Entries takes one; the auth
-// package is a separate question (whether the command should take both) and is not silently assumed.
-//
 // THE PATH IS RESOLVED FROM THIS FILE'S OWN LOCATION rather than from the process working directory:
 // `go test` runs with the cwd set to the package directory, so a root-relative literal silently
 // resolves to nothing - which is exactly the "an instrument that reports an empty surface" failure
@@ -52,8 +49,22 @@ func moduleRoot(t *testing.T) string {
 	return filepath.Join(filepath.Dir(file), "..", "..")
 }
 
+// mountDir is where the one mux is built.
 func mountDir(t *testing.T) string {
 	return filepath.Join(moduleRoot(t), "fastmcp", "server", "httpapp")
+}
+
+// mountedFamilies is every directory whose registrations reach the mux app.go builds. It is three
+// directories rather than one because the auth controllers register from their own packages: a witness
+// that stopped at the mux's own directory would agree with a producer that dropped those 20
+// registrations, which is the own-shadow failure this file exists to avoid.
+func mountedFamilies(t *testing.T) []string {
+	root := moduleRoot(t)
+	return []string{
+		mountDir(t),
+		filepath.Join(root, "fastmcp", "auth", "interface"),
+		filepath.Join(root, "fastmcp", "auth", "api"),
+	}
 }
 
 // witnessRoute is what this file reads for itself: a method and a path, both taken from the source.
@@ -337,8 +348,12 @@ func TestReferenceMatchesTheMountedRoutes(t *testing.T) {
 		t.Fatal("Entries returned no routes: an empty result is a failure, not a document")
 	}
 
-	witnessed := routesFromSource(t, mountDir(t))
-	t.Logf("witness reads %d registrations in %s", len(witnessed), mountDir(t))
+	families := mountedFamilies(t)
+	var witnessed []witnessRoute
+	for _, dir := range families {
+		witnessed = append(witnessed, routesFromSource(t, dir)...)
+	}
+	t.Logf("witness reads %d registrations across %d mounted families", len(witnessed), len(families))
 	inCode := map[string]bool{}
 	for _, r := range witnessed {
 		inCode[r.String()] = true
