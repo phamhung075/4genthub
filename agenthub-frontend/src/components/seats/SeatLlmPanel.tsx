@@ -76,7 +76,8 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
                 placeholder="default"
               />
               <p className="text-xs text-muted-foreground">
-                Model id for this runtime, for example claude-opus-4-6. Empty uses the runtime default.
+                Model id for this runtime, for example claude-opus-4-6. An empty box changes nothing:
+                the seat keeps the model it already has.
               </p>
               {!valid && <p className="text-xs text-destructive">{SEAT_MODEL_MESSAGE}</p>}
             </div>

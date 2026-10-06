@@ -218,6 +218,12 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The seat LLM panel no longer promises an effect an update does not apply** - 2026-10-06
+ - Its model hint read "Empty uses the runtime default", which is the CREATE semantics. On an update an
+ emptied box KEEPS the stored model - a blank field never clears a field - so the sentence said the model
+ would change when it would not. It now says an empty box keeps the model the seat already has.
+ - Copy only, and deliberately no test: an assertion on the text would pass whether or not the sentence is
+ true, which is the same reason the `/ws` proxy has none.
 - **The realtime socket reaches the API in development, and a refusal says why** - 2026-10-06
  - The dev server proxied `/api` to the backend but not `/ws`, while the app derives its socket URL from the
  page origin in development (`config/environment.ts`: `VITE_WS_URL` when set, else `API_BASE_URL` with the
