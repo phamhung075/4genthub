@@ -2,6 +2,32 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the fold and the two emissions: one parse feeds the runtime document and the seat's words (Go, packet 6 step 2, second slice)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy_fold.go`: `FoldPolicies` unions the deny lists
+  (adding a deny anywhere can only make a seat safer, and a union has no winner to argue about) while
+  **scalars must AGREE and a disagreement REFUSES the render** - silent last-writer-wins on a runtime
+  setting is how a second source of truth starts. A rule repeated with the SAME sibling folds silently;
+  the same match with a DIFFERENT sibling refuses, because one refusal cannot have two sanctioned
+  alternatives.
+- **An absent setting is not a zero**: `RenderPolicyConfig` omits the key no block spoke about, and
+  `TestRenderPolicyConfigOmitsAnAbsentSetting` pins both halves - no `mcp:` at all when every block is
+  silent, `startupTimeoutMs: 0` when a block declares 0. The sibling is NOT emitted into the runtime
+  document (it is words for the seat), and `TestRenderPolicyLimitsNamesASiblingForEveryDenial` counts one
+  alternative per denial, so a rule cannot reach the document without reaching the text.
+- `RenderSeat` wires the ONE fold into BOTH emissions: `AGENTS.md` carries the guides **and** the limits
+  text (a seat with limits and no guide gets the file too), and `runtime/omp-config.yml` carries the
+  fold's document when a policy resolves - superseding the startup constant rather than adding a second
+  document for the same file, so the client installs one document and no precedence rule is needed.
+- **Falsified, three mutations**: a role disagreement folding silently, a startup-window disagreement
+  folding silently, and an absent setting defaulting to 0 - each fails a named subtest or assertion.
+- **Verified in an EXPORT, and the reason is stated rather than omitted**: the seatrenderer test package
+  imports seedlibrary, and `seedlibrary/blockprovenance.go` does not compile at this moment (another seat
+  mid-edit: `go:embed requires import "embed"`), so a tree-wide run is blocked by THAT file and not by
+  this change. In an export of HEAD plus my changes, excluding theirs, the whole package is `ok`.
+- Commands: `cd agenthub_go && go vet ./fastmcp/seat_management/domain/seatrenderer/` and
+  `go test -count=1` on the package, both in that export.
+
 ## 2026-10-06 - the policy kind and its parse, with the sibling rule where rules are declared (Go, packet 6 step 2, first slice)
 
 - New `fastmcp/seat_management/domain/seatrenderer/policy.go`: `ParsePolicyModule` reads a `policy` block

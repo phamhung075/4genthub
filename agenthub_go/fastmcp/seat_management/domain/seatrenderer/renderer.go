@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	agentYAMLPath        = "agent.yaml"
-	guidancePath         = "guidance/role.md"
+	agentYAMLPath = "agent.yaml"
+	guidancePath  = "guidance/role.md"
 	// agentsMDPath is the seat's guide document, the file omp loads into every session from the
 	// agent directory. Packet 6 step 1 moved the guides out of a script that wrote it by hand and
 	// into library blocks, so the render writes it from those blocks; a seat whose resolution carries
@@ -27,7 +27,7 @@ const (
 	// guideSlugPrefix is what makes a block a guide: the guides are `instruction` modules named
 	// `guide-common` and `guide-<seat>`, and their destination is AGENTS.md rather than the guidance
 	// channel. One destination per module - a guide in both places would be the same text twice.
-	guideSlugPrefix = "guide-"
+	guideSlugPrefix      = "guide-"
 	skillFileName        = "SKILL.md"
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
@@ -175,6 +175,12 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 	if err != nil {
 		return nil, err
 	}
+	// ONE FOLD, TWO EMISSIONS: the same parsed set produces the document the runtime reads and the
+	// words the seat reads, so a rule and its plain-language line cannot drift apart.
+	policySet, err := FoldPolicies(seat.Modules)
+	if err != nil {
+		return nil, err
+	}
 
 	files := []OpenRigSpecFile{
 		{Path: agentYAMLPath, Content: agentYAML},
@@ -193,12 +199,11 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 			Content: block.Content,
 		})
 	}
-	if guides := guideModules(seat); len(guides) > 0 {
-		// The guides the library ships, written where omp reads them. The renderer decides nothing
-		// about WHO receives a guide - the seat's resolution does that, whether from its pinned type
-		// version or from an overlay - only how the guides it receives are laid out. A seat whose
-		// resolution carries no guide block gets NO file, the same absence rule as the MCP document.
-		files = append(files, OpenRigSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat)})
+	if len(guideModules(seat)) > 0 || policySet.Role != "" {
+		// The guides AND the limits text, in the one document omp loads into a session. A seat with
+		// limits but no guide gets it too: the limits are words the seat must read, not a decoration
+		// on the guides. A seat with neither still gets NO file, which is the absence rule.
+		files = append(files, OpenRigSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat, policySet)})
 	}
 	if receivesClaudeFragments(seat.Runtime) {
 		if mcpFragment != "" {
@@ -214,14 +219,27 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		// not understand. The client installs this file; see the G3 note.
 		files = append(files, OpenRigSpecFile{Path: codexRulesPath, Content: codexRules})
 	}
-	if seat.Runtime == resolver.RuntimeOmp && mcpFragment != "" {
+	if seat.Runtime == resolver.RuntimeOmp && (mcpFragment != "" || policySet.Role != "") {
 		// Same shape as the codex rules file and for the same reason. The client installs it as
 		// `<seat agent dir>/.mcp.json`; a seat with no mcp block gets NO file, which is the
 		// acceptance's "a seat with no mcp block gets none".
-		files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+		if mcpFragment != "" {
+			files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+		}
 		// AND THE SETTING THAT MAKES THE ENTRY MOUNT, in the same delivery because either half
 		// alone fails the seat: see ompMCPStartupTimeoutConfig for the measured root cause.
-		files = append(files, OpenRigSpecFile{Path: ompConfigPath, Content: ompMCPStartupTimeoutConfig})
+		//
+		// A POLICY BLOCK SUPERSEDES THE CONSTANT rather than adding a second document for the same
+		// file: the fold's document carries the startup setting when a block speaks about it AND the
+		// rules, so the client installs one document and no precedence rule is needed.
+		configDoc := ompMCPStartupTimeoutConfig
+		if policySet.Role != "" {
+			configDoc, err = RenderPolicyConfig(policySet)
+			if err != nil {
+				return nil, err
+			}
+		}
+		files = append(files, OpenRigSpecFile{Path: ompConfigPath, Content: configDoc})
 	}
 
 	return &OpenRigSpec{
@@ -301,7 +319,7 @@ func guideModules(seat resolver.ResolvedSeat) []resolver.ResolvedModule {
 // The blocks already carry their own headings (each guide is written as `## Guide: <seat>`), so this
 // adds provenance and separating newlines and NOT a second heading - a renderer that re-heads a block
 // that heads itself is the duplication this step exists to remove.
-func renderAgentsMD(seat resolver.ResolvedSeat) string {
+func renderAgentsMD(seat resolver.ResolvedSeat, policySet *PolicySet) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
 	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
@@ -310,6 +328,11 @@ func renderAgentsMD(seat resolver.ResolvedSeat) string {
 		b.WriteString("\n")
 		b.WriteString(strings.TrimRight(m.Content, "\n"))
 		b.WriteString("\n")
+	}
+	if policySet != nil && policySet.Role != "" {
+		// The limits, from the SAME fold that produced the config document.
+		b.WriteString("\n")
+		b.WriteString(RenderPolicyLimits(policySet))
 	}
 	return b.String()
 }
