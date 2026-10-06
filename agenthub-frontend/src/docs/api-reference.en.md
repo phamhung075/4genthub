@@ -44,8 +44,7 @@ Two kinds of credential are accepted:
 | **Keycloak access token** | The web app's own OIDC login flow (authorization code). | The browser UI, and any client that logs a human in. |
 | **API token** | Created through `POST /api/v2/tokens` (below). | Scripts, the OpenRig client, MCP clients. |
 
-An API token carries **scopes**; the token endpoints accept an arbitrary scope list and default
-to `["read"]`. A request whose token lacks the required scope is refused with `403`.
+An API token carries **scopes**; the token endpoints accept an arbitrary scope list and **apply NO DEFAULT — a token minted without scopes carries none**, so a scope-gated request is refused with `403`. *(The absence is conservative rather than dangerous: the failure is a refusal, not a privilege. The Python server carried `scopes: list[str] = Field(default=["read"])`, a Pydantic field default with no equivalent in a Go struct, so it did not cross the port — which is why this went unnoticed for as long as it did.)*
 
 ### Token lifecycle
 
