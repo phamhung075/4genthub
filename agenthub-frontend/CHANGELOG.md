@@ -3,6 +3,28 @@
 ## [Unreleased]
 
 ### Added
+- **The docs page's reference tier renderer (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
+  - `src/components/docs/ApiReferenceView.tsx` renders the generated reference: every mounted HTTP route
+  (method, path as registered, the handler when the mount names one, that handler's doc comment) and every MCP
+  tool (name, description, action badges, parameter schema), with a counts line per section.
+  - IT RENDERS WHAT IT IS GIVEN AND NOTHING ELSE. `reference` is a REQUIRED prop, because the generated module is
+  a BUILD-TIME import: an absent reference is a compile error at the caller, so the component carries NO loading
+  state and NO failure state. A branch for a failure that cannot happen is unreachable code that reads as
+  diligence. The spec's "a page that cannot load shows the failure" has no surface on this tier in step 1 - it
+  becomes load-bearing at step 2, where the guide tier reads documents from the cloud at runtime.
+  - TWO LEGITIMATE EMPTIES RENDER AS ABSENT rather than as an error or a placeholder: `handler` is empty when a
+  mount registers an inline closure (that row carries nothing but its method and path), and `actions` is empty
+  when a tool takes no `action` parameter (no badges, no label).
+  - THE SCHEMA IS VERBATIM WITH A SUMMARY DERIVED FROM IT: the `<pre>` block is the server's own JSON schema
+  character for character, and the property table is read out of that same object - so the page cannot document
+  a shape the server does not accept, and cannot become a second source of truth about one.
+  - Tests: `src/tests/components/ApiReferenceView.test.tsx` (7) drives the rendered component - every route
+  rendered, an inline closure absent, actions rendered only when declared, the schema parsing back to the object
+  the reference carries, the derived summary marking only what the schema marks, no loading or failure state,
+  and an empty reference rendering as empty sections rather than as a failure.
+  - Gate: `npx tsc --noEmit -p .` -> 0 errors; the new file 7 passed; the full suite and `npx vite build` green.
+  - OWED, AND NAMED AS A CLAIM STILL BEING MADE: the component is exercised against the REAL generated module
+  when go-dev2's artefact lands - a fixture proves the component, the real module proves the integration.
 - **The generated reference's type - the docs page's own seam (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
   - `src/types/apiReference.ts` is the SINGLE definition of the reference tier's shape: `ApiReference`
   (`{ routes: ApiRouteEntry[]; tools: ApiToolEntry[] }`), `ApiRouteEntry` (`method`, `path`, `pathParams`,
