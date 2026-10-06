@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the realtime endpoint's accepted set is pinned instead of silent (Go)
+
+- `fastmcp/server/httpapp/ws_mount_test.go`: `TestRealtimeDispatchAcceptsExactlyPingHeartbeatAndSubscribe` dials
+  `/ws/realtime` and pins the inbound vocabulary as a DECISION: `ping` and `heartbeat` answer heartbeat/pong,
+  `subscribe` answers sync/subscribed, and every other frame - including four types the PROTOCOL knows (`update`,
+  `bulk`, `sync`, `error`) - is refused with `Unknown message type: <type>` / `UNKNOWN_MESSAGE_TYPE`.
+- WHY that set: the retired Python endpoint handled exactly `message_type in ["ping", "heartbeat"]`
+  (`agenthub_main/src/fastmcp/server/routes/websocket_routes.py:680`) and `== "subscribe"` (`:701`), with
+  everything else in its `else` (`:748`) returning the identical payload - so the refusal is the port being
+  faithful, not a gap in it. The realtime socket pushes server->client; mutations travel over the HTTP API.
+- WHY the test exists: the refusal was SILENT in both directions. A client frame that could never be accepted
+  (the frontend's dead `useWebSocketV2.ts:290` sender, which has no caller in `src`) received an error nobody
+  read, and no test on either side failed.
+- PROVED BY MOVING THE SET, not argued: adding a `case "update":` to `handleRealtime` fails this test with
+  "update: type = heartbeat, want error - the endpoint must refuse it, not ignore it" (run and observed); the
+  case was then removed and `git diff` over `ws_mount.go` is empty.
+- Commands: `go test ./fastmcp/server/httpapp/ -count=1` -> ok (1.045s); `go vet ./fastmcp/server/httpapp/` -> 0
+  bytes; `gofmt -l fastmcp/server/httpapp/` -> empty.
+
 ## 2026-10-06 - the badge absence is asserted rather than inherited (frontend)
 
 - `src/tests/components/ApiReferenceView.test.tsx`: the "a tool with no actions renders no badges" half of its

@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **The realtime socket's accepted message types are pinned by a test, not only by its switch**: `ping`, `heartbeat` and `subscribe` are answered, and every other frame is refused with `Unknown message type` / `UNKNOWN_MESSAGE_TYPE` - the same set the retired Python endpoint had (`agenthub_main/src/fastmcp/server/routes/websocket_routes.py:680,701,748`), so the refusal is the port being faithful rather than a missing capability. The refusal was silent in both directions until now: a client frame that could never be accepted (the frontend's uncalled `useWebSocketV2.ts:290` sender) got an error nobody read. Files: `agenthub_go/fastmcp/server/httpapp/ws_mount_test.go`, `TEST-CHANGELOG.md`.
+
 - **Directive recorded: a docs page as the single source of truth** in `agenthub_go/NEXT_GEN.md`: a reference tier generated from the code (routes, MCP tools) with a drift test, and a guide tier of versioned cloud `document` modules edited by humans in the page and by AI through MCP; the retirement of `ai_docs/` is flagged as the owner's decision.
 
 - **Watch shows results as real lines**: `scripts/openrig_watch_tools.py` no longer joins a result into one line with a marker and cuts it; a call, result, reasoning, speech or incoming message is shown as indented lines, a compact JSON result is pretty-printed, each line is cut at `--width`, at most `--lines` (default 25) lines are shown and the rest is counted (`… +N more lines`). Files: `scripts/openrig_watch_tools.py`, `ai_docs/operations/watching-openrig-seats.md`, `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py` (10 pass).
