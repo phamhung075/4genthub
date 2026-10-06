@@ -228,6 +228,17 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The blank-model claim is sourced to the runtime, in every place the frontend made it** - 2026-10-06
+ - Four frontend sites carried the clause as if THIS path substituted a default: the doc on `isValidSeatModel`,
+ the create form's model hint (user-visible), the topology graph's and seat table's fallback label, and a test
+ name that claimed the substitution as this flow's work. fe-dev measured the truth in two halves: a blank model
+ is accepted and STORED BLANK here and the resolved seat renders no model line, while the runtime CLI DOES
+ substitute one when handed none - which default it picks is not established.
+ - The two comment sites and the hint now carry go-dev's sentence character for character, per the identity rule:
+ extra precision goes in a site-specific sentence BESIDE the shared one, never in an edit to it. The two display
+ labels keep 'runtime default' because that is what is known - a runtime default applies, unnamed - with a
+ comment naming the basis, and the test now pins the behaviour it actually asserts (an empty model is sent as an
+ empty string) rather than the substitution nothing in this path performs.
 - **An authentication refusal stops the status chip promising a retry** - 2026-10-06
  - A 1008 close makes the client give up permanently: `handleClose` emits `authenticationFailed` and returns
  WITHOUT scheduling a reconnect. But the store's `setError` set only the error, leaving `isReconnecting` true
@@ -253,7 +264,9 @@
  - The same create-only claim survived in two more places, found by the reviewer: the doc comment on
  `isValidSeatModel` (`lib/seatNames.ts`) and the doc on `OccupantUpdate` (`types/seatTypes.ts`). Both now say
  what an empty model means where they sit, so the next editor does not inherit the wrong generality. The
- create form's hint (`SeatsPage.tsx`) keeps the sentence because it is true for a create.
+ create form's hint (`SeatsPage.tsx`) kept the sentence on the reading that it is true for a create -
+ CORRECTED in the entry above: the clause is true of the RUNTIME, not of this path, and the shared sentence now
+ says so in all four places.
 - **The realtime socket reaches the API in development, and a refusal says why** - 2026-10-06
  - The dev server proxied `/api` to the backend but not `/ws`, while the app derives its socket URL from the
  page origin in development (`config/environment.ts`: `VITE_WS_URL` when set, else `API_BASE_URL` with the
@@ -261,8 +274,10 @@
  the app reported Live with nothing behind it. `/ws` is now proxied with `ws: true`, and a raw client against
  the dev origin with no token gets the backend's own refusal (`close 1008`, "Authentication required: pass a
  bearer token in the token query parameter or the Authorization header") instead of an open socket.
- - `VITE_WS_URL` cannot rescue that in development: Vite exposes only `.env` files, not the process
- environment, so the variable has no effect unless it is in a frontend `.env` - and there is none.
+ - `VITE_WS_URL` was said here to have no effect unless it is in a frontend `.env`. WRONG, and corrected in the
+ entry above: the config sets `envDir: '..'`, so the REPO ROOT `.env` is the file Vite reads, and what remains
+ true is narrower - a shell export changes nothing, because Vite reads files rather than the process
+ environment.
  - The status chip the task and project headers share now carries what the client records and used to drop:
  `Reconnecting…` while a retry is in progress rather than the same "Offline" as having given up, and the
  recorded error as the chip's title - which for an authentication refusal is the SERVER'S reason string,

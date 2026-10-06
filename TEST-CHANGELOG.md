@@ -2,6 +2,17 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the blank-model claim is sourced to the runtime (frontend)
+
+- `src/tests/pages/SeatsPage.test.tsx`: the case 'adds a seat with an empty model so the runtime default is
+  used' is RENAMED to 'sends an empty model as an empty string, leaving the substitution to the runtime'. Its
+  assertions are untouched - they pin the real behaviour, `createSeat` receiving `model: ''` - and the old name
+  claimed a substitution nothing in this path performs. The runtime CLI does substitute a default when handed
+  none (measured), and which default it picks is not established; nothing about the case's evidence changed,
+  only the claim its name made.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatsPage.test.tsx` -> 30 passed;
+  `npx vitest run` -> 102 files / 1761 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - the module form refuses an mcp block the renderer would refuse (frontend)
 
 - `src/tests/pages/SeatAuthoringPage.test.tsx` adds the pair: with kind mcp and plain-text content, Publish is

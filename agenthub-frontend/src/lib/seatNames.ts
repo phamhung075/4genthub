@@ -25,9 +25,9 @@ export const SEAT_MODEL_MESSAGE =
   'Use letters, digits, ".", "_", ":", "/" or "-"; start with a letter or digit.';
 
 /**
- * An empty model is valid. What an empty model then MEANS belongs to the caller, not to this validator:
- * creating a seat uses the runtime default, while an occupant update KEEPS the model the seat already
- * has, because a blank field never clears a field. This only says the shape is acceptable.
+ * A blank model is accepted and stored blank: this service substitutes no default and the resolved seat
+ * renders no model line. The runtime CLI does substitute one when handed none, measured; which default it
+ * picks is not established here.
  */
 export function isValidSeatModel(value: string): boolean {
   return value === '' || SEAT_MODEL_PATTERN.test(value);
