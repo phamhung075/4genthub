@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the rig path's validation half, with its six refusals (Go client)
+
+- `internal/clientsync/rig_test.go`: `TestReadRigspecPinsEveryShapeRefusal` covers the six checks `cmd_rig`
+  makes plus the name rule it applies per seat - a rigspec for a different room, no yaml text, no seats
+  (missing, not a list, or empty), a malformed seat entry (an entry that is not an object, a seat that is
+  not a string), an entry with no hash, a seat listed twice, and a seat name the rule refuses - each
+  asserting the message AND the code, because the split matters: a badly named room/seat is exit 2 while a
+  malformed ANSWER is exit 1. `TestValidateNameMirrorsThePythonRule` pins the rule in both directions,
+  including the ones that look harmless (`-leading`, `.dot`, `_leading`, a space, a newline).
+- THE ORDERING IS MEASURED, NOT ASSUMED: the "a bad room name never reaches the cloud" case counts the
+  requests the fake server received and requires ZERO, which is what makes "validation comes first" a
+  property rather than a reading of the Python's statement order.
+- Commands: `go test ./internal/clientsync/ -count=1` -> ok; `go test ./...` -> ok packages 143, FAIL lines
+  0; `go vet` -> 0 bytes, exit 0; `gofmt -l` -> empty.
+
 ## 2026-10-06 - the state root's default is pinned as a RESOLVED PATH (python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` gains two cases, WRITTEN BEFORE THE FIX and
