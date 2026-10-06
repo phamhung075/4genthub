@@ -25,7 +25,7 @@ columns top to bottom, left to right. With the default 2 columns for `4genthub-m
 Each pane is named after its seat (herdr pane title) and starts with a `== seat ==` header; its lines carry no seat name, to save width. The merged `feed` (several seats in one stream) still puts the seat name on every line.
 
 Options: `--rig <name>` (default `4genthub-min`), `--cols N`, `--back N` (events replayed per seat
-at start, default 4), `--width N` (characters of each command or result, default 110).
+at start, default 40; a pane holds only what was printed since it started, so raise this to see older work), `--width N` (characters of each command or result, default 110).
 
 Run it again for a fresh grid. It does not reuse or close an earlier one; close the old workspace
 in herdr (`herdr workspace close <id>`).
@@ -37,6 +37,10 @@ python3 scripts/openrig_watch_tools.py feed [--seat go-dev reviewer] [--back 5] 
 ```
 
 All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or without herdr.
+
+## Scrolling back
+
+herdr keeps 10 MB of scrollback per pane. Scroll with the mouse wheel (3 lines a notch) or the scrollbar; or press `prefix+[` for copy mode and use `PageUp`/`PageDown`, `q` or `Esc` to leave. Output stays live and follows the bottom. Settings (`~/.config/herdr/config.toml`): `[ui] mouse_scroll_lines`, `mouse_capture`, `pane_scrollbars`; `[advanced] scrollback_limit_bytes`. Older work than the replay is not in the pane: start the grid with a larger `--back`.
 
 ## Detail: reasoning, what the agent says, what it is told
 

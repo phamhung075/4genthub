@@ -186,7 +186,7 @@ def main() -> None:
     for name, fn in (("feed", feed), ("grid", grid)):
         p = sub.add_parser(name)
         p.add_argument("--rig", default="4genthub-min")
-        p.add_argument("--back", type=int, default=3 if name == "feed" else 4)
+        p.add_argument("--back", type=int, default=3 if name == "feed" else 40)
         p.add_argument("--width", type=int, default=170 if name == "feed" else 110)
         p.add_argument(
             "--detail",
