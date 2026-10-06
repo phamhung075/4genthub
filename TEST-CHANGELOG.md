@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the parity guard stops racing the build (Go)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go`:
+  the module walk now skips **dot directories** (`.gocache`, `.gotmp`, `.git` and any future cache
+  inside the module) and skips a file that vanishes between the listing and the read, instead of
+  failing on `ENOENT`. Both were load-bearing rather than tidy: the project's documented convention
+  puts `GOCACHE` and `TMPDIR` inside the module root, so the walk used to descend into the
+  concurrent build's temporary tree.
+- The file's "what it cannot see" list gains the resulting blind spot: a first-party repository
+  under a dot directory inside the module is unchecked.
+- Evidence, and it is the invocation that failed: `cd agenthub_go` with `GOCACHE=$PWD/.gocache`
+  `TMPDIR=$PWD/.gotmp`, then `go test ./...` **three consecutive times**, each green. The failure it
+  replaces was environment-dependent — one red under the full run, green every time the package ran
+  alone — so a single green run would have been no evidence at all.
+
 ## 2026-10-06 - the rig build's preserve window is pinned with a mid-build drop (Python scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained

@@ -17,6 +17,14 @@ package repositories_test
 // the alternative (calling every constructor) needs a database and a hand-maintained list, and a
 // hand-maintained list is exactly how the defect slipped past the existing constructor test.
 //
+// THE BOUNDARY, stated so that a green run is not read as stronger than it is: this verdict
+// describes the tree AT ONE INSTANT, and a concurrent writer can only HIDE a violation from the walk
+// (a file stashed, checked out or edited away mid-scan is simply not scanned) and can never INVENT
+// one, because every finding cites text this check actually read. That direction is the acceptable
+// one for a guard whose job is to catch a repository committed without its TableDef - it is not a
+// proof that the tree has none, and it is why the check runs in the default `go test` rather than
+// only on a claim.
+//
 // WHAT IT CANNOT SEE, stated so the blind spots are not mistaken for coverage:
 //   - a table name that is not a string literal at the call site. The check FAILS on one instead
 //     of skipping it, so the gap cannot open silently; forwarding constructors are an explicit
@@ -27,6 +35,10 @@ package repositories_test
 //     and the seat DDL guard own that.
 //   - whether the table exists in a LIVE database: that is the migration's business. A migrated
 //     schema is what app_boot_test.go checks, and it needs a database to do it.
+//   - anything under a DOT DIRECTORY inside the module, because the walk skips those: they hold
+//     vendored code and this project's own build caches (GOCACHE and TMPDIR live in .gocache and
+//     .gotmp by the documented convention), and walking them raced the concurrent build. A
+//     first-party repository placed under a dot directory would go unchecked.
 
 import (
 	"bytes"
@@ -83,11 +95,29 @@ func TestORMRepositoriesAskForRegisteredTables(t *testing.T) {
 	asked := map[string][]string{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
+			// A DIRECTORY that is removed or renamed while the walk is inside it - another seat's
+			// checkout, a branch switch, a pre-commit stash restoring the tree - is the same race
+			// one level up from a vanished file, and it is tolerated for the same reason: the entry
+			// was part of the tree when the walk listed it, and a walk cannot be run against a tree
+			// six seats are editing without expecting it to move. SkipDir for a directory (do not
+			// descend, but do walk its siblings); nil for anything else (skip that entry only).
+			if os.IsNotExist(err) {
+				if entry != nil && entry.IsDir() {
+					return fs.SkipDir
+				}
+				return nil
+			}
 			return err
 		}
 		if entry.IsDir() {
-			// Test data and vendored trees hold no constructor the server runs.
-			if name := entry.Name(); name == "testdata" || name == "node_modules" || name == ".git" {
+			// Test data and vendored trees hold no constructor the server runs, and DOT
+			// DIRECTORIES ARE NOT WALKED AT ALL. That last part is not tidiness: this project's own
+			// convention puts GOCACHE and TMPDIR INSIDE the module root (.gocache, .gotmp), so a
+			// walk that descended into them raced the concurrent build - the build deleted a
+			// temporary file between this walk's listing and its open, and the guard failed with
+			// ENOENT under `go test ./...` while passing when its package ran alone.
+			name := entry.Name()
+			if name == "testdata" || name == "node_modules" || strings.HasPrefix(name, ".") {
 				return fs.SkipDir
 			}
 			return nil
@@ -97,6 +127,11 @@ func TestORMRepositoriesAskForRegisteredTables(t *testing.T) {
 		}
 		source, err := os.ReadFile(path)
 		if err != nil {
+			// A live tree can change under the walk. A file that vanished is not this check's
+			// business; any other read failure is.
+			if os.IsNotExist(err) {
+				return nil
+			}
 			return err
 		}
 		// Cheap prefilter: most files declare no repository at all.
@@ -113,7 +148,24 @@ func TestORMRepositoriesAskForRegisteredTables(t *testing.T) {
 		fset := token.NewFileSet()
 		parsed, parseErr := parser.ParseFile(fset, path, source, 0)
 		if parseErr != nil {
-			return parseErr
+			// ONE RE-READ, because a concurrent writer can present a TRUNCATED file: a seat saving
+			// a file over a shared tree is exactly the case this guard's prefilter steers into the
+			// parser (only files naming the NewORMRepository family get here, which are the
+			// repository files under active edit). A genuine syntax error survives a re-read; a
+			// truncated read does not, so one retry kills the transient without weakening the
+			// check. No sleep and no lock: this is not a synchronisation problem.
+			refreshed, readErr := os.ReadFile(path)
+			if readErr != nil {
+				if os.IsNotExist(readErr) {
+					return nil
+				}
+				return readErr
+			}
+			source = refreshed
+			fset = token.NewFileSet()
+			if parsed, parseErr = parser.ParseFile(fset, path, source, 0); parseErr != nil {
+				return parseErr
+			}
 		}
 		ast.Inspect(parsed, func(node ast.Node) bool {
 			call, ok := node.(*ast.CallExpr)

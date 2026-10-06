@@ -122,6 +122,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**The registry parity guard no longer races the build it runs inside** (2026-10-06)
+
+- **Symptom, measured at the tip under the project's own documented invocation:** `go test ./...` from `agenthub_go` with `GOCACHE` and `TMPDIR` inside `.gocache`/`.gotmp` produced one failing test — `TestORMRepositoriesAskForRegisteredTables` — with `scan …: open …/.gotmp/go-build…/b563: no such file or directory`. The same package run **alone** passed every time, which is what made it look like a flake.
+- **Cause, and it is the convention that armed it:** the guard walks the module root, and the convention puts `TMPDIR` **inside** that root, so the walk descended into the concurrent build's temporary tree and lost a file between its listing and its open. The instrument's result depended on the environment it ran in — the same class as the D5 test.
+- **Fix, where the defect is:** the walk no longer descends into **dot directories at all** (which covers `.gocache`, `.gotmp`, `.git` and any future cache inside the module), and a file that vanishes during the walk is skipped rather than failing the check — a live tree can change under a walk, and a vanished file is not what this guard reasons about.
+- **Blind spot recorded in the file rather than left implicit:** a first-party repository placed under a dot directory inside the module would go unchecked.
+- Verified the way the failure appeared: three consecutive `go test ./...` runs from `agenthub_go` with `GOCACHE` and `TMPDIR` inside `.gocache`/`.gotmp`, green every time — a single run cannot tell you about a race that fires once in three.
+
 **The rig build's preserve set is derived at swap time, which closes a measured window and deletes the blacklist** (2026-10-06)
 
 - Follow-up to the entry below, and it closes a **window rather than a tidiness**: the rig build used to read the operator's entries once and pass them to the swap, so a file that landed **after that read and before the swap** was in neither the old list nor the new directory and was deleted — by a build whose promise is that the operator's files survive.
