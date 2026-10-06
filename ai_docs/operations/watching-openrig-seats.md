@@ -44,9 +44,9 @@ All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or wi
 
 | Mark | Meaning |
 |---|---|
-| `~ think` (dim italic) | the agent's reasoning before it acts |
+| `~ think` (light purple italic) | the agent's reasoning before it acts |
 | `▸ say` (bold) | what the agent writes back (single-character replies are skipped) |
-| `◂ in` (cyan) | a message the agent received: the owner, another seat, a system notice |
+| `◂ in` (light cyan) | a message the agent received: the owner, another seat, a system notice |
 
 **What OpenRig already shows, and what this adds.** OpenRig's own views (`rig transcript`, `rig ask`, `rig terminal open`, the UI's transcript drill-in) read the seat's pane, which the omp runner fills with the assistant's text, one-line tool summaries, incoming messages, compaction and errors. They do not carry the reasoning or a tool's full arguments and result; those exist only in the seat's session log, which this tool reads. Use OpenRig's views for the conversation, this one for the reasoning and tool detail.
 
@@ -62,11 +62,13 @@ All seats interleaved in one terminal; `--seat` limits it. Useful over ssh or wi
 | `→ tool key=value` | a tool call; `(+a, b)` lists arguments that are not shown |
 | `← text` | the tool's result, dim |
 | `✗ text` | an error result, red |
-| `✗ BLOCKED` (white on red) | the seat's policy refused the call (`scripts/openrig_seat_policy.py`) |
+| `✗ BLOCKED` (white on a red block) | the seat's policy refused the call (`scripts/openrig_seat_policy.py`) |
 | `⏎` | a line break inside a command or result |
 
-Tool colours: read, grep, find, ls blue; write, edit yellow; bash, eval green; `mcp__*` (4genthub,
-deepseek) magenta. The timestamp is when the viewer printed the line, not when the seat ran it, so
+All colours are light 256-colour tones chosen for a black terminal background; none uses the dim style or the dark ANSI blues and magentas (change the palette at the top of the script).
+
+Tool colours: read, grep, find, ls light blue; write, edit yellow; bash, eval green; `mcp__*` (4genthub,
+deepseek) pink. The timestamp is when the viewer printed the line, not when the seat ran it, so
 the replayed lines at start all share one time.
 
 ## Notes

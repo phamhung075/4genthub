@@ -66,7 +66,7 @@ def test_mcp_tools_get_their_own_colour():
         }
     ]
     (text,) = watch.events(line("assistant", call), 200)
-    assert "\033[1;35m" in text
+    assert watch.fg(watch.MCP_COLOR) in text
 
 
 def test_detail_adds_reasoning_what_the_agent_says_and_what_it_is_told_and_nothing_else_does():

@@ -18,20 +18,32 @@ import time
 from pathlib import Path
 
 ROOT = Path.home() / ".openrig" / "state" / "omp"
-COLORS = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94]
 RESET = "\033[0m"
+BOLD = "\033[1m"
+
+
+def fg(code: int) -> str:
+    """256-colour foreground. Every colour below is a light one: readable on a black background."""
+    return f"\033[38;5;{code}m"
+
+
+SEAT_COLORS = [203, 114, 221, 75, 213, 87, 215, 183, 120, 229]
+MCP_COLOR = 213
+DEFAULT_TOOL_COLOR = 255
+RESULT_COLOR = 249
+STAMP_COLOR = 245
 # tool name -> colour: reads blue, writes yellow, shell green, MCP magenta, anything else white
 TOOL_COLORS = {
-    "read": 34,
-    "grep": 34,
-    "find": 34,
-    "ls": 34,
-    "search": 34,
-    "write": 33,
-    "edit": 33,
-    "ast_edit": 33,
-    "bash": 32,
-    "eval": 32,
+    "read": 117,
+    "grep": 117,
+    "find": 117,
+    "ls": 117,
+    "search": 117,
+    "write": 221,
+    "edit": 221,
+    "ast_edit": 221,
+    "bash": 120,
+    "eval": 120,
 }
 
 
@@ -61,15 +73,15 @@ def detail_lines(role: str | None, part: dict, width: int):
     if role == "assistant" and kind == "thinking":
         text = " ".join(str(part.get("thinking", "")).split())
         if text:
-            yield f"\033[2;3;35m~ think {text[:width]}{RESET}"
+            yield f"{fg(183)}\033[3m~ think {text[:width]}{RESET}"
     elif role == "assistant" and kind == "text":
         text = " ".join(str(part.get("text", "")).split())
         if len(text) > 1:
-            yield f"\033[1;97m▸ say {RESET}{text[:width]}"
+            yield f"{BOLD}{fg(231)}▸ say {RESET}{fg(255)}{text[:width]}{RESET}"
     elif role == "user" and kind == "text":
         text = " ".join(str(part.get("text", "")).split())
         if text:
-            yield f"\033[1;96m◂ in {RESET}\033[36m{text[:width]}{RESET}"
+            yield f"{BOLD}{fg(87)}◂ in {RESET}{fg(123)}{text[:width]}{RESET}"
 
 
 def events(line: str, width: int, detail: bool = False):
@@ -82,19 +94,23 @@ def events(line: str, width: int, detail: bool = False):
         text = " ".join(p.get("text", "") for p in content or [] if isinstance(p, dict))
         body = text.replace(chr(10), " ⏎ ")[:width]
         if text.startswith("Tool ") and "is blocked by tool policy" in text[:120]:
-            yield f"\033[1;97;41m ✗ BLOCKED {RESET} \033[91m{body}{RESET}"
+            yield f"\033[1;38;5;231;48;5;160m ✗ BLOCKED {RESET} {fg(210)}{body}{RESET}"
         elif msg.get("isError"):
-            yield f"\033[1;91m✗ {body}{RESET}"
+            yield f"{BOLD}{fg(203)}✗ {body}{RESET}"
         else:
-            yield f"\033[2m← {body}{RESET}"
+            yield f"{fg(RESULT_COLOR)}← {body}{RESET}"
     elif isinstance(content, list):
         for part in content:
             if detail and isinstance(part, dict):
                 yield from detail_lines(msg.get("role"), part, width)
             if isinstance(part, dict) and part.get("type") == "toolCall":
                 name = part.get("name") or "?"
-                code = 35 if name.startswith("mcp__") else TOOL_COLORS.get(name, 97)
-                yield f"\033[1;{code}m→ {name}{RESET} {brief(part.get('arguments'), width)}"
+                code = (
+                    MCP_COLOR
+                    if name.startswith("mcp__")
+                    else TOOL_COLORS.get(name, DEFAULT_TOOL_COLOR)
+                )
+                yield f"{BOLD}{fg(code)}→ {name}{RESET} {fg(255)}{brief(part.get('arguments'), width)}{RESET}"
 
 
 def rig_seats(rig: str) -> list[str]:
@@ -190,14 +206,14 @@ def feed(a: argparse.Namespace) -> None:
     seats = rig_seats(a.rig)
     if a.seat:
         seats = [s for s in seats if s in a.seat]
-    color = {s: COLORS[i % len(COLORS)] for i, s in enumerate(seats)}
+    color = {s: SEAT_COLORS[i % len(SEAT_COLORS)] for i, s in enumerate(seats)}
     pos: dict[str, tuple[Path, int]] = {}
 
     def show(seat, line):
         stamp = time.strftime("%H:%M:%S")
         for text in events(line, a.width, a.detail):
             print(
-                f"\033[2m{stamp}\033[0m \033[1;{color[seat]}m{seat:<12}{RESET} {text}",
+                f"{fg(STAMP_COLOR)}{stamp}{RESET} {BOLD}{fg(color[seat])}{seat:<12}{RESET} {text}",
                 flush=True,
             )
 
