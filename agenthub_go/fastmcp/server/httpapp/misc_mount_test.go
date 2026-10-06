@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/server/metrics"
 )
 
@@ -54,7 +55,7 @@ func TestMiscRegisterResponse(t *testing.T) {
 		t.Fatalf("session_id missing: %v", body)
 	}
 	server, _ := body["server"].(map[string]any)
-	if server["name"] != "agenthub-server" || server["version"] != "2.1.0" || server["protocol_version"] != "2025-06-18" {
+	if server["name"] != "agenthub-server" || server["version"] != config.ReleaseVersion || server["protocol_version"] != mcpProtocolVersion {
 		t.Errorf("server = %v", server)
 	}
 	endpoints, _ := body["endpoints"].(map[string]any)

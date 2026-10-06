@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/server/metrics"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -186,8 +187,8 @@ func mcpRegisterResponse(sessionID, baseURL string) *entities.OrderedMap[any] {
 
 	server := entities.NewOrderedMap[any]()
 	server.Set("name", "agenthub-server")
-	server.Set("version", "2.1.0")
-	server.Set("protocol_version", "2025-06-18")
+	server.Set("version", config.ReleaseVersion)
+	server.Set("protocol_version", mcpProtocolVersion)
 	out.Set("server", server)
 
 	endpoints := entities.NewOrderedMap[any]()

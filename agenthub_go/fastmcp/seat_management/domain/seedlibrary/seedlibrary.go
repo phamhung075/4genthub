@@ -18,13 +18,14 @@ import (
 	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
+	"agenthub/fastmcp/seat_management/domain/secretscan"
 	"agenthub/fastmcp/seat_management/domain/seedmap"
 	"agenthub/fastmcp/seat_management/domain/skillblock"
 
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed seat-types/*.yaml shared-modules/* blocks/*.json
+//go:embed seat-types/*.yaml shared-modules/* blocks/*
 var embedded embed.FS
 
 const (
@@ -57,6 +58,10 @@ var sharedModuleFiles = []struct {
 	// told so by the render (no file, no tools) rather than by this text being absent — and because a
 	// seat whose blocks change should not need a second edit here to learn what to do with them.
 	{"mcp-usage", resolver.KindInstruction, "mcp-usage.md", ""},
+	// The working procedure every seat follows, as the library's own content rather than a script
+	// that writes each seat's AGENTS.md by hand (packet 6, step 1). It is SHARED, so every seat
+	// type carries it; the per-seat guides are blocks the shelf holds for a seat to mount.
+	{"guide-common", resolver.KindInstruction, "guide-common.md", ""},
 }
 
 var (
@@ -155,18 +160,33 @@ func sha256Hex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// loadBlocks reads the library's published MCP blocks: one blocks/*.json file per block, the
-// file name without .json being the module slug, the content one server in the mcpblock
-// payload shape. A block is validated here, before it is ever stored, so a malformed or
-// secret-carrying block is refused at load time.
+// loadBlocks reads the library's published blocks, one file per block, the file name without its
+// extension being the module slug. The extension states the kind: .json is an MCP block whose
+// content is one server in the mcpblock payload shape, .md is an instruction block whose content
+// is the text a seat renders into its guidance. A block is validated HERE, by the very rule its
+// kind's renderer runs, before it is ever stored or seeded, so a malformed, secret-carrying or
+// (for a guide) empty block is refused at load time and never reaches a seat.
 func loadBlocks(fsys fs.FS) (map[string]seedmap.SeedModule, error) {
-	names, err := fs.Glob(fsys, blocksDir+"/*.json")
+	names, err := fs.Glob(fsys, blocksDir+"/*")
 	if err != nil {
 		return nil, err
 	}
 	blocks := make(map[string]seedmap.SeedModule, len(names))
 	for _, name := range names {
-		slug := strings.TrimSuffix(path.Base(name), ".json")
+		ext := path.Ext(name)
+		var kind resolver.ModuleKind
+		switch ext {
+		case ".json":
+			kind = resolver.KindMCP
+		case ".md":
+			kind = resolver.KindInstruction
+		default:
+			// A file whose kind the loader cannot name is refused rather than skipped: skipping is
+			// how a block sits in the shelf with nothing able to load it, which is the same silent
+			// absence the per-kind rule exists to prevent.
+			return nil, fmt.Errorf("%s: a block file is .json (mcp) or .md (instruction), got %q", name, ext)
+		}
+		slug := strings.TrimSuffix(path.Base(name), ext)
 		if !slugPattern.MatchString(slug) {
 			return nil, fmt.Errorf("%s: block file name %q must match %s", name, slug, slugPattern)
 		}
@@ -174,12 +194,41 @@ func loadBlocks(fsys fs.FS) (map[string]seedmap.SeedModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, err := mcpblock.Parse(string(data)); err != nil {
-			return nil, fmt.Errorf("%s: %w", name, err)
+		if err := validateBlockContent(kind, name, string(data)); err != nil {
+			return nil, err
 		}
-		blocks[slug] = seedmap.SeedModule{Slug: slug, Kind: resolver.KindMCP, Content: string(data)}
+		blocks[slug] = seedmap.SeedModule{Slug: slug, Kind: kind, Content: string(data)}
 	}
 	return blocks, nil
+}
+
+// validateBlockContent runs the checks the publish route runs, in the route's order, for the two
+// kinds a block FILE can carry. It deliberately does not call modulecontent.Validate: that package
+// maps every kind to its rule, including the tool kind, whose rule lives in seatrenderer — and
+// seatrenderer's own test imports THIS package, so importing it back would close an import cycle.
+// The cost is stated rather than hidden: a third kind given an extension here must state its rule
+// here too, and the switch below refuses one that does not.
+func validateBlockContent(kind resolver.ModuleKind, name, content string) error {
+	if len(strings.TrimSpace(content)) == 0 {
+		return fmt.Errorf("%s: block is empty", name)
+	}
+	// The spec's rule is that secrets are never rendered into a module, and the route enforces it
+	// with secretscan BEFORE the kind's parse. An instruction block accepts any text, so without
+	// this the library path would be how a credential reached a seat's guidance.
+	if secretscan.Contains(content) {
+		return fmt.Errorf("%s: block carries a credential-shaped value", name)
+	}
+	switch kind {
+	case resolver.KindMCP:
+		if _, err := mcpblock.Parse(content); err != nil {
+			return fmt.Errorf("%s: %w", name, err)
+		}
+	case resolver.KindInstruction:
+		// Rendered verbatim into the seat's guidance, so the text itself is the whole rule.
+	default:
+		return fmt.Errorf("%s: no content rule for kind %q", name, kind)
+	}
+	return nil
 }
 
 // blockSlugs lists a block catalog's slugs in sorted order, for an error that names what the

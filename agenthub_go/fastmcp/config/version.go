@@ -1,41 +1,27 @@
 // Package config ports the fastmcp/config modules.
 package config
 
-import (
-	"os"
-
-	"agenthub/fastmcp/task_management/domain/entities"
-)
-
-// DefaultVersion is the default server version, overridable with SERVER_VERSION.
-const DefaultVersion = "0.0.2c"
+// ReleaseVersion is THE release identity of this server: one string, one place.
+//
+// Every surface that advertises the server's own version reads this. They used to disagree:
+// /health carried this marker while the MCP initialize serverInfo, the MCP status tool, the
+// register_mcp_client response, the access-level health checker and the connection-management
+// server records carried either the ported module's default (0.0.2c) or the Python framework's
+// version (2.1.0). Three answers to "which release is this?" is how a deploy gets called
+// complete when it is not, so the field is now one value (measured 2026-10-06; see CHANGELOG).
+//
+// The Python port also kept the version overridable with SERVER_VERSION and its metadata in
+// VersionInfo; both went with that tree. SERVER_VERSION is set nowhere in this repo and an
+// environment variable that can rename the release is a second identity by construction, so a
+// literal is the honest form of a deploy marker.
+//
+// Bump this with every change that must be confirmable after a deploy. It is the LAST commit in
+// the set before a deploy is requested, so the string can never cover a tree that lacks the
+// content it marks; if a commit lands after the bump, the bump moves to it or the deploy waits.
+const ReleaseVersion = "0.0.23"
 
 // ServerName is the server's NAME — the brand subtitle after the dash, not a
 // description sentence. One definition for every place that advertises the
-// server name: the version metadata, the MCP status tool, the health endpoint
-// and the server records built by the connection-management use cases.
+// server name: the health endpoint, the MCP initialize serverInfo, the MCP status
+// tool and the server records built by the connection-management use cases.
 const ServerName = "agenthub - AI Orchestration Platform"
-
-// ResolveVersion is SERVER_VERSION when set (even to the empty string), else DefaultVersion.
-func ResolveVersion(lookup func(string) (string, bool)) string {
-	if v, ok := lookup("SERVER_VERSION"); ok {
-		return v
-	}
-	return DefaultVersion
-}
-
-// Version is the server version, resolved once at startup (Python: at import).
-var Version = ResolveVersion(os.LookupEnv)
-
-// VersionInfo is the additional version metadata.
-func VersionInfo() *entities.OrderedMap[any] { return VersionInfoFor(Version) }
-
-// VersionInfoFor builds the metadata for a given version.
-func VersionInfoFor(version string) *entities.OrderedMap[any] {
-	m := entities.NewOrderedMap[any]()
-	m.Set("version", version)
-	m.Set("name", ServerName)
-	m.Set("codename", "Vision System Enhanced")
-	m.Set("release_date", "2025-09-10")
-	return m
-}

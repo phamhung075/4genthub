@@ -505,18 +505,17 @@ That is the **context API**, not the platform's composition model. How a seat is
 <tr>
 <td width="50%">
 
-### ⚡ **Current Performance**
-- **Response Time**: <200ms average
-- **Concurrent Users**: 10-50 users
-- **Agent Coordination**: Real-time
-- **Context Sync**: <5ms overhead
+### ⚡ **Performance — NOT MEASURED**
+- **No benchmark of this server exists in this repository**, so the figures that used to print here (`<200ms average` response time, `10-50 concurrent users`, `Context Sync <5ms overhead`) are **removed rather than restated: they had no measurement behind them and none in the tree.** Settle them by measuring, or leave them out.
+- **Agent Coordination**: real-time over the socket path — the mounted surface is in [the surface inventory](ai_docs/api-integration/surface-inventory.md)
 - **Database**: PostgreSQL
 
 </td>
 <td width="50%">
 
-### 📈 **Scaling Roadmap**
-- **MVP** (Current): 100 RPS
+### 📈 **Scaling Roadmap — TARGETS, NOT MEASURED CAPACITY**
+- **Every tier below is an aspiration with no measurement behind it and no date metadata in the tree, and the quarters it names have passed** — recorded as a roadmap so that nothing here reads as current capacity.
+- **MVP** (when written): 100 RPS
 - **Tier 1** (Q2 2025): 1K RPS + Microservices
 - **Tier 2** (Q3 2025): 10K RPS + Service Mesh
 - **Enterprise** (Q4 2025): 1M+ RPS + Global Edge
@@ -538,16 +537,13 @@ Track all changes, releases, and improvements to the agenthub platform through o
 | 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Deploy marker** | `GET /health` reports the running version. The tree carries **0.0.22** (`agenthub_go/fastmcp/server/httpapp/http.go:159`); the last deploy recorded in this repo is **0.0.21** (packet 3, `0018c644`). The newest *released* section of the changelog is **0.0.5** (2025-09-26) — the two numbering schemes are separate, so this row carries the deploy marker and links the release history. | [CHANGELOG.md](CHANGELOG.md) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Measured 2026-10-06 (pass 3): production answers `healthy` with `"version":"0.0.22"` AND `origin/main` still declares `0.0.22`, while THE TREE'S RELEASE LITERAL HAS MOVED TO `0.0.23`** — the value lives in `agenthub_go/fastmcp/config/version.go:21` and is read by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so **the deployed and the prepared state now DIFFER and the tree sits 44 commits above the deployed tip** (packet 4, `fcd4c268`; the previous deploy was `0.0.21` at packet 3, `0018c644`). **Pass 2's sentence "the first deploy where the two agree" was true when it was written and is false now; it is corrected here rather than quietly dropped, because a row that says two versions agree is itself a claim that drifts.** The newest *released* section of the changelog is **`0.0.5` (2025-09-26)** — a separate numbering scheme — so this row carries the deploy marker and links the release history; the dated reads of both halves live in the packet-4 deploy record rather than here, where a bundle name would go stale. | [CHANGELOG.md](CHANGELOG.md) |
 
 ### 🚀 **Latest Releases**
 
 **Recent highlights from our development journey:**
 
-- **[2025-09-19] - Iteration 107** - 🏆 Septuple Centenarian Perfection
-  - 541 tests passing with 100% success rate
-  - 107 consecutive perfect iterations achieved
-  - Self-healing system with zero maintenance required
+- **HISTORY — `[2025-09-19] - Iteration 107`** - 🏆 *"Septuple Centenarian Perfection"* — **this is a record of the RETIRED PYTHON TREE, not of this server:** `agenthub_main/` is archived and this repository no longer builds or tests it (`55c33107`, "ci: stop building and testing the archived Python server"). **The 541 tests and the 107 iterations are `agenthub_main`'s; the Go server's own tests are the live ones.** Kept, labelled, rather than deleted — **a release note that reads as a current highlight is a retired stack presented as live.**
 
 - **Agent Library Retirement** - Removed the Python agent library (32 templates), the `agent_templates` / `user_agent_instances` tables and the `call_agent` MCP tool
   - Replaced by the seat model (`manage_seat` / `call_seat`) and the `agents` registry via `manage_agent`
@@ -664,6 +660,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**agenthub** • deploy marker **0.0.22** in the tree (`GET /health`; last deploy recorded: **0.0.21**) • **Built with ❤️ for Human-AI Collaboration**
+**agenthub** • deployed marker **0.0.22** (production `GET /health` and `origin/main`, measured 2026-10-06) • tree release literal **0.0.23** (prepared, not pushed) • **Built with ❤️ for Human-AI Collaboration**
 
 </div>

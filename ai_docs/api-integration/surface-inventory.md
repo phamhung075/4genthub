@@ -27,10 +27,12 @@ The commands used and the full registration dump are in the acceptance appendix.
 
 ## 1. Mounted routes
 
-**Counts (DATED — carry the date and the pattern, per the counting rule).** At HEAD **2026-10-06**, the same pattern gives **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **124** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **144 total.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
+
+**CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, and §5's two quoted-report cites were re-derived here; the DDL and table citations in §3 were NOT re-derived in this pass (the `ProductionTables` count among them).** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
 
 Path convention for the Registration column: paths are relative to `agenthub_go/`; from
 §1.2 on, the column gives the BASENAME (`branch_routes.go:61`) because the section header
@@ -41,13 +43,13 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:112` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:135` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:148` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:156` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:164` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:185` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:193` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:122` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:146` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:159` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:167` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:175` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:196` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:204` |
 
 **The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:135` registers it and `:137-144` reads it with `_ = r.ParseForm()` and `r.PostForm.Get("name")`: **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
@@ -99,16 +101,16 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:55` |
-| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:116` |
+| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:73` |
+| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:138` |
 
 ### 1.7 WebSockets (`ws_mount.go`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:61` |
-| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:62` |
-| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:63` |
+| GET | `/ws/realtime` | `handleRealtime` | `ws_mount.go:68` |
+| GET | `/ws/connector` | `handleConnector` | `ws_mount.go:69` |
+| GET | `/ws/sessions/{id}` | `handleSessionViewer` | `ws_mount.go:70` |
 
 **DECLARED OUT OF SCOPE — THE THREE UNMOUNTED OLD-PROTOCOL WEBSOCKET ENDPOINTS (owner decision, 2026-10-06).** **The old-protocol surface served by `fastmcp/websocket/server.go` is NOT mounted on the live handler:** it registers **`/ws/{user_id}`** (`server.go:92`), **`/ws/health`** and **`/ws/stats`** (`server.go:93-94`) on **its own app**, and **nothing outside that package constructs it** (`NewWebSocketServer` has no non-test caller — the only imports of the package elsewhere are `wslib` for the `WebSocket` type, in `ws_mount.go:37` and `server/routes/websocket_routes.go:25`). **THE OWNER DECLARED THESE THREE OUT OF SCOPE RATHER THAN MOUNTING THEM, which is the honest closure of the parity claim: THE PORT IS COMPLETE FOR THE SURFACE IN USE, with `/ws/{user_id}`, `/ws/health` and `/ws/stats` DELIBERATELY EXCLUDED** — so nothing reads as though the old protocol is fully served. **AND IT IS A DECISION RATHER THAN AN OMISSION:** mounting them would have added endpoints **nothing consumes**, and **the owner chose the honest label over the tidier-looking port.**
 
@@ -116,10 +118,10 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/register` | `mcpRegistrationStore.register` | `misc_mount.go:62` |
-| POST | `/unregister` | `mcpRegistrationStore.unregisterResponse` | `misc_mount.go:66` |
-| GET | `/registrations` | `mcpRegistrationStore.listResponse` | `misc_mount.go:69` |
-| GET | `/ws/metrics` | `handleWebSocketMetrics` | `misc_mount.go:72` |
+| POST | `/register` | `mcpRegistrationStore.register` | `misc_mount.go:63` |
+| POST | `/unregister` | `mcpRegistrationStore.unregisterResponse` | `misc_mount.go:67` |
+| GET | `/registrations` | `mcpRegistrationStore.listResponse` | `misc_mount.go:70` |
+| GET | `/ws/metrics` | `handleWebSocketMetrics` | `misc_mount.go:73` |
 
 ### 1.9 Connections — base `/api/v2/connections` (`routes_mount.go:84`)
 
@@ -243,11 +245,11 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:111` |
-| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:114` |
-| GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:107` |
-| POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:35` |
-| DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:38` |
+| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:184` |
+| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:187` |
+| GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:105` |
+| POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:41` |
+| DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:44` |
 | POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:91` |
 | GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:94` |
 
@@ -297,6 +299,19 @@ within the caller's memberships.
 | PATCH | `/api/v2/openrig/teams/{team}/members/{user}` | `handleUpdateTeamMember` | `team_mount.go:90` |
 | DELETE | `/api/v2/openrig/teams/{team}/members/{user}` | `handleRemoveTeamMember` | `team_mount.go:93` |
 
+### 1.21 Friction channel — base `/api/v2/openrig/feedback` (`seat_feedback_mount.go`)
+
+**Added to this inventory on 2026-10-06 (docs duty pass 3): these two registrations were MOUNTED and were not documented here**, which is what made §1's count two short (§1's corrected counts paragraph carries the measurement).
+
+| Method | Path | Handler | Registration |
+|---|---|---|---|
+| POST | `/api/v2/openrig/feedback` | `handleSubmitSeatFeedback` (inline closure behind `seatFeedbackAuthed`) | `seat_feedback_mount.go:73` |
+| GET | `/api/v2/openrig/feedback` | `handleListSeatFeedback` (inline closure behind `authed`) | `seat_feedback_mount.go:76` |
+
+**Auth — read from the mount rather than assumed.** The **POST accepts a machine token OR a user token** (`seat_feedback_mount.go:7` states the pair, `:18-21` states why: the row is written under the token's own user id, so a machine token cannot write outside its tenant), and the order is load-bearing: `seatFeedbackAuthed` (`:91`) tries the machine-token store first (`:100`), because a machine token is an exact hash match while the user path can resolve a token that is not a user token when the auth layer's development fallback is running (`:83-89`); an invalid machine token **falls through to the user path** (`:110`, "Not a machine token: the user path gets it"), while a machine-token **lookup failure is an error** (`:112`) rather than a fall-through. The **GET takes a user token** only (`authed`).
+
+**Request shape — defined at `seat_feedback_mount.go:64-70`** (`seatFeedbackSubmission`: `room`, `seat`, `layer`, `text` required; `session` optional). The `layer` vocabulary is the DDL's closed set (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`) rather than a list in this document; the credential scan and the page that groups by layer are described once in `README.md`'s *Rig and OpenRig workflow* section. **The third door onto the same writer is the MCP tool `submit_feedback` (§2.3) and the fourth is `scripts/seat_feedback.sh`.**
+
 ---
 
 ## 2. MCP tool surface
@@ -332,24 +347,26 @@ ok  	agenthub/fastmcp/server/httpapp	0.014s
 ```
 
 The `tools/list` result is built by `App.getMCPToolsList`
-(`fastmcp/server/httpapp/mcp_routes.go:236`), which does exactly two things:
+(`fastmcp/server/httpapp/mcp_routes.go:257`), which does exactly two things:
 
 1. iterates `DDDCompliantMCPTools.ToolDefinitions()`
-   (`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:218`), and
-2. appends three schemas `ToolDefinitions` does not carry (`mcp_routes.go:249-274`).
+   (`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:221`), and
+2. appends **four** schemas `ToolDefinitions` does not carry — `manage_seat`, `call_seat`, `submit_feedback` and the connection tool (`mcp_routes.go:278`, `:287`, `:296`, `:305`).
 
 There is no other filter or source.
 
+**Citations re-derived and one claim corrected (2026-10-06, docs duty pass 3).** Every line above was re-resolved against the tree rather than trusted: `getMCPToolsList` had moved **236 → 257** and `ToolDefinitions` **218 → 221**; and **the appended count read THREE where the code appends FOUR** — `tools := make([]map[string]any, 0, len(defs)+4)` (`mcp_routes.go:262`) with four appends (`:278`, `:287`, `:296`, `:305`) — **which this same document's §2.3 table and §2.5 already called four, so this section was contradicting its own table as well as the code.** The stale range `249-274` is now the four real lines.
+
 ### 2.2 MCP protocol methods (NOT tools)
 
-`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:150`) implements these JSON-RPC
+`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:173`) implements these JSON-RPC
 methods. They are the protocol layer and MUST NOT be listed as tools:
 
 `initialize`, `notifications/initialized`, `ping`, `tools/list`, `resources/list`,
-`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:150-220`).
+`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:173`).
 
 `initialize` and `tools/list` additionally require a bearer token when
-`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:126`).
+`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:145`).
 `resources/list` and `prompts/list` return empty lists.
 
 ### 2.3 Published tools (`tools/list`)
@@ -358,20 +375,20 @@ Ten tool names, always present except `manage_context` (see note):
 
 | Tool | Source | File:line |
 |---|---|---|
-| `manage_task` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:220` |
-| `manage_subtask` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:224` |
-| `manage_context` | `ToolDefinitions` (conditional) | `ddd_compliant_mcp_tools.go:230` |
-| `manage_project` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:236` |
-| `manage_git_branch` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:241` |
-| `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:246` |
-| `manage_seat` | appended schema | `mcp_routes.go:257` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
-| `call_seat` | appended schema | `mcp_routes.go:266` (`CallSeatToolName`, `call_seat_controller.go:14`) |
-| `submit_feedback` | appended schema | `mcp_routes.go:271` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
-| `manage_connection` | appended schema | `mcp_routes.go:274` (`connectionToolDefinition`, `mcp_connection_tool.go:39`) |
+| `manage_task` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:223` |
+| `manage_subtask` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:227` |
+| `manage_context` | `ToolDefinitions` (conditional) | `ddd_compliant_mcp_tools.go:233` |
+| `manage_project` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:239` |
+| `manage_git_branch` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:244` |
+| `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:249` |
+| `manage_seat` | appended schema | `mcp_routes.go:279` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
+| `call_seat` | appended schema | `mcp_routes.go:288` (`CallSeatToolName`, `call_seat_controller.go:14`) |
+| `submit_feedback` | appended schema | `mcp_routes.go:297` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
+| `manage_connection` | appended schema | `mcp_routes.go:301` (`connTool, err := connectionToolDefinition()`, appended at `:305`; definition `mcp_connection_tool.go:39`) |
 
 Note: `manage_context` is emitted only when `ContextController != nil`; the constructor
-sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:107-111`), and
-`app.go:66` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
+sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:110-114`), and
+`app.go:71` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
 **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly
 these ten names.**
 
@@ -383,13 +400,13 @@ rest equals golden.
 
 ### 2.4 Dispatch-only names (callable via `tools/call`, NOT advertised by `tools/list`)
 
-`dispatchMCPTool` (`mcp_routes.go:303`) also handles two legacy names that are **not**
+`dispatchMCPTool` (`mcp_routes.go:324`) also handles two legacy names that are **not**
 published in `tools/list`:
 
-- `get_mcp_status` (`mcp_routes.go:326`)
-- `check_session_health` (`mcp_routes.go:333`)
+- `get_mcp_status` (`mcp_routes.go:357`)
+- `check_session_health` (`mcp_routes.go:363`)
 
-Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:435`, `default`).
+Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:469`, `default`).
 
 ### 2.5 Configuration gating — important negative finding
 
@@ -400,10 +417,10 @@ The Python-derived `ToolConfig` subsystem still exists in Go
 `regenerate_auto_rule`, `validate_tasks_json`, `create_context_file`, `manage_context`).
 
 **In this Go server that table does not gate `tools/list`.** Evidence:
-`DDDCompliantMCPTools` constructs a `ToolConfig` and passes it to controllers
-(`ddd_compliant_mcp_tools.go:62`), but the only method any caller invokes on it is
+`DDDCompliantMCPTools` builds a `ToolConfig` and passes it to controllers
+(`ddd_compliant_mcp_tools.go:65`, `cfg, err := configuration.NewToolConfig(...)`), but the only method any caller invokes on it is
 `IsWorkflowGuidanceEnabled()` (`git_branch_mcp_controller.go:176`,
-`subtask_mcp_controller.go:336`, `agent_mcp_controller.go:249`). `GetEnabledTools` has no
+`subtask_mcp_controller.go:336`, `agent_mcp_controller.go:249` — all three verified present). `GetEnabledTools` has no
 caller outside `fastmcp/config` (its `ToolRegistry`/`ToolConfigLoader` are unused by the
 HTTP path). `ToolDefinitions()` and `getMCPToolsList` read no environment variable.
 Therefore `TOOL_*` and the six phantom names (`manage_document`, `update_auto_rule`,
@@ -559,7 +576,7 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    **SUPERSEDED IN PLACE** (`95ffca45`). A status block above the blocker table marks B4
    and B6 as no longer describing HEAD (`getMCPToolsList` builds from
    `ToolDefinitions()`, `mcp_routes.go:236`; `GET /mcp` is `mcpSSEHandler`,
-   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables`), while the
+   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables` — **the two line numbers are the REPORT'S, taken at `c4ff8d42`; the live ones are `mcp_routes.go:257` and `:138` (re-derived 2026-10-06, pass 3), and the report's block is left as the dated quotation it is**), while the
    original findings stay visible as the dated record they are.
 5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
    method only. Its three divergences from the code are settled in this document: the

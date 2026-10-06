@@ -4,6 +4,7 @@ description: Writes and runs tests and reports failures with reproducible steps.
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+  - deepseek-offload
 module_refs:
   - test-driven-development@1.0.0
   - verification-before-completion@1.0.0

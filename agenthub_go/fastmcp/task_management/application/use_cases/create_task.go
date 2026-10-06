@@ -83,18 +83,18 @@ func (u *CreateTaskUseCase) Execute(ctx context.Context, request task.CreateTask
 		return fail(err)
 	}
 
-	// Handle very long content gracefully by truncating (Python len is code points).
+	// The ENTITY owns the length limits: NewTask validates through ValidateEntity, which refuses a
+	// title over 200 characters or a description over 2000 with the same message the update path
+	// reports - so there is ONE definition of the limit rather than a validator and a slicer that
+	// disagree. This path used to slice both silently: a create returned success with a truncated row
+	// stored, nothing on it saying so, and no way for the caller to learn what had been cut. The
+	// slicing was inherited from agenthub_main's create_task.py, an archived tree that is not a
+	// parity target.
 	title := request.Title
-	if title != "" && len([]rune(title)) > 200 {
-		title = string([]rune(title)[:200])
-	}
 
 	description := ""
 	if request.Description != nil {
 		description = *request.Description
-		if description != "" && len([]rune(description)) > 2000 {
-			description = string([]rune(description)[:2000])
-		}
 	}
 
 	// Get user_id from request or repository. The repository user_id attribute is

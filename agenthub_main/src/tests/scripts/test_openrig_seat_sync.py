@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
+import yaml
 
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
@@ -768,6 +769,422 @@ def test_bundle_says_nothing_when_the_pin_is_this_seats(monkeypatch, tmp_path, c
     assert code == 0
     assert err == ""
     assert out.strip() == str(out_dir / f"room1-seat1-{HASH_LONG[:8]}.rigbundle")
+
+
+OMP_MCP_DOCUMENT = {
+    "mcpServers": {
+        "agenthub_http": {
+            "type": "http",
+            "url": "https://api.example.test/mcp",
+            "headers": {"Authorization": "Bearer ${AGENTHUB_TOKEN}"},
+        }
+    }
+}
+
+# Exactly what the renderer emits for the omp startup setting (renderer.go's
+# ompMCPStartupTimeoutConfig), trailing newline included.
+OMP_CONFIG_FRAGMENT = "mcp:\n  startupTimeoutMs: 0\n"
+
+# What the renderer emits for a seat with guide blocks (packet 6 step 1): provenance stamps, then the
+# guides with their OWN headings, which the renderer must not re-head.
+AGENTS_MD_DOCUMENT = (
+    "<!-- seat-hash: a1a1 -->\n"
+    "<!-- seat-type-version: 1.2.0 -->\n\n"
+    "## Guide: every seat\n\nshared words\n\n"
+    "## Guide: seat1\n\nits own words\n"
+)
+
+# RIG_YAML is `pods: [{id: main, members: [{id: seat1}]}]` under `name: room1`, so the session is
+# main-seat1@room1 - and this is what pins the POD-id derivation rather than the rig name, which
+# would give room1-seat1@room1.
+OMP_SESSION = "main-seat1@room1"
+
+
+def _omp_agent_dir(tmp_path):
+    return tmp_path / "ompstate" / OMP_SESSION / "agent"
+
+
+def _omp_config_path(tmp_path):
+    return _omp_agent_dir(tmp_path) / "config.yml"
+
+
+POLICY_MODULE_PATH = (
+    Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_policy.py"
+)
+
+
+def _policy_module_with_room1(monkeypatch):
+    """The REAL policy module with the fixture's rig added to its table.
+
+    The rules stay the module's own - only the registry gains a row - so a test that compares the
+    written file with ``render_config`` is asserting the single-source property rather than a copy.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "openrig_seat_policy_for_test", POLICY_MODULE_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.SEAT_ROLES["room1"] = {"seat1": "dev"}
+    monkeypatch.setattr(seat_sync, "load_seat_policy", lambda: module)
+    return module
+
+
+def test_rig_applies_the_per_seat_policy_from_the_single_source(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A launched seat gets its policy from the render's rig, with no script run by hand.
+
+    The file must equal ``render_config``'s own document, which is what makes this an IMPORT rather
+    than a second copy of the rules: the allow/deny lists are never restated in this client.
+    """
+    policy = _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    config = _omp_config_path(tmp_path)
+    assert config.read_text() == policy.render_config("seat1", "dev")
+    assert "applied the per-seat policy" in err
+
+    parsed = yaml.safe_load(config.read_text())
+    bash, tools = policy.policy_for("dev")
+    assert [rule["match"] for rule in parsed["bash"]["patterns"]] == bash
+    assert all(rule["approval"] == "deny" for rule in parsed["bash"]["patterns"])
+    assert sorted(parsed["tools"]["approval"]) == sorted(tools)
+    assert parsed["mcp"]["startupTimeoutMs"] == 0
+
+
+def test_rig_policy_merge_keeps_what_the_runtime_file_already_carries(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The agent-dir config.yml is the runtime's own file: the policy's keys are set, the rest stays."""
+    _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+    _omp_config_path(tmp_path).write_text("model: something-else\n")
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    parsed = yaml.safe_load(_omp_config_path(tmp_path).read_text())
+    assert (
+        parsed["model"] == "something-else"
+    ), "a key the policy does not define was lost"
+    assert parsed["mcp"]["startupTimeoutMs"] == 0
+    assert parsed["bash"]["patterns"], "the policy's own keys did not arrive"
+    assert parsed["tools"]["approval"]
+
+
+def test_rig_policy_application_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """A second run writes nothing and touches no mtime: the file already carries the policy."""
+    _policy_module_with_room1(monkeypatch)
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    config = _omp_config_path(tmp_path)
+    before = config.read_bytes()
+    stamp = config.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert config.read_bytes() == before
+    assert config.stat().st_mtime_ns == stamp
+    assert "applied the per-seat policy" not in err
+
+
+def test_rig_reports_a_seat_the_policy_table_does_not_cover(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A governed rig with an unlisted seat is a real gap, and silence would hide it."""
+    spec = importlib.util.spec_from_file_location(
+        "openrig_seat_policy_for_test", POLICY_MODULE_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.SEAT_ROLES["room1"] = {"somebody-else": "dev"}
+    monkeypatch.setattr(seat_sync, "load_seat_policy", lambda: module)
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "room1/seat1 has no role" in err and "unpoliced" in err
+    config = _omp_config_path(tmp_path)
+    if config.exists():
+        assert "bash" not in (yaml.safe_load(config.read_text()) or {})
+
+
+def test_rig_leaves_a_rig_outside_the_policy_table_alone(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The table is a registry: a rig it does not govern gets no policy and no editorial line."""
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    # No editorial line and no policy: the render's own installs may still be reported.
+    assert "no role" not in err and "applied the per-seat policy" not in err
+    assert "unpoliced" not in err
+    config = _omp_config_path(tmp_path)
+    if config.exists():
+        assert "bash" not in (yaml.safe_load(config.read_text()) or {})
+
+
+def _omp_rig(
+    env,
+    monkeypatch,
+    tmp_path,
+    with_render=True,
+    with_config=True,
+    with_agents=False,
+    make_agent_dir=True,
+):
+    """A rig whose seat render may carry any of the omp files, plus a state root for the seat."""
+    monkeypatch.setattr(seat_sync, "OMP_STATE_ROOT", tmp_path / "ompstate")
+    env.set_rigspec(RIG_YAML, [{"seat": "seat1", "hash": HASH_A}])
+    files = list(FILES)
+    if with_render:
+        files.append(
+            {"path": "runtime/omp-mcp.json", "content": json.dumps(OMP_MCP_DOCUMENT)}
+        )
+    if with_config:
+        files.append({"path": "runtime/omp-config.yml", "content": OMP_CONFIG_FRAGMENT})
+    if with_agents:
+        files.append({"path": "AGENTS.md", "content": AGENTS_MD_DOCUMENT})
+    env.set_seat(HASH_A, files=files)
+    if make_agent_dir:
+        agent_dir = _omp_agent_dir(tmp_path)
+        agent_dir.mkdir(parents=True)
+    return _omp_agent_dir(tmp_path) / ".mcp.json"
+
+
+def test_rig_installs_the_rendered_omp_mcp_document_verbatim(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The rendered document is installed into the seat's OWN agent directory, byte for byte.
+
+    Verbatim matters: the renderer resolves the platform URL and leaves every other variable alone,
+    so `Bearer ${AGENTHUB_TOKEN}` must arrive as literal text for the runtime to expand.
+    """
+    installed = _omp_rig(env, monkeypatch, tmp_path)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert out.strip().splitlines() == [
+        f"rig:{tmp_path / 'room1' / 'rig' / 'rig.yaml'}"
+    ]
+    assert "installed" in err and str(installed) in err
+    assert json.loads(installed.read_text()) == OMP_MCP_DOCUMENT
+    assert "${AGENTHUB_TOKEN}" in installed.read_text()
+
+
+def test_rig_leaves_the_operators_rig_root_mcp_json_alone(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The operator's file is never opened for writing: it is read by every seat and holds their own
+    servers, so a render must add to the seat's directory and touch nothing at the rig root."""
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    operator_file = tmp_path / "room1" / "rig" / ".mcp.json"
+    operator_file.write_text(
+        '{"mcpServers": {"deepseek": {"type": "stdio", "command": "x"}}}\n'
+    )
+    before = operator_file.read_bytes()
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    assert operator_file.read_bytes() == before
+
+
+def test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys(
+    env, tmp_path, capsys, monkeypatch
+):
+    """THE MERGE, and this is the destructive-failure test.
+
+    `<agent dir>/config.yml` is OMP'S OWN settings file, so it may already hold settings an operator
+    or another seat put there. Copying the rendered file over it would delete them - the runtime's own
+    `omp config set` was measured to merge at the KEY level and leave an unrelated key alone, and this
+    install has to do the same.
+    """
+    _omp_rig(env, monkeypatch, tmp_path)
+    config = _omp_config_path(tmp_path)
+    config.write_text("mcp:\n  renderMarkdownResults: true\nmodel: something-else\n")
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    merged = yaml.safe_load(config.read_text())
+    assert merged["mcp"]["startupTimeoutMs"] == 0, "the rendered key was not set"
+    assert (
+        merged["mcp"]["renderMarkdownResults"] is True
+    ), "an unrelated nested key was lost"
+    assert merged["model"] == "something-else", "an unrelated top-level key was lost"
+    assert str(config) in err
+
+
+def test_rig_writes_the_omp_config_verbatim_when_the_seat_has_none(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat with no config file gets the render's own bytes in a new file, not a re-serialised
+    equivalent: the fresh case is byte-exact."""
+    _omp_rig(env, monkeypatch, tmp_path)
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+
+    assert _omp_config_path(tmp_path).read_text() == OMP_CONFIG_FRAGMENT
+
+
+def test_rig_omp_config_merge_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """Idempotence is SEMANTIC for this file: when the key already has the rendered value nothing is
+    written and the mtime is untouched, so a rebuild is not a diff."""
+    _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    config = _omp_config_path(tmp_path)
+    before = config.read_bytes()
+    stamp = config.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert config.read_bytes() == before
+    assert config.stat().st_mtime_ns == stamp
+    assert str(config) not in err
+
+
+def test_rig_warns_when_only_half_the_omp_render_is_present(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The asymmetry between the two files must never be silent: a render carrying the document but
+    not the startup setting mounts servers omp may not wait for (the pre-9b0e55ac shape), and the
+    other direction waits for servers the seat has no document for."""
+    installed = _omp_rig(env, monkeypatch, tmp_path, with_config=False)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert installed.exists(), "the half that IS rendered must still be installed"
+    assert not _omp_config_path(tmp_path).exists()
+    assert "warning:" in err and "runtime/omp-config.yml" in err and "HALF" in err
+
+
+def test_rig_install_is_idempotent(env, tmp_path, capsys, monkeypatch):
+    """A rebuild that renders the same document must not rewrite the file: a rebuild is not a diff."""
+    installed = _omp_rig(env, monkeypatch, tmp_path)
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    capsys.readouterr()
+    first = installed.read_bytes()
+    stamp = installed.stat().st_mtime_ns
+
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+
+    assert installed.read_bytes() == first
+    assert installed.stat().st_mtime_ns == stamp
+    assert "installed" not in err
+
+
+def test_rig_installs_the_rendered_guide_document_verbatim(
+    env, tmp_path, capsys, monkeypatch
+):
+    """Packet 6 step 1's delivery half: the render's AGENTS.md reaches the agent directory.
+
+    Byte for byte, because the guides' headings are the blocks' own and a re-serialised copy would be
+    a second place the text could drift.
+    """
+    _omp_rig(env, monkeypatch, tmp_path, with_agents=True)
+    installed = _omp_agent_dir(tmp_path) / "AGENTS.md"
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert "installed" in err and str(installed) in err
+    assert installed.read_text() == AGENTS_MD_DOCUMENT
+
+    # A rebuild that renders the same guide is not a diff.
+    assert run_cli(["rig", "room1", "--out", str(tmp_path)]) == 0
+    out, err = capsys.readouterr()
+    assert str(installed) not in err
+
+
+def test_rig_installs_the_guide_document_for_a_seat_with_no_mcp_block(
+    env, tmp_path, capsys, monkeypatch
+):
+    """The guide is INDEPENDENT of the MCP pair, and the half-render warning must know that.
+
+    A seat with guide blocks and no ``mcp`` block renders only AGENTS.md. Before the third mode
+    existed the half-render check counted FILES rather than the MCP pair, so this seat would have been
+    reported as missing half its MCP setup - a warning about something it never had.
+    """
+    _omp_rig(
+        env,
+        monkeypatch,
+        tmp_path,
+        with_render=False,
+        with_config=False,
+        with_agents=True,
+    )
+    installed = _omp_agent_dir(tmp_path) / "AGENTS.md"
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert installed.read_text() == AGENTS_MD_DOCUMENT
+    assert "HALF" not in err, err
+    assert not (_omp_agent_dir(tmp_path) / ".mcp.json").exists()
+    assert not _omp_config_path(tmp_path).exists()
+
+
+def test_rig_writes_nothing_for_a_seat_with_no_mcp_block(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat with no mcp block renders no document, so nothing is installed for it - the second half
+    of the acceptance, satisfied by absence rather than by an empty file."""
+    installed = _omp_rig(
+        env, monkeypatch, tmp_path, with_render=False, with_config=False
+    )
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 0
+    assert not installed.exists()
+    assert "installed" not in err
+
+
+def test_rig_refuses_when_the_seat_agent_directory_is_absent(
+    env, tmp_path, capsys, monkeypatch
+):
+    """A seat that has not been launched has no agent directory, and the install must say so rather
+    than miss quietly: the refusal names the path, the SEQUENCE that creates it, and the possibility
+    that the launch used a different --state-root. Nothing is written, including the rig itself."""
+    installed = _omp_rig(env, monkeypatch, tmp_path, make_agent_dir=False)
+
+    code = run_cli(["rig", "room1", "--out", str(tmp_path)])
+    out, err = capsys.readouterr()
+
+    assert code == 2
+    # The message names the missing DIRECTORY rather than the file that would go in it: the
+    # directory is what is absent, and it is what the operator has to look for.
+    assert str(_omp_agent_dir(tmp_path)) in err
+    assert "launched" in err and "--state-root" in err
+    assert not installed.exists()
+    # Validated before the build wrote anything: no half-applied rig directory.
+    assert not (tmp_path / "room1" / "rig").exists()
 
 
 def test_rig_update_moves_pin_and_materialized_agent(env, tmp_path, capsys):

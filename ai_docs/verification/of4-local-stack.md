@@ -51,7 +51,11 @@ DEFAULT_USER_EMAIL=dev@example.com AGENTHUB_PUBLIC_URL=http://localhost:8000 FAS
 ```
 
 `GET /health` must answer `healthy` with the version the binary carries
-(`healthVersion`, `agenthub_go/fastmcp/server/httpapp/http.go:159`; it read `0.0.21` in that run).
+(the release literal is `ReleaseVersion`, `agenthub_go/fastmcp/config/version.go:21`, read into
+`healthVersion` at `agenthub_go/fastmcp/server/httpapp/http.go:160`; **it read `0.0.21` in that run.
+Corrected 2026-10-06 by the writer seat: this citation said `http.go:159`, which is where the literal
+lived when the run was made and where `origin/main` still holds it — the value has since moved into
+`config/version.go`, and the old citation would send a reader to a reference rather than the value**).
 
 **Frontend:**
 
@@ -169,3 +173,10 @@ Stop the member rig (`rig seat stop` / `rig down`), remove the scratch store dir
 (`~/.openrig/agenthub-seats/of4room`), and revert any occupant change to the fixture's value.
 **Leave the Postgres data dir in place** unless you are done with the stack — it is what makes
 the next bring-up cheap.
+
+## See also
+
+**A packet that changes schema needs one gate this page does not cover: the two-binary upgrade test**,
+where the OLD binary builds the old schema and the NEW one migrates it — because **the fresh-database
+boot described here proves the binary runs and proves nothing about migrations.** The procedure, its
+assertions and the two practical facts are in **`schema-upgrade-gate.md`** beside this file.

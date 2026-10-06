@@ -3,6 +3,7 @@ package use_cases
 import (
 	"testing"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/connection_management/application/dtos"
 	"agenthub/fastmcp/connection_management/infrastructure/repositories"
 	infraservices "agenthub/fastmcp/connection_management/infrastructure/services"
@@ -69,8 +70,8 @@ func TestGetServerCapabilities(t *testing.T) {
 	)
 	resp := uc.Execute(dtos.NewServerCapabilitiesRequest(nil))
 
-	if !resp.Success || resp.Version != "2.1.0" {
-		t.Fatalf("success=%v version=%q want=%q", resp.Success, resp.Version, "2.1.0")
+	if !resp.Success || resp.Version != config.ReleaseVersion {
+		t.Fatalf("success=%v version=%q want=%q", resp.Success, resp.Version, config.ReleaseVersion)
 	}
 	if len(resp.CoreFeatures) != 10 || resp.CoreFeatures[0] != "Task Management" {
 		t.Fatalf("core_features=%v", resp.CoreFeatures)

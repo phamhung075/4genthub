@@ -136,31 +136,82 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	}
 }
 
-func TestCreateTaskUseCaseDefaultsAndTruncation(t *testing.T) {
+func TestCreateTaskUseCaseDefaults(t *testing.T) {
 	id := createTaskMustID(t, "22222222-2222-2222-2222-222222222222")
 	repo := &createTaskFakeRepo{nextID: id}
 	uc := NewCreateTaskUseCase(repo, nil)
 
-	desc := strings.Repeat("b", 2100)
+	desc := "D"
 	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
-		Title:       strings.Repeat("a", 250),
-		GitBranchID: "branch-1",
-		Description: &desc,
+		Title: "T", GitBranchID: "branch-1", Description: &desc,
 	})
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
-	if got := len([]rune(resp.Task.Title)); got != 200 {
-		t.Fatalf("title length = %d, want 200", got)
-	}
-	if got := len([]rune(resp.Task.Description)); got != 2000 {
-		t.Fatalf("description length = %d, want 2000", got)
-	}
 	if resp.Task.Status != "todo" || resp.Task.Priority != "medium" {
 		t.Fatalf("defaults = %q/%q", resp.Task.Status, resp.Task.Priority)
 	}
-	if repo.saved == nil || len([]rune(repo.saved.Title)) != 200 || len([]rune(repo.saved.Description)) != 2000 {
-		t.Fatalf("saved entity was not truncated")
+}
+
+// TestCreateTaskUseCaseRefusesOverLongContent is the anti-truncation test.
+//
+// The create path used to slice the title at 200 characters and the description at 2000 SILENTLY: a
+// create came back success with a truncated row stored and nothing saying anything had been cut,
+// while the update path refused the same input loudly. The limits belong to the entity, so an
+// over-limit create must return the entity's error - the message update reports - and store nothing.
+func TestCreateTaskUseCaseRefusesOverLongContent(t *testing.T) {
+	id := createTaskMustID(t, "22222222-2222-2222-2222-222222222222")
+	repo := &createTaskFakeRepo{nextID: id}
+	uc := NewCreateTaskUseCase(repo, nil)
+
+	longTitle := strings.Repeat("a", 250)
+	longDesc := strings.Repeat("b", 2100)
+
+	cases := []struct {
+		name  string
+		title string
+		desc  string
+		want  string
+	}{
+		{"title over 200", longTitle, "D", "Task title cannot exceed 200 characters"},
+		{"description over 2000", "T", longDesc, "Task description cannot exceed 2000 characters"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			desc := tc.desc
+			resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
+				Title: tc.title, GitBranchID: "branch-1", Description: &desc,
+			})
+			if resp != nil {
+				t.Fatalf("response = %+v, want nil: a refused create returns the entity's error", resp)
+			}
+			var ve *value_objects.ValueError
+			if !errors.As(err, &ve) {
+				t.Fatalf("err = %v, want *ValueError", err)
+			}
+			if ve.Msg != tc.want {
+				t.Fatalf("message = %q, want %q", ve.Msg, tc.want)
+			}
+			if repo.saved != nil {
+				t.Fatal("a refused create must not save a row")
+			}
+		})
+	}
+
+	// The boundary, so the test pins 2000 rather than something smaller: exactly at the limit is
+	// accepted and stored intact.
+	atLimit := strings.Repeat("c", 2000)
+	resp, err := uc.Execute(context.Background(), dtotask.CreateTaskRequest{
+		Title: "T", GitBranchID: "branch-1", Description: &atLimit,
+	})
+	if err != nil {
+		t.Fatalf("Execute at the limit: %v", err)
+	}
+	if !resp.Success || len([]rune(resp.Task.Description)) != 2000 {
+		t.Fatalf("at-limit create: success=%v length=%d", resp.Success, len([]rune(resp.Task.Description)))
+	}
+	if repo.saved == nil || len([]rune(repo.saved.Description)) != 2000 {
+		t.Fatal("the saved entity does not carry the full 2000 characters")
 	}
 }
 

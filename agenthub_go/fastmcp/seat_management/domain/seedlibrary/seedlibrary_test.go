@@ -221,8 +221,9 @@ func withBlocks(t *testing.T, fsys fstest.MapFS) fstest.MapFS {
 	return fsys
 }
 
-// Each of the nine seeded seat types mounts the platform server, and the reasoning roles
-// mount the sequential-thinking server too; the sets are asserted on the shipped seeds.
+// Each of the nine seeded seat types mounts the platform server and the deepseek offload bridge,
+// and the reasoning roles mount the sequential-thinking server too; the sets are asserted on the
+// shipped seeds.
 func TestLoadEmbeddedSeedsCarryServerSets(t *testing.T) {
 	seeds, err := Load()
 	if err != nil {
@@ -249,6 +250,31 @@ func TestLoadEmbeddedSeedsCarryServerSets(t *testing.T) {
 		}
 		if _, found := blocks["sequential-thinking"]; found != twoBlocks[seed.SeatTypeSlug] {
 			t.Fatalf("%s: sequential-thinking present = %v, want %v", seed.SeatTypeSlug, found, twoBlocks[seed.SeatTypeSlug])
+		}
+		// The deepseek offload bridge: every seat type mounts it, because the value it must carry —
+		// DSH_ROOT, which points the bridge at its checkout when HOME is the seat directory — cannot
+		// come from the seat's process environment (the runner's allowlist drops it).
+		offload, ok := blocks["deepseek-offload"]
+		if !ok {
+			t.Fatalf("%s: no deepseek-offload mcp block: %+v", seed.SeatTypeSlug, blocks)
+		}
+		bridge, err := mcpblock.Parse(offload.Content)
+		if err != nil {
+			t.Fatalf("%s: deepseek block: %v", seed.SeatTypeSlug, err)
+		}
+		if bridge.Name != "deepseek" || bridge.Type != mcpblock.TypeStdio || bridge.Command != "node" {
+			t.Fatalf("%s: deepseek block = %+v", seed.SeatTypeSlug, bridge)
+		}
+		for key, want := range map[string]string{
+			"DSH_ROOT":                  "${DSH_ROOT}",
+			"DSH_HOME":                  "${DSH_HOME}",
+			"DEEPSEEK_MCP_DEFAULT_CWD":  "${DEEPSEEK_MCP_DEFAULT_CWD}",
+			"DEEPSEEK_WORKSPACE_ATTACH": "1",
+			"DEEPSEEK_MCP_PERMISSION":   "allow",
+		} {
+			if bridge.Env[key] != want {
+				t.Fatalf("%s: deepseek env %s = %q, want %q", seed.SeatTypeSlug, key, bridge.Env[key], want)
+			}
 		}
 		for slug, m := range blocks {
 			if m.Version != seed.Version {

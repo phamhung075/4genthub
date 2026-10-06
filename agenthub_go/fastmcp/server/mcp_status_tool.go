@@ -14,8 +14,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-const mcpServerVersion = "2.1.0"
-
 func mcpStatusNow() float64 { return float64(time.Now().UnixNano()) / 1e9 }
 
 func mcpCtxSessionID(ctx *Context) string {
@@ -117,7 +115,7 @@ func GetMCPStatus(ctx *Context, includeDetails bool, cm *ConnectionManager, sb *
 	status.Set("session_id", mcpCtxSessionID(ctx))
 	serverInfo := entities.NewOrderedMap[any]()
 	serverInfo.Set("name", config.ServerName)
-	serverInfo.Set("version", mcpServerVersion)
+	serverInfo.Set("version", config.ReleaseVersion)
 	serverInfo.Set("status", "healthy")
 	status.Set("server_info", serverInfo)
 

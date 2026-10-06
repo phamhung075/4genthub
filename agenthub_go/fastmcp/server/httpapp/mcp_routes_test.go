@@ -10,7 +10,9 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/task_management/application/services"
+	"agenthub/fastmcp/task_management/domain/entities"
 	interfacelayer "agenthub/fastmcp/task_management/interface"
 )
 
@@ -247,5 +249,63 @@ func TestMCPEveryListedToolIsDispatchable(t *testing.T) {
 		if strings.Contains(body, "Unknown tool") {
 			t.Errorf("%s is listed by tools/list but tools/call answers Unknown tool: %s", tool.Name, body)
 		}
+	}
+}
+
+// TestProtocolVersionIsOneValueOnEverySurface is the anti-drift test for the protocol revision.
+//
+// The server advertised 2024-11-05 in initialize and 2025-06-18 in register_mcp_client, and
+// neither was what it implements: 2024-11-05's transport is HTTP+SSE, which this server does not
+// serve, and 2025-06-18 removed batching and requires the MCP-Protocol-Version header, neither of
+// which holds here. Both surfaces now advertise the one measured revision.
+func TestProtocolVersionIsOneValueOnEverySurface(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+
+	app := newMCPTestApp(t)
+	rec := postMCP(t, app, `{"jsonrpc":"2.0","id":1,"method":"initialize"}`, "")
+	var wire struct {
+		Result struct {
+			ProtocolVersion string `json:"protocolVersion"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &wire); err != nil {
+		t.Fatalf("decode initialize: %v (%s)", err, rec.Body.String())
+	}
+	if wire.Result.ProtocolVersion != mcpProtocolVersion {
+		t.Errorf("initialize protocolVersion = %q, want %q", wire.Result.ProtocolVersion, mcpProtocolVersion)
+	}
+
+	registered := mcpRegisterResponse("sess-proto", "http://example.com")
+	serverInfo, _ := registered.Get("server")
+	advertised, _ := serverInfo.(*entities.OrderedMap[any]).Get("protocol_version")
+	if advertised != mcpProtocolVersion {
+		t.Errorf("register protocol_version = %v, want %q", advertised, mcpProtocolVersion)
+	}
+
+	// The revisions the implementation does not match must not be advertised anywhere, and a
+	// protocol revision must never be the release identity: they answer different questions.
+	for _, got := range []any{wire.Result.ProtocolVersion, advertised} {
+		if got == "2024-11-05" || got == "2025-06-18" {
+			t.Errorf("a surface advertises %v, which this implementation does not match", got)
+		}
+		if got == config.ReleaseVersion {
+			t.Errorf("a protocol revision is reported as the release identity (%v)", got)
+		}
+	}
+}
+
+// TestNotificationOnlyPostIsAccepted mirrors the Streamable HTTP requirement: a POST carrying
+// only notifications or responses must be answered 202 Accepted with no body. It answered 204,
+// which no revision of the protocol asks for.
+func TestNotificationOnlyPostIsAccepted(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+	app := newMCPTestApp(t)
+
+	rec := postMCP(t, app, `{"jsonrpc":"2.0","method":"notifications/initialized"}`, "")
+	if rec.Code != http.StatusAccepted {
+		t.Fatalf("notification-only POST status = %d, want 202", rec.Code)
+	}
+	if rec.Body.Len() != 0 {
+		t.Fatalf("notification-only POST body = %q, want empty", rec.Body.String())
 	}
 }

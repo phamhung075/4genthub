@@ -52,18 +52,29 @@ export const SubtaskEditDialog: React.FC<SubtaskEditDialogProps> = ({
 
   // Load available seats when dialog opens
   useEffect(() => {
+    // The same shape as TaskEditDialog's effect, for the same reason: this dialog is rendered
+    // conditionally, so a load still in flight when it closes lands on a component that is gone.
+    // React ignores the write, so nothing crashes; the flag keeps it from being made at all.
+    let cancelled = false;
+
     if (open) {
       getAvailableAgents().then(
         seats => {
+          if (cancelled) return;
           setAvailableSeats(seats);
           setAvailableSeatsError(false);
         },
         error => {
+          if (cancelled) return;
           logger.error('Error loading seats for the assignee picker:', error);
           setAvailableSeatsError(true);
         }
       );
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   const handleUpdate = async () => {

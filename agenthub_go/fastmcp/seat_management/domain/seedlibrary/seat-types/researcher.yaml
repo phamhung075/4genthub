@@ -5,6 +5,7 @@ default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
   - sequential-thinking
+  - deepseek-offload
 module_refs:
   - queue-handoff@1.0.0
   - agent-browser@1.0.0

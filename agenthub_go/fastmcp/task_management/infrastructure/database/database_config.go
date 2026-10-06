@@ -136,6 +136,22 @@ func (c *DatabaseConfig) secureDatabaseURL() string {
 	return ""
 }
 
+// IsDatabaseConfigured reports whether the environment carries what newDatabaseConfig requires,
+// WITHOUT connecting: a supported DATABASE_TYPE and then a non-empty secureDatabaseURL() for it.
+//
+// It exists so the health surfaces report the gate the server actually starts up with. The flag
+// they used to compute tested SUPABASE_URL and DATABASE_URL, and this code uses neither for the
+// connection (SUPABASE_URL is the auth variable), so a deployment configured the supported way
+// reported database_configured:false while the database worked.
+func IsDatabaseConfigured(getenv Getenv) bool {
+	dbType := tmvo.PyLower(getenv.get("DATABASE_TYPE", ""))
+	if dbType != "postgresql" && dbType != "supabase" {
+		return false
+	}
+	c := &DatabaseConfig{DatabaseType: dbType, deps: Deps{Getenv: getenv}}
+	return c.secureDatabaseURL() != ""
+}
+
 // resolveDatabaseURL is _get_database_url: Supabase delegates to supabase_config.
 func (c *DatabaseConfig) resolveDatabaseURL(ctx context.Context) (string, error) {
 	switch c.DatabaseType {

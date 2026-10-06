@@ -879,8 +879,6 @@ func handleGetModuleVersion(w http.ResponseWriter, r *http.Request, u *authdomai
 	writeJSON(w, http.StatusOK, body)
 }
 
-const maxModuleContentBytes = 65536
-
 type putModuleRequest struct {
 	Kind    string `json:"kind"`
 	Content string `json:"content"`
@@ -901,16 +899,16 @@ func handlePutModuleVersion(w http.ResponseWriter, r *http.Request, u *authdomai
 		return
 	}
 	kind := resolver.ModuleKind(req.Kind)
-	if !resolver.ValidKind(kind) {
-		writeDetail(w, http.StatusBadRequest, "kind \""+req.Kind+"\" is not a module kind")
-		return
-	}
-	if req.Content == "" || len(req.Content) > maxModuleContentBytes {
-		writeDetail(w, http.StatusBadRequest, "content must be 1 to 65536 bytes")
-		return
-	}
-	if secretscan.Contains(req.Content) {
-		writeDetail(w, http.StatusUnprocessableEntity, "secret detected in content")
+	// ONE GATE, CALLED RATHER THAN RESTATED. The seat seeder is the other writer of a module version
+	// and calls this same function; before it existed the checks below lived only here, so a seeded
+	// version could be stored with a content this route refuses. The version is immutable, so this is
+	// still the last moment an unrenderable content can be refused.
+	if err := seatservices.ValidateModuleContent(kind, req.Content); err != nil {
+		status := http.StatusBadRequest
+		if errors.Is(err, seatservices.ErrModuleSecretDetected) {
+			status = http.StatusUnprocessableEntity
+		}
+		writeDetail(w, status, err.Error())
 		return
 	}
 	source, ok := seatAdminSourceFor(w, sessions)

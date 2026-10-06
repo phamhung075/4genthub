@@ -17,13 +17,23 @@ import (
 )
 
 const (
-	agentYAMLPath        = "agent.yaml"
-	guidancePath         = "guidance/role.md"
+	agentYAMLPath = "agent.yaml"
+	guidancePath  = "guidance/role.md"
+	// agentsMDPath is the seat's guide document, the file omp loads into every session from the
+	// agent directory. Packet 6 step 1 moved the guides out of a script that wrote it by hand and
+	// into library blocks, so the render writes it from those blocks; a seat whose resolution carries
+	// no guide block gets NO file, the same absence rule as the MCP document.
+	agentsMDPath = "AGENTS.md"
+	// guideSlugPrefix is what makes a block a guide: the guides are `instruction` modules named
+	// `guide-common` and `guide-<seat>`, and their destination is AGENTS.md rather than the guidance
+	// channel. One destination per module - a guide in both places would be the same text twice.
+	guideSlugPrefix      = "guide-"
 	skillFileName        = "SKILL.md"
 	mcpFragmentPath      = "runtime/claude-mcp.fragment.json"
 	settingsFragmentPath = "runtime/claude-settings.fragment.json"
 	codexRulesPath       = "runtime/codex.rules"
 	ompMCPPath           = "runtime/omp-mcp.json"
+	ompConfigPath        = "runtime/omp-config.yml"
 	roleResourceID       = "role"
 	mcpResourceID        = "claude-mcp"
 	settingsResourceID   = "claude-settings"
@@ -165,6 +175,12 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 	if err != nil {
 		return nil, err
 	}
+	// ONE FOLD, TWO EMISSIONS: the same parsed set produces the document the runtime reads and the
+	// words the seat reads, so a rule and its plain-language line cannot drift apart.
+	policySet, err := FoldPolicies(seat.Modules)
+	if err != nil {
+		return nil, err
+	}
 
 	files := []OpenRigSpecFile{
 		{Path: agentYAMLPath, Content: agentYAML},
@@ -183,6 +199,12 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 			Content: block.Content,
 		})
 	}
+	if len(guideModules(seat)) > 0 || policySet.Role != "" {
+		// The guides AND the limits text, in the one document omp loads into a session. A seat with
+		// limits but no guide gets it too: the limits are words the seat must read, not a decoration
+		// on the guides. A seat with neither still gets NO file, which is the absence rule.
+		files = append(files, OpenRigSpecFile{Path: agentsMDPath, Content: renderAgentsMD(seat, policySet)})
+	}
 	if receivesClaudeFragments(seat.Runtime) {
 		if mcpFragment != "" {
 			files = append(files, OpenRigSpecFile{Path: mcpFragmentPath, Content: mcpFragment})
@@ -197,11 +219,27 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 		// not understand. The client installs this file; see the G3 note.
 		files = append(files, OpenRigSpecFile{Path: codexRulesPath, Content: codexRules})
 	}
-	if seat.Runtime == resolver.RuntimeOmp && mcpFragment != "" {
+	if seat.Runtime == resolver.RuntimeOmp && (mcpFragment != "" || policySet.Role != "") {
 		// Same shape as the codex rules file and for the same reason. The client installs it as
 		// `<seat agent dir>/.mcp.json`; a seat with no mcp block gets NO file, which is the
 		// acceptance's "a seat with no mcp block gets none".
-		files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+		if mcpFragment != "" {
+			files = append(files, OpenRigSpecFile{Path: ompMCPPath, Content: mcpFragment})
+		}
+		// AND THE SETTING THAT MAKES THE ENTRY MOUNT, in the same delivery because either half
+		// alone fails the seat: see ompMCPStartupTimeoutConfig for the measured root cause.
+		//
+		// A POLICY BLOCK SUPERSEDES THE CONSTANT rather than adding a second document for the same
+		// file: the fold's document carries the startup setting when a block speaks about it AND the
+		// rules, so the client installs one document and no precedence rule is needed.
+		configDoc := ompMCPStartupTimeoutConfig
+		if policySet.Role != "" {
+			configDoc, err = RenderPolicyConfig(policySet)
+			if err != nil {
+				return nil, err
+			}
+		}
+		files = append(files, OpenRigSpecFile{Path: ompConfigPath, Content: configDoc})
 	}
 
 	return &OpenRigSpec{
@@ -265,13 +303,51 @@ func renderAgentYAML(seat resolver.ResolvedSeat, runtimeResources []runtimeResou
 	return buf.String(), nil
 }
 
+// guideModules returns the seat's guide blocks, in resolution order.
+func guideModules(seat resolver.ResolvedSeat) []resolver.ResolvedModule {
+	var out []resolver.ResolvedModule
+	for _, m := range modulesOfKind(seat.Modules, resolver.KindInstruction) {
+		if strings.HasPrefix(m.Slug, guideSlugPrefix) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// renderAgentsMD lays the seat's guides out as the one document omp loads into every session.
+//
+// The blocks already carry their own headings (each guide is written as `## Guide: <seat>`), so this
+// adds provenance and separating newlines and NOT a second heading - a renderer that re-heads a block
+// that heads itself is the duplication this step exists to remove.
+func renderAgentsMD(seat resolver.ResolvedSeat, policySet *PolicySet) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
+	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
+	b.WriteString("<!-- rendered from this seat's guide blocks; edits here are overwritten -->\n")
+	for _, m := range guideModules(seat) {
+		b.WriteString("\n")
+		b.WriteString(strings.TrimRight(m.Content, "\n"))
+		b.WriteString("\n")
+	}
+	if policySet != nil && policySet.Role != "" {
+		// The limits, from the SAME fold that produced the config document.
+		b.WriteString("\n")
+		b.WriteString(RenderPolicyLimits(policySet))
+	}
+	return b.String()
+}
+
 // renderGuidance writes the startup prompt: the seat hash and version stamp,
-// then instruction, document, and memory modules under per-kind headings.
+// then instruction, document, and memory modules under per-kind headings. A guide block is NOT
+// written here: its destination is AGENTS.md, so the same text is never delivered twice.
 func renderGuidance(seat resolver.ResolvedSeat) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "<!-- seat-hash: %s -->\n", seat.Hash)
 	fmt.Fprintf(&b, "<!-- seat-type-version: %s -->\n", seat.SeatTypeVersion)
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindInstruction) {
+		if strings.HasPrefix(m.Slug, guideSlugPrefix) {
+			continue // a guide's destination is AGENTS.md; see guideSlugPrefix
+		}
 		writeGuidanceSection(&b, "## "+m.Slug, m.Content)
 	}
 	for _, m := range modulesOfKind(seat.Modules, resolver.KindDocument) {
@@ -373,15 +449,29 @@ func quotedPattern(fields []string) string {
 	return strings.Join(quoted, ", ")
 }
 
+// ParseToolSettings reads one tool module's content: the settings object the runtime's settings
+// fragment merges. mergeToolModules below calls it, and so does the module publish validator
+// (domain/modulecontent) — exported here, rather than re-implemented there, so the rule a tool
+// module is held to at the store and the parse the renderer performs cannot drift, exactly as the
+// skill and mcp kinds delegate to skillblock.Parse and mcpblock.Parse. A change to what the tool
+// renderer accepts therefore changes the publish rule with it.
+func ParseToolSettings(content string) (map[string]any, error) {
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(content), &obj); err != nil {
+		return nil, fmt.Errorf("content is not a JSON object: %w", err)
+	}
+	return obj, nil
+}
+
 // mergeToolModules merges tool module JSON objects in module order. A top-level key present
 // in several modules takes the later value, except `permissions`: its deny, allow and ask lists
 // are the deduplicated union in order of appearance, and its other keys follow later-wins.
 func mergeToolModules(modules []resolver.ResolvedModule) (map[string]any, error) {
 	merged := make(map[string]any)
 	for _, m := range modules {
-		var obj map[string]any
-		if err := json.Unmarshal([]byte(m.Content), &obj); err != nil {
-			return nil, fmt.Errorf("tool module %q: content is not a JSON object: %w", m.Slug, err)
+		obj, err := ParseToolSettings(m.Content)
+		if err != nil {
+			return nil, fmt.Errorf("tool module %q: %w", m.Slug, err)
 		}
 		for key, value := range obj {
 			if key != "permissions" {
@@ -473,6 +563,30 @@ func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string
 	return marshalJSON(map[string]any{"mcpServers": servers}, "mcp fragment")
 }
 
+// ompMCPStartupTimeoutConfig is installed by the client as `<seat agent dir>/config.yml`. It is HALF
+// THE DELIVERY: the rendered `runtime/omp-mcp.json` declares the server, and this setting is what
+// makes the seat WAIT for it.
+//
+// THE MEASURED ROOT CAUSE (2026-10-06, owner-found and verified on the live rig): `mcp.startupTimeoutMs`
+// defaults to 250 ms — "wait this many milliseconds for initial MCP tool discovery; 0 waits until
+// connections settle". A LOCAL stdio server (the deepseek bridge) connects inside that window; a
+// REMOTE HTTPS server does not, so a seat's first turn started with the local server only and its
+// device list showed no agenthub tools. **THE DEFAULT DELAYS THE MOUNT RATHER THAN PREVENTING IT**
+// (measured on the reviewer's own seat: the device appeared between two attempts with NO relaunch), so
+// this setting is what makes a seat WAIT for its connections at STARTUP — DETERMINISTIC INSTEAD OF
+// EVENTUAL — and the relaunch is what makes an already-RUNNING seat read the setting at all, because
+// the config file is read when the process starts.
+//
+// 0 is the value that means WAIT UNTIL CONNECTIONS SETTLE; it is not "no timeout" and it is not a
+// disabled setting.
+//
+// IT MUST LIVE IN THE AGENT DIRECTORY AND NOT THE ENVIRONMENT: the runner hands the runtime an
+// allowlist of environment variables that is DENY BY DEFAULT, so an `MCP_STARTUP_TIMEOUT_MS` variable
+// never reaches the process (measured: 14 names reach it, and this is not among them). The agent dir
+// is the only per-seat place the runtime reads settings from.
+const ompMCPStartupTimeoutConfig = "mcp:\n  startupTimeoutMs: 0\n"
+
+// renderSettingsFragment writes a JSON settings fragment, the shape claude-code takes.
 func renderSettingsFragment(settings map[string]any) (string, error) {
 	return marshalJSON(settings, "settings fragment")
 }

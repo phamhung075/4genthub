@@ -2,6 +2,372 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the fold and the two emissions: one parse feeds the runtime document and the seat's words (Go, packet 6 step 2, second slice)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy_fold.go`: `FoldPolicies` unions the deny lists
+  (adding a deny anywhere can only make a seat safer, and a union has no winner to argue about) while
+  **scalars must AGREE and a disagreement REFUSES the render** - silent last-writer-wins on a runtime
+  setting is how a second source of truth starts. A rule repeated with the SAME sibling folds silently;
+  the same match with a DIFFERENT sibling refuses, because one refusal cannot have two sanctioned
+  alternatives.
+- **An absent setting is not a zero**: `RenderPolicyConfig` omits the key no block spoke about, and
+  `TestRenderPolicyConfigOmitsAnAbsentSetting` pins both halves - no `mcp:` at all when every block is
+  silent, `startupTimeoutMs: 0` when a block declares 0. The sibling is NOT emitted into the runtime
+  document (it is words for the seat), and `TestRenderPolicyLimitsNamesASiblingForEveryDenial` counts one
+  alternative per denial, so a rule cannot reach the document without reaching the text.
+- `RenderSeat` wires the ONE fold into BOTH emissions: `AGENTS.md` carries the guides **and** the limits
+  text (a seat with limits and no guide gets the file too), and `runtime/omp-config.yml` carries the
+  fold's document when a policy resolves - superseding the startup constant rather than adding a second
+  document for the same file, so the client installs one document and no precedence rule is needed.
+- **Falsified, three mutations**: a role disagreement folding silently, a startup-window disagreement
+  folding silently, and an absent setting defaulting to 0 - each fails a named subtest or assertion.
+- **Verified in an EXPORT, and the reason is stated rather than omitted**: the seatrenderer test package
+  imports seedlibrary, and `seedlibrary/blockprovenance.go` does not compile at this moment (another seat
+  mid-edit: `go:embed requires import "embed"`), so a tree-wide run is blocked by THAT file and not by
+  this change. In an export of HEAD plus my changes, excluding theirs, the whole package is `ok`.
+- Commands: `cd agenthub_go && go vet ./fastmcp/seat_management/domain/seatrenderer/` and
+  `go test -count=1` on the package, both in that export.
+
+## 2026-10-06 - the policy kind and its parse, with the sibling rule where rules are declared (Go, packet 6 step 2, first slice)
+
+- New `fastmcp/seat_management/domain/seatrenderer/policy.go`: `ParsePolicyModule` reads a `policy` block
+  - the seat's role, the runtime setting its limits need, and the rules it enforces - and `PolicyRule`
+  carries each denial **with its sibling**.
+- **The sibling rule is enforced at parse time**, which is the layer where rules are DECLARED: a denial
+  with a named sibling is a rule, a denial without one is a trap - it tells a seat what it may not do and
+  leaves it to guess what it may. `TestParsePolicyModuleRefusesADenialWithoutASibling` asserts the refusal
+  names the sibling and why; `TestParsePolicyModuleNamesWhatItRefuses` covers a non-object, a missing and
+  a blank role, an unknown approval (`ask` is refused BY NAME rather than ignored), a rule with no match,
+  and a negative startup window. `TestParsePolicyModuleReadsTheBlock` also pins that an ABSENT startup
+  setting parses as nil rather than 0 - a different fact, kept different.
+- `resolver.KindPolicy` added to `ValidKind` and to `kindRank`, and `modulecontent.Validate` delegates the
+  kind to the renderer's own parse (`policy content: …`), so the one place that maps kinds to rules stays
+  the only map. `TestEveryValidKindHasARule` now tracks the new kind, and `TestValidatePerKind` gains the
+  accepted block, the non-JSON refusal and the siblingless refusal.
+- `TestValidateModuleContentCoversThePolicyKindBothWritersCall` (services): the kind added AFTER the gate
+  was unified is enforced for both writers without either being told about it - the property the gate
+  exists for.
+- **Falsified**: removing the sibling requirement fails `TestParsePolicyModuleRefusesADenialWithoutASibling`
+  with `a denial with no sibling was accepted` AND the gate test with
+  `a policy whose denial has no sibling was accepted: <nil>`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet` (0 bytes) and
+  `go test -count=1` (ok) for `./fastmcp/seat_management/domain/seatrenderer/`,
+  `./fastmcp/seat_management/domain/modulecontent/`, `./fastmcp/seat_management/domain/resolver/` and
+  `./fastmcp/seat_management/application/services/`.
+
+## 2026-10-06 - the ten guide ops, proven by their effect with the real blocks (Go, packet 6 step 1b)
+
+- New `fastmcp/seat_management/domain/seedlibrary/guides_render_test.go`:
+  `TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD` walks all ten per-seat blocks out of the shelf's
+  own loader and, for each, renders a seat whose ONLY module is that block, then asserts that `AGENTS.md`
+  carries the block **verbatim** (the renderer adds a provenance header and strips trailing newlines and
+  nothing else), that the seat's own heading appears **exactly once**, and that `guidance/role.md` carries
+  none of it. It lives in package `seedlibrary` because the per-seat blocks are reachable only through the
+  shelf loader; the import direction is test-only, which is why the cycle step 1 refused (recorded at
+  `validateBlockContent`) does not return.
+- This is the half of packet 6 step 1 (b) that needs no production: it measures the EFFECT of the ten
+  overlay ops (`add guide-<seat>@1.0.0`) a `4genthub-min` room creation would carry, while the room itself
+  remains an owner decision.
+- **Falsified**: in a clean export of HEAD, appending a phrase the real guide does not contain to the
+  verbatim assertion fails for all ten seats on exactly that line, while the control run passes.
+- Commands: `go test -count=1 -run TestEverySeatGuideBlockRendersIntoTheSeatsAgentsMD
+  ./fastmcp/seat_management/domain/seedlibrary/` → ok; `go test -count=1
+  ./fastmcp/seat_management/domain/seedlibrary/` → ok.
+
+## 2026-10-06 - the guide document's install is pinned, with the seam the old check would have mis-warned (Python scripts, packet 6 step 1)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`:
+  `test_rig_installs_the_rendered_guide_document_verbatim` - the render's `AGENTS.md` lands in the agent
+  directory byte for byte, and a rebuild that renders the same guide writes nothing (a rebuild is not a
+  diff). `test_rig_installs_the_guide_document_for_a_seat_with_no_mcp_block` - a seat with guide blocks
+  and NO `mcp` block gets the guide and **no half-render warning**, which is the guard on the gap-logic
+  fix: the check counted files, so that seat would have been warned about missing half an MCP setup it
+  never had.
+- **Falsified**: removing the install branch makes both fail - `installed …/AGENTS.md` absent from
+  stderr, then the file itself missing.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **110 passed**.
+
+## 2026-10-06 - the library's own guide, through the real render (Go, packet 6 step 1)
+
+- New `fastmcp/seat_management/domain/seatrenderer/library_guide_render_test.go`:
+  `TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD` renders a seat whose ONLY module is the shared guide
+  taken from `seedlibrary.Load()` — the library's own text, not a fixture — and asserts that AGENTS.md
+  carries three headings that exist nowhere but in the shipped file (`Working procedure`,
+  `How to call a tool`, `The loop, in order`) plus one real sentence of it, and that `guidance/role.md`
+  carries none of it. It lives in package `seatrenderer` because that package's test already imports
+  `seedlibrary`; the loader must never import anything that reaches `seatrenderer`, because that closes
+  the import cycle step 1 refused (the reason is written at `seedlibrary.validateBlockContent`).
+- The entry below pins the SPLIT — a guide goes to AGENTS.md and not to guidance. This pins that what the
+  split delivers is the **shipped** text, because a render path tested only against hand-built blocks
+  cannot tell you the real guide survives load, resolve and render.
+- **Falsified rather than assumed**: in a clean export of HEAD, one assertion was re-pointed at a phrase
+  the shipped guide does not contain, and the test failed on exactly that line — `AGENTS.md does not carry
+  the shipped guide's own sentence about calling a tool` — while the control run on the same tree passed.
+- Commands: `GOFLAGS=-mod=mod go test -count=1 -run TestTheLibrarysOwnSharedGuideRendersIntoAgentsMD
+  ./fastmcp/seat_management/domain/seatrenderer/` → ok; `go test -count=1
+  ./fastmcp/seat_management/domain/seatrenderer/` → ok; `go vet` on the package → exit 0.
+
+## 2026-10-06 - the guides reach a seat through the render, and a guide has ONE destination (Go, packet 6 step 1)
+
+- `fastmcp/seat_management/domain/seatrenderer/renderer_test.go`:
+  `TestRenderSeatWritesTheGuidesIntoAgentsMDOnce` - the guide blocks land in `AGENTS.md` carrying the
+  block's OWN heading exactly once (a renderer that re-headed a block that heads itself would double the
+  heading, which is the duplication this step removes rather than relocates), they do NOT appear in
+  `guidance/role.md`, and a non-guide instruction module keeps its place there, which shows the split is
+  by the guide naming rather than by kind. `TestRenderSeatOmitsAgentsMDWhenNoGuideResolves` - a seat whose
+  resolution carries no guide renders NO `AGENTS.md`; absence is the signal, the same rule the MCP
+  document follows, rather than an empty file that reads as a rendered one.
+- **Falsified both halves separately**: removing the `AGENTS.md` emission fails with
+  `file "AGENTS.md" not rendered`; removing the guidance skip fails with
+  `guidance/role.md carries "## Guide: every seat": a guide has ONE destination` (three assertions fire).
+- The existing exact file-set assertions for claude/agy/omp are untouched and pass, because a seat with no
+  guide block renders no `AGENTS.md`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet
+  ./fastmcp/seat_management/domain/seatrenderer/` -> clean; `go test -count=1
+  ./fastmcp/seat_management/domain/seatrenderer/` -> ok.
+
+## 2026-10-06 - the seat guides load as instruction blocks (Go, packet 6 step 1)
+
+- New `fastmcp/seat_management/domain/seedlibrary/guides_test.go`, five tests:
+  `TestEmbeddedSeatGuidesLoadAsInstructionBlocks` (each of the ten `blocks/guide-<seat>.md` loads as kind
+  `instruction` **and carries its own `## Guide: <seat>` heading**, so the assertion is on content rather
+  than on a file's existence), `TestGuideCommonIsCarriedByEverySeatType` (exactly one `guide-common` per
+  seat type, which is what makes it the shared guide), and three refusals: an extension the loader cannot
+  name, an empty guide, and a guide carrying `TOKEN=abcdef123456` — the last one because `instruction`
+  accepts any text, so without the loader's own `secretscan` the library path would be how a credential
+  reached a seat's guidance.
+- **Falsified twice on the way, and each one is why a decision looks the way it does**: (1) the first run
+  failed `blocks/guide-*.md did not load` for all ten, because `//go:embed` named `blocks/*.json` — the
+  markdown files were on disk and outside the binary, which is what makes the embed pattern part of this
+  change rather than an accident of it; (2) importing `modulecontent` into `seedlibrary` closed an import
+  cycle (`seedlibrary → modulecontent → seatrenderer`, and `seatrenderer`'s test imports `seedlibrary`),
+  so the loader states the rule for the two kinds a block FILE can carry and refuses any other extension
+  instead of inheriting a silent pass.
+- Commands, all from `agenthub_go`, each number read from a FILE that was then parsed rather than from the
+  echo: `gofmt -l .` → 490 flagged paths, **every one under `.gomodcache/` (349) or `.gotmp/` (129)**, none
+  a source file (the echo spilled, so the count came from the artifact); `gofmt -l
+  fastmcp/seat_management/domain/seedlibrary/` → empty; `go vet ./...` → 0; `go test -count=1 -json ./...` →
+  **138 packages, 2385 tests, 0 failures**; `seedlibrary` alone → 18 of 18.
+- The route half of the acceptance was measured in a clean export of HEAD, not in the repo: the eleven real
+  guide files PUT through the real mux, one per request → **11 of 11 answered 200**, so the library does not
+  hold content its own writer would refuse.
+- Correction to the entry below: the `undefined: secretscan` it observed in `seedlibrary.go` was this edit
+  caught mid-write; it is resolved, and that package builds and passes.
+
+## 2026-10-06 - the module content gate is pinned for BOTH writers (Go)
+
+- New `fastmcp/seat_management/application/services/module_content_gate_test.go`: the unknown kind,
+  the empty content, content over the bound, content the kind's renderer cannot read, and the accepted
+  cases (a plain instruction module, and content exactly AT the bound); plus the secret case asserted
+  through `errors.Is(err, ErrModuleSecretDetected)`, because that is the one refusal a caller maps to
+  its own surface (the route answers 422 for it).
+- New `TestSeedSeatTypesRefusesAModuleItsKindCannotRead`: a seed whose second module is a skill block
+  that will not parse is refused, naming the module and the seat type, and **nothing is stored** - not
+  the module, not its version, and not the seat type version that references it.
+- **Falsified**: removing the seeder's gate call in an export makes that test fail with
+  `a refused seed stored module versions: map[developer-role@1.3.0:role]` - i.e. the writer stores
+  exactly what the gate refuses, which is the defect.
+- The route's existing tests (`TestSeatAdminPutModuleVersionRefusesUnrenderableContent` and its
+  siblings) pass unchanged through the shared gate, which is the evidence that the HTTP statuses and
+  messages did not move.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet
+  ./fastmcp/seat_management/application/services/ ./fastmcp/server/httpapp/` and `go test` on both
+  -> pass. NOT run repo-wide, and the reason is a finding: `seedlibrary.go` does not compile at this
+  moment (`undefined: secretscan`) because another seat is mid-edit in that package for packet 6
+  step 1; that package is untouched by this change.
+
+## 2026-10-06 - the task create path's silent truncation is pinned as a refusal instead (Go)
+
+- `fastmcp/task_management/application/use_cases/create_task_test.go`:
+  `TestCreateTaskUseCaseDefaultsAndTruncation` is **deleted** - it pinned the defect, asserting that a
+  250-character title and a 2100-character description came back sliced to 200 and 2000 - and replaced
+  by `TestCreateTaskUseCaseDefaults` plus `TestCreateTaskUseCaseRefusesOverLongContent`, which asserts
+  the entity's own `*ValueError` for a title over 200 and a description over 2000, that NO row is saved
+  in either case, and that exactly 2000 characters is accepted and stored intact.
+- **Falsified**: with the slicer restored in an export, both subtests fail with
+  `response = &{Success:true ... Task created successfully}` - the truncation returning success.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet ./fastmcp/task_management/...`
+  and `go test ./fastmcp/task_management/...` -> all pass.
+
+## 2026-10-06 - the per-seat policy is now delivered by the client, and pinned (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py`: five tests over the policy pass —
+  the single-source proof (the written `config.yml` equals `render_config(...)` from the REAL module,
+  with the fixture rig added to its table), the merge (an unrelated `model:` key survives while the
+  policy's keys arrive), semantic idempotence (second run writes nothing, mtime untouched), a seat
+  the governed rig's table omits (warned as unpoliced, no policy keys written), and a rig outside the
+  table (no policy, no editorial line).
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: one test that `--check` tolerates a
+  key the policy does not define and still reports a rule that is wrong.
+- **Falsified, both**: a copy instead of a merge fails the merge test with `KeyError: 'model'`; one
+  restated rule fails the single-source test because the file stops matching `render_config`.
+- **Behaviour, not just the file**: while making the change, this seat's runtime refused
+  `rm -rf …` citing `Blocked by bash pattern: rm -rf*` (the eleventh line of the policy document)
+  while `rm -r …` ran — the enforcement reads the file the pipeline writes.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py src/tests/scripts/test_openrig_seat_policy.py -q`
+  -> **117 passed**.
+
+## 2026-10-06 - the rendered omp seat file carries both hand-written MCP entries (Go)
+
+- `TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape` **extended, not paralleled**: the omp document
+  now carries three servers, and the test pins the deepseek entry — `stdio`, `node`, the server path
+  left as `${DEEPSEEK_MCP_SERVER}`, and the env keys with their exact values (`DSH_ROOT`, `DSH_HOME`,
+  `DEEPSEEK_MCP_DEFAULT_CWD` as references; `DEEPSEEK_WORKSPACE_ATTACH` and `DEEPSEEK_MCP_PERMISSION`
+  fixed), asserting the env has exactly those five keys. It also renders a seat from the **shipped
+  seed library** and asserts the block reaches the file, logging the document as the acceptance
+  artefact.
+- `TestRenderSeatSeededTypesMountDifferentServerSets` extended: the lead seat goes 2 → 3 servers and
+  the developer 1 → 2 (both now mount the offload bridge), and the distinction the test exists for is
+  still pinned — the developer still does not mount `sequential-thinking`.
+- `TestLoadEmbeddedSeedsCarryServerSets` extended: every one of the nine shipped seat types must carry
+  the `deepseek-offload` block, parsed, with its shape and its five env keys asserted on the seeds
+  themselves.
+- `mcpServerJSON` gained `Env`, so the test type reads the entry's env block rather than ignoring it.
+- Commands: `gofmt` clean on the touched files; `go vet ./fastmcp/...` clean; `go test -count=1 ./...`
+  all pass.
+
+## 2026-10-06 - the module publish route refuses an unrenderable content, per kind (Go)
+
+- `fastmcp/seat_management/domain/modulecontent` (new package, 3 tests): each parsed kind has a
+  content the renderer accepts and a content it refuses, and the error names the kind;
+  `TestEveryValidKindHasARule` requires a rule for every kind `resolver.ValidKind` accepts, so a
+  kind added later cannot inherit a silent pass; an unknown kind returns `ErrNoRule` rather than
+  being allowed through.
+- `fastmcp/server/httpapp/seat_admin_module_content_test.go` (new file):
+  `TestSeatAdminPutModuleVersionRefusesUnrenderableContent` holds the route to five refusals - skill
+  markdown, mcp that is not a server object, an mcp object with no `type`, a tool that is not JSON,
+  and JSON that is not an object - each a 400 whose detail names the kind, and each case also
+  asserts that **nothing was stored**; `...AcceptsRenderableContentPerKind` publishes one renderable
+  content per kind (all six), so the new validation cannot pass by refusing everything;
+  `TestSeatAdminPublishedModuleResolvesInASeat` publishes a skill through the route, adds it with a
+  seat overlay, and asserts the real resolution service renders the module version's SKILL.md.
+- **Falsified**: with the validation removed, the same five cases answer 200 at publish and the
+  seat's next read fails with `skill "bad-skill": content is not one JSON value` - measured first in
+  a throwaway in-process test in this package (real resolver, real renderer) and now pinned by the
+  refusal cases.
+- **Every parsed kind delegates to one implementation**, so no rule can drift from the renderer it
+  protects: `skillblock.Parse` and `mcpblock.Parse` are called, and the tool kind calls the new
+  `seatrenderer.ParseToolSettings` — the same function `mergeToolModules` now uses, so the tool
+  unmarshal exists once in the tree (`grep -n json.Unmarshal renderer.go` finds it only there, and
+  `modulecontent.go` has none). Both ends are pinned: the renderer by
+  `TestRenderSeatToolModuleInvalidJSONError`, the validator by the refusal cases below.
+- Three existing publish fixtures moved from junk skill content to blocks
+  (`TestSeatAdminPutModuleVersion`, `TestSeatAdminListModules`, `TestSeatAdminCreateSeatTypeVersion`):
+  they assert storage and listing, which a block exercises the same way, and the conflict case still
+  exercises the immutable-version 409.
+- Commands: `cd agenthub_go && gofmt -l` on the touched files -> nothing;
+  `go vet ./fastmcp/seat_management/... ./fastmcp/server/...` -> clean; `go test -count=1 ./...` -> all pass.
+
+## 2026-10-06 - the per-seat omp permission policy is pinned (Python)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py` (8 tests, all pass): every seat waits for MCP and checks compound commands; every seat including the lead is denied push, amend, `git add -A`, hard reset, ssh and tmux kill; only the lead keeps `rig launch` and the agent/seat/connection MCP tools; the context-sync and deepseek tools are never denied; only the reviewer loses `edit`/`ast_edit`; an unlisted rig or seat has no permissive default; `apply` writes every seat, is idempotent, `--check` reports drift and refuses a seat that was never launched.
+
+## 2026-10-06 - the MCP protocol revision is pinned to what the implementation matches (Go)
+
+- `TestProtocolVersionIsOneValueOnEverySurface` (fastmcp/server/httpapp) asserts that `initialize`
+  and `register_mcp_client` advertise the same `mcpProtocolVersion`, that neither advertises the
+  revisions this implementation does not match (`2024-11-05`, `2025-06-18`), and that a protocol
+  revision is never reported as the release identity.
+- `TestNotificationOnlyPostIsAccepted` pins 202 Accepted with an empty body for a POST carrying
+  only notifications, which Streamable HTTP requires and which the server answered 204 until now.
+- `TestMiscRegisterResponse` compares the register advertisement to the constant instead of a
+  literal.
+- **Falsified**: with `register_mcp_client` reverted to `2025-06-18` and the notification status
+  code back to 204, both tests fail - `register protocol_version = 2025-06-18, want "2025-03-26"`
+  and `notification-only POST status = 204, want 202`.
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet ./fastmcp/server/...`
+  and `go test ./fastmcp/server/...` -> all pass.
+
+## 2026-10-06 - the release identity and the database flag each get a check that can fail (Go)
+
+- **Version surfaces**: new `TestEveryVersionSurfaceReportsTheOneRelease` (fastmcp/server/httpapp)
+  asserts that four surfaces a client can reach report the same `config.ReleaseVersion` and none
+  reports a fossil — `GET /health`, MCP `initialize` `serverInfo.version`, the `register_mcp_client`
+  `server.version`, and the connection-management health route the `manage_connection` tool returns.
+  `server_info.version` is asserted in `TestGetMCPStatusNoClients` and `version` in
+  `TestSecureHealthCheckKeys` so the two remaining surfaces are pinned where they live.
+- **Fixture retired with its scope stated**: `config/testdata/version_cases.json` (96 cases) is now
+  `security_cases.json` (24) and `TestVersionAndAuthConfigParity` is `TestSecurityConfigParity`. The
+  version and info columns and the whole `SERVER_VERSION` dimension went with the ported machinery
+  they tested; the security and enforcement matrix is unchanged case for case. The parity that was
+  dropped was parity with an archived tree.
+- **Database flag**: new `TestDatabaseConfiguredMirrorsTheServerGate` covers seven environments —
+  postgresql with credentials, supabase with credentials, the auth variable alone, `DATABASE_URL`
+  alone, postgresql missing credentials, no `DATABASE_TYPE`, unsupported type — and asserts
+  `services_configured.database` agrees. `TestMCPServerHealthServiceEnvironment` now clears every
+  name the gate reads (not only the two the old flag tested, which a machine with `DATABASE_TYPE`
+  exported would have decided) and configures its custom case the supported way.
+- **Falsified, both**: with the MCP `serverInfo` version reverted to `2.1.0`, the version test fails
+  `initialize serverInfo.version = "2.1.0", want "0.0.23"`; with the old two-name expression
+  restored, four database cases fail — both supported configurations report `false` (want `true`)
+  and the auth-variable-alone case reports `true` (want `false`).
+- Commands: `cd agenthub_go && GOCACHE=$PWD/.gocache TMPDIR=$PWD/.gotmp go vet` and `go test` for
+  `./fastmcp/config/...`, `./fastmcp/server/...`, `./fastmcp/connection_management/...`,
+  `./fastmcp/task_management/infrastructure/database/...` -> all pass.
+
+## 2026-10-06 - the omp startup setting's install is pinned, including the clobber it must not do (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained four tests over the existing omp
+  fixture, which now renders BOTH files (the shape the render has since `9b0e55ac`):
+  `test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys` (a pre-existing `config.yml`
+  holding an unrelated nested key AND an unrelated top-level key keeps both while gaining the rendered
+  one — the destructive-failure test),
+  `test_rig_writes_the_omp_config_verbatim_when_the_seat_has_none` (a seat with no config file gets
+  the render's own bytes, trailing newline included),
+  `test_rig_omp_config_merge_is_idempotent` (content AND mtime unchanged on a second run, because
+  idempotence for this file is semantic — the key already holds the rendered value),
+  and `test_rig_warns_when_only_half_the_omp_render_is_present` (a render carrying the document but
+  not the setting installs the half it has and warns, naming the missing file).
+- **FALSIFIED to prove the destructive test can fail**: in an export with the merge replaced by a
+  verbatim copy, `test_rig_sets_the_omp_startup_setting_without_clobbering_other_keys` fails with
+  `KeyError: 'renderMarkdownResults'` — the unrelated key is gone, which is exactly the failure the
+  correction forbids. The other three pass either way.
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **103 passed**.
+
+## 2026-10-06 - the upgrade path's in-process idempotence is now a check (Go)
+
+- `agenthub_go/fastmcp/server/httpapp/migration_idempotence_test.go` (new): runs the migration path a
+  SECOND time against an already-migrated throwaway database and requires no error and an unchanged
+  schema — a full fingerprint of every column, index and constraint in the public schema, compared
+  item by item — plus the presence of the objects the upgrade is supposed to have produced
+  (`seat_feedback`, `rooms.team_id`, `ix_rooms_team_id`, `rooms_team_id_fkey`,
+  `ck_seat_feedback_layer`).
+- It gets its database from the bring-up this package already had (`newMissedNotificationAppEnv`,
+  which skips loudly without `AGENTHUB_TEST_PG_URL`) and reaches that config through the existing
+  singleton, so there is ONE bring-up in the package, not two. The gated run: `AGENTHUB_TEST_PG_URL=…
+  go test ./fastmcp/server/httpapp/ -run TestSchemaMigrationIsIdempotentInProcess` -> **PASS**;
+  ungated -> **SKIP** with the reason printed.
+- **Falsified to prove it can fail**, in a fresh export: with `IF NOT EXISTS` removed from the
+  `team_id` ensurer the second run fails with `ERROR: column "team_id" of relation "rooms" already
+  exists (SQLSTATE 42701)`, and the unmodified export passes — so the check detects a non-idempotent
+  migration rather than merely passing.
+- Scope, stated: this is the IN-PROCESS half. The two-binary procedure (old binary, new binary, new
+  binary again) is the writer's documented step; between them they are the owner's upgrade test.
+
+## 2026-10-06 - the per-seat omp MCP install is pinned five ways (Python scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` gained five tests over the existing rig
+  fixture: `test_rig_installs_the_rendered_omp_mcp_document_verbatim` (the document lands in the seat's
+  agent dir byte for byte, `Bearer ${AGENTHUB_TOKEN}` included, and the fixture's pod id `main` pins
+  the session derivation as `main-seat1@room1` rather than the rig name),
+  `test_rig_leaves_the_operators_rig_root_mcp_json_alone` (an operator `.mcp.json` at the rig root is
+  byte-identical after a rebuild), `test_rig_install_is_idempotent` (content AND mtime unchanged, no
+  `installed` line on the second run), `test_rig_writes_nothing_for_a_seat_with_no_mcp_block`, and
+  `test_rig_refuses_when_the_seat_agent_directory_is_absent` (exit 2; the message names the missing
+  DIRECTORY, the sequence that creates it and `--state-root`; and no rig directory is left behind,
+  which is what proves the validate-then-write ordering).
+- The live-runtime form was reproduced separately, outside the suite, because it needs a probe
+  endpoint and the real binary: the rendered bytes were placed in an agent dir, the real `omp` ran
+  from a neutral cwd with `AGENTHUB_TOKEN` set, and the probe logged `Authorization: Bearer
+  <probe value>` on **3 of 3** requests; with the variable **unset** the same run logged the literal
+  `${AGENTHUB_TOKEN}` on 3 requests — the A2 trap, which is why the acceptance for the live seat is
+  "lists the tools AND one call lands" rather than "the tools are listed".
+- Commands: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider
+  src/tests/scripts/test_openrig_seat_sync.py -q` -> **99 passed**.
+
 ## 2026-10-06 - the parity guard stops racing the build (Go)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/repositories/orm_registry_parity_test.go`:
@@ -109,6 +475,15 @@ Track test suite changes, fixes, and improvements for agenthub.
   `call_seat`, report what it actually ran, and keep credentials out of a tool call. It arrives through
   the existing instruction → guidance path, so the seat's startup text matches the configuration it was
   given.
+- **The second half of the delivery, added after the owner found the root cause on the live rig:**
+  `renderer.go` now renders TWO files for an omp seat that mounts mcp blocks — `runtime/omp-mcp.json`
+  and `runtime/omp-config.yml` (`mcp:` / `  startupTimeoutMs: 0`) — because **the runtime's
+  `mcp.startupTimeoutMs` defaults to 250 ms, which a local stdio server meets and a remote HTTPS server
+  does not**, and the setting can only live in the agent directory (the runner's environment allowlist
+  is deny-by-default). `TestRenderSeatOmpWaitsForMCPConnections` **pins the setting** — the exact bytes
+  and what `0` means (WAIT UNTIL CONNECTIONS SETTLE, not "no timeout") — so a later change cannot
+  quietly drop it; the cross-runtime test now expects both files for omp, and the no-mcp-block case
+  still renders none. `0` is also the reason a RUNNING seat needs a relaunch to pick a server up.
 - **Proven on the real stack, not only in unit tests:** a booted `cmd/agenthub` on a throwaway Postgres,
   one published `mcp` block and one seat type, a seat created with `runtime: omp`, and
   `GET /api/v2/openrig/rooms/mcp/rigspec` forcing a resolve →
@@ -1526,6 +1901,11 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 
 ### Added
 
+- `agenthub_main/src/tests/scripts/test_openrig_seat_client.py`: 9 tests with fakes (behind detection, quiet wait including the give-up and the just-wrote cases, sync adopting through the script, a pin that does not move, relaunch only changed and quiet seats, the seat filter). 9 pass.
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 2 tests (every seat's notice carries the common procedure and its own guide; a seat without a guide file is an error). 16 pass.
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 1 test that every seat's notice carries the 4genthub task/context rule and the deepseek offload rule. 14 pass.
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: 4 tests for the seat notice (lists every refused command and tool of its seat, says what to do instead of pushing, the lead/non-lead wording, `apply` writes it and `--check` sees it drift). 13 pass.
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: 4 tests for how a session log line becomes a feed line (tool call, policy refusal vs quoted text, non-events, MCP colour).
 - Go (`agenthub_go`): tests for the OpenRig renderer and seeder (`openrig_spec_renderer_test.go`); seat_management resolver, seatrenderer (including a real `rig agent validate` run when a daemon is available), commpolicy, seedmap (all 32 library agents), repositories (fake driver plus a Postgres integration test gated by `SEAT_TEST_DATABASE_URL`), `SeatResolutionService` end-to-end test (gated by `SEAT_TEST_DATABASE_URL` and `AGENT_LIBRARY_DIR_PATH`), `Overlay.ValidateTarget`, `cmd/seatcheck`, and the seat and seat-admin HTTP handlers.
 - Frontend: `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (6) and `SeatDetailPage.test.tsx` (3). The rest of the frontend suite already had 710 failing tests before this change (59 files); the count is unchanged.
 - Python: `agenthub_main/src/tests/scripts/test_openrig_seat_sync.py` (22 unit tests for `scripts/openrig_seat_sync.py`).

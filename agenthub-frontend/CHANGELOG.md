@@ -222,6 +222,10 @@
     that one case.
 
 ### Changed
+- **Two dialogs stop writing state after they are gone — hygiene, NOT a bug fix, zero observable risk today** - 2026-10-06
+  - `src/components/TaskEditDialog.tsx` and `src/components/SubtaskEditDialog.tsx` each start `getAvailableAgents()` from an effect and then write `setAvailableSeats` / `setAvailableSeatsError`. Both are rendered CONDITIONALLY (`LazyTaskList/components/DialogSection.tsx:54,65` and `LazySubtaskList/components/SubtaskDialogs.tsx:118`), so closing the dialog while the load is in flight unmounts the component and the continuation writes state on something that is gone. Both effects now carry an effect-scoped `cancelled` flag — checked after the load resolves and in the catch, with the cleanup setting it. ONE shape, twice, and deliberately not a token or a wrapper.
+  - WHAT THIS IS NOT, said first because the temptation is to read it as more than it is: NONE of these sites is the crash reproduced earlier tonight, and this does not fix that crash. A post-unmount state write in a LIVE environment is a no-op — React ignores it and dereferences nothing (this project is on React 19.1.1). The reproduced crash came from React DOM running after the TEST ENVIRONMENT had been torn down, where `window` is gone entirely, which is a different condition. THE OBSERVABLE RISK TODAY IS ZERO.
+  - The third candidate, `src/components/HealthCheck.tsx`, was NOT guarded: it has no render site anywhere in the application — zero references across the whole repository outside its own file, including imports, JSX use, routes, tests and string-based dynamic imports, and no `import.meta.glob` or computed import could reach it — so a guard there would have been defensive work at an unreachable site, indistinguishable from a real fix in a diff. It was reported as a DEAD-CODE finding instead, and it has since been REMOVED in its own change; see the Removed section below.
 - **The pin label states what a pin does instead of implying protection (owner's pin ruling)** - 2026-10-06
   - `src/components/seats/SeatComposer.tsx:181-183` drops the padlock glyph from the pinned badge: the badge reads
   `pinned at <scope>` and nothing else. The owner's ruling is that a pin LABELS THE TRUTH - it sets the version in effect
@@ -599,6 +603,10 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **An unreachable component — dead code, removed by measurement rather than preference** - 2026-10-06
+  - Deleted `src/components/HealthCheck.tsx` (114 lines). It had no render site anywhere, and the evidence is the sweep rather than an impression: across the WHOLE repository, outside the file itself, there is no import of it, no JSX use, no route, no test and no string-based dynamic import; it is absent from `App.tsx`, `main.tsx` and `index.tsx`; there is no `import.meta.glob` or `require.context` anywhere in `src`, so no glob could reach it without naming it; and every dynamic import in `src` names a literal path. It was last touched by `9787bce2 migrate to agenthub`.
+  - WHY REMOVED RATHER THAN GUARDED: a component nothing can reach is not a placeholder, it is a liability — establishing that cost one sweep, and leaving it would charge the next reader the same sweep. The project's rule is no dead code left behind, and git history keeps the file if anyone ever wants it. The lead placed the removal as its own change, deliberately separate from the unmount-guard work that found it.
+  - THE BLIND SPOT, stated rather than left implied: this is a STATIC-REFERENCE sweep. A path assembled by string concatenation, or a reference from outside this repository, would not have matched. No such path is known to exist, and none was ruled out exhaustively.
 - **The retired agent dialogs and the agent token scopes** - 2026-10-05
   - Deleted `src/components/AgentInfoDialog.tsx` - a 306-line hard-coded catalogue of the 32 retired library agents that
     was still RENDERED, opened by clicking an assignee - and with it the whole agent-info dialog chain (the task and

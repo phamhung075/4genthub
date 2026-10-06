@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"agenthub/fastmcp/config"
 	"agenthub/fastmcp/task_management/domain/entities"
 )
 
@@ -50,6 +51,9 @@ func TestGetMCPStatusNoClients(t *testing.T) {
 	serverInfo := mustMap(t, got, "server_info")
 	if !reflect.DeepEqual(serverInfo.Keys(), []string{"name", "version", "status", "message"}) {
 		t.Errorf("server_info keys = %v", serverInfo.Keys())
+	}
+	if v, _ := serverInfo.Get("version"); v != config.ReleaseVersion {
+		t.Errorf("server_info.version = %v, want %q", v, config.ReleaseVersion)
 	}
 	if v, _ := serverInfo.Get("status"); v != "no_clients" {
 		t.Errorf("status = %v", v)

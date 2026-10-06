@@ -88,7 +88,7 @@ func TestAdminResponseShape(t *testing.T) {
 	if v, _ := out.Get("server_name"); v != config.ServerName {
 		t.Errorf("server_name = %v", v)
 	}
-	if v, _ := out.Get("version"); v != "2.1.0" {
+	if v, _ := out.Get("version"); v != config.ReleaseVersion {
 		t.Errorf("version = %v", v)
 	}
 

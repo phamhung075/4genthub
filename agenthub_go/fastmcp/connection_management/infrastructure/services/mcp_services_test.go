@@ -101,7 +101,13 @@ func unsetenv(t *testing.T, key string) {
 func TestMCPServerHealthServiceEnvironment(t *testing.T) {
 	s := NewMCPServerHealthService()
 
-	for _, k := range []string{"AUTH_ENABLED", "AGENTHUB_DISABLE_CURSOR_TOOLS", "PRODUCTION", "SUPABASE_URL", "DATABASE_URL"} {
+	// Every name the database gate reads must be cleared, not just the two the old flag tested:
+	// a machine with DATABASE_TYPE exported would otherwise decide this case.
+	for _, k := range []string{
+		"AUTH_ENABLED", "AGENTHUB_DISABLE_CURSOR_TOOLS", "PRODUCTION",
+		"DATABASE_TYPE", "DATABASE_HOST", "DATABASE_USER", "DATABASE_PASSWORD",
+		"SUPABASE_DB_HOST", "SUPABASE_DB_PASSWORD", "SUPABASE_URL", "DATABASE_URL",
+	} {
 		unsetenv(t, k)
 	}
 	defaults := s.GetEnvironmentInfo()
@@ -117,7 +123,11 @@ func TestMCPServerHealthServiceEnvironment(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "false")
 	t.Setenv("AGENTHUB_DISABLE_CURSOR_TOOLS", "TRUE")
 	t.Setenv("PRODUCTION", "true")
-	t.Setenv("SUPABASE_URL", "http://example")
+	// The supported way, not the two names the old flag tested.
+	t.Setenv("DATABASE_TYPE", "postgresql")
+	t.Setenv("DATABASE_HOST", "db.internal")
+	t.Setenv("DATABASE_USER", "agenthub")
+	t.Setenv("DATABASE_PASSWORD", "secret")
 	got := s.GetEnvironmentInfo()
 	if got["auth_enabled"] != false || got["cursor_tools_disabled"] != true ||
 		got["mvp_mode"] != true || got["database_configured"] != true {
@@ -136,6 +146,63 @@ func TestMCPServerHealthServiceEnvironment(t *testing.T) {
 	if config["status"] != "healthy" || config["broadcasting_enabled"] != true ||
 		config["active_connections"] != 0 || config["server_restart_count"] != 0 || config["uptime_seconds"] != 0 {
 		t.Fatalf("config = %#v", config)
+	}
+}
+
+// TestDatabaseConfiguredMirrorsTheServerGate pins the flag to the gate newDatabaseConfig
+// enforces: a supported DATABASE_TYPE plus the credentials secureDatabaseURL derives from it.
+//
+// The first case is the one that matters. The flag used to test SUPABASE_URL and DATABASE_URL,
+// names this server does not use for the connection (SUPABASE_URL is the auth variable), so it
+// reported database_configured:false on a deployment configured the supported way - a health
+// field that can be false on a healthy system, which is worse than no field at all.
+func TestDatabaseConfiguredMirrorsTheServerGate(t *testing.T) {
+	s := NewMCPServerHealthService()
+	dbNames := []string{
+		"DATABASE_TYPE", "DATABASE_HOST", "DATABASE_USER", "DATABASE_PASSWORD",
+		"SUPABASE_DB_HOST", "SUPABASE_DB_PASSWORD", "SUPABASE_URL", "DATABASE_URL",
+	}
+
+	cases := []struct {
+		name string
+		env  map[string]string
+		want bool
+	}{
+		{"postgresql with its credentials", map[string]string{
+			"DATABASE_TYPE": "postgresql", "DATABASE_HOST": "db.internal",
+			"DATABASE_USER": "agenthub", "DATABASE_PASSWORD": "secret"}, true},
+		{"supabase with its credentials", map[string]string{
+			"DATABASE_TYPE": "supabase", "SUPABASE_DB_HOST": "db.example.supabase.co",
+			"SUPABASE_DB_PASSWORD": "secret"}, true},
+		{"the auth variable alone is not a DSN", map[string]string{"SUPABASE_URL": "http://example"}, false},
+		{"DATABASE_URL alone is not the gate the server enforces", map[string]string{
+			"DATABASE_URL": "postgresql://u:p@h/db"}, false},
+		{"postgresql missing its credentials", map[string]string{
+			"DATABASE_TYPE": "postgresql", "DATABASE_HOST": "db.internal"}, false},
+		{"no DATABASE_TYPE", map[string]string{
+			"DATABASE_HOST": "db.internal", "DATABASE_USER": "agenthub",
+			"DATABASE_PASSWORD": "secret"}, false},
+		{"unsupported type", map[string]string{
+			"DATABASE_TYPE": "mysql", "DATABASE_HOST": "db.internal",
+			"DATABASE_USER": "agenthub", "DATABASE_PASSWORD": "secret"}, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			for _, k := range dbNames {
+				unsetenv(t, k)
+			}
+			for k, v := range c.env {
+				t.Setenv(k, v)
+			}
+			got := s.GetEnvironmentInfo()
+			if got["database_configured"] != c.want {
+				t.Fatalf("database_configured = %v, want %v (env %v)", got["database_configured"], c.want, c.env)
+			}
+			services := got["services_configured"].(map[string]any)
+			if services["database"] != c.want {
+				t.Fatalf("services_configured.database = %v, want %v", services["database"], c.want)
+			}
+		})
 	}
 }
 
