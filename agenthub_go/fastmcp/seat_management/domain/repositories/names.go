@@ -26,9 +26,10 @@ func ValidateRuntime(runtime string) error {
 	return resolver.CheckRuntime(runtime)
 }
 
-// ValidateModel accepts an empty model or a model id. A blank is ACCEPTED BY THIS
-// VALIDATOR and stored as given: whether the runtime then applies a default of its
-// own is the runtime's behaviour, which is not established in this repo.
+// ValidateModel accepts an empty model or a model id. A blank is ACCEPTED AND STORED
+// BLANK: nothing in this service substitutes a default, and the resolved seat renders
+// no model line at all. Any substitution would have to come from the runtime CLI,
+// whose built-in fallback is unmeasured here.
 func ValidateModel(model string) error {
 	if model != "" && !modelPattern.MatchString(model) {
 		return fmt.Errorf("model %q must be empty or match %s", model, modelPattern)
