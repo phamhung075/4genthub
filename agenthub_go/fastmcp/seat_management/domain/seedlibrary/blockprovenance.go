@@ -237,6 +237,14 @@ func short(digest string) string {
 //
 // A root that does not hold the library at all is an error, so a caller cannot read a wrong root as
 // everything in step.
+//
+// ONE BOUND, STATED WHERE THE NEXT READER MEETS IT: the library-side comparison above is only
+// meaningful when root is NOT the tree this binary was built from. Pointed at its own build tree it
+// compares the embedded bytes against the very files they were embedded from, so an edit that
+// triggers a rebuild moves both sides together and the check reports nothing - a check comparing a
+// thing to its own shadow. Its real use is a deployed binary against a tree it was not built from.
+// The migration pairing is anchored OUTSIDE that shadow, which is what guides.lock.json is for: a
+// check on a migration has to be anchored outside the migration.
 func CheckBlockDrift(root string) ([]BlockDivergence, error) {
 	table, err := BlockProvenanceTable()
 	if err != nil {
