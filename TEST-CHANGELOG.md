@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 — the two destructive paths are exercised rather than read (Go)
+
+- `agenthub_go/fastmcp/seat_management/application/services/deletion_paths_integration_test.go` (new, gated by `SEAT_TEST_DATABASE_URL` like its neighbour `seat_resolution_integration_test.go`) covers the ONLY two destructive paths in the shipped surface — a seat link delete and a room delete — which had **no execution coverage at all**: the audit that reported them verified the SQL by reading, and the gated tests were not run for it.
+- Five assertions, each counting rows PER TABLE in both directions, so a future change that starts touching a neighbouring table fails here rather than passing quietly: (1) a link delete removes exactly one row — `seat_links 4->3` and no other table moved; (2) an absent link answers not-found, changes nothing, and the delete's scoping is proved by **deleting the neighbouring triple while the real row survives**; (3) a non-empty room is refused **with its count** (`still holds 2 seat(s)`) and removes nothing, proved by counts rather than by the error; (4) an empty room removes exactly its room overlay, its reported statuses and the room, with a **second room's** seat, link, overlay and status counted afterwards as survivors; (5) a second user identity is answered `ErrRoomNotFound` rather than forbidden, at the store level where the scoping lives, and removes nothing.
+- The layer division is named in the file: the HTTP status mapping (409 for the refusal, 404 for a missing link or room) belongs to the in-memory mount tests `TestSeatAdminDeleteRoom` and `TestSeatAdminDeleteLink`; this test asserts the counts and the store-level scoping those cannot.
+- It SKIPS when the variable is unset — verified: `--- SKIP: TestDeletionPathsIntegration`, with the package still ok — so the ordinary suite is unaffected, and the file states that the target is whatever the variable names, **with no fallback host**.
+- Commands: `gofmt -l` -> empty; `SEAT_TEST_DATABASE_URL=<throwaway> go test -count=1 -run TestDeletionPathsIntegration ./fastmcp/seat_management/application/services/` -> ok; the same run ungated -> SKIP; the package ungated -> ok.
+- One expectation was corrected by the measurement during the run, recorded because it is the point: claim 4 was first written as `seat_status 3->1` and measured `2->1`, because the fixture's own `RemoveSeat` had already removed that row — the code was right and the expectation was the error.
+
 ## 2026-10-06 - a deliberate socket close is not a failure (frontend)
 
 - `src/tests/services/WebSocketClient.test.ts` adds the case that DRIVES the deliberate close: connect, open, then
