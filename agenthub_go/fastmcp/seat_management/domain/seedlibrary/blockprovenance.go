@@ -159,6 +159,21 @@ func VerifyGuidePairing() error {
 	return verifyGuideLocks(digests)
 }
 
+// kindOfBlockFile is the ONE place that maps a block file's extension to its kind. loadBlocks and
+// BlockProvenanceTable both need it, and a rule stated twice is a rule that can drift - the table
+// would then vouch for a shelf the loader no longer builds, which is the silent divergence this
+// whole file exists to make loud.
+func kindOfBlockFile(name string) (resolver.ModuleKind, error) {
+	switch ext := path.Ext(name); ext {
+	case ".json":
+		return resolver.KindMCP, nil
+	case ".md":
+		return resolver.KindInstruction, nil
+	default:
+		return "", fmt.Errorf("%s: a block file is .json (mcp) or .md (instruction), got %q", name, ext)
+	}
+}
+
 // BlockProvenanceTable returns one entry per file the shelf carries, sorted by slug: every
 // blocks/* file and every file sharedModuleFiles names, because both are library content that
 // reaches a seat. Digests are computed from the embedded bytes, so the table cannot disagree with
@@ -175,19 +190,13 @@ func BlockProvenanceTable() ([]BlockProvenance, error) {
 		return nil, err
 	}
 	for _, name := range names {
-		ext := path.Ext(name)
-		var kind resolver.ModuleKind
-		switch ext {
-		case ".json":
-			kind = resolver.KindMCP
-		case ".md":
-			kind = resolver.KindInstruction
-		default:
+		kind, err := kindOfBlockFile(name)
+		if err != nil {
 			// loadBlocks refuses this file; the table must not quietly omit what the loader cannot
 			// name, or a drift check built on it would report on a library it never fully saw.
-			return nil, fmt.Errorf("%s: a block file is .json (mcp) or .md (instruction), got %q", name, ext)
+			return nil, err
 		}
-		entry, err := provenanceOf(name, strings.TrimSuffix(path.Base(name), ext), kind)
+		entry, err := provenanceOf(name, strings.TrimSuffix(path.Base(name), path.Ext(name)), kind)
 		if err != nil {
 			return nil, err
 		}
