@@ -48,6 +48,8 @@ export const TopologySeatsTable: React.FC<{ rooms: RoomTopology[] }> = ({ rooms 
             <TableCell className="font-medium">{seat.seat_key}</TableCell>
             <TableCell>{seat.seat_type}</TableCell>
             <TableCell>{seat.runtime}</TableCell>
+            {/* A runtime default applies when no model is set (measured); which one is unestablished, so the
+                cell names only that. This service stores blank. */}
             <TableCell>{seat.model || 'runtime default'}</TableCell>
             <TableCell>{pinLabel(seat.pinned_version)}</TableCell>
             <TableCell>{seat.permission_policy}</TableCell>

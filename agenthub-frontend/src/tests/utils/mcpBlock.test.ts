@@ -70,6 +70,33 @@ describe('parseMcpBlock', () => {
     expect(result.error).toContain(expected);
   });
 
+  // The Go parser matches struct tags CASE-INSENSITIVELY and decodes an explicit null to the field's zero
+  // value, so both shapes below are blocks the RENDERER accepts. A form that refuses them is a false
+  // refusal, which is the direction that makes this a defect rather than a note; both need hand-written JSON,
+  // which is why nothing exercised them.
+  it('accepts the shapes Go accepts: capitalised tags, and an explicit null on an optional field', () => {
+    const result = parseMcpBlock(
+      JSON.stringify({ Name: 'probe', Type: 'stdio', Command: 'npx', Args: null, Env: null })
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.server.name).toBe('probe');
+    expect(result.server.command).toBe('npx');
+    expect(result.server.args).toBeUndefined();
+    expect(result.server.env).toBeUndefined();
+  });
+
+  // Complements the rejection table's lowercase entry: matching without case must not turn an UNKNOWN field
+  // into an allowed one, which is the obvious way to get this alignment wrong.
+  it('still refuses an unknown field written in capitals', () => {
+    const result = parseMcpBlock(
+      JSON.stringify({ Name: 'x', Type: 'stdio', Command: 'npx', Tools: [] })
+    );
+
+    expect(result.ok).toBe(false);
+  });
+
   it('accepts an EMPTY string on the transport the block does not use, as the Go parser does', () => {
     // Go tests server.Command != "" and server.URL != "", so an empty string on the
     // unused transport is not a contradiction. Presence alone was the TS divergence.

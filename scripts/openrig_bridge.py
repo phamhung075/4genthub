@@ -86,10 +86,17 @@ STATUS_PATH = "/api/v2/openrig/seat-status"
 REGISTER_PATH = "/api/v2/openrig/machines"
 DEFAULT_ENV_FILE = Path.home() / ".config" / "agenthub-bridge.env"
 DEFAULT_PINS = Path.home() / ".openrig" / "agenthub-seats"
+# DEFAULT_SYNC_STATE records, per seat, the expected hash the cloud last answered in_sync for.
+# It is the client half of drift visibility: without it a seat's pinned hash has nothing local
+# to be compared against, so a drift is only ever visible by asking the server.
+DEFAULT_SYNC_STATE = Path.home() / ".openrig" / "bridge-sync.json"
 HEARTBEAT_SECONDS = 60.0
 MAX_BACKOFF = 120.0
 TOOL_TIMEOUT = 15
 SEND_TIMEOUT = 15
+# MAX_RESPONSE_BYTES bounds what the bridge will read from a report answer. The answer is small
+# (verdicts, not full seat bodies), and the bound is the one the server applies to its side.
+MAX_RESPONSE_BYTES = 1 << 20
 
 EXIT_OK = 0
 EXIT_REMOTE = 1
@@ -104,7 +111,11 @@ RUNTIMES = {"claude-code", "codex", "agy", "omp", "terminal", "unknown"}
 AGENT_STATUSES = {"idle", "working", "blocked", "done", "unknown"}
 
 Runner = Callable[[list[str]], str]
-Sender = Callable[[bytes], int]
+# A sender returns the status AND the response body: the report answer carries the per-seat
+# expected hash and verdict, which is the only way a bridge (holding no user token) can learn
+# what the cloud expects. A sender that returns a status alone would answer the report and then
+# throw away the answer.
+Sender = Callable[[bytes], tuple[int, bytes]]
 
 
 def run_command(argv: list[str]) -> str:
@@ -296,7 +307,7 @@ def utc_now() -> str:
 def make_sender(base_url: str, token: str) -> Sender:
     url = base_url.rstrip("/") + STATUS_PATH
 
-    def send(body: bytes) -> int:
+    def send(body: bytes) -> tuple[int, bytes]:
         request = urllib.request.Request(
             url,
             data=body,
@@ -308,9 +319,12 @@ def make_sender(base_url: str, token: str) -> Sender:
         )
         try:
             with urllib.request.urlopen(request, timeout=SEND_TIMEOUT) as response:
-                return response.status
+                return response.status, response.read(MAX_RESPONSE_BYTES)
         except urllib.error.HTTPError as err:
-            return err.code
+            # The answer is read on an error status too: it is small, and a caller naming what
+            # the server said is better than a bare code. Bounded, so a hostile answer cannot
+            # be unbounded.
+            return err.code, err.read(MAX_RESPONSE_BYTES)
 
     return send
 
@@ -377,6 +391,56 @@ def write_env_file(path: Path, url: str, machine_token: str) -> None:
     os.chmod(path, 0o600)
 
 
+def read_sync_state(path: Path) -> dict[str, str]:
+    """The recorded last-in-sync expected hash per seat key, or empty.
+
+    A missing, unreadable or malformed record reads as empty rather than raising: a bridge whose
+    own state file is gone must still report, and every verdict then reads unknown until the
+    cloud answers again. It never invents a hash.
+    """
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    seats = data.get("seats") if isinstance(data, dict) else None
+    if not isinstance(seats, dict):
+        return {}
+    return {str(k): str(v) for k, v in seats.items() if isinstance(v, str) and v}
+
+
+def write_sync_state(path: Path, machine_id: str, seats: dict[str, str]) -> None:
+    """Record the expected hash per seat through a temporary file and a rename.
+
+    The rename is what makes the record survive a restart: a reader sees either the previous
+    whole record or the new one, never a half-written file. A write that fails is loud but not
+    fatal - a bridge that cannot record must still report, and it says so rather than looping.
+    """
+    payload = {"machine_id": machine_id, "seats": seats}
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_name(path.name + ".tmp")
+        temporary.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        temporary.replace(path)
+    except OSError as err:
+        print(f"openrig-bridge: cannot record the sync state in {path}: {err}", file=sys.stderr)
+
+
+def verdicts_of(body: bytes):
+    """The per-seat verdicts in a report answer, or None when the answer carries none.
+
+    None means the record is left as it was: an answer that is absent, not JSON, not an object,
+    or carries no verdicts list is not evidence that anything moved.
+    """
+    try:
+        answer = json.loads(body.decode("utf-8"))
+    except (AttributeError, UnicodeDecodeError, ValueError):
+        return None
+    verdicts = answer.get("verdicts") if isinstance(answer, dict) else None
+    return verdicts if isinstance(verdicts, list) else None
+
+
 def register_command(args) -> int:
     """`register`: issue this machine's token and store it where the service unit reads it."""
     url, user_token = (
@@ -418,6 +482,7 @@ class Bridge:
         runner: Runner = run_command,
         secrets: dict[str, str] | None = None,
         pins_dir: Path = DEFAULT_PINS,
+        sync_state_path: Path = DEFAULT_SYNC_STATE,
         clock: Callable[[], float] = time.monotonic,
     ):
         self.machine_id = machine_id
@@ -426,6 +491,8 @@ class Bridge:
         self.runner = runner
         self.secrets = secrets or {}
         self.pins_dir = pins_dir
+        self.sync_state_path = sync_state_path
+        self.sync_state = read_sync_state(sync_state_path)
         self.clock = clock
         self.strip_detail = False
         self.backoff = 0.0
@@ -471,6 +538,77 @@ class Bridge:
             "agents": build_agents(raw_agents),
         }
 
+    def _state_key(self, room: str, seat: str) -> str:
+        return f"{self.machine_id}/{room}/{seat}"
+
+    def local_record(self, seats: list[dict]) -> dict[str, dict]:
+        """What this machine can say about each seat from its own record, and NOTHING more.
+
+        It answers exactly one question: has this seat changed since the cloud last CONFIRMED it
+        in sync? So its values are ``unchanged`` / ``changed`` / ``unknown`` - deliberately not
+        the cloud's words. It CANNOT establish ``in_sync``: that is the cloud comparing the
+        running hash against its NEWEST stored snapshot, and the cloud can move while this
+        machine does not. The answer to a report is the only channel that knows the cloud's
+        current expectation, which is why a verdict that is not ``in_sync`` is also named from
+        that answer (see apply_verdicts). No record, or no running hash, reads ``unknown``.
+        """
+        out: dict[str, dict] = {}
+        for seat in seats:
+            room, name = _str(seat.get("room")), _str(seat.get("seat"))
+            running = _str(seat.get("hash"))
+            confirmed = self.sync_state.get(self._state_key(room, name), "")
+            if not confirmed or not running:
+                since = "unknown"
+            elif running == confirmed:
+                since = "unchanged"
+            else:
+                since = "changed"
+            out[f"{room}/{name}"] = {
+                "running": running,
+                "last_in_sync": confirmed,
+                "since_last_in_sync": since,
+            }
+        return out
+
+    def apply_verdicts(self, body: bytes) -> None:
+        """Take what the cloud's answer says: record the ``in_sync`` ones, NAME the rest.
+
+        This answer is the ONLY channel that knows the cloud's CURRENT expectation, so a seat the
+        cloud calls drift or unknown is named here even while this machine's own record still
+        matches it - the cloud moved and the machine did not, which the local record cannot see
+        by construction. A seat the cloud confirms ``in_sync`` is recorded, so the local view has
+        a confirmed hash to compare against next cycle. An answer that is absent, not JSON or
+        carries no verdicts leaves the record as it was rather than clearing it.
+        """
+        verdicts = verdicts_of(body)
+        if verdicts is None:
+            return
+        changed = False
+        for verdict in verdicts:
+            if not isinstance(verdict, dict):
+                continue
+            room, seat = _str(verdict.get("room")), _str(verdict.get("seat"))
+            if not room or not seat:
+                continue
+            where = f"{room}/{seat}"
+            expected = _str(verdict.get("expected_hash"))
+            sync = _str(verdict.get("sync"))
+            if sync == "in_sync":
+                if not expected:
+                    continue
+                key = self._state_key(room, seat)
+                if self.sync_state.get(key) != expected:
+                    self.sync_state[key] = expected
+                    changed = True
+                continue
+            self.note(
+                f"cloud:{where}",
+                f"the cloud reports {where} {sync or 'without a verdict'}"
+                + (f" (it expects {expected})" if expected else ""),
+            )
+        if changed:
+            write_sync_state(self.sync_state_path, self.machine_id, self.sync_state)
+
     def cycle(self) -> float:
         """Run one cycle; return seconds to wait before the next one."""
         try:
@@ -478,14 +616,26 @@ class Bridge:
             key = json.dumps(
                 {k: v for k, v in payload.items() if k != "reported_at"}, sort_keys=True
             )
+            # What this machine knows from its OWN record, said BEFORE the report: it answers only
+            # whether the seat has changed since the cloud last confirmed it, so the words are
+            # unchanged/changed and never the cloud's in_sync. The cloud's own verdicts are named
+            # from the answer below, which is the only channel that knows them.
+            for where, record in self.local_record(payload["seats"]).items():
+                if record["since_last_in_sync"] == "changed":
+                    self.note(
+                        f"changed:{where}",
+                        f"{where} has changed since the cloud last confirmed it in sync "
+                        f"(running {record['running']}, confirmed {record['last_in_sync']})",
+                    )
             now = self.clock()
             due = self._last_sent is None or now - self._last_sent >= HEARTBEAT_SECONDS
             if key == self._last_key and not due:
                 return self.interval
-            status = self.send(json.dumps(payload).encode("utf-8"))
+            status, body = self.send(json.dumps(payload).encode("utf-8"))
         except Exception as err:
             return self._fail(f"cycle failed: {type(err).__name__}: {err}")
         if 200 <= status < 300:
+            self.apply_verdicts(body)
             self._last_key, self._last_sent = key, now
             self.strip_detail = False
             self.backoff = 0.0
@@ -555,6 +705,10 @@ def build_bridge(args, send: Sender) -> Bridge:
         machine_id,
         getattr(args, "interval", 20.0),
         send,
+        # named here rather than left to the class default: the local tools a bridge shells out
+        # to are resolved when the bridge is built, which is also what makes the CLI path
+        # testable without the tools on the host.
+        runner=run_command,
         secrets=openrig_scrub.secret_values_from_env(os.environ),
     )
 
@@ -603,8 +757,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "register":
         return register_command(args)
     if args.command == "once" and args.print_only:
-        bridge = build_bridge(args, lambda body: 200)
-        print(json.dumps(bridge.build_payload(), indent=2))
+        bridge = build_bridge(args, lambda body: (200, b""))
+        payload = bridge.build_payload()
+        # The local record rides this dump and NOT the reported payload: the server refuses
+        # unknown report fields, and this is what the operator's machine knows on its own - which
+        # is only whether a seat has CHANGED since the cloud last confirmed it, not the cloud's
+        # verdict, which the answer's own verdicts carry.
+        payload["local_record"] = bridge.local_record(payload["seats"])
+        print(json.dumps(payload, indent=2))
         return EXIT_OK
     bridge = build_bridge(args, sender_from_env())
     stop = threading.Event()

@@ -2,6 +2,29 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Local development in this repo
+
+The script notes below are the Create React App defaults and do not match this project. It runs with
+`npm start` on **port 3800** (see `vite.config.ts`), and Vite proxies `/api` and `/ws` to the backend on
+`:8000`.
+
+The realtime socket is the part that bites, and only measured statements belong here. `vite.config.ts`
+sets `envDir: '..'`, so the env FILE Vite reads is the REPO ROOT's `.env` - this directory holds only
+`.env.sample` - and **a shell export of `VITE_WS_URL` WINS over that file's value**, because Vite gives
+variables already present when it runs the highest priority. The socket URL a dev client ends up with is
+decided by the CONFIG's env loading, measured by reading the injected object itself (the investigation is
+filed at `.openrig/agenthub-seats/4genthub-min/VITE-ENV-INVESTIGATION.md`): the first line of the
+transformed `src/config/environment.ts` IS `import.meta.env`, and two dev servers with the same source
+file differ - one loaded the parent env and carried `VITE_WS_URL`, the other set no `envDir`, so Vite used
+its default (this directory, which holds only `.env.sample`) and injected only the process environment's
+variables, with the URL absent. So the client's read is correct and its fallback to the page origin is the
+correct consequence: **the value never arrived** rather than being discarded, and in that state the `/ws`
+proxy above is what carries the socket to the API. Without it, the dev server's own websocket server
+accepts the upgrade and the UI reports **Live with no backend behind it**. For any future instance, one
+command settles it: fetch the transformed config module from the running dev server
+(`/src/config/environment.ts`) and read line one - the injected object is literally there and a missing
+key is visible without inference. Which config the original observing run used is not provable from here.
+
 ## Available Scripts
 
 In the project directory, you can run:

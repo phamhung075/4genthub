@@ -95,7 +95,7 @@ def make_bridge(tmp_path, runner, send, **kwargs):
 
 def test_payload_shape_state_and_runtime_mapping(tmp_path):
     bridge = make_bridge(
-        tmp_path, fake_runner(rig_output(), herdr_output()), lambda b: 200
+        tmp_path, fake_runner(rig_output(), herdr_output()), lambda b: (200, b"")
     )
     payload = bridge.build_payload()
     assert set(payload) == {"machine_id", "reported_at", "seats", "agents"}
@@ -186,7 +186,7 @@ def test_runtime_mapping_keeps_every_supported_runtime(tmp_path, runtime, expect
         "agentActivity": {"state": "idle"},
     }
     bridge = make_bridge(
-        tmp_path, fake_runner(json.dumps([node]), herdr_output()), lambda b: 200
+        tmp_path, fake_runner(json.dumps([node]), herdr_output()), lambda b: (200, b"")
     )
     (seat,) = bridge.build_payload()["seats"]
     assert seat["runtime"] == expected
@@ -237,7 +237,9 @@ def test_bad_names_are_skipped(tmp_path):
         {"agent": "codex", "agent_status": "weird", "pane_id": "w1:p2"},
     ]
     bridge = make_bridge(
-        tmp_path, fake_runner(json.dumps(bad), herdr_output(*agents)), lambda b: 200
+        tmp_path,
+        fake_runner(json.dumps(bad), herdr_output(*agents)),
+        lambda b: (200, b""),
     )
     payload = bridge.build_payload()
     assert [(s["room"], s["seat"]) for s in payload["seats"]] == [("eng", "coder")]
@@ -247,7 +249,9 @@ def test_bad_names_are_skipped(tmp_path):
 
 
 def _payload_and_stderr(tmp_path, capsys, nodes):
-    bridge = make_bridge(tmp_path, fake_runner(json.dumps(nodes), None), lambda b: 200)
+    bridge = make_bridge(
+        tmp_path, fake_runner(json.dumps(nodes), None), lambda b: (200, b"")
+    )
     payload = bridge.build_payload()
     return payload, capsys.readouterr().err
 
@@ -309,13 +313,15 @@ def test_pinned_hash_used_when_valid(tmp_path):
     other = tmp_path / "eng" / "reviewer"
     other.mkdir(parents=True)
     (other / "pinned.json").write_text(json.dumps({"hash": "../evil"}))
-    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: 200)
+    bridge = make_bridge(
+        tmp_path, fake_runner(rig_output(), None), lambda b: (200, b"")
+    )
     seats = bridge.build_payload()["seats"]
     assert [s["hash"] for s in seats] == ["ab12", ""]
 
 
 def test_absent_tools_yield_empty_sources_and_log_once(tmp_path, capsys):
-    bridge = make_bridge(tmp_path, fake_runner(None, None), lambda b: 200)
+    bridge = make_bridge(tmp_path, fake_runner(None, None), lambda b: (200, b""))
     for _ in range(3):
         payload = bridge.build_payload()
     assert payload["seats"] == [] and payload["agents"] == []
@@ -326,7 +332,7 @@ def test_absent_tools_yield_empty_sources_and_log_once(tmp_path, capsys):
 
 def test_failing_tool_is_absent_not_fatal(tmp_path):
     bridge = make_bridge(
-        tmp_path, fake_runner(RuntimeError("exit 1"), "not json"), lambda b: 200
+        tmp_path, fake_runner(RuntimeError("exit 1"), "not json"), lambda b: (200, b"")
     )
     payload = bridge.build_payload()
     assert payload["seats"] == [] and payload["agents"] == []
@@ -340,7 +346,9 @@ def test_send_on_change_and_heartbeat(tmp_path):
     def runner(argv):
         return runner_state["rig"] if argv[0] == "rig" else herdr_output()
 
-    bridge = make_bridge(tmp_path, runner, lambda b: sent.append(b) or 200, clock=clock)
+    bridge = make_bridge(
+        tmp_path, runner, lambda b: (sent.append(b) or 200, b""), clock=clock
+    )
     bridge.cycle()
     assert len(sent) == 1
     clock.now += 20
@@ -361,7 +369,7 @@ def test_422_drops_detail_next_cycle_then_recovers(tmp_path):
 
     def send(body):
         sent.append(json.loads(body))
-        return next(statuses)
+        return next(statuses), b""
 
     bridge = make_bridge(tmp_path, fake_runner(rig_output(), herdr_output()), send)
     assert bridge.cycle() == 20.0
@@ -379,7 +387,7 @@ def test_backoff_doubles_to_cap_and_resets(tmp_path):
         result = results.pop(0)
         if isinstance(result, Exception):
             raise result
-        return result
+        return result, b""
 
     bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), send)
     delays = [bridge.cycle() for _ in range(6)]
@@ -390,7 +398,9 @@ def test_backoff_doubles_to_cap_and_resets(tmp_path):
 
 @pytest.mark.parametrize("status", [400, 401, 500])
 def test_other_http_errors_back_off_without_crashing(tmp_path, status):
-    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: status)
+    bridge = make_bridge(
+        tmp_path, fake_runner(rig_output(), None), lambda b: (status, b"")
+    )
     assert bridge.cycle() == 20.0
     assert bridge.cycle() == 40.0
 
@@ -448,9 +458,9 @@ def test_sender_reports_422_status_code(server, tmp_path):
 
 def test_run_once_exit_codes(tmp_path):
     stop = threading.Event()
-    ok = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: 200)
+    ok = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: (200, b""))
     assert ok.run(stop, once=True) == bridge_mod.EXIT_OK
-    bad = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: 500)
+    bad = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: (500, b""))
     assert bad.run(stop, once=True) == bridge_mod.EXIT_REMOTE
 
 
@@ -459,7 +469,7 @@ def test_run_stops_on_event(tmp_path):
 
     def send(body):
         stop.set()
-        return 200
+        return 200, b""
 
     bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), send)
     assert bridge.run(stop) == bridge_mod.EXIT_OK
@@ -552,7 +562,9 @@ def test_run_loop_failures_never_leak_the_token(server, tmp_path, monkeypatch, c
 
 def test_run_loop_backoff_stops_at_the_cap(tmp_path):
     stop = _RecordingStop(8)
-    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda b: 500)
+    bridge = make_bridge(
+        tmp_path, fake_runner(rig_output(), None), lambda b: (500, b"")
+    )
     bridge.run(stop)
     assert stop.waits == [20.0, 40.0, 80.0, 120.0, 120.0, 120.0, 120.0, 120.0]
 
@@ -587,7 +599,9 @@ def test_sender_without_the_machine_token_exits_2_naming_it(monkeypatch, capsys)
 
 
 def test_401_names_the_register_step(tmp_path, capsys):
-    bridge = make_bridge(tmp_path, fake_runner(rig_output(), None), lambda body: 401)
+    bridge = make_bridge(
+        tmp_path, fake_runner(rig_output(), None), lambda body: (401, b"")
+    )
     bridge.cycle()
     err = capsys.readouterr().err
     assert "401" in err and "openrig_bridge.py register" in err
@@ -671,3 +685,177 @@ def test_register_without_the_user_token_is_a_usage_error(monkeypatch, capsys):
         bridge_mod.main(["register", "--machine-id", "pc-1"]) == bridge_mod.EXIT_USAGE
     )
     assert "AGENTHUB_TOKEN" in capsys.readouterr().err
+
+
+# --- the recorded last-in-sync expected hash: drift the operator can see on this machine -----
+
+
+def _pin(tmp_path, room, seat, value):
+    target = tmp_path / room / seat
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "pinned.json").write_text(json.dumps({"hash": value}), encoding="utf-8")
+
+
+def _record(machine_id, seats):
+    return json.dumps({"machine_id": machine_id, "seats": seats})
+
+
+def _verdicts(*rows):
+    """A report answer in the shape the server sends: per-seat expected hash and verdict."""
+    return json.dumps(
+        {
+            "success": True,
+            "machine_id": "pc-1",
+            "seats": len(rows),
+            "verdicts": [
+                {"room": room, "seat": seat, "expected_hash": expected, "sync": sync}
+                for room, seat, expected, sync in rows
+            ],
+        }
+    ).encode("utf-8")
+
+
+def test_an_in_sync_answer_records_the_expected_hash(tmp_path):
+    _pin(tmp_path, "eng", "coder", "cloud456")
+    state = tmp_path / "sync.json"
+    bridge = make_bridge(
+        tmp_path,
+        fake_runner(rig_output(), None),
+        lambda b: (200, _verdicts(("eng", "coder", "cloud456", "in_sync"))),
+        sync_state_path=state,
+    )
+    bridge.cycle()
+    # on disk, not only in memory: this is what a restart reads
+    assert json.loads(state.read_text(encoding="utf-8"))["seats"] == {
+        "pc-1/eng/coder": "cloud456"
+    }
+
+
+def test_the_record_survives_a_restart_and_still_names_a_changed_seat(tmp_path, capsys):
+    """The requirement's whole point. A restarted bridge still knows what it was last in sync
+    with, and a seat that has changed since then is named locally - here with the cloud
+    UNREACHABLE, so nothing but the record on disk can be producing it."""
+    _pin(tmp_path, "eng", "coder", "cloud456")
+    state = tmp_path / "sync.json"
+    first = make_bridge(
+        tmp_path,
+        fake_runner(rig_output(), None),
+        lambda b: (200, _verdicts(("eng", "coder", "cloud456", "in_sync"))),
+        sync_state_path=state,
+    )
+    first.cycle()
+
+    _pin(tmp_path, "eng", "coder", "run999")  # the seat moves on, the record does not
+
+    def unreachable(body):
+        raise OSError("cloud unreachable")
+
+    restarted = make_bridge(
+        tmp_path, fake_runner(rig_output(), None), unreachable, sync_state_path=state
+    )
+    assert restarted.sync_state == {"pc-1/eng/coder": "cloud456"}
+    restarted.cycle()
+    err = capsys.readouterr().err
+    assert "eng/coder has changed since the cloud last confirmed it in sync" in err
+    assert "run999" in err and "cloud456" in err
+
+    record = restarted.local_record(restarted.build_payload()["seats"])
+    assert record["eng/coder"] == {
+        "running": "run999",
+        "last_in_sync": "cloud456",
+        "since_last_in_sync": "changed",
+    }
+    # a seat with no record reads unknown, never ``unchanged`` by accident
+    assert record["eng/reviewer"]["since_last_in_sync"] == "unknown"
+
+
+def test_the_cloud_moving_ahead_is_named_even_though_the_machine_did_not_move(
+    tmp_path, capsys
+):
+    """THE CASE THAT WAS SILENT, and the inversion the review found: the cloud's expectation
+    moves, the seat does not. The local record rightly reads ``unchanged`` - the machine IS
+    unchanged - so the local comparison CANNOT see this by construction, and the answer's
+    verdict is the only channel that knows the cloud's current expectation. It must be named,
+    and the record must NOT advance on it, because a drift answer is not a confirmation."""
+    _pin(tmp_path, "eng", "coder", "h1")
+    state = tmp_path / "sync.json"
+    state.write_text(_record("pc-1", {"pc-1/eng/coder": "h1"}), encoding="utf-8")
+    # the cloud now expects h2 for a seat that is unchanged here, so its answer is drift
+    bridge = make_bridge(
+        tmp_path,
+        fake_runner(rig_output(), None),
+        lambda b: (200, _verdicts(("eng", "coder", "h2", "drift"))),
+        sync_state_path=state,
+    )
+
+    record = bridge.local_record(bridge.build_payload()["seats"])
+    assert record["eng/coder"]["since_last_in_sync"] == "unchanged"
+
+    bridge.cycle()
+
+    err = capsys.readouterr().err
+    assert "the cloud reports eng/coder drift" in err, err
+    assert "h2" in err
+    assert bridge.sync_state == {"pc-1/eng/coder": "h1"}
+
+
+def test_an_answer_without_verdicts_leaves_the_record_intact(tmp_path):
+    _pin(tmp_path, "eng", "coder", "cloud456")
+    state = tmp_path / "sync.json"
+    state.write_text(_record("pc-1", {"pc-1/eng/coder": "cloud456"}), encoding="utf-8")
+    for answer in (b"", b"not json", json.dumps({"success": True}).encode()):
+        bridge = make_bridge(
+            tmp_path,
+            fake_runner(rig_output(), None),
+            lambda b: (200, answer),
+            sync_state_path=state,
+        )
+        bridge.cycle()
+        assert bridge.sync_state == {"pc-1/eng/coder": "cloud456"}
+
+
+def test_an_unreadable_record_reads_as_empty_rather_than_inventing_a_hash(tmp_path):
+    state = tmp_path / "sync.json"
+    state.write_text("{not json", encoding="utf-8")
+    bridge = make_bridge(
+        tmp_path,
+        fake_runner(rig_output(), None),
+        lambda b: (200, b""),
+        sync_state_path=state,
+    )
+    assert bridge.sync_state == {}
+    record = bridge.local_record(bridge.build_payload()["seats"])
+    assert {v["since_last_in_sync"] for v in record.values()} == {"unknown"}
+
+
+def test_once_print_carries_the_local_view_and_not_the_reported_payload(
+    tmp_path, capsys, monkeypatch
+):
+    _pin(tmp_path, "eng", "coder", "run999")
+    state = tmp_path / "sync.json"
+    state.write_text(_record("pc-1", {"pc-1/eng/coder": "cloud456"}), encoding="utf-8")
+    monkeypatch.setattr(bridge_mod, "DEFAULT_SYNC_STATE", state)
+    monkeypatch.setattr(bridge_mod, "DEFAULT_PINS", tmp_path)
+    # the dump path builds its bridge the way the CLI does, so the local tools it shells out to
+    # are injected here rather than assumed to exist on the test host
+    monkeypatch.setattr(
+        bridge_mod, "run_command", fake_runner(rig_output(), herdr_output())
+    )
+
+    assert (
+        bridge_mod.main(["once", "--print", "--machine-id", "pc-1"])
+        == bridge_mod.EXIT_OK
+    )
+
+    printed = json.loads(capsys.readouterr().out)
+    # the dump carries a per-seat local RECORD ... (this host's own record is not this test's to
+    # write, so a seat it has no record for reads unknown - and the words are the record's own,
+    # unchanged/changed, never the cloud's in_sync; the discrimination is pinned above)
+    assert printed["local_record"]["eng/coder"]["since_last_in_sync"] == "unknown"
+    assert printed["local_record"]["eng/coder"]["last_in_sync"] == ""
+    # ... and the POSTed payload must NOT grow that key: the server refuses unknown report
+    # fields, so a local view put on the wire would turn every report into a 400
+    payload = bridge_mod.Bridge(
+        "pc-1", 20.0, lambda b: (200, b""), pins_dir=tmp_path
+    ).build_payload()
+    assert "local_record" not in payload

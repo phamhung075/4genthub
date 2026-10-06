@@ -269,7 +269,11 @@ describe('SeatsPage', () => {
     expect(body.follow_latest).toBeUndefined();
   });
 
-  it('adds a seat with an empty model so the runtime default is used', async () => {
+  // The assertion is the real behaviour: an empty model is SENT as an empty string, and this service stores
+  // it blank rather than substituting anything. The runtime CLI supplies its own default when handed none
+  // (measured), and which one it picks is not established - the old name claimed that substitution as this
+  // path's work, which nothing here performs.
+  it('sends an empty model as an empty string, leaving the substitution to the runtime', async () => {
     await openAddSeatDialog();
     fireEvent.change(screen.getByLabelText('Model'), { target: { value: '' } });
     fireEvent.click(screen.getByLabelText('Use company default'));

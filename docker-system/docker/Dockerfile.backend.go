@@ -1,5 +1,5 @@
 # ---- build stage ----
-FROM golang:1.23.5 AS build
+FROM golang:1.26.8 AS build
 WORKDIR /src
 COPY agenthub_go/go.mod agenthub_go/go.sum ./
 RUN go mod download

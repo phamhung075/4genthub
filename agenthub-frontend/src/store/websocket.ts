@@ -149,7 +149,15 @@ export const useWebSocketStore = create<WebSocketStore>()(
       // Error actions
       setError: (error) =>
         set(
-          { error },
+          {
+            error,
+            // An error is the client's DECISION to stop, so it must not leave a retry looking pending. A
+            // 1008 close emits authenticationFailed and returns WITHOUT scheduling one, and after a failed
+            // handshake the transport error fires before the close - both would otherwise leave
+            // isReconnecting true (set by setDisconnected) and the badge would promise a retry that was
+            // never scheduled.
+            isReconnecting: false,
+          },
           false,
           'websocket/error'
         ),

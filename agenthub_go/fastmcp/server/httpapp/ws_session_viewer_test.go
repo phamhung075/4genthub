@@ -104,6 +104,16 @@ func dialViewer(t *testing.T, store sessionViewerStore, sessionID, query string)
 	return conn, br
 }
 
+// dialViewerToken is dialViewer with a caller-supplied credential, for the auth tests.
+func dialViewerToken(t *testing.T, store sessionViewerStore, sessionID, token string) (net.Conn, *bufio.Reader) {
+	t.Helper()
+	server := viewerServer(t, store)
+	conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+sessionID+"?token="+url.QueryEscape(token))
+	t.Cleanup(func() { _ = conn.Close() })
+	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	return conn, br
+}
+
 func readEventSeq(t *testing.T, br *bufio.Reader) int {
 	t.Helper()
 	opcode, payload := wsTestReadFrame(t, br)
@@ -267,18 +277,27 @@ func TestSessionViewerReplaysInPagesOf500(t *testing.T) {
 func TestSessionViewerRefusesAConnectionWithoutAValidToken(t *testing.T) {
 	// Configure the token validator, as for the other tests; the callers below send no valid token.
 	_ = wsTestToken(t, nil)
-	for name, query := range map[string]string{
-		"no token":  "",
-		"bad token": "?token=not-a-token",
+	for name, tc := range map[string]struct {
+		query  string
+		reason string
+	}{
+		"no token":  {"", wsAuthMissingTokenReason},
+		"bad token": {"?token=not-a-token", wsAuthInvalidTokenReason},
 	} {
 		t.Run(name, func(t *testing.T) {
 			store := &countingStore{viewerStore: newViewerStore(1)}
 			server := viewerServer(t, store)
 
-			status := wsTestDialStatus(t, server.URL, "/ws/sessions/"+viewerSID+query)
-
-			if status != http.StatusForbidden {
-				t.Fatalf("status = %d, want 403 and no upgrade", status)
+			// The upgrade is COMPLETED and refused with a close, exactly as the sibling
+			// sockets refuse: a bare pre-upgrade 403 reaches a browser as 1006 with no reason.
+			conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+viewerSID+tc.query)
+			defer conn.Close()
+			code, reason := readClose(t, br)
+			if code != wsClosePolicyViolation {
+				t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+			}
+			if reason != tc.reason {
+				t.Fatalf("close reason = %q, want %q", reason, tc.reason)
 			}
 			if store.reads() != 0 {
 				t.Fatalf("the store was read %d times for an unauthenticated caller", store.reads())
@@ -287,6 +306,69 @@ func TestSessionViewerRefusesAConnectionWithoutAValidToken(t *testing.T) {
 				t.Fatalf("%d hub subscriptions for an unauthenticated caller", n)
 			}
 		})
+	}
+}
+
+// TestSessionViewerAgreesWithRESTWhenAuthDisabled is the session-viewer half of the
+// ruling that governs both sibling sockets: with AUTH_ENABLED=false ONE decision
+// governs every surface, so a bearer no provider minted is accepted by the REST
+// dependency AND by the viewer as the SAME identity. The viewer reaches it through
+// wsAuthenticateRealtime -> authinterface.GetCurrentUser (the helper every REST route
+// mounts). The identity resolved here is the dev user the REST path returns for the
+// same bearer; the viewer must serve the session that user owns.
+func TestSessionViewerAgreesWithRESTWhenAuthDisabled(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "false")
+	t.Setenv("ENV", "dev")
+	wsWireRESTAuth(t)
+	const crafted = "self-crafted-token-no-provider-minted"
+
+	// REST resolves the dev identity for the same bearer; the viewer must reach the SAME one.
+	status, restUserID := wsRESTUser(t, "Bearer "+crafted)
+	if status != http.StatusOK || restUserID == "" {
+		t.Fatalf("REST refused the self-crafted token: status=%d user=%q", status, restUserID)
+	}
+
+	// The socket is served for that identity: the session it owns is replayed. A different
+	// identity would fail the ownership check and close 4004 instead of sending event 1.
+	store := newViewerStore(1)
+	store.owner[viewerSID] = restUserID
+	conn, br := dialViewerToken(t, store, viewerSID, crafted)
+	if seq := readEventSeq(t, br); seq != 1 {
+		t.Fatalf("seq = %d, want 1 for the identity the REST path resolved (%s)", seq, restUserID)
+	}
+	t.Logf("auth disabled: forged token accepted, identity resolved = %s (same as REST)", restUserID)
+	_ = conn.Close()
+}
+
+// TestSessionViewerRefusesTheForgedTokenWhenAuthEnabled is the other half: with auth ON
+// the same forged token is refused, and the refusal now carries the evidence a browser
+// can read - the handshake completes and the socket closes with 1008 and the reason the
+// shared auth decision gives an invalid token. The refused caller must reach neither the
+// store nor the hub.
+func TestSessionViewerRefusesTheForgedTokenWhenAuthEnabled(t *testing.T) {
+	t.Setenv("AUTH_ENABLED", "true")
+	t.Setenv("AUTH_PROVIDER", "keycloak")
+	t.Setenv("JWT_SECRET_KEY", "ws-mount-test-secret-000000000000")
+	t.Setenv("KEYCLOAK_URL", "")
+	const crafted = "self-crafted-token-no-provider-minted"
+
+	store := &countingStore{viewerStore: newViewerStore(1)}
+	server := viewerServer(t, store)
+
+	conn, br := wsTestDial(t, server.URL, "/ws/sessions/"+viewerSID+"?token="+url.QueryEscape(crafted))
+	defer conn.Close()
+	code, reason := readClose(t, br)
+	if code != wsClosePolicyViolation {
+		t.Fatalf("close code = %d, want %d", code, wsClosePolicyViolation)
+	}
+	if reason != wsAuthInvalidTokenReason {
+		t.Fatalf("close reason = %q, want %q", reason, wsAuthInvalidTokenReason)
+	}
+	if store.reads() != 0 {
+		t.Fatalf("the store was read %d times for a refused credential", store.reads())
+	}
+	if n := session_stream.Hub.Subscribers(viewerSID); n != 0 {
+		t.Fatalf("%d hub subscriptions for a refused credential", n)
 	}
 }
 

@@ -275,7 +275,7 @@ export interface SeatLinkRequest {
   allow: boolean;
 }
 
-/** An empty model means the runtime default. */
+/** An empty model is accepted and KEEPS the model the seat already has: a blank field never clears a field. */
 export interface OccupantUpdate {
   runtime: SeatRuntime;
   model: string;

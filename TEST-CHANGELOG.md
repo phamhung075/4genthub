@@ -2,6 +2,66 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - a deliberate socket close is not a failure (frontend)
+
+- `src/tests/services/WebSocketClient.test.ts` adds the case that DRIVES the deliberate close: connect, open, then
+  `disconnect()` against the mock socket, whose `close()` fires `onclose` synchronously - asserting `disconnected`
+  fired and `reconnectFailed` did NOT. Proved by removing the branch: the case then fails with `reconnectFailed`
+  called once, which is the false failure reproduced as a test. The give-up path keeps its own case
+  ('should emit reconnectFailed after max attempts'), untouched and still passing.
+- Counts: that file 28 -> 29; the full suite 1763 -> 1764, 0 errors.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/services/WebSocketClient.test.ts` -> 29 passed;
+  `npx vitest run` -> 102 files / 1764 passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - the block mirror stops being stricter than the authority (frontend)
+
+- `src/tests/utils/mcpBlock.test.ts` adds the two cases that pin the alignment: a block with CAPITALISED tags and
+  an explicit `null` on optional fields parses, because Go matches struct tags case-insensitively and decodes null
+  to the zero value; and an unknown field is still refused when it is written in capitals, so the case-insensitive
+  match cannot turn an unknown field into an allowed one.
+- Proved by removing the alignment: the accept-case fails with "expected false to be true", which is precisely the
+  false refusal it exists to prevent - a block the renderer accepts that the form could not submit.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/utils/mcpBlock.test.ts` -> 29 passed;
+  `npx vitest run` -> 102 files / 1763 tests passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - the blank-model claim is sourced to the runtime (frontend)
+
+- `src/tests/pages/SeatsPage.test.tsx`: the case 'adds a seat with an empty model so the runtime default is
+  used' is RENAMED to 'sends an empty model as an empty string, leaving the substitution to the runtime'. Its
+  assertions are untouched - they pin the real behaviour, `createSeat` receiving `model: ''` - and the old name
+  claimed a substitution nothing in this path performs. The runtime CLI does substitute a default when handed
+  none (measured), and which default it picks is not established; nothing about the case's evidence changed,
+  only the claim its name made.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatsPage.test.tsx` -> 30 passed;
+  `npx vitest run` -> 102 files / 1761 tests passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - the module form refuses an mcp block the renderer would refuse (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` adds the pair: with kind mcp and plain-text content, Publish is
+  disabled and the field says the content is not one server block; replacing that text with one block enables
+  Publish. Proved by removing the gate from the form's validity expression - the case then fails with
+  "Received element is not disabled", which is precisely the plain-text publish the route would have accepted.
+- The file's existing case asserting that mcp IS offered in the kind union is untouched and still passes. The
+  first version of this fix DELETED mcp from the union and broke it, which is how the pinned decision surfaced:
+  the union's membership is deliberate, so the fix moved to refusing the SHAPE of the content rather than
+  hiding the kind.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
+  passed; `npx vitest run` -> 102 files / 1760 tests passed, 0 errors; `npx vite build` -> ok.
+
+## 2026-10-06 - the socket's dev wiring, and the reason it records (frontend)
+
+- `src/tests/components/ProjectList/components/ProjectListHeader.test.tsx` pins the two facts the surface
+  used to drop: with `isReconnecting` set the chip reads "Reconnecting…" and carries the recorded error as
+  its title. Proved by removing exactly those two lines from the chip - the case then fails with "Unable to
+  find an element with the text: Reconnecting…". A store reset in `beforeEach` keeps the singleton from
+  leaking into the file's other cases, which assert the Offline label from the prop.
+- NO test is written for the `/ws` proxy, deliberately: it is configuration, and a test asserting the config
+  text would pass whether or not the proxy works. Its evidence is measurement instead - a raw client against
+  the dev origin with no token now returns the backend's `close 1008` and its reason, where before the dev
+  server accepted the upgrade itself and the app called that Connected.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` (ProjectListHeader, LazyTaskList) -> 31 passed;
+  `npx vitest run` -> 102 files / 1759 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - clipboard guards and a leaked navigator stub (frontend, hygiene)
 
 - `src/tests/components/GlobalContextDialog.test.tsx` installed a clipboard stub on the GLOBAL `navigator` and

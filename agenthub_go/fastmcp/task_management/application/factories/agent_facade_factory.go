@@ -15,8 +15,8 @@ import (
 	"sync"
 )
 
-// AgentApplicationFacade is the consumer-side marker for the unported
-// AgentApplicationFacade; no method is called by the factory.
+// AgentApplicationFacade is the consumer-side marker; no method is called by the
+// factory.
 type AgentApplicationFacade interface{}
 
 // AgentRepositoryFactoryBackend is the static AgentRepositoryFactory.create(user_id) used
@@ -26,7 +26,7 @@ type AgentRepositoryFactoryBackend func(userID string) (repositories.AgentReposi
 // AgentRepositoryFactoryDefault is the fallback backend when none was injected.
 var AgentRepositoryFactoryDefault AgentRepositoryFactoryBackend
 
-// AgentApplicationFacadeConstructor builds the unported AgentApplicationFacade.
+// AgentApplicationFacadeConstructor builds the AgentApplicationFacade.
 var AgentApplicationFacadeConstructor func(repo repositories.AgentRepository) AgentApplicationFacade
 
 // AgentFacadeFactory mirrors agent_facade_factory.AgentFacadeFactory.

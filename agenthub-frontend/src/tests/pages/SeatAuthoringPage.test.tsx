@@ -132,6 +132,30 @@ describe('SeatAuthoringPage', () => {
     expect(within(card).getByText('rules@1.0.0')).toBeInTheDocument();
   });
 
+  // An mcp module's content is ONE server block the renderer parses, and the publish route checks the
+  // KIND rather than the block - measured on the running backend: `{"kind":"mcp","content":"not a
+  // block"}` is accepted with 200. So the form refuses the plain-text shape here, instead of letting
+  // some seat's resolve refuse it later and look like a broken seat.
+  it('refuses mcp content that is not one server block, and accepts a block', async () => {
+    renderPage();
+    fireEvent.change(await screen.findByLabelText('Module kind'), { target: { value: 'mcp' } });
+    fireEvent.change(screen.getByLabelText('Module slug'), { target: { value: 'probe-block' } });
+    fireEvent.change(screen.getByLabelText('Module version'), { target: { value: '1.0.0' } });
+    fireEvent.change(screen.getByLabelText('Module content'), {
+      target: { value: 'rule: do the thing' },
+    });
+
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeDisabled();
+    expect(screen.getByText(/Not a server block/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Module content'), {
+      target: { value: JSON.stringify({ name: 'probe', type: 'stdio', command: 'npx' }) },
+    });
+
+    expect(screen.queryByText(/Not a server block/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Publish' })).toBeEnabled();
+  });
+
   it('keeps Publish disabled until slug, version and content are valid', async () => {
     renderPage();
     await screen.findByText('Coder');

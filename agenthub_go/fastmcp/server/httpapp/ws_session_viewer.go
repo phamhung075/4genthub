@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"agenthub/fastmcp/auth"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/session_stream"
 	"agenthub/fastmcp/task_management/domain/entities"
@@ -43,11 +42,23 @@ func (s sessionStreamStore) ListEvents(ctx context.Context, userID, sessionID st
 // handleSessionViewer authenticates from ?token=, then answers a session that is
 // missing and a session that belongs to someone else with the same 4004 close so ids
 // cannot be probed.
+//
+// The credential is resolved by wsAuthenticateRealtime, the SAME helper the realtime
+// and connector sockets use, so this viewer obeys the one AUTH_ENABLED decision
+// instead of applying a rule of its own: with auth on it validates the token; with
+// auth off it resolves the identity through authinterface.GetCurrentUser, the helper
+// every REST route mounts.
+//
+// A refused credential is answered the way the sibling sockets answer it
+// (wsRejectUpgrade): the handshake is completed and the socket is closed with 1008 and
+// a reason naming what the server wanted. A bare pre-upgrade 403 reaches a browser as
+// close code 1006 with no reason, so the client could not tell a refused credential
+// from a network drop.
 func handleSessionViewer(store sessionViewerStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		result := auth.ValidateTokenUniversal(r.Context(), r.URL.Query().Get("token"), nil)
-		if !result.Valid || result.UserID == nil || *result.UserID == "" {
-			http.Error(w, "Authentication required", http.StatusForbidden)
+		result, reason := wsAuthenticateRealtime(r.Context(), r.URL.Query().Get("token"))
+		if reason != "" {
+			wsRejectUpgrade(w, r, reason)
 			return
 		}
 		conn, err := wsUpgrade(w, r)

@@ -19,6 +19,10 @@ import (
 type fakeSeatStatus struct {
 	byUser map[string]map[string]repositories.Machine
 	err    error
+	// expected is the cloud's expected hash per "room/seat", the value the repository's LEFT
+	// JOIN to the seat's newest resolved snapshot supplies on read. ReplaceSnapshot is a no-op
+	// for it (the write ignores ExpectedHash), so the fake applies it in List.
+	expected map[string]string
 }
 
 func (f *fakeSeatStatus) ReplaceSnapshot(_ context.Context, userID string, m repositories.Machine) error {
@@ -41,6 +45,14 @@ func (f *fakeSeatStatus) List(_ context.Context, userID string) ([]repositories.
 	}
 	out := []repositories.Machine{}
 	for _, m := range f.byUser[userID] {
+		if f.expected != nil {
+			seats := make([]repositories.SeatStatus, len(m.Seats))
+			copy(seats, m.Seats)
+			for i := range seats {
+				seats[i].ExpectedHash = f.expected[seats[i].Room+"/"+seats[i].Seat]
+			}
+			m.Seats = seats
+		}
 		out = append(out, m)
 	}
 	return out, nil
@@ -230,6 +242,49 @@ func TestSeatStatusRepositoryErrorIs500(t *testing.T) {
 	rec := getMachines(mux)
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("GET = %d", rec.Code)
+	}
+}
+
+// The report response tells the machine what the cloud expects, per seat, in the same shape
+// GET /machines renders - the only way a bridge, which holds no user token, can record the hash
+// it was last in sync with. The discrimination is exercised by making the hashes differ.
+func TestSeatStatusPostReportsVerdictsPerSeat(t *testing.T) {
+	fake := &fakeSeatStatus{expected: map[string]string{
+		"eng/coder": "cloud456",
+		"eng/same":  "cloud456",
+	}}
+	mux := seatStatusTestMux(t, fake)
+	body := `{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z","seats":[` +
+		`{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","hash":"run123","detail":"","redacted":false},` +
+		`{"room":"eng","seat":"same","state":"idle","runtime":"claude-code","hash":"cloud456","detail":"","redacted":false},` +
+		`{"room":"eng","seat":"none","state":"idle","runtime":"claude-code","hash":"run123","detail":"","redacted":false}` +
+		`],"agents":[]}`
+
+	rec := postSeatStatus(mux, body)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST = %d %s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		Verdicts []struct {
+			Room, Seat   string
+			ExpectedHash string `json:"expected_hash"`
+			Sync         string `json:"sync"`
+		} `json:"verdicts"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("decode: %v\n%s", err, rec.Body.String())
+	}
+	want := map[string]string{"coder": "drift", "same": "in_sync", "none": "unknown"}
+	if len(got.Verdicts) != 3 {
+		t.Fatalf("verdicts = %s", rec.Body.String())
+	}
+	for _, v := range got.Verdicts {
+		if v.Sync != want[v.Seat] {
+			t.Errorf("seat %s sync = %q, want %q", v.Seat, v.Sync, want[v.Seat])
+		}
+		if v.Seat == "coder" && v.ExpectedHash != "cloud456" {
+			t.Errorf("coder expected_hash = %q: the response must carry the cloud value, not the reported hash", v.ExpectedHash)
+		}
 	}
 }
 

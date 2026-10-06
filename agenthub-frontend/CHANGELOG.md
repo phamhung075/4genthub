@@ -181,6 +181,48 @@
     that one case.
 
 ### Changed
+- **The Vite trap is corrected a SECOND time: the export WINS, and the file Vite reads is the root one** - 2026-10-06
+ - A correction of a correction, kept visible because the history is the evidence that the standard is held: 5b9a019f
+ retracted the claim that `VITE_WS_URL` is inert without a frontend `.env` - true as far as it went - and then offered
+ its own wrong trap, that a SHELL EXPORT changes nothing. Measured against Vite itself, its loader writes the FILE
+ values first and then OVERWRITES them from the process environment, and that precedence is documented, so **an
+ export WINS over the file's value**.
+ - What stands, measurements only: (i) the config reads the REPO ROOT env file, because `envDir` is `'..'`; (ii) a
+ shell export overrides that file's value; (iii) the running client logged the variable as NOT SET and fell back to
+ the page origin, and the mechanism for THAT is not established - three candidates, none chosen. The false trap WAS
+ an explanation offered for (iii), and a fourth explanation would repeat the error exactly.
+ - Every home is swept and every remaining copy of the false mechanism is marked RETRACTED rather than deleted, since
+ these are dated records: this file in three places, the setup guide (another seat's second pass, which reverses the
+ first), and the root changelog. The Go backlog carries no copy - searched, zero matches for the trap text.
+- **The socket rationale is corrected, and the trap narrowed to what was measured** - 2026-10-06
+ - The earlier line said `VITE_WS_URL` had no effect because the frontend has no `.env`. That is wrong twice
+ over: `vite.config.ts` sets `envDir: '..'`, so the REPO ROOT `.env` IS the file Vite reads - measured through
+ Vite's own resolver, which returns `VITE_WS_URL=ws://localhost:8000` from it - and this directory holds only
+ `.env.sample`. The trap it then offered is WRONG AND IS RETRACTED HERE: it said a SHELL EXPORT changes nothing,
+ but **an export WINS over the file's value in Vite**, because variables already present when Vite runs have the
+ highest priority. Corrected statement, measurements only: the config reads the REPO ROOT env file, and an export
+ overrides that file.
+ - The gap recorded here is now EXPLAINED, measured and filed (`VITE-ENV-INVESTIGATION.md`, fe-dev): the injected
+ environment reflects the CONFIG's env loading and its env directory. One dev server set no `envDir`, so Vite used
+ its default - this directory, holding only `.env.sample` - and injected only the process environment's variables,
+ with `VITE_WS_URL` absent; another loaded the parent env and carried `VITE_WS_URL` in the object itself. So the
+ client's read was CORRECT and its fallback to the page origin was its correct consequence: the value never
+ ARRIVED rather than being discarded. The other two candidates are refuted, not parked, and the FIRST REASON HERE IS
+ CORRECTED: the runtime `window._env_` object is NOT absent in development - `index.html` loads `/env-config.js` in
+ every environment and that file defines the object - but it carries NO websocket key (its keys are placeholders such
+ as `__VITE_API_URL__`, which `getEnvVar` ignores), so that branch cannot supply the URL. The computed-key read
+ resolved against a populated object in the build, as measured when that output was present.
+ Diagnostic, one command: fetch the transformed config module from the running dev server and read line one, where
+ the injected object is literally present. WHICH config the original observing run used stays unprovable here.
+- **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
+ - The file still carried the Create React App defaults (`pnpm start`, port 3000); this project runs
+ `npm start` on port 3800 through Vite, which proxies `/api` and now `/ws` to the backend on :8000.
+ - It also recorded a trap that is RETRACTED (2026-10-06, see the entry above): it said `VITE_WS_URL` is inert in
+ development unless it is in a `.env` file. **That is false.** The config reads the REPO ROOT `.env` (`envDir`
+ `'..'`), and a SHELL EXPORT overrides even that file's value. What stays true is why the proxy exists: in this
+ dev setup the client logs the variable as NOT SET and dials the page origin, so the socket reaches the API
+ through `/ws`, and without that proxy the dev server accepts the upgrade itself and the UI reports Live with no
+ backend behind it.
 - **The frontend speaks the seat model, not the retired agent library (owner directive C)** - 2026-10-05
   - Read-only inventory first: every claim the frontend makes about the API it calls and about the agent model, with
     file:line and a class (matches / stale / retired-as-live). Result: no retired-as-live HTTP call survived - the
@@ -211,6 +253,105 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **A deliberate disconnect stops reporting a reconnection failure** - 2026-10-06
+ - `disconnect()` raises the attempt counter to its maximum to suppress auto-reconnect and then closes the socket,
+ and `handleClose` could not tell that state from having EXHAUSTED retries - so it took its give-up branch and
+ emitted `reconnectFailed`, whose message is "Failed to reconnect to WebSocket server", for a close the user asked
+ for. The retry flag was already correct on that path, so no retry was promised; the ERROR STRING was what lied.
+ - The intent is now recorded where it is decided - `closingIntentionally`, set by `disconnect()` and cleared by
+ `connect()` - and `handleClose` short-circuits on it. A server-initiated close still retries, and still reports
+ a failure when retries run out: that path's own case is untouched and still passes.
+ - Measured: with the branch removed, the new case fails with `reconnectFailed` called once, which is the false
+ failure reproduced as a test.
+- **Two transitive advisories closed, and the lockfile question answered** - 2026-10-06
+  - `source-map-js` 1.2.1 -> **1.2.2** and `brace-expansion` 2.0.2 -> **2.1.7**. Both are TRANSITIVE - the first through
+    `postcss` (and `tailwindcss > postcss-nested > postcss`), the second through `tailwindcss > sucrase > glob > minimatch` -
+    so the fix is an override rather than a direct-dependency bump, bounded to the SAME MAJOR as the vulnerable copy: an
+    unbounded range resolved `brace-expansion` all the way to 5.0.12, which is the blind bump this change exists to avoid.
+  - The override sits in `pnpm-workspace.yaml` (the supported home: the local pnpm is 12.9.1 and warns that the
+    `package.json` `pnpm` field is no longer read) AND in `package.json`'s `pnpm` block, because the production image pins
+    `pnpm@10.9.0`, which does read it. The duplication is the compatibility shim across the two managers actually in play.
+  - WHICH LOCKFILE THE BUILD USES, measured rather than assumed: `docker-system/docker/Dockerfile.frontend.production`
+    (reached through `captain-definition.frontend`) copies `agenthub-frontend/pnpm-lock.yaml` and runs
+    `pnpm install --frozen-lockfile`, so the FRONTEND lockfile is authoritative. `node_modules` carries pnpm's own markers
+    (`.pnpm`, `.modules.yaml`). CI installs no frontend dependencies at all: `test_coverage.yml` works only in
+    `agenthub_main`, and `production-deployment.yml`'s frontend image step names `./agenthub-frontend/Dockerfile.production`,
+    which does not exist in the tree (reported, not fixed here - outside this task's scope).
+  - The root lockfiles (`package-lock.json`, `pnpm-lock.yaml`) are tracked but serve the root `package.json` (a thin project
+    with `sass` and the agent SDK, and no scripts); the root's `source-map-js@1.2.1` sits under the root's own `sass`, not in
+    the frontend's path. Neither is read by the frontend build or by CI, so whether they are dead weight is the owner's call;
+    nothing here deletes them.
+  - Gates, measured before and after: `tsc --noEmit` **0 errors** -> **0 errors** (the 23-error baseline was removed
+    2026-10-03); `vite build` clean (21.65s); `vitest run` **102 files / 1763 passed** before -> **1763 passed of 1764** after,
+    where the one failure is in `WebSocketClient.test.ts` at line 116 (`expect(failures).not.toHaveBeenCalled()`, the
+    reconnection-failure path) - and BOTH that test file and its source are modified and uncommitted by another seat, with the
+    suite gaining a test between the two runs. Neither bumped package is reachable from that path.
+  - Lockfile regenerated with `pnpm@10.9.0` (the production pin) via `pnpm install --no-frozen-lockfile`; the only version
+    changes are the two above.
+- **The block form stops refusing blocks the renderer accepts** - 2026-10-06
+ - The frontend mirror of the Go parser was STRICTER in two places, so it refused blocks the authority accepts -
+ the direction that makes it a defect rather than a note. Go matches object keys to struct tags
+ case-insensitively, and decodes an explicit `null` on an optional field to that field's zero value, i.e. absent;
+ the mirror compared the allowed-key list case-sensitively and treated `null` as invalid. Both now read the way
+ the authority reads, and neither loosening touches the refusals that ARE the authority's.
+ - Measured: with the alignment removed, the new case fails - `{"Name":"probe","Type":"stdio","Command":"npx",
+ "Args":null}` is refused - which is a block the renderer accepts and the form could not submit. The unknown-field
+ refusal keeps its meaning and is now pinned in capitals as well, since matching without case must not turn an
+ unknown field into an allowed one.
+- **The blank-model claim is sourced to the runtime, in every place the frontend made it** - 2026-10-06
+ - Four frontend sites carried the clause as if THIS path substituted a default: the doc on `isValidSeatModel`,
+ the create form's model hint (user-visible), the topology graph's and seat table's fallback label, and a test
+ name that claimed the substitution as this flow's work. fe-dev measured the truth in two halves: a blank model
+ is accepted and STORED BLANK here and the resolved seat renders no model line, while the runtime CLI DOES
+ substitute one when handed none - which default it picks is not established.
+ - The two comment sites and the hint now carry go-dev's sentence character for character, per the identity rule:
+ extra precision goes in a site-specific sentence BESIDE the shared one, never in an edit to it. The two display
+ labels keep 'runtime default' because that is what is known - a runtime default applies, unnamed - with a
+ comment naming the basis, and the test now pins the behaviour it actually asserts (an empty model is sent as an
+ empty string) rather than the substitution nothing in this path performs.
+- **An authentication refusal stops the status chip promising a retry** - 2026-10-06
+ - A 1008 close makes the client give up permanently: `handleClose` emits `authenticationFailed` and returns
+ WITHOUT scheduling a reconnect. But the store's `setError` set only the error, leaving `isReconnecting` true
+ from the preceding `setDisconnected`, so the chip rendered "Reconnecting..." forever - a retry the client had
+ decided against. The error now clears the retry state, so the chip shows Offline with the reason the server
+ gave, which is the state the client actually reached.
+- **The module form refuses an mcp block the renderer would refuse** - 2026-10-06
+ - An mcp module's content is ONE whole server block that the renderer PARSES, and the publish route checks
+ the KIND rather than the block: measured on the running backend, `{"kind":"mcp","content":"not a block"}`
+ is accepted with 200. The generic publish form therefore let a plain-text mcp module through, and the
+ refusal landed later, on some seat's resolve, where it reads as a broken seat rather than a bad publish.
+ The form now parses the block with the same mirror the MCP block form uses (`lib/mcpBlock`), keeps Publish
+ disabled when the content is not one server block, and says why under the field.
+ - The kind union is unchanged - `mcp` is still offered, and the existing case that pins that union still
+ passes. The first version of this fix hid the kind instead and broke that case, which is how the pinned
+ decision surfaced; refusing the SHAPE is the fix, not removing the option.
+- **The seat LLM panel no longer promises an effect an update does not apply** - 2026-10-06
+ - Its model hint read "Empty uses the runtime default", which is the CREATE semantics. On an update an
+ emptied box KEEPS the stored model - a blank field never clears a field - so the sentence said the model
+ would change when it would not. It now says an empty box keeps the model the seat already has.
+ - Copy only, and deliberately no test: an assertion on the text would pass whether or not the sentence is
+ true, which is the same reason the `/ws` proxy has none.
+ - The same create-only claim survived in two more places, found by the reviewer: the doc comment on
+ `isValidSeatModel` (`lib/seatNames.ts`) and the doc on `OccupantUpdate` (`types/seatTypes.ts`). Both now say
+ what an empty model means where they sit, so the next editor does not inherit the wrong generality. The
+ create form's hint (`SeatsPage.tsx`) kept the sentence on the reading that it is true for a create -
+ CORRECTED in the entry above: the clause is true of the RUNTIME, not of this path, and the shared sentence now
+ says so in all four places.
+- **The realtime socket reaches the API in development, and a refusal says why** - 2026-10-06
+ - The dev server proxied `/api` to the backend but not `/ws`, while the app derives its socket URL from the
+ page origin in development (`config/environment.ts`: `VITE_WS_URL` when set, else `API_BASE_URL` with the
+ scheme rewritten). So the socket went to the DEV SERVER's own websocket server, which accepts the upgrade -
+ the app reported Live with nothing behind it. `/ws` is now proxied with `ws: true`, and a raw client against
+ the dev origin with no token gets the backend's own refusal (`close 1008`, "Authentication required: pass a
+ bearer token in the token query parameter or the Authorization header") instead of an open socket.
+ - `VITE_WS_URL` was said here to have no effect unless it is in a frontend `.env`. WRONG, and corrected in the
+ entry above: the config sets `envDir: '..'`, so the REPO ROOT `.env` is the file Vite reads. What was then
+ offered as the surviving trap - that a shell export changes nothing - IS ALSO WRONG and retracted: an export
+ WINS over the file in Vite.
+ - The status chip the task and project headers share now carries what the client records and used to drop:
+ `Reconnecting…` while a retry is in progress rather than the same "Offline" as having given up, and the
+ recorded error as the chip's title - which for an authentication refusal is the SERVER'S reason string,
+ the only thing that distinguishes a scope refusal from a bad credential.
 - **A copy button does not throw without a clipboard, and a copied reset no longer outlives its component** - 2026-10-06
  - `GlobalContextDialog`'s Copy handler and `RawJSONDisplay`'s copy button called `navigator.clipboard.writeText`
  unguarded, so a context without a clipboard (jsdom, or a browser refusing the write) threw out of the click; both

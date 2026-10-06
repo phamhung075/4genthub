@@ -4,17 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
 type decodeFixture struct {
-	Files []struct {
-		Path string                   `json:"path"`
-		Out  struct{ Ok, Exc string } `json:"out"`
-	} `json:"files"`
 	Edge []struct {
 		In  string                   `json:"in"`
 		Out struct{ Ok, Exc string } `json:"out"`
@@ -59,46 +54,6 @@ func TestLoadYAMLEdgeParity(t *testing.T) {
 		got, _ := dumpDefault(v)
 		if got != c.Out.Ok {
 			t.Errorf("%q:\n got  %s\n want %s", c.In, got, c.Out.Ok)
-		}
-	}
-}
-
-// TestLoadYAMLAgentLibraryParity loads every agent-library YAML file with the Go loader
-// and compares the JSON dump with PyYAML's. The library lives in the Python tree, so the
-// test is skipped when that tree is gone.
-func TestLoadYAMLAgentLibraryParity(t *testing.T) {
-	root := filepath.Join("..", "..", "..", "..", "..", "agenthub_main")
-	if _, err := os.Stat(filepath.Join(root, "agent-library")); err != nil {
-		t.Skip("agent-library not present")
-	}
-	files := loadDecodeFixture(t).Files
-	if len(files) < 300 {
-		t.Fatalf("fixture too small: %d files", len(files))
-	}
-	for _, f := range files {
-		raw, err := os.ReadFile(filepath.Join(root, f.Path))
-		if err != nil {
-			t.Fatal(err)
-		}
-		v, err := LoadYAML(raw)
-		if f.Out.Exc != "" {
-			if err == nil {
-				t.Errorf("%s: Python fails (%s), Go loads", f.Path, f.Out.Exc)
-			}
-			continue
-		}
-		if err != nil {
-			t.Errorf("%s: %v", f.Path, err)
-			continue
-		}
-		got, _ := dumpDefault(v)
-		if got != f.Out.Ok {
-			n := 0
-			for n < len(got) && n < len(f.Out.Ok) && got[n] == f.Out.Ok[n] {
-				n++
-			}
-			lo := max(0, n-60)
-			t.Errorf("%s: differs at byte %d:\n got  ...%s\n want ...%s", f.Path, n, got[lo:min(len(got), n+60)], f.Out.Ok[lo:min(len(f.Out.Ok), n+60)])
 		}
 	}
 }

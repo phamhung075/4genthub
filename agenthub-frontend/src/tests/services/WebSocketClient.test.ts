@@ -95,6 +95,28 @@ describe('WebSocketClient', () => {
     });
   });
 
+  describe('disconnect()', () => {
+    // A deliberate close used to be reported as a FAILURE: disconnect() raises the attempt count to
+    // suppress auto-reconnect, handleClose could not tell that from exhausted retries, and it emitted
+    // reconnectFailed, whose message is 'Failed to reconnect to WebSocket server'. The state must say
+    // what actually happened - a close the client asked for.
+    it('reports no reconnection failure for a close the client asked for', () => {
+      const failures = vi.fn();
+      const disconnected = vi.fn();
+      client.on('reconnectFailed', failures);
+      client.on('disconnected', disconnected);
+
+      client.connect();
+      mockWs.readyState = WebSocket.OPEN;
+      mockWs.onopen?.(new Event('open'));
+
+      client.disconnect();
+
+      expect(disconnected).toHaveBeenCalled();
+      expect(failures).not.toHaveBeenCalled();
+    });
+  });
+
   describe('connect()', () => {
     it('should create WebSocket connection with correct URL', () => {
       client.connect();

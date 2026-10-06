@@ -524,7 +524,10 @@ export const SeatsPage: React.FC = () => {
                   placeholder="runtime default"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Model id for this runtime, for example sonnet. Empty uses the runtime default.
+                  Model id for this runtime, for example sonnet. A blank model is accepted and stored
+                  blank: this service substitutes no default and the resolved seat renders no model line.
+                  The runtime CLI does substitute one when handed none, measured; which default it picks is
+                  not established here.
                 </p>
                 {!seatModelValid && <p className="text-xs text-destructive">{SEAT_MODEL_MESSAGE}</p>}
               </div>

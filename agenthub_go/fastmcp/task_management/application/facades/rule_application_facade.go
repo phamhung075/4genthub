@@ -10,7 +10,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// RulePathResolver is the consumer-side port of the unported
+// RulePathResolver is the consumer-side port of the
 // task_management/interface/mcp_tools/path_resolver.PathResolver methods used by
 // RuleApplicationFacade. Python returns pathlib.Path; the Go port returns the path
 // string and existence/reading is done with the os package.

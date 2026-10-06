@@ -77,33 +77,6 @@ func wsTestDial(t *testing.T, serverURL, path string) (net.Conn, *bufio.Reader) 
 	return conn, br
 }
 
-// wsTestDialStatus performs the handshake and returns the HTTP status when the
-// server refuses the upgrade.
-func wsTestDialStatus(t *testing.T, serverURL, path string) int {
-	t.Helper()
-	u, err := url.Parse(serverURL)
-	if err != nil {
-		t.Fatalf("parse server url: %v", err)
-	}
-	conn, err := net.Dial("tcp", u.Host)
-	if err != nil {
-		t.Fatalf("dial: %v", err)
-	}
-	defer conn.Close()
-	key := base64.StdEncoding.EncodeToString([]byte("0123456789abcdef"))
-	req := "GET " + path + " HTTP/1.1\r\nHost: " + u.Host +
-		"\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: " + key +
-		"\r\nSec-WebSocket-Version: 13\r\n\r\n"
-	if _, err := conn.Write([]byte(req)); err != nil {
-		t.Fatalf("write handshake: %v", err)
-	}
-	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
-	if err != nil {
-		t.Fatalf("read handshake: %v", err)
-	}
-	return resp.StatusCode
-}
-
 // wsTestDialAuth is wsTestDial with one extra request header (e.g. Authorization), for the
 // realtime socket's bearer path.
 func wsTestDialAuth(t *testing.T, serverURL, path, header string) (net.Conn, *bufio.Reader) {

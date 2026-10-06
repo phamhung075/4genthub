@@ -63,6 +63,8 @@ function SeatNode({ seat, point }: { seat: Seat; point: Point }) {
       <text x={10} y={40} className="fill-current text-xs opacity-70">
         {seat.seat_type} · {seat.runtime}
       </text>
+      {/* The runtime substitutes a default when handed none (measured); WHICH default it picks is not
+          established, so the label names only that a runtime default applies. This service stores blank. */}
       <text x={10} y={58} className="fill-current text-xs opacity-70">
         {seat.model || 'runtime default'}
       </text>

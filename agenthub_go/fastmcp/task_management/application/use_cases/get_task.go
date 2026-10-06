@@ -37,7 +37,7 @@ func NewGetTaskUseCase(taskRepository repositories.TaskRepository,
 }
 
 // Execute retrieves a task and optionally context data.
-func (uc *GetTaskUseCase) Execute(ctx context.Context, taskID string, generateRules bool,
+func (uc *GetTaskUseCase) Execute(ctx context.Context, taskID string,
 	forceFullGeneration bool, includeContext bool) (*dtostask.TaskResponse, error) {
 
 	domainTaskID, err := value_objects.NewTaskId(taskID)

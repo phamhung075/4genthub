@@ -24,7 +24,11 @@ export const SEAT_MODEL_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/;
 export const SEAT_MODEL_MESSAGE =
   'Use letters, digits, ".", "_", ":", "/" or "-"; start with a letter or digit.';
 
-/** An empty model is valid: the runtime default is used. */
+/**
+ * A blank model is accepted and stored blank: this service substitutes no default and the resolved seat
+ * renders no model line. The runtime CLI does substitute one when handed none, measured; which default it
+ * picks is not established here.
+ */
 export function isValidSeatModel(value: string): boolean {
   return value === '' || SEAT_MODEL_PATTERN.test(value);
 }

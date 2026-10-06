@@ -233,7 +233,7 @@ func (h *CRUDHandler) GetTask(ctx context.Context, facade TaskFacade, taskID str
 }
 
 // enrichTaskInheritedContext mirrors the try/except block of get_task. A panic
-// from the unported FacadeService takes the except path (context_available=true,
+// from the FacadeService takes the except path (context_available=true,
 // inherited_context_available=false), matching `except Exception`.
 func enrichTaskInheritedContext(ctx context.Context, result, taskData *entities.OrderedMap[any],
 	taskID, taskContextID string) {
