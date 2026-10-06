@@ -12,37 +12,31 @@ import (
 )
 
 // zpTaskAppCreateTaskUseCase is the task_application_service dependency on the
-// unported CreateTaskUseCase (Python: CreateTaskUseCase(repo, git_branch_repo)).
+// CreateTaskUseCase (Python: CreateTaskUseCase(repo, git_branch_repo)).
 type zpTaskAppCreateTaskUseCase interface {
 	Execute(request taskdtos.CreateTaskRequest) (*taskdtos.CreateTaskResponse, error)
 }
 
-// zpTaskAppGetTaskUseCase is the unported GetTaskUseCase.
 type zpTaskAppGetTaskUseCase interface {
 	Execute(ctx context.Context, taskID string, forceFullGeneration, includeContext bool) (*taskdtos.TaskResponse, error)
 }
 
-// zpTaskAppUpdateTaskUseCase is the unported UpdateTaskUseCase.
 type zpTaskAppUpdateTaskUseCase interface {
 	Execute(request taskdtos.UpdateTaskRequest) (*taskdtos.UpdateTaskResponse, error)
 }
 
-// zpTaskAppListTasksUseCase is the unported ListTasksUseCase.
 type zpTaskAppListTasksUseCase interface {
 	Execute(ctx context.Context, request taskdtos.ListTasksRequest) (*taskdtos.TaskListResponse, error)
 }
 
-// zpTaskAppSearchTasksUseCase is the unported SearchTasksUseCase.
 type zpTaskAppSearchTasksUseCase interface {
 	Execute(ctx context.Context, request taskdtos.SearchTasksRequest) (*taskdtos.TaskListResponse, error)
 }
 
-// zpTaskAppDeleteTaskUseCase is the unported DeleteTaskUseCase.
 type zpTaskAppDeleteTaskUseCase interface {
 	Execute(ctx context.Context, taskID string) (bool, error)
 }
 
-// zpTaskAppCompleteTaskUseCase is the unported CompleteTaskUseCase.
 type zpTaskAppCompleteTaskUseCase interface {
 	Execute(ctx context.Context, taskID string, completionSummary, testingNotes, nextRecommendations *string) (*entities.OrderedMap[any], error)
 }
@@ -56,7 +50,7 @@ type zpTaskAppContextService interface {
 	DeleteContext(level, contextID string) (bool, error)
 }
 
-// zpTaskAppDeps bundles the unported use cases this service is built from.
+// zpTaskAppDeps bundles the use cases this service is built from.
 type zpTaskAppDeps struct {
 	CreateTask   zpTaskAppCreateTaskUseCase
 	GetTask      zpTaskAppGetTaskUseCase

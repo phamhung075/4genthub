@@ -30,7 +30,7 @@ type TaskWorkflowHandler interface {
 	EnrichTaskResponse(response *entities.OrderedMap[any], action string, taskData any) *entities.OrderedMap[any]
 }
 
-// Constructor hooks for the unported search/workflow handlers.
+// Constructor hooks for the search/workflow handlers.
 var (
 	NewSearchHandler   = func(responseFormatter ResponseFormatter) TaskSearchHandler { return nil }
 	NewWorkflowHandler = func(responseFormatter ResponseFormatter, contextFacadeFactory any) TaskWorkflowHandler {

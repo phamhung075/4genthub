@@ -27,7 +27,7 @@ type AITaskIntegrationService interface {
 	GeneratePlanningInsights(analyzed []*domainservices.AnalyzedRequirement) *entities.OrderedMap[any]
 }
 
-// NewAITaskIntegrationService is the constructor hook for the unported service.
+// NewAITaskIntegrationService is the constructor hook for the service.
 var NewAITaskIntegrationService = func(facade TaskFacade) AITaskIntegrationService { return nil }
 
 // AIHandler ports AIHandler.

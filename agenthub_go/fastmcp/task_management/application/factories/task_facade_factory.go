@@ -15,7 +15,7 @@ import (
 	"errors"
 )
 
-// TaskContextFacadeFactory is the consumer-side port of the unported
+// TaskContextFacadeFactory is the consumer-side port of the
 // UnifiedContextFacadeFactory.create_facade.
 type TaskContextFacadeFactory interface {
 	CreateFacade(userID, projectID, gitBranchID *string) any

@@ -20,7 +20,7 @@ var projectFacadeFactoryInstance *ProjectFacadeFactory
 // projectFacadeFactoryInitialized is the class-level `_initialized`.
 var projectFacadeFactoryInitialized bool
 
-// ProjectFacadeBuilder builds the unported ProjectManagementService + facade pair.
+// ProjectFacadeBuilder builds the ProjectManagementService + facade pair.
 var ProjectFacadeBuilder func(projectRepo repositories.ProjectRepository, userID string) (any, error)
 
 // ProjectFacadeFactory mirrors project_facade_factory.ProjectFacadeFactory.

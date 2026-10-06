@@ -16,13 +16,13 @@ type ParameterValidator interface {
 	ValidateSearchParams(query *string, filters map[string]any) (bool, *entities.OrderedMap[any])
 }
 
-// ContextValidator is the minimal view of context_validator.py (unported).
+// ContextValidator is the minimal view of context_validator.py.
 type ContextValidator interface {
 	ValidateContextRequirements(operation string, taskID, gitBranchID *string, includeContext *bool) (bool, *entities.OrderedMap[any])
 	ValidateContextData(contextData *entities.OrderedMap[any]) (bool, *entities.OrderedMap[any])
 }
 
-// BusinessValidator is the minimal view of business_validator.py (unported).
+// BusinessValidator is the minimal view of business_validator.py.
 type BusinessValidator interface {
 	ValidateTaskCreationRules(title, gitBranchID string, priority, dueDate *string, dependencies []string) (bool, *entities.OrderedMap[any])
 	ValidateTaskUpdateRules(taskID string, currentTaskData *entities.OrderedMap[any], status, priority, dueDate *string,
@@ -31,7 +31,7 @@ type BusinessValidator interface {
 	ValidateTaskDeletionRules(taskID string, currentTaskData *entities.OrderedMap[any]) (bool, *entities.OrderedMap[any])
 }
 
-// Constructor hooks for the unported validators. A later worker can assign the
+// Constructor hooks for the validators. A later worker can assign the
 // real constructors without editing this file.
 var (
 	NewParameterValidator = func(responseFormatter ResponseFormatter) ParameterValidator { return nil }

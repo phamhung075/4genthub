@@ -16,7 +16,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// completeTaskContextFacade is the subset of the (unported) UnifiedContextFacade
+// completeTaskContextFacade is the subset of the UnifiedContextFacade
 // used by the completion flow. Data payloads are OrderedMaps because the Python
 // dicts they mirror have observable insertion order.
 type completeTaskContextFacade interface {
@@ -26,7 +26,7 @@ type completeTaskContextFacade interface {
 }
 
 // completeTaskContextFacadeFactory builds a context facade scoped to a
-// branch/project; it stands in for the unported UnifiedContextFacadeFactory.
+// branch/project; it stands in for the UnifiedContextFacadeFactory.
 type completeTaskContextFacadeFactory interface {
 	CreateFacade(gitBranchID *string, projectID *string) completeTaskContextFacade
 }
@@ -258,7 +258,7 @@ func (uc *CompleteTaskUseCase) executeCore(
 		}
 	}
 
-	// Check the unified context system (unported facade; failures swallowed).
+	// Check the unified context system (failures swallowed).
 	if !contextExists {
 		if fac := uc.newFacade(task.GitBranchID, nil); fac != nil {
 			result := fac.GetContext("task", taskIDStr)

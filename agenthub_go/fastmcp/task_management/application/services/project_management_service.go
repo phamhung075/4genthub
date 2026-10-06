@@ -11,7 +11,7 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// zpProjCreateProjectUseCase is the consumer-side port of the unported
+// zpProjCreateProjectUseCase is the consumer-side port of
 // CreateProjectUseCase.execute(project_id, name, description).
 type zpProjCreateProjectUseCase interface {
 	Execute(ctx context.Context, projectID *string, name *string, description string) (*entities.OrderedMap[any], error)
@@ -81,9 +81,9 @@ type zpProjTaskCounter interface {
 	CountTasksByBranch(ctx context.Context, branchID string) (int, error)
 }
 
-// zpProjDeps bundles the unported use cases. Python builds each use case from the
-// user-scoped repository inside the corresponding method; because those use cases are not
-// ported yet, the caller supplies ready-built (user-scoped) instances here.
+// zpProjDeps bundles the use cases. Python builds each use case from the
+// user-scoped repository inside the corresponding method, so the caller supplies
+// ready-built (user-scoped) instances here.
 type zpProjDeps struct {
 	CreateProject      zpProjCreateProjectUseCase
 	GetProject         zpProjGetProjectUseCase
