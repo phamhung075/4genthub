@@ -70,6 +70,16 @@ func sequentialThinkingModule() resolver.ResolvedModule {
 	}
 }
 
+// deepseekOffloadModule is the offload bridge block: the same payload the seed library publishes as
+// `deepseek-offload`. Its machine paths stay ${VAR} references for the runtime to expand from the
+// seat's environment, exactly as the platform block leaves its bearer.
+func deepseekOffloadModule() resolver.ResolvedModule {
+	return resolver.ResolvedModule{
+		Slug: "deepseek-offload", Version: "1.2.0", Kind: resolver.KindMCP,
+		Content: `{"name":"deepseek","type":"stdio","command":"node","args":["${DEEPSEEK_MCP_SERVER}"],"env":{"DEEPSEEK_MCP_DEFAULT_CWD":"${DEEPSEEK_MCP_DEFAULT_CWD}","DEEPSEEK_WORKSPACE_ATTACH":"1","DEEPSEEK_MCP_PERMISSION":"allow","DSH_ROOT":"${DSH_ROOT}","DSH_HOME":"${DSH_HOME}"}}`,
+	}
+}
+
 // withMCP appends mounted mcp blocks to a seat copy.
 func withMCP(seat resolver.ResolvedSeat, blocks ...resolver.ResolvedModule) resolver.ResolvedSeat {
 	modules := append([]resolver.ResolvedModule{}, seat.Modules...)
@@ -104,6 +114,7 @@ type mcpServerJSON struct {
 	Command string            `json:"command"`
 	Args    []string          `json:"args"`
 	Headers map[string]string `json:"headers"`
+	Env     map[string]string `json:"env"`
 }
 
 func mcpServers(t *testing.T, spec *OpenRigSpec) map[string]mcpServerJSON {
@@ -553,9 +564,12 @@ func TestRenderSeatSameModulesOnBothRuntimes(t *testing.T) {
 // the runtime was MEASURED to read (2026-10-06, MCP-OMP-STEP-A-MEASUREMENT.md): a `{"mcpServers": …}`
 // document installed as the seat's agent-dir `.mcp.json`, with the platform URL resolved and every
 // other ${VAR} LEFT for the runtime — which does expand it, in a header and in a stdio server's env.
+// It carries BOTH servers the owner used to hand-write into the rig-root file: agenthub_http (bearer
+// left as a ${VAR}) and the deepseek offload bridge, whose env transports DSH_ROOT — the value that
+// makes the bridge find its checkout when HOME is the seat directory.
 func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
 	seat := withModules(seatFixture("omp"), []resolver.ResolvedModule{
-		mcpPlatformModule(), sequentialThinkingModule(),
+		mcpPlatformModule(), sequentialThinkingModule(), deepseekOffloadModule(),
 	})
 
 	spec, err := RenderSeat(seat, testMCPURL)
@@ -571,8 +585,8 @@ func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
 		}
 	}
 	servers := mcpServersAt(t, spec, ompMCPPath)
-	if len(servers) != 2 {
-		t.Fatalf("omp servers = %+v, want the two the seat mounts", servers)
+	if len(servers) != 3 {
+		t.Fatalf("omp servers = %+v, want the three the seat mounts", servers)
 	}
 	http := servers["agenthub_http"]
 	if http.Type != "http" || http.URL != testMCPURL {
@@ -585,6 +599,49 @@ func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
 	}
 	if stdio := servers["sequential-thinking"]; stdio.Type != "stdio" || stdio.Command != "npx" {
 		t.Fatalf("sequential-thinking = %+v, want the stdio server unchanged", stdio)
+	}
+	deepseek := servers["deepseek"]
+	if deepseek.Type != "stdio" || deepseek.Command != "node" {
+		t.Fatalf("deepseek = %+v, want the offload bridge as a stdio node server", deepseek)
+	}
+	if len(deepseek.Args) != 1 || deepseek.Args[0] != "${DEEPSEEK_MCP_SERVER}" {
+		t.Fatalf("deepseek args = %v, want the server path left as ${DEEPSEEK_MCP_SERVER}", deepseek.Args)
+	}
+	// THE ENV BLOCK IS THE ONLY CHANNEL THAT WORKS: the bridge resolves its checkout from
+	// os.homedir(), which in a seat is the seat directory, and the seat's own process environment
+	// does not carry DSH_ROOT (the runner's allowlist drops it). Moving these to the process
+	// environment would silently restore the ENOENT this entry exists to fix.
+	wantEnv := map[string]string{
+		"DSH_ROOT":                  "${DSH_ROOT}",
+		"DSH_HOME":                  "${DSH_HOME}",
+		"DEEPSEEK_MCP_DEFAULT_CWD":  "${DEEPSEEK_MCP_DEFAULT_CWD}",
+		"DEEPSEEK_WORKSPACE_ATTACH": "1",
+		"DEEPSEEK_MCP_PERMISSION":   "allow",
+	}
+	for name, want := range wantEnv {
+		if deepseek.Env[name] != want {
+			t.Errorf("deepseek env %s = %q, want %q", name, deepseek.Env[name], want)
+		}
+	}
+	if len(deepseek.Env) != len(wantEnv) {
+		t.Errorf("deepseek env = %v, want exactly %d keys", deepseek.Env, len(wantEnv))
+	}
+
+	// The shipped library carries the same entry: every seeded seat type names the deepseek block, so
+	// a seat rendered from the library mounts it with nobody hand-writing the file.
+	seeded, err := RenderSeat(withModules(seatFixture("omp"), seedModules(t, "lead")), testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat(seeded lead): %v", err)
+	}
+	seededServers := mcpServersAt(t, seeded, ompMCPPath)
+	t.Logf("the omp seat file a seeded lead receives (%s):\n%s", ompMCPPath, fileContent(t, seeded, ompMCPPath))
+	if _, ok := seededServers["agenthub_http"]; !ok {
+		t.Fatalf("seeded seat servers = %+v, want the platform server too", seededServers)
+	}
+	seededDeepseek := seededServers["deepseek"]
+	if seededDeepseek.Type != "stdio" || seededDeepseek.Command != "node" ||
+		seededDeepseek.Env["DSH_ROOT"] != "${DSH_ROOT}" || seededDeepseek.Env["DSH_HOME"] != "${DSH_HOME}" {
+		t.Fatalf("the seeded seat's deepseek entry = %+v, want the shipped block's env", seededDeepseek)
 	}
 
 	// Deterministic: the same seat renders byte-identical twice, so a rebuild is not a diff.
@@ -887,16 +944,19 @@ func TestRenderSeatSeededTypesMountDifferentServerSets(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RenderSeat(developer): %v", err)
 	}
-	t.Logf("lead (mcp_blocks: agenthub-http, sequential-thinking) renders:\n%s", fileContent(t, leadSpec, mcpFragmentPath))
-	t.Logf("developer (mcp_blocks: agenthub-http) renders:\n%s", fileContent(t, developerSpec, mcpFragmentPath))
+	t.Logf("lead (mcp_blocks: agenthub-http, sequential-thinking, deepseek-offload) renders:\n%s", fileContent(t, leadSpec, mcpFragmentPath))
+	t.Logf("developer (mcp_blocks: agenthub-http, deepseek-offload) renders:\n%s", fileContent(t, developerSpec, mcpFragmentPath))
 
 	leadServers := mcpServers(t, leadSpec)
-	if len(leadServers) != 2 || leadServers["agenthub_http"].URL != testMCPURL || leadServers["sequential-thinking"].Type != "stdio" {
+	if len(leadServers) != 3 || leadServers["agenthub_http"].URL != testMCPURL || leadServers["sequential-thinking"].Type != "stdio" {
 		t.Fatalf("lead servers = %+v", leadServers)
 	}
+	if leadServers["deepseek"].Command != "node" || leadServers["deepseek"].Env["DSH_ROOT"] != "${DSH_ROOT}" {
+		t.Fatalf("lead servers lack the offload bridge and its env: %+v", leadServers)
+	}
 	developerServers := mcpServers(t, developerSpec)
-	if len(developerServers) != 1 {
-		t.Fatalf("developer servers = %+v, want only agenthub_http", developerServers)
+	if len(developerServers) != 2 {
+		t.Fatalf("developer servers = %+v, want the platform server and the offload bridge", developerServers)
 	}
 	if _, ok := developerServers["sequential-thinking"]; ok {
 		t.Fatalf("developer mounted a block it does not declare: %+v", developerServers)

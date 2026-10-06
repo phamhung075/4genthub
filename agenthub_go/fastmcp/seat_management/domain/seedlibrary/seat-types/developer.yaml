@@ -4,6 +4,7 @@ description: Implements one task at a time with tests, keeping changes small and
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+  - deepseek-offload
 module_refs:
   - test-driven-development@1.0.0
   - queue-handoff@1.0.0

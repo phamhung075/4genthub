@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the rendered omp seat file carries both hand-written MCP entries (Go)
+
+- `TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape` **extended, not paralleled**: the omp document
+  now carries three servers, and the test pins the deepseek entry — `stdio`, `node`, the server path
+  left as `${DEEPSEEK_MCP_SERVER}`, and the env keys with their exact values (`DSH_ROOT`, `DSH_HOME`,
+  `DEEPSEEK_MCP_DEFAULT_CWD` as references; `DEEPSEEK_WORKSPACE_ATTACH` and `DEEPSEEK_MCP_PERMISSION`
+  fixed), asserting the env has exactly those five keys. It also renders a seat from the **shipped
+  seed library** and asserts the block reaches the file, logging the document as the acceptance
+  artefact.
+- `TestRenderSeatSeededTypesMountDifferentServerSets` extended: the lead seat goes 2 → 3 servers and
+  the developer 1 → 2 (both now mount the offload bridge), and the distinction the test exists for is
+  still pinned — the developer still does not mount `sequential-thinking`.
+- `TestLoadEmbeddedSeedsCarryServerSets` extended: every one of the nine shipped seat types must carry
+  the `deepseek-offload` block, parsed, with its shape and its five env keys asserted on the seeds
+  themselves.
+- `mcpServerJSON` gained `Env`, so the test type reads the entry's env block rather than ignoring it.
+- Commands: `gofmt` clean on the touched files; `go vet ./fastmcp/...` clean; `go test -count=1 ./...`
+  all pass.
+
 ## 2026-10-06 - the module publish route refuses an unrenderable content, per kind (Go)
 
 - `fastmcp/seat_management/domain/modulecontent` (new package, 3 tests): each parsed kind has a

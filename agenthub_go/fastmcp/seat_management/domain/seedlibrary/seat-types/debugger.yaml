@@ -4,6 +4,7 @@ description: Reproduces a defect, finds its root cause, and applies the smallest
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+  - deepseek-offload
 module_refs:
   - systematic-debugging@1.0.0
   - refocusing@1.0.0

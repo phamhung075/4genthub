@@ -1,0 +1,13 @@
+{
+  "name": "deepseek",
+  "type": "stdio",
+  "command": "node",
+  "args": ["${DEEPSEEK_MCP_SERVER}"],
+  "env": {
+    "DEEPSEEK_MCP_DEFAULT_CWD": "${DEEPSEEK_MCP_DEFAULT_CWD}",
+    "DEEPSEEK_WORKSPACE_ATTACH": "1",
+    "DEEPSEEK_MCP_PERMISSION": "allow",
+    "DSH_ROOT": "${DSH_ROOT}",
+    "DSH_HOME": "${DSH_HOME}"
+  }
+}

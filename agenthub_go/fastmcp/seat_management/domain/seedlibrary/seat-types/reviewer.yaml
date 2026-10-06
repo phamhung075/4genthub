@@ -4,6 +4,7 @@ description: Reviews a change with fresh eyes against its task and reports findi
 default_runtime: claude-code
 mcp_blocks:
   - agenthub-http
+  - deepseek-offload
 module_refs:
   - review-team@1.0.0
   - verification-before-completion@1.0.0
