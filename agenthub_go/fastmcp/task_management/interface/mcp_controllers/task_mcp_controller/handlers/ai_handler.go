@@ -17,9 +17,10 @@ import (
 // AITaskIntegrationService is the AITaskIntegrationService surface used by the
 // handler. It embeds the use-case interface (so the same value can build
 // AITaskCreationUseCase) and adds the requirement-analyzer methods reached
-// through ai_service.ai_planning_service.requirement_analyzer. The concrete
-// task_management/application/services/ai_integration_service.py has no Go port
-// yet; the interface is declared here and reported as a dependency.
+// through ai_service.ai_planning_service.requirement_analyzer. The Go port lives at
+// task_management/application/services/ai_integration_service.go, but nothing
+// constructs it: the hook below is never reassigned anywhere in the tree, so this
+// interface is declared here and reported as a dependency.
 type AITaskIntegrationService interface {
 	use_cases.AITaskIntegrationService
 	ParseRequirements(requirements string) []*aentities.RequirementItem
@@ -27,7 +28,10 @@ type AITaskIntegrationService interface {
 	GeneratePlanningInsights(analyzed []*domainservices.AnalyzedRequirement) *entities.OrderedMap[any]
 }
 
-// NewAITaskIntegrationService is the constructor hook for the service.
+// NewAITaskIntegrationService is the constructor hook for the service. The default
+// returns nil and NOTHING REASSIGNS IT anywhere in the tree, while the concrete port
+// (application/services/ai_integration_service.go) has no callers - so the methods
+// below run against a nil service. This hook is a seam nothing fills.
 var NewAITaskIntegrationService = func(facade TaskFacade) AITaskIntegrationService { return nil }
 
 // AIHandler ports AIHandler.
