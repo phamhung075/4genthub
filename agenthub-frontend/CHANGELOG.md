@@ -211,6 +211,19 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The realtime socket reaches the API in development, and a refusal says why** - 2026-10-06
+ - The dev server proxied `/api` to the backend but not `/ws`, while the app derives its socket URL from the
+ page origin in development (`config/environment.ts`: `VITE_WS_URL` when set, else `API_BASE_URL` with the
+ scheme rewritten). So the socket went to the DEV SERVER's own websocket server, which accepts the upgrade -
+ the app reported Live with nothing behind it. `/ws` is now proxied with `ws: true`, and a raw client against
+ the dev origin with no token gets the backend's own refusal (`close 1008`, "Authentication required: pass a
+ bearer token in the token query parameter or the Authorization header") instead of an open socket.
+ - `VITE_WS_URL` cannot rescue that in development: Vite exposes only `.env` files, not the process
+ environment, so the variable has no effect unless it is in a frontend `.env` - and there is none.
+ - The status chip the task and project headers share now carries what the client records and used to drop:
+ `Reconnecting…` while a retry is in progress rather than the same "Offline" as having given up, and the
+ recorded error as the chip's title - which for an authentication refusal is the SERVER'S reason string,
+ the only thing that distinguishes a scope refusal from a bad credential.
 - **A copy button does not throw without a clipboard, and a copied reset no longer outlives its component** - 2026-10-06
  - `GlobalContextDialog`'s Copy handler and `RawJSONDisplay`'s copy button called `navigator.clipboard.writeText`
  unguarded, so a context without a clipboard (jsdom, or a browser refusing the write) threw out of the click; both

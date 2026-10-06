@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-06 - the socket's dev wiring, and the reason it records (frontend)
+
+- `src/tests/components/ProjectList/components/ProjectListHeader.test.tsx` pins the two facts the surface
+  used to drop: with `isReconnecting` set the chip reads "Reconnecting…" and carries the recorded error as
+  its title. Proved by removing exactly those two lines from the chip - the case then fails with "Unable to
+  find an element with the text: Reconnecting…". A store reset in `beforeEach` keeps the singleton from
+  leaking into the file's other cases, which assert the Offline label from the prop.
+- NO test is written for the `/ws` proxy, deliberately: it is configuration, and a test asserting the config
+  text would pass whether or not the proxy works. Its evidence is measurement instead - a raw client against
+  the dev origin with no token now returns the backend's `close 1008` and its reason, where before the dev
+  server accepted the upgrade itself and the app called that Connected.
+- Commands: `npx tsc --noEmit -p .` -> 0; `npx vitest run` (ProjectListHeader, LazyTaskList) -> 31 passed;
+  `npx vitest run` -> 102 files / 1759 tests passed, 0 errors; `npx vite build` -> ok.
+
 ## 2026-10-06 - clipboard guards and a leaked navigator stub (frontend, hygiene)
 
 - `src/tests/components/GlobalContextDialog.test.tsx` installed a clipboard stub on the GLOBAL `navigator` and

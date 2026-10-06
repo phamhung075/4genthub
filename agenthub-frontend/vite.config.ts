@@ -132,7 +132,14 @@ export default defineConfig(({ mode }) => {
       }
     },
     proxy: {
-      '/api': 'http://localhost:8000'
+      '/api': 'http://localhost:8000',
+      // The realtime socket lives on the API origin, and the app derives its URL from the page origin in
+      // development (config/environment.ts). Without this entry the socket went to the DEV SERVER itself,
+      // whose own websocket server accepts the upgrade, so the app reported Live with nothing behind it.
+      '/ws': {
+        target: 'ws://localhost:8000',
+        ws: true
+      }
     }
   },
   resolve: {

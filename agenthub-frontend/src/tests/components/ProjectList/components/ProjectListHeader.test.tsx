@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from './../../../test-utils';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ProjectListHeader } from '../../../../components/ProjectList/components/ProjectListHeader';
 import type { ProjectListHeaderProps } from '../../../../types/componentTypes';
+import { mockWebSocketStore } from '../../../zustand-utils';
 
 // Mock lucide-react icons
 vi.mock('lucide-react', () => ({
@@ -60,6 +61,9 @@ describe('ProjectListHeader Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // The socket store is a global singleton, so a case that sets it must not leak its state into the
+    // next one: the previous suite's cases assert the OFFLINE label from the prop.
+    mockWebSocketStore({ isConnected: false, isReconnecting: false, error: null });
   });
 
   const renderComponent = (props: Partial<ProjectListHeaderProps> = {}) => {
@@ -76,15 +80,35 @@ describe('ProjectListHeader Component', () => {
   describe('WebSocket Connection Status', () => {
     it('should show connected status when isConnected is true', () => {
       renderComponent({ isConnected: true });
-      
+
       expect(screen.getByTestId('wifi-icon')).toBeInTheDocument();
       expect(screen.getByText('Live')).toBeInTheDocument();
       expect(screen.queryByTestId('wifi-off-icon')).not.toBeInTheDocument();
     });
 
+    // The two facts the client records and this surface used to drop: a retry in progress is not the
+    // same state as having given up, and an authentication refusal carries the SERVER'S reason string -
+    // the only thing that distinguishes a scope refusal from a bad credential.
+    it('distinguishes reconnecting from offline and carries the recorded reason', () => {
+      mockWebSocketStore({
+        isConnected: false,
+        isReconnecting: true,
+        error:
+          'WebSocket authentication failed: Authentication required: pass a bearer token in the token query parameter or the Authorization header'
+      });
+
+      renderComponent({ isConnected: false });
+
+      const chip = screen.getByText('Reconnecting…');
+      expect(chip.closest('div')).toHaveAttribute(
+        'title',
+        expect.stringContaining('Authentication required')
+      );
+    });
+
     it('should show disconnected status when isConnected is false', () => {
       renderComponent({ isConnected: false });
-      
+
       expect(screen.getByTestId('wifi-off-icon')).toBeInTheDocument();
       expect(screen.getByText('Offline')).toBeInTheDocument();
       expect(screen.queryByTestId('wifi-icon')).not.toBeInTheDocument();
@@ -92,14 +116,14 @@ describe('ProjectListHeader Component', () => {
 
     it('should apply correct styling for connected state', () => {
       renderComponent({ isConnected: true });
-      
+
       const statusContainer = screen.getByText('Live').closest('div');
       expect(statusContainer).toHaveClass('bg-green-100', 'text-green-700');
     });
 
     it('should apply correct styling for disconnected state', () => {
       renderComponent({ isConnected: false });
-      
+
       const statusContainer = screen.getByText('Offline').closest('div');
       expect(statusContainer).toHaveClass('bg-red-100', 'text-red-700');
     });
@@ -108,10 +132,10 @@ describe('ProjectListHeader Component', () => {
   describe('Refresh Button', () => {
     it('should render refresh buttons with correct props', () => {
       renderComponent();
-      
+
       const refreshButtons = screen.getAllByTestId('refresh-button');
       expect(refreshButtons.length).toBeGreaterThan(0);
-      
+
       // All refresh buttons should have the same title
       refreshButtons.forEach(button => {
         expect(button).toHaveAttribute('title', 'Refresh projects and branch summaries');
@@ -120,7 +144,7 @@ describe('ProjectListHeader Component', () => {
 
     it('should pass loading state to refresh buttons', () => {
       renderComponent({ loading: true });
-      
+
       const refreshButtons = screen.getAllByTestId('refresh-button');
       refreshButtons.forEach(button => {
         expect(button).toHaveAttribute('data-loading', 'true');
@@ -129,7 +153,7 @@ describe('ProjectListHeader Component', () => {
 
     it('should pass loadingBulkSummaries state to refresh buttons', () => {
       renderComponent({ loadingBulkSummaries: true });
-      
+
       const refreshButtons = screen.getAllByTestId('refresh-button');
       refreshButtons.forEach(button => {
         expect(button).toHaveAttribute('data-loading', 'true');
@@ -138,19 +162,19 @@ describe('ProjectListHeader Component', () => {
 
     it('should call onRefresh when refresh button is clicked', () => {
       renderComponent();
-      
+
       const refreshButton = screen.getAllByTestId('refresh-button')[0];
       fireEvent.click(refreshButton);
-      
+
       expect(mockOnRefresh).toHaveBeenCalledTimes(1);
     });
 
     it('should have different visibility classes for responsive design', () => {
       renderComponent();
-      
+
       const refreshButtons = screen.getAllByTestId('refresh-button');
       const classes = refreshButtons.map(button => button.className);
-      
+
       // Should have different responsive classes
       expect(classes.some(cls => cls.includes('sm:hidden'))).toBe(true);
       expect(classes.some(cls => cls.includes('hidden sm:flex'))).toBe(true);
@@ -161,7 +185,7 @@ describe('ProjectListHeader Component', () => {
   describe('Global Context Button', () => {
     it('should render global context button with correct props', () => {
       renderComponent();
-      
+
       const globalButton = screen.getByRole('button', { name: 'View/Edit Global Context' });
       expect(globalButton).toBeInTheDocument();
       expect(globalButton).toHaveAttribute('title', 'View and Edit Global Context');
@@ -169,7 +193,7 @@ describe('ProjectListHeader Component', () => {
 
     it('should show globe icon', () => {
       renderComponent();
-      
+
       const globeIcon = screen.getByTestId('globe-icon');
       expect(globeIcon).toBeInTheDocument();
       expect(globeIcon).toHaveClass('w-4', 'h-4');
@@ -177,32 +201,32 @@ describe('ProjectListHeader Component', () => {
 
     it('should show "Global" text on large screens', () => {
       renderComponent();
-      
+
       const globalText = screen.getByText('Global');
       expect(globalText).toHaveClass('hidden', 'lg:inline');
     });
 
     it('should call onShowGlobalContext when clicked', () => {
       renderComponent();
-      
+
       const globalButton = screen.getByRole('button', { name: 'View/Edit Global Context' });
       fireEvent.click(globalButton);
-      
+
       expect(mockOnShowGlobalContext).toHaveBeenCalledTimes(1);
     });
 
     it('should handle undefined onShowGlobalContext gracefully', () => {
       renderComponent({ onShowGlobalContext: undefined });
-      
+
       const globalButton = screen.getByRole('button', { name: 'View/Edit Global Context' });
-      
+
       // Should not throw when clicked
       expect(() => fireEvent.click(globalButton)).not.toThrow();
     });
 
     it('should have correct styling', () => {
       renderComponent();
-      
+
       const globalButton = screen.getByRole('button', { name: 'View/Edit Global Context' });
       expect(globalButton).toHaveAttribute('data-variant', 'outline');
       expect(globalButton).toHaveAttribute('data-size', 'sm');
@@ -212,7 +236,7 @@ describe('ProjectListHeader Component', () => {
   describe('Create Project Button', () => {
     it('should render create project button with correct props', () => {
       renderComponent();
-      
+
       const createButton = screen.getByRole('button', { name: /New Project/i });
       expect(createButton).toBeInTheDocument();
       expect(createButton).toHaveAttribute('title', 'Create New Project');
@@ -220,7 +244,7 @@ describe('ProjectListHeader Component', () => {
 
     it('should show plus icon', () => {
       renderComponent();
-      
+
       const plusIcon = screen.getByTestId('plus-icon');
       expect(plusIcon).toBeInTheDocument();
       expect(plusIcon).toHaveClass('w-4', 'h-4');
@@ -228,23 +252,23 @@ describe('ProjectListHeader Component', () => {
 
     it('should show "New Project" text on large screens', () => {
       renderComponent();
-      
+
       const projectText = screen.getByText('New Project');
       expect(projectText).toHaveClass('hidden', 'lg:inline');
     });
 
     it('should call onCreateProject when clicked', () => {
       renderComponent();
-      
+
       const createButton = screen.getByRole('button', { name: /New Project/i });
       fireEvent.click(createButton);
-      
+
       expect(mockOnCreateProject).toHaveBeenCalledTimes(1);
     });
 
     it('should have correct styling', () => {
       renderComponent();
-      
+
       const createButton = screen.getByRole('button', { name: /New Project/i });
       expect(createButton).toHaveAttribute('data-variant', 'default');
       expect(createButton).toHaveAttribute('data-size', 'sm');
@@ -254,26 +278,26 @@ describe('ProjectListHeader Component', () => {
   describe('Responsive Layout', () => {
     it('should render with responsive flex layout', () => {
       const { container } = renderComponent();
-      
+
       const mainContainer = container.firstChild as HTMLElement;
       expect(mainContainer).toHaveClass('flex', 'flex-col', 'sm:flex-row');
     });
 
     it('should have responsive gap and margin classes', () => {
       const { container } = renderComponent();
-      
+
       const mainContainer = container.firstChild as HTMLElement;
       expect(mainContainer).toHaveClass('gap-3', 'mb-2');
     });
 
     it('should have responsive button container', () => {
       renderComponent();
-      
+
       const buttonContainers = screen.getAllByRole('button').map(btn => btn.parentElement);
-      const actionContainer = buttonContainers.find(container => 
+      const actionContainer = buttonContainers.find(container =>
         container?.className.includes('flex gap-2 justify-end')
       );
-      
+
       expect(actionContainer).toBeInTheDocument();
     });
   });
@@ -281,7 +305,7 @@ describe('ProjectListHeader Component', () => {
   describe('Accessibility', () => {
     it('should have proper ARIA labels', () => {
       renderComponent();
-      
+
       expect(screen.getByRole('button', { name: 'View/Edit Global Context' })).toBeInTheDocument();
       // Create button has title but text content serves as accessible name
       expect(screen.getByRole('button', { name: /New Project/i })).toBeInTheDocument();
@@ -289,9 +313,9 @@ describe('ProjectListHeader Component', () => {
 
     it('should have proper title attributes for tooltips', () => {
       renderComponent();
-      
+
       const buttons = screen.getAllByRole('button');
-      
+
       // Check that all interactive elements have titles
       const titledButtons = buttons.filter(btn => btn.hasAttribute('title'));
       expect(titledButtons.length).toBeGreaterThan(0);
