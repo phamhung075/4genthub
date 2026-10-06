@@ -60,6 +60,9 @@ func (h *AIHandler) AIPlan(ctx context.Context, facade TaskFacade,
 	}
 
 	aiService := NewAITaskIntegrationService(facade)
+	if aiService == nil {
+		return h.unavailableAIResponse("ai_plan")
+	}
 	result, err := aiService.CreateAIEnhancedTaskPlan(ctx,
 		kwStringValue(kwargs, "requirements"),
 		kwStringValue(kwargs, "title"),
@@ -114,8 +117,12 @@ func (h *AIHandler) AICreate(ctx context.Context, facade TaskFacade,
 		aiRequest.Priority = &medium
 	}
 
+	aiService := NewAITaskIntegrationService(facade)
+	if aiService == nil {
+		return h.unavailableAIResponse("ai_create")
+	}
 	aiUseCase := use_cases.NewAITaskCreationUseCase(facade.TaskRepository(), facade,
-		NewAITaskIntegrationService(facade))
+		aiService)
 	result := aiUseCase.Execute(ctx, aiRequest)
 
 	if result != nil && pyResultSuccess(result) {
@@ -135,8 +142,12 @@ func (h *AIHandler) AIEnhance(ctx context.Context, facade TaskFacade,
 			"Missing required parameter: task_id", ErrorCodeValidationError, nil)
 	}
 
+	aiService := NewAITaskIntegrationService(facade)
+	if aiService == nil {
+		return h.unavailableAIResponse("ai_enhance")
+	}
 	aiUseCase := use_cases.NewAITaskCreationUseCase(facade.TaskRepository(), facade,
-		NewAITaskIntegrationService(facade))
+		aiService)
 	enhancementOptions := map[string]any{
 		"analyze_complexity":    kwBoolDefault(kwargs, "analyze_complexity", true),
 		"suggest_optimizations": kwBoolDefault(kwargs, "suggest_optimizations", true),
@@ -162,6 +173,9 @@ func (h *AIHandler) AIAnalyze(ctx context.Context, facade TaskFacade,
 	}
 
 	aiService := NewAITaskIntegrationService(facade)
+	if aiService == nil {
+		return h.unavailableAIResponse("ai_analyze")
+	}
 	requirementItems := aiService.ParseRequirements(*requirements)
 	analyzedRequirements := aiService.AnalyzeRequirementsBatch(requirementItems)
 	insights := aiService.GeneratePlanningInsights(analyzedRequirements)
@@ -213,6 +227,9 @@ func (h *AIHandler) AISuggestAgents(ctx context.Context, facade TaskFacade,
 	}
 
 	aiService := NewAITaskIntegrationService(facade)
+	if aiService == nil {
+		return h.unavailableAIResponse("ai_suggest_agents")
+	}
 	requirementItems := aiService.ParseRequirements(*requirements)
 	analyzedRequirements := aiService.AnalyzeRequirementsBatch(requirementItems)
 	insights := aiService.GeneratePlanningInsights(analyzedRequirements)
@@ -274,6 +291,17 @@ func (h *AIHandler) identifySpecializationNeeds(patternDistribution *entities.Or
 		}
 	}
 	return specializations
+}
+
+// unavailableAIResponse is the legible refusal for the five AI actions. The
+// AI-integration seam is NOT wired in this build: NewAITaskIntegrationService returns
+// nil and nothing reassigns it, so building a service and calling through it dereferences
+// nil. The owner's ruling is refuse rather than wire, so each action answers with this
+// instead of dying - the seam structure itself is unchanged.
+func (h *AIHandler) unavailableAIResponse(operation string) *entities.OrderedMap[any] {
+	return h.responseFormatter.CreateErrorResponse(operation,
+		"AI integration is not available: the AITaskIntegrationService seam is not wired in this build",
+		ErrorCodeOperationFailed, nil)
 }
 
 // typeErrorResponse mirrors the `except Exception` branch triggered by the

@@ -153,7 +153,7 @@ func (f *ProjectRepositoryFactory) buildORM(userID string, dbPath *string, kwarg
 
 func (f *ProjectRepositoryFactory) buildMock(userID string, dbPath *string, kwargs Kwargs) (domainrepos.ProjectRepository, error) {
 	if f.MockFactory == nil {
-		return nil, &tmvo.ValueError{Msg: "MockProjectRepository is not ported"}
+		return nil, &tmvo.ValueError{Msg: "mock project repository requested but the MockFactory hook is not configured (the type exists in mock_repository_factory.go)"}
 	}
 	return f.MockFactory(), nil
 }

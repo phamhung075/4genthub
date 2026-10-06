@@ -65,7 +65,7 @@ func NewGitBranchRepositoryFactory(sessions *database.SessionManager, getenv fun
 		return NewORMGitBranchRepository(f.Sessions, userID, false)
 	})
 	f.RegisterType(GitBranchRepositoryTypeMemory, func(userID *string, kwargs Kwargs) (domainrepos.GitBranchRepository, error) {
-		return nil, &tmvo.ValueError{Msg: "MockGitBranchRepository is not ported"}
+		return nil, &tmvo.ValueError{Msg: "the memory git-branch repository is a stub: no implementation is registered for the memory type"}
 	})
 	return f
 }

@@ -122,7 +122,7 @@ func (f *AgentRepositoryFactory) CreateInstance(repositoryType AgentRepositoryTy
 		return f.buildORM(userID, dbPath, kwargs)
 	}
 	if f.UnportedFactory == nil {
-		return nil, &tmvo.ValueError{Msg: "repository_factory.RepositoryFactory is not ported"}
+		return nil, &tmvo.ValueError{Msg: "the non-ORM agent repository has no wiring: AgentRepositoryFactory.UnportedFactory is not configured"}
 	}
 	return f.UnportedFactory()
 }
