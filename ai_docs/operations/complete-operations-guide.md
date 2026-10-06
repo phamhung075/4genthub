@@ -61,13 +61,12 @@ docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
 
 | Component | Purpose | Port | Health Check |
 |-----------|---------|------|--------------|
-| PostgreSQL | Primary database | 5432 | `pg_isready` |
-| Redis | Cache & sessions | 6379 | `redis-cli ping` |
-| MCP Backend | API server | 8000 | `/health` |
-| Frontend | Web interface | 3000 | `/health` |
-| Nginx | Reverse proxy | 80/443 | `/health` |
-| Prometheus | Metrics collection | 9090 | `/-/healthy` |
-| Grafana | Dashboards | 3001 | `/api/health` |
+| PostgreSQL | Primary database (production container `srv-captain--4genthubdb`) | 5432 | `pg_isready` |
+| Go backend (`cmd/agenthub`) | API, WebSocket and MCP server | 8000 (`FASTMCP_PORT`) | `GET /health` |
+| Frontend | React dashboard (dev `npm run dev`) | 3800 | — |
+| Reverse proxy | CapRover's nginx terminates TLS in production | 80/443 | — |
+
+> Earlier revisions of this guide listed **Redis**, **Prometheus** and **Grafana** rows here, and a `timestamp_health_monitor.py` dashboard elsewhere. **None of those components is defined by this repository**: there is no `monitoring/` directory (`git ls-files monitoring/` → 0), and the Go module carries no Redis client (`fastmcp/server/session_store.go:23` sets `zpSessionRedisAvailable = false`). They are not part of this deployment as the repository describes it.
 
 ### Rollback Procedures
 
@@ -597,13 +596,15 @@ AUTO_MIGRATE=true ./agenthub
 ### Health Check Commands
 
 ```bash
-# All services
+# Backend (the deployed version is what /health reports)
 curl http://localhost:8000/health
-curl http://localhost:8080/health  # Keycloak
-curl http://localhost:3800  # Frontend
 
-# Database
-psql -h localhost -U agenthub_user -d agenthub -c "SELECT 1;"
+# Frontend
+curl http://localhost:3800
+
+# Database (local defaults from .env.sample: database agenthub, role postgres;
+# production is database postgresdb in container srv-captain--4genthubdb)
+psql -h localhost -U postgres -d agenthub -c "SELECT 1;"
 
 # System resources
 docker stats

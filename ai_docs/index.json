@@ -4,8 +4,8 @@
     "tracked_files": {
       "scripts/docker-menu.sh": {
         "doc_path": "_absolute_docs/scripts/docker-menu.sh.md",
-        "hash": "08e3c29b25b41893020dde49175738bf",
-        "last_updated": "2026-10-06T18:33:47.102257"
+        "hash": "11c159abd4ead3a589310669a5d6a11c",
+        "last_updated": "2026-10-06T18:35:13.932139"
       }
     }
   },
@@ -14,11 +14,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "08e3c29b25b41893020dde49175738bf",
-          "modified": "2026-10-06T18:33:47.102257",
+          "hash": "11c159abd4ead3a589310669a5d6a11c",
+          "modified": "2026-10-06T18:35:13.932139",
           "name": "docker-menu.sh.md",
           "path": "_absolute_docs/scripts/docker-menu.sh.md",
-          "size": 2940
+          "size": 2941
         }
       ],
       "path": "_absolute_docs/scripts"
@@ -303,11 +303,11 @@
       "count": 1,
       "files": [
         {
-          "hash": "010087610487e19e1fed03a14627d81c",
-          "modified": "2026-10-06T18:31:17.630276",
+          "hash": "7bec6cd9a4e1c99efe027573b1ab34fb",
+          "modified": "2026-10-06T18:36:09.502345",
           "name": "complete-operations-guide.md",
           "path": "operations/complete-operations-guide.md",
-          "size": 19528
+          "size": 20129
         }
       ],
       "path": "operations"
@@ -510,7 +510,7 @@
       "path": "troubleshooting-guides"
     }
   },
-  "generated_at": "2026-10-06T18:34:51.904821",
+  "generated_at": "2026-10-06T18:36:42.727453",
   "structure": {
     "_absolute_docs": {
       "scripts": {
