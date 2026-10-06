@@ -40,15 +40,22 @@ Track test suite changes, fixes, and improvements for agenthub.
   pin sets the version in effect at company for this block and does nothing else - it is not a lock, so removing
   the block still removes it.` Both halves are pinned rather than described; the component was then restored and
   `git diff` on it is empty.
-- ONE FINDING ABOUT THE FILE, not fixed here: the `SeatAuthoringPage composer` describe (:327) has no `beforeEach`
-  of its own - it inherits the first describe's mocks only because that describe's `beforeEach` runs first in a full
-  file run. Filtered (`vitest run <file> -t '<one composer case>'`) no test of the first describe runs, the API
-  mocks stay unimplemented, and the page renders "No rooms yet" - the case then fails at the `Compose level`
-  lookup, not at its own assertion. Reproduced twice. A full-file run is the correct way to run these cases until
-  the shared `beforeEach` is hoisted to file scope.
+- THE FILE'S OWN SETUP IS NOW AT FILE SCOPE (the repair, `qitem-20261006163405-fffde845a648c88c`): the mocks every
+  case needs were registered in a `beforeEach` INSIDE the first describe, so the two describes it does not contain -
+  `SeatAuthoringPage composer` and `SeatAuthoringPage mcp blocks` - inherited them only by accident of full-file
+  order. The block is moved verbatim to file scope with the reason in a comment above it. This is a scope move and
+  not a behaviour change, and the full-file run is the measurement of that: 22 passed before and after, the same 22
+  case names, none skipped, no expectation edited.
+- MEASURED BEFORE AND AFTER ON THE SAME INVOCATION, `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx -t
+  '<case>'`: BEFORE the move, `-t 'labels a pin as what it does'` failed `TestingLibraryElementError: Unable to find
+  a label with the text of: Compose level` with the page rendering "No rooms yet" - the case never reached its own
+  assertion (reproduced twice, which is how the defect was found). AFTER the move the same string passes
+  `1 passed | 21 skipped`, and so do `-t 'labels each block with where it is inherited from'`, `-t 'refuses to add
+  a block already in effect at this level'`, `-t 'lists seat types with their default runtime'` and `-t 'names an
+  mcp entry by its server and transport'`.
 - Counts: that file 22 tests, 0 errors.
 - Commands: `npx tsc --noEmit -p .` -> 0 errors; `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 22
-  passed.
+  passed; the five single-case invocations above -> `1 passed | 21 skipped` each.
 
 ## 2026-10-06 — the two destructive paths are exercised rather than read (Go)
 

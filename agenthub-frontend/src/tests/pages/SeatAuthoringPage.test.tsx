@@ -63,67 +63,72 @@ const seatType = {
 const fill = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-describe('SeatAuthoringPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockApi.listSeatTypes.mockResolvedValue({ success: true, seat_types: [seatType] });
-    mockApi.listModules.mockResolvedValue({
-      success: true,
-      modules: [{ slug: 'rules', kind: 'instruction', version: '1.0.0', sha256: 'abcdef0123456789' }],
-    });
-    mockApi.createSeatTypeVersion.mockResolvedValue({
-      success: true,
-      seat_type_version: {
-        slug: 'coder',
-        version: '1.0.1',
-        default_runtime: 'codex',
-        module_refs: [{ slug: 'rules', version: '1.0.0' }],
-      },
-    });
-    mockApi.putModuleVersion.mockResolvedValue({
-      success: true,
-      module: { slug: 'rules', kind: 'instruction', version: '1.1.0', sha256: 'abc' },
-    });
-    mockApi.listRooms.mockResolvedValue({
-      success: true,
-      rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room' }],
-    });
-    mockApi.listSeats.mockResolvedValue({
-      success: true,
-      seats: [
-        {
-          id: 'seat-1',
-          room_id: 'room-dev',
-          seat_key: 'alice',
-          seat_type: 'coder',
-          seat_type_id: 'type-1',
-          pinned_version: '1.0.0',
-          runtime: 'claude-code',
-          model: '',
-          permission_policy: 'standard',
-        },
-      ],
-    });
-    mockApi.getOverlay.mockImplementation(async (scope) => ({
-      success: true,
-      overlay: { scope, ops: [] },
-    }));
-    mockApi.putOverlay.mockResolvedValue({ success: true, overlay: { scope: 'seat', ops: [] } });
-    mockApi.getModuleVersion.mockImplementation(async (slug) => ({
-      success: true,
-      module: {
-        slug,
-        kind: 'mcp',
-        version: '1.0.0',
-        checksum: 'sum',
-        content:
-          slug === 'agenthub-http'
-            ? JSON.stringify({ name: 'agenthub_http', type: 'http', url: 'https://mcp.test', headers: {} })
-            : JSON.stringify({ name: 'sequential-thinking', type: 'stdio', command: 'npx', args: ['-y', 'pkg'] }),
-      },
-    }));
+// The API mocks every case in this file needs, registered at FILE scope. A describe-level
+// beforeEach runs only for the cases that describe contains, so with the setup nested in the
+// first describe a single-case run (`vitest run <file> -t '<one composer case>'`) reached the
+// page with unimplemented mocks: it rendered "No rooms yet" and failed at the Compose-level
+// lookup instead of at the assertion the run was asking about.
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockApi.listSeatTypes.mockResolvedValue({ success: true, seat_types: [seatType] });
+  mockApi.listModules.mockResolvedValue({
+    success: true,
+    modules: [{ slug: 'rules', kind: 'instruction', version: '1.0.0', sha256: 'abcdef0123456789' }],
   });
+  mockApi.createSeatTypeVersion.mockResolvedValue({
+    success: true,
+    seat_type_version: {
+      slug: 'coder',
+      version: '1.0.1',
+      default_runtime: 'codex',
+      module_refs: [{ slug: 'rules', version: '1.0.0' }],
+    },
+  });
+  mockApi.putModuleVersion.mockResolvedValue({
+    success: true,
+    module: { slug: 'rules', kind: 'instruction', version: '1.1.0', sha256: 'abc' },
+  });
+  mockApi.listRooms.mockResolvedValue({
+    success: true,
+    rooms: [{ id: 'room-dev', slug: 'dev', name: 'Dev Room' }],
+  });
+  mockApi.listSeats.mockResolvedValue({
+    success: true,
+    seats: [
+      {
+        id: 'seat-1',
+        room_id: 'room-dev',
+        seat_key: 'alice',
+        seat_type: 'coder',
+        seat_type_id: 'type-1',
+        pinned_version: '1.0.0',
+        runtime: 'claude-code',
+        model: '',
+        permission_policy: 'standard',
+      },
+    ],
+  });
+  mockApi.getOverlay.mockImplementation(async (scope) => ({
+    success: true,
+    overlay: { scope, ops: [] },
+  }));
+  mockApi.putOverlay.mockResolvedValue({ success: true, overlay: { scope: 'seat', ops: [] } });
+  mockApi.getModuleVersion.mockImplementation(async (slug) => ({
+    success: true,
+    module: {
+      slug,
+      kind: 'mcp',
+      version: '1.0.0',
+      checksum: 'sum',
+      content:
+        slug === 'agenthub-http'
+          ? JSON.stringify({ name: 'agenthub_http', type: 'http', url: 'https://mcp.test', headers: {} })
+          : JSON.stringify({ name: 'sequential-thinking', type: 'stdio', command: 'npx', args: ['-y', 'pkg'] }),
+    },
+  }));
+});
 
+describe('SeatAuthoringPage', () => {
   it('lists seat types with their default runtime and module refs', async () => {
     renderPage();
 
