@@ -127,13 +127,49 @@ describe('FeedbackPage', () => {
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(6);
   });
 
-  it('shows the route failure instead of an empty page', async () => {
+  // The worst failure this page can have is a false statement that looks true: "nothing
+  // reported for this layer" is the SERVER's claim, and a failed read cannot make it.
+  it('does not claim a layer is empty when the read has never succeeded', async () => {
     mockApi.listFeedback.mockRejectedValue(new Error('Not authenticated'));
 
     renderPage();
 
     expect(
       await screen.findByText('Could not load the friction entries: Not authenticated')
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Not loaded: the read failed, so this layer’s count is unknown.')
+    ).toHaveLength(6);
+    expect(screen.queryByText('Nothing reported for this layer.')).not.toBeInTheDocument();
+    expect(screen.queryByText('No friction entries reported yet.')).not.toBeInTheDocument();
+    // And no count is stated as if it were known.
+    expect(screen.getByText('Counts unavailable: the read has not succeeded.')).toBeInTheDocument();
+    expect(screen.queryByText(/entries, grouped by the layer/)).not.toBeInTheDocument();
+  });
+
+  it('keeps the last successful read visible when a refresh fails, and says which it is', async () => {
+    mockApi.listFeedback.mockResolvedValue({
+      success: true,
+      total: 1,
+      layers: [group('cloud', [report({ id: 'c1', layer: 'cloud', text: 'the token route answers 403' })])],
+    });
+
+    renderPage();
+
+    expect(within(await sectionFor('Cloud')).getByText('the token route answers 403')).toBeInTheDocument();
+
+    mockApi.listFeedback.mockRejectedValue(new Error('Request failed'));
+    fireEvent.click(screen.getByRole('button', { name: /Refresh/ }));
+
+    expect(
+      await screen.findByText(
+        'Could not refresh the friction entries: Request failed The groups below are the last read that succeeded.'
+      )
+    ).toBeInTheDocument();
+    // The rows from the successful read stay, and the header still states what it knows.
+    expect(within(await sectionFor('Cloud')).getByText('the token route answers 403')).toBeInTheDocument();
+    expect(
+      screen.getByText('1 entry, grouped by the layer it was reported against.')
     ).toBeInTheDocument();
   });
 

@@ -6,6 +6,10 @@
  * sort, re-group or fill the gaps, because those are display rulings and they live where
  * they are visible, in the page.
  *
+ * `loaded` is the difference between "the server said there are none" and "we never heard":
+ * it is false until a response actually arrived, and the page must not state a count or an
+ * empty layer on anything less.
+ *
  * @module hooks/useFeedback
  * @version 1.0.0
  */
@@ -33,6 +37,8 @@ async function fetchFeedback(): Promise<FeedbackView> {
 
 /** Every friction report the caller may see, grouped as the API groups them. */
 export function useFeedback(): FeedbackView & {
+  /** True only once a response has arrived, so a failure is never rendered as an empty list. */
+  loaded: boolean;
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
@@ -45,6 +51,7 @@ export function useFeedback(): FeedbackView & {
   return {
     groups: query.data?.groups ?? [],
     total: query.data?.total ?? 0,
+    loaded: query.data !== undefined,
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

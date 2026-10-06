@@ -4,6 +4,16 @@
 
 ### Added
 - **The friction channel's read side: a page grouped by layer (Directive H)** - 2026-10-06
+  - THREE STATES, NOT TWO, and this is the page's integrity rule rather than a nicety: "nothing reported for this layer"
+  is a claim the SERVER made, while a failed read is a claim nobody can make. So the page distinguishes "loaded and
+  empty" from "never loaded": when the read has not succeeded the sections say `Not loaded: the read failed, so this
+  layer's count is unknown.`, no count badge is rendered at all, and the header states `Counts unavailable: the read has
+  not succeeded.` instead of "0 entries". A failure that kept a previous successful read shows the groups with an alert
+  naming them as the last read that succeeded. The defect this closes was found in the page's own browser screenshot:
+  the failure state rendered six "Nothing reported for this layer." lines and a "0 entries" summary, both of which are
+  false - the worst failure available to a viewer, a false statement that looks exactly like a true one.
+  - `src/hooks/useFeedback.ts` carries the `loaded` flag this rests on, so no part of the page can state a count or an
+  empty layer on anything less than a response that actually arrived.
   - `src/pages/FeedbackPage.tsx` shows the friction reports GROUPED BY LAYER, which is the deliverable rather than a
   filter over a flat list: every layer of the closed set (runtime, openrig, cloud, seat-context, workspace, other)
   gets its own section in the canonical order, and a layer the response omits renders its own empty state rather than
@@ -24,12 +34,16 @@
   being absorbed.
   - Route: `/feedback`, protected and inside `AppLayout`, added to `src/App.tsx` with its lazy import; no nav entry
     was added, since the page's place in the navigation is a separate decision.
-  - Tests: `src/tests/pages/FeedbackPage.test.tsx` (8) drives the rendered page - canonical heading order with each
-    report under its own layer, the per-layer empty state for an omitted layer, the whole-table empty state, the
-    route failure shown instead of an empty page, the row's own fields rendered without interpretation, and the
-    "only Refresh" property.
-  - OWED, NOT CLAIMED: the browser proof (the page driven with feedback spanning at least two layers) waits for
-    go-dev's routes to land. Until then the page shows the real 404 rather than a faked endpoint.
+  - Tests: `src/tests/pages/FeedbackPage.test.tsx` (9) drives the rendered page - canonical heading order with each
+    report under its own layer, the per-layer empty state for an omitted layer, the whole-table empty state, the row's
+    own fields rendered without interpretation, the "only Refresh" property, Refresh re-reading, an out-of-set layer,
+    and the two states a failure can be in: never loaded (no empty claim, no count) and loaded-then-a-failed-refresh
+    (the last read stays, named as such).
+  - OWED, NOT CLAIMED: the browser proof (the page driven with feedback spanning at least two layers). The page is
+    driven and photographed in its FAILURE state now; the grouping-with-data half is blocked on the backend, measured
+    rather than assumed - the tree's server cannot boot at all (`app: unknown table "seat_feedback"`, with
+    AUTO_MIGRATE true and false alike, because the ORM resolves tables by name through the shared registry and
+    `seat_tables.go` has no TableDef for it), so the routes are in the source and not in any runnable process.
 - **API reference documentation page (owner directive E)** - 2026-10-05
   - `src/docs/api-reference.en.md` is the API reference the `/docs` page renders: authentication and the token flow, the mounted route
     families with method and path, the MCP surface (the nine published tools and how a client calls them), the seat-composition model, and
@@ -295,6 +309,28 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **An unguarded global in an async continuation, and two 30s timers nothing owned (hardening — NOT a flake fix)** - 2026-10-06
+  - `src/services/apiV2.ts`'s 401/token-refresh failure branch removed both cookies and dispatched
+    `auth-logout` through `window`. That branch is an ASYNC CONTINUATION — it resumes after the refresh
+    round-trip — so it can run when the DOM is already gone (a torn-down test environment, where the
+    dereference throws `window is not defined`). The three DOM-touching statements now sit behind one
+    `typeof window !== 'undefined'` guard. In a browser `window` and `document` always exist, so the
+    change is behaviour-preserving: this is HARDENING of a latent defect on its own merits, **not** a fix
+    for the intermittent exit-non-zero-while-green flake, whose cause is still unattributed — that row
+    (`qitem-20261005052811`) stays parked as a monitor with its wake armed.
+  - `src/utils/responseValidator.ts` and `src/utils/websocketValidator.ts` each started a module-scope
+    `setInterval(..., 30000)` under `import.meta.env.DEV` and discarded the handle, so nothing owned it:
+    in a Node host (a vitest worker) that timer kept the event loop alive after the environment which
+    started it was gone. THE LIFECYCLE IS NOW STATED AND OWNED: the module owns the timer for the page's
+    lifetime — a browser has no teardown to clear it on, and that is the intended lifetime — and the
+    handle is `unref()`'d where the runtime offers that. A browser's numeric handle has no `unref`, so its
+    behaviour is unchanged. Neither callback touches a DOM global, so neither could produce the
+    `window is not defined` line; this is the separate leak it looks like.
+  - The mechanism behind the reported error SHAPE, proved rather than argued: calling a React state setter
+    once the jsdom `window` is gone throws exactly `ReferenceError: window is not defined` from React DOM's
+    own scheduling code, with every test still passing (reproduced with a throwaway probe, then deleted).
+    That is why the failure names a test file and a state setter, and why no application source contains
+    the string. It does not yet attribute the flake to a file.
 - **A deliberate disconnect stops reporting a reconnection failure** - 2026-10-06
  - `disconnect()` raises the attempt counter to its maximum to suppress auto-reconnect and then closes the socket,
  and `handleClose` could not tell that state from having EXHAUSTED retries - so it took its give-up branch and
