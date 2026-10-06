@@ -7,6 +7,7 @@ package httpapp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -109,6 +110,18 @@ func findReport(t *testing.T, store *fakeSeatFeedback, text string) repositories
 	return repositories.SeatFeedback{}
 }
 
+// TestMCPToolsListRefusesAnUncomposedRegistry pins the half a caller's GUARD depends on: the refusal is
+// an error a test can match by IDENTITY rather than by prose. The wording may change; the sentinel may
+// not, because the consumer's guard must keep working when a sentence is reworded - a search for a label
+// is not a search for the content.
+func TestMCPToolsListRefusesAnUncomposedRegistry(t *testing.T) {
+	_, err := (&App{}).MCPToolsList()
+	if !errors.Is(err, ErrMCPToolsRegistryUncomposed) {
+		t.Fatalf("err = %v, want ErrMCPToolsRegistryUncomposed", err)
+	}
+}
+
+// TestMCPToolsListPublishesSubmitFeedback asserts the composed App publishes the friction channel's tool.
 func TestMCPToolsListPublishesSubmitFeedback(t *testing.T) {
 	t.Setenv("AUTH_ENABLED", "false")
 	app := newSubmitFeedbackTestApp(t, seatservices.NewSeatFeedbackService(&fakeSeatFeedback{}))

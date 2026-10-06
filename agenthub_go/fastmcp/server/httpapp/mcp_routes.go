@@ -3,6 +3,7 @@ package httpapp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -250,6 +251,17 @@ func (a *App) handleJSONRPC(ctx context.Context, r *http.Request, req jsonRPCReq
 	return resp
 }
 
+// ErrMCPToolsRegistryUncomposed is what MCPToolsList returns when the App was built without the MCP tool
+// registry. It is a SENTINEL because a caller must be able to assert IDENTITY rather than match prose: the
+// one consumer today is a build-time artefact generator, whose guard has to be a test that keeps working
+// when the wording changes (the same lesson as everywhere else tonight - a search for a label is not a
+// search for the content). The message below still names the fault and the fix.
+var ErrMCPToolsRegistryUncomposed = errors.New(
+	"the MCP tool registry was not composed: this App has no ToolDefinitions, so the tool surface is " +
+		"unknown rather than empty. Wire the registry (the boot path and the test helper both construct " +
+		"it) before asking for the list",
+)
+
 // MCPToolsList builds the MCP tools/list result from ToolDefinitions(), the
 // Python tool registry. manage_seat, call_seat, submit_feedback and the connection tool are registered by
 // their own controllers rather than by ToolDefinitions, so their schemas are appended here; every schema is
@@ -267,11 +279,7 @@ func (a *App) MCPToolsList() ([]map[string]any, error) {
 		// a generator that composed an App the cheap way would exit 0 and write an artefact saying the
 		// tool surface is empty. An unbuilt registry is a wiring fault, and a wiring fault that reads
 		// as a fact about the platform is the "looks complete and is not" shape in a new place.
-		return nil, fmt.Errorf(
-			"the MCP tool registry was not composed: this App has no ToolDefinitions, so the tool " +
-				"surface is unknown rather than empty. Wire the registry (the boot path and the test " +
-				"helper both construct it) before asking for the list",
-		)
+		return nil, ErrMCPToolsRegistryUncomposed
 	}
 	defs := a.mcpTools.ToolDefinitions()
 	tools := make([]map[string]any, 0, len(defs)+4)
