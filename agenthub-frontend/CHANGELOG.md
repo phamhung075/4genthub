@@ -202,10 +202,15 @@
  but **an export WINS over the file's value in Vite**, because variables already present when Vite runs have the
  highest priority. Corrected statement, measurements only: the config reads the REPO ROOT env file, and an export
  overrides that file.
- - What the correction does NOT claim is that the variable reaches the app, because it does not: the running
- client logs `VITE_WS_URL: NOT_SET` and dials the page origin, which is why the `/ws` proxy is what carries the
- socket to the API. The delivery of `VITE_*` to the dev client is unexplained here and is recorded as a gap
- rather than smoothed over; a raw probe through the dev origin still returns the backend's own refusal.
+ - The gap recorded here is now EXPLAINED, measured and filed (`VITE-ENV-INVESTIGATION.md`, fe-dev): the injected
+ environment reflects the CONFIG's env loading and its env directory. One dev server set no `envDir`, so Vite used
+ its default - this directory, holding only `.env.sample` - and injected only the process environment's variables,
+ with `VITE_WS_URL` absent; another loaded the parent env and carried `VITE_WS_URL` in the object itself. So the
+ client's read was CORRECT and its fallback to the page origin was its correct consequence: the value never
+ ARRIVED rather than being discarded. The other two candidates are refuted, not parked - the runtime `window._env_`
+ path is absent in development, and the computed-key read resolves against a populated object in the build.
+ Diagnostic, one command: fetch the transformed config module from the running dev server and read line one, where
+ the injected object is literally present. WHICH config the original observing run used stays unprovable here.
 - **The frontend README says how this repo is actually run, and what the socket needs** - 2026-10-06
  - The file still carried the Create React App defaults (`pnpm start`, port 3000); this project runs
  `npm start` on port 3800 through Vite, which proxies `/api` and now `/ws` to the backend on :8000.
