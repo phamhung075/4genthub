@@ -8,6 +8,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Fixed
 
+**`healthVersion` 0.0.20 — the deploy marker for this packet** (2026-10-06)
+
+- Bumped from 0.0.19 in `agenthub_go/fastmcp/server/httpapp/http.go`. `/health` reports this string and it is the only deploy-verifiable fact the server can expose (the Docker build context has no `.git`, so no commit id can be embedded): after the push, production must report **0.0.20**, and if it does not, the deploy did not take.
+- No test change was needed and that was CHECKED rather than assumed: `http_health_test.go:97` asserts the reported version against the CONSTANT (`got != healthVersion`) rather than a pinned literal, and a grep for `0.0.19` across the Go tree returns nothing.
+- This packet also carries the owner-gated `ck_modules_kind` ALTER, run by the owner with the push: an `mcp` block cannot be published until it lands, so the marker and the ALTER go together.
+
 **The seeder verifies the module refs it writes, so a seed run can no longer produce types that 404 at resolve** (2026-10-06)
 
 - `SeedSeatTypes` (`agenthub_go/fastmcp/seat_management/application/services/seat_seeder.go`) stored each seed's own authored modules (role, one per rule, output-format, shared, blocks) and then appended the curated refs `seedmap` adds as `ExtraRefs` to the seat type version **without checking they exist** — unlike the HTTP publish path, whose service validates every ref (`seat_admin_service.go:212`, "module ref X@Y does not exist"). So `POST /seat-types/seed` returned success, the types carried refs to modules absent from the catalog, and every seat created from one failed later on a different route: resolve returned 404 module not found, which is why fe-dev's database showed an empty `resolved_seats`.
@@ -53,6 +59,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - Established before the change, as the row required: the string was SET in two places and NOTHING asserted it — no Go test pins the constant or the literal, and the Python-side occurrences are the legacy backend's own server name, not consumers of this payload.
 
 ### Changed
+
+- **`NEXT_GEN.md` record: the count and its list now agree at the G1 tick (2026-10-06)** — the line said "all nine tables … (nine names, plus `seat_settings`)", which is a count of nine beside a list of ten, so a reader could not tell which was the claim. It now reads "the nine G1 tables … (the nine names) plus `seat_settings`" — the smallest instance of the count-without-its-pattern class the record has rules about. The dated "9 tables" line at the 2026-10-03 draft is deliberately NOT touched: a figure attached to a dated draft is history, and rewriting it would destroy the record's ability to show what was known when.
 
 - **`NEXT_GEN.md` record: the two owner demands corrected — attribution and the operative half (2026-10-06)** — the sequence is the **OWNER'S CONFIRMED DECISION** (resolve the premises, then **BUILD IMMEDIATELY on the answer**), **not** a research-only instruction and **not** something the owner asked for at the outset: research was OUR framing and the owner has since confirmed it as the sequence — the overstatement defect pointed at the owner's words. **Demand 1 is not research-only**, and the delivered research already suggests BOTH unknowns resolve YES (a real per-seat signal exists in the session journal; omp honours compaction with the idle path behind a setting that defaults off). **Demand 2 may start its build**: the research settled the seat half, leaving ONE design decision — how the declaration's two host-specific paths are supplied, given a block carries exactly one platform-substitutable value.
 
