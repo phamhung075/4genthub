@@ -161,6 +161,19 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-07 - the completion path broadcasts, pinned by a test that could not compile before the fix
+
+- `complete_task_test.go`: `TestCompleteTaskSuccessBroadcasts`, with a `completeTaskFakeHooks` spy mirroring
+  `createTaskFakeHooks`. **IT COULD NOT COMPILE BEFORE THE FIX** — `CompleteTaskHooks` did not declare
+  `NotifyTaskEvent`, so the call the test asserts was unwritable at that site — which is the strongest
+  failing-before evidence available: the compiler, not a runtime assertion.
+- **It also caught a real placement bug during the change:** the broadcast was first put inside the
+  context-facade guard, and the test's own case (a completion with no facade) proved it would never fire
+  there. The assertion failed on the first run, the call moved out, and the assertion then passed - a test
+  that found its own fix's mistake on the first execution.
+- Verified: all eight `TestCompleteTask*` PASS; `gofmt -l` clean on the package; `go vet` exit 0;
+  `go test -count=1 ./...` -> **143 packages ok, 0 FAIL**.
+
 ## 2026-10-07 - the fixtures catch up with the rename, and the suite stops throwing on render
 
 - `SeatsPage.test.tsx`: the two machine-row literals now carry `pinned_hash` instead of `hash`. The failure it

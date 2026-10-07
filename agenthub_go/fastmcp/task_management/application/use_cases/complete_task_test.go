@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	dtotask "agenthub/fastmcp/task_management/application/dtos/task"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
@@ -237,6 +238,50 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	// One save for todo -> in_progress, one for the final persistence.
 	if len(repo.saves) != 2 {
 		t.Fatalf("expected 2 saves, got %d", len(repo.saves))
+	}
+}
+
+// completeTaskFakeHooks records what the completion path asks of its hooks, mirroring
+// createTaskFakeHooks. The assertion that matters is WHICH action string reaches the broadcast.
+type completeTaskFakeHooks struct {
+	notified []string
+}
+
+func (h *completeTaskFakeHooks) SyncTaskStatus(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
+func (h *completeTaskFakeHooks) SyncTaskMetadata(_ context.Context, _ string, _ *entities.Task, _ string) error {
+	return nil
+}
+
+func (h *completeTaskFakeHooks) NotifyTaskEvent(_ context.Context, eventType string, _ *entities.Task, _ *dtotask.TaskResponse, _ *string, _ string) {
+	h.notified = append(h.notified, eventType)
+}
+
+// TestCompleteTaskSuccessBroadcasts is the regression this whole change exists for, and it FAILED TO
+// COMPILE before it: CompleteTaskHooks declared only SyncTaskStatus and SyncTaskMetadata, so the call
+// it asserts could not be written at that site - the object the wiring hands to this use case
+// implements the capability and the interface the use case holds did not declare it. A completion
+// therefore reached the client only through React Query's own refetch, with no frame and no animation,
+// while a created or updated task animated.
+//
+// "completed" RATHER THAN "updated" IS THE DECISION: it is the terminal transition the client
+// animates distinctively, and both names are already in its allowlist. Every OTHER status move emits
+// "updated", matching update_task.go's literal - a distinct animation per transition would be a
+// vocabulary addition and the owner's decision.
+func TestCompleteTaskSuccessBroadcasts(t *testing.T) {
+	task, id := completeTaskNewTestTask(t)
+	repo := &completeTaskFakeTaskRepository{task: task}
+	hooks := &completeTaskFakeHooks{}
+	uc := NewCompleteTaskUseCase(repo, &completeTaskFakeSubtaskRepository{}, nil, nil).WithHooks(hooks)
+	summary := "all done"
+
+	if _, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if len(hooks.notified) != 1 || hooks.notified[0] != "completed" {
+		t.Fatalf("broadcast actions = %v, want exactly [completed]", hooks.notified)
 	}
 }
 
