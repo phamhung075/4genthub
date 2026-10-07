@@ -207,13 +207,11 @@ export const useRealtimeSync = (
             return;
           }
 
-          // THE DELETE ANIMATION STAYS, unlike the create above, but it is NOT working:
-          // this call is SCHEDULED before the cache update and still fires 150ms later,
-          // and the cache update below has removed the row by then - so this lands on an
-          // unregistered element, exactly as WebSocketAnimationService's own delete does.
-          // The mechanism designed for it, the deletion trackers, is never marked by any
-          // caller (see the changelog). Both calls are kept: the fix is a timing one, and
-          // this is the site whose comment says what the intent was.
+          // THE DELETE ANIMATION STAYS, and unlike the create above it IS a real source:
+          // the cache update below is DELAYED 600ms (see the comment on it), so the row is
+          // still mounted and registered when this fires at ~150ms. WebSocketAnimationServ-
+          // ice animates the same event on the same delay - the factory's per-element,
+          // per-type cooldown collapses the two into one visible animation.
           logger.debug('🎬 [useRealtimeSync] Triggering task delete animation', { taskId });
           requestAnimationFrame(() => {
             setTimeout(() => {
@@ -468,8 +466,8 @@ export const useRealtimeSync = (
             return;
           }
 
-          // THE DELETE ANIMATION STAYS, and is equally not working - see the task delete
-          // case above: the row is gone 150ms later when this timer fires.
+          // THE DELETE ANIMATION STAYS, for the same reason as the task delete above: the
+          // cache removal here is delayed 600ms, so the row is still registered at ~150ms.
           logger.debug('🎬 [useRealtimeSync] Triggering subtask delete animation', { subtaskId: subtaskData.id });
           requestAnimationFrame(() => {
             setTimeout(() => {

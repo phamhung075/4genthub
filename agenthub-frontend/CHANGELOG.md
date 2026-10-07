@@ -452,12 +452,18 @@
     duplicate really was a second animation. The subtask create goes for a different reason: the service deliberately SKIPS
     subtask creates ("mount animation handles this"), and so does the hook now - a newly appearing subtask mounts its row, and
     the row's mount effect animates it. The cache invalidation and the toasts, which are this hook's own job, are untouched.
-  - The DELETE calls STAY, for a reason that is a finding rather than a preference. They are SCHEDULED before the cache update
-    and still fire 150ms later, by which time the cache update has removed the row and unregistered the element - so they land
-    on nothing, exactly as the service's own delete does. THE DELETE ANIMATION FOR A REMOVED ROW IS THEREFORE CURRENTLY
-    DROPPED FROM BOTH PATHS, and the mechanism designed for it - the four deletion trackers and their 50ms intervals - is
-    never marked, because `markForDeletion` has NO CALLER in the app. Kept rather than deleted: the fix is a timing one, and
-    these are the sites whose comments record what the intent was.
+  - The DELETE calls STAY, and they are a REAL source rather than a duplicate to remove: the cache removal in this hook is
+    already deferred by 600ms ("Delay cache update to allow delete animation to play (~800ms total)"), so the row is still
+    mounted and registered when the call fires at ~150ms and the animation LANDS. WebSocketAnimationService animates the
+    same event on the same delay, so both land in the same tick and the factory's per-element, per-type cooldown collapses
+    them into ONE visible animation - an improvement this change made rather than a risk it took. (An earlier version of
+    this entry claimed the delete path was broken from both ends; that came from reading the delete case only as far as its
+    toast, with the 600ms removal block below it. Corrected here and in the code comments.)
+  - The four deletion trackers are REMOVED in the follow-up commit, with their four row-side readers and the subtask list
+    filter they fed. They were a complete api (markForDeletion, isMarkedForDeletion, clearDeletion, getPendingDeletions)
+    with NO writer anywhere in the app, so every reader was a no-op - unused rather than broken, because the 600ms deferral
+    above is what actually keeps a departing row registered long enough to animate. Keeping an unwired second mechanism is
+    how the next reader ends up debugging the one nobody calls.
   - The SEAT calls STAY: the service has no seat branch at all, so `useRealtimeSync` is the only source for seat animations.
   - The three prop-change effects (`useTaskAnimation`, `useBranchAnimation`, `useProjectAnimation`) are deleted. They compared
     previous props and called `playUpdateAnimation('websocket')` - passing `'websocket'` for what is a RENDER, not a

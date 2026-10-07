@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../services/AnimationFactory';
 import { Branch, BranchSummary } from '../types/api.types';
 import logger from '../utils/logger';
-import { branchDeletionTracker } from '../services/branchDeletionTracker';
 
 // Animation CSS classes are defined in: src/styles/task-animations.css
 // They are applied globally via AnimationFactory
@@ -157,20 +156,11 @@ export function useBranchAnimation(
   // for what is a RENDER, not a websocket event - and the real event is animated by
   // WebSocketAnimationService, so every update animated twice.
 
-  // Detect when branch is marked for deletion and trigger delete animation
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      if (branchDeletionTracker.isMarkedForDeletion(branch.id)) {
-        logger.debug('🗑️ [useBranchAnimation] Branch marked for deletion, triggering animation', { branchId: branch.id }, 'useBranchAnimation.ts');
-        playDeleteAnimation('websocket');
-        // Stop checking once we've triggered the animation
-        clearInterval(checkInterval);
-      }
-    }, 50); // Check every 50ms
-
-    // Cleanup interval on unmount
-    return () => clearInterval(checkInterval);
-  }, [branch.id, playDeleteAnimation]);
+  // The deletion tracker's 50ms poll used to live here. Nothing ever marked one - the
+  // trackers had no writer anywhere in the app - and the delete animation it guarded is
+  // triggered from the delete site, where the cache removal is deferred 600ms so the row
+  // is still registered when the animation fires. Removed with the trackers rather than
+  // left in place looking live.
 
   // Helper function to get fallback animation class - matches task/subtask/project implementation
   // ✅ FIX 2025-11-22: Updated to use branch-specific CSS classes instead of task classes

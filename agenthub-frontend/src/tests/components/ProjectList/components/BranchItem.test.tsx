@@ -3,7 +3,6 @@ import { render, screen, fireEvent, act } from './../../../test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BranchItem } from '../../../../components/ProjectList/components/BranchItem';
 import { animationFactory } from '../../../../services/AnimationFactory';
-import { branchDeletionTracker } from '../../../../services/branchDeletionTracker';
 import type { BranchSummary } from '../../../../types';
 
 // Mock the animation factory
@@ -129,7 +128,6 @@ describe('BranchItem', () => {
     });
 
     afterEach(() => {
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReset();
       vi.useRealTimers();
       vi.mocked(animationFactory.animate).mockReturnValue(true);
     });
@@ -159,30 +157,6 @@ describe('BranchItem', () => {
       act(() => { vi.advanceTimersByTime(50); });
 
       expect(container()).toHaveClass('branchRowCreateAnimation');
-    });
-
-    it('plays the delete animation for a branch marked for deletion and then removes it', () => {
-      render(<BranchItem {...defaultProps} />);
-      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
-
-      act(() => { vi.advanceTimersByTime(50); });
-      expect(animationFactory.animate).toHaveBeenCalledWith('branch-1', 'delete', 'websocket');
-      expect(container()).toBeInTheDocument();
-
-      act(() => { vi.advanceTimersByTime(800); });
-      expect(screen.queryByRole('button', { name: /feature\/test-branch/ })).not.toBeInTheDocument();
-    });
-
-    it('applies the CSS delete class while a branch is being removed without the factory', () => {
-      vi.mocked(animationFactory.animate).mockReturnValue(false);
-      render(<BranchItem {...defaultProps} />);
-      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
-
-      act(() => { vi.advanceTimersByTime(50); });
-
-      expect(container()).toHaveClass('branchRowDeleteAnimation');
     });
 
     it('does NOT animate an update when a prop changes: the websocket event owns that', () => {

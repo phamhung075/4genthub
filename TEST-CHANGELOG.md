@@ -16,6 +16,9 @@ Track test suite changes, fixes, and improvements for agenthub.
   ['branch-1','update',Anything]"). It changes `git_branch_name` deliberately: the hook derives its name from that field
   first, so changing only `name` left the pre-fix effect comparing the same value and proved nothing - the first version of
   this test passed against the bug.
+- `BranchItem.test.tsx`: its two tracker-driven delete cases are REMOVED with the trackers they drove (the 50ms poll and
+  the tracker's mock in setUp). What remains pinning the delete path is the useRealtimeSync suites' cache-removal
+  assertion, which is where the animation is actually triggered from.
 - Dead-code tests removed with the code they covered: `tests/components/SubtaskRow/SubtaskRowRefactored.test.tsx` and
   `SubtaskRowRefactored.phase1.test.tsx` (54 tests), after the probe proved that module unreachable.
 - Verified: the two create-proof files 21 passed; `npx tsc --noEmit -p .` 0 errors; the full suite in the commit notes.

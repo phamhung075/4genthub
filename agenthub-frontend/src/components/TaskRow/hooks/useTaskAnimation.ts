@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../../../services/AnimationFactory';
 import { TaskSummary } from '../../../types/taskTypes';
 import logger from '../../../utils/logger';
-import { taskDeletionTracker } from '../../../services/taskDeletionTracker';
 
 // Animation CSS classes are defined in: src/styles/task-animations.css
 // They are applied globally via AnimationFactory
@@ -140,20 +139,11 @@ export function useTaskAnimation(
   // for what is a RENDER, not a websocket event - and the real event is animated by
   // WebSocketAnimationService, so every update animated twice.
 
-  // Detect when task is marked for deletion and trigger delete animation
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      if (taskDeletionTracker.isMarkedForDeletion(summary.id)) {
-        logger.debug('🗑️ [useTaskAnimation] Task marked for deletion, triggering animation', { taskId: summary.id }, 'useTaskAnimation.ts');
-        playDeleteAnimation('websocket');
-        // Stop checking once we've triggered the animation
-        clearInterval(checkInterval);
-      }
-    }, 50); // Check every 50ms
-
-    // Cleanup interval on unmount
-    return () => clearInterval(checkInterval);
-  }, [summary.id, playDeleteAnimation]);
+  // The deletion tracker's 50ms poll used to live here. Nothing ever marked one - the
+  // trackers had no writer anywhere in the app - and the delete animation it guarded is
+  // triggered from the delete site, where the cache removal is deferred 600ms so the row
+  // is still registered when the animation fires. Removed with the trackers rather than
+  // left in place looking live.
 
   // Helper function to get fallback animation class - matches subtask implementation
   // CSS classes are now global (defined in src/styles/task-animations.css)
