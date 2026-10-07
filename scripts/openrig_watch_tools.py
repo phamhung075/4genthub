@@ -262,7 +262,7 @@ def inputs(a: argparse.Namespace) -> None:
             )
         )
         herdr("pane", "rename", new, seat + INPUT_SUFFIX)
-        herdr("pane", "send-text", new, f"python3 {me} input --rig {a.rig} --seat {seat}")
+        herdr("pane", "send-text", new, f"clear; exec python3 {me} input --rig {a.rig} --seat {seat}")
         herdr("pane", "send-keys", new, "Enter")
         opened += 1
     print(f"inputs: opened {opened}")
