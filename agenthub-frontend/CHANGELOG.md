@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Added
+- **The reference tier is exercised against the REAL generated artefact - and doing it corrected one of my own assertions** - 2026-10-07
+  - `src/tests/components/ApiReferenceView.real.test.tsx` imports the module the generator committed (`a5ff17a0`,
+  `src/docs/apiReference.ts`, 73003 bytes): the same BUILD-TIME import the page uses, so a regeneration that drops a key,
+  empties a list or changes a field reaches a suite instead of the page. EVERY EXPECTATION IS DERIVED FROM THE ARTEFACT
+  - its own route and tool counts, its own order for the inline-closure row, the tools whose actions are non-empty, each
+  tool's schema parsed back and compared to that tool's own object - so 144 routes pass by construction where 57 did, and
+  the only fixed expectation is that neither list is empty (a generator that emitted nothing would otherwise render
+  "0 routes" and pass every count check).
+  - FIRST CHECK ON ARRIVAL, per the contract ruling and deliberately BEFORE the counts: `pathParams` is a LIST on ALL 144
+  ROUTES, zero nulls - the property `src/types/apiReference.ts` asserts. The artefact carries 144 routes, 10 tools, 134
+  inline closures (empty handler) and 10 empty action lists (the enum slice is still deferred).
+  - THE EXERCISE CORRECTED ONE OF MY OWN ASSERTIONS, which is the whole argument for running it against real data: the
+  "no loading and no failure state" case used word-based negatives (`/loading/i`, `/could not|failed|error/i`) THAT PASS
+  ON THE FIXTURE AND FAIL ON THE REAL ARTEFACT, because the real MCP tool descriptions carry their own "ERRORS: ..."
+  sections - so the pattern was measuring the DATA rather than the component, and it reported a failure that was not one.
+  Both files now assert STRUCTURALLY: no `role="alert"`, no `[aria-busy="true"]`, and EXACTLY the two labelled regions
+  and nothing else.
+  - Gates: both files 13 passed (7 fixture + 6 real); `npx tsc --noEmit -p .` 0 errors; the full suite and
+    `npx vite build` green in the commit notes.
 - **The docs page renders the generated reference tier (DOCS-PAGE.md step 1, fe-dev's half)** - 2026-10-06
   - `src/pages/ApiDocsPage.tsx` imports the generated module and renders web-dev's `ApiReferenceView` with it as a REQUIRED
     prop, so `/docs` shows what the server advertises - every mounted HTTP route and every MCP tool - instead of a table

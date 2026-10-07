@@ -145,12 +145,21 @@ describe('ApiReferenceView', () => {
 
   // The reference arrives through a build-time import, so there is no runtime load to fail and
   // no loading state to show. A branch for either would be unreachable code.
+  //
+  // THE ASSERTION IS STRUCTURAL, NOT LEXICAL, AND THAT IS A CORRECTION: a word-based negative
+  // (/could not|failed|error/) measures the DATA rather than the component - it passed on this
+  // fixture and failed against the real artefact, whose tool descriptions carry their own
+  // "ERRORS:" sections. What must hold is that the component renders its two regions and nothing
+  // that claims a failure or a wait.
   it('carries no loading state and no failure state', () => {
-    renderView();
+    const { container } = renderView();
 
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.queryByText(/loading/i)).toBeNull();
-    expect(screen.queryByText(/could not|failed|error/i)).toBeNull();
+    expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+    expect(screen.getAllByRole('region').map((region) => region.getAttribute('aria-labelledby'))).toEqual([
+      'api-reference-routes',
+      'api-reference-tools',
+    ]);
   });
 
   it('renders a reference with no routes and no tools as empty sections rather than as a failure', () => {

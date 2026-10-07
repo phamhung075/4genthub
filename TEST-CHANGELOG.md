@@ -2,6 +2,25 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the reference tier is exercised against the REAL artefact, and a lexical assertion is corrected by it (frontend)
+
+- `src/tests/components/ApiReferenceView.real.test.tsx` (new, 6 cases) imports the module go-dev2's generator committed
+  (`a5ff17a0`: 73003 bytes, 144 routes, 10 tools) - the same build-time import the page uses. The fixture suite proves
+  the component; this proves the integration, which is why it was PARKED outside the tree while the artefact was
+  withdrawn rather than left collecting on a missing import.
+- EVERY EXPECTATION IS DERIVED FROM THE ARTEFACT rather than from tonight's numbers: the counts come from its own
+  arrays, the inline-closure row is found by INDEX over its own order, the action badges are counted against the tools
+  whose actions are non-empty, and every tool's schema is parsed back and compared to that tool's own `parameters`. The
+  only fixed expectation is that neither list is empty - so 144 routes pass where 57 did, and an artefact that emitted
+  nothing cannot render "0 routes" and pass.
+- THE EXERCISE FOUND A DEFECT IN MY OWN ASSERTION, and it is the reason to run a negative against real data: the "no
+  loading and no failure state" case used `/loading/i` and `/could not|failed|error/i`, which PASS ON THE FIXTURE and
+  FAIL ON THE REAL ARTEFACT - `Found multiple elements with the text: /could not|failed|error/i` - because the real MCP
+  tool descriptions carry their own "ERRORS: ..." sections. The pattern was measuring the DATA. Both files now assert
+  structurally: no `role="alert"`, no `[aria-busy="true"]`, and exactly the two labelled regions.
+- Counts: the fixture file 7, the real file 6, 13 together. Commands: `npx vitest run` on both files -> 13 passed;
+  `npx tsc --noEmit -p .` -> 0 errors; `npx vite build` -> exit 0, built in 13.04s; the full suite in the commit notes.
+
 ## 2026-10-06 - the docs page's generated tier is mounted, and its two cases are pinned by removal (frontend)
 
 - `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: two cases over the MOUNT, not over the view's internals - those are
