@@ -55,15 +55,41 @@ def newest_session(seat_dir: Path):
     return max(files, key=lambda f: f.stat().st_mtime, default=None)
 
 
+def indent_cut_json(text: str) -> str:
+    """Indent JSON that was cut off mid-value, which no parser accepts: break at every
+    structural comma, brace and bracket that is outside a string."""
+    out, depth, in_str, esc = [], 0, False, False
+    for ch in text:
+        out.append(ch)
+        if in_str:
+            esc = ch == "\\" and not esc
+            in_str = ch != '"' or esc
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch in "{[":
+            depth += 1
+            out.append("\n" + "  " * depth)
+        elif ch == ",":
+            out.append("\n" + "  " * depth)
+        elif ch in "}]":
+            depth = max(depth - 1, 0)
+            out.insert(-1, "\n" + "  " * depth)
+    return "".join(out)
+
+
 def pretty(text: str) -> str:
-    """A result that is JSON (compact or not) is shown indented; anything else as it is."""
+    """A result that starts with JSON is shown indented, whatever follows it (a wall-time
+    line, a truncation notice) as it is; JSON cut off by the log is indented as far as it goes."""
     stripped = text.strip()
-    if stripped[:1] in "{[":
-        try:
-            return json.dumps(json.loads(stripped), indent=2, ensure_ascii=False)
-        except json.JSONDecodeError:
-            pass
-    return text
+    if stripped[:1] not in ("{", "["):
+        return text
+    try:
+        value, end = json.JSONDecoder().raw_decode(stripped)
+    except json.JSONDecodeError:
+        head, sep, tail = stripped.partition("\n\n")
+        return indent_cut_json(head) + sep + tail
+    return json.dumps(value, indent=2, ensure_ascii=False) + stripped[end:]
 
 
 def block(head: str, style: str, text: str, width: int, lines: int) -> str:

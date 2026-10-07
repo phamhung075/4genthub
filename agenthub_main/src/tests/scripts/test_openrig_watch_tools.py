@@ -187,3 +187,20 @@ def test_inputs_open_for_one_seat_leaves_the_others_without_one(monkeypatch):
     watch.inputs(type("A", (), {"rig": "r", "action": "open", "seat": ["lead"]}))
     renamed = [c[3] for c in calls if c[:2] == ("pane", "rename")]
     assert renamed == ["lead > input"]
+
+
+def test_pretty_indents_json_followed_by_a_trailer():
+    shown = watch.pretty('{"a":[1,{"b":2}]}\n\nWall time: 0.1 seconds')
+    assert shown.startswith('{\n  "a": [\n    1,')
+    assert shown.endswith("}\n\nWall time: 0.1 seconds")
+
+
+def test_pretty_indents_json_cut_off_by_the_log():
+    shown = watch.pretty('{"a":[1,{"b":"x, {y}"},{"k":"cut\n\n[Some lines truncated]')
+    assert '"b":"x, {y}"' in shown
+    assert shown.count("\n") > 6
+    assert shown.endswith("[Some lines truncated]")
+
+
+def test_pretty_leaves_prose_alone():
+    assert watch.pretty('plain {"a":1}') == 'plain {"a":1}'

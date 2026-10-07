@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - watch tools: JSON result with a trailer, cut JSON, and prose
+
+- `tests/scripts/test_openrig_watch_tools.py`: three specs for `pretty()` (trailer kept, cut-off JSON indented, prose untouched).
+
 ## 2026-10-07 - the toast hooks' violation: one pin that discriminates, and one that does not
 
 - `tests/components/ui/toast.test.tsx`, two new cases for task e6ca3f6c. PIN ONE (identity) asserts the SAME function
