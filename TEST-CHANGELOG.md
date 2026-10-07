@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the task UPDATE animation: the chain is sound, and the test that proved it
+
+- `src/tests/services/taskUpdateAnimation.test.ts`: NEW, and its whole reason for existing is that the
+  service's own suite COULD NOT have caught this. `WebSocketAnimationService.test.ts` replaces
+  `animationFactory.animate` with `vi.fn().mockReturnValue(true)`, so it proves the CALL and never the
+  LANDING - the same defect shape as the delete finding earlier tonight. This file unmocks the factory,
+  registers a REAL `<tr>`, calls the service, and asserts the ELEMENT'S CLASS.
+- RESULT, and it is a bounded one: `taskRowUpdateAnimation` LANDS for an `updated` event and
+  `taskRowCompleteAnimation` for a `completed` event. So service->factory->element is NOT the break in the
+  owner's report, and the second half is a BACKEND wiring defect recorded in CHANGELOG.md and on task
+  60ae8b03 - the frontend chain has no defect in it.
+- Kept as a guard rather than as a reproduction: it passes today, and what it pins is that the landing stays
+  real if the factory's rules or the service's handlers change.
+- Verified: 2 passed.
+
 ## 2026-10-07 - the seat chat input: absence asserted with the right instrument, a refusal in the server's words, a transcript that must not blink
 
 - `src/tests/components/SeatInputBox.test.tsx`, NEW, 6 tests. (1) "renders no input on the first mount"
