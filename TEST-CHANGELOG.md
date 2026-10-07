@@ -2,6 +2,26 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the task-row dialog: a negative result with its boundary stated
+
+- `tests/components/LazyTaskListDialogOpen.test.tsx`: NEW, for the owner's report that View details needs two clicks (task
+  200afce7). It renders the REAL LazyTaskListRefactored with the REAL useDialogManager, clicks View details ONCE, and
+  asserts the dialog is still there afterwards AS THE SAME DOM NODE - the node identity, because "still open" is satisfied
+  by a close-and-reopen, and a close-and-reopen is what a flash would be.
+- IT DOES NOT REPRODUCE THE BUG, and the file's header says so rather than implying otherwise. What it establishes is a
+  BOUNDARY: at this fidelity, with two routes that reconcile to the same element, no close and no remount occurs. A passing
+  test is kept as a GUARD and labelled a guard; it is not dressed up as a reproduction.
+- THE HYPOTHESIS IT NAMES for whoever picks this up: `openDialog` navigates to `/.../task/<id>` for 'details', and if the
+  real router mounts a DIFFERENT element for that path the list REMOUNTS, destroying the dialog state - after which the
+  URL-sync effect's other branch (`LazyTaskListRefactored.tsx:123`) REOPENS it. That is a flash the owner would read as
+  "closes instantly", while a SECOND click (same URL, no route change) leaves it alone. Settling it needs a harness whose
+  route element identity matches the app's; it is recorded UNPROVEN.
+- RULED OUT BY READING, each with its reason: the overlay's onClick (`dialog.tsx:32`) cannot receive the opening click,
+  because the button stopPropagation's it (`TaskRowActions.tsx:12`) and the overlay mounts only afterwards; the Escape
+  handler is a KEYDOWN rather than a click; and the focus-restore effect's deps are `[opener]` - a `useState` - so its
+  cleanup runs on unmount only and focuses the opener without closing anything.
+- Verified: the file 1 passed, as a guard.
+
 ## 2026-10-07 - the task UPDATE animation: the chain is sound, and the test that proved it
 
 - `src/tests/services/taskUpdateAnimation.test.ts`: NEW, and its whole reason for existing is that the
