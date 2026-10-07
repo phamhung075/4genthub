@@ -218,7 +218,7 @@ def grid(a: argparse.Namespace) -> None:
 
 
 INPUT_SUFFIX = " > input"
-INPUT_ROWS_RATIO = 0.85  # share of the seat pane that stays with the feed
+INPUT_ROWS_RATIO = 0.65  # share of the seat pane that stays with the feed; the input needs rows to click on
 
 
 def grid_workspace(rig: str) -> str:
