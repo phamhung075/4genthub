@@ -204,3 +204,34 @@ def test_pretty_indents_json_cut_off_by_the_log():
 
 def test_pretty_leaves_prose_alone():
     assert watch.pretty('plain {"a":1}') == 'plain {"a":1}'
+
+
+def test_watch_opens_the_grid_and_a_lead_window_with_its_input(monkeypatch):
+    calls = fake_herdr(monkeypatch, [])
+    monkeypatch.setattr(
+        watch,
+        "herdr",
+        lambda *a: calls.append(a)
+        or {"root_pane": {"pane_id": "w9:p1"}, "pane": {"pane_id": "w9:p2"}},
+    )
+    watch.watch(
+        type(
+            "A",
+            (),
+            {
+                "rig": "r",
+                "cols": 2,
+                "back": 40,
+                "width": 200,
+                "lines": 25,
+                "detail": True,
+            },
+        )
+    )
+    labels = [c for c in calls if c[:3] == ("workspace", "create", "--cwd")]
+    assert [c[4] for c in labels] == ["--label", "--label"] and labels[-1][
+        5
+    ] == "r lead"
+    sent = [c[3] for c in calls if c[:2] == ("pane", "send-text")]
+    assert any("feed --rig r --seat lead" in t and "--detail" in t for t in sent)
+    assert any(t.endswith("input --rig r --seat lead") for t in sent)

@@ -8,6 +8,8 @@
     openrig_watch_tools.py inputs open|hide [--rig R] [--seat S ...]
         open or hide a small input pane under each seat pane of the grid; a line typed
         there is sent to that seat with ``rig send`` (the grid itself stays read-only)
+    openrig_watch_tools.py watch [--rig R] [--cols 2]
+        the grid, plus a second workspace for the lead: its feed on top, a ``lead > input`` pane below
 
 The feed reads each seat's newest session jsonl under ~/.openrig/state/omp and follows it.
 A policy refusal is shown white-on-red. See ai_docs/operations/watching-openrig-seats.md.
@@ -310,10 +312,40 @@ def input_loop(a: argparse.Namespace) -> None:
         print("sent" if done.returncode == 0 else f"failed: {done.stderr.strip()[:200]}")
 
 
+LEAD_ROWS_RATIO = 0.8  # share of the lead workspace that stays with its feed
+
+
+def lead_window(rig: str) -> None:
+    """A workspace for the lead alone: its detailed feed on top, an input pane under it."""
+    me = Path(__file__).resolve()
+    root = herdr("workspace", "create", "--cwd", str(me.parent), "--label", f"{rig} lead", "--no-focus")[
+        "root_pane"
+    ]["pane_id"]
+    below = pane_id(
+        herdr(
+            "pane", "split", "--pane", root, "--direction", "down",
+            "--ratio", f"{LEAD_ROWS_RATIO:.3f}", "--cwd", str(me.parent),
+        )
+    )
+    herdr("pane", "rename", below, f"lead{INPUT_SUFFIX}")
+    for pane, cmd in (
+        (root, f"feed --rig {rig} --seat lead --back 40 --width 200 --lines 25 --detail"),
+        (below, f"input --rig {rig} --seat lead"),
+    ):
+        herdr("pane", "send-text", pane, f"clear; exec python3 {me} {cmd}")
+        herdr("pane", "send-keys", pane, "Enter")
+
+
+def watch(a: argparse.Namespace) -> None:
+    """Everything needed to watch a rig work: the seat grid and the lead window."""
+    grid(a)
+    lead_window(a.rig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="command", required=True)
-    for name, fn in (("feed", feed), ("grid", grid)):
+    for name, fn in (("feed", feed), ("grid", grid), ("watch", watch)):
         p = sub.add_parser(name)
         p.add_argument("--rig", default="4genthub-min")
         p.add_argument("--back", type=int, default=3 if name == "feed" else 40)
@@ -322,7 +354,7 @@ def main() -> None:
         p.add_argument(
             "--detail",
             action="store_true",
-            default=name == "grid",
+            default=name != "feed",
             help="also show the agent's reasoning, what it says and what it is told (on for grid)",
         )
         if name == "feed":

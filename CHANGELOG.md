@@ -1,3 +1,8 @@
+## One command to watch a rig: `openrig_watch_tools.py watch`
+
+- `scripts/openrig_watch_tools.py`: new `watch` opens the seat grid and a second `<rig> lead` workspace (detailed
+  lead feed on top, `lead > input` pane below). Docs: `ai_docs/operations/watching-openrig-seats.md`.
+
 ## The ten policy modules advance to `1.1.0`, which is the version the seat overlays resolve
 
 - **Owner ruling 2026-10-07.** A **minor** bump rather than the patch the apply's self-heal would have picked,

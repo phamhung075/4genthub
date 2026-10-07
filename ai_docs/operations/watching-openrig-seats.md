@@ -104,3 +104,12 @@ the replayed lines at start all share one time.
 - A seat's own screen (not its tool calls) is a different tool: `rig terminal open <rig>` opens one
   tile per seat in herdr.
 - Seats other than omp seats have no such log, so they do not appear.
+
+## One command: grid plus lead window
+
+```bash
+python3 scripts/openrig_watch_tools.py watch --rig 4genthub-min
+```
+
+Opens the seat grid and a `<rig> lead` workspace: the lead's detailed feed on top, a `lead > input` pane below
+(a line typed there goes to the lead with `rig send`). Never type or press Ctrl-C in a raw `tmux attach` pane of a seat.

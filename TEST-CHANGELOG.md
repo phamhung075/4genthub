@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - watch tools: the `watch` command
+
+- `tests/scripts/test_openrig_watch_tools.py`: one spec, `watch` opens the grid and the lead window with feed and input.
+
 ## 2026-10-07 - room deletion: the real contract, the predicted refusal, and the server's own sentence
 
 - `src/tests/pages/SeatsPage.test.tsx`, `describe('delete room')` rewritten around the contract the server enforces (an
