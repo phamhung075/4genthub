@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - no test changed for the dependency upgrades; the suite is what verified them
+
+- The Trivy CRITICAL/HIGH task changed two manifests and two lockfiles and NO test file, so there
+  is no new assertion to record. What the suite contributed is the other half - the verification
+  that the bumps are behaviour-preserving, which a lockfile cannot show: `npx vitest run` -> 105
+  files / 1795 tests passed, and `npx tsc --noEmit -p .` -> exit 0 with 0 errors. The react-router
+  jump (7.9.1 -> 7.18.4) was the change most likely to have broken something, and it did not.
+- NAMED SO IT IS NOT READ AS A GAP: no test asserts the LOCKFILE VERSIONS. The gate that fails on
+  them is Trivy's, in the pipeline, and a repository test would be a second and weaker witness to
+  the same fact - one that every future dependency bump would have to re-pin. The protection for
+  these findings is the pipeline gate plus this record, not a test.
+
 ## 2026-10-07 - the notice generator's tests retire with it, and their properties have successors (python)
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: **SEVEN tests removed** with the notice verb they
