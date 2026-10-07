@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+### Added
+- **The sessions page gains a chat input per seat window, shut every time it mounts** - 2026-10-07
+  - `src/components/sessions/SeatInputBox.tsx` and its mounting in `SessionLiveView.tsx`: the toggle sits
+    in the window's chrome and the input is a drawer at the window's FOOT, rendered into a foot node the
+    window owns, so opening it takes its own height and the transcript above keeps the rest of the window.
+    A window that streams what it is watching must not have its newest lines covered by the thing that is
+    typing, which is why the drawer is a portal into the foot rather than an overlay.
+  - CLOSED ON EVERY MOUNT, by construction: the open flag is component state - no app state, no URL, no
+    storage - so a reload returns the window to watch-only. The seat key is a prop and is the only seat
+    fact the component carries.
+  - It calls ONE endpoint, `POST /api/v2/openrig/seats/{seat_key}/messages` (new `seatApi.sendSeatMessage`),
+    which has not landed on the backend yet, so the component and its tests are built against the interface
+    with the call mocked. THE SHAPE LIVES IN ONE PLACE - `SeatMessageRequest`/`SeatMessageResponse` in
+    `src/types/seatTypes.ts` and the single method in `src/services/seatApi.ts` - so a rename is those two
+    edits and nothing in the component.
+  - A refusal is rendered VERBATIM. A seat can be refused by scope, and the server's sentence is the only
+    actionable thing in that response, so it lands beside the input and the typed text is kept for a retry
+    rather than cleared.
+  - ONE OPEN QUESTION, recorded rather than guessed: the page's only seat identifier is the session's NAME
+    (a session row carries no seat key), so `SessionsPage.tsx` passes that as `seatKey`. If the route wants
+    a bare seat key, that is one line at the call site and the component is unchanged.
+  - Gates: `npx tsc --noEmit -p .` exit 0, 0 errors; `SeatInputBox.test.tsx` 6 passed; full-suite and
+    `npx vite build` counts in the commit notes.
+
 ### Fixed
 - **Room deletion states the contract the server enforces, and the refusal arrives with its reason** - 2026-10-07
   - `src/pages/SeatsPage.tsx`: the delete-room confirmation claimed the room "is deleted with all of its seats, their

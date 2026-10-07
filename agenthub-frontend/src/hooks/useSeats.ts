@@ -23,6 +23,7 @@ import type {
   SeatLinkKind,
   SeatPermissionPolicy,
   SeatLinkRequest,
+  SeatMessageRequest,
   SeatOverlay,
   SeatOverlayOp,
   SeatOverlayScope,
@@ -389,6 +390,22 @@ export function useDeleteSeatLink(room: string, seat: string) {
       queryClient.invalidateQueries({ queryKey: seatKeys.links(room, seat) });
       showSuccess(`Link ${kind} to "${to}" deleted`);
     },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Messages
+// ---------------------------------------------------------------------------
+
+/**
+ * One message to a seat's session. NOTHING IS INVALIDATED on success: the window's transcript
+ * arrives over the session stream rather than from a query, so there is no cache here to refresh -
+ * and a refusal is NOT toasted, because the sentence the server sends is the thing the caller has
+ * to read, so it is rendered where the message was typed.
+ */
+export function useSendSeatMessage(seat: string) {
+  return useMutation({
+    mutationFn: (data: SeatMessageRequest) => seatApi.sendSeatMessage(seat, data),
   });
 }
 

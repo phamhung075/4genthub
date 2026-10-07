@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SessionsPage } from '../../pages/SessionsPage';
 import { useSessionStream, useSessions } from '../../hooks/useSessions';
@@ -33,15 +34,24 @@ const session = (id: string, name: string): SessionSummary => ({
   last_seen: '2026-10-05T18:00:00',
 });
 
-const renderPage = (path = '/sessions') =>
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/sessions" element={<SessionsPage />} />
-        <Route path="/sessions/:sessionId" element={<SessionsPage />} />
-      </Routes>
-    </MemoryRouter>
+// A provider, because the window now holds a real mutation: the chat input's send. This file mocks
+// the two query hooks, so before the input existed no QueryClient was needed here at all - the
+// component that needs one now is the one under test's own child.
+const renderPage = (path = '/sessions') => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/sessions" element={<SessionsPage />} />
+          <Route path="/sessions/:sessionId" element={<SessionsPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
+};
 
 describe('SessionsPage', () => {
   beforeEach(() => {

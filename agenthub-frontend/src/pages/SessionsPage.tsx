@@ -76,6 +76,10 @@ export const SessionsPage: React.FC = () => {
               events={stream.events}
               status={stream.status}
               error={stream.error}
+              // The identifier this page holds is the session's name - the row's own seat fact.
+              // Turning it into the route's `{seat_key}` is the route's decision, and it is this
+              // one line if the answer differs from the name.
+              seatKey={selected?.name ?? null}
             />
           </CardContent>
         </Card>

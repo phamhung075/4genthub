@@ -2,6 +2,30 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the seat chat input: absence asserted with the right instrument, a refusal in the server's words, a transcript that must not blink
+
+- `src/tests/components/SeatInputBox.test.tsx`, NEW, 6 tests. (1) "renders no input on the first mount"
+  asserts ABSENCE with `queryByRole` rather than a `getBy*` - a getBy-shaped assertion for absence throws
+  instead of reporting, so it cannot express the claim at all; the same case pins `aria-expanded="false"`
+  and that no request went out. (2) the send path posts the TRIMMED text as `{ text }` to the seat key and
+  clears the box on success - this is also the INTERFACE PIN, since the route does not exist yet. (3) a
+  refused message renders the SERVER's sentence verbatim and KEEPS the text, so a retry does not cost the
+  user what they typed. (4) after a mount that was opened, a fresh mount renders no input again, which is
+  "closed on every mount" as behaviour rather than as a reading of the source.
+- The third property belongs to the WINDOW, so its coverage lives in the same file: with the drawer open,
+  the transcript line AND its sequence number are both still rendered - the toggle does not touch the read.
+  Plus: a window with no seat renders no toggle, because the idle branch has no window to attach one to.
+- Verified: `SeatInputBox.test.tsx` 6 passed; the full suite and `npx vite build` counts are in the commit
+  notes, and the directly affected page test (`SessionsPage.test.tsx`, which renders the window and does
+  not mock `seatApi`, so it exercises the new hook) was run on its own first.
+- `src/tests/pages/SessionsPage.test.tsx` gained a `QueryClientProvider` wrapper, and it is a REAL finding
+  about the change rather than test housekeeping: that file mocks both query hooks, so it needed no client
+  before, and the window's new chat input performs a real mutation inside the component under test's own
+  child - the raw `@testing-library` render then threw "No QueryClient set, use QueryClientProvider". The
+  fix is the provider and NOT a mock of the new hook, because the mutation is part of the component now,
+  and mocking it away would let the file pass while the page could not render. Seen failing first (1 failed
+  / 2 passed) and green after (3 passed).
+
 ## 2026-10-07 - watch tools: the `watch` command
 
 - `tests/scripts/test_openrig_watch_tools.py`: one spec, `watch` opens the grid and the lead window with feed and input.
