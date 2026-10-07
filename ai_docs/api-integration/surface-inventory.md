@@ -101,8 +101,8 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:73` |
-| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:138` |
+| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:74` |
+| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:139` |
 
 ### 1.7 WebSockets (`ws_mount.go`)
 
