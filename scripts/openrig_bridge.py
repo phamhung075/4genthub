@@ -31,7 +31,7 @@ list of nodes (an ``{"items": [...]}`` envelope is also accepted). Per node:
   The seat key is the member name only, so two pods of one rig with the same member name
   collide: the first node is sent, the others are skipped and named on stderr.
   detail  <- latestError, heldReason, agentActivity.reason (scrubbed, <=200)
-  hash    <- ~/.openrig/agenthub-seats/<room>/<seat>/pinned.json "hash", else ""
+  pinned_hash <- ~/.openrig/agenthub-seats/<room>/<seat>/pinned.json "hash", else ""
 
 herdr source: ``herdr api snapshot`` -> result.snapshot.agents[]. Only
 agent, agent_status and pane_id are kept. agent_status maps to
@@ -257,7 +257,7 @@ def build_seats(
                 "seat": seat,
                 "state": seat_state(node),
                 "runtime": runtime if runtime in RUNTIMES else "unknown",
-                "hash": pinned_hash(pins_dir, room, seat),
+                "pinned_hash": pinned_hash(pins_dir, room, seat),
                 "detail": detail,
                 "redacted": redacted,
             }
@@ -565,7 +565,7 @@ class Bridge:
         out: dict[str, dict] = {}
         for seat in seats:
             room, name = _str(seat.get("room")), _str(seat.get("seat"))
-            running = _str(seat.get("hash"))
+            running = _str(seat.get("pinned_hash"))
             confirmed = self.sync_state.get(self._state_key(room, name), "")
             if not confirmed or not running:
                 since = "unknown"

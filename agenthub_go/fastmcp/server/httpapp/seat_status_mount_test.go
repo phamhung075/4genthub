@@ -103,7 +103,7 @@ func getMachines(mux *http.ServeMux) *httptest.ResponseRecorder {
 }
 
 const validSeatStatusBody = `{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z",` +
-	`"seats":[{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","hash":"abc123","detail":"working","redacted":false}],` +
+	`"seats":[{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","pinned_hash":"abc123","detail":"working","redacted":false}],` +
 	`"agents":[{"agent":"claude","status":"idle","pane_id":"w5:p3"}]}`
 
 func TestSeatStatusPostStoresAndGetServes(t *testing.T) {
@@ -126,8 +126,9 @@ func TestSeatStatusPostStoresAndGetServes(t *testing.T) {
 			MachineID string `json:"machine_id"`
 			Online    bool   `json:"online"`
 			Seats     []struct {
-				Room, Seat, State, Runtime, Hash, Detail string
-				ReportedAt                               string `json:"reported_at"`
+				Room, Seat, State, Runtime, Detail string
+				PinnedHash                         string `json:"pinned_hash"`
+				ReportedAt                         string `json:"reported_at"`
 			} `json:"seats"`
 			Agents []struct {
 				Agent  string `json:"agent"`
@@ -142,6 +143,20 @@ func TestSeatStatusPostStoresAndGetServes(t *testing.T) {
 		len(got.Machines[0].Seats) != 1 || got.Machines[0].Seats[0].ReportedAt != "2026-10-03T11:59:30Z" ||
 		len(got.Machines[0].Agents) != 1 || got.Machines[0].Agents[0].PaneID != "w5:p3" {
 		t.Fatalf("GET = %s", rec.Body.String())
+	}
+
+	// THE ASSERTION THAT MATTERS, and it is why the field is named rather than left as `hash`: the two
+	// hashes come from DIFFERENT SOURCES - the reported one is what the seat has PINNED, the expected one
+	// is the cloud's newest stored snapshot - so a wiring that served the intended hash under
+	// `pinned_hash` would satisfy every check above while telling an operator nothing. The fake's stored
+	// expected hash is set to a value DIFFERENT from the posted one, so each field can only be right by
+	// reading its own source, and the two must differ for the test to mean anything at all.
+	fake.expected = map[string]string{"eng/coder": "cloud999"}
+	if rec = getMachines(mux); rec.Code != http.StatusOK {
+		t.Fatalf("GET after setting the expected hash = %d", rec.Code)
+	}
+	if body := rec.Body.String(); !strings.Contains(body, `"pinned_hash":"abc123","expected_hash":"cloud999"`) {
+		t.Fatalf("the served pair must be the seat's PINNED hash and the cloud's EXPECTED one, got: %s", body)
 	}
 }
 
@@ -212,10 +227,10 @@ func TestSeatStatusPostRejectsInvalidReports(t *testing.T) {
 func TestSeatStatusPostRejectsSecretsWithoutEchoing(t *testing.T) {
 	const secret = "sk-abcdefghijklmnopqrstuvwxyz0123456789ABCD"
 	cases := map[string]struct{ body, field string }{
-		"detail":  {strings.Replace(validSeatStatusBody, `"working"`, `"key `+secret+`"`, 1), "seats[0].detail"},
-		"hash":    {strings.Replace(validSeatStatusBody, `abc123`, secret, 1), "seats[0].hash"},
-		"pane":    {strings.Replace(validSeatStatusBody, `w5:p3`, `token=abc123def456`, 1), "agents[0].pane_id"},
-		"machine": {strings.Replace(validSeatStatusBody, `pc-home`, secret, 1), "machine_id"},
+		"detail":      {strings.Replace(validSeatStatusBody, `"working"`, `"key `+secret+`"`, 1), "seats[0].detail"},
+		"pinned_hash": {strings.Replace(validSeatStatusBody, `abc123`, secret, 1), "seats[0].pinned_hash"},
+		"pane":        {strings.Replace(validSeatStatusBody, `w5:p3`, `token=abc123def456`, 1), "agents[0].pane_id"},
+		"machine":     {strings.Replace(validSeatStatusBody, `pc-home`, secret, 1), "machine_id"},
 	}
 	for name, tc := range cases {
 		fake := &fakeSeatStatus{}
@@ -255,9 +270,9 @@ func TestSeatStatusPostReportsVerdictsPerSeat(t *testing.T) {
 	}}
 	mux := seatStatusTestMux(t, fake)
 	body := `{"machine_id":"pc-home","reported_at":"2026-10-03T11:59:30Z","seats":[` +
-		`{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","hash":"run123","detail":"","redacted":false},` +
-		`{"room":"eng","seat":"same","state":"idle","runtime":"claude-code","hash":"cloud456","detail":"","redacted":false},` +
-		`{"room":"eng","seat":"none","state":"idle","runtime":"claude-code","hash":"run123","detail":"","redacted":false}` +
+		`{"room":"eng","seat":"coder","state":"running","runtime":"claude-code","pinned_hash":"run123","detail":"","redacted":false},` +
+		`{"room":"eng","seat":"same","state":"idle","runtime":"claude-code","pinned_hash":"cloud456","detail":"","redacted":false},` +
+		`{"room":"eng","seat":"none","state":"idle","runtime":"claude-code","pinned_hash":"run123","detail":"","redacted":false}` +
 		`],"agents":[]}`
 
 	rec := postSeatStatus(mux, body)
@@ -307,7 +322,7 @@ func TestSeatStatusGetReportsExpectedHashAndSync(t *testing.T) {
 		Machines []struct {
 			Seats []struct {
 				Seat         string `json:"seat"`
-				Hash         string `json:"hash"`
+				PinnedHash   string `json:"pinned_hash"`
 				ExpectedHash string `json:"expected_hash"`
 				Sync         string `json:"sync"`
 			} `json:"seats"`
@@ -325,8 +340,8 @@ func TestSeatStatusGetReportsExpectedHashAndSync(t *testing.T) {
 			t.Errorf("seat %s sync = %q, want %q", s.Seat, s.Sync, wantSync[s.Seat])
 		}
 	}
-	// key order: runtime, hash (running), expected_hash, sync, detail
-	if !strings.Contains(rec.Body.String(), `"runtime":"claude-code","hash":"h1","expected_hash":"h1","sync":"in_sync","detail":`) {
+	// key order: runtime, pinned_hash (what the seat has PINNED), expected_hash, sync, detail
+	if !strings.Contains(rec.Body.String(), `"runtime":"claude-code","pinned_hash":"h1","expected_hash":"h1","sync":"in_sync","detail":`) {
 		t.Fatalf("seat keys out of order: %s", rec.Body.String())
 	}
 }

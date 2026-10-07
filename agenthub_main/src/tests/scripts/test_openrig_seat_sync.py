@@ -856,8 +856,12 @@ def test_rig_applies_the_per_seat_policy_from_the_single_source(
 
     parsed = yaml.safe_load(config.read_text())
     bash, tools = policy.policy_for("dev")
-    assert [rule["match"] for rule in parsed["bash"]["patterns"]] == bash
-    assert all(rule["approval"] == "deny" for rule in parsed["bash"]["patterns"])
+    patterns = parsed["bash"]["patterns"]
+    # THE EXEMPTION IS FIRST AND IS NOT A DENIAL: the startup `rig whoami` is allowed in every
+    # approval mode, so the deny list is what follows it and every one of those is still a deny.
+    assert patterns[0] == {"match": "rig whoami*", "approval": "allow"}
+    assert [rule["match"] for rule in patterns[1:]] == bash
+    assert all(rule["approval"] == "deny" for rule in patterns[1:])
     assert sorted(parsed["tools"]["approval"]) == sorted(tools)
     assert parsed["mcp"]["startupTimeoutMs"] == 0
 

@@ -102,6 +102,19 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-07 - the pinned-hash rename, and the three failures that proved it was incomplete
+
+- `seat_status_mount_test.go`: `TestSeatStatusPostStoresAndGetServes` gained the discriminating pair — a posted
+  pinned hash against a **different** stored expected hash, asserting `pinned_hash:abc123` and
+  `expected_hash:cloud999` on the wire, so a wiring that served the intended hash under `pinned_hash` fails.
+  All eight `TestSeatStatus*` PASS.
+- `test_openrig_bridge.py` + `test_openrig_seat_sync.py`: **166 passed** after the reader fix. Three tests were
+  failing before it — two in the bridge suite and the seat_sync one — and all three were the same cause:
+  `openrig_bridge.py:568` read the renamed key, so the verdict became `unknown`. The seat_sync test now asserts
+  the `rig whoami` exemption is FIRST and that the denies that follow it are exactly the list it always named.
+- `machineSeats.test.ts`: 3 passed. `npx tsc --noEmit -p .` → **0 errors** (it was 4, all from one
+  `Pick<…,'hash'>` that the rename missed).
+
 ## 2026-10-07 - the deletion invariants get the one proof a tombstone would fail
 
 - `deletion_paths_integration_test.go`: **CLAIM 5** added — after `RemoveSeat`, the same seat key is created

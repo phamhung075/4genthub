@@ -215,8 +215,12 @@ export interface MachineSeatStatus {
   seat: string;
   state: SeatRunState;
   runtime: string;
-  /** Hash the machine is running. */
-  hash: string;
+  /**
+   * The PINNED hash: the resolved-seat snapshot hash this seat actually installed, read from its own
+   * pin by the bridge. It is the one the sync verdict compares against `expected_hash`, so it says
+   * which resolved policy the seat is ON rather than which one the cloud last resolved.
+   */
+  pinned_hash: string;
   /** Hash of the seat's latest resolved snapshot; empty when the seat is not in the cloud. */
   expected_hash: string;
   sync: SeatSync;
@@ -273,6 +277,24 @@ export interface SeatLinkRequest {
   to_seat: string;
   kind: SeatLinkKind;
   allow: boolean;
+}
+
+/**
+ * Body of POST /api/v2/openrig/seats/{seat}/messages - one message handed to a seat's session.
+ *
+ * THIS SHAPE IS THE INTERFACE THE CHAT INPUT IS BUILT AGAINST, pinned in one place
+ * (`seatApi.sendSeatMessage`) so the route's author aligns it in a single edit. `text` is the
+ * whole body; the route carries no room, unlike every other seat route, because the seat key in
+ * the path is the seat's own identity. (If the route lands with a different field name, it is
+ * this type and that one method that change - the component reads neither.)
+ */
+export interface SeatMessageRequest {
+  text: string;
+}
+
+/** The seat-message reply. The seat routes answer `{success: true}`; nothing here reads more. */
+export interface SeatMessageResponse {
+  success?: boolean;
 }
 
 /** An empty model is accepted and KEEPS the model the seat already has: a blank field never clears a field. */

@@ -216,7 +216,7 @@ def test_allow_list_never_sends_foreign_fields_or_secrets(tmp_path):
         "seat",
         "state",
         "runtime",
-        "hash",
+        "pinned_hash",
         "detail",
         "redacted",
     }
@@ -317,7 +317,7 @@ def test_pinned_hash_used_when_valid(tmp_path):
         tmp_path, fake_runner(rig_output(), None), lambda b: (200, b"")
     )
     seats = bridge.build_payload()["seats"]
-    assert [s["hash"] for s in seats] == ["ab12", ""]
+    assert [s["pinned_hash"] for s in seats] == ["ab12", ""]
 
 
 def test_absent_tools_yield_empty_sources_and_log_once(tmp_path, capsys):

@@ -36,14 +36,14 @@ const SYNC_CLASSES: Record<SeatSync, string> = {
 
 const shortHash = (hash: string) => hash.slice(0, 8);
 
-export const SeatSyncBadge: React.FC<{ seat: Pick<MachineSeatStatus, 'sync' | 'hash' | 'expected_hash'> }> = ({
+export const SeatSyncBadge: React.FC<{ seat: Pick<MachineSeatStatus, 'sync' | 'pinned_hash' | 'expected_hash'> }> = ({
   seat,
 }) => {
   const className = SYNC_CLASSES[seat.sync] ?? SYNC_CLASSES.unknown;
   if (seat.sync === 'drift') {
     return (
       <Badge variant="outline" className={className}>
-        drift · running {shortHash(seat.hash)} · expected {shortHash(seat.expected_hash)}
+        drift · running {shortHash(seat.pinned_hash)} · expected {shortHash(seat.expected_hash)}
       </Badge>
     );
   }
@@ -106,7 +106,7 @@ const MachineCard: React.FC<{ machine: MachineStatus }> = ({ machine }) => (
                   <SeatStateBadge state={seat.state} />
                 </td>
                 <td>{seat.runtime}</td>
-                <td className="font-mono">{shortHash(seat.hash)}</td>
+                <td className="font-mono">{shortHash(seat.pinned_hash)}</td>
                 <td>
                   <SeatSyncBadge seat={seat} />
                 </td>
