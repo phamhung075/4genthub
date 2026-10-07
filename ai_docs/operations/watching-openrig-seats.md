@@ -39,6 +39,7 @@ The grid panes are read-only. To talk to a seat from the grid, open a small inpu
 
 ```bash
 python3 scripts/openrig_watch_tools.py inputs open    # one "<seat> > input" pane under every seat pane
+python3 scripts/openrig_watch_tools.py inputs open --seat lead   # only the lead gets one
 python3 scripts/openrig_watch_tools.py inputs hide    # close them again; the grid is back to watch-only
 ```
 

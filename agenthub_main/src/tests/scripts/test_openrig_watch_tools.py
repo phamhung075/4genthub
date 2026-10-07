@@ -146,7 +146,7 @@ def pane(label):
 
 def test_inputs_open_splits_a_small_input_pane_under_each_seat_pane(monkeypatch):
     calls = fake_herdr(monkeypatch, [pane("lead"), pane("go-dev")])
-    watch.inputs(type("A", (), {"rig": "r", "action": "open"}))
+    watch.inputs(type("A", (), {"rig": "r", "action": "open", "seat": None}))
     assert sum(c[:2] == ("pane", "split") for c in calls) == 2
     renamed = [c[3] for c in calls if c[:2] == ("pane", "rename")]
     assert renamed == ["lead > input", "go-dev > input"]
@@ -157,13 +157,13 @@ def test_inputs_open_twice_adds_nothing_the_second_time(monkeypatch):
         monkeypatch,
         [pane("lead"), pane("lead > input"), pane("go-dev"), pane("go-dev > input")],
     )
-    watch.inputs(type("A", (), {"rig": "r", "action": "open"}))
+    watch.inputs(type("A", (), {"rig": "r", "action": "open", "seat": None}))
     assert not any(c[:2] == ("pane", "split") for c in calls)
 
 
 def test_inputs_hide_closes_only_the_input_panes(monkeypatch):
     calls = fake_herdr(monkeypatch, [pane("lead"), pane("lead > input")])
-    watch.inputs(type("A", (), {"rig": "r", "action": "hide"}))
+    watch.inputs(type("A", (), {"rig": "r", "action": "hide", "seat": None}))
     closed = [c[2] for c in calls if c[:2] == ("pane", "close")]
     assert closed == [f"{GRID}:lead > input"]
 
@@ -180,3 +180,10 @@ def test_a_typed_line_is_sent_to_its_seat_and_hide_leaves_the_loop(monkeypatch):
     )
     watch.input_loop(type("A", (), {"rig": "r", "seat": "lead"}))
     assert sent == [["rig", "send", "r-lead@r", "hello lead"]]
+
+
+def test_inputs_open_for_one_seat_leaves_the_others_without_one(monkeypatch):
+    calls = fake_herdr(monkeypatch, [pane("lead"), pane("go-dev")])
+    watch.inputs(type("A", (), {"rig": "r", "action": "open", "seat": ["lead"]}))
+    renamed = [c[3] for c in calls if c[:2] == ("pane", "rename")]
+    assert renamed == ["lead > input"]

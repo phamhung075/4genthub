@@ -5,7 +5,7 @@
         one merged stream: a line per tool call and per result, coloured by tool kind
     openrig_watch_tools.py grid [--rig R] [--cols 2] [--back N] [--width W] [--lines L]
         a new herdr workspace with one pane per seat, each running its own ``feed``
-    openrig_watch_tools.py inputs open|hide [--rig R]
+    openrig_watch_tools.py inputs open|hide [--rig R] [--seat S ...]
         open or hide a small input pane under each seat pane of the grid; a line typed
         there is sent to that seat with ``rig send`` (the grid itself stays read-only)
 
@@ -241,7 +241,7 @@ def grid_panes(rig: str) -> list[dict]:
 def inputs(a: argparse.Namespace) -> None:
     """Open or hide the input pane under every seat pane of the grid."""
     panes = grid_panes(a.rig)
-    seats = set(rig_seats(a.rig))
+    seats = set(a.seat or rig_seats(a.rig))
     if a.action == "hide":
         closing = [p for p in panes if (p.get("label") or "").endswith(INPUT_SUFFIX)]
         for p in closing:
@@ -307,6 +307,7 @@ def main() -> None:
     p = sub.add_parser("inputs")
     p.add_argument("action", choices=("open", "hide"))
     p.add_argument("--rig", default="4genthub-min")
+    p.add_argument("--seat", nargs="*", help="open: only these seats (default all)")
     p.set_defaults(func=inputs)
     p = sub.add_parser("input")
     p.add_argument("--rig", default="4genthub-min")
