@@ -29,11 +29,11 @@ func TestFoldPoliciesUnionsDenyListsAndRefusesDisagreeingScalars(t *testing.T) {
 	if folded.StartupTimeoutMs == nil || *folded.StartupTimeoutMs != 0 {
 		t.Errorf("startupTimeoutMs = %v, want a set 0", folded.StartupTimeoutMs)
 	}
-	if len(folded.BashDeny) != 2 || folded.BashDeny[0].Match != "a" || folded.BashDeny[1].Match != "c" {
-		t.Errorf("bash deny did not union: %+v", folded.BashDeny)
+	if len(folded.BashRules) != 2 || folded.BashRules[0].Match != "a" || folded.BashRules[1].Match != "c" {
+		t.Errorf("bash deny did not union: %+v", folded.BashRules)
 	}
-	if len(folded.ToolDeny) != 1 {
-		t.Errorf("tool deny = %+v", folded.ToolDeny)
+	if len(folded.ToolRules) != 1 {
+		t.Errorf("tool deny = %+v", folded.ToolRules)
 	}
 
 	// A block that does not speak about a scalar does not veto it: nil is silent, not zero.
@@ -89,8 +89,8 @@ func TestFoldPoliciesUnionsDenyListsAndRefusesDisagreeingScalars(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an identical rule declared twice did not fold: %v", err)
 	}
-	if len(repeated.BashDeny) != 1 {
-		t.Errorf("bash deny = %+v, want the rule once", repeated.BashDeny)
+	if len(repeated.BashRules) != 1 {
+		t.Errorf("bash deny = %+v, want the rule once", repeated.BashRules)
 	}
 }
 
@@ -195,5 +195,72 @@ func TestRenderPolicyLimitsNamesASiblingForEveryDenial(t *testing.T) {
 	// One denial, one alternative: the count is the check that no rule was written without one.
 	if got := strings.Count(text, "— instead:"); got != 2 {
 		t.Errorf("alternatives = %d, want one per denial (2)", got)
+	}
+}
+
+// TestRenderPolicyConfigEmitsAnAllowanceFirst: the document the CLIENT installs carries the allowance,
+// and it carries it FIRST - the same choice the hand-written generator makes, so the exemption is safe
+// under either match order rather than only under first-match.
+func TestRenderPolicyConfigEmitsAnAllowanceFirst(t *testing.T) {
+	folded, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+	})
+	if err != nil {
+		t.Fatalf("FoldPolicies: %v", err)
+	}
+	doc, err := RenderPolicyConfig(folded)
+	if err != nil {
+		t.Fatalf("RenderPolicyConfig: %v", err)
+	}
+	allow := strings.Index(doc, "rig whoami*")
+	deny := strings.Index(doc, "git push*")
+	if allow < 0 || deny < 0 {
+		t.Fatalf("the document lacks a rule:\n%s", doc)
+	}
+	if allow > deny {
+		t.Errorf("the allowance must come first so either match order is safe:\n%s", doc)
+	}
+	if !strings.Contains(doc, "approval: allow") {
+		t.Errorf("the allowance did not reach the document:\n%s", doc)
+	}
+}
+
+// TestFoldRefusesAMatchThatIsBothAllowedAndDenied: one match cannot be both, and the fold REFUSES
+// rather than picking a winner - a seat would then have to guess which one the runtime applied.
+func TestFoldRefusesAMatchThatIsBothAllowedAndDenied(t *testing.T) {
+	_, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`),
+		policyModule("policy.b", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"deny","sibling":"ask the lead"}]}}`),
+	})
+	if err == nil {
+		t.Fatal("a match declared both allowed and denied was folded instead of refused")
+	}
+	if !strings.Contains(err.Error(), "both refused and allowed") {
+		t.Errorf("error = %q, want it to name the contradiction", err.Error())
+	}
+}
+
+// TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals: the SEAT reads these words, so an
+// allowance listed under a "Refused" heading would tell it the opposite of what its policy says.
+func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
+	folded, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+	})
+	if err != nil {
+		t.Fatalf("FoldPolicies: %v", err)
+	}
+	text := RenderPolicyLimits(folded)
+	allowedAt := strings.Index(text, "### Allowed in every approval mode")
+	refusedAt := strings.Index(text, "### Refused shell commands")
+	whoamiAt := strings.Index(text, "`rig whoami*`")
+	pushAt := strings.Index(text, "`git push*`")
+	if allowedAt < 0 || refusedAt < 0 || whoamiAt < 0 || pushAt < 0 {
+		t.Fatalf("the limits text lacks a section or a rule:\n%s", text)
+	}
+	if !(allowedAt < whoamiAt && whoamiAt < refusedAt && refusedAt < pushAt) {
+		t.Errorf("the allowance belongs under the allowed heading and the denial under the refused one:\n%s", text)
+	}
+	if strings.Contains(text[:refusedAt], "— instead:") {
+		t.Errorf("the allowed section names an alternative, which an allowance does not have:\n%s", text)
 	}
 }

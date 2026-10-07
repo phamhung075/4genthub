@@ -6,6 +6,10 @@
   "bash": {
     "patterns": [
       {
+        "match": "rig whoami*",
+        "approval": "allow"
+      },
+      {
         "match": "git push*",
         "approval": "deny",
         "sibling": "you never push. Commit, then tell the lead the hash; the principal pushes."

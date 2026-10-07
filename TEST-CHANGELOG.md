@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the policy guard's second approval, and the words that must not lie
+
+- `seatrenderer/policy_test.go`: `TestParsePolicyModuleAcceptsAnAllowanceWithoutASibling` pins the
+  asymmetry (an allowance parses with no sibling), and
+  `TestParsePolicyModuleStillRefusesAnUnknownApprovalByName` pins the property that must survive the
+  widening — an approval the kind cannot express is still refused, with a message naming **both** values
+  it can express and the reason (`silently not apply`).
+- `seatrenderer/policy_fold_test.go`: `TestRenderPolicyConfigEmitsAnAllowanceFirst` asserts the allowance
+  reaches the document the client installs and sits **first**, so the exemption is safe under either match
+  order; `TestFoldRefusesAMatchThatIsBothAllowedAndDenied` asserts the fold refuses a contradiction instead
+  of picking a winner; `TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals` asserts the section
+  ordering and that the allowed section names **no** alternative — the check that the seat's words cannot
+  say the opposite of its policy.
+- Renamed with the code (`BashDeny`→`BashRules`, `ToolDeny`→`ToolRules`) in both test files; no assertion
+  weakened, and the existing `unknown_approval` subtest still passes against the new message.
+- Verified: `go test -count=1 ./...` → **143 packages ok, 0 FAIL**; `gofmt -l` clean on the package; the
+  build clean before the test files were touched, and the four new tests PASS by name.
+
 ## 2026-10-07 - the config check separates allow from deny, and pins the one allowance
 
 - `src/tests/scripts/test_openrig_seat_policy.py`: `deny_patterns()` used to **assert** that every

@@ -13,8 +13,8 @@ import (
 type PolicySet struct {
 	Role             string
 	StartupTimeoutMs *int // nil when no block spoke about it; it must NOT become a literal 0
-	BashDeny         []PolicyRule
-	ToolDeny         []PolicyRule
+	BashRules        []PolicyRule
+	ToolRules        []PolicyRule
 }
 
 // FoldPolicies folds a seat's policy blocks in resolution order.
@@ -31,8 +31,8 @@ type PolicySet struct {
 //     source of truth starts.
 func FoldPolicies(modules []resolver.ResolvedModule) (*PolicySet, error) {
 	set := &PolicySet{}
-	seenBash := map[string]string{}
-	seenTools := map[string]string{}
+	seenBash := map[string]PolicyRule{}
+	seenTools := map[string]PolicyRule{}
 	for _, m := range modules {
 		if m.Kind != resolver.KindPolicy {
 			continue
@@ -59,26 +59,40 @@ func FoldPolicies(modules []resolver.ResolvedModule) (*PolicySet, error) {
 			set.StartupTimeoutMs = block.StartupTimeoutMs
 		}
 		var err2 error
-		if set.BashDeny, err2 = foldRules(m.Slug, "bash", block.BashDeny, seenBash, set.BashDeny); err2 != nil {
+		if set.BashRules, err2 = foldRules(m.Slug, "bash", block.BashRules, seenBash, set.BashRules); err2 != nil {
 			return nil, err2
 		}
-		if set.ToolDeny, err2 = foldRules(m.Slug, "tools", block.ToolDeny, seenTools, set.ToolDeny); err2 != nil {
+		if set.ToolRules, err2 = foldRules(m.Slug, "tools", block.ToolRules, seenTools, set.ToolRules); err2 != nil {
 			return nil, err2
 		}
 	}
 	return set, nil
 }
 
-// foldRules unions one rule list, refusing the same match declared with two different siblings.
+// foldRules unions one rule list. The same match declared twice folds only when the two declarations
+// AGREE, and the agreement is checked on the APPROVAL first and the sibling second: one match cannot
+// be both refused and allowed (a seat would then have to guess which the runtime applied), and one
+// refusal cannot have two sanctioned alternatives.
+//
+// The union is sound for a deny and needs its reason restated for an allow, because the two are not
+// symmetric: adding a deny anywhere can only make a seat safer, while an allowance GRANTS something,
+// so the union's safety comes from elsewhere - a seat cannot compose itself, so every block in its
+// stack was put there by whoever owns the room. The collision rule above is what keeps that honest.
 func foldRules(
 	slug, section string,
 	rules []PolicyRule,
-	seen map[string]string,
+	seen map[string]PolicyRule,
 	out []PolicyRule,
 ) ([]PolicyRule, error) {
 	for _, rule := range rules {
-		if sibling, ok := seen[rule.Match]; ok {
-			if sibling != rule.Sibling {
+		if earlier, ok := seen[rule.Match]; ok {
+			if earlier.Approval != rule.Approval {
+				return nil, fmt.Errorf(
+					"policy module %q declares %s %q as %q, but an earlier block declared it as %q: one match cannot be both refused and allowed",
+					slug, section, rule.Match, rule.Approval, earlier.Approval,
+				)
+			}
+			if rule.Approval == "deny" && earlier.Sibling != rule.Sibling {
 				return nil, fmt.Errorf(
 					"policy module %q declares %s %q with a different sibling than an earlier block: one refusal cannot have two sanctioned alternatives",
 					slug, section, rule.Match,
@@ -86,7 +100,7 @@ func foldRules(
 			}
 			continue
 		}
-		seen[rule.Match] = rule.Sibling
+		seen[rule.Match] = rule
 		out = append(out, rule)
 	}
 	return out, nil
@@ -103,18 +117,18 @@ func RenderPolicyConfig(set *PolicySet) (string, error) {
 	if set.StartupTimeoutMs != nil {
 		doc["mcp"] = map[string]any{"startupTimeoutMs": *set.StartupTimeoutMs}
 	}
-	if len(set.BashDeny) > 0 {
-		patterns := make([]map[string]any, 0, len(set.BashDeny))
-		for _, rule := range set.BashDeny {
+	if len(set.BashRules) > 0 {
+		patterns := make([]map[string]any, 0, len(set.BashRules))
+		for _, rule := range set.BashRules {
 			patterns = append(patterns, map[string]any{"match": rule.Match, "approval": rule.Approval})
 		}
 		// allowCompoundCommands is what makes a pattern match each command of `a && b` rather than the
 		// whole line, which is the behaviour the deny list assumes.
 		doc["bash"] = map[string]any{"allowCompoundCommands": true, "patterns": patterns}
 	}
-	if len(set.ToolDeny) > 0 {
+	if len(set.ToolRules) > 0 {
 		approval := map[string]any{}
-		for _, rule := range set.ToolDeny {
+		for _, rule := range set.ToolRules {
 			approval[rule.Match] = rule.Approval
 		}
 		doc["tools"] = map[string]any{"approval": approval}
@@ -133,17 +147,36 @@ func RenderPolicyLimits(set *PolicySet) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "## Your limits as seat (%s)\n\n", set.Role)
 	b.WriteString("Your tool calls are checked against a policy. A refused call returns `Tool ... is blocked by tool policy`. That is a rule, not a fault. **Do not retry it, rephrase it, or reach the same effect another way** (a script, `eval`, a file write). Do the allowed alternative, or ask the lead.\n")
-	if len(set.BashDeny) > 0 {
+	if allowed := rulesWith(set.BashRules, "allow"); len(allowed) > 0 {
+		b.WriteString("\n### Allowed in every approval mode\n\nThese are exempted by the seat's own policy, so they do not prompt even on a seat that asks for everything else.\n\n")
+		for _, rule := range allowed {
+			fmt.Fprintf(&b, "- `%s`\n", rule.Match)
+		}
+	}
+	if denied := rulesWith(set.BashRules, "deny"); len(denied) > 0 {
 		b.WriteString("\n### Refused shell commands\n\nMatched inside a compound command too (`a && b`), each part separately.\n\n")
-		for _, rule := range set.BashDeny {
+		for _, rule := range denied {
 			fmt.Fprintf(&b, "- `%s` — instead: %s\n", rule.Match, rule.Sibling)
 		}
 	}
-	if len(set.ToolDeny) > 0 {
+	if denied := rulesWith(set.ToolRules, "deny"); len(denied) > 0 {
 		b.WriteString("\n### Refused tools\n\n")
-		for _, rule := range set.ToolDeny {
+		for _, rule := range denied {
 			fmt.Fprintf(&b, "- `%s` — instead: %s\n", rule.Match, rule.Sibling)
 		}
 	}
 	return b.String()
+}
+
+// rulesWith selects the rules of one approval. The words emission needs the split because an
+// allowance listed under a "Refused" heading would tell a seat the opposite of what its policy says,
+// and the seat reads this text rather than the config document.
+func rulesWith(rules []PolicyRule, approval string) []PolicyRule {
+	out := make([]PolicyRule, 0, len(rules))
+	for _, rule := range rules {
+		if rule.Approval == approval {
+			out = append(out, rule)
+		}
+	}
+	return out
 }
