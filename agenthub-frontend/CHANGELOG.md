@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Removed
+- **The dead half of the SubtaskRow pair - proved dead before deleting it** - 2026-10-07
+  - `src/components/SubtaskRow/index.ts` (the barrel), its target `SubtaskRowRefactored.tsx`, the copied hook
+    `components/SubtaskRow/hooks/useSubtaskAnimation.ts`, and `SubtaskRowActions`/`SubtaskRowBadges`/`SubtaskRowAssignees`.
+    The consumer imports `SubtaskRow from "../../SubtaskRow"`, and a throwaway probe through Vite's own resolver showed that
+    specifier resolves to the FILE `SubtaskRow.tsx`: its default export is named `SubtaskRow` and the resolved module exposes
+    ONLY a default, so the barrel's re-exports were unreachable. The three sub-components said "for reuse" and nothing reused
+    them - the live row inlines what it needs and imports the SHARED `src/hooks/useSubtaskAnimation.ts`.
+  - Their tests go with them (`tests/components/SubtaskRow/SubtaskRowRefactored.*.tsx`), and the three prop interfaces they
+    owned (`SubtaskRowActionsProps`, `SubtaskRowBadgesProps`, `SubtaskRowAssigneesProps`) are removed from
+    `src/types/subtaskTypes.ts`. `SubtaskRowProps` STAYS - the live row uses it.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the full suite green in the commit notes.
+
 ### Added
 - **The reference tier is exercised against the REAL generated artefact - and doing it corrected one of my own assertions** - 2026-10-07
   - `src/tests/components/ApiReferenceView.real.test.tsx` imports the module the generator committed (`a5ff17a0`,
@@ -433,6 +446,47 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The duplicate animation sources are gone: one event, one animation** - 2026-10-07
+  - `useRealtimeSync` no longer animates the task and subtask CREATE. `WebSocketAnimationService` is the single websocket
+    source for those, it animates the same events, and by the time its call fires the row is mounted, so its call lands - the
+    duplicate really was a second animation. The subtask create goes for a different reason: the service deliberately SKIPS
+    subtask creates ("mount animation handles this"), and so does the hook now - a newly appearing subtask mounts its row, and
+    the row's mount effect animates it. The cache invalidation and the toasts, which are this hook's own job, are untouched.
+  - The DELETE calls STAY, for a reason that is a finding rather than a preference. They are SCHEDULED before the cache update
+    and still fire 150ms later, by which time the cache update has removed the row and unregistered the element - so they land
+    on nothing, exactly as the service's own delete does. THE DELETE ANIMATION FOR A REMOVED ROW IS THEREFORE CURRENTLY
+    DROPPED FROM BOTH PATHS, and the mechanism designed for it - the four deletion trackers and their 50ms intervals - is
+    never marked, because `markForDeletion` has NO CALLER in the app. Kept rather than deleted: the fix is a timing one, and
+    these are the sites whose comments record what the intent was.
+  - The SEAT calls STAY: the service has no seat branch at all, so `useRealtimeSync` is the only source for seat animations.
+  - The three prop-change effects (`useTaskAnimation`, `useBranchAnimation`, `useProjectAnimation`) are deleted. They compared
+    previous props and called `playUpdateAnimation('websocket')` - passing `'websocket'` for what is a RENDER, not a
+    websocket event - and the real event is already animated by the service, so every update animated twice. Their now-dead
+    refs go with them; `useTaskAnimation`'s `hasMountedRef` STAYS, because the row's hidden-until-animated class reads it.
+  - THE UPDATE PATH HAS NO DUPLICATE LEFT TO DELETE - the prop-change effects were the duplicate and they are gone - so its
+    pin is a different shape, and two-sided on purpose: `BranchItem.test.tsx` asserts a prop change animates NOTHING (shown
+    failing against the pre-fix prop-change effect), while the service's own cases pin that its update call HAPPENS. Neither
+    half alone is a proof: a row test passes if the service is dead, and a service test passes if the duplicate is still
+    there. Together: the only live path is the service's, and an update leaves the row mounted, so its call lands.
+  - PROOF, which the owner asked for by name (one created event must animate create exactly once): two count tests pin
+    it. `test_useRealtimeSync_task.test.tsx` and `test_useRealtimeSync_subtask.test.tsx` each feed ONE created websocket
+    event and assert this hook makes NO create call - while still asserting the cache update happened, so the row really
+    was added. Both FAILED against the pre-fix code: the restored 50ms call produced exactly the call they forbid.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the affected suites (`src/tests/hooks/`, `src/tests/integration/`,
+    `ProjectList/`) 251 passed; the full suite green in the commit notes.
+- **The three 50ms mount timers no longer outlive the effect that starts them (the rest of the owner's animation item)** - 2026-10-07
+  - `useBranchAnimation` and `useProjectAnimation`: the mount-create effect started a 50ms `setTimeout` and returned NOTHING,
+    so the handle was unreachable - and on a remount that timer fired into the new row and replayed its create animation.
+  - `useSubtaskAnimation`: its cleanup unregisters the element but never cleared the same timer, which is the subtler shape,
+    because a cleanup that does something looks like a cleanup that does everything. That effect also re-runs whenever
+    `hasPlayedCreateAnimation` flips, so the previous run's callback could still fire.
+  - `useTaskAnimation` needs nothing: its mount animation is already DISABLED, with the comment "WebSocket notifications are
+    the source of truth for animations (MCP trigger)".
+  - The factory fix (`13afeb6a`) already dedupes the replay by element id, so what remained was a real but silent leak: a
+    pending timer, a debug line and a blocked `animate` per unmount. Named rather than dropped for exactly that reason.
+    Each effect now keeps its handle and clears it in the cleanup it returns - the EFFECT's timer, not the row's.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `src/tests/hooks/` + `BranchItem.test.tsx` 137 passed; the full suite green in
+    the commit notes.
 - **The reported "animation triggers multiple times" is now two rules per element and type, with a reason logged for every block** - 2026-10-07
   - `src/services/AnimationFactory.ts`: coordination is kept PER ELEMENT AND TYPE, and the played record deliberately
     OUTLIVES `unregisterElement` - a real remount is unregister + register (all five animation hooks unregister in their

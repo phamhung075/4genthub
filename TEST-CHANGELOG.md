@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the animation dedupe: two count proofs on the create path
+
+- `test_useRealtimeSync_task.test.tsx` and `test_useRealtimeSync_subtask.test.tsx`: one new case each, on the owner's
+  report that the repeat happens on CREATE. Each feeds ONE created websocket event and asserts the hook makes NO
+  `animate(..., 'create', ...)` call, because WebSocketAnimationService owns the task create and the row's mount effect
+  owns the subtask one (the service deliberately skips subtask creates). Each also asserts the cache update DID happen,
+  so the test cannot pass by the message never arriving. Both were shown FAILING against the pre-fix code before the fix
+  was kept: restoring the old 50ms call produced exactly the call the assertion forbids.
+- `BranchItem.test.tsx` (the update path - no duplicate left to delete there, since the prop-change effects are gone): one
+  new case asserting a prop change animates NOTHING, paired with the service's existing cases that pin its update call.
+  Shown FAILING against the pre-fix prop-change effect ("expected spy to not be called with arguments:
+  ['branch-1','update',Anything]"). It changes `git_branch_name` deliberately: the hook derives its name from that field
+  first, so changing only `name` left the pre-fix effect comparing the same value and proved nothing - the first version of
+  this test passed against the bug.
+- Dead-code tests removed with the code they covered: `tests/components/SubtaskRow/SubtaskRowRefactored.test.tsx` and
+  `SubtaskRowRefactored.phase1.test.tsx` (54 tests), after the probe proved that module unreachable.
+- Verified: the two create-proof files 21 passed; `npx tsc --noEmit -p .` 0 errors; the full suite in the commit notes.
+
 ## 2026-10-07 - the animation factory's suite: the fixture's reset, and the defect's reproduction
 
 - `AnimationFactory.test.ts`: the `afterEach` reset moved from `unregisterElement` to the factory's supported

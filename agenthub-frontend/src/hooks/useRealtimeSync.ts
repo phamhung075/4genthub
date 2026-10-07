@@ -108,15 +108,9 @@ export const useRealtimeSync = (
 
       switch (action) {
         case 'created':
-          // 🎬 CRITICAL: Trigger create animation IMMEDIATELY (before cache update)
-          // Animation needs to play as soon as task appears
-          logger.debug('🎬 [useRealtimeSync] Triggering task create animation', { taskId });
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              animationFactory.animate(taskId, 'create', 'websocket');
-            }, 50); // 50ms delay ensures DOM is ready
-          });
-
+          // NO create animation here: WebSocketAnimationService is the single websocket
+          // source for tasks, and it animates this very event. Two sources for one event
+          // was the reported defect ("animation triggers multiple times").
           // Direct cache update - add new task to the lists (check for duplicates)
           if (taskData.git_branch_id) {
             queryClient.setQueryData<Task[]>(
@@ -213,8 +207,13 @@ export const useRealtimeSync = (
             return;
           }
 
-          // 🎬 CRITICAL: Trigger delete animation IMMEDIATELY (before cache update)
-          // Animation needs to play BEFORE component unmounts
+          // THE DELETE ANIMATION STAYS, unlike the create above, but it is NOT working:
+          // this call is SCHEDULED before the cache update and still fires 150ms later,
+          // and the cache update below has removed the row by then - so this lands on an
+          // unregistered element, exactly as WebSocketAnimationService's own delete does.
+          // The mechanism designed for it, the deletion trackers, is never marked by any
+          // caller (see the changelog). Both calls are kept: the fix is a timing one, and
+          // this is the site whose comment says what the intent was.
           logger.debug('🎬 [useRealtimeSync] Triggering task delete animation', { taskId });
           requestAnimationFrame(() => {
             setTimeout(() => {
@@ -381,15 +380,9 @@ export const useRealtimeSync = (
 
       switch (action) {
         case 'created':
-          // 🎬 CRITICAL: Trigger create animation IMMEDIATELY (before cache update)
-          // Animation plays as soon as subtask appears (slide-in from right to left)
-          logger.debug('🎬 [useRealtimeSync] Triggering subtask create animation', { subtaskId: subtaskData.id });
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              animationFactory.animate(subtaskData.id, 'create', 'websocket');
-            }, 50); // 50ms delay ensures DOM is ready
-          });
-
+          // NO create animation here: WebSocketAnimationService deliberately SKIPS subtask
+          // creates ("mount animation handles this"), and so does this hook now - a newly
+          // appearing subtask mounts its row, and the row's mount effect animates it.
           // Direct cache update - add new subtask to the list (check for duplicates)
           if (taskId) {
             queryClient.setQueryData<Subtask[]>(
@@ -475,8 +468,8 @@ export const useRealtimeSync = (
             return;
           }
 
-          // 🎬 CRITICAL: Trigger delete animation IMMEDIATELY (before cache update)
-          // Animation needs to play BEFORE component unmounts
+          // THE DELETE ANIMATION STAYS, and is equally not working - see the task delete
+          // case above: the row is gone 150ms later when this timer fires.
           logger.debug('🎬 [useRealtimeSync] Triggering subtask delete animation', { subtaskId: subtaskData.id });
           requestAnimationFrame(() => {
             setTimeout(() => {

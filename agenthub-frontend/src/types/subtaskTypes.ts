@@ -224,22 +224,3 @@ export interface SubtaskRowProps {
  * @see {import('./animationTypes').SubtaskAnimationState}
  * Note: Import from animationTypes - duplicates removed to avoid barrel export conflicts
  */
-
-export interface SubtaskRowActionsProps {
-  subtaskId: string;
-  onView: () => void;
-  onEdit: () => void;
-  onComplete: () => void;
-  onDelete: () => void;
-}
-
-export interface SubtaskRowBadgesProps {
-  status: string;
-  priority: string;
-  progressPercentage?: number;
-}
-
-export interface SubtaskRowAssigneesProps {
-  assignees?: string[];
-  assigneesCount: number;
-}

@@ -19,12 +19,6 @@ export function useBranchAnimation(
   const mobileElementRef = useRef<HTMLDivElement>(null);
   const desktopElementRef = useRef<HTMLDivElement>(null);
 
-  // Track previous values to detect updates
-  const prevNameRef = useRef<string>(branch.git_branch_name || branch.name || '');
-  const prevStatusRef = useRef<string | undefined>(branch.status);
-  const prevDescriptionRef = useRef<string | undefined>('description' in branch ? branch.description : undefined);
-  const hasMountedRef = useRef(false);
-
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
     logger.debug('🎬 [useBranchAnimation] playCreateAnimation called', {
       branchId: branch.id,
@@ -131,6 +125,11 @@ export function useBranchAnimation(
   // Mount-time animation check for newly created branches
   useEffect(() => {
     const createdAt = 'created_at' in branch ? branch.created_at : undefined;
+    // KEPT SO THE EFFECT CAN CLEAR IT. This timer used to outlive the row: it fires
+    // 50ms after mount, and on a remount that was long enough to land in the NEW row
+    // and replay its create animation. The factory now dedupes that by element id,
+    // but a pending timer should still not outlive the effect that started it.
+    let timer: NodeJS.Timeout | undefined;
 
     // Only animate if branch was created recently (within last 2 seconds)
     // This prevents ALL branches from animating when the list re-renders
@@ -142,51 +141,21 @@ export function useBranchAnimation(
 
       if (isNewBranch) {
         // Small delay to ensure DOM is ready, then trigger animation
-        setTimeout(() => {
+        timer = setTimeout(() => {
           playCreateAnimation('mount');
-          hasMountedRef.current = true;
         }, 50);
-      } else {
-        hasMountedRef.current = true;
       }
-    } else {
-      hasMountedRef.current = true;
     }
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, []); // Only run on mount
 
-  // Detect ANY changes after mount and trigger update animation
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      // Skip on first mount (create animation handles that)
-      return;
-    }
-
-    // Check if ANY field changed
-    const branchName = branch.git_branch_name || branch.name || '';
-    const nameChanged = prevNameRef.current !== branchName;
-    const statusChanged = prevStatusRef.current !== branch.status;
-    const branchDescription = 'description' in branch ? branch.description : undefined;
-    const descriptionChanged = prevDescriptionRef.current !== branchDescription;
-
-    if (nameChanged || statusChanged || descriptionChanged) {
-      logger.debug('🎬 [useBranchAnimation] Branch update detected', {
-        branchId: branch.id,
-        nameChanged,
-        statusChanged,
-        descriptionChanged,
-        oldName: prevNameRef.current,
-        newName: branchName
-      }, 'useBranchAnimation.ts');
-
-      // Trigger update animation
-      playUpdateAnimation('websocket');
-
-      // Update refs for next comparison
-      prevNameRef.current = branchName;
-      prevStatusRef.current = branch.status;
-      prevDescriptionRef.current = branchDescription;
-    }
-  }, [branch.git_branch_name, branch.name, branch.status, 'description' in branch ? branch.description : undefined, playUpdateAnimation]); // Run when any field changes
+  // NO prop-change update animation. The effect that used to sit here compared the
+  // previous props and called playUpdateAnimation('websocket') - passing 'websocket'
+  // for what is a RENDER, not a websocket event - and the real event is animated by
+  // WebSocketAnimationService, so every update animated twice.
 
   // Detect when branch is marked for deletion and trigger delete animation
   useEffect(() => {

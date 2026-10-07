@@ -19,10 +19,9 @@ export function useTaskAnimation(
   const mobileElementRef = useRef<HTMLDivElement>(null);
   const desktopElementRef = useRef<HTMLTableRowElement>(null);
 
-  // Track previous values to detect updates
-  const prevStatusRef = useRef<string>(summary.status);
-  const prevTitleRef = useRef<string>(summary.title);
-  const prevProgressRef = useRef<number | undefined>(summary.subtask_count);
+  // Tracks whether this row has mounted. A row created recently stays hidden (the
+  // 'taskRowNew' class) until the WebSocket animation for it arrives; see the class
+  // application below.
   const hasMountedRef = useRef(false);
 
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
@@ -136,37 +135,10 @@ export function useTaskAnimation(
     hasMountedRef.current = true;
   }, []); // Only run on mount
 
-  // Detect ANY changes after mount and trigger update animation
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      // Skip on first mount (create animation handles that)
-      return;
-    }
-
-    // Check if ANY field changed
-    const statusChanged = prevStatusRef.current !== summary.status;
-    const titleChanged = prevTitleRef.current !== summary.title;
-    const progressChanged = prevProgressRef.current !== summary.subtask_count;
-
-    if (statusChanged || titleChanged || progressChanged) {
-      logger.debug('🎬 [useTaskAnimation] Task update detected', {
-        taskId: summary.id,
-        statusChanged,
-        titleChanged,
-        progressChanged,
-        oldStatus: prevStatusRef.current,
-        newStatus: summary.status
-      }, 'useTaskAnimation.ts');
-
-      // Trigger update animation
-      playUpdateAnimation('websocket');
-
-      // Update refs for next comparison
-      prevStatusRef.current = summary.status;
-      prevTitleRef.current = summary.title;
-      prevProgressRef.current = summary.subtask_count;
-    }
-  }, [summary.status, summary.title, summary.subtask_count, playUpdateAnimation]); // Run when any field changes
+  // NO prop-change update animation. The effect that used to sit here compared the
+  // previous props and called playUpdateAnimation('websocket') - passing 'websocket'
+  // for what is a RENDER, not a websocket event - and the real event is animated by
+  // WebSocketAnimationService, so every update animated twice.
 
   // Detect when task is marked for deletion and trigger delete animation
   useEffect(() => {

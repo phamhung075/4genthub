@@ -83,6 +83,12 @@ export function useSubtaskAnimation({
   // Register element with AnimationFactory on mount
   useEffect(() => {
     const currentElement = elementRef.current;
+    // KEPT SO THIS EFFECT CAN CLEAR IT. This effect re-runs whenever
+    // hasPlayedCreateAnimation flips, so before this the PREVIOUS run's 50ms callback
+    // could still fire - and on a remount it landed in the new row and replayed its
+    // create. The factory now dedupes that by element id; a pending timer should
+    // still not outlive the run that started it.
+    let timer: NodeJS.Timeout | undefined;
 
     if (currentElement) {
       logger.debug('🎬 [useSubtaskAnimation] Registering element', {
@@ -115,7 +121,7 @@ export function useSubtaskAnimation({
       // Auto-trigger create animation for newly mounted subtasks
       // Small delay to ensure element is fully rendered and ready for animation
       if (!hasPlayedCreateAnimation) {
-        setTimeout(() => {
+        timer = setTimeout(() => {
           logger.debug('🎬 [useSubtaskAnimation] Auto-triggering create animation on mount', { subtaskId });
           playCreateAnimation('mount');
         }, 50);
@@ -124,6 +130,7 @@ export function useSubtaskAnimation({
 
     // Cleanup on unmount
     return () => {
+      clearTimeout(timer);
       logger.debug('🎬 [useSubtaskAnimation] Unregistering', { subtaskId }, 'useSubtaskAnimation.ts');
       animationFactory.unregisterElement(subtaskId);
       logger.debug('Subtask element unregistered from AnimationFactory', {

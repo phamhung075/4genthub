@@ -12,6 +12,7 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
+import { animationFactory } from '../../services/AnimationFactory';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 import logger from '../../utils/logger';
@@ -67,6 +68,58 @@ describe('useRealtimeSync - Subtask Delete Handler with Type Guards (TDD)', () =
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  /**
+   * The owner's report on the SUBTASK create path. This hook's 50ms call was the
+   * duplicate of trigger C, the row's mount effect. Unlike the task path there is no
+   * second source to fall back on: WebSocketAnimationService deliberately SKIPS subtask
+   * creates ("mount animation handles this"), so the mount effect IS the one source.
+   * FAILED BEFORE THE FIX - this assertion used to see 1 call.
+   */
+  it('does NOT animate a subtask create: the mount effect owns that one', async () => {
+    renderHook(() => useRealtimeSync(mockWebSocketClient, true), { wrapper });
+    const messageHandler = mockWebSocketClient.on.mock.calls[0][1];
+
+    const createdMessage: WSMessage = {
+      id: 'msg-subtask-create-1',
+      version: '2.0',
+      type: 'update',
+      timestamp: new Date().toISOString(),
+      sequence: 1,
+      payload: {
+        entity: 'subtask',
+        action: 'created',
+        data: {
+          primary: {
+            id: 'subtask-created-1',
+            title: 'Subtask to Create',
+            task_id: 'task-123',
+          },
+        },
+      },
+      metadata: {
+        source: 'mcp-ai' as const,
+      },
+    };
+
+    messageHandler(createdMessage);
+
+    // The cache update IS still this hook's job: the subtask really was added.
+    await waitFor(() => {
+      expect(queryClient.getQueryData(['subtasks', 'task-123'])).toContainEqual(
+        expect.objectContaining({ id: 'subtask-created-1' })
+      );
+    });
+
+    // Past the 50ms the duplicate used to wait for, so this is not a race.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    expect(animationFactory.animate).not.toHaveBeenCalledWith(
+      'subtask-created-1',
+      'create',
+      expect.anything()
+    );
+  });
 
   /**
    * Test 1: Valid Subtask Delete Payload

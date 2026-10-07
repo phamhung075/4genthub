@@ -184,6 +184,32 @@ describe('BranchItem', () => {
 
       expect(container()).toHaveClass('branchRowDeleteAnimation');
     });
+
+    it('does NOT animate an update when a prop changes: the websocket event owns that', () => {
+      // The owner's report on the UPDATE path. The row used to compare its previous
+      // props in an effect and call playUpdateAnimation('websocket') - passing
+      // 'websocket' for what is a RENDER, not an event - while WebSocketAnimationService
+      // animated the real websocket update. One update, two animations. That effect is
+      // deleted; this pins its absence. FAILED BEFORE THE FIX.
+      const { rerender } = render(<BranchItem {...defaultProps} />);
+
+      // The hook derives its name from git_branch_name FIRST, so that is the prop the
+      // pre-fix effect actually compared - changing only `name` would leave the effect
+      // looking at the same value and prove nothing.
+      rerender(
+        <BranchItem
+          {...defaultProps}
+          branch={{ ...mockBranch, git_branch_name: 'feature/renamed', name: 'Renamed Branch' } as BranchSummary}
+        />
+      );
+      act(() => { vi.advanceTimersByTime(100); });
+
+      expect(animationFactory.animate).not.toHaveBeenCalledWith(
+        'branch-1',
+        'update',
+        expect.anything()
+      );
+    });
   });
 
   it('applies count animation classes', () => {
