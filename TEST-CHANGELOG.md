@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the animation factory's suite: the fixture's reset, and the defect's reproduction
+
+- `AnimationFactory.test.ts`: the `afterEach` reset moved from `unregisterElement` to the factory's supported
+  `clearAnimationState`. The played record now deliberately outlives an unmount (a real remount is unregister + register,
+  and must not replay the create), so unregistering is no longer a reset, and a shared element id let one case's record
+  block the next - which is why 19 of the 29 existing cases failed against the fixed factory, and why all 29 passed again
+  once the fixture reset properly. No existing assertion was weakened or deleted.
+- THREE CASES ADDED for the owner's report, written before the fix: "does NOT replay create when the row remounts" and
+  "does NOT fire twice for one event when a callback and a WebSocket both report it" FAILED against the pre-fix factory -
+  that failure was the reproduction - and "still animates a different type for the same element once the cooldown has
+  passed" records the boundary the two new rules must not overreach.
+- Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
+  `npx vitest run` → 105 files, 1798 passed.
+
 ## 2026-10-07 - an allowance may not come from a seat-scoped override
 
 - `seatrenderer/policy_fold_test.go`: `TestFoldRefusesASeatScopedAllowance` — a seat-scoped **override**

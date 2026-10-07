@@ -433,6 +433,27 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The reported "animation triggers multiple times" is now two rules per element and type, with a reason logged for every block** - 2026-10-07
+  - `src/services/AnimationFactory.ts`: coordination is kept PER ELEMENT AND TYPE, and the played record deliberately
+    OUTLIVES `unregisterElement` - a real remount is unregister + register (all five animation hooks unregister in their
+    cleanup, plus `SeatsPage`), and the same row coming back is not a new row. One entry per element could not answer both
+    questions this now has to answer: has this element played its create (so a remount must not replay it), and has it
+    played THIS type inside the cooldown (so one event reported by two sources animates once).
+  - RULE 1 - MOUNT IS ALLOWED ONCE PER ELEMENT ID. `shouldAllowAnimation` returned true unconditionally for
+    `source === 'mount'`, so ANY remount - a list re-render, a key change, another page of results - replayed the create
+    animation for a row nothing had happened to. THIS IS THE REPORTED DEFECT'S CORE.
+  - RULE 2 - THE SAME TYPE FOR THE SAME ELEMENT IS DEDUPED INSIDE THE COOLDOWN, whichever source asks, so an event reported
+    by both the callback path and the WebSocket path animates once. The WebSocket-over-callback allowance is KEPT for a
+    DIFFERENT type: that is a different event arriving mid-animation, not the same one twice.
+  - EVERY BLOCK NAMES ITS REASON and is logged at `debug` with the element, the requested type and source, and the cooldown
+    - the same silent path the 2026-10-06 entry logs, extended to the two new ways it has to be silent, because a dropped
+    animation and a message that never arrived look identical in a console while having opposite fixes.
+  - THE RECORD IS BOUNDED BY `MAX_TRACKED_ELEMENTS`, not by unmounting, precisely because unmounting no longer clears it.
+  - THE THREE CONSUMERS OF THE WIDENED STATE were found by the type checker rather than by reading: `isAnimationInProgress`
+    (any type in flight for the element), `getAnimationState` (the element's most recent) and `getDebugInfo` (per element
+    and type, flattened).
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `src/tests/services/AnimationFactory.test.ts` 32 passed; the full suite
+    105 files / 1798 passed.
 - **A refused notification was invisible on the client: an error frame with no animation route was dropped in silence** - 2026-10-06
   - `src/services/WebSocketAnimationService.ts` `handleWebSocketMessage` routed task/subtask/branch/project and had NO branch
     for anything else, so every error frame the server sends was discarded without a trace. THE FRAME THAT FOUND IT, from a

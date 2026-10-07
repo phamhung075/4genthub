@@ -50,6 +50,15 @@ describe('AnimationFactory', () => {
   });
 
   afterEach(() => {
+    // The factory now KEEPS an element's played record past unregisterElement on
+    // purpose: a real remount is unregister + register, and it must not replay the
+    // create animation. So unregistering is no longer a reset, and a shared id
+    // would let one case's record block the next. clearAnimationState is the
+    // supported reset for that record.
+    ['test-element', 'test-task', 'task-1', 'task-2', 'task-3'].forEach((id) =>
+      animationFactory.clearAnimationState(id)
+    );
+
     // Clean up test elements
     animationFactory.unregisterElement('test-element');
     animationFactory.unregisterElement('test-task');
@@ -464,6 +473,68 @@ describe('AnimationFactory', () => {
       // Here we verify the animations are tracked properly
       expect(animationFactory.animate('task-1', 'update', 'callback')).toBe(false); // Blocked by cooldown
       expect(animationFactory.animate('task-2', 'update', 'callback')).toBe(true);  // Different element, allowed
+    });
+  });
+
+  /**
+   * REPRODUCTION AND REGRESSION GUARD for the owner's bug report (2026-10-07):
+   * "animation triggers multiple times". The first two cases FAILED against the
+   * factory as it was - that failure was the reproduction - and the third records
+   * the boundary those two rules must not overreach:
+   *
+   *  1. a remount is not a new element (the mount replay);
+   *  2. one event reported by two sources animates once (the same type);
+   *  3. but a genuinely new event still animates (a different type, past cooldown).
+   *
+   * Each case uses its own element id where the record is not the point: the
+   * played record deliberately outlives unregisterElement, so two cases sharing an
+   * id would test each other's history instead of the rule.
+   */
+  describe('one event must animate once (the reported defect)', () => {
+    it('does NOT replay create when the row remounts', () => {
+      const id = 'remounting-row';
+
+      animationFactory.registerElement(id, mockElement, 'task');
+      const first = animationFactory.animate(id, 'create', 'mount');
+
+      // A real remount is an unmount followed by a mount - the hooks unregister in
+      // their cleanup - and the same row coming back is not a new row.
+      animationFactory.unregisterElement(id);
+      animationFactory.registerElement(id, mockElement, 'task');
+      const second = animationFactory.animate(id, 'create', 'mount');
+
+      expect(first).toBe(true);
+      expect(second).toBe(false); // FAILED BEFORE THE FIX: mount returned true unconditionally
+
+      animationFactory.clearAnimationState(id);
+    });
+
+    it('does NOT fire twice for one event when a callback and a WebSocket both report it', () => {
+      const id = 'callback-and-socket-row';
+      animationFactory.registerElement(id, mockElement, 'task');
+
+      const fromCallback = animationFactory.animate(id, 'update', 'callback');
+      const fromWebSocket = animationFactory.animate(id, 'update', 'websocket');
+
+      // Two SOURCES, one EVENT: the second must not animate again.
+      expect(fromCallback).toBe(true);
+      expect(fromWebSocket).toBe(false); // FAILED BEFORE THE FIX: websocket-over-callback was allowed
+
+      animationFactory.clearAnimationState(id);
+    });
+
+    it('still animates a different type for the same element once the cooldown has passed', () => {
+      const id = 'different-type-row';
+      animationFactory.registerElement(id, mockElement, 'task');
+
+      expect(animationFactory.animate(id, 'create', 'mount')).toBe(true);
+
+      // Past the cooldown this is genuinely a new event rather than the same one
+      // arriving again - the dedupe is per element AND type, not per element.
+      vi.advanceTimersByTime(200);
+      expect(animationFactory.animate(id, 'update', 'websocket')).toBe(true);
+
+      animationFactory.clearAnimationState(id);
     });
   });
 });
