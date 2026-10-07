@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the docs page's mock follows its import, and the fixture assertions are the proof (frontend)
+
+- `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: ONE path change, `vi.mock('../../docs/api-reference-prose.en.md?raw')`, and it is
+  REQUIRED rather than cosmetic - the page now imports the writer's prose as its written half, so a mock still naming the retired file would load
+  the real prose and the fixture's heading assertions (three headings, and `first-section-1` for the duplicate) would stop meaning anything. THE
+  PASS IS ITSELF THE PROOF: those assertions run against the FIXTURE, so they cannot pass while the real document is what loads - a stale path
+  fails them, which is what makes this a check rather than a formality.
+- WHAT WAS NOT DELETED, and this is the test-side half of a premise correction: the markdown machinery's cases all STAY - `applyTokens` (two),
+  `slugifyHeading`, `toSanitizedHtml`, and the contents-list-follows-the-headings case - because the prose is STILL MARKDOWN rendered through them.
+  The row that commissioned this said to delete them rather than re-pin them; deleting them would have removed the coverage of the machinery that
+  renders the replacement, which is the opposite of a retirement.
+- Commands: `npx vitest run src/tests/pages/ApiDocsPage.test.tsx src/tests/pages/ApiDocsPage.mcpConfig.test.tsx` -> 2 files, 10 passed;
+  `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> green.
+
 ## 2026-10-07 - the reference tier is exercised against the REAL artefact, and a lexical assertion is corrected by it (frontend)
 
 - `src/tests/components/ApiReferenceView.real.test.tsx` (new, 6 cases) imports the module go-dev2's generator committed

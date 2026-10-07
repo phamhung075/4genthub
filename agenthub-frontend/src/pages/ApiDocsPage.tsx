@@ -8,11 +8,13 @@ import { API_BASE_URL, MCP_URL } from '../config/environment';
 // error at this import, which is why neither this page nor the view has a loading or a failure
 // state - there is no runtime step in which the reference can be missing.
 import { apiReference } from '../docs/apiReference';
-// The document is imported raw from the app source tree, so the reviewed file IS
-// the rendered page: no copy step and no generated artefact to fall out of date.
-// It must live inside this tree because the production image copies only
-// agenthub-frontend.
-import apiReferenceMarkdown from '../docs/api-reference.en.md?raw';
+// The WRITTEN half of the reference: the prose a generator cannot produce, imported raw from
+// the app source tree so the reviewed file IS what renders, with no copy step. It must live
+// inside this tree because the production image copies only agenthub-frontend. The generated
+// tables beside it come from the module above, and the two are the "output plus prose" the
+// spec names; this file carries no route rows and no restated counts, which is what lets the
+// generated tier be the only place a route or a tool is enumerated.
+import apiReferenceProse from '../docs/api-reference-prose.en.md?raw';
 
 interface TocItem {
   id: string;
@@ -85,7 +87,7 @@ export function ApiDocsPage() {
 
   const source = useMemo(
     () =>
-      applyTokens(apiReferenceMarkdown, {
+      applyTokens(apiReferenceProse, {
         [TOKEN_API_ORIGIN]: API_BASE_URL,
         [TOKEN_MCP_URL]: MCP_URL,
         [TOKEN_VERSION]: version,

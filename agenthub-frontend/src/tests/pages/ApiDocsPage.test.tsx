@@ -4,11 +4,11 @@ import { ApiDocsPage, applyTokens, slugifyHeading } from '../../pages/ApiDocsPag
 import { toSanitizedHtml } from '../../lib/markdownHtml';
 import { API_BASE_URL } from '../../config/environment';
 
-// The document is imported raw by the page. The real file is asserted through
-// the page; the mock below proves the table of contents FOLLOWS the content
-// rather than a hand-maintained list, and it is the only place a heading is
-// added and removed without touching the real document.
-vi.mock('../../docs/api-reference.en.md?raw', () => ({
+// The prose is imported raw by the page. The mock below proves the table of contents FOLLOWS
+// the content rather than a hand-maintained list, and it is the only place a heading is added
+// and removed without touching the real document - so it must mock the module the page now
+// imports, or the real prose loads and the fixture's headings stop meaning anything.
+vi.mock('../../docs/api-reference-prose.en.md?raw', () => ({
   default: [
     '# Mocked title',
     '',

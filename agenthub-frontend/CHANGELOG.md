@@ -740,6 +740,23 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **The hand-written API reference is retired: the page renders the writer's prose, and the old file is deleted in the same commit** - 2026-10-07
+  - THE SWAP, exactly as ruled: `src/pages/ApiDocsPage.tsx` imports `api-reference-prose.en.md?raw` as `apiReferenceProse` and passes THAT to
+    `applyTokens`, and `src/docs/api-reference.en.md` (447 lines) is deleted in this commit. The writer's prose is the written half of
+    DOCS-PAGE.md:12's "output plus prose" and carries no route rows and no restated counts - VERIFIED HERE RATHER THAN TAKEN ON TRUST: zero
+    route-shaped table rows and zero "N routes" / "N tools" phrases in the file - which is what leaves the generated tier as the only place a route
+    or a tool is enumerated. This is follow-up `cd77527c` landing, and it removes the page's second copy of the same surface (144 generated routes
+    rendered beside 127 hand-written ones).
+  - AND THE MACHINERY IS NOT REMOVED, WHICH CORRECTS THE PREMISE `cd77527c` WAS WRITTEN UNDER - by me, who wrote it. The row said the markdown
+    machinery and its tests would go with the file, "deleted rather than re-pinned". THAT IS WRONG FOR THIS SHAPE: the prose is STILL MARKDOWN
+    rendered through the same path, so `applyTokens`, `slugifyHeading`, the table of contents built from rendered headings and `<Markdown>` all
+    REMAIN, as does every case that asserts them - deleting them would break the page rather than retire anything. What is deleted is the FILE and
+    nothing else. The distinction is the point: a retirement removes the thing being REPLACED, not the machinery that renders its replacement.
+  - The one test change is the mock's PATH (`vi.mock('../../docs/api-reference-prose.en.md?raw')`), and it is REQUIRED rather than cosmetic: the
+    fixture exists to prove the contents list FOLLOWS the rendered headings, so a mock no longer matching the module the page imports would
+    silently load the real prose and the fixture's heading assertions would stop meaning anything.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; the page's two test files -> 10 passed (an unchanged count, and the fixture assertions
+    passing IS the proof the mock path is right - a stale path fails them); `npx vite build` green.
 - **A dead WebSocket sender — removed as unreachable code, not as a fix** - 2026-10-06
   - Deleted the `updateTask` property from the object `useTaskWebSocket` returns in `src/hooks/useWebSocketV2.ts`. It
     sent `{ type: 'update', payload: { entity: 'task', action: 'update', ... } }` and had NO CALLER anywhere in `src`:
