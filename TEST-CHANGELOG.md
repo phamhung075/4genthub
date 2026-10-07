@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the config check separates allow from deny, and pins the one allowance
+
+- `src/tests/scripts/test_openrig_seat_policy.py`: `deny_patterns()` used to **assert** that every
+  `bash.patterns` entry is a deny, so the new exemption would have failed the helper rather than been
+  described by it. It now filters on `approval == "deny"` and the allowance is asserted on its own by
+  `test_every_seat_exempts_the_startup_rig_whoami_and_only_that`, which pins the exact list —
+  `["rig whoami*"]` — for **every** seat in the rig. Pinning the whole list rather than membership is the
+  point: a second allowance added later would be a silent widening of an exemption that exists to stop one
+  blocking call, and this test refuses it loudly.
+- The exemption was also checked against the **deny** side rather than assumed compatible: for every
+  seat/role, no deny pattern in the table matches `rig whoami --json`. That is why the entry can sit first
+  and win under either match order, and it is the assertion a reader would otherwise have to make in their
+  head.
+- Verified: `pytest … test_openrig_seat_policy.py` → **12 passed** (11 before, plus the new test);
+  `ruff check` on both changed files → All checks passed; the rendered YAML eyeballed via
+  `show go-dev --rig 4genthub-min`, where the allow entry is the first pattern under `bash:`.
+
 ## 2026-10-07 - the search filters accept the forms a caller's integers arrive in (Go)
 
 - `validators/validators_test.go`: `TestParameterValidatorSearchIntegersArriveAsJSONNumbers` covers `limit` and `offset`

@@ -153,6 +153,12 @@ def render_config(seat: str, role: str) -> str:
         "  allowCompoundCommands: true",
         "  patterns:",
     ]
+    # The startup call is exempt in EVERY approval mode, and it is the one entry that does not come
+    # from a role table: the startup file orders `rig whoami` before anything else, and `ask.timeout`
+    # is 0 live (which its own key text says disables the auto-select), so on an always-ask seat an
+    # unanswered prompt blocks the seat on its first call. A layer that only exempts in some modes
+    # cannot fix that; this file is the seat's own and omp honours `allow` in every mode.
+    lines += [f"    - match: {json.dumps('rig whoami*')}", "      approval: allow"]
     for pattern in bash:
         lines += [f"    - match: {json.dumps(pattern)}", "      approval: deny"]
     if tools:

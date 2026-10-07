@@ -33,8 +33,23 @@ def parsed(seat: str) -> dict:
 
 
 def deny_patterns(config: dict) -> list[str]:
-    assert all(rule["approval"] == "deny" for rule in config["bash"]["patterns"])
-    return [rule["match"] for rule in config["bash"]["patterns"]]
+    """The bash patterns that DENY. The startup exemption is `allow` and is asserted on its own."""
+    return [
+        rule["match"]
+        for rule in config["bash"]["patterns"]
+        if rule["approval"] == "deny"
+    ]
+
+
+def test_every_seat_exempts_the_startup_rig_whoami_and_only_that():
+    """The startup file orders `rig whoami` first and ask.timeout is 0 live, so on an always-ask seat
+    an unanswered prompt blocks the seat on its first call. The exemption is one entry, on every seat,
+    and nothing else may be allowed by this file."""
+    for seat in policy.SEAT_ROLES[RIG]:
+        patterns = parsed(seat)["bash"]["patterns"]
+        allows = [rule["match"] for rule in patterns if rule["approval"] == "allow"]
+        assert allows == ["rig whoami*"], f"{seat}: allowed patterns are {allows}"
+        assert "rig whoami*" not in deny_patterns(parsed(seat))
 
 
 def tools_denied(config: dict) -> list[str]:
