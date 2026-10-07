@@ -1,6 +1,37 @@
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+
+# pnpm 12 no longer reads the "pnpm" field in package.json (it warns and ignores it),
+# so BOTH settings live here. This is the single home - the package.json block was
+# removed rather than left as a second voice, because its keys were being ignored and
+# an ignored override looks applied.
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild
+
 overrides:
+  # The pipeline's Trivy step is scan-type: fs and no workflow runs pnpm, so the
+  # LOCKFILE is the artefact that has to change; every fix below is verified in a
+  # lockfile rather than in a manifest.
   source-map-js: '^1.2.2'
   brace-expansion: '^2.1.7'
+  immutable: '^5.1.8'
+  '@parcel/watcher': '^2.6.0'
+  'picomatch@<2.3.2': '2.3.2'
+  'picomatch@>=4.0.0 <4.0.4': '4.0.4'
+
+  # The dev-toolchain set: pnpm audit reports these twelve, the platform's alert list
+  # does not name them. Every patched version below is a PATCH or MINOR of what is
+  # installed except glob, which is a major and is the one real risk here.
+  vitest: '^3.2.6'
+  tinypool: '^2.1.2'
+  vite: '^7.3.5'
+  rollup: '^4.59.0'
+  postcss: '^8.5.18'
+  nanoid: '^3.3.18'
+  browserslist: '^4.28.7'
+  flatted: '^3.4.0'
+  ws: '^8.21.0'
+  minimatch: '^9.0.7'
+  glob: '^12.0.0'
