@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the search filters accept the forms a caller's integers arrive in (Go)
+
+- `validators/validators_test.go`: `TestParameterValidatorSearchIntegersArriveAsJSONNumbers` covers `limit` and `offset`
+  with the forms that actually arrive - `float64(3)`, `float64(0)`, `"3"` - plus the Go `int` literal the suite already
+  used, and the refusals that must stay: over the bound, under it, and a word.
+- **Written before the fix and SEEN FAILING**, and the failure named the diagnosis: every float64 and string case
+  FAILED while `limit as a Go int` PASSED. That is why the bug shipped - the only `limit` case in the file (`:172`)
+  passes an `int` literal, the one form that cannot come from JSON.
+- After the fix: 10/10 subtests PASS; the validators package `ok`; the whole `./fastmcp/task_management/...` tree
+  reports **0 FAIL lines**; `gofmt -l` empty; `go vet` exit 0.
+- The WIRED path was checked rather than assumed: `task_mcp_controller.go:264` routes `list` AND `search` to
+  `ValidateSearchRequest` → `validation_factory.go:164` → the validator; and the consumer at `handler_adapters.go:73,:94`
+  (`adapterKwInt`) already coerces int, int64, float64 and string - so the newly accepted value is usable downstream
+  and no silent misread replaces the refusal.
+
+
 ## 2026-10-07 - no test changed for the dependency upgrades; the suite is what verified them
 
 - The Trivy CRITICAL/HIGH task changed two manifests and two lockfiles and NO test file, so there

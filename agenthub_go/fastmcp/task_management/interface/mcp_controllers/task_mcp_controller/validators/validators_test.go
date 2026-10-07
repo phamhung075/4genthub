@@ -176,6 +176,41 @@ func TestParameterValidatorUUIDStatusPriorityDate(t *testing.T) {
 	}
 }
 
+// The forms a caller's integers actually arrive in. encoding/json decodes EVERY number as
+// float64, and a tool caller may send the digits as a string, so asserting int refused every
+// value that came over the wire - while the one case the suite covered, an int literal written
+// in Go, is the single form that cannot arrive from JSON. These are the values the reports used.
+func TestParameterValidatorSearchIntegersArriveAsJSONNumbers(t *testing.T) {
+	f := &fakeFormatter{}
+	v := NewParameterValidator(f)
+
+	cases := []struct {
+		name  string
+		key   string
+		value any
+		ok    bool
+	}{
+		{"limit as a decoded JSON number", "limit", float64(3), true},
+		{"limit zero", "limit", float64(0), true},
+		{"limit as a numeric string", "limit", "3", true},
+		{"limit as a Go int (the only form the suite covered)", "limit", 3, true},
+		{"limit over the bound", "limit", float64(2000), false},
+		{"limit under the bound", "limit", float64(-1), false},
+		{"limit that is not a number", "limit", "three", false},
+		{"offset as a decoded JSON number", "offset", float64(20), true},
+		{"offset zero", "offset", float64(0), true},
+		{"offset negative", "offset", float64(-1), false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ok, _ := v.ValidateSearchParams(nil, map[string]any{tc.key: tc.value})
+			if ok != tc.ok {
+				t.Fatalf("%s = %#v: ok = %v, want %v (last error %q)", tc.key, tc.value, ok, tc.ok, f.errMsg)
+			}
+		})
+	}
+}
+
 func TestParameterValidatorProgressCoercion(t *testing.T) {
 	f := &fakeFormatter{}
 	v := NewParameterValidator(f)
