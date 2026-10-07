@@ -121,11 +121,11 @@
           "size": 19169
         },
         {
-          "hash": "1083b8c234dd137446d2fecfd68c9be6",
-          "modified": "2026-10-06T19:00:28.264458",
+          "hash": "b22cdb56a9500f8adab7fe619f8074b9",
+          "modified": "2026-10-07T21:31:28.118304",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 40956
+          "size": 50914
         }
       ],
       "path": "api-integration"
@@ -300,17 +300,128 @@
       "path": "development-guides/ui-patterns"
     },
     "operations": {
-      "count": 1,
+      "count": 5,
       "files": [
+        {
+          "hash": "4542983221a4bee6809852dcd2dd7558",
+          "modified": "2026-10-07T22:13:38.100538",
+          "name": "openrig-seat-limits.md",
+          "path": "operations/openrig-seat-limits.md",
+          "size": 4953
+        },
         {
           "hash": "7bec6cd9a4e1c99efe027573b1ab34fb",
           "modified": "2026-10-06T18:36:09.502345",
           "name": "complete-operations-guide.md",
           "path": "operations/complete-operations-guide.md",
           "size": 20129
+        },
+        {
+          "hash": "e113cdd9573b567c38fc176469ced30e",
+          "modified": "2026-10-07T22:50:18.088329",
+          "name": "watching-openrig-seats.md",
+          "path": "operations/watching-openrig-seats.md",
+          "size": 5674
+        },
+        {
+          "hash": "2b9b2685b5247b90125f52a4cb288b8d",
+          "modified": "2026-10-07T22:18:55.760770",
+          "name": "seat-approval-and-the-startup-call.md",
+          "path": "operations/seat-approval-and-the-startup-call.md",
+          "size": 11316
+        },
+        {
+          "hash": "5299396c8695c7940bccc3b4c525c57f",
+          "modified": "2026-10-06T21:13:31.695244",
+          "name": "syncing-seats-with-the-cloud.md",
+          "path": "operations/syncing-seats-with-the-cloud.md",
+          "size": 2522
         }
       ],
       "path": "operations"
+    },
+    "operations/seat-guides": {
+      "count": 11,
+      "files": [
+        {
+          "hash": "d8a4b6bb04416474a18024f0b2ef230a",
+          "modified": "2026-10-06T21:15:44.524850",
+          "name": "fe-dev.md",
+          "path": "operations/seat-guides/fe-dev.md",
+          "size": 1850
+        },
+        {
+          "hash": "630d64b1b3224d1b5d776b095dd75699",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "go-dev2.md",
+          "path": "operations/seat-guides/go-dev2.md",
+          "size": 1472
+        },
+        {
+          "hash": "86166336f81c376f4b54a9a22d8ebee2",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "context-dev.md",
+          "path": "operations/seat-guides/context-dev.md",
+          "size": 1408
+        },
+        {
+          "hash": "410e094ed953a97b8ba13f60989bd109",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "writer.md",
+          "path": "operations/seat-guides/writer.md",
+          "size": 1463
+        },
+        {
+          "hash": "0dc6b3a84ae73ee9bf161021e6d25095",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "go-dev.md",
+          "path": "operations/seat-guides/go-dev.md",
+          "size": 1775
+        },
+        {
+          "hash": "2459ec31318b28186abbdddb10b7db5c",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "web-dev.md",
+          "path": "operations/seat-guides/web-dev.md",
+          "size": 1304
+        },
+        {
+          "hash": "20e9f2cf9bac055a0bcd5e7aaa06a3fe",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "lead.md",
+          "path": "operations/seat-guides/lead.md",
+          "size": 2029
+        },
+        {
+          "hash": "ac05046492a0e15539227e918f6edb7e",
+          "modified": "2026-10-07T22:16:55.386198",
+          "name": "_common.md",
+          "path": "operations/seat-guides/_common.md",
+          "size": 4172
+        },
+        {
+          "hash": "84cdf3f0e32fd6344d1595ae95067cc2",
+          "modified": "2026-10-06T21:15:44.524850",
+          "name": "reviewer.md",
+          "path": "operations/seat-guides/reviewer.md",
+          "size": 1939
+        },
+        {
+          "hash": "8686af95ae452a00ba1c5648076fe749",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "skills-dev.md",
+          "path": "operations/seat-guides/skills-dev.md",
+          "size": 1403
+        },
+        {
+          "hash": "07aa95696b84b9eb71da5a30f4f7f849",
+          "modified": "2026-10-06T21:08:35.680580",
+          "name": "feedback-dev.md",
+          "path": "operations/seat-guides/feedback-dev.md",
+          "size": 1281
+        }
+      ],
+      "path": "operations/seat-guides"
     },
     "reports-status": {
       "count": 2,
@@ -323,11 +434,11 @@
           "size": 10922
         },
         {
-          "hash": "19accbc64fd8de75bd26030578b5c62b",
-          "modified": "2026-10-06T06:15:05.443342",
+          "hash": "fd8175e46b6ae865f6af0a2c5efcfc16",
+          "modified": "2026-10-06T19:56:02.383446",
           "name": "openrig-side-defects-2026-10-06.md",
           "path": "reports-status/openrig-side-defects-2026-10-06.md",
-          "size": 5598
+          "size": 7702
         }
       ],
       "path": "reports-status"
@@ -513,11 +624,11 @@
       "count": 2,
       "files": [
         {
-          "hash": "79c539e5f3e8df3f1a1e6cc3601b41de",
-          "modified": "2026-10-06T19:37:24.750800",
+          "hash": "c7bd99adc2b935fa188fad99db695a08",
+          "modified": "2026-10-06T21:22:35.481446",
           "name": "of4-local-stack.md",
           "path": "verification/of4-local-stack.md",
-          "size": 9725
+          "size": 10130
         },
         {
           "hash": "7e093ffd894fbafa9aaa657cb2bae3c8",
@@ -530,7 +641,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-06T19:37:24.902683",
+  "generated_at": "2026-10-07T22:57:01.956968",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -633,8 +744,27 @@
     ],
     "operations": {
       "files": [
-        "complete-operations-guide.md"
-      ]
+        "complete-operations-guide.md",
+        "openrig-seat-limits.md",
+        "seat-approval-and-the-startup-call.md",
+        "syncing-seats-with-the-cloud.md",
+        "watching-openrig-seats.md"
+      ],
+      "seat-guides": {
+        "files": [
+          "_common.md",
+          "context-dev.md",
+          "fe-dev.md",
+          "feedback-dev.md",
+          "go-dev.md",
+          "go-dev2.md",
+          "lead.md",
+          "reviewer.md",
+          "skills-dev.md",
+          "web-dev.md",
+          "writer.md"
+        ]
+      }
     },
     "reports-status": {
       "files": [
@@ -672,6 +802,6 @@
       ]
     }
   },
-  "total_directories": 21,
-  "total_files": 57
+  "total_directories": 22,
+  "total_files": 72
 }
