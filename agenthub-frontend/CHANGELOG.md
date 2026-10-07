@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### Fixed
+- **Room deletion states the contract the server enforces, and the refusal arrives with its reason** - 2026-10-07
+  - `src/pages/SeatsPage.tsx`: the delete-room confirmation claimed the room "is deleted with all of its seats, their
+    links and overlays" - WHICH THE SERVER REFUSES. `RoomDeletionService.DeleteRoom` hard-deletes an EMPTY room only and
+    answers 409 for one that still holds seats (`room "... still holds N seat(s); remove them first"`, mapped to 409 at
+    `seat_admin_mount.go:1170`; seats are never cascaded). The dialog now states that contract, and when the loaded seat
+    list is non-empty it PREDICTS the refusal - naming the count and disabling the confirm - so the user cannot walk
+    into a 409 the page could see coming.
+  - The refusal is still RENDERED when it arrives anyway (a stale list, or seats the page never loaded): keyed on the
+    status, the server's own sentence is shown under "The room was not deleted." rather than being flattened into a
+    generic failure. The dialog stays open on failure, so the sentence sits where the button was.
+  - What a room deletion actually removes is corrected with it: the room overlay, the reported seat statuses and the
+    room row - not the seats.
+  - Gates: `npx tsc --noEmit -p .` exit 0, 0 errors; focused run `SeatsPage.test.tsx` + `apiRequest.test.ts` +
+    `SeatDetailPage.test.tsx` 61 passed; after the apiV2 case was added, `SeatsPage.test.tsx` 32 + `apiRequest.test.ts` 9
+    = 41 passed; full-suite and `npx vite build` counts are in the commit notes.
+
+### Changed
+- **`apiRequest` keeps the HTTP status on a refusal** - 2026-10-07
+  - `src/services/apiV2.ts`: the fallthrough error dropped the status (`throw new Error(error.detail || ...)`), so a rule
+    refusal (409) and a server fault (500) reached callers as indistinguishable messages and no caller could render one
+    as a refusal. The status now rides on the thrown error; the 404 and 422 branches already carried their own. The
+    MESSAGE is unchanged, so everything that rendered `error.message` before renders the same text - only callers that
+    want to branch gained information.
+
 ### Removed
 - **The dead half of the SubtaskRow pair - proved dead before deleting it** - 2026-10-07
   - `src/components/SubtaskRow/index.ts` (the barrel), its target `SubtaskRowRefactored.tsx`, the copied hook

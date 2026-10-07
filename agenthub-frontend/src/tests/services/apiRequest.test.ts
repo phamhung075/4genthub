@@ -129,4 +129,23 @@ describe('apiRequest', () => {
 
     await expect(apiRequest('/api/v2/openrig/seats/dev/alice-404-plain')).rejects.toThrow('Resource not found');
   });
+
+  it('rejects a 409 with the server detail as the message AND the status on the error', async () => {
+    // A refusal carries its reason in the detail and its nature in the status. Deleting a room
+    // that still holds seats answers 409 and names how many remain, and a caller can render
+    // "refused, because X" rather than "failed" only if the status survives the throw - so both
+    // halves are asserted here, and the sentence is the assertion rather than any throw at all.
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: 'room "dev" still holds 2 seat(s); remove them first' }), {
+        status: 409,
+      })
+    );
+
+    await expect(
+      apiRequest('/api/v2/openrig/rooms/dev-409-detail', { method: 'DELETE' })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'room "dev" still holds 2 seat(s); remove them first',
+    });
+  });
 });

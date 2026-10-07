@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - room deletion: the real contract, the predicted refusal, and the server's own sentence
+
+- `src/tests/pages/SeatsPage.test.tsx`, `describe('delete room')` rewritten around the contract the server enforces (an
+  EMPTY room only), because the old success case asserted a cascade the server REFUSES: it deleted a room that held a
+  seat and asserted the dialog's promise that the seats went with it. Three paths now, with the fixture split by whether
+  the room holds seats. An empty room deletes and closes its seat list. A room that holds a seat refuses BEFORE the call,
+  names the count (`still holds 1 seat`), leaves the confirm disabled, and `deleteRoom` is never called. A server 409 -
+  raised while the page had seen the room as empty, which is the case the client's own count cannot cover - renders the
+  SERVER's sentence (`room "dev" still holds 2 seat(s); remove them first`) under the refusal framing. A non-409 failure
+  keeps the plain error and must NOT show the refusal framing (asserted, so the branch is discriminating).
+- `src/tests/services/apiRequest.test.ts`, one new case: a 409 rejects with the server detail AS the message AND
+  `status: 409` on the error. Both halves are asserted deliberately - the sentence is the only useful thing in the
+  response, and the status is what lets a caller render "refused, because X" instead of "failed" - so the assertion
+  cannot pass on a bare throw.
+- Verified: `SeatsPage.test.tsx` 32 passed, `apiRequest.test.ts` 9 passed, `SeatDetailPage.test.tsx` green in the same
+  focused run (61 across the three files before the apiV2 case was added; 41 across the two after it).
+
 ## 2026-10-07 - watch tools: JSON result with a trailer, cut JSON, and prose
 
 - `tests/scripts/test_openrig_watch_tools.py`: three specs for `pretty()` (trailer kept, cut-off JSON indented, prose untouched).
