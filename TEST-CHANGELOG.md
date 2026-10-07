@@ -81,6 +81,21 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-07 - the deletion invariants get the one proof a tombstone would fail
+
+- `deletion_paths_integration_test.go`: **CLAIM 5** added — after `RemoveSeat`, the same seat key is created
+  again; after `DeleteRoom`, a room with the removed slug is created again. Both must succeed, and **nothing
+  else in the file can catch a tombstone**: it satisfies every row count, the scoping triples and the
+  cross-owner check, and collides only at the unique constraint.
+- The audit that produced it also produced a **wrong gap**, which is why the counts are worth writing down: a
+  grep for `user2|otherUser|second user|cross` reported cross-tenant scoping as untested, but the fixture's
+  second user is named `other` and the `CROSS-OWNER` block already asserts `ErrRoomNotFound` for it and that
+  it deletes no link. The gap list was corrected before the report, not after.
+- Verified: `gofmt -l` clean on the touched file; `go vet ./fastmcp/seat_management/application/services/`
+  exit 0; the package `ok`. **CLAIM 5 CANNOT BE RUN HERE** — the file skips without `SEAT_TEST_DATABASE_URL`
+  and no Postgres tooling is present, so what is verified is that it compiles and that the ordinary suite is
+  unaffected; running it needs a throwaway database.
+
 ## 2026-10-07 - an allowance may not come from a seat-scoped override
 
 - `seatrenderer/policy_fold_test.go`: `TestFoldRefusesASeatScopedAllowance` — a seat-scoped **override**
