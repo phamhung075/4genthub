@@ -2,6 +2,29 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the notice generator's tests retire with it, and their properties have successors (python)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: **SEVEN tests removed** with the notice verb they
+  covered — `test_every_notice_lists_every_refused_command_of_its_seat`,
+  `test_the_notice_names_what_to_do_instead_of_pushing`,
+  `test_only_the_non_lead_notice_hands_rig_control_to_the_lead`,
+  `test_apply_writes_the_notice_next_to_the_config_and_check_sees_it_drift`,
+  `test_every_notice_tells_the_seat_to_track_work_in_4genthub_and_offload_to_deepseek`,
+  `test_every_seat_has_a_guide_and_its_notice_carries_the_common_procedure_and_its_own`,
+  `test_a_seat_without_a_guide_file_is_an_error` — plus the `notice()` helper and the `GUIDES_DIR` monkeypatch.
+- WHERE EACH PROPERTY WENT, so the retirement is not a gap: the refusal list is now the policy MODULE's, checked by
+  its own parse and the fold (`policy_fold_test.go`, `modulecontent`'s per-kind gate) and verified element-for-element
+  against the generator's own tables when the ten artefacts were authored; the working procedure and the offload
+  instructions live in the **guide modules**, whose render is covered by `library_guide_render_test.go` and whose
+  pairing rule by `TestGuidePairingRefusesAStaleRecord`.
+- ONE ASSERTION REPOINTED RATHER THAN DELETED:
+  `test_the_default_state_root_survives_a_home_that_points_at_a_seat` asserted the path the tool uses is
+  single-nested under the machine state root; it now checks `config_path` / `agent/config.yml`, the file that remains,
+  instead of `notice_path` / `agent/AGENTS.md`.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q`
+  -> **11 passed**; `python3 -m ruff check` on both changed files -> **All checks passed**;
+  `python3 scripts/openrig_seat_policy.py --help` -> verbs `{show,apply}`.
+
 ## 2026-10-07 - the connector client's redaction and frame shapes are pinned by tests (Go client)
 
 - `agenthub_go/internal/clientsync/connector_test.go` (new, 9 cases incl. 8 redaction subtests): the

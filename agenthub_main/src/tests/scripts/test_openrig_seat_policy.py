@@ -151,67 +151,6 @@ def test_check_tolerates_keys_the_policy_does_not_define_and_still_catches_a_bro
     assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT
 
 
-def notice(seat: str) -> str:
-    return policy.render_notice(seat, policy.SEAT_ROLES[RIG][seat])
-
-
-def test_every_notice_lists_every_refused_command_of_its_seat():
-    for seat, role in policy.SEAT_ROLES[RIG].items():
-        bash, tools = policy.policy_for(role)
-        text = notice(seat)
-        for pattern in bash:
-            assert f"`{pattern}`" in text, f"{seat}'s notice omits {pattern}"
-        for tool in tools:
-            assert f"`{tool}`" in text, f"{seat}'s notice omits {tool}"
-
-
-def test_the_notice_names_what_to_do_instead_of_pushing():
-    for seat in policy.SEAT_ROLES[RIG]:
-        text = notice(seat)
-        assert "you never push" in text
-        assert "git add -- <path>" in text
-
-
-def test_only_the_non_lead_notice_hands_rig_control_to_the_lead():
-    assert "ask the lead" in notice("go-dev")
-    assert "the principal does that" in notice("lead")
-
-
-def test_apply_writes_the_notice_next_to_the_config_and_check_sees_it_drift(tmp_path):
-    seed_state(tmp_path)
-    args = ["--rig", RIG, "--state-root", str(tmp_path)]
-    assert policy.main(["apply", *args]) == policy.EXIT_OK
-    for seat, role in policy.SEAT_ROLES[RIG].items():
-        assert policy.notice_path(
-            tmp_path, RIG, seat
-        ).read_text() == policy.render_notice(seat, role)
-    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_OK
-    policy.notice_path(tmp_path, RIG, "writer").write_text("stale\n")
-    assert policy.main(["apply", *args, "--check"]) == policy.EXIT_DRIFT
-
-
-def test_every_notice_tells_the_seat_to_track_work_in_4genthub_and_offload_to_deepseek():
-    for seat in policy.SEAT_ROLES[RIG]:
-        text = notice(seat)
-        assert "manage_task" in text and "manage_context" in text
-        assert "deepseek_agent" in text
-        assert "Do not start work that has no task" in text
-
-
-def test_every_seat_has_a_guide_and_its_notice_carries_the_common_procedure_and_its_own():
-    for seat in policy.SEAT_ROLES[RIG]:
-        text = notice(seat)
-        assert "## Working procedure (every seat)" in text
-        assert f"## Guide: {seat}" in text
-
-
-def test_a_seat_without_a_guide_file_is_an_error(tmp_path, monkeypatch):
-    monkeypatch.setattr(policy, "GUIDES_DIR", tmp_path)
-    (tmp_path / "_common.md").write_text("common\n")
-    with pytest.raises(SystemExit):
-        policy.render_guide("lead")
-
-
 def machine_state_root() -> Path:
     """The state root the DEFAULT must resolve to: the real user's home, from the passwd
     database, which is the one source that is the same inside and outside a seat."""
@@ -237,8 +176,8 @@ def test_the_default_state_root_survives_a_home_that_points_at_a_seat(monkeypatc
     # THE DOUBLING, as a path assertion: the seat's own state dir must not be a prefix.
     assert str(seat_state) not in str(reloaded.DEFAULT_STATE_ROOT)
     # And the path the tool actually uses for a seat is single-nested under that root.
-    assert reloaded.notice_path(reloaded.DEFAULT_STATE_ROOT, RIG, "web-dev") == (
-        machine_state_root() / f"{RIG}-web-dev@{RIG}" / "agent" / "AGENTS.md"
+    assert reloaded.config_path(reloaded.DEFAULT_STATE_ROOT, RIG, "web-dev") == (
+        machine_state_root() / f"{RIG}-web-dev@{RIG}" / "agent" / "config.yml"
     )
 
 
