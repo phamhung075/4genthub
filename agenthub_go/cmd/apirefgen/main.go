@@ -23,7 +23,9 @@ import (
 	"agenthub/internal/apiref"
 )
 
-// defaultMountDir is where the *_mount.go files live, relative to agenthub_go.
+// defaultMountDir is the SEED directory of the route walk: the *_mount.go files live here, and the walk
+// follows each RegisterRoutes call from them into the package that owns it, so this path is where the
+// reading starts rather than the whole scope it covers.
 const defaultMountDir = "fastmcp/server/httpapp"
 
 // defaultOut is the artefact the page imports. It must live inside agenthub-frontend, because the
@@ -31,7 +33,7 @@ const defaultMountDir = "fastmcp/server/httpapp"
 const defaultOut = "../agenthub-frontend/src/docs/apiReference.ts"
 
 func main() {
-	mountDir := flag.String("mount-dir", defaultMountDir, "directory holding the *_mount.go files")
+	mountDir := flag.String("mount-dir", defaultMountDir, "SEED directory of the route walk (the *_mount.go files; the packages they mount routes from are followed too)")
 	out := flag.String("out", defaultOut, "the TypeScript module to write")
 	flag.Parse()
 

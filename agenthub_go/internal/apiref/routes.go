@@ -2,8 +2,9 @@
 // every MCP tool, taken from the code rather than from a list someone maintains.
 //
 // ONE PRODUCER, ONE WITNESS. Entries() is the producer and the only thing a consumer calls. The drift
-// test is the WITNESS and must read the code independently - a separate parse of the *_mount.go source
-// for routes, and the dispatch entries for tools - which is why THE ROUTE PARSER IN THIS FILE IS
+// test is the WITNESS and must read the code independently - a separate parse of the same Go source
+// (the mount directory AND the packages it mounts routes from, not the mount files alone) for routes,
+// and the dispatch entries for tools - which is why THE ROUTE PARSER IN THIS FILE IS
 // UNEXPORTED. Exporting it would let the witness call the producer and compare the generator to
 // itself, passing forever: two readings of one artefact is the whole value, and one reading twice is
 // no evidence at all.

@@ -67,8 +67,10 @@ func RenderModule(reference Reference) ([]byte, error) {
 	header := strings.Join([]string{
 		"// GENERATED - do not edit by hand.",
 		"//",
-		"// Produced by agenthub/internal/apiref from the running code: every mounted route read from the",
-		"// *_mount.go source text, and every MCP tool read by calling the server's own builder, so an",
+		"// Produced by agenthub/internal/apiref from the running code: every route registration read",
+		"// from the Go source text - the mount directory AND every package those files register",
+		"// routes from, resolved through go.mod, so the auth family is counted and not only the",
+		"// mount files - and every MCP tool read by calling the server's own builder, so an",
 		"// entry reaches this file only because it reaches the wire.",
 		"//",
 		"// THE DRIFT TEST IS THE WITNESS and reads the code independently; if this file and the code",
