@@ -6,7 +6,9 @@ The team definition (room, seats, links, context modules, overlays) is data in
 ``apply`` pushes that definition in a fixed order and is idempotent::
 
     1. seat types        POST /api/v2/openrig/seat-types/seed        (the seats need them;
-                         idempotent, the server needs AGENTHUB_PUBLIC_URL)
+                         idempotent, the server needs AGENTHUB_PUBLIC_URL; sent only when
+                         GET /seat-types lacks one the team uses, or when no credentials
+                         are set so the stored set is unknown)
     2. context modules   PUT  /api/v2/openrig/modules/{slug}/versions/{version}
     3. room              POST /api/v2/openrig/rooms                  (409 exists: ok)
     4. seats             POST /api/v2/openrig/rooms/{room}/seats     (409 exists: ok)
@@ -519,11 +521,31 @@ def project_modules(project_root: Path) -> list:
     return modules
 
 
-def build_plan(team: dict) -> list:
-    """Return the ordered steps: (label, method, path, body, tolerate_exists)."""
+def stored_seat_type_slugs(base_url: str, token: str) -> set:
+    """Return the slug of every seat type the server already stores (``GET /seat-types``)."""
+    path = f"{API}/seat-types"
+    status, payload = _get_json(base_url, token, path)
+    if status != 200:
+        raise SetupError(f"GET {path} failed: HTTP {status}", EXIT_REMOTE)
+    seat_types = payload.get("seat_types") if isinstance(payload, dict) else None
+    if not isinstance(seat_types, list) or not all(isinstance(t, dict) for t in seat_types):
+        raise SetupError(f"GET {path} returned an unexpected body", EXIT_REMOTE)
+    return {t.get("slug") for t in seat_types}
+
+
+def build_plan(team: dict, stored_seat_types: set = None) -> list:
+    """Return the ordered steps: (label, method, path, body, tolerate_exists).
+
+    The seat-types seed runs when a seat type the team uses is not stored, or when the stored set
+    is unknown (``None``, a plan built without credentials). The seed publishes against the curated
+    catalog, so seeding a server whose seat types already exist would fail on refs it never needed.
+    """
     room = team["room"]["slug"]
     seats_path = f"{API}/rooms/{room}/seats"
-    plan = [("seat types (seed)", "POST", f"{API}/seat-types/seed", {}, False)]
+    needed = {seat["seat_type"] for seat in team["seats"]}
+    plan = []
+    if stored_seat_types is None or not needed <= stored_seat_types:
+        plan.append(("seat types (seed)", "POST", f"{API}/seat-types/seed", {}, False))
     for m in team["modules"]:
         plan.append(module_step(m["slug"], m["kind"], m["version"], m["content"]))
     plan.append((f"room {room}", "POST", f"{API}/rooms", dict(team["room"]), True))
@@ -535,10 +557,11 @@ def build_plan(team: dict) -> list:
             f"{seats_path}/{link['from']}/links",
             {"to_seat": link["to"], "kind": link["kind"], "allow": True}, False,
         ))
-    plan.append((
-        "overlay company", "PUT", f"{API}/overlay",
-        overlay_body(team, team["company_overlay"]), False,
-    ))
+    if team["company_overlay"]:  # the company overlay is account-wide and a PUT replaces it
+        plan.append((
+            "overlay company", "PUT", f"{API}/overlay",
+            overlay_body(team, team["company_overlay"]), False,
+        ))
     for seat, slugs in team["seat_overlays"].items():
         plan.append((
             f"overlay seat {seat}", "PUT", f"{seats_path}/{seat}/overlay",
@@ -610,7 +633,9 @@ def run_steps(steps: list, dry_run: bool, collect_failures: bool = False) -> lis
 
 
 def cmd_apply(args) -> None:
-    run_steps(build_plan(load_team(args.team)), args.dry_run)
+    base_url, token = _optional_credentials()
+    stored = stored_seat_type_slugs(base_url, token) if base_url else None
+    run_steps(build_plan(load_team(args.team), stored), args.dry_run)
 
 
 def cmd_import_project(args) -> None:

@@ -133,170 +133,47 @@
       "model": "deepseek/deepseek-flash"
     }
   ],
-  "links": [
-    {
-      "from": "lead",
-      "to": "go-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "go-dev2",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "fe-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "web-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "skills-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "context-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "feedback-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "reviewer",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "writer",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "go-dev",
-      "to": "reviewer",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev",
-      "to": "fe-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev2",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "skills-dev",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "context-dev",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "web-dev",
-      "to": "fe-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "writer",
-      "to": "reviewer",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "feedback-dev",
-      "to": "web-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "go-dev2",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "fe-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "web-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "skills-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "context-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "feedback-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "reviewer",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "writer",
-      "to": "lead",
-      "kind": "escalates_to"
-    }
-  ],
-  "company_overlay": [
-    "guide-common"
-  ],
+  "links": [],
+  "company_overlay": [],
   "seat_overlays": {
     "lead": [
+      "guide-common",
       "guide-lead"
     ],
     "go-dev": [
+      "guide-common",
       "guide-go-dev"
     ],
     "go-dev2": [
+      "guide-common",
       "guide-go-dev2"
     ],
     "fe-dev": [
+      "guide-common",
       "guide-fe-dev"
     ],
     "web-dev": [
+      "guide-common",
       "guide-web-dev"
     ],
     "skills-dev": [
+      "guide-common",
       "guide-skills-dev"
     ],
     "context-dev": [
+      "guide-common",
       "guide-context-dev"
     ],
     "feedback-dev": [
+      "guide-common",
       "guide-feedback-dev"
     ],
     "reviewer": [
+      "guide-common",
       "guide-reviewer"
     ],
     "writer": [
+      "guide-common",
       "guide-writer"
     ]
   }

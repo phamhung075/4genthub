@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - apply reads the stored seat types, and an empty company overlay is not sent (scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py`: the fake server counts `GET /api/v2/openrig/seat-types` apart (`seat_type_reads`) so every existing write-order and request-count assertion stays about writes; its default answer is an empty store, so the existing cases still run the seed. Four cases added: the seed is skipped when every needed seat type is stored; the seed runs first when one is missing; an unreadable seat-type list stops before any write (`requests == []`); an empty `company_overlay` yields no `overlay company` step. 50 passed.
+
 ## 2026-10-07 - the docs page's mock follows its import, and the fixture assertions are the proof (frontend)
 
 - `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: ONE path change, `vi.mock('../../docs/api-reference-prose.en.md?raw')`, and it is

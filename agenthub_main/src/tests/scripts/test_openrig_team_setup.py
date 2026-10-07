@@ -22,6 +22,7 @@ MODULE_PATH = REPO_ROOT / "scripts" / "openrig_team_setup.py"
 TEAM_DIR = REPO_ROOT / "scripts" / "team" / "4genthub"
 
 TOKEN = "tok-secret-1234567890"
+SEAT_TYPES_PATH = "/api/v2/openrig/seat-types"
 SEAT_TYPES = {
     "lead",
     "planner",
@@ -60,7 +61,14 @@ class _Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         body = json.loads(self.rfile.read(length) or b"null")
         server = self.server
-        server.requests.append(
+        # apply's read of the stored seat types is counted apart, so the write-sequence
+        # assertions below stay about writes
+        record = (
+            server.seat_type_reads
+            if (self.command, self.path) == ("GET", SEAT_TYPES_PATH)
+            else server.requests
+        )
+        record.append(
             {
                 "method": self.command,
                 "path": self.path,
@@ -87,9 +95,11 @@ class _Handler(BaseHTTPRequestHandler):
 class TeamServer:
     def __init__(self):
         self.requests = []
+        self.seat_type_reads = []
         self.overrides = {}  # (method, path) -> (status, text)
         self.httpd = HTTPServer(("127.0.0.1", 0), _Handler)
         self.httpd.requests = self.requests
+        self.httpd.seat_type_reads = self.seat_type_reads
         self.httpd.respond = self.respond
         self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
         self.thread.start()
@@ -101,6 +111,8 @@ class TeamServer:
     def respond(self, method, path, body):
         if (method, path) in self.overrides:
             return self.overrides[(method, path)]
+        if (method, path) == ("GET", SEAT_TYPES_PATH):
+            return 200, '{"seat_types": []}'  # nothing stored: the seed runs
         if method == "GET":
             return 404, '{"detail": "not found"}'
         return (201 if method == "POST" else 200), '{"success": true}'
@@ -296,6 +308,48 @@ def test_seed_failure_stops_before_any_other_call(server, env, capsys):
     assert code == 1
     assert "seat types (seed)" in err and "AGENTHUB_PUBLIC_URL" in err
     assert len(server.requests) == 1
+
+
+def test_the_seed_is_skipped_when_every_needed_seat_type_is_stored(server, env, capsys):
+    stored = [{"slug": slug} for slug in SEAT_TYPES]
+    server.overrides[("GET", SEAT_TYPES_PATH)] = (
+        200,
+        json.dumps({"seat_types": stored}),
+    )
+    code, out, _ = _run(capsys)
+    assert code == 0
+    assert not any(r["path"].endswith("/seat-types/seed") for r in server.requests)
+    assert "seat types (seed)" not in out
+    assert len(server.requests) == len(team_setup.build_plan(_team(), SEAT_TYPES))
+
+
+def test_the_seed_runs_when_a_needed_seat_type_is_missing(server, env, capsys):
+    stored = [{"slug": slug} for slug in SEAT_TYPES - {"writer"}]
+    server.overrides[("GET", SEAT_TYPES_PATH)] = (
+        200,
+        json.dumps({"seat_types": stored}),
+    )
+    code, out, _ = _run(capsys)
+    assert code == 0
+    assert server.requests[0]["path"] == "/api/v2/openrig/seat-types/seed"
+
+
+def test_an_empty_company_overlay_sends_no_company_overlay(server, env, capsys):
+    team = _team()
+    team[
+        "company_overlay"
+    ] = []  # the company overlay is account-wide: a PUT would replace it
+    labels = [step[0] for step in team_setup.build_plan(team, SEAT_TYPES)]
+    assert "overlay company" not in labels
+    assert any(label.startswith("overlay seat ") for label in labels)
+
+
+def test_an_unreadable_seat_type_list_stops_before_any_write(server, env, capsys):
+    server.overrides[("GET", SEAT_TYPES_PATH)] = (500, '{"detail":"boom"}')
+    code, _, err = _run(capsys)
+    assert code == 1
+    assert "GET /api/v2/openrig/seat-types failed: HTTP 500" in err
+    assert server.requests == []
 
 
 def test_409_without_already_exists_is_an_error(server, env, capsys):
