@@ -83,7 +83,7 @@ const machineSeat = {
   seat: 'alice',
   state: 'running' as const,
   runtime: 'claude-code',
-  hash: 'abcdef0123456789',
+  pinned_hash: 'abcdef0123456789',
   expected_hash: 'abcdef0123456789',
   sync: 'in_sync' as const,
   detail: '<b>working</b>',
@@ -491,7 +491,7 @@ describe('SeatsPage', () => {
             seats: [
               {
                 ...machineSeat,
-                hash: 'aaaaaaaa11111111',
+                pinned_hash: 'aaaaaaaa11111111',
                 expected_hash: 'bbbbbbbb22222222',
                 sync: 'drift' as const,
               },
@@ -598,7 +598,7 @@ describe('SeatsPage', () => {
               {
                 ...machineSeat,
                 reported_at: iso(0),
-                hash: 'aaaaaaaa11111111',
+                pinned_hash: 'aaaaaaaa11111111',
                 expected_hash: 'bbbbbbbb22222222',
                 sync: 'drift' as const,
               },

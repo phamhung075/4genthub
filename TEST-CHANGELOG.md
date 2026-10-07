@@ -126,6 +126,17 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-07 - the fixtures catch up with the rename, and the suite stops throwing on render
+
+- `SeatsPage.test.tsx`: the two machine-row literals now carry `pinned_hash` instead of `hash`. The failure it
+  fixes was a **render crash**, not a wrong assertion — `shortHash(seat.pinned_hash)` threw
+  `Cannot read properties of undefined` — so **10 tests in that file** were red while `tsc` was clean, which is
+  the point worth keeping: a fixture that omits a field is not type-checked against it, only against the type it
+  claims to satisfy.
+- Verified: that file **32/32 passed** (it was 10 failing); `npx tsc --noEmit -p .` → **0 errors**. Before the
+  fix the suite measured **11 failed / 1745 passed**; the full suite is re-run after this commit and its count
+  is reported separately rather than assumed from the one file.
+
 ## 2026-10-07 - the pinned-hash rename, and the three failures that proved it was incomplete
 
 - `seat_status_mount_test.go`: `TestSeatStatusPostStoresAndGetServes` gained the discriminating pair — a posted

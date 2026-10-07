@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+- **The machine-row fixtures follow the renamed field, so the bridge-machines tests stop throwing on render** - 2026-10-07
+  - `src/tests/pages/SeatsPage.test.tsx`: the two machine-row literals carry `pinned_hash` instead of `hash`.
+    The failure was a RENDER crash, not a wrong assertion - `shortHash(seat.pinned_hash)` threw
+    `Cannot read properties of undefined (reading 'slice')` - so 10 tests in that file were red while
+    `tsc --noEmit` stayed clean: a fixture that omits a field is not type-checked against it, only against the
+    type it claims to satisfy.
+  - THE THIRD INSTANCE OF ONE MECHANISM IN A SINGLE RENAME: the bridge's own reader, the `Pick<...>` in
+    `MachinesPanel.tsx`, and now these fixtures - writers counted, readers and producers not. Recorded rather
+    than smoothed because the next rename needs the reader/fixture grep, not just the writer one.
+  - Verified: that file 32/32 passed (it was 10 failing); `npx tsc --noEmit -p .` 0 errors.
+
 ### Added
 - **The sessions page gains a chat input per seat window, shut every time it mounts** - 2026-10-07
   - `src/components/sessions/SeatInputBox.tsx` and its mounting in `SessionLiveView.tsx`: the toggle sits
