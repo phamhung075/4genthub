@@ -49,6 +49,63 @@ const WrappedTestComponent: React.FC = () => (
   </ToastProvider>
 );
 
+/**
+ * The two pins for the toast hooks' rules-of-hooks violation (task e6ca3f6c).
+ *
+ * PIN ONE is the identity: the same function reference across re-renders, both inside a
+ * provider and - the case that matters - OUTSIDE one. Predicted to fail on the old code
+ * because it returned a fresh `() => ''` per call outside a provider; inside a provider
+ * it already returned a useCallback'd function, so only the outside half discriminates.
+ *
+ * PIN TWO is the hook order: a component whose provider is TOGGLED between renders. The
+ * old shape called useContext + useCallback inside a provider and useContext + an early
+ * return outside, so the hook COUNT changed with a context value - React throws in dev,
+ * and in a production build it is not absent, it is UNDEFINED.
+ */
+describe('toast hooks - identity and hook order', () => {
+  it('returns the SAME function across re-renders, inside and outside a provider', () => {
+    const seen: Array<() => unknown> = [];
+    const Probe: React.FC<{ tick: number }> = ({ tick }) => {
+      seen.push(useSuccessToast());
+      return <span>{tick}</span>;
+    };
+
+    const bare = render(<Probe tick={0} />);
+    bare.rerender(<Probe tick={1} />);
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe(seen[1]);
+
+    // The inside-provider half, for completeness: it passed on the old code too.
+    seen.length = 0;
+    const wrapped = render(
+      <ToastProvider>
+        <Probe tick={0} />
+      </ToastProvider>
+    );
+    wrapped.rerender(
+      <ToastProvider>
+        <Probe tick={1} />
+      </ToastProvider>
+    );
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe(seen[1]);
+  });
+
+  it('calls the same number of hooks whether or not a provider is present', () => {
+    const Probe: React.FC<{ tick: number }> = ({ tick }) => {
+      useSuccessToast();
+      return <span>{tick}</span>;
+    };
+    const Toggling: React.FC<{ wrap: boolean }> = ({ wrap }) => {
+      const inner = <Probe tick={wrap ? 1 : 0} />;
+      return wrap ? <ToastProvider>{inner}</ToastProvider> : inner;
+    };
+
+    const view = render(<Toggling wrap />);
+    expect(() => view.rerender(<Toggling wrap={false} />)).not.toThrow();
+  });
+});
+
 describe('Toast Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();

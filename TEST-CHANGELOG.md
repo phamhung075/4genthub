@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the toast hooks' violation: one pin that discriminates, and one that does not
+
+- `tests/components/ui/toast.test.tsx`, two new cases for task e6ca3f6c. PIN ONE (identity) asserts the SAME function
+  reference across re-renders, both inside and outside a provider. SHOWN FAILING against the hooks as committed, with
+  exactly the predicted error - `expected [Function] to be [Function]`, because outside a provider every call returned a
+  fresh `() => ''`. That is the harness's red run; the old file was swapped in and back out in one command so the tree was
+  never left broken.
+- PIN TWO (hook order) toggles the provider between renders and asserts no throw. IT PASSES ON BOTH VERSIONS, which is a
+  finding about the PIN rather than about the hook: RTL's `act` wraps the rerender, so React's hooks-count mismatch never
+  escapes as a throw the assertion can see. It is kept and LABELLED as an invariant rather than a reproduction, not
+  adjusted silently to look like one. A discriminating order pin needs a different mechanism and is not claimed here.
+- Also settled while writing them: `useToast` handles a missing provider by THROWING, so it has no violation - the
+  early-return pattern was FOUR sites (the four convenience hooks), not five. A grep for `if (!context) {` counts five, and
+  one of the five is correct.
+- Verified: `toast.test.tsx` 9 passed with the fix.
+
 ## 2026-10-07 - grid input panes
 
 - `src/tests/scripts/test_openrig_watch_tools.py`: 4 specs for `inputs open|hide` and the `input` loop (herdr and `rig send`

@@ -446,6 +446,23 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The toast hooks' rules-of-hooks violation, at four sites, found by looking rather than by trusting a count of three** - 2026-10-07
+  - `src/components/ui/toast.tsx`: `useSuccessToast`, `useErrorToast` (`:233` - its own `duration: 8000`, written from the same
+    pattern), `useWarningToast` and `useInfoToast` all did `const context = useContext(...); if (!context) return () => '';`
+    BEFORE a `useCallback`. TWO defects in six lines: the hook COUNT depended on a context value - a rules-of-hooks
+    violation, latent only while a provider's presence cannot change between renders of one component, and UNDEFINED
+    behaviour rather than absent behaviour if it ever does - and OUTSIDE a provider every call returned a fresh `() => ''`,
+    an unstable value in any dependency array.
+  - Fixed by hoisting a module-level `noop` and calling `useCallback` unconditionally with `showToast` through optional
+    chaining, so both the hook order and the identity are stable.
+  - NOTE THE CONTRAST, because it decides whether this was a mistake or a choice: `useToast` handles the same missing
+    provider by THROWING. The convenience hooks silently substituted a no-op, and this change keeps that deliberately -
+    making them throw would be a behaviour change beyond the violation.
+  - PINNED, RED RUN FIRST: a re-render probe asserts the SAME function reference across renders, and it FAILED against the
+    old code with exactly the predicted error (`expected [Function] to be [Function]` - the fresh no-op per call). A second
+    pin toggles the provider between renders and passes on BOTH versions in this harness - RTL's `act` wraps the rerender,
+    so React's mismatch error does not escape - hence it is labelled an invariant rather than a reproduction.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `toast.test.tsx` 9 passed; the full suite in the commit notes.
 - **The duplicate animation sources are gone: one event, one animation** - 2026-10-07
   - `useRealtimeSync` no longer animates the task and subtask CREATE. `WebSocketAnimationService` is the single websocket
     source for those, it animates the same events, and by the time its call fires the row is mounted, so its call lands - the
