@@ -5,6 +5,9 @@ Read-only. It reads the seats' session logs and never talks to a seat.
 
 Tool: `scripts/openrig_watch_tools.py`. Needs `herdr` for the grid view.
 
+**Standing choice (owner, 2026-10-07):** after restoring or spawning a team, watch it with `grid`
+(below), not with `rig terminal open` tiles. The `spawn-team` skill records the same rule.
+
 ## Grid: one pane per seat (the usual way)
 
 ```bash
@@ -29,6 +32,19 @@ at start, default 40; a pane holds only what was printed since it started, so ra
 
 Run it again for a fresh grid. It does not reuse or close an earlier one; close the old workspace
 in herdr (`herdr workspace close <id>`).
+
+## Input panes: type to a seat from the grid (optional)
+
+The grid panes are read-only. To talk to a seat from the grid, open a small input pane under each seat pane:
+
+```bash
+python3 scripts/openrig_watch_tools.py inputs open    # one "<seat> > input" pane under every seat pane
+python3 scripts/openrig_watch_tools.py inputs hide    # close them again; the grid is back to watch-only
+```
+
+A line typed in an input pane is sent to that seat with `rig send <rig>-<seat>@<rig>`; `/hide` or Ctrl-D leaves the loop.
+Opening twice adds nothing. Keep backticks, apostrophes and `$` out of a message: `rig send` mangles them.
+The inputs are off by default; the grid itself never writes to a seat.
 
 ## Feed: one merged stream
 

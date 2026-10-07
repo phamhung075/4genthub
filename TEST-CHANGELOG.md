@@ -2,6 +2,30 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - grid input panes
+
+- `src/tests/scripts/test_openrig_watch_tools.py`: 4 specs for `inputs open|hide` and the `input` loop (herdr and `rig send`
+  faked): open splits one input pane per seat pane, a second open adds none, hide closes only the input panes, a typed
+  line reaches the right seat and `/hide` leaves the loop. 14 pass.
+
+## 2026-10-07 - the websocket-protocol-v2 file: a bounded flake, and a mock that matched neither production nor any failure
+
+- `src/tests/e2e/websocket-protocol-v2.test.tsx` was the last intermittent failure in the frontend suite: the task recorded
+  1 test failing in about half of the full-suite runs and once in 5 isolated runs. MEASURED NOW: 0 failures in 20
+  consecutive isolated runs, and the full-suite counts are in the commit notes. The flake does NOT reproduce at the recorded
+  rate on the current tree, and the task's measurements are from 2026-10-04 - the tree has moved since, including this
+  file's own hardening. NOTHING WAS CHANGED TO MAKE THE RATE FALL; the rate is the finding.
+- The toast mock returned a NEW function per call (`() => vi.fn()`), where production's hooks return a `useCallback`'d
+  function inside the app's ToastProvider - so the hook's effect saw an unstable dependency. Corrected to stable identities,
+  and the claim is bounded to what was measured: an unstable mock does NOT make these cases fail, because they render the
+  hook once and never re-render it. The churn was a shape the fixture permitted, not a failure it showed.
+- One invariant added: exactly one websocket registration per mount, pinned as an INVARIANT and not as a reproduction - it
+  passes under either mock.
+- Ruled out with an argument rather than a run: the fixed 700ms sleeps (each is followed by a waitFor with its own 1000ms
+  budget, so the tolerance is ~1700ms against a 600ms timer) and the module-global toast dedupe (per-entity keys, and every
+  case uses its own id, so its 2s window cannot cross cases).
+- Verified: the file 20 passed across 24 consecutive isolated runs; full suite in the commit notes.
+
 ## 2026-10-07 - the animation dedupe: two count proofs on the create path
 
 - `test_useRealtimeSync_task.test.tsx` and `test_useRealtimeSync_subtask.test.tsx`: one new case each, on the owner's

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Live tool-call feed for the omp seats of an OpenRig rig. Read-only.
+"""Live tool-call feed for the omp seats of an OpenRig rig. The feed is read-only.
 
     openrig_watch_tools.py feed [--rig R] [--seat S ...] [--back N] [--width W] [--lines L]
         one merged stream: a line per tool call and per result, coloured by tool kind
     openrig_watch_tools.py grid [--rig R] [--cols 2] [--back N] [--width W] [--lines L]
         a new herdr workspace with one pane per seat, each running its own ``feed``
+    openrig_watch_tools.py inputs open|hide [--rig R]
+        open or hide a small input pane under each seat pane of the grid; a line typed
+        there is sent to that seat with ``rig send`` (the grid itself stays read-only)
 
 The feed reads each seat's newest session jsonl under ~/.openrig/state/omp and follows it.
 A policy refusal is shown white-on-red. See ai_docs/operations/watching-openrig-seats.md.
@@ -214,6 +217,73 @@ def grid(a: argparse.Namespace) -> None:
     print(f"grid: {len(seats)} seats in {a.cols} columns")
 
 
+INPUT_SUFFIX = " > input"
+INPUT_ROWS_RATIO = 0.85  # share of the seat pane that stays with the feed
+
+
+def grid_workspace(rig: str) -> str:
+    """The id of the newest ``<rig> grid`` workspace."""
+    found = [
+        w["workspace_id"]
+        for w in herdr("workspace", "list")["workspaces"]
+        if w["label"] == f"{rig} grid"
+    ]
+    if not found:
+        raise SystemExit(f"no '{rig} grid' workspace: run grid first")
+    return found[-1]
+
+
+def grid_panes(rig: str) -> list[dict]:
+    ws = grid_workspace(rig)
+    return [p for p in herdr("pane", "list")["panes"] if p["workspace_id"] == ws]
+
+
+def inputs(a: argparse.Namespace) -> None:
+    """Open or hide the input pane under every seat pane of the grid."""
+    panes = grid_panes(a.rig)
+    seats = set(rig_seats(a.rig))
+    if a.action == "hide":
+        closing = [p for p in panes if (p.get("label") or "").endswith(INPUT_SUFFIX)]
+        for p in closing:
+            herdr("pane", "close", p["pane_id"])
+        print(f"inputs: hid {len(closing)}")
+        return
+    open_for = {p["label"] for p in panes if (p.get("label") or "").endswith(INPUT_SUFFIX)}
+    me = Path(__file__).resolve()
+    opened = 0
+    for p in panes:
+        seat = p.get("label")
+        if seat not in seats or seat + INPUT_SUFFIX in open_for:
+            continue
+        new = pane_id(
+            herdr(
+                "pane", "split", "--pane", p["pane_id"], "--direction", "down",
+                "--ratio", f"{INPUT_ROWS_RATIO:.3f}", "--cwd", str(me.parent),
+            )
+        )
+        herdr("pane", "rename", new, seat + INPUT_SUFFIX)
+        herdr("pane", "send-text", new, f"python3 {me} input --rig {a.rig} --seat {seat}")
+        herdr("pane", "send-keys", new, "Enter")
+        opened += 1
+    print(f"inputs: opened {opened}")
+
+
+def input_loop(a: argparse.Namespace) -> None:
+    """Read lines and send each to the seat. Empty line skips; Ctrl-D or /hide leaves."""
+    target = f"{a.rig}-{a.seat}@{a.rig}"
+    while True:
+        try:
+            line = input(f"{a.seat} > ").strip()
+        except EOFError:
+            return
+        if line == "/hide":
+            return
+        if not line:
+            continue
+        done = subprocess.run(["rig", "send", target, line], capture_output=True, text=True)
+        print("sent" if done.returncode == 0 else f"failed: {done.stderr.strip()[:200]}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = ap.add_subparsers(dest="command", required=True)
@@ -234,6 +304,14 @@ def main() -> None:
         else:
             p.add_argument("--cols", type=int, default=2)
         p.set_defaults(func=fn)
+    p = sub.add_parser("inputs")
+    p.add_argument("action", choices=("open", "hide"))
+    p.add_argument("--rig", default="4genthub-min")
+    p.set_defaults(func=inputs)
+    p = sub.add_parser("input")
+    p.add_argument("--rig", default="4genthub-min")
+    p.add_argument("--seat", required=True)
+    p.set_defaults(func=input_loop)
     a = ap.parse_args()
     a.func(a)
 

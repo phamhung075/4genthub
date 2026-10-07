@@ -116,3 +116,67 @@ def test_a_long_line_is_cut_at_the_width_but_the_other_lines_stay():
         line("toolResult", [{"type": "text", "text": "x" * 500 + "\nsecond"}]), 50
     )
     assert "x" * 50 in out and "x" * 51 not in out and "second" in out
+
+
+GRID = "w25"
+
+
+def fake_herdr(monkeypatch, panes):
+    """Replace the herdr call: record every command and answer list/split like the real one."""
+    calls = []
+
+    def run(*args):
+        calls.append(args)
+        if args[:2] == ("workspace", "list"):
+            return {"workspaces": [{"workspace_id": GRID, "label": "r grid"}]}
+        if args[:2] == ("pane", "list"):
+            return {"panes": panes}
+        if args[:2] == ("pane", "split"):
+            return {"pane": {"pane_id": f"{GRID}:new{len(calls)}"}}
+        return {}
+
+    monkeypatch.setattr(watch, "herdr", run)
+    monkeypatch.setattr(watch, "rig_seats", lambda rig: ["lead", "go-dev"])
+    return calls
+
+
+def pane(label):
+    return {"pane_id": f"{GRID}:{label}", "workspace_id": GRID, "label": label}
+
+
+def test_inputs_open_splits_a_small_input_pane_under_each_seat_pane(monkeypatch):
+    calls = fake_herdr(monkeypatch, [pane("lead"), pane("go-dev")])
+    watch.inputs(type("A", (), {"rig": "r", "action": "open"}))
+    assert sum(c[:2] == ("pane", "split") for c in calls) == 2
+    renamed = [c[3] for c in calls if c[:2] == ("pane", "rename")]
+    assert renamed == ["lead > input", "go-dev > input"]
+
+
+def test_inputs_open_twice_adds_nothing_the_second_time(monkeypatch):
+    calls = fake_herdr(
+        monkeypatch,
+        [pane("lead"), pane("lead > input"), pane("go-dev"), pane("go-dev > input")],
+    )
+    watch.inputs(type("A", (), {"rig": "r", "action": "open"}))
+    assert not any(c[:2] == ("pane", "split") for c in calls)
+
+
+def test_inputs_hide_closes_only_the_input_panes(monkeypatch):
+    calls = fake_herdr(monkeypatch, [pane("lead"), pane("lead > input")])
+    watch.inputs(type("A", (), {"rig": "r", "action": "hide"}))
+    closed = [c[2] for c in calls if c[:2] == ("pane", "close")]
+    assert closed == [f"{GRID}:lead > input"]
+
+
+def test_a_typed_line_is_sent_to_its_seat_and_hide_leaves_the_loop(monkeypatch):
+    typed = iter(["hello lead", "", "/hide", "never read"])
+    sent = []
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(typed))
+    monkeypatch.setattr(
+        watch.subprocess,
+        "run",
+        lambda cmd, **kw: sent.append(cmd)
+        or type("R", (), {"returncode": 0, "stderr": ""})(),
+    )
+    watch.input_loop(type("A", (), {"rig": "r", "seat": "lead"}))
+    assert sent == [["rig", "send", "r-lead@r", "hello lead"]]
