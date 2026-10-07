@@ -21,5 +21,8 @@ A good prompt names the exact files it may touch, the goal, the commands to run,
 ### Commits in the shared tree
 Other seats edit the same tree. Stage explicit paths only: `git add -- <path>` then `git commit -m "<type(scope): subject>" -- <path>`. Never `git add .`, `-A` or `--amend`. Commit types: feat, fix, refactor, test, chore, style, ai_docs. Update `CHANGELOG.md` (and `TEST-CHANGELOG.md` when you change tests) in the same commit.
 
+### Startup and the approval gate
+On a seat whose policy is not `builtin:yolo` — `locked`, `standard`, `open`, or no policy at all — the launch posture is `floor` and the runtime gates **every** tool call, the startup `rig whoami --json` included. The prompt has no timeout (`ask.timeout: 0` disables the auto-select), so an unanswered call waits rather than failing: if your first call never returns, that is the approval gate, a human must answer it, and a floor seat is not autonomous. Mechanism with file:line, and the two-line fix this repo already has a home for: `ai_docs/operations/seat-approval-and-the-startup-call.md`.
+
 ### When you are stuck or refused
 A refused tool call is policy: do not retry or route around it. A failed 4genthub or deepseek call: send the lead the exact error and continue. Information only the owner can give, or anything touching production, quota or money: send it to the lead, who sends it to the principal.
