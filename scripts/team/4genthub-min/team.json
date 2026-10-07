@@ -72,61 +72,61 @@
     },
     {
       "slug": "policy-lead",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-lead.json"
     },
     {
       "slug": "policy-go-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-go-dev.json"
     },
     {
       "slug": "policy-go-dev2",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-go-dev2.json"
     },
     {
       "slug": "policy-fe-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-fe-dev.json"
     },
     {
       "slug": "policy-web-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-web-dev.json"
     },
     {
       "slug": "policy-skills-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-skills-dev.json"
     },
     {
       "slug": "policy-context-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-context-dev.json"
     },
     {
       "slug": "policy-feedback-dev",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-feedback-dev.json"
     },
     {
       "slug": "policy-reviewer",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-reviewer.json"
     },
     {
       "slug": "policy-writer",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "kind": "policy",
       "file": "policy-writer.json"
     }
