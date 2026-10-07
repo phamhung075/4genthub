@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - the connector client's redaction and frame shapes are pinned by tests (Go client)
+
+- `agenthub_go/internal/clientsync/connector_test.go` (new, 9 cases incl. 8 redaction subtests): the
+  connector's wire proofs need the real server plus a database, so the tests that run WITHOUT one pin
+  what is entirely the client's job - that redaction happens BEFORE the frame is built (the assertion is
+  on the event that would be uploaded, not on the helper), that ordinary transcript lines survive, that
+  the newest `--lines` lines are the ones kept, and that `MessageEvent` carries the server's own shape
+  (`{type: "message", payload: …}`, whose other direction lives in `ws_connector_test.go:149`).
+- THE TESTS CAUGHT TWO DEFECTS IN MY OWN FIRST DRAFT, both fixed in place: the redactor deleted the
+  space after `AGENTHUB_TOKEN: ` (it sliced the match at the separator instead of capturing the prefix),
+  and it KEPT the token on the whole-token patterns because `${1}` expanded a capture group that should
+  not have been there at all. Both are recorded in the CHANGELOG entry rather than quietly corrected.
+- NOT covered here, and stated rather than implied: the wire itself (a real session reaching the cloud
+  under the right account). That needs the server's ingest path, which needs a database; a test against
+  a fake socket would prove the fake.
+- Commands: `go test -count=1 ./internal/clientsync/` -> **ok** (0.305s, the package's existing suites
+  included); `go build ./...` -> rc=0; `go vet ./internal/clientsync/` -> rc=0; `gofmt -l` -> empty.
+
 ## 2026-10-07 - apply reads the stored seat types, and an empty company overlay is not sent (scripts)
 
 - `agenthub_main/src/tests/scripts/test_openrig_team_setup.py`: the fake server counts `GET /api/v2/openrig/seat-types` apart (`seat_type_reads`) so every existing write-order and request-count assertion stays about writes; its default answer is an empty store, so the existing cases still run the seed. Four cases added: the seed is skipped when every needed seat type is stored; the seed runs first when one is missing; an unreadable seat-type list stops before any write (`requests == []`); an empty `company_overlay` yields no `overlay company` step. 50 passed.
