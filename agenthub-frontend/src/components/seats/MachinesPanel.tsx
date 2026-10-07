@@ -34,7 +34,12 @@ const SYNC_CLASSES: Record<SeatSync, string> = {
   unknown: 'bg-transparent text-gray-500 dark:text-gray-400',
 };
 
-const shortHash = (hash: string) => hash.slice(0, 8);
+// The domain renders an ABSENT hash as the empty string (lib/machineSeats.ts tests `expected_hash === ''`
+// for exactly that), and ''.slice(0, 8) is '' rather than a throw - so an empty value already degrades to the
+// unknown state the sync badge models. This guard covers the OTHER absence a producer can send: a missing
+// key, which the required type cannot catch because the type is only a claim about the producer. Without it, a
+// second client or a proxy that drops the field takes the whole panel down instead of one seat's row.
+const shortHash = (hash: string | undefined) => (hash ?? '').slice(0, 8);
 
 export const SeatSyncBadge: React.FC<{ seat: Pick<MachineSeatStatus, 'sync' | 'pinned_hash' | 'expected_hash'> }> = ({
   seat,

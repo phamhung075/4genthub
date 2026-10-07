@@ -13,6 +13,14 @@
     `MachinesPanel.tsx`, and now these fixtures - writers counted, readers and producers not. Recorded rather
     than smoothed because the next rename needs the reader/fixture grep, not just the writer one.
   - Verified: that file 32/32 passed (it was 10 failing); `npx tsc --noEmit -p .` 0 errors.
+  - **And the render path was hardened in the same pass, as an OPTIONAL guard rather than a bug fix:** the
+    fixtures were the only producer that ever omitted the key. The Go emitter cannot - `PinnedHash string
+    json:"pinned_hash"` has no `omitempty`, `:330-331` sets both hashes on every seat unconditionally, and the
+    empty case cannot throw because the domain sends `''` for a seat with no snapshot and `''.slice(0, 8)` is
+    `''`. `shortHash` now takes `string | undefined` and falls back to `''`, so a FUTURE producer that omits the
+    key degrades one row to the `unknown` state the badge already models instead of taking the whole panel
+    down. Taken because the empty-absence is already the domain's own representation, so this adds no second
+    convention - and it is named here rather than left as an unexplained `?? ''`.
 
 ### Added
 - **The sessions page gains a chat input per seat window, shut every time it mounts** - 2026-10-07
