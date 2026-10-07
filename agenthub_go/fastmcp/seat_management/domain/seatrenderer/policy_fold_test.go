@@ -264,3 +264,45 @@ func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
 		t.Errorf("the allowed section names an alternative, which an allowance does not have:\n%s", text)
 	}
 }
+
+// TestFoldRefusesASeatScopedAllowance: an allowance is the ROOM OWNER'S act. A seat cannot compose
+// itself, so every block in its stack was put there by whoever owns the room - with one exception the
+// resolver records, an OVERRIDE, whose content the overlay supplied. At the seat scope that is the
+// seat's own act, so the allowance is refused BY NAME with the way out, the same form as the guard's
+// refusal of an approval it cannot express.
+func TestFoldRefusesASeatScopedAllowance(t *testing.T) {
+	const allowRule = `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`
+
+	seatScoped := policyModule("policy.a", allowRule)
+	seatScoped.Overridden = true
+	seatScoped.ContentScope = resolver.ScopeSeat
+
+	_, err := FoldPolicies([]resolver.ResolvedModule{seatScoped})
+	if err == nil {
+		t.Fatal("a seat-scoped allowance was folded instead of refused")
+	}
+	for _, want := range []string{`"policy.a"`, `"rig whoami*"`, "seat-scoped", "room owner's act", "move the block to the room scope"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error = %q, want it to contain %q", err.Error(), want)
+		}
+	}
+
+	// POSITIVE CONTROL 1: the same allowance from the ROOM scope folds, so this is a scope rule rather
+	// than a ban on allowances.
+	roomScoped := policyModule("policy.a", allowRule)
+	roomScoped.Overridden = true
+	roomScoped.ContentScope = "room" // ScopeRoom is unexported on purpose: only ScopeSeat has a production reader.
+	if _, err := FoldPolicies([]resolver.ResolvedModule{roomScoped}); err != nil {
+		t.Errorf("a room-scoped allowance was refused: %v", err)
+	}
+
+	// POSITIVE CONTROL 2, and the reason the rule keys on the OVERRIDE rather than on the scope alone:
+	// an ADDED module carries the owner's PUBLISH and no overlay content, so it folds at any scope.
+	// This is the case the ten room policy modules take, and it must not be refused.
+	added := policyModule("policy.a", allowRule)
+	added.Overridden = false
+	added.ContentScope = resolver.ScopeSeat
+	if _, err := FoldPolicies([]resolver.ResolvedModule{added}); err != nil {
+		t.Errorf("an added module was refused: %v", err)
+	}
+}

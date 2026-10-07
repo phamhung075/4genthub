@@ -101,6 +101,12 @@ type ResolvedModule struct {
 	Kind       ModuleKind
 	Content    string
 	Overridden bool
+	// ContentScope is the overlay scope that supplied this module's content - `company`, `room` or
+	// `seat` - or the empty string when the content came from the seat type's own refs. It is
+	// PROVENANCE rather than content: the rendered bytes and the hash are the same wherever the same
+	// text came from, so computeHash deliberately does not read it. The renderer uses it to refuse a
+	// block that a seat granted ITSELF, which is the one place an allowance may not come from.
+	ContentScope string
 }
 
 type ResolvedSeat struct {
@@ -114,10 +120,12 @@ type ResolvedSeat struct {
 const (
 	scopeCompany = "company"
 	scopeRoom    = "room"
-	scopeSeat    = "seat"
+	// ScopeSeat is the seat scope, exported because the RENDERER has to name it: an allowance may not
+	// arrive from a seat-scoped overlay, and that rule is enforced where the blocks are folded.
+	ScopeSeat = "seat"
 )
 
-var scopeOrder = []string{scopeCompany, scopeRoom, scopeSeat}
+var scopeOrder = []string{scopeCompany, scopeRoom, ScopeSeat}
 
 // requireConcrete rejects the empty version and the "latest" alias: a resolved seat only moves when
 // a new resolved version is published, so no ref may defer to the catalog's newest module.
@@ -132,13 +140,16 @@ type moduleState struct {
 	version    string
 	content    string
 	overridden bool
+	// contentScope records where the content came from, so the renderer can tell a block the seat
+	// type supplied from one a seat-scoped overlay injected. Empty means the seat type's own refs.
+	contentScope string
 }
 
 func Resolve(catalog Catalog, seatType SeatTypeVersion, overlays []Overlay) (ResolvedSeat, error) {
 	byScope := make(map[string]Overlay, len(overlays))
 	for _, ov := range overlays {
 		switch ov.Scope {
-		case scopeCompany, scopeRoom, scopeSeat:
+		case scopeCompany, scopeRoom, ScopeSeat:
 		default:
 			return ResolvedSeat{}, fmt.Errorf("invalid overlay scope %q", ov.Scope)
 		}
@@ -162,7 +173,7 @@ func Resolve(catalog Catalog, seatType SeatTypeVersion, overlays []Overlay) (Res
 			continue
 		}
 		for _, op := range ov.Ops {
-			if err := applyOp(state, op); err != nil {
+			if err := applyOp(state, op, scope); err != nil {
 				return ResolvedSeat{}, err
 			}
 		}
@@ -184,7 +195,7 @@ func Resolve(catalog Catalog, seatType SeatTypeVersion, overlays []Overlay) (Res
 	return seat, nil
 }
 
-func applyOp(state map[string]*moduleState, op Op) error {
+func applyOp(state map[string]*moduleState, op Op, scope string) error {
 	switch op.Kind {
 	case OpAdd:
 		if _, ok := state[op.Slug]; ok {
@@ -209,6 +220,10 @@ func applyOp(state map[string]*moduleState, op Op) error {
 		}
 		st.content = op.Content
 		st.overridden = true
+		// The one place content is supplied WITHOUT a published module: an override's text is the
+		// overlay's, so its scope is the fact the renderer needs to tell an owner's act from a
+		// seat's own. An `add` carries a version and no content, so it records nothing here.
+		st.contentScope = scope
 	case OpPin:
 		st, ok := state[op.Slug]
 		if !ok {
@@ -237,11 +252,12 @@ func resolveModules(catalog Catalog, state map[string]*moduleState) ([]ResolvedM
 			content = st.content
 		}
 		modules = append(modules, ResolvedModule{
-			Slug:       slug,
-			Version:    version,
-			Kind:       mv.Kind,
-			Content:    content,
-			Overridden: st.overridden,
+			Slug:         slug,
+			Version:      version,
+			Kind:         mv.Kind,
+			Content:      content,
+			Overridden:   st.overridden,
+			ContentScope: st.contentScope,
 		})
 	}
 	return modules, nil

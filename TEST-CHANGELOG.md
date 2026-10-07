@@ -2,6 +2,18 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-07 - an allowance may not come from a seat-scoped override
+
+- `seatrenderer/policy_fold_test.go`: `TestFoldRefusesASeatScopedAllowance` — a seat-scoped **override**
+  carrying an allowance is refused with the module, the pattern, "seat-scoped", "room owner's act" and the
+  way out all named in the message; and **two positive controls** keep it a scope rule rather than a ban:
+  the same allowance from the room scope folds, and an **added** module (the owner's publish, no overlay
+  content) folds at any scope — the case the ten room policy modules take.
+- `resolver/resolver_test.go`: the seat-scope literal now uses the exported `ScopeSeat`, the value the
+  renderer and this test share.
+- Verified: `go test -count=1 ./...` → **143 packages ok, 0 FAIL**; `gofmt -l` and `go vet` clean on both
+  packages; the new test PASSES by name.
+
 ## 2026-10-07 - the policy guard's second approval, and the words that must not lie
 
 - `seatrenderer/policy_test.go`: `TestParsePolicyModuleAcceptsAnAllowanceWithoutASibling` pins the

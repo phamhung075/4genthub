@@ -180,7 +180,7 @@ func TestResolveRemove(t *testing.T) {
 
 func TestResolveRemoveAbsentErrors(t *testing.T) {
 	overlays := []Overlay{{
-		Scope: scopeSeat,
+		Scope: ScopeSeat,
 		Ops:   []Op{{Kind: OpRemove, Slug: "tool.new"}},
 	}}
 	if _, err := Resolve(testCatalog(), baseSeatType(), overlays); err == nil {
@@ -226,7 +226,7 @@ func TestResolveOverrideErrors(t *testing.T) {
 
 func TestResolvePin(t *testing.T) {
 	overlays := []Overlay{{
-		Scope: scopeSeat,
+		Scope: ScopeSeat,
 		Ops:   []Op{{Kind: OpPin, Slug: "skill.alpha", Version: "1.0.0"}},
 	}}
 	seat, err := Resolve(testCatalog(), baseSeatType(), overlays)
@@ -248,7 +248,7 @@ func TestResolvePinErrors(t *testing.T) {
 	}
 	for name, op := range cases {
 		t.Run(name, func(t *testing.T) {
-			overlay := Overlay{Scope: scopeSeat, Ops: []Op{op}}
+			overlay := Overlay{Scope: ScopeSeat, Ops: []Op{op}}
 			if _, err := Resolve(testCatalog(), baseSeatType(), []Overlay{overlay}); err == nil {
 				t.Fatal("expected pin error, got nil")
 			}
@@ -259,7 +259,7 @@ func TestResolvePinErrors(t *testing.T) {
 func TestResolveScopeOrderIndependentOfInputOrder(t *testing.T) {
 	company := Overlay{Scope: scopeCompany, Ops: []Op{{Kind: OpOverride, Slug: "doc.guide", Content: "company"}}}
 	room := Overlay{Scope: scopeRoom, Ops: []Op{{Kind: OpOverride, Slug: "doc.guide", Content: "room"}}}
-	seatOverlay := Overlay{Scope: scopeSeat, Ops: []Op{{Kind: OpOverride, Slug: "doc.guide", Content: "seat"}}}
+	seatOverlay := Overlay{Scope: ScopeSeat, Ops: []Op{{Kind: OpOverride, Slug: "doc.guide", Content: "seat"}}}
 
 	forward, err := Resolve(testCatalog(), baseSeatType(), []Overlay{company, room, seatOverlay})
 	if err != nil {

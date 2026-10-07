@@ -41,6 +41,25 @@ func FoldPolicies(modules []resolver.ResolvedModule) (*PolicySet, error) {
 		if err != nil {
 			return nil, fmt.Errorf("policy module %q: %w", m.Slug, err)
 		}
+		// AN ALLOWANCE IS AN OWNER'S ACT. A seat cannot compose itself, so every block in its stack
+		// was put there by whoever owns the room - with one exception the resolver records: an
+		// OVERRIDE carries content the overlay supplied, and at the seat scope that is the seat's own
+		// act. A block may DENY from anywhere (adding a denial can only make a seat safer), but it may
+		// not GRANT from there, so the seat cannot widen the exemption that applies to it.
+		//
+		// The containment is what makes this a rule rather than a preference: a seat-scoped block that
+		// wants to exempt itself is refused, and refused BY NAME with the way out, the same form as
+		// the guard's refusal of an approval it cannot express.
+		if m.Overridden && m.ContentScope == resolver.ScopeSeat {
+			for _, rule := range block.BashRules {
+				if rule.Approval == "allow" {
+					return nil, fmt.Errorf(
+						"policy module %q supplies the allowance %q from a seat-scoped overlay: an allowance is the room owner's act and a seat must not grant itself one - move the block to the room scope, or make this a denial",
+						m.Slug, rule.Match,
+					)
+				}
+			}
+		}
 		if set.Role == "" {
 			set.Role = block.Role
 		} else if set.Role != block.Role {
