@@ -306,3 +306,12 @@ def test_a_compaction_record_shows_as_a_line_and_resets_the_context_reading():
     assert watch.context_tokens(line) == 42545
     text = "".join(watch.events(line, 100))
     assert "COMPACTED" in text and "234k -> 43k" in text
+
+
+def test_seat_model_is_the_last_model_in_the_log_tail(tmp_path):
+    log = tmp_path / "s.jsonl"
+    log.write_text(
+        '{"message":{"model":"old"}}\n{"message":{"model":"claude-opus-5-5"}}\n'
+    )
+    assert watch.seat_model(log) == "claude-opus-5-5"
+    assert watch.seat_model(None) == ""

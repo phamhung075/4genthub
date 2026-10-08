@@ -99,6 +99,16 @@ def context_tokens(line: str) -> int | None:
     return sum(int(usage.get(k) or 0) for k in keys) or None
 
 
+def seat_model(log: Path | None) -> str:
+    """The model that answered last, read from the log's tail (``message.model`` in both runtimes)."""
+    if log is None:
+        return ""
+    with open(log, "rb") as fh:
+        fh.seek(max(log.stat().st_size - 300_000, 0))
+        found = re.findall(r'"model":"([^"]+)"', fh.read().decode(errors="replace"))
+    return found[-1] if found else ""
+
+
 def kilo(n: int) -> str:
     return f"{n / 1000:.0f}k" if n < 1_000_000 else f"{n / 1_000_000:.2f}M"
 
@@ -513,8 +523,8 @@ class Header:
 
     REPEAT = 20  # seconds between bar lines, printed only when the reading moved
 
-    def __init__(self, name: str, colour: int, limit: int):
-        self.name, self.colour, self.limit = name, colour, limit
+    def __init__(self, name: str, colour: int, limit: int, model: str = ""):
+        self.name, self.colour, self.limit, self.model = name, colour, limit, model
         self.tokens: int | None = None
         self.last = ("", 0.0)
 
@@ -527,7 +537,8 @@ class Header:
         return f"{BOLD}{fg(colour)}{pct:>4.0%}{RESET} {fg(RESULT_COLOR)}{kilo(self.tokens):>5}{RESET} "
 
     def draw(self) -> None:
-        title = f"{BOLD}{fg(self.colour)}== {self.name} =={RESET}  {token_bar(self.tokens, self.limit)}"
+        who = f"{self.name} | {self.model}" if self.model else self.name
+        title = f"{BOLD}{fg(self.colour)}== {who} =={RESET}  {token_bar(self.tokens, self.limit)}"
         text, at = self.last
         waited = time.time() - at
         if title != text and waited >= self.REPEAT:
@@ -543,7 +554,9 @@ def feed(a: argparse.Namespace) -> None:
     pos: dict[str, tuple[Path, int]] = {}
     # One seat in view (a grid pane): its name and token bar are the pinned top row, not a column.
     header = (
-        Header(seats[0], color[seats[0]], COMPACT_LIMIT) if len(seats) == 1 else None
+        Header(seats[0], color[seats[0]], COMPACT_LIMIT, seat_model(seat_log(a.rig, seats[0])[0]))
+        if len(seats) == 1
+        else None
     )
 
     def log_of(seat):
