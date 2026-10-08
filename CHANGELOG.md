@@ -1,3 +1,13 @@
+## The surface inventory's counts re-measured at the tip: 145 routes, ten MCP tools, and five rotted rows repaired
+
+### Changed
+- `ai_docs/api-integration/surface-inventory.md`: the route count is **125 in `httpapp` + 20 in `fastmcp/auth` = 145**, re-measured at HEAD `88d27758` with the control that makes it a drift figure rather than a preference — the identical pattern returns **124** at `6dc06203` (the figure it replaces, REPRODUCED) and **125** at HEAD, so exactly ONE registration was added: `GET /api/v2/tasks/{id}/events` (`task_routes.go:107`), the task-event ledger's read route, which now has its row (`routes.GetTaskEvents`, `after_seq` query). Three further rows had rotted by exactly +10 (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and two by exactly +4 (`seat_status_mount.go` 91->95, 94->98); each shift is a single insertion, which is the control that names the cause rather than assuming it. **The Reproduce line was itself a defect: it cited `rg -n`, which is not installed in this environment, over a scope that includes `*_test.go` — 127 lines at HEAD rather than the figure's 125.** It now cites the command that produced the number: `grep -rn "mux.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> 145.
+- `ai_docs/api-integration/mcp-tools-api-complete.md`: the ten-tool figure re-dated to `88d27758` and verified from the CLIENT side — the ten routes a connected session exposes — rather than from the registry alone. The set is unchanged since `763b8196`.
+- `agenthub_go/PROD_READINESS_REPORT.md:179`: cited `MIGRATION.md:996` in a **972-line** file, so the citation pointed past EOF. It now cites `MIGRATION.md:951`, **verified by reading that line** (it carries the `stats returns 500` half of the sentence) and records that the `PUT {id}` requires-`task_id` half has **no line in MIGRATION.md** — so a reader cannot take the citation for more than it supports.
+
+### Tested
+- All 145 route rows re-checked against the tree with a resolver that searches for the cited file's basename and accepts a row only when its line is a registration of that method: **145 verified, 0 problems** (the five repairs above were the only mismatches found).
+
 ## The watch wall comes back in the same style after every relaunch, resume or runtime switch
 
 ### Changed
@@ -7,6 +17,31 @@
 
 ### Tested
 - `test_a_relaunched_grid_replaces_the_old_one_and_keeps_the_same_layout`; the herdr fake now answers `workspace create`. 26 script tests pass (`--noconftest`).
+
+## The seat instructions now teach the commit form they were changed to (ten policy modules, three guide-common copies, one lock re-record)
+
+### Changed
+- `scripts/team/4genthub-min/policy-*.json` (ten files, nine identical siblings each, 90 strings): the sibling every denied git command answers with no longer says "stage explicit paths (`git add -- <path>`)" first. It now says to commit with `git commit -m "..." -- <paths>` **without** staging first, that the index is shared so a staged line can be taken by another seat's commit, that a new file is the one exception and is marked with `git add -N -- <new>` (intent-to-add, no content enters the index), and that just before committing the seat reads `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>` and names every line: if a line is not yours, do not commit that file, commit your other paths and hold it until its owner commits. Copied verbatim from `ai_docs/architecture-design/decision-commit-form-in-seat-instructions.md` at `4cc8790b`, which carries both later corrections (`4f375115`: add -N; `4cc8790b`: hold the file).
+- `ai_docs/operations/seat-guides/_common.md` (the source) and `scripts/team/4genthub-min/guide-common.md`: line 22 rewritten to the same form, keeping its commit-types and changelog sentences; a new paragraph beside it adds the canonical script-test command and the reason the flag is not decoration (`--noconftest`), which until now lived only in the reviewer's guide.
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md`: re-copied from the source, so the shelf is no longer behind it — it was missing the whole "Startup and the approval gate" section. All three copies are now one byte-identical file (`1b0a2f11`).
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides.lock.json`: guide-common's `sha256` and `source_sha256` re-recorded to `1b0a2f11…`; both had been `1df9362d…`, stale for the shelf and for the source.
+
+### Added
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go` and `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py` — both red before this change; see `TEST-CHANGELOG.md`.
+
+### Not in this commit
+- The ten live `~/.openrig/state/omp/*/agent/AGENTS.md`: outside the repository, and the lead takes that step separately.
+- `ai_docs/index.json`: the generated docs index, whose diff is the architect's two decision notes rather than this change.
+
+## The seat trailer ships as a hook-framework config entry, not as an install
+
+### Changed
+- `agenthub_main/.pre-commit-config.yaml`: the seat trailer is one `repo: local` entry at stage `prepare-commit-msg`, so the repository owns the mechanism it runs through. What remains of the install is ONE reproducible command, `pre-commit install --hook-type prepare-commit-msg`, which writes the framework's own generated hook (its header says "File generated by pre-commit") into `.git/hooks`; nothing hand-copied and nothing of ours lives there, and the note's copy-into-`.git/hooks` instruction is superseded. The reason the note forbade this file is stale: it recorded that config as archived, and it is live - the generated `.git/hooks/pre-commit` execs `pre_commit --config=agenthub_main/.pre-commit-config.yaml`, with `core.hooksPath` unset.
+- **The delivery changed; the hook's contract did not.** For this stage `pre_commit` replaces the file list with the commit MESSAGE FILE (`commands/run.py:_all_filenames`), so the script still receives the message file as `$1`. The entry must therefore not carry `pass_filenames: false`, which would pass no message file at all - the note in the config says so where the next reader will be.
+- Measured end to end in a throwaway repository whose `.git/hooks/prepare-commit-msg` is the framework's own generated hook: a commit with `OPENRIG_SESSION_NAME` set gains `Seat: <address>`; a commit with the variable removed gains nothing and still succeeds; a body line reading `Gates: ...` is prose and does not disturb the trailer; and two amends leave exactly one trailer.
+
+### Removed
+- `scripts/git-hooks/prepare-commit-msg`: the `--check` mode is deleted together with the install step it existed for, and two guards replace it - no message file (the framework's `run` mode) and no `OPENRIG_SESSION_NAME` both exit 0 and write nothing, so an instrument can never refuse a commit. Its comment now carries what the census measured: **an absent trailer means "not a seat" only once this is live**, because seat commits made before it carried no trailer either.
 
 ## Seat instructions will teach the no-prestage commit form, decided (architect's decision note, 2026-10-08)
 
@@ -21,8 +56,6 @@
 
 ### Changed
 - `scripts/openrig_watch_tools.py`: one `COMPACT_LIMIT = 200_000` for every seat (it was 850k for omp seats, an assumed 200k for Claude Code) plus `HARD_LIMIT = 400_000`. The pinned bar turns red with ` LIMIT REACHED ` past 200k. The omp harness still compacts at about 850k on its own, as a backstop. The Claude Code limit remains an assumption.
-- The grid pane scrolls again: the bar is no longer pinned through a terminal scroll region (lines scrolled inside one never reach the scrollback). Every event line starts with the seat's context percent and tokens, and the full bar prints after the backlog and again whenever the reading moves. `--lines` defaults to 60.
-- The supervisor sends `/compact` only to a seat OpenRig reports idle (a `/compact` typed into a working seat becomes a steering message and is read as text) and waits 60s of log silence by default. Witnessed: lead 234k -> 43k.
 
 ## Commits will name their seat: a hook-written `Seat:` trailer, decided
 
