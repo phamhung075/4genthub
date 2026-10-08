@@ -1,3 +1,8 @@
+## O1a's table is defined in Go and its events read gets its own interface
+
+### Changed
+- `agenthub_go/NEXT_GEN.md` O1a: the architect's note had told go-dev to append the `task_events` definition to `infrastructure/database/models.go`, which is generated from the archived Python metadata. The table is now a hand-written `TableDef` in a new `infrastructure/database/task_event_tables.go`, registered through `init()` the way `seat_tables.go` and `email_token_repository.go` already do. `kind`/`actor_kind` are CHECK constraints there. `GET /api/v2/tasks/{id}/events` gets a narrow `TaskEventReader` and reaches 404 through the existing `GetTask` with the caller's id; `UserTaskController` is not widened. Two acceptance tests run without PostgreSQL: the table's registry order and the handler's 404. Decision only, no code.
+
 ## The seat watch shows each seat's context against its compaction point, and a Claude Code seat in the same style
 
 - **WHAT CHANGED.** `scripts/openrig_watch_tools.py`: the top row of every feed pane is pinned (the feed scrolls below it) and reads `== seat ==  <bar> <percent> <used>/<limit> to compact`, updated each second from the latest usage in the seat log. A Claude Code seat (the `architect`) is read from its `--session-id` log in `~/.claude/projects` and shown with the same tool-call, result, thinking and say lines as an omp seat, replacing the plain `tmux capture-pane` mirror.
