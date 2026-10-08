@@ -608,7 +608,9 @@ Run from `/home/daihu/__projects__/4genthub/agenthub_go` unless noted.
 # Every route registration (the source of §1)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go'
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go'
-# Counts: 121 httpapp + 20 auth = 141
+# Counts: 123 httpapp + 20 auth = 143, re-measured 2026-10-08 at 62b734ec
+# (this line read 121 httpapp + 20 auth = 141 and was stale; both commands above now return 123 and 20,
+#  and apirefgen agrees - `go run ./cmd/apirefgen` reported "143 routes, 10 tools" at the same HEAD)
 grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go' | wc -l
 grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/auth | grep -v '_test.go' | wc -l
 
