@@ -131,8 +131,15 @@
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 6,
+      "count": 7,
       "files": [
+        {
+          "hash": "88f4764386ddea12b7e537816fb2084d",
+          "modified": "2026-10-08T19:11:27.245804",
+          "name": "decision-seat-attribution.md",
+          "path": "architecture-design/decision-seat-attribution.md",
+          "size": 5788
+        },
         {
           "hash": "3ec8f120ff8f6ef3cf920c32be084727",
           "modified": "2026-10-03T22:31:18.057918",
@@ -142,7 +149,7 @@
         },
         {
           "hash": "15d3994dacafe3785c7626f6bbc23826",
-          "modified": "2026-10-08T19:01:00.574784",
+          "modified": "2026-10-08T19:02:18.606265",
           "name": "decision-orchestration-layer.md",
           "path": "architecture-design/decision-orchestration-layer.md",
           "size": 5678
@@ -169,11 +176,11 @@
           "size": 40950
         },
         {
-          "hash": "7c893a2606aa71e7ab2ff685582acc57",
-          "modified": "2026-10-08T19:01:28.178601",
+          "hash": "3761e049b942b937a0f1d01f60d75a82",
+          "modified": "2026-10-08T19:02:18.346267",
           "name": "decision-seat-client-fold.md",
           "path": "architecture-design/decision-seat-client-fold.md",
-          "size": 4395
+          "size": 4787
         }
       ],
       "path": "architecture-design"
@@ -265,7 +272,7 @@
         },
         {
           "hash": "390f73a0d9f534b34b06d6acd6d61a66",
-          "modified": "2026-10-08T19:01:11.110714",
+          "modified": "2026-10-08T19:02:18.606265",
           "name": "agenthub-system-architecture.md",
           "path": "core-architecture/agenthub-system-architecture.md",
           "size": 19739
@@ -662,7 +669,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T19:02:10.887632",
+  "generated_at": "2026-10-08T19:11:27.317078",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -710,6 +717,7 @@
         "PRD.md",
         "decision-agy-runtime.md",
         "decision-orchestration-layer.md",
+        "decision-seat-attribution.md",
         "decision-seat-client-fold.md",
         "product-architecture-complete.md"
       ]
@@ -827,5 +835,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 75
+  "total_files": 76
 }

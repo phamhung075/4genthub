@@ -1,0 +1,30 @@
+Decision: every commit carries a `Seat:` trailer added by a git hook from the seat's own environment; board rows stay the record of who owns a workstream, and are not a second attribution system
+
+Context: every commit in this tree has the same author name and email, so git cannot name the seat that made it (lead, 2026-10-08 17:10Z). On 2026-10-08, two shared-file incidents (`1d6c09d4`, `e66607a9`) hit entries from the seat-watch tooling, and no seat could be named as its owner. A grep of the transcripts counts discussion, not authorship. A grep of the seat `AGENTS.md` files proves the area of work, not who did it. Measured 2026-10-08:
+- Every seat shell exports `OPENRIG_SESSION_NAME` (this seat: `4genthub-min-architect@4genthub-min`), which is the same address `rig send` uses. So the identity is in the environment, not only in the message header, and a trailer is expressible.
+- `web-dev` already writes a `Seat:` trailer by hand (6 of the last 200 commits, as `Seat: 4genthub-min.web-dev`). No other seat does.
+- Hooks run from `.git/hooks`, which is not version-controlled. The only `.pre-commit-config.yaml` is in the archived `agenthub_main/`.
+
+Options:
+- A. Board row per workstream. Pros: names the owner before anything is committed, and a lookup replaces a history search. Cons: it names the owner of a topic, not the seat behind a commit, so a ride-in stays unattributable. It works only if every seat files a row, and the seat-watch tooling had none. This is the existing rule ("work another seat must act on needs a row"), so it adds no mechanism.
+- B. A `Seat:` trailer, written by hand by convention. Pros: each commit attributes itself, whatever the git identity. `web-dev` shows it works. Cons: it relies on ten seats remembering it on every commit. Tonight's ladder shows that a step a seat must remember gets skipped under pressure. The format is already inconsistent: `web-dev` writes `4genthub-min.web-dev`, while the address is `4genthub-min-web-dev@4genthub-min`.
+- C. A `Seat:` trailer added by a `prepare-commit-msg` hook: `git interpret-trailers --in-place --if-exists doNothing --trailer "Seat: $OPENRIG_SESSION_NAME" "$1"`, run only when the variable is set. A human's commit gets no trailer and is not refused. Pros: every seat's commit attributes itself, nobody has to remember anything, and the value is the address, so a reader can `rig send` it directly. `--if-exists doNothing` leaves a hand-written trailer alone. Cons: the hook is installed in the shared `.git/hooks`, which belongs to the owner's environment and is not versioned. A hook that is installed but missing from the repository cannot be reproduced.
+
+Recommendation: C. The hook script is kept in the repository (`scripts/git-hooks/prepare-commit-msg`) and installed into `.git/hooks` as one step that the owner approves. A keeps doing its own job: once a trailer names a committer, the board names the workstream's owner. Its gap tonight was a missing row, and that is enforced by the existing rule, not by a new mechanism. B is C without the guarantee.
+
+What C does not fix: a trailer names the seat that ran `git commit`, not the author of every line in the commit. `0c8122a9` is the counterexample: go-dev's commit carried the architect's two staged lines. A trailer there would read go-dev and would be wrong for those lines. A trailer is true for a commit's lines only when the commit holds only the committer's lines. That is the pre-commit ladder's job: before committing, read the same scope the commit will take. So C and the ladder are one fix in two parts. Neither one alone attributes a line.
+
+Consequences:
+- This is additive to the code (a new script, nothing changed) and changes the commit convention for every seat: each commit message gains one line, and no seat changes what it types. Installing a hook into the shared `.git` is a change to the owner's environment, so the owner approves the install step. The lead assigns the script.
+- `web-dev`'s six hand-written trailers stay as history. Its next commits get the hook's form, and it should stop writing the trailer by hand so one source writes it.
+- Attribution reading for every seat: `git log --format='%h %(trailers:key=Seat,valueonly)'`. A commit without the trailer was made before the install or by a human, and says so by having no trailer.
+
+Acceptance (dev seat: skills-dev, whose area is seat tooling; go-dev if the lead prefers):
+- May touch: new `scripts/git-hooks/prepare-commit-msg`, its test under `agenthub_main/src/tests/scripts/` (the valid test path), and CHANGELOG/TEST-CHANGELOG.
+- Must not touch: `.git/hooks` (the owner's step), `.claude/`, `agenthub_main/.pre-commit-config.yaml`, any seat's environment.
+- Failing first: a test that makes a commit in a throwaway repo with `OPENRIG_SESSION_NAME=x@y` and expects the trailer `Seat: x@y`, red before the script exists.
+- Negatives: with the variable unset, no trailer is added and the commit succeeds; with a `Seat:` trailer already in the message, it is not duplicated; a merge or amend message is handled the same way, with one trailer at most.
+- Command: `python -m pytest agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py -q`. The throwaway repo sets its git identity inline, and cleanup does not use `rm`.
+- Install (owner-approved, after the test passes): copy the script to `.git/hooks/prepare-commit-msg` and make it executable, after first checking that no `prepare-commit-msg` hook exists there already. If one exists, stop and report it.
+
+Handoff: the lead assigns the script, and takes the install step to the owner, because it changes `.git` in the owner's environment. Nothing depends on anything deleted or never built: `OPENRIG_SESSION_NAME` and `git interpret-trailers` (git 2.43 here) both exist today.

@@ -1,3 +1,8 @@
+## Commits will name their seat: a hook-written `Seat:` trailer, decided
+
+### Added
+- `ai_docs/architecture-design/decision-seat-attribution.md`: every commit in this tree has the same git author, so git cannot name the seat that made it. The decision is a `prepare-commit-msg` hook that adds `Seat: $OPENRIG_SESSION_NAME` (measured: every seat shell exports it) through `git interpret-trailers`, with the script kept under `scripts/git-hooks/` and its install into `.git/hooks` approved by the owner. Board rows stay the record of who owns a workstream. Limit stated: a trailer names the seat that committed, not the author of every line in the commit (`0c8122a9` is the counterexample), so it is true only together with the pre-commit ladder. Decision only, no code.
+
 ## O1a's table is defined in Go and its events read gets its own interface
 
 ### Changed
