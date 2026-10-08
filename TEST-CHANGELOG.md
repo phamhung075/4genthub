@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the seat-attribution hook, pinned by a suite that was made to detect (python)
+
+- New `agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py`, seven cases, `pytest.mark.unit` and
+  self-contained (a throwaway repository per case, git identity set inline, cleanup is pytest's `tmp_path`,
+  no `rm` anywhere): the trailer lands when the variable is set; an unset variable adds NOTHING and the
+  commit still succeeds; a hand-written `Seat:` trailer is not duplicated; an amend keeps ONE trailer;
+  `--check` reports a free hook path and INSTALLS NOTHING; `--check` reports an occupied path and names it;
+  and what a seat installs is the versioned file byte for byte.
+- **RED-GREEN-RED-GREEN, because a suite that has never failed has not been shown to detect anything**:
+  script absent -> 7 failed; implemented -> 7 passed; a CONTROL hook that does nothing -> the positive case
+  red with `assert 'Seat: 4genthub-min-skills-dev@4genthub-min' in 'subject\n\n'`; restored byte-identical ->
+  7 passed. The control is the half that proves the assertion is about the trailer rather than about git.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_prepare_commit_msg_seat.py -q`
+  -> 7 passed.
+
 ## 2026-10-08 - compaction supervisor tests
 
 - `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py` (new, 5 tests): under the limit is left alone; past 200k and still working is told once and not compacted; quiet past 200k is told then compacted; a seat that dropped below is told again later; at 400k it is compacted while working. Run with `pytest --noconftest` because the repo conftest connects to PostgreSQL before every test. Together with the watch tests: 28 pass.
