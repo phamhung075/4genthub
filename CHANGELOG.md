@@ -1,3 +1,29 @@
+## Release `0.0.27` — the deploy marker, so a landed deploy and a silently-skipped one stop looking identical
+
+### Changed
+- `agenthub_go/fastmcp/config/version.go:21`: `ReleaseVersion` `0.0.26` -> **`0.0.27`**. It is the only *code* literal that moves (`git grep -n '0\.0\.26'` returns this line plus two historical CHANGELOG prose lines about the previous release, which are a log and stay), and no surface keeps a copy: `httpapp/http.go:160` declares `const healthVersion = config.ReleaseVersion`, so `/health`, the MCP `initialize` `serverInfo`, the MCP status tool, `register_mcp_client` and the connection-management health route all move with it.
+- Why it is on the critical path: the owner's push auto-deploys, and the Docker build context has no `.git` — so no commit id can be embedded and the version string on `/health` is the *only* thing that can confirm a deploy actually landed. Without a bump, a successful deploy and a skipped one are indistinguishable, which is the failure this day was about.
+
+### Verified
+- From `agenthub_go` with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`: `gofmt -l fastmcp/config/version.go` prints nothing; `go build ./...` exit **0**; `go vet ./...` exit **0**; `go test ./...` exit **0** — **143 packages ok, 0 failing** — including `TestEveryVersionSurfaceReportsTheOneRelease` (**PASS**), which asserts all four version surfaces report `config.ReleaseVersion` and that the two fossils (`0.0.2c`, `2.1.0`) are gone from every one of them.
+
+### Not in this release
+- `GO-2026-5932` (`golang.org/x/crypto/openpgp`) is unchanged and stays severity **UNKNOWN**, invisible to the deploy gate (`severity: CRITICAL,HIGH`): its DB record carries `introduced: 0` with no `fixed` event, and `x/crypto v0.57.0` is already `@latest`. Named here so a later all-severity scan does not read it as a new alarm.
+
+## The route surface's counts are re-measured and dated, the removed task routes are struck, and apirefgen replaces a hand-written resolver
+
+### Changed
+- `ai_docs/api-integration/surface-inventory.md`: the Reproduce line now reads **143** (httpapp 123 + auth 20) at `db9d2bc3`, where it carried 145 — it contradicted line 30 of the same file. The acceptance block's own count read **121 + 20 = 141** and now reads **123 + 20 = 143** as a **snapshot at `62b734ec`**, with the stale figure named and the instruction to re-run its two commands rather than quote the line, because a count inside a fenced block is outside what `COUNTS-AUDIT.py` reads. The "How to read the route table" section now names `cd agenthub_go && go run ./cmd/apirefgen` (143 routes, 10 tools at that HEAD) instead of leaving the reader to hand-write a resolver for the function-scoped `const base` that the same paragraph describes — three such attempts produced junk path keys while reporting plausible counts.
+- `ai_docs/architecture-design/Architecture_Technique.md`: the row for the removed `GET /api/v2/tasks/stats/summary` is struck and marked **REMOVED by `e6829b32`**, with the command that proves its absence. **The table's check mark is the Auth Required column, not a liveness mark** — the row was live-looking because nothing dated it, and that file carries no staleness marker of its own, so the fleet's convention (name the removal commit plus a proving command, from `surface-inventory.md:545`) was used rather than a new one.
+- `ai_docs/architecture-design/decision-task-stats-endpoint.md`: the two `file:line` cites are anchored to **`e6829b32^`**, the revision at which they are correct, rather than renumbered — the removal commit moved both lines onto different routes.
+
+### Tested
+- `python3 <seat-area>/COUNTS-AUDIT.py` at `62b734ec`: **exit 0**, eleven rows matching.
+- `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref.ts` at `db9d2bc3`: **143 routes, 10 tools**; neither removed route present. The same negative holds by grep: exit 1 at `db9d2bc3`, count 1 each at `e6829b32^`.
+- The acceptance block's two commands, re-run after the edit: 123 and 20.
+
+Commits `bc5db276`, `ee71488b`, `894d4b2c`, `3fe918cb`.
+
 ## The deploy pipeline's security scan is unblocked at the root: five of six root alerts close by a range-respecting bump, and the sixth is named rather than suppressed
 
 ### Fixed
