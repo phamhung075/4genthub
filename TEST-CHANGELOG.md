@@ -6,8 +6,12 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 - `fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: 2 tests added for O1a, and BOTH SKIP HERE - all six PostgreSQL binaries are absent and both gate on `AGENTHUB_TEST_PG_URL`.
   - `TestTaskEventAppendAssignsGaplessSeq` - two concurrent Appends on ONE task get seq 1 and 2, never a duplicate, and `after_seq=1` returns only seq>1. This is the acceptance's behavioural claim, and the package's `ok` is NOT evidence of it: the package reports `ok` with both tests skipped.
-  - `TestTaskEventAppendRefusesBogusKind` - `kind='bogus'` is refused by the database's own PostgreSQL type rather than by Go.
+  - `TestTaskEventAppendRefusesBogusKind` - `kind='bogus'` is refused by the database's own CHECK constraint rather than by Go.
   - THE FAILING-FIRST ARTIFACT is the RED run captured BEFORE the implementation: `FAIL [build failed]`, eight undefined symbols. A later green build is not evidence of the gapless guarantee.
+- `fastmcp/task_management/infrastructure/database/task_event_tables_test.go`: 2 tests added for O1a's schema route, AND BOTH RUN HERE WITHOUT POSTGRES, so they are real passes rather than skips.
+  - `TestTaskEventTableRegisteredAfterTasks` - `task_events` is in `Tables` at an index AFTER `tasks`. The table is hand-written and registered from its own `init()`, which is exactly the kind of registration that silently does not happen, and `createAll` walks `Tables` in slice order with no dependency sort, so a foreign key to a table not yet created fails.
+  - `TestTaskEventTableDeclaresItsConstraints` - the DDL carries `ck_task_event_kind`, `ck_task_event_actor_kind` and `uq_task_event_seq`, read from the DDL string rather than a live database, and carries no `ON DELETE CASCADE`.
+  - CORRECTION CARRIED WITH THEM: the vocabularies are CHECK constraints in the DDL, NOT PostgreSQL enum types. `1d6c09d4`'s message says types and that is wrong - the architect ruled CHECKs, because extending one is a single DDL string and the registry has no lifecycle for `CREATE TYPE`.
 
 ## 2026-10-08 - the seat watch token bar and the Claude Code log in the feed
 

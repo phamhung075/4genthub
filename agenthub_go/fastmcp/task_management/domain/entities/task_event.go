@@ -20,9 +20,9 @@ type TaskEvent struct {
 	CreatedAt time.Time
 }
 
-// TaskEventKind is the closed vocabulary of ledger entry kinds. The database declares the same
-// set as its own type, so a value that skips these constants is refused by the DB rather than
-// silently stored - the vocabulary is enforced where the bytes land, not only where they are made.
+// TaskEventKind is the closed vocabulary of ledger entry kinds. The database declares the same set
+// as a CHECK constraint, so a value that skips these constants is refused where the bytes land
+// rather than only where they are made.
 type TaskEventKind string
 
 const (

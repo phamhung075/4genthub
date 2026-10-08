@@ -31,7 +31,8 @@ func NewTaskEventRepository(sessions *database.SessionManager, userID, branchID 
 // per-task advisory lock. Two concurrent appends on the same task therefore serialize: the second
 // reads the first's committed MAX(seq) and takes the next number, so the sequence is gapless and
 // cannot repeat. The unique constraint on (task_id, seq) is the belt to that brace - if the lock
-// were ever bypassed the insert would fail loudly rather than overwrite an event.
+// were ever bypassed the insert would fail loudly rather than overwrite an event. The vocabularies
+// are CHECK constraints in the table's DDL, so a value outside them is refused where the bytes land.
 func (r *TaskEventRepository) Append(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
 	eventID := value_objects.NewUUIDv4()
 	var out *entities.TaskEvent
