@@ -51,7 +51,7 @@ def test_a_seat_past_the_limit_still_working_is_told_once_and_not_compacted(
     path = seat_log(tmp_path, 250_000, 5)
     first = run_step(monkeypatch, path, state)
     assert len(first) == 1 and "Context limit reached" in first[0]
-    assert "rig send r-lead@r /compact" in first[0]
+    assert "do not compact yourself" in first[0]
     assert run_step(monkeypatch, path, state) == []
 
 
@@ -83,3 +83,9 @@ def test_a_working_seat_is_never_sent_compact_even_at_the_hard_limit(
 ):
     sent = run_step(monkeypatch, seat_log(tmp_path, 420_000, 600), {}, working=True)
     assert [t[:5] for t in sent] == ["Conte"]
+
+
+def test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself():
+    text = sup.notice("r", "lead")
+    assert "do not compact yourself" in text
+    assert "rig send" not in text

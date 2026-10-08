@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - compaction notice no longer asks the seat to compact itself
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: `test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself` (new); the still-working test now asserts "do not compact yourself" instead of the old `rig send ... /compact` instruction. 33 script tests pass (`--noconftest`).
+
 ## 2026-10-08 - the commit form the seats read, pinned on both sides (go + python)
 
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go`: reads the EMBEDDED `shared-modules/guide-common.md` and fails if the shelf does not say `do not stage first`, or still carries the old first form. **RED BEFORE THE FIX**, both assertions reporting (`does not say "do not stage first"`; `still prescribes the old form ("`git add -- <path>` then")`), green after. The second test is a NEGATIVE CONTROL rather than a second assertion: it first asserts the shipped shelf passes `VerifyGuidePairing`, then hands `verifyGuideLocks` the same digest map with ONLY guide-common's digest moved, and requires it to REFUSE, naming the guide and the recorded digest — so the lock is still checked and not bypassed.

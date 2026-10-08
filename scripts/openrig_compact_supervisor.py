@@ -66,11 +66,10 @@ def log(text: str) -> None:
 def notice(rig: str, seat: str) -> str:
     return (
         "Context limit reached: your session is past "
-        f"{watch.kilo(watch.COMPACT_LIMIT)} tokens. You may finish the job you are on. "
-        "When it is finished, compact your own session: run this and nothing else: "
-        f"rig send {rig}-{seat}@{rig} /compact --raw. "
-        f"If you do not, the supervisor sends /compact for you once you have been quiet for a while, "
-        f"or, at {watch.kilo(watch.HARD_LIMIT)} tokens, as soon as you are idle."
+        f"{watch.kilo(watch.COMPACT_LIMIT)} tokens. Finish the job you are on, then stop and send nothing: "
+        "do not compact yourself, a /compact sent while you work is only queued as text. "
+        "The supervisor sends /compact for you as soon as you have been idle for a few seconds, "
+        f"and at {watch.kilo(watch.HARD_LIMIT)} tokens as soon as you are idle."
     )
 
 
@@ -104,8 +103,8 @@ def step(rig: str, state: dict, quiet: int) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--rig", default="4genthub-min")
-    ap.add_argument("--quiet", type=int, default=60, help="seconds of log silence that mean the job is finished")
-    ap.add_argument("--every", type=int, default=30)
+    ap.add_argument("--quiet", type=int, default=20, help="seconds of log silence that mean the job is finished")
+    ap.add_argument("--every", type=int, default=10)
     ap.add_argument("--once", action="store_true")
     a = ap.parse_args()
     state: dict = {}
