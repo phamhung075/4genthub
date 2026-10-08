@@ -1,4 +1,4 @@
-Decision: every seat's instructions say "commit by pathspec, do not stage first", in every copy that a seat reads or that will be rendered to it. A new file is the one exception, added in the same command line as the commit.
+Decision: every seat's instructions say "commit by pathspec, do not stage first", in every copy that a seat reads or that will be rendered to it. A new file is the one exception: it is marked with `git add -N` (intent-to-add, which puts no content in the index), then committed by pathspec.
 
 Context: on 2026-10-08 the fleet changed its commit form to `git commit -m "..." -- <paths>` with no earlier `git add`, after four seats lost or took lines through the shared index in under an hour (`0c8122a9`, `e42fdbdc`, and the cases in the lead's 17:07Z-17:20Z broadcasts). The change did not hold, because the instructions every seat reads first still prescribe the old form. A rule that lives in a message loses to a rule that lives in the file a seat reads first (lead, 17:20Z). feedback-dev found the defect; the reviewer reported the same two lines at 16:44Z.
 
@@ -15,15 +15,15 @@ Recommendation: A.
 
 Replacement wording. This is one sentence, used for all nine siblings in all ten policy modules. `FoldPolicies` refuses one match with two different siblings, so all ten change identically in one commit:
 
-"commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: `git add -- <new> && git commit -m \"...\" -- <paths>`, on one command line. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+"commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
 
 guide-common line 22, which keeps its commit-types and changelog sentences:
 
-"Other seats edit the same tree. Commit by pathspec and do not stage first: `git commit -m \"<type(scope): subject>\" -- <paths>`. A new file is the one exception: `git add -- <new> && git commit ... -- <paths>`, on one command line. Just before committing, read `git status --porcelain -- <paths>` and `git diff HEAD -- <paths>`, and name every line. Never `git add .`, `-A` or `--amend`. Commit types: feat, fix, refactor, test, chore, style, ai_docs. Update `CHANGELOG.md` (and `TEST-CHANGELOG.md` when you change tests) in the same commit."
+"Other seats edit the same tree. Commit by pathspec and do not stage first: `git commit -m \"<type(scope): subject>\" -- <paths>`. A new file is the one exception: `git add -N -- <new>` (intent-to-add), then the same pathspec commit. Just before committing, read `git status --porcelain -- <paths>` and `git diff HEAD -- <paths>`, and name every line. Never `git add .`, `-A` or `--amend`. Commit types: feat, fix, refactor, test, chore, style, ai_docs. Update `CHANGELOG.md` (and `TEST-CHANGELOG.md` when you change tests) in the same commit."
 
 Why each clause is there:
 - "Just before" is there because a reading taken after a failed commit reports another seat's work (go-dev, 17:20Z).
-- The new-file exception is there because `git commit -- <path>` refuses a path git has never tracked.
+- The new-file exception is there because `git commit -- <path>` refuses a path git has never tracked. It uses `git add -N`, not `git add`: the index then holds only the empty blob (e69de29b), so nothing of the seat's sits there for another commit to take. Measured 2026-10-08 (fe-dev, then the architect in a scratch repo): a bare `git commit -m` by a second writer after `git add -N new.txt` committed only its own file; the pathspec commit then carried `new.txt` (numstat 1 0); and under pre-commit 4.4.0 (this repository's version) the same commit passed, with another file's unstaged edit restored untouched. After `-N`, `git status --porcelain` and `git diff --cached` show nothing for the file, by design, so the reading for a new file is `git diff HEAD -- <paths>`.
 - The existence precondition (`ls <file> && git ls-files --error-unmatch <file>`) stays in the fleet note, not in the sibling. It is a reading discipline, not the commit form, and `--error-unmatch` fails by design for the new-file case.
 
 Consequences and shape:
