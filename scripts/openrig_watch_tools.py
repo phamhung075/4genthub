@@ -500,18 +500,26 @@ class Header:
     scrollback, so the pane could not be scrolled. A plain line keeps the scrollback.
     """
 
-    REPEAT = 20  # seconds between lines when the reading moved; three times that when it did not
+    REPEAT = 20  # seconds between bar lines, printed only when the reading moved
 
     def __init__(self, name: str, colour: int, limit: int):
         self.name, self.colour, self.limit = name, colour, limit
         self.tokens: int | None = None
         self.last = ("", 0.0)
 
+    def tag(self) -> str:
+        """A short percent that prefixes every event line, so the meter is never scrolled out of view."""
+        if self.tokens is None:
+            return ""
+        pct = self.tokens / self.limit
+        colour = 120 if pct < 0.6 else 221 if pct < 0.8 else 203
+        return f"{BOLD}{fg(colour)}{pct:>4.0%}{RESET} {fg(RESULT_COLOR)}{kilo(self.tokens):>5}{RESET} "
+
     def draw(self) -> None:
         title = f"{BOLD}{fg(self.colour)}== {self.name} =={RESET}  {token_bar(self.tokens, self.limit)}"
         text, at = self.last
         waited = time.time() - at
-        if (title != text and waited >= self.REPEAT) or waited >= self.REPEAT * 3:
+        if title != text and waited >= self.REPEAT:
             print(title, flush=True)
             self.last = (title, time.time())
 
@@ -535,7 +543,7 @@ def feed(a: argparse.Namespace) -> None:
         if header and used:
             header.tokens = used
         stamp = time.strftime("%H:%M:%S")
-        name = "" if header else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
+        name = header.tag() if header else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
         for text in events(line, a.width, a.detail, a.lines):
             print(f"{fg(STAMP_COLOR)}{stamp}{RESET} {name}{text}", flush=True)
 
