@@ -11,6 +11,11 @@ cloud room  --hash per seat-->  openrig_seat_client.py  --rig ROOM --update-->  
                                          +-- relaunch (when quiet) -->  seat loads it at start
 ```
 
+**`openrig_seat_client.py` is retiring into `agenthub-client sync`.** `status` is already ported —
+`agenthub-client sync status <room>` is the same check. `sync` and `watch` stay on this script until
+`agenthub-client sync rig` and `sync watch` are ported; **the script and its test are deleted in that
+commit.** (Architect decision: `ai_docs/architecture-design/decision-seat-client-fold.md`.)
+
 Environment: `AGENTHUB_URL` (for production `https://api.4genthub.com`) and `AGENTHUB_TOKEN`. The
 token is passed on in the environment and never printed or written. The store is
 `~/.openrig/agenthub-seats` (`--out`).
