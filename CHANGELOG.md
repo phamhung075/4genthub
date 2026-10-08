@@ -1,3 +1,14 @@
+## The deploy pipeline's security scan is unblocked at the root: five of six root alerts close by a range-respecting bump, and the sixth is named rather than suppressed
+
+### Fixed
+- `package-lock.json` (root): `npm update --package-lock-only`, which moves nothing outside a range already declared in `package.json`. It resolved `sass` 1.93.3 -> **1.105.1**, and with it `immutable` 5.1.4 -> **5.1.9**, `source-map-js` 1.2.1 -> **1.2.2**, `picomatch` 2.3.1 -> **4.0.7**, `@parcel/watcher` 2.5.1 -> **2.6.0** and `chokidar` 4.0.3 -> 5.0.0. **`braces` and `micromatch` left the tree entirely** — the old `sass` reached them only through its optional `@parcel/watcher`, which `sass@1.105.1` no longer declares (it uses `chokidar ^5`). THE PARENT IS NAMED ON PURPOSE: `sass` is a direct root dependency at `^1.89.2`, so this is a parent bump, not a dedupe artefact. `npm audit` before: **6 high**. After: **0 advisories at any severity, exit 0.**
+- `agenthub-frontend/pnpm-lock.yaml`: `pnpm update yaml --lockfile-only`. `yaml` 1.10.2 -> **1.10.3** and 2.8.1 -> **2.9.1**, closing the yaml stack-overflow advisory. Frontend audit before: 11 advisories. After: 7 (2 low, 4 moderate, 1 high).
+
+### Not closed, and not suppressed
+- **The frontend's `braces` (high, GHSA-vfj7-8cjw-p6xm) has no patched release at all**: every published version is `<=3.0.3` and the advisory covers `<=3.0.3`, so `pnpm audit` prints `Patched versions: None`. It reaches the app through `tailwindcss@3.4.x` alone (`fast-glob>micromatch>braces`, `chokidar>braces`, `micromatch>braces`). The one route past it is the **tailwindcss 3 -> 4 major** — `tailwindcss@4.3.3` declares no dependencies, so braces, micromatch, chokidar and fast-glob all leave the tree — and that is an app-wide styling change rather than a lockfile bump, so it is reported for a decision rather than taken here. No `.trivyignore`, no scanner exclusion, no suppress flag.
+- **The pipeline's own scanner could not be run**: `trivy` is not installed on this host and `gh` has no `GH_TOKEN`, so the alerts were not queried from the API. The closures above are observed in `npm audit` and `pnpm audit`, which read the same lockfiles against the GitHub Advisory DB. The two scanners disagree on severity — Trivy rates immutable's prototype pollution CRITICAL, npm rates it high — so the pipeline's own verdict needs a run.
+- For the next reader: the gate is `severity: 'CRITICAL,HIGH'` with `skip-dirs: 'agenthub_main'`, so the frontend's `yaml` alert (medium) never gated the deploy, while both lockfiles are in scope. Verified after the change: `npx tsc --noEmit -p .` -> 0 `error TS` lines; `npx vite build` -> built in 18.28s.
+
 ## Seats compact to a smaller floor, and the writer seat trials a lower thinking level
 
 ### Changed
