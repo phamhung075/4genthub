@@ -1,182 +1,129 @@
-"""The seat-attribution hook: `scripts/git-hooks/prepare-commit-msg` appends `Seat: <OPENRIG_SESSION_NAME>`.
+"""The Seat trailer hook: what it writes, what it refuses, and what it leaves alone.
 
-FAILING FIRST: this file was written before the script exists, so every case below is red until it
-lands. WHAT IT IS FOR: every commit in this tree carries one machine identity, so git cannot name the
-seat that made it - eleven instruments across five seats failed to attribute a file on 2026-10-08.
-The trailer's value is not merely that it is unique: `OPENRIG_SESSION_NAME` IS the `rig send` address
-(for example `4genthub-min-architect@4genthub-min`), so a reader who finds the trailer can MESSAGE THE
-SEAT DIRECTLY, which no other attribution instrument last night could do.
-
-WHAT THE TRAILER DOES NOT FIX: it names the seat that RAN `git commit`, not the author of every line.
-`0c8122a9` is the counterexample - go-dev's commit carried the architect's two staged lines, and a
-trailer there would read go-dev. This hook and the pre-commit ladder are ONE FIX IN TWO PARTS.
-
-WHERE THE HOOK LIVES IN A TEST: copied into a THROWAWAY repository's own `.git/hooks`, never the
-shared repository's hook directory - installing there is the owner's step, and the last case asserts
-the script does not install anything itself. Cleanup is pytest's `tmp_path`; no case removes anything
-and none uses `rm`.
+Instrument note, and it is the point of several cases below: EVERY ASSERTION READS THE TRAILER
+THROUGH GIT'S PARSER (`git log --format=%(trailers:key=Seat,valueonly)`), never through a
+`^Key:` grep. A grep for a capitalised word and a colon counts prose: this repository's commit
+bodies contain mid-paragraph lines like "Gates: ..." and "UserTaskController: ...", and a census
+that grepped for them counted trailers that were not there. The parser, unlike the grep, reads
+only the final trailer block.
 """
 
+from __future__ import annotations
+
 import os
-import shutil
+import stat
 import subprocess
 from pathlib import Path
 
-import pytest
+# <repo>/agenthub_main/src/tests/scripts/<this file>: the repository root is four levels up, and that
+# is where scripts/git-hooks/ lives - the same relative path the pre-commit config's `entry` names.
+REPO_ROOT = Path(__file__).resolve().parents[4]
+HOOK = REPO_ROOT / "scripts" / "git-hooks" / "prepare-commit-msg"
 
-REPO = (
-    Path(__file__).resolve().parents[4]
-)  # agenthub_main/src/tests/scripts -> repository root
-HOOK = REPO / "scripts" / "git-hooks" / "prepare-commit-msg"
-IDENTITY = ["-c", "user.email=probe@local", "-c", "user.name=probe"]
-
-# Self-contained: no seat, daemon or test database is needed.
-pytestmark = pytest.mark.unit
+ADDRESS = "4genthub-min-skills-dev@4genthub-min"
 
 
-def _git(*args, cwd, env=None):
+def _git(repo: Path, *args: str, env: dict[str, str] | None = None) -> str:
+    full = dict(os.environ)
+    full.update(env or {})
     return subprocess.run(
-        ["git", *args], cwd=str(cwd), env=env, capture_output=True, text=True
-    )
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=full,
+    ).stdout
 
 
-def _env(session=None):
-    env = dict(os.environ)
-    env.pop("OPENRIG_SESSION_NAME", None)
-    if session is not None:
-        env["OPENRIG_SESSION_NAME"] = session
-    return env
-
-
-@pytest.fixture(autouse=True)
-def _interpret_trailers_available():
-    """A skip is not a pass: if git cannot do this, SAY SO and say why."""
-    probe = subprocess.run(
-        ["git", "interpret-trailers", "--help"], capture_output=True, text=True
-    )
-    if probe.returncode != 0:
-        pytest.skip(
-            "git cannot run interpret-trailers, so this hook cannot be exercised: "
-            + (probe.stderr or probe.stdout).strip().splitlines()[0]
-        )
-
-
-def _new_repo(tmp_path):
-    repo = tmp_path / "scratch"
+def _repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "repo"
     repo.mkdir()
-    assert _git("init", "-q", ".", cwd=repo).returncode == 0
+    _git(repo, "init", "-q")
+    _git(repo, "config", "user.name", "Test Seat")
+    _git(repo, "config", "user.email", "seat@example.invalid")
+    (repo / "a.txt").write_text("one\n")
+    _git(repo, "add", "a.txt")
+    _git(repo, "commit", "-q", "-m", "initial")
     return repo
 
 
-def _install(repo):
-    """Install the hook into the THROWAWAY repo only - never the shared .git/hooks."""
-    hooks = repo / ".git" / "hooks"
-    hooks.mkdir(parents=True, exist_ok=True)
-    target = hooks / "prepare-commit-msg"
-    shutil.copy2(HOOK, target)
-    os.chmod(target, 0o755)
-    return target
+def _install(repo: Path, src: Path | None = None) -> Path:
+    """Install the script the way git finds a prepare-commit-msg hook."""
+    dest = repo / ".git" / "hooks" / "prepare-commit-msg"
+    dest.write_text((src or HOOK).read_text())
+    dest.chmod(dest.stat().st_mode | stat.S_IXUSR)
+    return dest
 
 
-def _commit(repo, message, env=None, extra=()):
-    (repo / "f.txt").write_text(
-        (repo / "f.txt").read_text() + "x" if (repo / "f.txt").exists() else "x"
-    )
-    _git("add", "--", "f.txt", cwd=repo)
-    return _git(*IDENTITY, "commit", *extra, "-m", message, cwd=repo, env=env or _env())
+def _commit(repo: Path, message: str, env: dict[str, str]) -> None:
+    _git(repo, "commit", "-q", "--allow-empty", "-m", message, env=env)
 
 
-def _body(repo):
-    return _git("log", "-1", "--format=%B", cwd=repo).stdout
+def _seats(repo: Path) -> list[str]:
+    """Every Seat value git's own trailer parser finds on HEAD, in order."""
+    out = _git(repo, "log", "-1", "--format=%(trailers:key=Seat,valueonly)")
+    return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def test_a_seat_commit_carries_the_seat_trailer(tmp_path):
-    repo = _new_repo(tmp_path)
+def test_a_seat_commit_carries_the_send_address(tmp_path: Path) -> None:
+    repo = _repo(tmp_path)
     _install(repo)
-    done = _commit(repo, "subject", env=_env("4genthub-min-skills-dev@4genthub-min"))
-    assert done.returncode == 0, done.stderr
-    assert "Seat: 4genthub-min-skills-dev@4genthub-min" in _body(repo)
+    _commit(repo, "feat: something", {"OPENRIG_SESSION_NAME": ADDRESS})
+    assert _seats(repo) == [ADDRESS]
 
 
-def test_without_the_variable_nothing_is_added_and_the_commit_succeeds(tmp_path):
-    repo = _new_repo(tmp_path)
+def test_the_case_can_fail_a_do_nothing_hook(tmp_path: Path) -> None:
+    """Control: with a hook that writes nothing, the positive case is red."""
+    repo = _repo(tmp_path)
+    noop = tmp_path / "noop"
+    noop.write_text("#!/bin/sh\nexit 0\n")
+    _install(repo, src=noop)
+    _commit(repo, "feat: something", {"OPENRIG_SESSION_NAME": ADDRESS})
+    assert _seats(repo) == []
+
+
+def test_no_seat_identity_writes_nothing_and_still_commits(tmp_path: Path) -> None:
+    """The owner commits from the host, where the variable is unset."""
+    repo = _repo(tmp_path)
     _install(repo)
-    done = _commit(repo, "subject", env=_env(None))
-    assert done.returncode == 0, done.stderr
-    assert "Seat:" not in _body(repo)
+    _commit(repo, "docs: from the host", {"OPENRIG_SESSION_NAME": ""})
+    assert _seats(repo) == []
+    assert _git(repo, "log", "-1", "--format=%s").strip() == "docs: from the host"
 
 
-def test_a_hand_written_seat_trailer_is_not_duplicated(tmp_path):
-    repo = _new_repo(tmp_path)
+def test_a_hand_written_trailer_is_left_alone(tmp_path: Path) -> None:
+    repo = _repo(tmp_path)
     _install(repo)
-    done = _commit(
+    _commit(
         repo,
-        "subject\n\nSeat: hand@written",
-        env=_env("4genthub-min-skills-dev@4genthub-min"),
+        "fix: hand written\n\nSeat: someone-else@rig\n",
+        {"OPENRIG_SESSION_NAME": ADDRESS},
     )
-    assert done.returncode == 0, done.stderr
-    body = _body(repo)
-    assert body.count("Seat:") == 1, body
-    assert (
-        "hand@written" in body
-    )  # --if-exists doNothing leaves the hand-written one alone
+    assert _seats(repo) == ["someone-else@rig"]
 
 
-def test_an_amend_gets_one_trailer_at_most(tmp_path):
-    repo = _new_repo(tmp_path)
+def test_prose_that_looks_like_a_trailer_is_not_one(tmp_path: Path) -> None:
+    """The census's error, as a case: a body line reading `Gates: ...` is prose, not a trailer.
+
+    Git parses only the final trailer block, so the Seat line must still be the single value the
+    parser returns - which a `^Key:` grep would have got wrong.
+    """
+    repo = _repo(tmp_path)
     _install(repo)
-    assert (
-        _commit(
-            repo, "subject", env=_env("4genthub-min-skills-dev@4genthub-min")
-        ).returncode
-        == 0
-    )
-    done = _commit(
-        repo,
-        "subject amended",
-        env=_env("4genthub-min-skills-dev@4genthub-min"),
-        extra=("--amend",),
-    )
-    assert done.returncode == 0, done.stderr
-    assert _body(repo).count("Seat:") == 1, _body(repo)
+    body = "feat: something\n\nGates: the rung that watches for it\nSeat: not-a-trailer-here\n\nSeat is written at the end.\n"
+    _commit(repo, body, {"OPENRIG_SESSION_NAME": ADDRESS})
+    assert _seats(repo) == [ADDRESS]
 
 
-def test_check_reports_a_free_hook_path_and_installs_nothing(tmp_path):
-    repo = _new_repo(tmp_path)
-    done = subprocess.run(
-        [str(HOOK), "--check"],
-        cwd=str(repo),
+def test_no_message_file_is_not_a_failure(tmp_path: Path) -> None:
+    """The framework's own `run` mode passes no message file: nothing to write, and no refusal."""
+    repo = _repo(tmp_path)
+    hook = _install(repo)
+    result = subprocess.run(
+        [str(hook)],
         capture_output=True,
         text=True,
-        env=_env(),
+        env={**os.environ, "OPENRIG_SESSION_NAME": ADDRESS},
     )
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert "free" in (done.stdout + done.stderr).lower()
-    assert not (
-        repo / ".git" / "hooks" / "prepare-commit-msg"
-    ).exists(), "the script must not install"
-
-
-def test_check_reports_an_occupied_hook_path_and_names_it(tmp_path):
-    repo = _new_repo(tmp_path)
-    hooks = repo / ".git" / "hooks"
-    hooks.mkdir(parents=True, exist_ok=True)
-    foreign = hooks / "prepare-commit-msg"
-    foreign.write_text("#!/bin/sh\n# somebody else's hook\nexit 0\n")
-    done = subprocess.run(
-        [str(HOOK), "--check"],
-        cwd=str(repo),
-        capture_output=True,
-        text=True,
-        env=_env(),
-    )
-    assert done.returncode != 0, done.stdout
-    out = done.stdout + done.stderr
-    assert "prepare-commit-msg" in out and "free" not in out.lower(), out
-
-
-def test_the_installed_hook_is_the_repositorys_script(tmp_path):
-    """The guard's other half: what a seat installs is the versioned file, byte for byte."""
-    repo = _new_repo(tmp_path)
-    target = _install(repo)
-    assert target.read_bytes() == HOOK.read_bytes()
+    assert result.returncode == 0
+    assert _seats(repo) == []

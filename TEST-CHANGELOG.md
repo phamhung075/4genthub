@@ -4,18 +4,27 @@ Track test suite changes, fixes, and improvements for agenthub.
 
 ## 2026-10-08 - the seat-attribution hook, pinned by a suite that was made to detect (python)
 
-- New `agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py`, seven cases, `pytest.mark.unit` and
-  self-contained (a throwaway repository per case, git identity set inline, cleanup is pytest's `tmp_path`,
-  no `rm` anywhere): the trailer lands when the variable is set; an unset variable adds NOTHING and the
-  commit still succeeds; a hand-written `Seat:` trailer is not duplicated; an amend keeps ONE trailer;
-  `--check` reports a free hook path and INSTALLS NOTHING; `--check` reports an occupied path and names it;
-  and what a seat installs is the versioned file byte for byte.
-- **RED-GREEN-RED-GREEN, because a suite that has never failed has not been shown to detect anything**:
-  script absent -> 7 failed; implemented -> 7 passed; a CONTROL hook that does nothing -> the positive case
-  red with `assert 'Seat: 4genthub-min-skills-dev@4genthub-min' in 'subject\n\n'`; restored byte-identical ->
-  7 passed. The control is the half that proves the assertion is about the trailer rather than about git.
+- `agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py`, rewritten for the config delivery: six
+  cases, self-contained (a throwaway repository per case, git identity set inline, cleanup is pytest's
+  `tmp_path`, no `rm` anywhere). The trailer lands with the address when the variable is set; a CONTROL hook
+  that writes nothing turns that same case red; an unset variable adds NOTHING and the commit still
+  succeeds; a hand-written `Seat:` trailer is left alone rather than duplicated; a body line reading
+  `Gates: ...` and a mid-body `Seat:` line are PROSE, and the parser still returns exactly one Seat value;
+  and a missing message file (the framework's own `run` mode) exits 0 and writes nothing.
+- **THE INSTRUMENT IS GIT'S PARSER, NOT A GREP.** Every assertion reads
+  `git log -1 --format=%(trailers:key=Seat,valueonly)`, because the trailer census measured this
+  repository's own commit bodies carrying `Gates:` and `UserTaskController:` mid-paragraph - lines a
+  `^[A-Z][A-Za-z-]+:` grep counts as trailers and `git interpret-trailers --parse` does not. Two `--check`
+  cases were deleted with the mode they covered, because the config entry replaces the hand install.
+- **A REWRITE'S OWN REGRESSION, and the suite caught it:** `REPO_ROOT` was left one level too shallow, so
+  five cases failed reading `<repo>/agenthub_main/scripts/git-hooks/prepare-commit-msg`. That is the failure
+  of a test that reads the real file rather than a stub, which is what these cases are for.
+- **AND THE DELIVERY WAS PROVEN END TO END, not only the script.** In a scratch repository with
+  `pre_commit install --hook-type prepare-commit-msg`, a seat commit gains the trailer through the
+  framework's own generated hook, a commit with the variable removed gains none, a body line reading
+  `Gates:` is prose, and two amends leave exactly one trailer.
 - Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_prepare_commit_msg_seat.py -q`
-  -> 7 passed.
+  -> 6 passed. `--noconftest` because the repository conftest connects to PostgreSQL before every test.
 
 ## 2026-10-08 - compaction supervisor tests
 

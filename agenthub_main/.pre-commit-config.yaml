@@ -31,3 +31,16 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=5000']
       - id: check-merge-conflict
+
+  # Seat attribution. Decision: ai_docs/architecture-design/decision-seat-attribution.md
+  # The trailer names the seat that RAN `git commit` - not the author of every line - so it is one
+  # half of the fix; the pre-commit ladder checks the lines before the commit takes them.
+  # For this stage pre-commit replaces the file list with the commit MESSAGE FILE, which is the
+  # hook's argument, so do not add `pass_filenames: false`: it would pass no message file at all.
+  - repo: local
+    hooks:
+      - id: seat-trailer
+        name: "seat trailer (Seat: <send address>)"
+        entry: scripts/git-hooks/prepare-commit-msg
+        language: script
+        stages: [prepare-commit-msg]
