@@ -10,9 +10,15 @@
     two that is right**. And a path parameter absorbs a literal segment: `/seats/{room}/{seat}` also serves
     `/seats/{room}/messages`, so a caller of the latter is not calling a route that is missing. **Both produce FALSE mismatches
     rather than missed ones**, which is why the note says an unmatched row has to be explained before the drift is believed.
-  - It also records that **the tables' currency is witnessed by `agenthub_go/internal/apiref/reference_test.go`, a GO test** — so
-    a green FRONTEND run says nothing about whether `apiReference.ts` is current. The frontend's own `ApiReferenceView.real`
-    suite asserts the **component against the artefact**, not the artefact against the code.
+  - It also records that **the tables' currency is witnessed by `agenthub_go/internal/apiref/committed_artefact_test.go`,
+    `TestTheCommittedArtefactMatchesTheProducer`, a GO test** — so a green FRONTEND run says nothing about whether
+    `apiReference.ts` is current. The frontend's own `ApiReferenceView.real` suite asserts the **component against the
+    artefact**, not the artefact against the code.
+  - **CORRECTED THE SAME DAY, after go-dev built the gate: the first version of this entry named
+    `agenthub_go/internal/apiref/reference_test.go` as the witness, which was wrong in exactly the way the note was — that
+    file renders into `t.TempDir()` and never opens the committed artefact, and the package's `docs_page_drift_test.go` takes
+    both of its sides from the code. The name came from a FILENAME MATCH rather than from reading the test, which is the
+    document-over-artefact error this whole note is about. The gate's own header names this note as the intent it implements.**
   - Found while running a frontend caller-versus-route drift check: 39 call sites resolved by call syntax, 35 exact matches, and
     **all four remainders traced to the checking instrument rather than to the code** — which is what makes "no drift at breadth"
     believable rather than merely stated.

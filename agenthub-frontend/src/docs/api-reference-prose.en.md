@@ -244,6 +244,15 @@ drift here has to explain every unmatched row before it is believed:
   `/api/v2/openrig/seats/{room}/messages`. A client calling the latter is not calling a route that is
   missing.
 
-**And the witness for these tables' currency is not the frontend suite.** The artefact is checked by
-`agenthub_go/internal/apiref/reference_test.go`, a **Go** test, so a green frontend run says nothing
+**And the witness for these tables' currency is not the frontend suite.** The committed artefact is
+checked by `agenthub_go/internal/apiref/committed_artefact_test.go`,
+`TestTheCommittedArtefactMatchesTheProducer` — a **Go** test, so a green frontend run says nothing
 about whether `apiReference.ts` is current. Check it with `go test ./internal/apiref/...`.
+**Name this file rather than the package, and treat this paragraph as a correction to an earlier
+version of this note: neither of the package's other tests opens the committed file.** The package's
+`reference_test.go` renders into `t.TempDir()`, and `docs_page_drift_test.go`'s drift witness is a
+real check that takes **both** of its sides from the code — its own walk of the mount files against
+the producer. So neither can see whether the file on disk matches the producer: naming either one
+reads as coverage of a file that nothing opened, and a stale artefact would be served with every test
+green. That is what this sentence looked like before the gate existed, and it is the trap worth
+keeping here rather than only in the gate's own comment.
