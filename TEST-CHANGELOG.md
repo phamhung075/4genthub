@@ -20,6 +20,13 @@ Track test suite changes, fixes, and improvements for agenthub.
   and mocked the same `../../api`; the exact-name overlap was 1 of 44; of the retired file's 11 name-uniques, eight were this
   file's cases under different wording and one (the `listSubtasks`-was-called assertion) was already here twice. The suite
   collected both, so 12 duplicate declarations leave with it.
+- **THE PORTED CASE WAS RENAMED, AND THE OLD NAME IS NOWHERE - which is the trap for anyone auditing this pair, because the merge
+  subject counts test BODIES rather than uniques.** `2f7ada9a` says it ported "the one case"; `86cf4513` then deletes the file. The
+  case left the retired file as `should show loading state while loading full subtask` and landed here as `should hold the edit
+  dialog closed while the full subtask is still loading` (`src/tests/components/LazySubtaskList.test.tsx:785`). So a reader who
+  greps the merge's wording finds the old name NOWHERE, sees a 480-line file deleted, and concludes a ruled unique was dropped -
+  when it was renamed, not dropped. `context-dev` nearly drew that conclusion and the lead would have; the name is what this line
+  is for, not the count.
 
 ## 2026-10-08 - the absent-hash class: three sites, one failing case each, each seen red at its own line
 
