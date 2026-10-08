@@ -135,7 +135,7 @@ def test_apply_writes_every_seat_is_idempotent_and_check_reports_drift(tmp_path)
     for seat, role in policy.SEAT_ROLES[RIG].items():
         assert policy.config_path(
             tmp_path, RIG, seat
-        ).read_text() == policy.render_config(seat, role)
+        ).read_text() == policy.render_config(seat, role, RIG)
 
     assert policy.main(["apply", *args, "--check"]) == policy.EXIT_OK
     policy.config_path(tmp_path, RIG, "writer").write_text("tools: {}\n")
@@ -204,3 +204,19 @@ def test_the_default_state_root_is_the_same_under_any_HOME(monkeypatch, tmp_path
     inside_a_seat = load_module().DEFAULT_STATE_ROOT
 
     assert outside_a_seat == inside_a_seat == machine_state_root()
+
+
+def test_every_seat_keeps_only_the_recent_tail_verbatim_at_a_compaction():
+    for seat in policy.SEAT_ROLES[RIG]:
+        assert parsed(seat)["compaction"] == {
+            "keepRecentTokens": policy.KEEP_RECENT_TOKENS
+        }
+
+
+def test_only_the_trial_seat_runs_a_lower_thinking_level():
+    def level(seat):
+        text = policy.render_config(seat, policy.SEAT_ROLES[RIG][seat], RIG)
+        return yaml.safe_load(text).get("defaultThinkingLevel")
+
+    assert level("writer") == "medium"
+    assert {level(s) for s in policy.SEAT_ROLES[RIG] if s != "writer"} == {None}

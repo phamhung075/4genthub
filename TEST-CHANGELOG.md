@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - seat config pins the compaction tail and the thinking trial
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: two tests (every seat has `compaction.keepRecentTokens`; only `writer` has `defaultThinkingLevel: medium`); the byte comparison now passes the rig. `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py src/tests/scripts/test_openrig_seat_sync.py` -> 125 passed.
+
 ## 2026-10-08 - a witnessed compaction is followed by one resume message
 
 - `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: two tests pin the resume send (once after a witnessed compaction, never without a witness). `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_compact_supervisor.py` -> 9 passed.

@@ -908,7 +908,7 @@ def policy_document(policy_module, rig: str, member: str):
     roles = getattr(policy_module, "SEAT_ROLES", {}).get(rig)
     if not roles or member not in roles:
         return None
-    return policy_module.render_config(member, roles[member])
+    return policy_module.render_config(member, roles[member], rig)
 
 
 def apply_policy(document: str, target: Path) -> bool:
