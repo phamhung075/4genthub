@@ -1,3 +1,22 @@
+## The block-provenance check gets the caller it never had, so the one-source pairing is measured instead of asserted
+
+### Added
+- `agenthub_go/cmd/blockdrift`: the **first caller of `seedlibrary.CheckBlockDrift` outside its own tests**, which is why the command exists. Measured: a grep for it across `agenthub_go` returns only `blockprovenance.go` and `blockprovenance_test.go`, and every test call passes a `t.TempDir()` or a materialised copy — so the pairing between the library blocks, `guides.lock.json` and the interim `ai_docs/operations/seat-guides/*` files was asserted against a synthetic tree and never measured against a real one. A check nothing runs is a check that cannot fail.
+- The repository root is a **required flag and is never guessed**: a check that picks its own root can silently examine the wrong tree, so `-root` has no default, and a root that does not hold the library exits **3** rather than reporting a clean bill.
+- **`source-gone` is reported and does not fail.** After the migration deletes the interim files an absent source is the intended state, so it prints as `expected:` and is counted separately; only a real divergence sets the exit status. Treating it as a failure would produce a gate that can never pass once the deletion lands — a gate somebody has to disable, which is worse than no gate. The split is a named function (`partition`) so the distinction is asserted rather than buried in a loop.
+- Exit status is the contract a hook reads: **0** nothing diverges, **1** a divergence, **2** usage, **3** the check could not run.
+
+### Tested
+- `gofmt -l cmd/blockdrift/` prints nothing; `go build` and `go vet` exit 0; `go test -count=1` on `./cmd/blockdrift/`, `./fastmcp/seat_management/domain/seedlibrary/` and `./fastmcp/seat_management/domain/seatrenderer/` all report `ok`.
+- **The real tree, measured for the first time**: from `agenthub_go`, `blockdrift -root ..` → `16 block(s) in step … 0 source file(s) already gone`, exit **0**. Tonight's concurrent edits to `ai_docs/operations/seat-guides/{_common,reviewer}.md` and the matching block and lock entries moved both copies together, so the migration pairing holds.
+- **Falsified on a faithful copy of the real tree**, so no shared file was touched: the faithful copy exits **0**; one line appended to the interim source only reports `guide-reviewer: ai_docs/operations/seat-guides/reviewer.md source-differs; recorded 2ec5c7b8876f, found fd5bce4e267c` and exits **1**; an interim source deleted prints as `expected:` while the count stays at the single real divergence.
+- **An absent block file is a divergence per block, never a pass** — measured while building that copy: omitting the four `.json` blocks (`agenthub-http`, `comm-guard`, `deepseek-offload`, `sequential-thinking`) produced four `missing` divergences, which is also how the shelf's non-guide kinds became visible.
+- **`go run` cannot carry this check's status**: it prints `exit status 2` / `exit status 3` and itself exits 1, so a hook must run a built binary. These measurements used `go build -o /tmp/blockdrift`.
+
+### Not in this commit, offered to the lead rather than edited here
+- The hook stanza that would run the check in `agenthub_main/.pre-commit-config.yaml`. That file is shared, so the exact lines go to the lead to serialize, and they must invoke a BUILT binary for the `go run` reason above.
+- The bound the command documents and does not fix: the library half compares the tree against the bytes embedded in the binary, so it is a thing compared to its own shadow when the binary was built from the tree it examines. Making that half report the lock it actually applied needs an exported accessor in `seedlibrary`, which is another seat's file.
+
 ## The documented deploy path resolves against the tree, and its steps match the Go stack
 
 ### Fixed

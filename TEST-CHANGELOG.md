@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the missing caller of the block-drift check, and the three states it has to tell apart
+
+- `agenthub_go/cmd/blockdrift/main_test.go`, **NEW FILE**, beside `main.go` — the command is the first caller of `seedlibrary.CheckBlockDrift` outside its own tests, so these pin the contract that had never been exercised end to end: `partition` separates `source-gone` (the post-migration steady state, reported and not failed) from `differs`, `missing` and `source-differs`; a root that does not hold the library is a refusal (exit 3) whose message names what it could not find; and an empty shelf is one divergence per block, so absence is never read as a pass — with the shelf's own directory taken from `BlockProvenanceTable()` rather than named by the test, so the test cannot disagree with the library about where the blocks live.
+- Commands and results, from `agenthub_go`: `go test -count=1 ./cmd/blockdrift/` -> `ok agenthub/cmd/blockdrift 0.004s`; `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/` -> `ok 0.026s`; `./fastmcp/seat_management/domain/seatrenderer/` -> `ok 0.028s`.
+- Three states proven against a faithful copy of the real tree, because the shipped tree must not be perturbed to show the check bites: faithful copy -> exit **0**; one line appended to `ai_docs/operations/seat-guides/reviewer.md` only -> `source-differs; recorded 2ec5c7b8876f, found fd5bce4e267c`, exit **1**; that interim source deleted -> printed as `expected:` and not counted.
+- The command's exit status is only observable through a built binary: `go run` reports the program's status in its output and itself exits 1.
+
 ## 2026-10-08 - the View-details dialog opens on ONE click every time, and the case that fails first is the SECOND open (frontend)
 
 - `src/tests/components/TaskRowDetailsReopen.test.tsx`, **NEW FILE** — the second half of owner bug (b). `TaskRowDetailsOneClick.test.tsx` pins the first open at full fidelity; this file pins every open AFTER it, plus the two paths the fix must not break.
