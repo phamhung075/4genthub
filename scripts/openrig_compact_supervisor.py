@@ -6,6 +6,7 @@ seat once, in its terminal, that the limit is reached and how to compact itself.
 finishes (its session log is silent for ``--quiet`` seconds) and is still over the limit, the
 supervisor sends ``/compact`` for it. A compaction counts only when a new compaction record appears
 (omp) or the context drops (Claude Code); a send with no such witness is logged as a failure.
+Once a compaction is witnessed the seat is told to resume, so it carries on without the owner typing continue.
 Run it from the host, not inside a seat pane: a loop in a seat dies with the seats it watches.
 """
 
@@ -20,6 +21,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import openrig_watch_tools as watch  # noqa: E402
 
 TAIL_BYTES = 2_000_000
+RESUME = (
+    "Context was compacted. Continue the job you were on: re-read your role file and the board item "
+    "you held, check the working tree for what is already done, then carry on without waiting for me."
+)
 COOLDOWN = 900  # seconds after a /compact before the same seat is considered again
 
 
@@ -81,13 +86,17 @@ def step(rig: str, state: dict, quiet: int) -> None:
             continue
         used = last_context(path)
         s = state.setdefault(seat, {"told": False, "sent": 0.0, "before": None, "count": 0})
+        if s["before"] is not None:
+            done = compactions(path) > s["count"] or (used or 0) < s["before"] * 0.6
+            if done or now - s["sent"] > 180:
+                log(f"{seat}: /compact {'WITNESSED' if done else 'NOT witnessed'} ({watch.kilo(s['before'])} -> {watch.kilo(used or 0)})")
+                s["before"] = None
+                if done:
+                    say(rig, seat, RESUME)
+                    log(f"{seat}: told to resume")
         if used is None or used < watch.COMPACT_LIMIT:
             s["told"] = False
             continue
-        if s["before"] is not None and now - s["sent"] > 180:
-            done = compactions(path) > s["count"] or used < s["before"] * 0.6
-            log(f"{seat}: /compact {'WITNESSED' if done else 'NOT witnessed'} ({watch.kilo(s['before'])} -> {watch.kilo(used)})")
-            s["before"] = None
         if not s["told"]:
             say(rig, seat, notice(rig, seat))
             s["told"] = True

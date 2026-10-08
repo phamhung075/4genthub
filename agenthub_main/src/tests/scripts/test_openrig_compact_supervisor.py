@@ -89,3 +89,25 @@ def test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself():
     text = sup.notice("r", "lead")
     assert "do not compact yourself" in text
     assert "rig send" not in text
+
+
+def test_a_witnessed_compaction_is_followed_by_a_resume_message_once(
+    monkeypatch, tmp_path
+):
+    state = {}
+    path = seat_log(tmp_path, 250_000, 600)
+    run_step(monkeypatch, path, state)
+    assert state["lead"]["before"] == 250_000
+    after = seat_log(tmp_path, 42_000, 5)
+    first = run_step(monkeypatch, after, state)
+    assert first == [sup.RESUME] and state["lead"]["before"] is None
+    assert run_step(monkeypatch, after, state) == []
+
+
+def test_a_send_with_no_compaction_witness_sends_no_resume(monkeypatch, tmp_path):
+    state = {}
+    run_step(monkeypatch, seat_log(tmp_path, 250_000, 600), state)
+    state["lead"]["sent"] -= 200
+    assert sup.RESUME not in run_step(
+        monkeypatch, seat_log(tmp_path, 250_000, 5), state
+    )

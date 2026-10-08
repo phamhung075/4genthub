@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - a witnessed compaction is followed by one resume message
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: two tests pin the resume send (once after a witnessed compaction, never without a witness). `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_compact_supervisor.py` -> 9 passed.
+
 ## 2026-10-08 - the two always-500 task routes are pinned absent, with a control so the assertion cannot pass vacuously
 
 - `agenthub_go/fastmcp/server/httpapp/routes_mount_test.go`: `GET /api/v2/tasks/stats/summary` leaves `handlerPatterns`, `GET /api/tasks/task-1` leaves `expectedProbes()` because `mountRoutes` no longer registers it, and a new `TestRemovedTaskRoutesAreAbsent` asserts `404` for `/api/tasks/task-1` with its live neighbour `/api/tasks/task-1/context/summary` as a control that must stay mounted.
