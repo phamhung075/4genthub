@@ -134,11 +134,11 @@
       "count": 7,
       "files": [
         {
-          "hash": "88f4764386ddea12b7e537816fb2084d",
-          "modified": "2026-10-08T19:11:27.245804",
+          "hash": "6caf8f1d2261f8e2c9451858167ae3a5",
+          "modified": "2026-10-08T19:17:25.762666",
           "name": "decision-seat-attribution.md",
           "path": "architecture-design/decision-seat-attribution.md",
-          "size": 5788
+          "size": 6782
         },
         {
           "hash": "3ec8f120ff8f6ef3cf920c32be084727",
@@ -669,7 +669,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T19:11:27.317078",
+  "generated_at": "2026-10-08T19:17:25.815895",
   "structure": {
     "_absolute_docs": {
       "scripts": {
