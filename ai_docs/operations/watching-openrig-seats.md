@@ -113,3 +113,11 @@ python3 scripts/openrig_watch_tools.py watch --rig 4genthub-min
 
 Opens the seat grid and a `<rig> lead` workspace: the lead's detailed feed on top, a `lead > input` pane below
 (a line typed there goes to the lead with `rig send`). Never type or press Ctrl-C in a raw `tmux attach` pane of a seat.
+
+## Same style on every relaunch, resume or runtime switch
+
+`watch` is the one entry point and it is idempotent: it closes the rig's earlier `<rig> grid` and `<rig> lead` workspaces, then rebuilds both with the same layout (2 columns, `--back 40 --width 200 --lines 60 --detail`, seat name + model + token bar in each pane, the lead window with its input pane). The layout lives in the script, not in a saved herdr state, so it cannot drift.
+
+- `~/.openrig/bin/rig-continue.sh <rig>` runs it at the end of every restore (skip with `RIG_CONTINUE_WATCH=0`; point `WATCH_TOOL` at another copy of the script).
+- After `rig up` or a runtime switch (`rig-runtime-switch` skill, step 10) run it by hand: `python3 scripts/openrig_watch_tools.py watch --rig <rig>`.
+- Panes are matched to seats by tmux session name (`<rig>-<seat>@<rig>`), so a seat that changes LLM keeps its pane; the model in the header follows the seat's newest log. A runtime with no log reader (Codex, agy) keeps the pane and header but shows no events.

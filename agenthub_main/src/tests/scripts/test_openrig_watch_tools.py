@@ -133,6 +133,8 @@ def fake_herdr(monkeypatch, panes):
             return {"panes": panes}
         if args[:2] == ("pane", "split"):
             return {"pane": {"pane_id": f"{GRID}:new{len(calls)}"}}
+        if args[:2] == ("workspace", "create"):
+            return {"root_pane": {"pane_id": f"{GRID}:p1"}}
         return {}
 
     monkeypatch.setattr(watch, "herdr", run)
@@ -166,6 +168,23 @@ def test_inputs_hide_closes_only_the_input_panes(monkeypatch):
     watch.inputs(type("A", (), {"rig": "r", "action": "hide", "seat": None}))
     closed = [c[2] for c in calls if c[:2] == ("pane", "close")]
     assert closed == [f"{GRID}:lead > input"]
+
+
+def test_a_relaunched_grid_replaces_the_old_one_and_keeps_the_same_layout(monkeypatch):
+    calls = fake_herdr(monkeypatch, [])
+    args = type(
+        "A",
+        (),
+        {"rig": "r", "cols": 2, "back": 40, "width": 200, "lines": 60, "detail": True},
+    )
+    watch.grid(args)
+    closed = [c[2] for c in calls if c[:2] == ("workspace", "close")]
+    assert closed == [GRID]
+    assert calls.index(("workspace", "close", GRID)) < next(
+        i for i, c in enumerate(calls) if c[:2] == ("workspace", "create")
+    )
+    sent = [c[3] for c in calls if c[:2] == ("pane", "send-text")]
+    assert all("--back 40 --width 200 --lines 60 --detail" in text for text in sent)
 
 
 def test_a_typed_line_is_sent_to_its_seat_and_hide_leaves_the_loop(monkeypatch):
@@ -208,12 +227,6 @@ def test_pretty_leaves_prose_alone():
 
 def test_watch_opens_the_grid_and_a_lead_window_with_its_input(monkeypatch):
     calls = fake_herdr(monkeypatch, [])
-    monkeypatch.setattr(
-        watch,
-        "herdr",
-        lambda *a: calls.append(a)
-        or {"root_pane": {"pane_id": "w9:p1"}, "pane": {"pane_id": "w9:p2"}},
-    )
     watch.watch(
         type(
             "A",

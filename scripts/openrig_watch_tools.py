@@ -335,10 +335,18 @@ def pane_id(result: dict) -> str:
     return (result.get("pane") or result["root_pane"])["pane_id"]
 
 
+def close_workspaces(label: str) -> None:
+    """Close every workspace with this label, so a relaunch leaves one wall, not a stack."""
+    for w in herdr("workspace", "list")["workspaces"]:
+        if w["label"] == label:
+            herdr("workspace", "close", w["workspace_id"])
+
+
 def grid(a: argparse.Namespace) -> None:
     """One pane per seat. Columns are split first, then each column into equal rows."""
     seats = rig_seats(a.rig)
     cwd = str(Path(__file__).resolve().parent)
+    close_workspaces(f"{a.rig} grid")
     root = herdr("workspace", "create", "--cwd", cwd, "--label", f"{a.rig} grid")[
         "root_pane"
     ]["pane_id"]
@@ -457,6 +465,7 @@ LEAD_ROWS_RATIO = 0.8  # share of the lead workspace that stays with its feed
 def lead_window(rig: str) -> None:
     """A workspace for the lead alone: its detailed feed on top, an input pane under it."""
     me = Path(__file__).resolve()
+    close_workspaces(f"{rig} lead")
     root = herdr("workspace", "create", "--cwd", str(me.parent), "--label", f"{rig} lead", "--no-focus")[
         "root_pane"
     ]["pane_id"]
