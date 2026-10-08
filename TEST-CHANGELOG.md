@@ -161,6 +161,17 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-08 - the dormant task-event family is deleted, with the compiler as the blast-radius check
+
+- Deleted with their subject: `task_event_handlers_test.go` (the handler suite) and the two source files it
+  covered. Nothing else referenced any of the symbols — **`go build ./...` exit 0, `go vet ./...` exit 0,
+  `go test -count=1 ./...` → 143 packages ok, 0 FAIL** — which is the mechanical form of the claim that the
+  deletion broke nothing reachable.
+- The one near-miss, recorded because it is the same class as the finding itself: an initial grep listed
+  `event_bus.go` as a reference to the initializer, and the lines it matched hold `events.EventQueue` — the
+  LIVE async queue. Deleting on that grep's word would have removed a live type; reading the line first is what
+  kept the package intact, and the compiler check came after as confirmation rather than as the only guard.
+
 ## 2026-10-07 - the completion path broadcasts, pinned by a test that could not compile before the fix
 
 - `complete_task_test.go`: `TestCompleteTaskSuccessBroadcasts`, with a `completeTaskFakeHooks` spy mirroring
