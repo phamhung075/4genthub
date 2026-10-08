@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[4] / "scripts"
+SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 spec = importlib.util.spec_from_file_location(
     "openrig_compact_supervisor", SCRIPTS / "openrig_compact_supervisor.py"

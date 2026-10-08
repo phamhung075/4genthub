@@ -7,8 +7,8 @@ name without putting content in the index. The policy modules still told every s
 explicit paths", which is the old form, so a seat reading its limits text would stage and lose the
 line; these tests hold the nine files to the current form.
 
-The suite runs ``python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q`` from
-``agenthub_main``, so this file is self-contained: the repository root is derived from ``__file__``
+The suite runs ``python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q`` from the
+repository root, so this file is self-contained: the repository root is derived from ``__file__``
 and nothing is imported from a conftest.
 """
 
@@ -18,8 +18,8 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-# <repo>/agenthub_main/src/tests/scripts/<this file>: the repository root is four levels up.
-REPO_ROOT = Path(__file__).resolve().parents[4]
+# <repo>/scripts/tests/<this file>: the repository root is two levels up.
+REPO_ROOT = Path(__file__).resolve().parents[2]
 POLICY_DIR = REPO_ROOT / "scripts" / "team" / "4genthub-min"
 POLICY_FILES = sorted(POLICY_DIR.glob("policy-*.json"))
 

@@ -20,7 +20,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_JSON = REPO_ROOT / "scripts" / "team" / "4genthub-min" / "team.json"
 POLICY_PATH = REPO_ROOT / "scripts" / "openrig_seat_policy.py"
 RIG = "4genthub-min"

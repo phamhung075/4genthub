@@ -10,7 +10,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "scripts" / "openrig_scrub.py"
 FIXTURE = (
     ROOT

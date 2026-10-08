@@ -22,7 +22,7 @@ import pytest
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-MODULE_PATH = Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_sync.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "openrig_seat_sync.py"
 
 HASH_A = "a1" * 32
 FILES = [{"path": "docs/readme.md", "content": "hello"}]

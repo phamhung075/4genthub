@@ -1,7 +1,8 @@
 // Package clientsync is the sync half of agenthub-client: pull, rig, bundle, switch, status and watch,
-// ported test-for-test from agenthub_main/src/tests/scripts/test_openrig_seat_sync.py. Those Python
-// tests are the parity spec, so a verb here is done when the Go tests assert WHAT THEY ASSERT, not when
-// the Go tests pass.
+// ported test-for-test from the Python test now at scripts/tests/test_openrig_seat_sync.py (it lived at
+// agenthub_main/src/tests/scripts/ until 2026-10-08, when the script tests left the archived tree).
+// Those Python tests are the parity spec, so a verb here is done when the Go tests assert WHAT THEY
+// ASSERT, not when the Go tests pass.
 //
 // The pinned-snapshot rules are the part that must not soften: a seat's snapshot is pinned by hash and
 // a pull never falls back to a different one.

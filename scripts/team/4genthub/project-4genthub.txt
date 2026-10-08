@@ -5,13 +5,13 @@ PROJECT. 4genthub is an agent orchestration platform. The backend is Go in agent
 LAYOUT.
 - agenthub_go: Go server, packages under fastmcp/*, plan and backlog in NEXT_GEN.md and MIGRATION.md.
 - agenthub-frontend: React app (src/pages, src/hooks, src/services, src/types, src/tests).
-- agenthub_main: legacy Python backend; its script tests live in agenthub_main/src/tests/scripts.
+- agenthub_main: legacy Python backend. The script tests for the operator scripts moved out of it to scripts/tests (they are Python, the scripts they test are Python).
 - scripts: operator and OpenRig client scripts.
 - ai_docs: documentation.
 
 TESTS.
 - Go: run from agenthub_go with GOCACHE and TMPDIR set inside .gocache and .gotmp. Run go vet and go test ./... by package.
-- Python scripts: cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q
+- Python scripts, from the repository root: python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q
 - Frontend: npx vitest run, npx tsc --noEmit -p . (0 errors — the 23-error baseline was removed 2026-10-03), npx vite build.
 
 WORKING RULES.

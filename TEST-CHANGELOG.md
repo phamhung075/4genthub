@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the View-details dialog opens on ONE click every time, and the case that fails first is the SECOND open (frontend)
+
+- `src/tests/components/TaskRowDetailsReopen.test.tsx`, **NEW FILE** — the second half of owner bug (b). `TaskRowDetailsOneClick.test.tsx` pins the first open at full fidelity; this file pins every open AFTER it, plus the two paths the fix must not break.
+  - **SEEN FAILING FIRST, and the case that fails is the one that matters:** with both source files reverted to `HEAD`, the file reports `2 failed | 3 passed` — *"opens on one click again AFTER a dialog has been closed"* and *"opens on one click again when the previous close is still in flight"* fail, while **fresh mount, deep link and the back transition stay green**, which is what says the new cases are the reproduction and not a broken harness. Restored: `5 passed`.
+  - The five cases, and why each is there: one click opens from a fresh mount; **one click opens again after a close (the owner's two clicks)**; one click opens again while the previous close is still inside its 50 ms window (the cancellable-close half); a deep link opens on mount; and a bare URL transition back to the branch — no `closeDialog()` call anywhere in the app — still closes, which is the back-button path the fix deliberately keeps.
+  - Fidelity is the sibling guard's: only the process boundaries are mocked (`../../api`, auth, toasts, the websocket transport, the logger) and the REAL react-query client, `useTasks`/`useTaskMutations`, `useDialogManager`, `DialogSection`, `Dialog` and `TaskDetailsDialog` run, with both the branch and the task path rendering the SAME element as `App.tsx` has it.
+  - The close is asserted with `waitFor` rather than on the next tick, because `closeDialog` clears the dialog state on a 50 ms timer by design — it lets the navigation land first.
+  - Commands and results: `npx vitest run` on the new file plus the six dialog files -> **7 files, 50 tests, all passed**; on the unfixed tree the new file alone -> `2 failed | 3 passed`.
+
+## 2026-10-08 - the script tests move out of the archived tree, and the suite's own runner config moves with them
+
+- The twelve script tests move from `agenthub_main/src/tests/scripts/` to `scripts/tests/`; every module path changes from `parents[4]` to `parents[2]`, and the one site that reaches the Go module root uses `parents[1] / "agenthub_go"`. New and tracked: `scripts/tests/pytest.ini`, carrying `addopts = --noconftest -p no:cacheprovider` **and the reason in a comment** — the repository conftest reaches for PostgreSQL before every test, so without the flag the run HANGS rather than fails. It is a guard rather than a present need: nothing above `scripts/tests` carries a conftest today.
+- Commands and results, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` -> **319 passed, 9 warnings in 70.08s**; the same command with NO flags -> 319 passed and no `.pytest_cache` created, which is the config's `-p no:cacheprovider` applying; `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`.
+- **319 against the move's 315 baseline, and the four are attributed rather than merely reported as different**: `test_openrig_compact_supervisor.py` 7 -> 9 (from `1a1ae32c`, `7c1270d3`) and `test_openrig_seat_policy.py` 12 -> 14 (from `db9d2bc3`); every other file is unchanged, `test_team_roster.py`'s four included, so the move added and removed nothing.
+- `grep -rn 'agenthub_main\|src/tests' scripts/tests/` -> nothing. The new files are named in the commit with `git add -N` first (they are brand new) and the commit names the old directory too, so `git` reports the twelve as renames rather than as a delete plus twelve adds.
+
+
+
 ## 2026-10-08 - seat config pins the compaction tail and the thinking trial
 
 - `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: two tests (every seat has `compaction.keepRecentTokens`; only `writer` has `defaultThinkingLevel: medium`); the byte comparison now passes the rig. `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py src/tests/scripts/test_openrig_seat_sync.py` -> 125 passed.

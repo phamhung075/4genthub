@@ -17,7 +17,7 @@ import pytest
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = REPO_ROOT / "scripts" / "openrig_team_setup.py"
 TEAM_DIR = REPO_ROOT / "scripts" / "team" / "4genthub"
 

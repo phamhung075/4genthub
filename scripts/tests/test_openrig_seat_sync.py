@@ -18,7 +18,7 @@ import yaml
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-MODULE_PATH = Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_sync.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "openrig_seat_sync.py"
 
 HASH_A = "a1" * 32
 HASH_B = "b2" * 32
@@ -815,7 +815,7 @@ def _omp_config_path(tmp_path):
 
 
 POLICY_MODULE_PATH = (
-    Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_policy.py"
+    Path(__file__).resolve().parents[2] / "scripts" / "openrig_seat_policy.py"
 )
 
 

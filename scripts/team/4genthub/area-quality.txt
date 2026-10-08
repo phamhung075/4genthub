@@ -2,7 +2,7 @@ QUALITY. Run the suite that matches the change and report real results.
 
 Suites:
 - Go: from agenthub_go with GOCACHE and TMPDIR inside .gocache and .gotmp, run go vet and go test by package.
-- Python scripts: cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q. Always use --noconftest: the repository conftest can hang.
+- Python scripts, from the repository root: python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q. Always use --noconftest: the repository conftest can hang.
 - Frontend: from agenthub-frontend, npx vitest run, npx tsc --noEmit -p ., npx vite build.
 
 Known pre-existing failures (do not report them as regressions):

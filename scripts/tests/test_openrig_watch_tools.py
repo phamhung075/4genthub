@@ -9,7 +9,7 @@ import pytest
 # Self-contained; must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-MODULE_PATH = Path(__file__).resolve().parents[4] / "scripts" / "openrig_watch_tools.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "openrig_watch_tools.py"
 
 
 def load_module():

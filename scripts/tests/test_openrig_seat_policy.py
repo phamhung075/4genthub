@@ -14,7 +14,7 @@ import yaml
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-MODULE_PATH = Path(__file__).resolve().parents[4] / "scripts" / "openrig_seat_policy.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "openrig_seat_policy.py"
 RIG = "4genthub-min"
 
 

@@ -15,9 +15,9 @@ import stat
 import subprocess
 from pathlib import Path
 
-# <repo>/agenthub_main/src/tests/scripts/<this file>: the repository root is four levels up, and that
+# <repo>/scripts/tests/<this file>: the repository root is two levels up, and that
 # is where scripts/git-hooks/ lives - the same relative path the pre-commit config's `entry` names.
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK = REPO_ROOT / "scripts" / "git-hooks" / "prepare-commit-msg"
 
 ADDRESS = "4genthub-min-skills-dev@4genthub-min"

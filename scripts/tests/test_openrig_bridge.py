@@ -10,7 +10,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-MODULE_PATH = Path(__file__).resolve().parents[4] / "scripts" / "openrig_bridge.py"
+MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "openrig_bridge.py"
 
 FAKE_TOKEN = "sk-FAKEFAKEFAKEFAKEFAKE12345678"
 
