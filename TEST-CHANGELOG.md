@@ -15,6 +15,11 @@ Track test suite changes, fixes, and improvements for agenthub.
   and my `head` cut the assertion off — a window, not a measurement.
 - The ported case uses `vi.mocked(...)` rather than the `as ReturnType<typeof vi.fn>` cast the surrounding cases use, per the
   repository's `ts-no-return-type` rule, and types its deferred promise with `unknown` rather than an inferred helper type.
+- RETIRED IN ITS OWN COMMIT: `src/components/__tests__/LazySubtaskList.test.tsx` is deleted, its one genuine unique having been
+  ported above. Both files resolved the same barrel (`src/components/LazySubtaskList/index.ts`, default `LazySubtaskListRefactored`)
+  and mocked the same `../../api`; the exact-name overlap was 1 of 44; of the retired file's 11 name-uniques, eight were this
+  file's cases under different wording and one (the `listSubtasks`-was-called assertion) was already here twice. The suite
+  collected both, so 12 duplicate declarations leave with it.
 
 ## 2026-10-08 - the absent-hash class: three sites, one failing case each, each seen red at its own line
 
