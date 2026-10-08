@@ -131,7 +131,7 @@
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 7,
+      "count": 8,
       "files": [
         {
           "hash": "21398ac98de79b32f56824a942577c74",
@@ -153,6 +153,13 @@
           "name": "decision-orchestration-layer.md",
           "path": "architecture-design/decision-orchestration-layer.md",
           "size": 5678
+        },
+        {
+          "hash": "28a28e996371c9afe3c6a22e44ef3a68",
+          "modified": "2026-10-08T19:21:51.164346",
+          "name": "decision-commit-form-in-seat-instructions.md",
+          "path": "architecture-design/decision-commit-form-in-seat-instructions.md",
+          "size": 8241
         },
         {
           "hash": "d35676668eab828233e375accd41f235",
@@ -669,7 +676,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T19:18:28.228495",
+  "generated_at": "2026-10-08T19:21:51.223114",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -716,6 +723,7 @@
         "Architecture_Technique.md",
         "PRD.md",
         "decision-agy-runtime.md",
+        "decision-commit-form-in-seat-instructions.md",
         "decision-orchestration-layer.md",
         "decision-seat-attribution.md",
         "decision-seat-client-fold.md",
@@ -835,5 +843,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 76
+  "total_files": 77
 }
