@@ -916,6 +916,15 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
+      "method": "GET",
+      "path": "/api/v2/tasks/{id}/events",
+      "pathParams": [
+        "id"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
       "method": "POST",
       "path": "/api/v2/tasks/{task_id}/subtasks/summaries",
       "pathParams": [
