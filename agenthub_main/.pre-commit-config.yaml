@@ -32,7 +32,8 @@ repos:
         args: ['--maxkb=5000']
       - id: check-merge-conflict
 
-  # Seat attribution. Decision: ai_docs/architecture-design/decision-seat-attribution.md
+  # Seat attribution. Decision: ai_docs/core-architecture/agenthub-system-architecture.md (D6; it
+  # absorbed ai_docs/architecture-design/decision-seat-attribution.md, deleted in b98a483b).
   # The trailer names the seat that RAN `git commit` - not the author of every line - so it is one
   # half of the fix; the pre-commit ladder checks the lines before the commit takes them.
   # For this stage pre-commit replaces the file list with the commit MESSAGE FILE, which is the
