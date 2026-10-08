@@ -21,7 +21,7 @@ registrations compose the path from a `const base = "…"` declared in the same 
 so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/projects/`.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **145** (httpapp 125, auth 20). *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 127 at HEAD rather than the figure's 125. The command above is the one that produced the number.*
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **143** (httpapp 123, auth 20), re-run at `db9d2bc3`; the same command returned **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than the figure's 123; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 ---
 
