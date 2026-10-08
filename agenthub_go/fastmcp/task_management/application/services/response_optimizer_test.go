@@ -148,3 +148,44 @@ func TestResponseOptimizer_FlattenExplicitNilPartialFailures(t *testing.T) {
 		t.Fatal("empty list should flatten")
 	}
 }
+
+func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.T) {
+	envelope := func(persisted bool) *entities.OrderedMap[any] {
+		return zpRespOM(
+			"success", persisted,
+			"operation_id", "1b9d74f2-828c-438e-8daa-2a6eb9f09d6a",
+			"timestamp", "2026-10-08T16:40:48.997744+00:00",
+			"operation", "create",
+			"confirmation", zpRespOM("data_persisted", persisted),
+		)
+	}
+	r := NewResponseOptimizer()
+
+	// A refused call used to expose meta.id, so a caller recorded a phantom handle and every
+	// later update against it answered "Task not found". Nothing that reads as a handle may
+	// survive, while the response still says plainly that nothing was persisted.
+	failed := r.MergeMetadata(envelope(false))
+	metaAny, _ := failed.Get("meta")
+	meta, _ := metaAny.(*entities.OrderedMap[any])
+	if meta == nil {
+		t.Fatal("meta should survive to carry the persisted flag")
+	}
+	if _, has := meta.Get("id"); has {
+		t.Fatalf("refused call exposed a handle: %#v", meta)
+	}
+	if v, ok := meta.Get("persisted"); !ok || v != false {
+		t.Fatalf("persisted must still be reported as false: %v %#v", ok, meta)
+	}
+	if !meta.Has("operation") || !meta.Has("timestamp") {
+		t.Fatalf("non-handle metadata should survive: %#v", meta)
+	}
+
+	// The same envelope on a persisted call keeps its id: that is the handle callers rely on,
+	// so withholding it unconditionally would be a different defect, not this fix.
+	ok := r.MergeMetadata(envelope(true))
+	metaOKAny, _ := ok.Get("meta")
+	metaOK, _ := metaOKAny.(*entities.OrderedMap[any])
+	if v, has := metaOK.Get("id"); !has || v == nil {
+		t.Fatalf("persisted call lost its handle: %#v", metaOK)
+	}
+}

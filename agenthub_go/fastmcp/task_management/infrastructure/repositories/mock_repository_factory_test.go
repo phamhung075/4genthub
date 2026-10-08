@@ -38,7 +38,7 @@ func TestMockTaskRepositorySaveFindAllOrderAndSearch(t *testing.T) {
 		t.Fatalf("FindByID returned %#v", got)
 	}
 	// search is case-insensitive on title/description
-	res, _ := repo.Search(ctx, "beta", 10)
+	res, _ := repo.Search(ctx, "beta", nil, 10)
 	if len(res) != 1 || res[0] != b {
 		t.Fatalf("search mismatch: %#v", res)
 	}

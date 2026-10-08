@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dtostask "agenthub/fastmcp/task_management/application/dtos/task"
+	"agenthub/fastmcp/task_management/domain/entities"
 )
 
 // TestFacadeEmptyTaskIDResponses checks the application-boundary validation
@@ -137,5 +138,47 @@ func TestFacadeSliceBounds(t *testing.T) {
 		if lo != c.lo || hi != c.hi {
 			t.Errorf("n=%d start=%v stop=%d: got [%d:%d] want [%d:%d]", c.n, c.start, c.stop, lo, hi, c.lo, c.hi)
 		}
+	}
+}
+
+// capturingMinimalLister records the assignee the facade hands the performance path. That
+// path used to receive a literal nil on EVERY list call - IsPerformanceMode() is
+// unconditionally true - so a filtered list answered with rows the caller had excluded.
+type capturingMinimalLister struct {
+	assigneeID *string
+	calls      int
+}
+
+func (c *capturingMinimalLister) ListTasksMinimal(_ context.Context, _, _, assigneeID, _ *string, _, _ *int) ([]*entities.OrderedMap[any], error) {
+	c.calls++
+	c.assigneeID = assigneeID
+	return nil, nil
+}
+
+func TestListTasksForwardsTheAssigneeToThePerformancePath(t *testing.T) {
+	assignee := "@go-dev"
+	lister := &capturingMinimalLister{}
+	f := &TaskApplicationFacade{deps: TaskFacadeDeps{
+		NewMinimalLister: func(_, _ *string) (TaskMinimalLister, error) { return lister, nil },
+	}}
+
+	f.ListTasks(context.Background(), dtostask.ListTasksRequest{
+		Assignees: []string{assignee},
+		Limit:     new(int),
+	}, false, true, false)
+
+	if lister.calls != 1 {
+		t.Fatalf("performance path should have run once, ran %d", lister.calls)
+	}
+	if lister.assigneeID == nil || *lister.assigneeID != assignee {
+		t.Fatalf("assignee filter was not forwarded: %v", lister.assigneeID)
+	}
+
+	// An unfiltered list must still take the performance path, with no assignee invented.
+	unfiltered := &capturingMinimalLister{}
+	f.deps.NewMinimalLister = func(_, _ *string) (TaskMinimalLister, error) { return unfiltered, nil }
+	f.ListTasks(context.Background(), dtostask.ListTasksRequest{Limit: new(int)}, false, true, false)
+	if unfiltered.calls != 1 || unfiltered.assigneeID != nil {
+		t.Fatalf("unfiltered list: calls=%d assignee=%v", unfiltered.calls, unfiltered.assigneeID)
 	}
 }

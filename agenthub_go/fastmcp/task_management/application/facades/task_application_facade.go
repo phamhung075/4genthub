@@ -1358,7 +1358,10 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 	unexpected := func(err error) *entities.OrderedMap[any] {
 		return facadeFail("list", "Unexpected error: "+err.Error())
 	}
-	if performance.Settings.IsPerformanceMode() && minimal {
+	// The minimal lister expresses one assignee and no labels. A request carrying more than
+	// that falls through to the full path rather than silently returning rows the caller
+	// asked to exclude - the bug that made a filtered list answer with other seats' work.
+	if performance.Settings.IsPerformanceMode() && minimal && len(request.Labels) == 0 && len(request.Assignees) <= 1 {
 		if f.deps.NewMinimalLister == nil {
 			return unexpected(errors.New("performance-mode repository is not wired"))
 		}
@@ -1366,8 +1369,12 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 		if err != nil {
 			return unexpected(err)
 		}
+		var assigneeID *string
+		if len(request.Assignees) == 1 {
+			assigneeID = &request.Assignees[0]
+		}
 		offset := 0
-		tasks, err := lister.ListTasksMinimal(ctx, request.Status, request.Priority, nil, request.GitBranchID, request.Limit, &offset)
+		tasks, err := lister.ListTasksMinimal(ctx, request.Status, request.Priority, assigneeID, request.GitBranchID, request.Limit, &offset)
 		if err != nil {
 			return unexpected(err)
 		}
@@ -1387,6 +1394,11 @@ func (f *TaskApplicationFacade) ListTasks(ctx context.Context, request dtostask.
 		filters := entities.NewOrderedMap[any]()
 		filters.Set("status", facadeStrOrNil(request.Status))
 		filters.Set("priority", facadeStrOrNil(request.Priority))
+		var appliedAssignee any
+		if len(request.Assignees) > 0 {
+			appliedAssignee = request.Assignees
+		}
+		filters.Set("assignees", appliedAssignee)
 		filters.Set("git_branch_id", facadeStrOrNil(request.GitBranchID))
 		out := entities.NewOrderedMap[any]()
 		out.Set("success", true)

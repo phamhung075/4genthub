@@ -18,8 +18,9 @@ type TaskRepository interface {
 	FindByAssignee(ctx context.Context, assignee string) ([]*entities.Task, error)
 	// FindByLabels finds tasks containing any of the labels.
 	FindByLabels(ctx context.Context, labels []string) ([]*entities.Task, error)
-	// Search searches tasks by query string (Python default limit 10).
-	Search(ctx context.Context, query string, limit int) ([]*entities.Task, error)
+	// Search searches tasks by query string (Python default limit 10), applying
+	// the optional status/priority/assignees/labels filters.
+	Search(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error)
 	Delete(ctx context.Context, taskID value_objects.TaskId) (bool, error)
 	Exists(ctx context.Context, taskID value_objects.TaskId) (bool, error)
 	GetNextID(ctx context.Context) (value_objects.TaskId, error)

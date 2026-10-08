@@ -5,6 +5,10 @@ type SearchTasksRequest struct {
 	Query       string
 	GitBranchID *string
 	Limit       int
+	Status      *string
+	Priority    *string
+	Assignees   []string
+	Labels      []string
 }
 
 // NewSearchTasksRequest applies the Python default limit=10.

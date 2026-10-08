@@ -1050,7 +1050,7 @@ func taskRepoInClause(column string, ids []string, args *[]any, cast string) str
 // ---- search_tasks --------------------------------------------------------------
 
 // SearchTasks is search_tasks: ANY word matches ANY of title/description/label name.
-func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, limit int) ([]*entities.Task, error) {
+func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
 	out := []*entities.Task{}
 	searchWords := []string{}
 	for _, w := range value_objects.PySplit(query) {
@@ -1068,6 +1068,38 @@ func (r *ORMTaskRepository) SearchTasks(ctx context.Context, query string, limit
 		if r.GitBranchID != nil && *r.GitBranchID != "" {
 			args = append(args, *r.GitBranchID)
 			conds = append(conds, fmt.Sprintf(`"git_branch_id" = $%d::uuid`, len(args)))
+		}
+		if v, ok := filters["status"]; ok {
+			sv := taskRepoEnumValue(v)
+			if sv == nil {
+				conds = append(conds, `"status" IS NULL`)
+			} else {
+				args = append(args, value_objects.PyStr(sv))
+				conds = append(conds, fmt.Sprintf(`"status" = $%d`, len(args)))
+			}
+		}
+		if v, ok := filters["priority"]; ok {
+			pv := taskRepoEnumValue(v)
+			if pv == nil {
+				conds = append(conds, `"priority" IS NULL`)
+			} else {
+				args = append(args, value_objects.PyStr(pv))
+				conds = append(conds, fmt.Sprintf(`"priority" = $%d`, len(args)))
+			}
+		}
+		if v, ok := filters["assignees"]; ok && value_objects.PyTruthy(v) {
+			assignees := taskRepoStringList(v)
+			if len(assignees) > 0 {
+				in := taskRepoInClause("ta.assignee_id", assignees, &args, "")
+				conds = append(conds, `EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.task_id = tasks.id AND `+in+`)`)
+			}
+		}
+		if v, ok := filters["labels"]; ok && value_objects.PyTruthy(v) {
+			labels := taskRepoStringList(v)
+			if len(labels) > 0 {
+				in := taskRepoInClause("l.name", labels, &args, "")
+				conds = append(conds, `EXISTS (SELECT 1 FROM task_labels tl JOIN labels l ON tl.label_id = l.id WHERE tl.task_id = tasks.id AND `+in+`)`)
+			}
 		}
 		wordConds := []string{}
 		for _, word := range searchWords {
@@ -1447,8 +1479,8 @@ func (r *ORMTaskRepository) FindByLabels(ctx context.Context, labels []string) (
 }
 
 // Search is search (Python default limit 10).
-func (r *ORMTaskRepository) Search(ctx context.Context, query string, limit int) ([]*entities.Task, error) {
-	return r.SearchTasks(ctx, query, limit)
+func (r *ORMTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
+	return r.SearchTasks(ctx, query, filters, limit)
 }
 
 // Delete is delete.

@@ -124,10 +124,6 @@ func (h *SearchHandler) ListTasks(ctx context.Context, facade TaskSearchFacade, 
 // SearchTasks ports search_tasks.
 func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade, query, status, priority, assignee, tag, gitBranchID *string,
 	limit, offset *int) (result *entities.OrderedMap[any]) {
-	_ = status
-	_ = priority
-	_ = assignee
-	_ = tag
 	_ = offset
 
 	if query == nil || !value_objects.PyTruthy(*query) {
@@ -147,6 +143,14 @@ func (h *SearchHandler) SearchTasks(ctx context.Context, facade TaskSearchFacade
 	}()
 
 	request := task.NewSearchTasksRequest(*query, gitBranchID, limit)
+	request.Status = status
+	request.Priority = priority
+	if assignee != nil {
+		request.Assignees = []string{*assignee}
+	}
+	if tag != nil {
+		request.Labels = []string{*tag}
+	}
 	result = facade.SearchTasks(ctx, request)
 
 	successVal, _ := result.Get("success")

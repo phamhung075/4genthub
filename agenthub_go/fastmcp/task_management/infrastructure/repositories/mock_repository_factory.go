@@ -279,7 +279,7 @@ func (m *MockTaskRepository) Exists(_ context.Context, taskID tmvo.TaskId) (bool
 }
 
 // Search is search. Python lower-cases query/title/description and ignores its limit.
-func (m *MockTaskRepository) Search(_ context.Context, query string, _ int) ([]*entities.Task, error) {
+func (m *MockTaskRepository) Search(_ context.Context, query string, _ map[string]any, _ int) ([]*entities.Task, error) {
 	out := []*entities.Task{}
 	q := strings.ToLower(query)
 	for _, t := range m.Tasks.Values() {

@@ -346,17 +346,30 @@ func (o *ResponseOptimizer) MergeMetadata(response *entities.OrderedMap[any]) *e
 	}
 	meta, _ := response.Get("meta")
 	metaMap, _ := meta.(*entities.OrderedMap[any])
+	conf := zpRespGetMap(response, "confirmation")
+	// data_persisted is false exactly when the call failed or carried no data, so an
+	// operation_id on such a response names no row. Exposing it as "id" gave every caller
+	// a phantom handle: a refused create returned meta.id, and every later update against
+	// that id answered "Task not found". Absent proof of persistence is not proof of a row.
+	persisted := false
+	if conf != nil {
+		if v, ok := conf.Get("data_persisted"); ok {
+			persisted = value_objects.PyTruthy(v)
+		}
+	}
 	for _, field := range []string{"operation_id", "timestamp", "operation"} {
 		if v, ok := response.Get(field); ok {
 			if field == "operation_id" {
-				metaMap.Set("id", v)
+				if persisted {
+					metaMap.Set("id", v)
+				}
 			} else {
 				metaMap.Set(field, v)
 			}
 			response.Delete(field)
 		}
 	}
-	if conf := zpRespGetMap(response, "confirmation"); conf != nil {
+	if conf != nil {
 		if v, ok := conf.Get("data_persisted"); ok {
 			metaMap.Set("persisted", v)
 		}

@@ -62,7 +62,7 @@ func (f *useCasesGroup3FakeTaskRepository) FindByLabels(ctx context.Context, lab
 	return nil, nil
 }
 
-func (f *useCasesGroup3FakeTaskRepository) Search(ctx context.Context, query string, limit int) ([]*entities.Task, error) {
+func (f *useCasesGroup3FakeTaskRepository) Search(ctx context.Context, query string, filters map[string]any, limit int) ([]*entities.Task, error) {
 	return nil, nil
 }
 
