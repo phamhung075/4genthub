@@ -204,6 +204,24 @@ Track test suite changes, fixes, and improvements for agenthub.
 - Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
   `npx vitest run` → 105 files, 1798 passed.
 
+## 2026-10-08 - the committed artefact gets a gate, and the gate is proven red before it is believed
+
+- NEW `internal/apiref/committed_artefact_test.go`: `TestTheCommittedArtefactMatchesTheProducer` reads the real
+  `agenthub-frontend/src/docs/apiReference.ts`, parses the renderer's envelope, and compares **both directions**
+  against `apiref.Entries` — routes and tools, missing and stale. It closes a gap the package's own witness
+  cannot: that witness compares the producer to an independent extractor, and **both sides are code**, so the
+  file the frontend imports was never opened by anything.
+- `TestTheArtefactGateCanFailBothWays` perturbs the **parsed** reference, so both directions are shown failing
+  without editing the tree — the rule the witness header states: a check is only a check once each direction has
+  been seen failing. Its first version was wrong and the run caught it: it reused a set that was already missing
+  an entry, so direction 1 fired for the wrong reason. Each direction now builds from the pristine set.
+- **SEEN RED BY CONSTRUCTION, verbatim:** removing `POST /api/auth/dev-login` from the artefact produced
+  `DIRECTION 1 FAILS: 1 route(s) are registered in the code and absent from the committed artefact … POST
+  /api/auth/dev-login`; restoring it returned `sha256 7be90f01e6d54efd05d9ebc03c7e0fc43f08154e6136b12a6d851e99b2336458`
+  exactly — the same value as before the proof — and the gate to PASS.
+- Verified: `go test -count=1 ./internal/apiref/...` → ok (the witness and the new gate together); `gofmt -l`
+  clean on the new file; the artefact unmodified in git after the red proof.
+
 ## 2026-10-08 - the dormant task-event family is deleted, with the compiler as the blast-radius check
 
 - Deleted with their subject: `task_event_handlers_test.go` (the handler suite) and the two source files it
