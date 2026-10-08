@@ -468,7 +468,7 @@ def main() -> None:
         p.add_argument("--rig", default="4genthub-min")
         p.add_argument("--back", type=int, default=3 if name == "feed" else 40)
         p.add_argument("--width", type=int, default=170 if name == "feed" else 200)
-        p.add_argument("--lines", type=int, default=25)
+        p.add_argument("--lines", type=int, default=60)
         p.add_argument(
             "--detail",
             action="store_true",
@@ -494,20 +494,25 @@ def main() -> None:
 
 
 class Header:
-    """The seat name and its token bar, pinned to the top row while the feed scrolls below it."""
+    """The seat name and its token bar as a line of the feed, repeated when the reading moves.
+
+    A pinned row needs a terminal scroll region, and lines scrolled inside a region never reach the
+    scrollback, so the pane could not be scrolled. A plain line keeps the scrollback.
+    """
+
+    REPEAT = 20  # seconds between repeats of an unchanged line
 
     def __init__(self, name: str, colour: int, limit: int):
         self.name, self.colour, self.limit = name, colour, limit
         self.tokens: int | None = None
-        self.rows = 0
+        self.last = ("", 0.0)
 
     def draw(self) -> None:
-        rows = shutil.get_terminal_size().lines
-        if rows != self.rows:
-            self.rows = rows
-            print(f"\033[2;{rows}r\033[{rows};1H", end="")
         title = f"{BOLD}{fg(self.colour)}== {self.name} =={RESET}  {token_bar(self.tokens, self.limit)}"
-        print(f"\0337\033[1;1H\033[2K{title}\0338", end="", flush=True)
+        text, at = self.last
+        if title != text and time.time() - at >= self.REPEAT:
+            print(title, flush=True)
+            self.last = (title, time.time())
 
 
 def feed(a: argparse.Namespace) -> None:
@@ -533,10 +538,7 @@ def feed(a: argparse.Namespace) -> None:
         for text in events(line, a.width, a.detail, a.lines):
             print(f"{fg(STAMP_COLOR)}{stamp}{RESET} {name}{text}", flush=True)
 
-    if header:
-        print("\033[2J", end="")
-        header.draw()
-    else:
+    if not header:
         print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     for seat in seats:
         f = log_of(seat)
@@ -550,6 +552,7 @@ def feed(a: argparse.Namespace) -> None:
             header.tokens = next(
                 (t for t in map(context_tokens, reversed(lines)) if t), None
             )
+            header.draw()
         for ln in shown:
             show(seat, ln)
         pos[seat] = (f, f.stat().st_size)

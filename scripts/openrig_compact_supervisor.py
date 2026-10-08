@@ -35,9 +35,10 @@ def compactions(log: Path) -> int:
         return fh.read().decode(errors="replace").count('"type":"compaction"')
 
 
-def say(rig: str, seat: str, text: str) -> None:
+def say(rig: str, seat: str, text: str, raw: bool = False) -> None:
+    """``raw`` sends the exact text: without it ``rig send`` wraps it in a From/To envelope, which makes /compact plain text."""
     subprocess.run(
-        ["rig", "send", f"{rig}-{seat}@{rig}", text, "--wait-for-idle", "120"],
+        ["rig", "send", f"{rig}-{seat}@{rig}", text, "--wait-for-idle", "120", *(["--raw"] if raw else [])],
         capture_output=True,
         text=True,
     )
@@ -52,7 +53,7 @@ def notice(rig: str, seat: str) -> str:
         "Context limit reached: your session is past "
         f"{watch.kilo(watch.COMPACT_LIMIT)} tokens. You may finish the job you are on. "
         "When it is finished, compact your own session: run this and nothing else: "
-        f"rig send {rig}-{seat}@{rig} /compact --wait-for-idle 120. "
+        f"rig send {rig}-{seat}@{rig} /compact --raw. "
         f"If you do not, the supervisor sends /compact for you once you have been quiet for a while, "
         f"or at once at {watch.kilo(watch.HARD_LIMIT)} tokens."
     )
@@ -80,7 +81,7 @@ def step(rig: str, state: dict, quiet: int) -> None:
         silent = now - path.stat().st_mtime
         if (silent >= quiet or used >= watch.HARD_LIMIT) and now - s["sent"] > COOLDOWN:
             s.update(sent=now, before=used, count=compactions(path))
-            say(rig, seat, "/compact")
+            say(rig, seat, "/compact", raw=True)
             log(f"{seat}: quiet {silent:.0f}s at {watch.kilo(used)}, sent /compact{' (hard limit)' if used >= watch.HARD_LIMIT else ''}")
 
 

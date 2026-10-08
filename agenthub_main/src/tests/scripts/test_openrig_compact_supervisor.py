@@ -28,7 +28,13 @@ def run_step(monkeypatch, path, state):
     sent = []
     monkeypatch.setattr(sup.watch, "rig_seats", lambda rig: ["lead"])
     monkeypatch.setattr(sup.watch, "seat_log", lambda rig, seat: (path, "omp"))
-    monkeypatch.setattr(sup, "say", lambda rig, seat, text: sent.append(text))
+    monkeypatch.setattr(
+        sup,
+        "say",
+        lambda rig, seat, text, raw=False: sent.append(
+            text if not raw else "/compact RAW"
+        ),
+    )
     sup.step("r", state, quiet=180)
     return sent
 
