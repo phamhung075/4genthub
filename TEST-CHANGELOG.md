@@ -2,6 +2,38 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - a task UPDATE must move the row without a refetch (owner bug, frontend)
+
+- `src/tests/hooks/useTaskMutations.update.test.tsx`, **NEW FILE — the update mutation had no test at all**. The create path is
+  pinned by the realtime tests and the update path was not, which is how the asymmetry between them survived.
+  - **SEEN FAILING FIRST on the old tree:** `AssertionError: expected 'todo' to be 'in_progress' // Object.is equality`, exit
+    code 1 — the list cache the row reads still held the old status after the update had been issued.
+  - **THE HARNESS SEEDS ONLY WHAT A LIST PAGE HAS** — `['tasks', <branch>]` and nothing else. A harness that also seeded
+    `['task', id, false]` **passes on the old tree**, because that seed is precisely the cache the broken resolution read from;
+    the absent seed is what makes the fixture mean anything.
+  - **THE ROUND TRIP IS DELIBERATELY LEFT UNSETTLED** inside the assertion window (the mocked `updateTask` returns a promise
+    that never resolves), so the only thing that can have put the new status in the cache is the optimistic write — the case
+    cannot be satisfied by a refetch, which is what makes a failure here a statement about the UI.
+  - A second case pins the CREATE half of the owner's own sentence ("while CREATE works"), so the contrast that gives the bug
+    its meaning lives in the same file rather than only in a commit message.
+  - Full suite after the fix: **107 files / 1753 tests passed, exit 0**; `tsc --noEmit` exit 0 with 0 errors.
+
+## 2026-10-08 - the composer purposes: a mirror that fails on divergence, falsified before it was trusted
+
+- `src/tests/components/SeatComposerPurposes.test.tsx`, NEW, 3 cases. (1) **THE MIRROR**: reads
+  `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`, compares its kind literals with `SEAT_MODULE_KINDS` in
+  BOTH directions, then asserts the purposes' kind union equals that list with no kind appearing twice. It FAILS rather than
+  skips when the Go file cannot be read, because a mirror check that cannot see the other side proves nothing.
+  **SEEN FAILING BEFORE IT WAS TRUSTED:** with `'policy'` removed from the array (the historical drift, put back for the
+  run and restored after) it reports `expected [ 'document', 'instruction', …(4) ] to deeply equal [ …(5) ]` with
+  `- "policy"` in the diff, while the other two cases stay green. (2) **THE FAMILIES**: `mcp-usage` and `delegate-deepseek`
+  (both KindInstruction) resolve to Tools/MCP, `guide-web-dev` stays in Guide, and a `policy` block is untouched - so the
+  override discriminates rather than swallowing every instruction block. (3) **THE VIEW**: rendered with three blocks, the
+  five purposes appear in fixed order, `policy-web-dev` sits between Policy and Tools/MCP, `mcp-usage` between Tools/MCP and
+  Skills, and an empty purpose shows its own empty state.
+- No existing test needed changing: `SeatAuthoringPage.test.tsx` 27 passed, because the `Composed blocks` list label and the
+  row markup the page asserts on are preserved - the grouping is additive to that surface.
+
 ## 2026-10-08 - the duplicate LazySubtaskList pair, merged then retired: one ported case, and a correction to the audit that ordered it
 
 - `src/tests/components/LazySubtaskList.test.tsx` gains `should hold the edit dialog closed while the full subtask is still loading`,
