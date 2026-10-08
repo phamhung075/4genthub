@@ -85,9 +85,12 @@ def seat_log(rig: str, seat: str) -> tuple[Path | None, str]:
 def context_tokens(line: str) -> int | None:
     """Tokens in the context after this record's reply, or None when the record carries no usage."""
     try:
-        usage = (json.loads(line).get("message") or {}).get("usage")
+        record = json.loads(line)
+        usage = (record.get("message") or {}).get("usage")
     except (json.JSONDecodeError, AttributeError):
         return None
+    if record.get("type") == "compaction" and "tokensAfter" in record:
+        return int(record["tokensAfter"])
     if not isinstance(usage, dict):
         return None
     if "totalTokens" in usage:
@@ -248,6 +251,14 @@ def events(line: str, width: int, detail: bool = False, lines: int = 25):
     try:
         record = json.loads(line)
     except json.JSONDecodeError:
+        return
+    if record.get("type") == "compaction":
+        before, after = record.get("tokensBefore"), record.get("tokensAfter")
+        if before and after:
+            yield (
+                f"\033[1;38;5;16;48;5;120m COMPACTED {RESET} {BOLD}{fg(120)}"
+                f"{kilo(int(before))} -> {kilo(int(after))}{RESET}"
+            )
         return
     for omp_record in claude_to_omp(record):
         yield from omp_events(omp_record, width, detail, lines)

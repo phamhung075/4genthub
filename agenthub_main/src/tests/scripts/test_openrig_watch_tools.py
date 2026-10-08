@@ -297,3 +297,12 @@ def test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point():
     bar = watch.token_bar(425_000, 850_000)
     assert "50%" in bar and "425k/850k" in bar and bar.count("█") == 8
     assert "…" in watch.token_bar(None, 850_000)
+
+
+def test_a_compaction_record_shows_as_a_line_and_resets_the_context_reading():
+    line = json.dumps(
+        {"type": "compaction", "tokensBefore": 234283, "tokensAfter": 42545}
+    )
+    assert watch.context_tokens(line) == 42545
+    text = "".join(watch.events(line, 100))
+    assert "COMPACTED" in text and "234k -> 43k" in text
