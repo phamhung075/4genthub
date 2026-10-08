@@ -19,7 +19,20 @@ export function useDialogManager(
   // Track if we're in the middle of closing to prevent race conditions
   const isClosingRef = useRef(false);
 
+  // The deferred writes a close schedules. They are cancellable because a newer open must supersede
+  // them: otherwise a dialog opened inside the close's 50ms window is wiped by the earlier close.
+  const pendingCloseTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  const clearPendingClose = useCallback(() => {
+    pendingCloseTimersRef.current.forEach(clearTimeout);
+    pendingCloseTimersRef.current = [];
+  }, []);
+
   const openDialog = useCallback((type: string, taskId?: string, extraData?: any) => {
+    // Opening supersedes a close still in flight: cancel its deferred writes and lift the guard.
+    clearPendingClose();
+    isClosingRef.current = false;
+
     // Set dialog state immediately to fix double-click issue
     setActiveDialog({ type: type as DialogType, taskId, data: extraData });
 
@@ -36,10 +49,13 @@ export function useDialogManager(
     if (type === 'details' && taskId) {
       navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/task/${taskId}`);
     }
-  }, [navigate, projectId, taskTreeId, onLoadFullTask, onLoadSeats]);
+  }, [navigate, projectId, taskTreeId, onLoadFullTask, onLoadSeats, clearPendingClose]);
 
   const closeDialog = useCallback(() => {
     logger.debug('Starting dialog close process');
+
+    // This close supersedes any earlier one's deferred writes.
+    clearPendingClose();
 
     // Set closing flag to prevent useEffect from reopening
     isClosingRef.current = true;
@@ -56,17 +72,19 @@ export function useDialogManager(
     }
 
     // Use setTimeout to allow navigation to complete before clearing state
-    setTimeout(() => {
+    const clearStateTimer = setTimeout(() => {
       // Clear dialog state
       setActiveDialog({ type: null });
 
       // Reset closing flag after state updates complete
-      setTimeout(() => {
+      const resetGuardTimer = setTimeout(() => {
         isClosingRef.current = false;
         logger.debug('Dialog close complete, reopening protection reset');
       }, 100);
+      pendingCloseTimersRef.current = [resetGuardTimer];
     }, 50);
-  }, [navigate, projectId, taskTreeId, urlTaskId, subtaskId]);
+    pendingCloseTimersRef.current = [clearStateTimer];
+  }, [navigate, projectId, taskTreeId, urlTaskId, subtaskId, clearPendingClose]);
 
   return {
     activeDialog,

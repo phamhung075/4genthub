@@ -108,30 +108,45 @@ const LazyTaskListRefactored: React.FC<LazyTaskListProps> = ({ projectId, taskTr
   // Track the last processed taskId to prevent reopening loops
   const lastProcessedTaskIdRef = useRef<string | undefined>(undefined);
 
+  // The dialog type, readable inside the URL-sync effect WITHOUT being one of its dependencies. That
+  // effect must run on URL transitions only: `activeDialog.type` changes on every open and close, and
+  // re-running there is what let an intermediate render be mistaken for a back-navigation.
+  const activeDialogTypeRef = useRef(activeDialog.type);
+  activeDialogTypeRef.current = activeDialog.type;
+
   // Auto-open task dialog from URL
   useEffect(() => {
-    const autoOpenTask = async () => {
+    const autoOpenTask = () => {
+      const previousUrlTaskId = lastProcessedTaskIdRef.current;
+
+      // Only process a real URL transition
+      if (urlTaskId === previousUrlTaskId) {
+        return;
+      }
+
+      // Consume the transition FIRST, even when the action below is skipped: a transition left
+      // unconsumed is re-read on the next render and then misapplied to a LATER open.
+      lastProcessedTaskIdRef.current = urlTaskId;
+
       // Skip if we're in the middle of closing
       if (isClosingRef.current) {
         return;
       }
 
-      // Only process if taskId actually changed
-      if (urlTaskId !== lastProcessedTaskIdRef.current) {
-        lastProcessedTaskIdRef.current = urlTaskId;
-
-        if (urlTaskId && activeDialog.type === null) {
-          // Load the task and open dialog
-          openDialog('details', urlTaskId);
-        } else if (!urlTaskId && activeDialog.type === 'details') {
-          // URL changed (back button) - close dialog
-          closeDialog();
-        }
+      if (urlTaskId && activeDialogTypeRef.current === null) {
+        // Load the task and open dialog
+        openDialog('details', urlTaskId);
+      } else if (!urlTaskId && previousUrlTaskId && activeDialogTypeRef.current === 'details') {
+        // A REAL transition back to no task (the back button) closes the dialog. The
+        // `previousUrlTaskId` term is required: openDialog sets the dialog state and navigates in two
+        // separate commits, so the render in which the dialog first exists still carries the OLD url.
+        // Undefined in both is not a transition and must never close.
+        closeDialog();
       }
     };
 
     autoOpenTask();
-  }, [urlTaskId, activeDialog.type, openDialog, closeDialog, isClosingRef]);
+  }, [urlTaskId, openDialog, closeDialog, isClosingRef]);
 
   // Task expansion
   const toggleTaskExpansion = useCallback(async (taskId: string) => {
