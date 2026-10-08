@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the two always-500 task routes are pinned absent, with a control so the assertion cannot pass vacuously
+
+- `agenthub_go/fastmcp/server/httpapp/routes_mount_test.go`: `GET /api/v2/tasks/stats/summary` leaves `handlerPatterns`, `GET /api/tasks/task-1` leaves `expectedProbes()` because `mountRoutes` no longer registers it, and a new `TestRemovedTaskRoutesAreAbsent` asserts `404` for `/api/tasks/task-1` with its live neighbour `/api/tasks/task-1/context/summary` as a control that must stay mounted.
+- **THE FIRST DRAFT PASSED VACUOUSLY, AND THE CONTROL IS WHY IT CANNOT NOW.** `testRouteDeps()` mounts `mountRoutes`, but the v2 task routes come from `App.registerTaskRoutes`, which that harness never calls — so a 404 on the v2 stats path meant "this mux never mounted it", not "it was removed". A control probe in each harness is what turns the 404 into an observation instead of a silence.
+- **AND THE v2 PATH CANNOT BE ASSERTED AS 404 AT ALL.** It sits under the `GET /api/v2/tasks/` prefix route, which matches the whole subtree and answers 403 before auth whether or not the dedicated handler exists; the test says so in its own comment, and that half is evidenced by the symbol grep and the build instead of by a request.
+- Commands and results: `cd agenthub_go && go test ./fastmcp/server/... ./fastmcp/task_management/interface/api_controllers/...` -> every package `ok`; `gofmt -l` over the tracked `.go` files -> empty; `go vet ./fastmcp/server/... ./fastmcp/task_management/interface/...` -> clean; the acceptance grep -> **21 matches in 10 files at HEAD, 0 after**; `go test ./fastmcp/seat_management/domain/seedlibrary/...` -> `ok`; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q` -> **12 passed**.
+
 ## 2026-10-08 - the room definition and the policy table are compared to each other and to the live roster
 
 - `agenthub_main/src/tests/scripts/test_team_roster.py` (new): loads `team.json` and asserts the seat keys equal the live ten measured 2026-10-08, that the architect seat runs `claude-code`, that every `seat_overlays` key is a declared seat and every module `file` exists, and that team.json's `omp` seats equal the keys of `SEAT_ROLES["4genthub-min"]`. **RED BEFORE THE FIX, in the shape the decision note predicted**: `2 failed, 2 passed` — the seat set reported `go-dev2` where the roster has `architect`, the architect assertion reported that the live rig runs one, and the two that passed did so only because both files still carried `go-dev2` together.

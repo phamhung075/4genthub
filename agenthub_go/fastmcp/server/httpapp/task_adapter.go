@@ -64,13 +64,3 @@ func (h handlerTaskFacade) CountTasks(ctx context.Context, filters map[string]an
 func (h handlerTaskFacade) ListTasksSummary(ctx context.Context, filters map[string]any, offset, limit int) *entities.OrderedMap[any] {
 	return h.f.ListTasksSummary(ctx, filters, offset, limit, true)
 }
-
-// The Python facade has no get_task_statistics / get_task_with_relations; the API
-// handlers call them and report the resulting AttributeError.
-func (h handlerTaskFacade) GetTaskStatistics(ctx context.Context, userID string) any {
-	panic("'TaskApplicationFacade' object has no attribute 'get_task_statistics'")
-}
-
-func (h handlerTaskFacade) GetTaskWithRelations(ctx context.Context, taskID string) any {
-	panic("'TaskApplicationFacade' object has no attribute 'get_task_with_relations'")
-}

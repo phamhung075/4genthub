@@ -8,7 +8,6 @@ package routes
 import (
 	"context"
 	"math"
-	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	taskdomain "agenthub/fastmcp/task_management/domain/entities"
@@ -19,7 +18,6 @@ import (
 type TaskRoutesController interface {
 	CountTasks(ctx context.Context, filters *taskdomain.OrderedMap[any], userID string) (TaskCountResult, error)
 	ListTasksSummary(ctx context.Context, filters *taskdomain.OrderedMap[any], offset, limit int, userID string) (TaskListSummaryResult, error)
-	GetFullTask(ctx context.Context, taskID, userID string) (FullTaskResult, error)
 }
 
 // TaskCountResult mirrors the count response attributes.
@@ -34,13 +32,6 @@ type TaskListSummaryResult struct {
 	Success bool
 	Error   *string
 	Tasks   []*taskdomain.OrderedMap[any]
-}
-
-// FullTaskResult mirrors get_full_task's result.
-type FullTaskResult struct {
-	Success bool
-	Error   *string
-	Task    *taskdomain.OrderedMap[any]
 }
 
 // SubtaskRoutesController is the minimal SubtaskAPIController surface for
@@ -159,27 +150,6 @@ func GetTaskSummaries(ctx context.Context, req TaskSummariesRequest, currentUser
 	response.Set("limit", limit)
 	response.Set("has_more", (offset+limit) < totalCount)
 	return response, nil
-}
-
-// GetFullTask ports get_full_task (GET /tasks/{task_id}).
-func GetFullTask(ctx context.Context, taskID string, currentUser *authdomain.User, taskC TaskRoutesController) (*taskdomain.OrderedMap[any], error) {
-	if taskID == "" {
-		return nil, httpErr(400, "task_id is required")
-	}
-	result, err := taskC.GetFullTask(ctx, taskID, currentUserID(currentUser))
-	if err != nil {
-		return nil, httpErr(500, err.Error())
-	}
-	if !result.Success {
-		if result.Error != nil && strings.Contains(strings.ToLower(*result.Error), "not found") {
-			return nil, httpErr(404, "Task "+taskID+" not found")
-		}
-		return nil, httpErr(500, pyOrStr(result.Error, "Failed to fetch task"))
-	}
-	if result.Task == nil {
-		return nil, httpErr(404, "Task "+taskID+" not found")
-	}
-	return result.Task, nil
 }
 
 // GetTaskRouteSubtaskSummaries ports get_subtask_summaries (POST /subtasks/summaries).

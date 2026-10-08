@@ -96,10 +96,6 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		body, err := routes.ListUserTasks(r.Context(), req, u, c)
 		writeResult(w, body, err)
 	}))
-	mux.HandleFunc("GET "+base+"/stats/summary", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.GetUserTaskStats(r.Context(), u, c)
-		writeResult(w, body, err)
-	}))
 	mux.HandleFunc("GET "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		body, err := routes.GetUserTask(r.Context(), r.PathValue("id"), u, c)
 		writeResult(w, body, err)
