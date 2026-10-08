@@ -131,7 +131,7 @@ The server cannot see the repository, and an agent's account of its own work is 
 
 The evidence is stored as an `evidence_submitted` event. File contents and test output bodies stay on the machine. Only paths, counts, names and exit codes reach the cloud.
 
-The `agenthub-client` binary exists only as a skeleton (`cmd/agenthubclient/main.go`: `help`, `version`). The ONE-CLIENT directive already plans it, and evidence is its first subcommand that does real work.
+The `agenthub-client` binary (`cmd/agenthubclient`, verbs in `internal/clientsync`, `internal/clientbridge`) runs `sync status`, `sync pull` and `sync connector`. `bridge` is in Go too (`internal/clientbridge`). `sync rig`, `bundle`, `switch` and `watch` refuse with a pointer to `openrig_seat_sync.py`, and `feedback` and `seatcheck` are named pending (measured 2026-10-08). Evidence is a new subcommand beside them.
 
 ### 4.7 Validation gate — NEW (G7, rewritten)
 
@@ -216,7 +216,7 @@ Project and branch contexts already serve as memory, and seat `memory` modules c
 | Wake-on-open-work | Not built. OpenRig's local queue wakes seats; the cloud cannot. |
 | Resume/continue | Seat-level resume is built by OpenRig (snapshots, session files). Task-level resume is not built. |
 | Project memory | Contexts and memory modules are built. Nothing writes verified facts into them. |
-| Go as the platform | Built: the server is Go. The client binary is a skeleton; the client is still Python scripts. |
+| Go as the platform | Built: the server is Go. The client binary is partial: `sync status`, `sync pull`, `sync connector` and `bridge` (`internal/clientbridge`, with a parity test against the Python bridge) are in Go; the other sync verbs and `feedback` are still Python scripts. Which bridge the seats run today was not checked here. |
 
 ## 8. What is deliberately not in this architecture
 
