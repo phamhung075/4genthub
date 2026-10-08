@@ -106,15 +106,6 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "GET",
-      "path": "/api/tasks/{task_id}",
-      "pathParams": [
-        "task_id"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
       "path": "/api/tasks/{task_id}/context/summary",
       "pathParams": [
         "task_id"
@@ -868,13 +859,6 @@ export const apiReference: ApiReference = {
     {
       "method": "POST",
       "path": "/api/v2/tasks/",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "GET",
-      "path": "/api/v2/tasks/stats/summary",
       "pathParams": [],
       "handler": "",
       "description": ""
