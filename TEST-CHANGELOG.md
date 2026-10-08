@@ -2,6 +2,24 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the View-details dialog after ONE click, at full fidelity (a guard, not a reproduction)
+
+- `src/tests/components/TaskRowDetailsOneClick.test.tsx`, **NEW FILE — a PASSING guard whose value is the fidelity it keeps and the boundary
+  it records.** It mocks only the process boundaries (the network via `../../api`, auth, toasts, the websocket transport, the logger) and runs
+  the REAL react-query client, the REAL `useTasks`/`useTaskMutations`, the REAL `useDialogManager`, the REAL `DialogSection`, the REAL
+  `Dialog` and the REAL `TaskDetailsDialog`, with the router set up the way `App.tsx` sets it up — no mocked query client and no
+  `['task', id, false]` stub, which is what the earlier list-only guard (`LazyTaskListDialogOpen.test.tsx`) had to use.
+  - **IT IS GREEN ON TODAY'S TREE, AND ITS FIRST RUN WAS RED — AND THAT RED WAS THE INSTRUMENT.** The first run reported the owner's flash
+    exactly (the dialog present when awaited, then `ABSENT` in all ten 50 ms samples), and the log carried `No "getTaskContext" export is
+    defined on the "../../api" mock`: the now-REAL dialog was throwing on an incomplete mock. Adding that one export turned it green. **A
+    failing reading from a broken instrument is not a finding**, which is why the mock spells out every export the real tree imports.
+  - **IT RECORDS THE NAMED ENVIRONMENT GAP RATHER THAN WORKING AROUND IT:** jsdom dispatches ONE synthetic click with no intervening
+    `pointerdown`/`mousedown`, and the overlay mounts after that click completes, so "the opening gesture is read as a dismiss" is
+    unreachable there. That gap was then crossed in a real Chromium (the real `ui/dialog.tsx` behind a real button, capture-phase listeners
+    on all five gesture events) and the result was **NEGATIVE**: every event targeted the trigger button, and `onOpenChange` was never
+    called. So the candidate the shared dialog's full-viewport overlay suggested is DISPROVED, not merely unreproduced — a named limit can
+    conceal an unknown or a disproof, and only crossing it tells you which.
+
 ## 2026-10-08 - a task UPDATE must move the row without a refetch (owner bug, frontend)
 
 - `src/tests/hooks/useTaskMutations.update.test.tsx`, **NEW FILE — the update mutation had no test at all**. The create path is
