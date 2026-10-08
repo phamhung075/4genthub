@@ -114,31 +114,31 @@
       "count": 2,
       "files": [
         {
-          "hash": "9afc9793d391c85934678ef19ab28957",
-          "modified": "2026-10-06T19:00:56.962950",
+          "hash": "b054c585c49554df7a87426ecced23dc",
+          "modified": "2026-10-08T20:16:12.532940",
           "name": "mcp-tools-api-complete.md",
           "path": "api-integration/mcp-tools-api-complete.md",
-          "size": 19169
+          "size": 19440
         },
         {
-          "hash": "b22cdb56a9500f8adab7fe619f8074b9",
-          "modified": "2026-10-07T21:31:28.118304",
+          "hash": "68b252327f681578b365165cec63ff9f",
+          "modified": "2026-10-08T20:17:30.700222",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 50914
+          "size": 53158
         }
       ],
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 8,
+      "count": 9,
       "files": [
         {
-          "hash": "21398ac98de79b32f56824a942577c74",
-          "modified": "2026-10-08T19:18:28.170120",
+          "hash": "6548667b2352f61bc248afd01f19dd34",
+          "modified": "2026-10-08T19:39:30.735067",
           "name": "decision-seat-attribution.md",
           "path": "architecture-design/decision-seat-attribution.md",
-          "size": 7119
+          "size": 9510
         },
         {
           "hash": "3ec8f120ff8f6ef3cf920c32be084727",
@@ -155,11 +155,11 @@
           "size": 5678
         },
         {
-          "hash": "28a28e996371c9afe3c6a22e44ef3a68",
-          "modified": "2026-10-08T19:21:51.164346",
+          "hash": "20c633cc733ae3aa9df35cadf09aeb6f",
+          "modified": "2026-10-08T19:39:32.463053",
           "name": "decision-commit-form-in-seat-instructions.md",
           "path": "architecture-design/decision-commit-form-in-seat-instructions.md",
-          "size": 8241
+          "size": 10300
         },
         {
           "hash": "d35676668eab828233e375accd41f235",
@@ -188,6 +188,13 @@
           "name": "decision-seat-client-fold.md",
           "path": "architecture-design/decision-seat-client-fold.md",
           "size": 4787
+        },
+        {
+          "hash": "7cb0df4e60b56472ef16fca479cd85e7",
+          "modified": "2026-10-08T20:20:10.666756",
+          "name": "decision-task-stats-endpoint.md",
+          "path": "architecture-design/decision-task-stats-endpoint.md",
+          "size": 7376
         }
       ],
       "path": "architecture-design"
@@ -352,11 +359,11 @@
           "size": 20129
         },
         {
-          "hash": "494b4c4c84c23dd0e750fb7eb29bb4a7",
-          "modified": "2026-10-07T23:19:50.114584",
+          "hash": "2fa4a087bf1caf5ad98ed402d4d06b01",
+          "modified": "2026-10-08T20:13:25.818485",
           "name": "watching-openrig-seats.md",
           "path": "operations/watching-openrig-seats.md",
-          "size": 6023
+          "size": 7041
         },
         {
           "hash": "2b9b2685b5247b90125f52a4cb288b8d",
@@ -428,11 +435,11 @@
           "size": 2029
         },
         {
-          "hash": "ac05046492a0e15539227e918f6edb7e",
-          "modified": "2026-10-07T22:16:55.386198",
+          "hash": "b9ba3418c8bb650adcebe1a14473cea7",
+          "modified": "2026-10-08T19:41:40.906013",
           "name": "_common.md",
           "path": "operations/seat-guides/_common.md",
-          "size": 4172
+          "size": 4781
         },
         {
           "hash": "84cdf3f0e32fd6344d1595ae95067cc2",
@@ -676,7 +683,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T19:21:51.223114",
+  "generated_at": "2026-10-08T20:20:10.762159",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -727,6 +734,7 @@
         "decision-orchestration-layer.md",
         "decision-seat-attribution.md",
         "decision-seat-client-fold.md",
+        "decision-task-stats-endpoint.md",
         "product-architecture-complete.md"
       ]
     },
@@ -843,5 +851,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 77
+  "total_files": 78
 }

@@ -1,3 +1,12 @@
+## Decision: the two task routes that can only return 500 — remove them (recommended), keep them for Python parity, or build a statistic now
+
+### Added
+- `ai_docs/architecture-design/decision-task-stats-endpoint.md` (board row 6d520676): `GET /api/v2/tasks/stats/summary` and `GET /api/tasks/{task_id}` both end in a deliberate `panic` in `httpapp/task_adapter.go:70-76`, ported from Python's AttributeError. The board row named only the first route. Neither route has a frontend caller (`apiReference.ts` only lists them). The note compares keeping parity, building a statistic now, and removing both routes, and recommends removal: the statistic arrives once, under O8, from the ledger. The owner rules. The acceptance command was run at HEAD: build, vet and test pass, and the symbol grep prints 21 lines (red), which is the instrument for the removal.
+- `ai_docs/index.json`: regenerated with the note's entry.
+
+### Fixed
+- The no-prestage decision's entry below gave the wrong reason why the ten policy modules change together (the fold). It now gives the consistency reason, matching the note's correction in `20fcf17a`.
+
 ## The surface inventory's counts re-measured at the tip: 145 routes, ten MCP tools, and five rotted rows repaired
 
 ### Changed
@@ -46,7 +55,7 @@
 ## Seat instructions will teach the no-prestage commit form, decided (architect's decision note, 2026-10-08)
 
 - **Decision**: `ai_docs/architecture-design/decision-commit-form-in-seat-instructions.md` (`1248b534`, `4f375115`). Every copy of the seat instructions says to commit by pathspec without staging first, and to mark a new file with `git add -N` (intent-to-add, no content in the shared index). The live `AGENTS.md` files still teach `git add -- <path>` first, which keeps open the window behind tonight's ride-ins.
-- **Where the words are**: the policy modules' siblings (`scripts/team/4genthub-min/policy-*.json`, ten files that change together because the fold refuses two siblings for one match), and `guide-common` in three copies, with the embedded one pinned by `seedlibrary/guides.lock.json`. The ten live `AGENTS.md` have no generator since `288fe6ac`, so they are edited by hand as a separate, lead-approved step.
+- **Where the words are**: the policy modules' siblings (`scripts/team/4genthub-min/policy-*.json`, ten files that change together so every seat reads the same rule; the fold compares only one seat's own modules, so it does not force them to agree), and `guide-common` in three copies, with the embedded one pinned by `seedlibrary/guides.lock.json`. The ten live `AGENTS.md` have no generator since `288fe6ac`, so they are edited by hand as a separate, lead-approved step.
 - **Not implemented here**: feedback-dev takes the repository change. The attribution note (`decision-seat-attribution.md`) gains the trailer census: `Gate:`/`Gates:` lines are prose, not trailers, according to git's parser. It also gains option D (the runtime writing `Seat:` itself), and an acceptance instrument that reads trailers only through git's parser.
 
 ## Seats may pass 200k tokens, never 400k, and a supervisor compacts them
