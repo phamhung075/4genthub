@@ -500,7 +500,7 @@ class Header:
     scrollback, so the pane could not be scrolled. A plain line keeps the scrollback.
     """
 
-    REPEAT = 20  # seconds between repeats of an unchanged line
+    REPEAT = 20  # seconds between lines when the reading moved; three times that when it did not
 
     def __init__(self, name: str, colour: int, limit: int):
         self.name, self.colour, self.limit = name, colour, limit
@@ -510,7 +510,8 @@ class Header:
     def draw(self) -> None:
         title = f"{BOLD}{fg(self.colour)}== {self.name} =={RESET}  {token_bar(self.tokens, self.limit)}"
         text, at = self.last
-        if title != text and time.time() - at >= self.REPEAT:
+        waited = time.time() - at
+        if (title != text and waited >= self.REPEAT) or waited >= self.REPEAT * 3:
             print(title, flush=True)
             self.last = (title, time.time())
 
@@ -552,9 +553,10 @@ def feed(a: argparse.Namespace) -> None:
             header.tokens = next(
                 (t for t in map(context_tokens, reversed(lines)) if t), None
             )
-            header.draw()
         for ln in shown:
             show(seat, ln)
+        if header:
+            header.draw()
         pos[seat] = (f, f.stat().st_size)
     while True:
         for seat in seats:
