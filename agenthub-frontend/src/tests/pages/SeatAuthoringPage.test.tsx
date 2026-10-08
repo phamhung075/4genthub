@@ -7,7 +7,7 @@ import { SeatAuthoringPage } from '../../pages/SeatAuthoringPage';
 import { seatApi } from '../../services/seatApi';
 import { useWebSocket } from '../../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
-import type { SeatOverlayOp, SeatOverlayScope } from '../../types/seatTypes';
+import type { ModuleSummary, SeatOverlayOp, SeatOverlayScope } from '../../types/seatTypes';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -222,6 +222,24 @@ describe('SeatAuthoringPage', () => {
     expect(within(row).getByText('rules')).toBeInTheDocument();
     expect(within(row).getByText('instruction')).toBeInTheDocument();
     expect(within(row).getByText('1.0.0')).toBeInTheDocument();
+  });
+
+  it('renders a module whose sha256 is absent instead of taking the page down', async () => {
+    // The PRODUCER's absence rather than the type's: PublishedModuleVersion declares sha256 as a
+    // required string, so this shape is what a second client or a proxy that drops the field sends,
+    // and the type is only a claim about the producer. Unfixed this threw
+    // "Cannot read properties of undefined (reading 'slice')" DURING RENDER, which unmounts the
+    // page rather than degrading one cell.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [
+        { slug: 'rules', kind: 'instruction', version: '1.0.0' } as unknown as ModuleSummary,
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('rules')).toBeInTheDocument();
   });
 
   it('creates a seat type version from the selected type, prefilled and editable', async () => {

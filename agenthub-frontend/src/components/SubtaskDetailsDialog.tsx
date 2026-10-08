@@ -445,10 +445,14 @@ export const SubtaskDetailsDialog: React.FC<SubtaskDetailsDialogProps> = ({
                 </Button>
               </div>
               {fullSubtask && (
+                // A producer can OMIT the id - the type only claims it is present - and the house
+                // form for that absence is an optional chain plus a named fallback
+                // (types/websocket-protocol.ts:473). Unfixed, the missing key threw while building
+                // the file name and unmounted the dialog and the page under it.
                 <RawJSONDisplay
                   jsonData={fullSubtask}
                   title={`Subtask: ${fullSubtask.title}`}
-                  fileName={`subtask_${fullSubtask.id.slice(0, 8)}.json`}
+                  fileName={`subtask_${fullSubtask.id?.substring(0, 8) || 'unknown'}.json`}
                 />
               )}
             </div>

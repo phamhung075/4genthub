@@ -111,11 +111,11 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
     try {
       // Search tasks using the search API
       const taskResults = await searchTasks(query, { git_branch_id: taskTreeId });
-      
+
       // For subtasks, we need to get all tasks and then search through their subtasks
       const allTasks = await listTasks({ git_branch_id: taskTreeId });
       const subtaskResults: SearchResult['subtasksWithParent'] = [];
-      
+
       // Search through all tasks' subtasks
       for (const task of allTasks) {
         if (task.subtasks && task.subtasks.length > 0) {
@@ -129,7 +129,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
                 (subtask.description && subtask.description.toLowerCase().includes(queryLower))
               );
             });
-            
+
             matchingSubtasks.forEach(subtask => {
               subtaskResults.push({ subtask, parentTask: task });
             });
@@ -138,7 +138,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
           }
         }
       }
-      
+
       setSearchResults({
         tasks: taskResults,
         subtasksWithParent: subtaskResults
@@ -192,7 +192,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
       }
       return true;
     })].slice(0, 5);
-    
+
     setRecentSearches(updated);
     localStorage.setItem('recentTaskSearches_' + taskTreeId, JSON.stringify(updated));
   };
@@ -224,7 +224,7 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
         inputRef.current?.focus();
         setShowResults(true);
       }
-      
+
       // Escape to clear search
       if (e.key === 'Escape' && showResults) {
         clearSearch();
@@ -240,10 +240,10 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
   return (
     <div className="w-full">
       <div className="relative flex items-center justify-center font-sans w-full">
-        
+
         {/* Search Modal */}
         <div className="w-full space-y-6 bg-white/30 dark:bg-black/30 backdrop-blur-3xl border border-black/10 dark:border-white/5 rounded-3xl shadow-lg dark:shadow-2xl dark:shadow-purple-500/15 p-4">
-          
+
           {/* Search Input with Dual Rotating Border Animation */}
           <div className="dual-rotating-border-glow relative p-px rounded-2xl bg-gradient-to-r from-orange-500 via-purple-600 to-pink-600 shadow-lg shadow-purple-500/20 dark:shadow-purple-600/30 transition-shadow duration-300 hover:shadow-purple-500/40 dark:hover:shadow-purple-600/50 focus-within:shadow-purple-500/40 dark:focus-within:shadow-purple-600/50">
               <div className="flex items-center w-full px-4 py-2 bg-white/80 dark:bg-gray-900/90 rounded-[15px]">
@@ -314,22 +314,26 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
                                   {getStatusIcon(task.status)}
                                   <div className="flex flex-col">
                                     <span className="text-gray-700 dark:text-gray-200 font-medium">{task.title}</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">ID: {task.id.substring(0, 8)}...</span>
+                                    {/* A producer can OMIT the id - the type only claims it is present -
+                                        and the house form for that absence is an optional chain plus a
+                                        named fallback (types/websocket-protocol.ts:473). Unfixed the
+                                        missing key threw while rendering this line. */}
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">ID: {task.id?.substring(0, 8) || 'unknown'}...</span>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span 
+                                  <span
                                     className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
                                     style={{ backgroundColor: getPriorityColor(task.priority) }}
                                   >
                                     {task.priority}
                                   </span>
                                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <span 
-                                      style={{ 
-                                        backgroundColor: getStatusColor(task.status), 
-                                        boxShadow: `0 0 8px ${getStatusColor(task.status)}` 
-                                      }} 
+                                    <span
+                                      style={{
+                                        backgroundColor: getStatusColor(task.status),
+                                        boxShadow: `0 0 8px ${getStatusColor(task.status)}`
+                                      }}
                                       className="w-2 h-2 rounded-full"
                                     />
                                     <span className="text-xs">{task.status.replace('_', ' ')}</span>
@@ -364,18 +368,18 @@ export const TaskSearch: React.FC<TaskSearchProps> = ({
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span 
+                                  <span
                                     className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
                                     style={{ backgroundColor: getPriorityColor(subtask.priority) }}
                                   >
                                     {subtask.priority}
                                   </span>
                                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                                    <span 
-                                      style={{ 
-                                        backgroundColor: getStatusColor(subtask.status), 
-                                        boxShadow: `0 0 8px ${getStatusColor(subtask.status)}` 
-                                      }} 
+                                    <span
+                                      style={{
+                                        backgroundColor: getStatusColor(subtask.status),
+                                        boxShadow: `0 0 8px ${getStatusColor(subtask.status)}`
+                                      }}
                                       className="w-2 h-2 rounded-full"
                                     />
                                     <span className="text-xs">{subtask.status.replace('_', ' ')}</span>

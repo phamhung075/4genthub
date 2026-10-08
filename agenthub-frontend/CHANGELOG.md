@@ -3,6 +3,25 @@
 ## [Unreleased]
 
 ### Fixed
+- **An absent hash or id degrades one cell instead of unmounting the page — three more sites of the class the seat panel's guard closed** - 2026-10-08
+  - `SeatAuthoringPage.tsx:183` (`module.sha256.slice(0, 8)`), `SubtaskDetailsDialog.tsx:451` (`fullSubtask.id.slice(0, 8)`) and
+    `TaskSearch.tsx:317` (`task.id.substring(0, 8)`) each threw `Cannot read properties of undefined (reading 'slice')` /
+    `(reading 'substring')` **during render** when the producer omitted the field: the type declares it as a required string, so a
+    missing key is invisible to the compiler, and a throw in render unmounts the tree — the whole page goes down instead of one
+    cell. The owner reported exactly that shape on the seat page.
+  - **THE GUARD IS CITED, NOT INVENTED.** The house form already exists in this codebase — `types/websocket-protocol.ts:473`
+    reads `id?.substring(0, 8) || 'unknown'`, an optional chain plus a named fallback — and all three sites now take that shape,
+    so there is ONE convention rather than a second one. (An earlier draft of this fix introduced a shared `shortHash` helper; it
+    was withdrawn in favour of the convention already in force.)
+  - **The class was enumerated and every hit read, not counted:** `slice(0,N) | substring(0,N) | substr(0,N)` over
+    `agenthub-frontend/src`. The hits that are NOT this defect were left alone deliberately — length-guarded sites
+    (`ProgressHistoryTimeline.tsx:39`, `ProgressDisplay.tsx:79,165`), array slices (`TaskSearch.tsx:93,194`, `DockerSetup.tsx:93`)
+    and `toUpperCase()` results (`UserProfileDropdown.tsx:240`, `Profile.tsx:63`). Changing a correct site to match a fix is how a
+    fix becomes a regression.
+  - `MachinesPanel.tsx:42`, the seat panel's own guard from `cd163bb7`, is untouched; this closes the sites outside that commit's
+    blast radius.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the three files **60 tests passed**; full-suite and `npx vite build` counts in the
+    commit notes.
 - **The machine-row fixtures follow the renamed field, so the bridge-machines tests stop throwing on render** - 2026-10-07
   - `src/tests/pages/SeatsPage.test.tsx`: the two machine-row literals carry `pinned_hash` instead of `hash`.
     The failure was a RENDER crash, not a wrong assertion - `shortHash(seat.pinned_hash)` threw

@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the absent-hash class: three sites, one failing case each, each seen red at its own line
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx`: a module list whose entry OMITS `sha256`. **SEEN FAILING FIRST** as
+  `Cannot read properties of undefined (reading 'slice')` at `SeatAuthoringPage.tsx:183:78`, propagating through
+  `SeatAuthoringPage` (:178) — the whole page, which is the shape the owner reported. Green after the guard.
+- `src/tests/components/SubtaskDetailsDialog.test.tsx`, **NEW FILE — the site had no test at all**: a fetch whose result omits `id`
+  (so `fullSubtask` is truthy but id-less — the producer's absence rather than the type's) then the JSON tab. **SEEN FAILING FIRST**
+  as the same TypeError at `SubtaskDetailsDialog.tsx:451:55`.
+- `src/tests/components/TaskSearch.test.tsx`: a search result omitting `id`. **SEEN FAILING FIRST** as
+  `Cannot read properties of undefined (reading 'substring')` at `TaskSearch.tsx:317:109`, with the file's other 31 cases passing —
+  so the new case is the only thing that moved.
+- After the guard: the three files **60 tests passed** (SeatAuthoringPage 27, TaskSearch 32, SubtaskDetailsDialog 1).
+- Instrument note: my FIRST enumeration of this class was a grep that MISSED `SubtaskDetailsDialog.tsx:451` and reported one site;
+  context-dev's enumeration over all three shapes found the third (`TaskSearch.tsx:317`), which my `.slice(0, 8)`-only pattern could
+  not have matched because it uses `substring`. The count is trustworthy only once the pattern covers the family over the whole tree
+  and every hit is read — which is the same lesson as the wrapper-versus-artefact readings.
+
 ## 2026-10-07 - the task-row dialog: a negative result with its boundary stated
 
 - `tests/components/LazyTaskListDialogOpen.test.tsx`: NEW, for the owner's report that View details needs two clicks (task
