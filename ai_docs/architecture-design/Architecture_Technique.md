@@ -364,7 +364,9 @@ class SQLAlchemyTaskRepository(TaskRepository):
 | `/api/v2/subtasks/{id}` | DELETE | Delete subtask | ✅ |
 | `/api/v2/subtasks/{id}/complete` | POST | Complete subtask | ✅ |
 
-The full surface (141 route registrations) is in `ai_docs/api-integration/surface-inventory.md` §1.
+The full surface is in `ai_docs/api-integration/surface-inventory.md` §1 — the count lives there and is
+re-derived there by `COUNTS-AUDIT.py`; this file does not repeat it, because a document that both points
+at the owner of a number and restates it takes on a liability it cannot discharge.
 
 **Request/Response Format**:
 ```typescript
@@ -776,9 +778,9 @@ SELECT * FROM tasks WHERE git_branch_id = $1 AND user_id = $2;
 
 ### Table Definitions (Go, Postgres-only)
 
-**Location**: `agenthub_go/fastmcp/task_management/infrastructure/database/models.go` (`database.Tables`), plus `models_auth.go`, `seat_tables.go` and `models_prod.go`.
+**Location** — five files in **three different trees**, each path checked to resolve at `ee71488b` rather than inferred from the base: `fastmcp/task_management/infrastructure/database/models.go` (`database.Tables`) and its sibling `models_prod.go` (`ProductionTables`); `fastmcp/auth/infrastructure/database/models_auth.go`; `fastmcp/seat_management/infrastructure/database/seat_tables.go` and its sibling `team_tables.go`. **The auth, seat and team registries do NOT live in the tree that first pair gives** — an earlier wording named `models_auth.go` and `seat_tables.go` beside `models.go`, and a reader who followed it landed on a path with no such file. A `file:line` is a pointer that rots; this one never resolved at all.
 
-The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` holds the **38 tables** the server creates (20 core + 3 auth + 13 seat + 2 team); `ProductionTables` (`models_prod.go`) declares 6 more that are deliberately not appended and are therefore not created by `CreateTables`. The full list is in `ai_docs/api-integration/surface-inventory.md` §3.
+The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` holds the **39 tables** the server creates (20 core + 3 auth + 14 seat + 2 team) — **re-derived 2026-10-08 at `ee71488b`, and dated because the figure is derived from the list below rather than borrowed** (`COUNTS-AUDIT.py` re-derives it; the seat block is 14, not the 13 this paragraph carried until `seat_feedback` was listed below); `ProductionTables` (`models_prod.go`) declares 6 more that are deliberately not appended and are therefore not created by `CreateTables`. The full list is in `ai_docs/api-integration/surface-inventory.md` §3.
 
 **Key tables**:
 
@@ -790,7 +792,7 @@ The Go server uses generated `TableDef` metadata, not an ORM. `database.Tables` 
 | `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` | Context records at the four levels (`/api/v2/contexts/{level}`) |
 | `agents`, `agent_sessions`, `agent_session_events` | Agent registry and session records |
 | `users`, `user_token_balances`, `email_tokens` | Auth tables |
-| `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `machines`, `machine_tokens`, `seat_status` | Seat management (13 tables) |
+| `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `seat_feedback`, `machines`, `machine_tokens`, `seat_status` | Seat management (14 tables) |
 | `teams`, `team_members` | Teams and sharing (2 tables) |
 
 Every runtime table carries a `user_id` column except `applied_migrations` (a `ProductionTables` ledger).
