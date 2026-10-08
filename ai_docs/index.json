@@ -131,7 +131,7 @@
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 4,
+      "count": 5,
       "files": [
         {
           "hash": "3ec8f120ff8f6ef3cf920c32be084727",
@@ -139,6 +139,13 @@
           "name": "decision-agy-runtime.md",
           "path": "architecture-design/decision-agy-runtime.md",
           "size": 1841
+        },
+        {
+          "hash": "4f41461175ca40c875aea07b634604e1",
+          "modified": "2026-10-08T18:54:45.841274",
+          "name": "decision-orchestration-layer.md",
+          "path": "architecture-design/decision-orchestration-layer.md",
+          "size": 5612
         },
         {
           "hash": "d35676668eab828233e375accd41f235",
@@ -240,7 +247,7 @@
       "path": "claude-code"
     },
     "core-architecture": {
-      "count": 2,
+      "count": 3,
       "files": [
         {
           "hash": "2a90f6a82e400133b1d3e520a659b5a2",
@@ -248,6 +255,13 @@
           "name": "agent-knowledge-skill-system-specs.md",
           "path": "core-architecture/agent-knowledge-skill-system-specs.md",
           "size": 102344
+        },
+        {
+          "hash": "b34efa16fc8ff09d84b0cc58fd781cac",
+          "modified": "2026-10-08T18:54:19.881445",
+          "name": "agenthub-system-architecture.md",
+          "path": "core-architecture/agenthub-system-architecture.md",
+          "size": 19309
         },
         {
           "hash": "224d2d44fb3f207f10320f4162bfcb58",
@@ -317,11 +331,11 @@
           "size": 20129
         },
         {
-          "hash": "e113cdd9573b567c38fc176469ced30e",
-          "modified": "2026-10-07T22:50:18.088329",
+          "hash": "494b4c4c84c23dd0e750fb7eb29bb4a7",
+          "modified": "2026-10-07T23:19:50.114584",
           "name": "watching-openrig-seats.md",
           "path": "operations/watching-openrig-seats.md",
-          "size": 5674
+          "size": 6023
         },
         {
           "hash": "2b9b2685b5247b90125f52a4cb288b8d",
@@ -641,7 +655,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-07T22:57:01.956968",
+  "generated_at": "2026-10-08T18:54:45.898054",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -688,6 +702,7 @@
         "Architecture_Technique.md",
         "PRD.md",
         "decision-agy-runtime.md",
+        "decision-orchestration-layer.md",
         "product-architecture-complete.md"
       ]
     },
@@ -711,7 +726,8 @@
     "core-architecture": {
       "files": [
         "agent-knowledge-skill-system-specs.md",
-        "agent-knowledge-skill-system-summary.md"
+        "agent-knowledge-skill-system-summary.md",
+        "agenthub-system-architecture.md"
       ]
     },
     "development-guides": {
@@ -803,5 +819,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 72
+  "total_files": 74
 }
