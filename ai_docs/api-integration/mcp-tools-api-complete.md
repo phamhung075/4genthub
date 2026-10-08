@@ -17,7 +17,7 @@
 
 **Common Pattern**: All tools require `action` parameter except `call_seat`, `submit_feedback` and `manage_connection`.
 
-The live registry publishes **ten** tools, the ten rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat`, `submit_feedback` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-279`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable. **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly these ten names.**
+The live registry publishes **ten** tools, the ten rows above. `manage_context` is published when the context controller is wired, which it is on a database-backed server. `manage_seat`, `call_seat`, `submit_feedback` and `manage_connection` are appended to the `tools/list` registry by `getMCPToolsList` (`mcp_routes.go:249-279`) rather than carried in `ToolDefinitions()`; `tools/list` is not gated by any `TOOL_*` environment variable. **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly these ten names.** **RE-MEASURED 2026-10-08 at HEAD `88d27758`: the same TEN names are what a connected client receives — verified live from the client side (the ten routes this seat's own session exposes) rather than from the registry alone, and the set is unchanged since `763b8196`.**
 
 ---
 

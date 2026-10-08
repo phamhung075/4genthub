@@ -176,7 +176,7 @@ Gate: `gofmt -l` empty; `go build ./... && go vet ./... && go test -race -count=
 | B5 Dockerfile | PARTIAL (dev-check, WP4) | Dockerfile.backend.go, captain-definition.backend.go, healthcheck flag, timeouts, graceful shutdown | Image build (no Docker) |
 | B6 schema safety | FIXED | `AUTO_MIGRATE` gate; on the prod-like local DB with it unset the table count is 28 before and after start; models for the 8 tables with fake-driver CRUD tests | CRUD on real Postgres (`TEST_DATABASE_URL` test skipped; `prod_like` has no rows in `agent_templates` or `user_agent_instances`); a copy of production data was not tested |
 
-Open parity questions resolved: `GET /api/v2/tasks/stats/summary` returns 500 `{"detail":"Failed to get task statistics"}` in Python too, and `PUT /api/v2/tasks/{id}` requires `task_id` in the body in Python too (the URL value then overrides it). Go matches both; these were not bugs (see `MIGRATION.md:996`).
+Open parity questions resolved: `GET /api/v2/tasks/stats/summary` returns 500 `{"detail":"Failed to get task statistics"}` in Python too, and `PUT /api/v2/tasks/{id}` requires `task_id` in the body in Python too (the URL value then overrides it). Go matches both; these were not bugs (the `500` half is at `MIGRATION.md:951`; the `PUT {id}` requires-`task_id` half has NO line in MIGRATION.md — verified 2026-10-08, when the file was 972 lines and the previous citation pointed past its end).
 
 Remaining gaps: `/health` shows `connections` and `status_broadcasting` as unavailable until `SetHealthStatusProvider` is wired; Keycloak RS256 login with the e2e account is not verified (see WP6).
 
