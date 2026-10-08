@@ -7,9 +7,10 @@
 **Update 2026-10-05 (NEXT_GEN D5, teams/sharing).** §1.20 and the two team rows of §3.3
 were added and every count updated: registrations 132 -> **140**, runtime `Tables` 36 ->
 **38**. This delta was generated on top of `b0a1f510`; the rest of the file is unchanged
-from the `c4ff8d42` snapshot. **The registration figure is now 141** — the seat-type create
-route (`POST /api/v2/openrig/seat-types`) was added after that snapshot; §1 carries the
-current count with its pattern and date.
+from the `c4ff8d42` snapshot. **The registration figure has moved since it** — the seat-type
+create route (`POST /api/v2/openrig/seat-types`) was added after that snapshot — **and no figure
+is restated here: §1 owns the count, with its pattern and date**, because a second copy kept in
+this header is a copy that rots on its own, which is exactly what this line had done.
 
 **Scope:** the Go service (`agenthub_go`, `cmd/agenthub`) plus the auth route sets it
 mounts. `agenthub-frontend` and `agenthub_main` (Python) are out of scope and were not
@@ -592,8 +593,8 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
 5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
    method only. Its three divergences from the code are settled in this document: the
    `TOOL_*` gating claim in §2.5, `initialize`/`ping` as protocol methods rather than
-   dispatch cases in §2.2, and the route count in §1 (its 112 was `httpapp`-only; the
-   current figure is 121 + 20 = 141). Its table sections omit the three auth tables and
+   dispatch cases in §2.2, and the route count in §1 (its `112` was `httpapp`-only; **§1
+   carries the current figure, with its pattern and date**). Its table sections omit the three auth tables and
    the six `ProductionTables`, both carried in §3.
 
 ---
