@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - compaction supervisor tests
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py` (new, 5 tests): under the limit is left alone; past 200k and still working is told once and not compacted; quiet past 200k is told then compacted; a seat that dropped below is told again later; at 400k it is compacted while working. Run with `pytest --noconftest` because the repo conftest connects to PostgreSQL before every test. Together with the watch tests: 28 pass.
+
 ## 2026-10-08 - the task-event ledger's acceptance tests, written failing-first
 
 - `fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: 2 tests added for O1a, and BOTH SKIP HERE - all six PostgreSQL binaries are absent and both gate on `AGENTHUB_TEST_PG_URL`.

@@ -55,9 +55,10 @@ TOOL_COLORS = {
 
 
 CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
-# Context at which the runtime compacts. omp: the deepseek-flash seats compacted at 852312 tokens.
-# Claude Code: an assumption (200k window); the real limit is not in the log.
-COMPACT_AT = {"omp": 850_000, "claude": 200_000}
+# Per-session context limit: past it the seat finishes its job, then the compaction supervisor
+# (openrig_compact_supervisor.py) sends it /compact. The harness itself only compacts at ~850k.
+COMPACT_LIMIT = 200_000  # soft: told to compact when the job ends
+HARD_LIMIT = 400_000  # hard: compacted at once, whatever the seat is doing
 BAR_CELLS = 16
 
 
@@ -104,6 +105,11 @@ def token_bar(tokens: int | None, limit: int) -> str:
     if tokens is None:
         return f"{fg(STAMP_COLOR)}ctx …{RESET}"
     pct = tokens / limit
+    if pct >= 1:
+        return (
+            f"{BOLD}\033[1;38;5;231;48;5;160m LIMIT REACHED {RESET} {BOLD}{fg(203)}"
+            f"{kilo(tokens)}/{kilo(limit)}{RESET} {fg(RESULT_COLOR)}compacts when the job ends{RESET}"
+        )
     cells = min(BAR_CELLS, round(pct * BAR_CELLS))
     colour = 120 if pct < 0.6 else 221 if pct < 0.8 else 203
     bar = "█" * cells + "░" * (BAR_CELLS - cells)
@@ -510,17 +516,13 @@ def feed(a: argparse.Namespace) -> None:
         seats = [s for s in seats if s in a.seat]
     color = {s: SEAT_COLORS[i % len(SEAT_COLORS)] for i, s in enumerate(seats)}
     pos: dict[str, tuple[Path, int]] = {}
-    runtime: dict[str, str] = {}
     # One seat in view (a grid pane): its name and token bar are the pinned top row, not a column.
     header = (
-        Header(seats[0], color[seats[0]], COMPACT_AT["omp"]) if len(seats) == 1 else None
+        Header(seats[0], color[seats[0]], COMPACT_LIMIT) if len(seats) == 1 else None
     )
 
     def log_of(seat):
-        f, runtime[seat] = seat_log(a.rig, seat)
-        if header:
-            header.limit = COMPACT_AT[runtime[seat]]
-        return f
+        return seat_log(a.rig, seat)[0]
 
     def show(seat, line):
         used = context_tokens(line)
