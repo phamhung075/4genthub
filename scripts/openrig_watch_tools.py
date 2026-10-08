@@ -18,6 +18,8 @@ A policy refusal is shown white-on-red. See ai_docs/operations/watching-openrig-
 import argparse
 import json
 import os
+import re
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -50,6 +52,65 @@ TOOL_COLORS = {
     "bash": 120,
     "eval": 120,
 }
+
+
+CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+# Context at which the runtime compacts. omp: the deepseek-flash seats compacted at 852312 tokens.
+# Claude Code: an assumption (200k window); the real limit is not in the log.
+COMPACT_AT = {"omp": 850_000, "claude": 200_000}
+BAR_CELLS = 16
+
+
+def claude_log(rig: str, seat: str) -> Path | None:
+    """The session log of a Claude Code seat, found from the --session-id of its process."""
+    out = subprocess.run(
+        ["pgrep", "-af", f"claude .*--name {rig}-{seat}@{rig}"],
+        capture_output=True,
+        text=True,
+    ).stdout
+    ids = re.findall(r"--(?:session-id|resume) ([0-9a-f-]{36})", out)
+    found = [f for i in ids for f in CLAUDE_PROJECTS.glob(f"*/{i}.jsonl")]
+    return max(found, key=lambda f: f.stat().st_mtime, default=None)
+
+
+def seat_log(rig: str, seat: str) -> tuple[Path | None, str]:
+    """(newest session log, runtime) of a seat: omp state first, else the Claude Code log."""
+    seat_dir = ROOT / f"{rig}-{seat}@{rig}"
+    if seat_dir.is_dir():
+        return newest_session(seat_dir), "omp"
+    return claude_log(rig, seat), "claude"
+
+
+def context_tokens(line: str) -> int | None:
+    """Tokens in the context after this record's reply, or None when the record carries no usage."""
+    try:
+        usage = (json.loads(line).get("message") or {}).get("usage")
+    except (json.JSONDecodeError, AttributeError):
+        return None
+    if not isinstance(usage, dict):
+        return None
+    if "totalTokens" in usage:
+        return int(usage["totalTokens"])
+    keys = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")
+    return sum(int(usage.get(k) or 0) for k in keys) or None
+
+
+def kilo(n: int) -> str:
+    return f"{n / 1000:.0f}k" if n < 1_000_000 else f"{n / 1_000_000:.2f}M"
+
+
+def token_bar(tokens: int | None, limit: int) -> str:
+    """A bar of the context filled so far, its percent, and tokens used of the compaction point."""
+    if tokens is None:
+        return f"{fg(STAMP_COLOR)}ctx …{RESET}"
+    pct = tokens / limit
+    cells = min(BAR_CELLS, round(pct * BAR_CELLS))
+    colour = 120 if pct < 0.6 else 221 if pct < 0.8 else 203
+    bar = "█" * cells + "░" * (BAR_CELLS - cells)
+    return (
+        f"{fg(colour)}{bar}{RESET} {BOLD}{fg(colour)}{pct:.0%}{RESET} "
+        f"{fg(RESULT_COLOR)}{kilo(tokens)}/{kilo(limit)} to compact{RESET}"
+    )
 
 
 def newest_session(seat_dir: Path):
@@ -143,11 +204,51 @@ def detail_lines(role: str | None, part: dict, width: int, lines: int):
             yield block(f"{BOLD}{fg(87)}◂ in {RESET}", fg(123), text, width, lines)
 
 
+def claude_to_omp(record: dict) -> list[dict]:
+    """A Claude Code log record as omp records: tool_use becomes toolCall, each tool_result its own toolResult."""
+    msg = record.get("message") or {}
+    content = msg.get("content")
+    if not isinstance(content, list):
+        return [record]
+    if msg.get("role") == "assistant":
+        parts = [
+            {"type": "toolCall", "name": p.get("name"), "arguments": p.get("input")}
+            if p.get("type") == "tool_use"
+            else p
+            for p in content
+        ]
+        return [{"message": {"role": "assistant", "content": parts}}]
+    out = []
+    for p in content:
+        if p.get("type") != "tool_result":
+            out.append({"message": {"role": msg.get("role"), "content": [p]}})
+            continue
+        body = p.get("content")
+        if isinstance(body, list):
+            body = " ".join(b.get("text", "") for b in body if isinstance(b, dict))
+        out.append(
+            {
+                "message": {
+                    "role": "toolResult",
+                    "isError": bool(p.get("is_error")),
+                    "content": [{"text": str(body)}],
+                }
+            }
+        )
+    return out
+
+
 def events(line: str, width: int, detail: bool = False, lines: int = 25):
     try:
-        msg = json.loads(line).get("message") or {}
+        record = json.loads(line)
     except json.JSONDecodeError:
         return
+    for omp_record in claude_to_omp(record):
+        yield from omp_events(omp_record, width, detail, lines)
+
+
+def omp_events(record: dict, width: int, detail: bool, lines: int):
+    msg = record.get("message") or {}
     content = msg.get("content")
     if msg.get("role") == "toolResult":
         text = " ".join(p.get("text", "") for p in content or [] if isinstance(p, dict))
@@ -192,11 +293,7 @@ def rig_seats(rig: str) -> list[str]:
 
 
 def seat_command(rig: str, seat: str, feed_args: str) -> str:
-    """The feed for an omp seat; a read-only pane mirror for any other runtime."""
-    if (ROOT / f"{rig}-{seat}@{rig}").is_dir():
-        return f"python3 {Path(__file__).resolve()} feed --rig {rig} --seat {seat} {feed_args}"
-    session = f"{rig}-{seat}@{rig}"
-    return f"while :; do clear; tmux capture-pane -p -t '{session}' | tail -n 40; sleep 2; done"
+    return f"python3 {Path(__file__).resolve()} feed --rig {rig} --seat {seat} {feed_args}"
 
 
 def herdr(*args: str) -> dict:
@@ -390,38 +487,73 @@ def main() -> None:
     a.func(a)
 
 
+class Header:
+    """The seat name and its token bar, pinned to the top row while the feed scrolls below it."""
+
+    def __init__(self, name: str, colour: int, limit: int):
+        self.name, self.colour, self.limit = name, colour, limit
+        self.tokens: int | None = None
+        self.rows = 0
+
+    def draw(self) -> None:
+        rows = shutil.get_terminal_size().lines
+        if rows != self.rows:
+            self.rows = rows
+            print(f"\033[2;{rows}r\033[{rows};1H", end="")
+        title = f"{BOLD}{fg(self.colour)}== {self.name} =={RESET}  {token_bar(self.tokens, self.limit)}"
+        print(f"\0337\033[1;1H\033[2K{title}\0338", end="", flush=True)
+
+
 def feed(a: argparse.Namespace) -> None:
     seats = rig_seats(a.rig)
     if a.seat:
         seats = [s for s in seats if s in a.seat]
     color = {s: SEAT_COLORS[i % len(SEAT_COLORS)] for i, s in enumerate(seats)}
     pos: dict[str, tuple[Path, int]] = {}
+    runtime: dict[str, str] = {}
+    # One seat in view (a grid pane): its name and token bar are the pinned top row, not a column.
+    header = (
+        Header(seats[0], color[seats[0]], COMPACT_AT["omp"]) if len(seats) == 1 else None
+    )
+
+    def log_of(seat):
+        f, runtime[seat] = seat_log(a.rig, seat)
+        if header:
+            header.limit = COMPACT_AT[runtime[seat]]
+        return f
 
     def show(seat, line):
+        used = context_tokens(line)
+        if header and used:
+            header.tokens = used
         stamp = time.strftime("%H:%M:%S")
-        # One seat in view (a grid pane): its name is the pane's title, not a column on every line.
-        name = "" if len(seats) == 1 else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
+        name = "" if header else f"{BOLD}{fg(color[seat])}{seat:<12}{RESET} "
         for text in events(line, a.width, a.detail, a.lines):
             print(f"{fg(STAMP_COLOR)}{stamp}{RESET} {name}{text}", flush=True)
 
-    if len(seats) == 1:
-        print(f"{BOLD}{fg(color[seats[0]])}== {seats[0]} =={RESET}", flush=True)
+    if header:
+        print("\033[2J", end="")
+        header.draw()
     else:
         print(f"-- following {len(seats)} seats; Ctrl-C to stop", flush=True)
     for seat in seats:
-        f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")
+        f = log_of(seat)
         if f is None:
             continue
         lines = f.read_text().splitlines()
         shown = [
             ln for ln in lines if any(True for _ in events(ln, 1, a.detail, a.lines))
         ][-a.back * 2 :]
+        if header:
+            header.tokens = next(
+                (t for t in map(context_tokens, reversed(lines)) if t), None
+            )
         for ln in shown:
             show(seat, ln)
         pos[seat] = (f, f.stat().st_size)
     while True:
         for seat in seats:
-            f = newest_session(ROOT / f"{a.rig}-{seat}@{a.rig}")
+            f = log_of(seat)
             if f is None:
                 continue
             old, off = pos.get(seat, (f, 0))
@@ -435,6 +567,8 @@ def feed(a: argparse.Namespace) -> None:
                 for ln in chunk.splitlines():
                     show(seat, ln)
             pos[seat] = (f, size)
+        if header:
+            header.draw()
         time.sleep(1)
 
 

@@ -237,9 +237,7 @@ def test_watch_opens_the_grid_and_a_lead_window_with_its_input(monkeypatch):
     assert any(t.endswith("input --rig r --seat lead") for t in sent)
 
 
-def test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror(
-    monkeypatch, tmp_path
-):
+def test_seats_are_the_live_tmux_sessions(monkeypatch):
     sessions = "r-lead@r\nr-architect@r\nother-x@other\n"
     monkeypatch.setattr(
         watch.subprocess,
@@ -247,11 +245,55 @@ def test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror(
         lambda *a, **k: type("R", (), {"stdout": sessions})(),
     )
     assert watch.rig_seats("r") == ["architect", "lead"]
-    (tmp_path / "r-lead@r").mkdir()
-    monkeypatch.setattr(watch, "ROOT", tmp_path)
-    assert "feed --rig r --seat lead --back 40" in watch.seat_command(
-        "r", "lead", "--back 40"
+    assert "feed --rig r --seat architect --back 40" in watch.seat_command(
+        "r", "architect", "--back 40"
     )
-    mirror = watch.seat_command("r", "architect", "--back 40")
-    assert "tmux capture-pane" in mirror and "r-architect@r" in mirror
-    assert "feed" not in mirror
+
+
+def test_a_claude_code_call_and_its_result_show_like_an_omp_one():
+    call = json.dumps(
+        {
+            "message": {
+                "role": "assistant",
+                "content": [
+                    {"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}
+                ],
+            }
+        }
+    )
+    result = json.dumps(
+        {
+            "message": {
+                "role": "user",
+                "content": [{"type": "tool_result", "content": "a.txt\nb.txt"}],
+            }
+        }
+    )
+    shown = list(watch.events(call, 80)) + list(watch.events(result, 80))
+    assert "→ Bash" in shown[0] and "command=ls" in shown[0]
+    assert "← " in shown[1] and "b.txt" in shown[1]
+
+
+def test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage():
+    omp = json.dumps({"message": {"usage": {"totalTokens": 422248, "input": 705}}})
+    claude = json.dumps(
+        {
+            "message": {
+                "usage": {
+                    "input_tokens": 2,
+                    "cache_creation_input_tokens": 873,
+                    "cache_read_input_tokens": 148956,
+                    "output_tokens": 1273,
+                }
+            }
+        }
+    )
+    assert watch.context_tokens(omp) == 422248
+    assert watch.context_tokens(claude) == 151104
+    assert watch.context_tokens(json.dumps({"message": {"role": "user"}})) is None
+
+
+def test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point():
+    bar = watch.token_bar(425_000, 850_000)
+    assert "50%" in bar and "425k/850k" in bar and bar.count("█") == 8
+    assert "…" in watch.token_bar(None, 850_000)
