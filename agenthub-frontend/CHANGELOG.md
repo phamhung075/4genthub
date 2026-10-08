@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+- **The API reference's prose now names the two traps that make a client-versus-route diff lie, and states who actually witnesses the tables** - 2026-10-08
+  - `src/docs/api-reference-prose.en.md` gains **"Comparing a client against these tables"**. `{$}` is Go's **end-anchor for a
+    trailing slash, not a parameter**, so a normaliser that rewrites `{...}` as a placeholder turns `/api/v2/branches/{$}` into
+    `/api/v2/branches/:p` and reports the collection route as missing from the tables **when the tables are the only one of the
+    two that is right**. And a path parameter absorbs a literal segment: `/seats/{room}/{seat}` also serves
+    `/seats/{room}/messages`, so a caller of the latter is not calling a route that is missing. **Both produce FALSE mismatches
+    rather than missed ones**, which is why the note says an unmatched row has to be explained before the drift is believed.
+  - It also records that **the tables' currency is witnessed by `agenthub_go/internal/apiref/reference_test.go`, a GO test** — so
+    a green FRONTEND run says nothing about whether `apiReference.ts` is current. The frontend's own `ApiReferenceView.real`
+    suite asserts the **component against the artefact**, not the artefact against the code.
+  - Found while running a frontend caller-versus-route drift check: 39 call sites resolved by call syntax, 35 exact matches, and
+    **all four remainders traced to the checking instrument rather than to the code** — which is what makes "no drift at breadth"
+    believable rather than merely stated.
+
 ### Fixed
 - **An absent hash or id degrades one cell instead of unmounting the page — three more sites of the class the seat panel's guard closed** - 2026-10-08
   - `SeatAuthoringPage.tsx:183` (`module.sha256.slice(0, 8)`), `SubtaskDetailsDialog.tsx:451` (`fullSubtask.id.slice(0, 8)`) and

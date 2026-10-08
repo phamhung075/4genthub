@@ -229,3 +229,21 @@ curl -sS "$API/health"
 
 `GET /health` reports liveness and the deployed version, `{{VERSION}}`. Poll it to confirm a
 deployment.
+
+## Comparing a client against these tables
+
+Two traps for anyone diffing a client's call sites against the generated tables. Both were found on
+2026-10-08, and **both produce a FALSE MISMATCH rather than a missed one** — so a check that reports
+drift here has to explain every unmatched row before it is believed:
+
+- **`{$}` is an end-anchor, not a parameter.** Go's mux uses `{$}` to mean "the path ends here", so
+  `/api/v2/branches/{$}` serves `/api/v2/branches/`. A normaliser that rewrites `{...}` as a
+  placeholder turns that into `/api/v2/branches/:p`, and then reports the collection route as absent
+  from these tables — when the tables are the only one of the two that is right.
+- **A path parameter absorbs a literal segment.** `/api/v2/openrig/seats/{room}/{seat}` also serves
+  `/api/v2/openrig/seats/{room}/messages`. A client calling the latter is not calling a route that is
+  missing.
+
+**And the witness for these tables' currency is not the frontend suite.** The artefact is checked by
+`agenthub_go/internal/apiref/reference_test.go`, a **Go** test, so a green frontend run says nothing
+about whether `apiReference.ts` is current. Check it with `go test ./internal/apiref/...`.
