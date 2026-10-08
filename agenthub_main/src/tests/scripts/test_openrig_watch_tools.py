@@ -235,3 +235,23 @@ def test_watch_opens_the_grid_and_a_lead_window_with_its_input(monkeypatch):
     sent = [c[3] for c in calls if c[:2] == ("pane", "send-text")]
     assert any("feed --rig r --seat lead" in t and "--detail" in t for t in sent)
     assert any(t.endswith("input --rig r --seat lead") for t in sent)
+
+
+def test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror(
+    monkeypatch, tmp_path
+):
+    sessions = "r-lead@r\nr-architect@r\nother-x@other\n"
+    monkeypatch.setattr(
+        watch.subprocess,
+        "run",
+        lambda *a, **k: type("R", (), {"stdout": sessions})(),
+    )
+    assert watch.rig_seats("r") == ["architect", "lead"]
+    (tmp_path / "r-lead@r").mkdir()
+    monkeypatch.setattr(watch, "ROOT", tmp_path)
+    assert "feed --rig r --seat lead --back 40" in watch.seat_command(
+        "r", "lead", "--back 40"
+    )
+    mirror = watch.seat_command("r", "architect", "--back 40")
+    assert "tmux capture-pane" in mirror and "r-architect@r" in mirror
+    assert "feed" not in mirror

@@ -2,6 +2,10 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the seat watch follows live tmux sessions and mirrors a non-omp seat
+
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: added `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror` (seat list from tmux sessions of the rig only; omp seat gets the feed command, a Claude seat gets a capture-pane mirror). 20 pass.
+
 ## 2026-10-08 - the View-details dialog after ONE click, at full fidelity (a guard, not a reproduction)
 
 - `src/tests/components/TaskRowDetailsOneClick.test.tsx`, **NEW FILE — a PASSING guard whose value is the fidelity it keeps and the boundary

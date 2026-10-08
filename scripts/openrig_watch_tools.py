@@ -178,10 +178,25 @@ def events(line: str, width: int, detail: bool = False, lines: int = 25):
 
 
 def rig_seats(rig: str) -> list[str]:
+    """Seats with a live tmux session; the omp state dirs outlive removed seats."""
+    out = subprocess.run(
+        ["tmux", "list-sessions", "-F", "#{session_name}"],
+        capture_output=True,
+        text=True,
+    ).stdout.split()
     return sorted(
-        d.name.removeprefix(f"{rig}-").removesuffix(f"@{rig}")
-        for d in ROOT.glob(f"{rig}-*@{rig}")
+        name.removeprefix(f"{rig}-").removesuffix(f"@{rig}")
+        for name in out
+        if name.startswith(f"{rig}-") and name.endswith(f"@{rig}")
     )
+
+
+def seat_command(rig: str, seat: str, feed_args: str) -> str:
+    """The feed for an omp seat; a read-only pane mirror for any other runtime."""
+    if (ROOT / f"{rig}-{seat}@{rig}").is_dir():
+        return f"python3 {Path(__file__).resolve()} feed --rig {rig} --seat {seat} {feed_args}"
+    session = f"{rig}-{seat}@{rig}"
+    return f"while :; do clear; tmux capture-pane -p -t '{session}' | tail -n 40; sleep 2; done"
 
 
 def herdr(*args: str) -> dict:
@@ -231,12 +246,12 @@ def grid(a: argparse.Namespace) -> None:
         for left in range(per_col - 1, 0, -1):
             cur = split(cur, "down", 1 / (left + 1))
             panes.append(cur)
-    me = Path(__file__).resolve()
     for pane, seat in zip(panes, seats):
-        cmd = (
-            f"python3 {me} feed --rig {a.rig} --seat {seat} --back {a.back} --width {a.width}"
-            + f" --lines {a.lines}"
-            + (" --detail" if a.detail else "")
+        cmd = seat_command(
+            a.rig,
+            seat,
+            f"--back {a.back} --width {a.width} --lines {a.lines}"
+            + (" --detail" if a.detail else ""),
         )
         herdr("pane", "rename", pane, seat)
         herdr("pane", "send-text", pane, cmd)
