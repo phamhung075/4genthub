@@ -151,14 +151,27 @@ check_prerequisites() {
         exit 1
     fi
 
-    # Check required environment files
-    local env_files=(".env" "docker-system/.env.${ENVIRONMENT}")
+    # Check required environment files. Every compose in this tree reads
+    # ${ENV_FILE:-../../.env}, i.e. the repo-root .env, for every environment;
+    # docker-system/.env.<environment> is read by nothing here, and requiring it made
+    # this check impossible to pass rather than failing for a real reason.
+    local env_files=(".env")
     for env_file in "${env_files[@]}"; do
         if [[ ! -f "${PROJECT_ROOT}/${env_file}" ]]; then
             log_error "Required environment file missing: ${env_file}"
             exit 1
         fi
     done
+
+    # The compose file every later step resolves must exist. Without this check a
+    # missing environment's compose surfaces as a docker-compose file error halfway
+    # through a deployment instead of as a reason here.
+    local compose_file="${PROJECT_ROOT}/docker-system/docker/docker-compose.${ENVIRONMENT}.yml"
+    if [[ ! -f "${compose_file}" ]]; then
+        log_error "Required compose file missing: docker-system/docker/docker-compose.${ENVIRONMENT}.yml"
+        log_error "This tree defines no compose for '${ENVIRONMENT}'."
+        exit 1
+    fi
 
     log_success "All prerequisites met"
 }
@@ -186,7 +199,7 @@ create_rollback_snapshot() {
     mkdir -p "${ROLLBACK_DATA_DIR}"
 
     # Save current container states
-    docker-compose -f "${PROJECT_ROOT}/docker-system/docker-compose.${ENVIRONMENT}.yml" ps --format json > "${ROLLBACK_DATA_DIR}/containers.json" || true
+    docker-compose -f "${PROJECT_ROOT}/docker-system/docker/docker-compose.${ENVIRONMENT}.yml" ps --format json > "${ROLLBACK_DATA_DIR}/containers.json" || true
 
     # Save current images
     docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.Size}}" > "${ROLLBACK_DATA_DIR}/images.txt"
@@ -208,7 +221,7 @@ build_images() {
     cd "${PROJECT_ROOT}"
 
     # Build production images
-    docker-compose -f "docker-system/docker-compose.${ENVIRONMENT}.yml" build --no-cache
+    docker-compose -f "${PROJECT_ROOT}/docker-system/docker/docker-compose.${ENVIRONMENT}.yml" build --no-cache
 
     # Tag images with deployment timestamp
     local timestamp
@@ -233,24 +246,34 @@ deploy_infrastructure() {
 
     cd "${PROJECT_ROOT}"
 
-    # Stop existing containers
-    docker-compose -f "docker-system/docker-compose.${ENVIRONMENT}.yml" down
+    local compose_file="${PROJECT_ROOT}/docker-system/docker/docker-compose.${ENVIRONMENT}.yml"
 
-    # Start database and dependencies first
+    # Stop existing containers
+    docker-compose -f "${compose_file}" down
+
+    # Start the database first. The only services any compose in this tree defines are
+    # postgres, mcp-backend, frontend, pgadmin and nginx: there is no `redis` service
+    # in ANY compose file here, and the Python stack that might have wanted one is retired.
     log_info "Starting database and dependencies..."
-    docker-compose -f "docker-system/docker-compose.${ENVIRONMENT}.yml" up -d postgres redis
+    docker-compose -f "${compose_file}" up -d postgres
 
     # Wait for database to be ready
     log_info "Waiting for database to be ready..."
-    timeout 60 bash -c 'until docker-compose -f "docker-system/docker-compose.'${ENVIRONMENT}'.yml" exec -T postgres pg_isready; do sleep 2; done'
+    timeout 60 bash -c "until docker-compose -f '${compose_file}' exec -T postgres pg_isready; do sleep 2; done"
 
-    # Run database migrations
-    log_info "Running database migrations..."
-    docker-compose -f "docker-system/docker-compose.${ENVIRONMENT}.yml" run --rm backend python -m alembic upgrade head
+    # No migration step here, and deliberately so. The Go server owns its schema: it
+    # creates and patches it on boot when AUTO_MIGRATE=true
+    # (task_management/infrastructure/database/init_database.go), and after Stage 1 the
+    # versioned migrations under agenthub_go/migrations/ become the source of truth.
+    # `run --rm backend python -m alembic upgrade head` is deleted with the Python stack:
+    # the production compose has no `backend` service (its service is mcp-backend, and it
+    # is Go), so the old step named a service that does not exist and a migration tool
+    # that no longer has anything to migrate.
+    log_info "Schema is created by the Go server (AUTO_MIGRATE), not by alembic"
 
     # Start all services
     log_info "Starting all services..."
-    docker-compose -f "docker-system/docker-compose.${ENVIRONMENT}.yml" up -d
+    docker-compose -f "${compose_file}" up -d
 
     log_success "Infrastructure deployed successfully"
 }

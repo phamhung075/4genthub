@@ -152,8 +152,16 @@ jobs:
         id: build-frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./agenthub-frontend
-          file: ./agenthub-frontend/Dockerfile.production
+          # The context must be the REPO ROOT, for two measured reasons: the
+          # Dockerfile at docker-system/docker/Dockerfile.frontend.production COPYs
+          # `agenthub-frontend/...` (a repo-root-relative path), and the production
+          # compose builds the same image with `context: ../..`. build-push-action
+          # also requires the Dockerfile to live INSIDE the context, so widening
+          # the context and the file path together is the only single-step fix:
+          # keeping context: ./agenthub-frontend cannot work, because that context
+          # contains no `agenthub-frontend/` subdirectory to COPY from.
+          context: .
+          file: ./docker-system/docker/Dockerfile.frontend.production
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
@@ -169,7 +177,10 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [build]
-    if: github.ref == 'refs/heads/main' || inputs.environment == 'staging'
+    # Dispatch-only. This tree defines NO staging compose file, so running this on
+    # every main push started a job that could only fail. The old condition also ran
+    # it for a production dispatch, because github.ref is the branch dispatched from.
+    if: inputs.environment == 'staging'
     environment:
       name: staging
       url: https://staging.agenthub.com
@@ -186,8 +197,17 @@ jobs:
 
       - name: Deploy to staging
         run: |
+          # Staging has no definition in this tree. The compose set under
+          # docker-system/docker/ is backend-frontend, backend-go-frontend, db-only,
+          # dev, optimized, pgadmin, production - there is no staging compose, and
+          # inventing one here would be deciding staging's topology by accident.
+          # Refuse with the reason instead of resolving a file that does not exist.
+          compose="$PWD/docker-system/docker/docker-compose.staging.yml"
+          if [ ! -f "$compose" ]; then
+            echo "::error::no staging compose file at $compose - staging is not defined by this repository"
+            exit 1
+          fi
           echo "Deploying to staging environment..."
-          # Deploy using staging configuration
           ./scripts/deployment/deploy-production.sh \
             --environment staging \
             --force
