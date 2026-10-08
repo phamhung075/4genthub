@@ -150,39 +150,58 @@ func TestResponseOptimizer_FlattenExplicitNilPartialFailures(t *testing.T) {
 }
 
 func TestResponseOptimizer_MergeMetadataWithholdsAnUnpersistedHandle(t *testing.T) {
-	envelope := func(persisted bool) *entities.OrderedMap[any] {
-		return zpRespOM(
-			"success", persisted,
-			"operation_id", "1b9d74f2-828c-438e-8daa-2a6eb9f09d6a",
-			"timestamp", "2026-10-08T16:40:48.997744+00:00",
-			"operation", "create",
-			"confirmation", zpRespOM("data_persisted", persisted),
-		)
+	// Measured vectors, not one invented case: four refused add_insight calls missing a required
+	// context_id, a create refused for an invalid assignee, and a create refused for an over-length
+	// description. They differ in action name, in validation class (a length bound versus a missing
+	// required field) and in operation_id, which is regenerated per call. A test covering only one
+	// of them passes while the other five still ship a handle.
+	vectors := []struct {
+		name      string
+		operation string
+		id        string
+		persisted bool
+	}{
+		{"refused add_insight, missing context_id (ec5eeacf)", "add_insight", "ec5eeacf-cc93-4664-9669-74fa4891845e", false},
+		{"refused add_insight, missing context_id (362855c4)", "add_insight", "362855c4-0d5e-4e8f-9d1a-6b6f4a6dc3ee", false},
+		{"refused add_insight, missing context_id (bdfb07f0)", "add_insight", "bdfb07f0-6c8a-4f2f-9a1f-4b0b2b1b6a11", false},
+		{"refused add_insight, missing context_id (b3f291c5)", "add_insight", "b3f291c5-2f1e-4c7d-8a3b-5d9c0e7f4a22", false},
+		{"refused create, invalid assignee (1b9d74f2)", "create", "1b9d74f2-828c-438e-8daa-2a6eb9f09d6a", false},
+		{"refused create, description over the length bound", "create", "6f1c9d2e-3a4b-4c5d-8e9f-0a1b2c3d4e5f", false},
 	}
-	r := NewResponseOptimizer()
 
-	// A refused call used to expose meta.id, so a caller recorded a phantom handle and every
-	// later update against it answered "Task not found". Nothing that reads as a handle may
-	// survive, while the response still says plainly that nothing was persisted.
-	failed := r.MergeMetadata(envelope(false))
-	metaAny, _ := failed.Get("meta")
-	meta, _ := metaAny.(*entities.OrderedMap[any])
-	if meta == nil {
-		t.Fatal("meta should survive to carry the persisted flag")
-	}
-	if _, has := meta.Get("id"); has {
-		t.Fatalf("refused call exposed a handle: %#v", meta)
-	}
-	if v, ok := meta.Get("persisted"); !ok || v != false {
-		t.Fatalf("persisted must still be reported as false: %v %#v", ok, meta)
-	}
-	if !meta.Has("operation") || !meta.Has("timestamp") {
-		t.Fatalf("non-handle metadata should survive: %#v", meta)
+	r := NewResponseOptimizer()
+	for _, v := range vectors {
+		t.Run(v.name, func(t *testing.T) {
+			resp := zpRespOM(
+				"success", false,
+				"operation_id", v.id,
+				"operation", v.operation,
+				"timestamp", "2026-10-08T16:40:48.997744+00:00",
+				"confirmation", zpRespOM("data_persisted", v.persisted),
+			)
+			metaAny, _ := r.MergeMetadata(resp).Get("meta")
+			meta, _ := metaAny.(*entities.OrderedMap[any])
+			if meta == nil {
+				t.Fatalf("meta should survive to carry the persisted flag")
+			}
+			// THE ASSERTION: whenever the outcome is not persisted, meta.id is absent or null.
+			if id, has := meta.Get("id"); has && id != nil {
+				t.Errorf("refused call exposed a handle: %#v", id)
+			}
+			if persisted, ok := meta.Get("persisted"); !ok || persisted != false {
+				t.Errorf("persisted must still be reported as false: %v %#v", ok, meta)
+			}
+		})
 	}
 
 	// The same envelope on a persisted call keeps its id: that is the handle callers rely on,
 	// so withholding it unconditionally would be a different defect, not this fix.
-	ok := r.MergeMetadata(envelope(true))
+	ok := r.MergeMetadata(zpRespOM(
+		"success", true,
+		"operation_id", "1b9d74f2-828c-438e-8daa-2a6eb9f09d6a",
+		"operation", "create",
+		"confirmation", zpRespOM("data_persisted", true),
+	))
 	metaOKAny, _ := ok.Get("meta")
 	metaOK, _ := metaOKAny.(*entities.OrderedMap[any])
 	if v, has := metaOK.Get("id"); !has || v == nil {

@@ -23,9 +23,11 @@
 - **THE TESTS PROVE NEGATIVES, NOT JUST POSITIVES:** a refused call exposes no field that reads as a handle
   while a persisted call still exposes one, an unfiltered list invents no assignee, and a forwarded
   assignee reaches the SQL boundary.
-- **NOT IN THIS COMMIT, NAMED RATHER THAN LEFT SILENT:** `offset` is still discarded in `SearchTasks`, and
-  the status-change broadcast path is still dead - `event_handler_initializer.go:69` constructs
-  `NewTaskEventHandlers(nil, nil, nil)`.
+- **NOT IN THIS COMMIT, NAMED RATHER THAN LEFT SILENT:** `offset` is still discarded in `SearchTasks`.
+  And the status-change broadcast path no longer exists to be dead - the `TaskEventHandlers` /
+  `TaskEventNotificationService` family was DELETED in `e1970dc5` as dormant (zero references remain in
+  `agenthub_go`), so anything still describing it as "constructed with three nil dependencies" is
+  describing the tree before that deletion.
 
 ## The task UPDATE animation: the frontend chain is sound and the status-change path broadcasts nothing
 
