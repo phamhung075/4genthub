@@ -4,11 +4,11 @@ import { ApiDocsPage, applyTokens, slugifyHeading } from '../../pages/ApiDocsPag
 import { toSanitizedHtml } from '../../lib/markdownHtml';
 import { API_BASE_URL } from '../../config/environment';
 
-// The document is imported raw by the page. The real file is asserted through
-// the page; the mock below proves the table of contents FOLLOWS the content
-// rather than a hand-maintained list, and it is the only place a heading is
-// added and removed without touching the real document.
-vi.mock('../../docs/api-reference.en.md?raw', () => ({
+// The prose is imported raw by the page. The mock below proves the table of contents FOLLOWS
+// the content rather than a hand-maintained list, and it is the only place a heading is added
+// and removed without touching the real document - so it must mock the module the page now
+// imports, or the real prose loads and the fixture's headings stop meaning anything.
+vi.mock('../../docs/api-reference-prose.en.md?raw', () => ({
   default: [
     '# Mocked title',
     '',
@@ -124,5 +124,66 @@ describe('ApiDocsPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('api-docs-version')).toHaveTextContent('{{VERSION}}');
     });
+  });
+});
+
+// THE GENERATED REFERENCE TIER (DOCS-PAGE.md step 1). The module is a BUILD-TIME import, so the
+// page takes it as DATA: an absent reference is a compile error at the import, which is why there
+// is no loading state and no failure state to test here - that acceptance has no runtime branch on
+// this tier and becomes load-bearing at step 2. What this block pins is the MOUNT itself.
+//
+// THE SECOND CASE IS A RULED COST WITH A DATE, not an oversight: the lead ruled mount-alongside for
+// step 1 because retiring the hand-written tier inside a commit scoped to "mount the section" would
+// smuggle a change and would drop MCP_URL, which has no other home on the page. Follow-up cd77527c
+// retires the markdown tier and its machinery when the prose has a home, AND THIS CASE GOES WITH IT.
+vi.mock('../../docs/apiReference', () => ({
+  apiReference: {
+    routes: [
+      { method: 'GET', path: '/api/mocked/{id}', pathParams: ['id'], handler: 'getOne', description: 'Read one.' },
+      { method: 'POST', path: '/api/mocked', pathParams: [], handler: '', description: '' },
+    ],
+    tools: [
+      {
+        name: 'mock_tool',
+        description: 'Does a thing.',
+        parameters: { type: 'object', properties: { action: { type: 'string' } }, required: ['action'] },
+        actions: ['create'],
+      },
+      { name: 'quiet_tool', description: '', parameters: { type: 'object', properties: {} }, actions: [] },
+    ],
+  },
+}));
+
+describe('ApiDocsPage - the generated reference tier', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('renders the generated tier from the imported reference, counts included', async () => {
+    render(<ApiDocsPage />);
+
+    expect(await screen.findByTestId('api-docs-reference')).toBeInTheDocument();
+
+    // THE COUNTS COME FROM THE REFERENCE'S OWN LENGTH, so the page cannot print a number the data
+    // does not support: the mocked reference has two routes and two tools and the page says so.
+    expect(screen.getByText(/2 routes, generated from the mounts/)).toBeInTheDocument();
+    expect(screen.getByText(/2 tools, with the parameters the/)).toBeInTheDocument();
+    expect(screen.getByText('/api/mocked/{id}')).toBeInTheDocument();
+    expect(screen.getByText('mock_tool')).toBeInTheDocument();
+  });
+
+  it('still renders the hand-written document beside it - the ruled cost, with its date', async () => {
+    render(<ApiDocsPage />);
+
+    // Both tiers are on the page tonight: the generated one first, the hand-written one below.
+    // This is the second-copy shape the packet exists to remove, tolerated only because it is
+    // dated and named - see follow-up cd77527c, which removes this case along with the tier.
+    expect(await screen.findByTestId('api-docs-body')).toBeInTheDocument();
+    expect(screen.getByTestId('api-docs-toc')).toBeInTheDocument();
+    expect(screen.getByTestId('api-docs-reference')).toBeInTheDocument();
   });
 });

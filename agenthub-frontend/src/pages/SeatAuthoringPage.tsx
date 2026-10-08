@@ -180,7 +180,11 @@ export const SeatAuthoringPage: React.FC = () => {
               <span className="font-mono font-medium">{module.slug}</span>
               <Badge variant="secondary">{module.kind}</Badge>
               <Badge variant="outline">{module.version}</Badge>
-              <code className="text-xs text-muted-foreground">{module.sha256.slice(0, 8)}</code>
+              {/* A producer can OMIT sha256 - the type only claims it is present - and an optional
+                  chain plus a named fallback is this codebase's house form for that absence
+                  (types/websocket-protocol.ts:473). Without it the missing key threw during render
+                  and unmounted the whole page instead of degrading this one cell. */}
+              <code className="text-xs text-muted-foreground">{module.sha256?.substring(0, 8) || 'unknown'}</code>
             </div>
           ))}
         </CardContent>

@@ -218,50 +218,51 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 // Convenience hooks for different toast types
+// A module-level no-op, so the identity returned OUTSIDE a provider is stable across
+// calls. It used to be an inline `() => ''`, a fresh function on every call - an unstable
+// dependency for any consumer that put it in a dependency array.
+const noop = () => '';
+
 export const useSuccessToast = () => {
   const context = useContext(ToastContext);
-  if (!context) {
-    // Return a no-op function if not within provider
-    return () => '';
-  }
-  const { showToast } = context;
+  // THE useCallback IS CALLED UNCONDITIONALLY. It used to sit after an early return for
+  // the no-provider case, so which hooks this component calls depended on a context value
+  // - a rules-of-hooks violation, latent only while a provider's presence cannot change
+  // between renders of one component, and undefined behaviour if it ever does.
+  const showToast = context?.showToast;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
+    if (!showToast) return noop();
     return showToast({ type: 'success', title, description, action });
   }, [showToast]);
 };
 
 export const useErrorToast = () => {
   const context = useContext(ToastContext);
-  if (!context) {
-    // Return a no-op function if not within provider
-    return () => '';
-  }
-  const { showToast } = context;
+  // Unconditional useCallback: see useSuccessToast above for why the early return was a
+  // rules-of-hooks violation rather than a convenience.
+  const showToast = context?.showToast;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
+    if (!showToast) return noop();
     return showToast({ type: 'error', title, description, action, duration: 8000 }); // Longer for errors
   }, [showToast]);
 };
 
 export const useWarningToast = () => {
   const context = useContext(ToastContext);
-  if (!context) {
-    // Return a no-op function if not within provider
-    return () => '';
-  }
-  const { showToast } = context;
+  // Unconditional useCallback: see useSuccessToast above.
+  const showToast = context?.showToast;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
+    if (!showToast) return noop();
     return showToast({ type: 'warning', title, description, action });
   }, [showToast]);
 };
 
 export const useInfoToast = () => {
   const context = useContext(ToastContext);
-  if (!context) {
-    // Return a no-op function if not within provider
-    return () => '';
-  }
-  const { showToast } = context;
+  // Unconditional useCallback: see useSuccessToast above.
+  const showToast = context?.showToast;
   return useCallback((title: string, description?: string, action?: Toast['action']) => {
+    if (!showToast) return noop();
     return showToast({ type: 'info', title, description, action });
   }, [showToast]);
 };

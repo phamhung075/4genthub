@@ -8,9 +8,10 @@
  * @version 1.0.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AlertCircle, Loader2, Radio } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { SeatInputBox } from './SeatInputBox';
 import { cn } from '../../lib/utils';
 import type { SessionEvent } from '../../types/sessionTypes';
 import type { SessionStreamStatus } from '../../hooks/useSessions';
@@ -20,6 +21,11 @@ interface SessionLiveViewProps {
   events: SessionEvent[];
   status: SessionStreamStatus;
   error: string | null;
+  /**
+   * The seat this window belongs to; the chat input addresses it. Null while no session is
+   * selected, which is exactly when there is no window to put an input in.
+   */
+  seatKey?: string | null;
 }
 
 const STATUS_LABEL: Record<SessionStreamStatus, string> = {
@@ -54,7 +60,13 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
   events,
   status,
   error,
+  seatKey = null,
 }) => {
+  // The window's foot, where the chat drawer lands. Held in state rather than a ref object because
+  // the drawer is a PORTAL: it needs the node as a value to render into, and a ref object would
+  // give it null on the render that matters.
+  const [chatFoot, setChatFoot] = useState<HTMLDivElement | null>(null);
+
   if (status === 'idle') {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-base-secondary">
@@ -76,6 +88,7 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
         <Badge variant={statusBadgeVariant(status)} className="ml-auto shrink-0">
           {STATUS_LABEL[status]}
         </Badge>
+        {seatKey && <SeatInputBox seatKey={seatKey} drawerTarget={chatFoot} />}
       </div>
 
       {(status === 'connecting' || status === 'reconnecting') && events.length === 0 && (
@@ -112,6 +125,10 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
           </ul>
         )}
       </div>
+
+      {/* The window's foot. The chat input's drawer renders into this node, so opening it takes its
+          own height here and the transcript above keeps the rest of the window, scroll included. */}
+      <div ref={setChatFoot} className="shrink-0" />
     </div>
   );
 };

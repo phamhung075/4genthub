@@ -219,3 +219,47 @@ func TestBaseRepositoryUUIDNormalisationAndErrorWrapping(t *testing.T) {
 		t.Fatalf("encode error must be DatabaseException, got %T %v", err, err)
 	}
 }
+
+// TestBindDoesNotCoerceAWiredVarcharUserID is the discriminator the identity split needed, and it asks
+// the WIRED registry rather than reading a file.
+//
+// WHY IT EXISTS: the task list binds a uuid5 for the dev user id (confirmed, not assumed -
+// uuid5(DNS, "dev-user-00000000-0000-0000-0000-000000000000") == the 708b1d8f... seen in the statement
+// log), and the binder is type-aware: it calls UnifiedUUIDBindParam ONLY under case "UUID". Two column
+// defs disagree about the type - models.go (generated from the Python's SQLAlchemy metadata, whose
+// models declare user_id as String) says VARCHAR, while models_prod.go says UUID and its own header
+// says its tables are "intentionally not appended to Tables". So the question is which def the wired
+// registry actually carries for THIS column: if the literal passes through, the defs are exonerated and
+// the coercion is upstream of the repository; if it comes back as a uuid5, the wired def is the UUID
+// one and the divergence is in the schema after all.
+func TestBindDoesNotCoerceAWiredVarcharUserID(t *testing.T) {
+	var tasks database.TableDef
+	for _, table := range database.Tables {
+		if table.Name == "tasks" {
+			tasks = table
+		}
+	}
+	if tasks.Name == "" {
+		t.Fatal("the tasks table is not in the wired registry")
+	}
+	var userID database.ColumnDef
+	for _, column := range tasks.Columns {
+		if column.Name == "user_id" {
+			userID = column
+		}
+	}
+	if userID.Name == "" {
+		t.Fatal("tasks has no user_id column in the wired registry")
+	}
+	t.Logf("wired tasks.user_id SQLType = %q", userID.SQLType)
+
+	const literal = "dev-user-00000000-0000-0000-0000-000000000000"
+	got, err := bind(userID, literal)
+	if err != nil {
+		t.Fatalf("bind: %v", err)
+	}
+	if got != literal {
+		t.Fatalf("bind(%q, literal) = %v (%T), want the literal passed through: the WIRED def coerces, so the defs are NOT exonerated",
+			userID.SQLType, got, got)
+	}
+}

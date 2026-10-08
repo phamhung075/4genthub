@@ -257,15 +257,15 @@ func TestTaskRepoSearch(t *testing.T) {
 	if _, err := repo.CreateTask(ctx, "Database migration", "migration desc", "medium", nil, []string{"backend"}, nil); err != nil {
 		t.Fatal(err)
 	}
-	byWord, err := repo.Search(ctx, "JWT", 10)
+	byWord, err := repo.Search(ctx, "JWT", nil, 10)
 	if err != nil || len(byWord) != 1 || byWord[0].Title != "Authentication JWT handling" {
 		t.Fatalf("Search JWT: %v %#v", err, byWord)
 	}
-	byLabel, err := repo.Search(ctx, "backend", 10)
+	byLabel, err := repo.Search(ctx, "backend", nil, 10)
 	if err != nil || len(byLabel) != 1 || byLabel[0].Title != "Database migration" {
 		t.Fatalf("Search label: %v %#v", err, byLabel)
 	}
-	empty, err := repo.SearchTasks(ctx, "   ", 10)
+	empty, err := repo.SearchTasks(ctx, "   ", nil, 10)
 	if err != nil || len(empty) != 0 {
 		t.Fatalf("Search empty: %v %d", err, len(empty))
 	}

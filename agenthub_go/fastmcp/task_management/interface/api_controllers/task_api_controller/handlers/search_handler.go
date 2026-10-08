@@ -45,35 +45,6 @@ func thInt(v any) int {
 // thFuncService returns the injected facade service.
 func (h *TaskSearchHandler) thFuncService() TaskFacadeService { return h.facadeService }
 
-// GetTaskStatistics mirrors TaskSearchHandler.get_task_statistics.
-func (h *TaskSearchHandler) GetTaskStatistics(ctx context.Context, userID string) (resp *types.StatisticsResponse) {
-	resp = &types.StatisticsResponse{Success: false, Timestamp: thNow()}
-	defer func() {
-		if r := recover(); r != nil {
-			resp.Success = false
-			resp.Error = thPanicStr(r)
-			resp.Message = thMsg("Failed to get task statistics")
-			resp.Timestamp = thNow()
-		}
-	}()
-	raw, err := h.facadeService.GetTaskFacade(strPtr("default_project"), nil, &userID)
-	if err != nil {
-		return thStatsFailure(err.Error())
-	}
-	facade, ok := raw.(TaskHandlerFacade)
-	if !ok {
-		return thStatsFailure("Failed to get task statistics")
-	}
-	result := facade.GetTaskStatistics(ctx, userID)
-	if m, isDict := thDict(result); isDict && thSuccess(m) {
-		return &types.StatisticsResponse{Success: true, Statistics: thOmGetDefault(m, "statistics", result), Timestamp: thNow()}
-	} else if isDict {
-		errorMsg := value_objects.PyStr(thOmGetDefault(m, "error", "Failed to get task statistics"))
-		return &types.StatisticsResponse{Success: false, Error: &errorMsg, Message: &errorMsg, Timestamp: thNow()}
-	}
-	return &types.StatisticsResponse{Success: true, Statistics: result, Timestamp: thNow()}
-}
-
 // CountTasks mirrors TaskSearchHandler.count_tasks.
 func (h *TaskSearchHandler) CountTasks(ctx context.Context, filters *entities.OrderedMap[any], userID string) (resp *types.CountResponse) {
 	resp = &types.CountResponse{Success: false, Timestamp: thNow()}
@@ -168,41 +139,7 @@ func (h *TaskSearchHandler) ListTasksSummary(ctx context.Context, filters *entit
 	return &types.TaskSummariesResponse{Success: false, Tasks: []*types.TaskSummaryDTO{}, Error: &errorMsg, Message: &errorMsg, Timestamp: thNow()}
 }
 
-// GetFullTask mirrors TaskSearchHandler.get_full_task.
-func (h *TaskSearchHandler) GetFullTask(ctx context.Context, taskID, userID string) (resp *types.TaskResponse) {
-	resp = &types.TaskResponse{Success: false, Timestamp: thNow()}
-	defer func() {
-		if r := recover(); r != nil {
-			thPanicked(resp, r, "Failed to get task details")
-		}
-	}()
-	raw, err := h.facadeService.GetTaskFacade(strPtr("default_project"), nil, &userID)
-	if err != nil {
-		return thGetFailureMsg(err.Error())
-	}
-	facade, ok := raw.(TaskHandlerFacade)
-	if !ok {
-		return thGetFailureMsg("Failed to get task details")
-	}
-	task := facade.GetTaskWithRelations(ctx, taskID)
-	if task == nil {
-		return &types.TaskResponse{Success: false, Task: nil, Error: thMsg("Task not found"), Message: thMsg("Task not found or access denied"), Timestamp: thNow()}
-	}
-	dto, derr := thTaskValue(task, true)
-	if derr != nil {
-		return thGetFailureMsg(derr.Error())
-	}
-	return &types.TaskResponse{Success: true, Task: dto, Timestamp: thNow()}
-}
-
 func strPtr(s string) *string { return &s }
-
-func thStatsFailure(msg string) *types.StatisticsResponse {
-	if msg == "" {
-		msg = "Failed to get task statistics"
-	}
-	return &types.StatisticsResponse{Success: false, Error: &msg, Message: &msg, Timestamp: thNow()}
-}
 
 func thCountFailure(msg string) *types.CountResponse {
 	if msg == "" {

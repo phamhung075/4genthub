@@ -5,7 +5,6 @@ import (
 
 	"agenthub/fastmcp/server/routes"
 	dtostask "agenthub/fastmcp/task_management/application/dtos/task"
-	"agenthub/fastmcp/task_management/domain/entities"
 	taskapicontroller "agenthub/fastmcp/task_management/interface/api_controllers/task_api_controller"
 	"agenthub/fastmcp/types"
 )
@@ -48,12 +47,6 @@ func (a userTaskControllerAdapter) ListTasks(ctx context.Context, req *dtostask.
 		tasks = append(tasks, t.ModelDump())
 	}
 	return routes.UserTaskListResult{Success: r.Success, Error: r.Error, Tasks: tasks}, nil
-}
-
-func (a userTaskControllerAdapter) GetTaskStatistics(ctx context.Context, userID string) (routes.UserTaskStatsResult, error) {
-	r := a.c.GetTaskStatistics(ctx, userID)
-	stats, _ := r.Statistics.(*entities.OrderedMap[any])
-	return routes.UserTaskStatsResult{Success: r.Success, Message: r.Message, Statistics: stats}, nil
 }
 
 func taskResult(success bool, errMsg, msg *string, task *types.TaskDTO) routes.UserTaskResult {

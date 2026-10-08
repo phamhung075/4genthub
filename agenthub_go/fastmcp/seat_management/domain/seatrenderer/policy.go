@@ -33,8 +33,8 @@ type PolicyRule struct {
 type PolicyModule struct {
 	Role             string
 	StartupTimeoutMs *int // nil when the block does not set it
-	BashDeny         []PolicyRule
-	ToolDeny         []PolicyRule
+	BashRules        []PolicyRule
+	ToolRules        []PolicyRule
 }
 
 // policyJSON mirrors the block shape. Pointers distinguish "absent" from "set to the zero value",
@@ -74,37 +74,47 @@ func ParsePolicyModule(content string) (*PolicyModule, error) {
 		if err != nil {
 			return nil, err
 		}
-		out.BashDeny = rules
+		out.BashRules = rules
 	}
 	if raw.Tools != nil {
 		rules, err := parsePolicyRules("tools", raw.Tools.Patterns)
 		if err != nil {
 			return nil, err
 		}
-		out.ToolDeny = rules
+		out.ToolRules = rules
 	}
 	return out, nil
 }
 
-// parsePolicyRules validates one rule list: every entry must name what it refuses, must be a denial
-// (the only approval this kind expresses today, refused by name rather than ignored), and must carry
-// the sibling that makes it a rule rather than a trap.
+// parsePolicyRules validates one rule list: every entry must name what it matches, and must carry an
+// approval this kind can EXPRESS - `deny` or `allow`. An approval it cannot express is still refused
+// BY NAME, because an unknown one would silently not apply, and that property is the reason this
+// guard refuses rather than tolerates.
+//
+// The SIBLING is required of a DENIAL and not of an allowance, and the asymmetry is the rule rather
+// than a convenience: a denial without a sanctioned alternative is a trap - it says what a seat may
+// not do and leaves it to guess what it may - while an allowance IS the sanctioned alternative, so a
+// sibling would be a second voice saying the same thing.
 func parsePolicyRules(section string, rules []PolicyRule) ([]PolicyRule, error) {
 	out := make([]PolicyRule, 0, len(rules))
 	for i, rule := range rules {
 		if strings.TrimSpace(rule.Match) == "" {
 			return nil, fmt.Errorf("%s.patterns[%d]: match is required", section, i)
 		}
-		if rule.Approval != "deny" {
+		switch rule.Approval {
+		case "deny":
+			if strings.TrimSpace(rule.Sibling) == "" {
+				return nil, fmt.Errorf(
+					"%s.patterns[%d] (%s): a denial needs its sibling - the sanctioned way to do the legitimate thing it looks like - or it is a trap rather than a rule",
+					section, i, rule.Match,
+				)
+			}
+		case "allow":
+			// Carries no sibling on purpose: see the asymmetry above.
+		default:
 			return nil, fmt.Errorf(
-				"%s.patterns[%d] (%s): approval %q is not one this kind expresses; only \"deny\" is, and an unknown approval would silently not apply",
+				"%s.patterns[%d] (%s): approval %q is not one this kind expresses; only \"deny\" and \"allow\" are, and an unknown approval would silently not apply",
 				section, i, rule.Match, rule.Approval,
-			)
-		}
-		if strings.TrimSpace(rule.Sibling) == "" {
-			return nil, fmt.Errorf(
-				"%s.patterns[%d] (%s): a denial needs its sibling - the sanctioned way to do the legitimate thing it looks like - or it is a trap rather than a rule",
-				section, i, rule.Match,
 			)
 		}
 		out = append(out, PolicyRule{

@@ -14,8 +14,6 @@ import { cleanup } from '@testing-library/react';
 
 // Enable auto-mocking for animation services
 vi.mock('./services/AnimationFactory');
-vi.mock('./services/taskDeletionTracker');
-vi.mock('./services/branchDeletionTracker');
 
 // Cleanup after each test
 afterEach(() => {

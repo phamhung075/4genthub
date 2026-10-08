@@ -2,16 +2,18 @@
 // every MCP tool, taken from the code rather than from a list someone maintains.
 //
 // ONE PRODUCER, ONE WITNESS. Entries() is the producer and the only thing a consumer calls. The drift
-// test is the WITNESS and must read the code independently - a separate parse of the *_mount.go source
-// for routes, and the dispatch entries for tools - which is why THE ROUTE PARSER IN THIS FILE IS
+// test is the WITNESS and must read the code independently - a separate parse of the same Go source
+// (the mount directory AND the packages it mounts routes from, not the mount files alone) for routes,
+// and the dispatch entries for tools - which is why THE ROUTE PARSER IN THIS FILE IS
 // UNEXPORTED. Exporting it would let the witness call the producer and compare the generator to
 // itself, passing forever: two readings of one artefact is the whole value, and one reading twice is
 // no evidence at all.
 //
-// TWO INSTRUMENTS, AND THE DIFFERENCE IS DELIBERATE. ROUTES come from the SOURCE TEXT of the
-// *_mount.go files, because a http.ServeMux cannot be enumerated: the method and the pattern are
-// string literals and are therefore certain, while the handler name is present only when the mount
-// registers a named function and is empty for an inline closure. TOOLS come from CALLING
+// TWO INSTRUMENTS, AND THE DIFFERENCE IS DELIBERATE. ROUTES come from the SOURCE TEXT of every
+// non-test Go file in the mount directory AND in each package that directory mounts routes from,
+// because a http.ServeMux cannot be enumerated: the method and the pattern are string literals and
+// are therefore certain, while the handler name is present only when the mount registers a named
+// function and is empty for an inline closure. TOOLS come from CALLING
 // (*httpapp.App).MCPToolsList(), so the tool surface is reproduced by RUNNING the code rather than by
 // counting lines - and the ten tools (six definitions plus four schemas appended inside that function)
 // reach this package only because they reach the wire.
@@ -50,17 +52,32 @@ var pathParam = regexp.MustCompile(`\{([^}]*)\}`)
 // test is a test's own mux, not the server's.
 const testFileSuffix = "_test.go"
 
-// routesFromDir reads every non-test Go file in dir and returns their routes, sorted.
-//
-// THE FILE FAMILY IS EVERY .go FILE, NOT ONLY THE _mount.go ONES, and the witness is why: a first
-// version filtered to *_mount.go, both producer and witness shared that filter, and the witness then
-// agreed with the producer about a surface that omitted 29 registrations - every route mounted by a
-// per-family *_routes.go (branches, tasks, subtasks, sessions) and by app.go itself. A witness that
-// inherits the producer's scope is not a witness.
-//
-// Unexported on purpose: this is the producer's instrument, and the witness must parse the same
-// source text with its own code rather than call this.
-func routesFromDir(dir string) ([]RouteEntry, error) {
+// routesFromTree reads EVERY directory whose registrations reach the one mux app.go builds: the mount
+// directory itself and each package whose RegisterRoutes that directory calls with the mux. The auth
+// controller and the supabase controller register from their own packages, so a scan of the mount
+// directory alone dropped their 20 registrations silently - the same partial skip as a
+// string-literal-only parser, one scope wider, and one the empty-artefact guard cannot see.
+func routesFromTree(dir string) ([]RouteEntry, error) {
+	dirs, err := routeDirs(dir)
+	if err != nil {
+		return nil, err
+	}
+	var routes []RouteEntry
+	for _, found := range dirs {
+		entries, err := routesFromDir(found)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, entries...)
+	}
+	sortRoutes(routes)
+	return routes, nil
+}
+
+// goFilesIn lists the non-test Go files in dir, sorted. A test's own mux is not the server's surface,
+// and every other .go file is: the family used to be *_mount.go, which dropped 29 registrations that
+// lived in app.go and the per-family *_routes.go files.
+func goFilesIn(dir string) ([]string, error) {
 	names, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	if err != nil {
 		return nil, fmt.Errorf("cannot list the Go files in %s: %w", dir, err)
@@ -76,7 +93,18 @@ func routesFromDir(dir string) ([]RouteEntry, error) {
 		return nil, fmt.Errorf("no Go files in %s: the route surface cannot be empty", dir)
 	}
 	sort.Strings(files)
+	return files, nil
+}
 
+// routesFromDir reads every non-test Go file in dir and returns their routes, sorted.
+//
+// Unexported on purpose: this is the producer's instrument, and the witness must parse the same
+// source text with its own code rather than call this.
+func routesFromDir(dir string) ([]RouteEntry, error) {
+	files, err := goFilesIn(dir)
+	if err != nil {
+		return nil, err
+	}
 	routes := make([]RouteEntry, 0, len(files))
 	for _, name := range files {
 		source, err := os.ReadFile(name)
@@ -89,13 +117,138 @@ func routesFromDir(dir string) ([]RouteEntry, error) {
 		}
 		routes = append(routes, found...)
 	}
+	sortRoutes(routes)
+	return routes, nil
+}
+
+// sortRoutes orders routes by path and then method, so the artefact has one stable order whatever
+// directory order the read produced.
+func sortRoutes(routes []RouteEntry) {
 	sort.Slice(routes, func(i, j int) bool {
 		if routes[i].Path != routes[j].Path {
 			return routes[i].Path < routes[j].Path
 		}
 		return routes[i].Method < routes[j].Method
 	})
-	return routes, nil
+}
+
+// routeDirs returns dir plus every package directory whose RegisterRoutes dir calls with the mux. The
+// traversal follows the mount calls rather than a list someone maintains, so a family that registers
+// from its own package is read where it lands; a package already visited is not visited twice.
+func routeDirs(dir string) ([]string, error) {
+	moduleRoot, modulePath, err := moduleFor(dir)
+	if err != nil {
+		return nil, err
+	}
+	dirs := []string{dir}
+	seen := map[string]bool{dir: true}
+	for index := 0; index < len(dirs); index++ {
+		files, err := goFilesIn(dirs[index])
+		if err != nil {
+			return nil, err
+		}
+		for _, name := range files {
+			source, err := os.ReadFile(name)
+			if err != nil {
+				return nil, fmt.Errorf("cannot read %s: %w", name, err)
+			}
+			file, err := parser.ParseFile(token.NewFileSet(), name, source, 0)
+			if err != nil {
+				return nil, fmt.Errorf("%s does not parse: %w", filepath.Base(name), err)
+			}
+			imports := importPaths(file)
+			for _, call := range registerRoutesMounts(file) {
+				path, ok := imports[packageQualifier(call.Fun)]
+				if !ok {
+					continue
+				}
+				target := filepath.Join(moduleRoot, strings.TrimPrefix(path, modulePath+"/"))
+				if !seen[target] {
+					seen[target] = true
+					dirs = append(dirs, target)
+				}
+			}
+		}
+	}
+	return dirs, nil
+}
+
+// registerRoutesMounts returns the `pkg.RegisterRoutes(mux)` calls in file: a package-qualified
+// RegisterRoutes call is a route family joining the mux from its own package, which is the package
+// routeDirs then reads.
+func registerRoutesMounts(file *ast.File) []*ast.CallExpr {
+	var calls []*ast.CallExpr
+	ast.Inspect(file, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok || len(call.Args) != 1 {
+			return true
+		}
+		selector, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != "RegisterRoutes" {
+			return true
+		}
+		calls = append(calls, call)
+		return true
+	})
+	return calls
+}
+
+// packageQualifier reports the package identifier an expression is rooted at, so
+// `authinterface.NewAuthController()` and a plain `pkg.Func()` both name their package.
+func packageQualifier(expr ast.Expr) string {
+	switch value := expr.(type) {
+	case *ast.Ident:
+		return value.Name
+	case *ast.CallExpr:
+		return packageQualifier(value.Fun)
+	case *ast.SelectorExpr:
+		return packageQualifier(value.X)
+	}
+	return ""
+}
+
+// importPaths maps each import's local qualifier to its path: the alias when one is declared and the
+// path's last segment otherwise.
+func importPaths(file *ast.File) map[string]string {
+	imports := map[string]string{}
+	for _, spec := range file.Imports {
+		path, err := strconv.Unquote(spec.Path.Value)
+		if err != nil {
+			continue
+		}
+		name := filepath.Base(path)
+		if spec.Name != nil {
+			name = spec.Name.Name
+		}
+		imports[name] = path
+	}
+	return imports
+}
+
+// moduleFor walks up from dir to the go.mod that owns it and returns the module root and path, so an
+// import path can be turned into the directory it names.
+func moduleFor(dir string) (root, path string, err error) {
+	current, err := filepath.Abs(dir)
+	if err != nil {
+		return "", "", fmt.Errorf("cannot resolve %s: %w", dir, err)
+	}
+	for {
+		data, readErr := os.ReadFile(filepath.Join(current, "go.mod"))
+		if readErr == nil {
+			for _, line := range strings.Split(string(data), "\n") {
+				fields := strings.Fields(line)
+				if len(fields) >= 2 && fields[0] == "module" {
+					return current, fields[1], nil
+				}
+			}
+			return "", "", fmt.Errorf("%s/go.mod declares no module path", current)
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", "", fmt.Errorf("no go.mod above %s: cannot resolve a mounted package", dir)
+		}
+		current = parent
+	}
 }
 
 // routesInSource parses one mount file and returns the routes it registers.

@@ -172,7 +172,15 @@ const handleResponse = async <T>(response: Response, originalUrl?: string, origi
       throw validationError;
     }
 
-    throw new Error(error.detail || `Request failed with status ${response.status}`);
+    // The status rides on the refusal. A rule refusal (409) and a server fault (500) both
+    // arrive here as a message, and the message alone cannot tell a caller which one it is
+    // holding - so a caller that wants to render "this was refused, and here is why" needs
+    // the number. The 404 and 422 branches above set their own names and statuses.
+    const refusal = new Error(error.detail || `Request failed with status ${response.status}`) as Error & {
+      status?: number;
+    };
+    refusal.status = response.status;
+    throw refusal;
   }
 
   // Parse JSON response

@@ -352,7 +352,7 @@ class SQLAlchemyTaskRepository(TaskRepository):
 | `/api/v2/branches/summaries/bulk` | POST | Bulk branch summaries | ✅ |
 | `/api/v2/tasks/` | POST | Create task | ✅ |
 | `/api/v2/tasks/` | GET | List tasks | ✅ |
-| `/api/v2/tasks/stats/summary` | GET | Task statistics | ✅ |
+| ~~`/api/v2/tasks/stats/summary`~~ | GET | ~~Task statistics~~ — **REMOVED by `e6829b32`** (2026-10-08; it could only answer 500 — the statistic moves to the O8 ledger panel). Verified absent at `db9d2bc3`: `grep -rq "stats/summary" --include='*.go' --exclude='*_test.go' agenthub_go/fastmcp/server/{httpapp,auth,routes}` exits 1. | — |
 | `/api/v2/tasks/{id}` | GET | Get task details | ✅ |
 | `/api/v2/tasks/{id}` | PUT | Update task | ✅ |
 | `/api/v2/tasks/{id}` | DELETE | Delete task | ✅ |

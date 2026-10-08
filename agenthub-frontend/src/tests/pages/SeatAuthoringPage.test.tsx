@@ -7,7 +7,7 @@ import { SeatAuthoringPage } from '../../pages/SeatAuthoringPage';
 import { seatApi } from '../../services/seatApi';
 import { useWebSocket } from '../../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
-import type { SeatOverlayOp, SeatOverlayScope } from '../../types/seatTypes';
+import type { ModuleSummary, SeatOverlayOp, SeatOverlayScope } from '../../types/seatTypes';
 
 vi.mock('../../services/seatApi', () => ({
   seatApi: {
@@ -222,6 +222,24 @@ describe('SeatAuthoringPage', () => {
     expect(within(row).getByText('rules')).toBeInTheDocument();
     expect(within(row).getByText('instruction')).toBeInTheDocument();
     expect(within(row).getByText('1.0.0')).toBeInTheDocument();
+  });
+
+  it('renders a module whose sha256 is absent instead of taking the page down', async () => {
+    // The PRODUCER's absence rather than the type's: PublishedModuleVersion declares sha256 as a
+    // required string, so this shape is what a second client or a proxy that drops the field sends,
+    // and the type is only a claim about the producer. Unfixed this threw
+    // "Cannot read properties of undefined (reading 'slice')" DURING RENDER, which unmounts the
+    // page rather than degrading one cell.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [
+        { slug: 'rules', kind: 'instruction', version: '1.0.0' } as unknown as ModuleSummary,
+      ],
+    });
+
+    renderPage();
+
+    expect(await screen.findByText('rules')).toBeInTheDocument();
   });
 
   it('creates a seat type version from the selected type, prefilled and editable', async () => {
@@ -452,6 +470,63 @@ describe('SeatAuthoringPage composer', () => {
         'alice'
       )
     );
+  });
+
+  // THE PIN LABEL'S PROPERTY, NOT ITS WORDING. The backend has no pin lock (a `pin` sets a
+  // version and a later `remove` at a lower scope still wins), so what must hold is a RELATION
+  // and a NEGATIVE, at EVERY scope rather than at the one a literal would be written for:
+  //   - the label names the scope the pin was applied at;
+  //   - it claims no protection, by glyph and by vocabulary;
+  //   - a removal stays allowed.
+  // The label is found by its automation hook (`data-pinned-at`), so the copy itself may change
+  // without rewriting these cases - and a change that made one scope read differently WOULD fail
+  // them, which is the point.
+  const PROTECTION_VOCABULARY =
+    /\block(?:s|ed|ing)?\b|\bprotect(?:s|ed|ing|ion)?\b|\bread-?only\b|\bimmutable\b/i;
+
+  const pinnedLabelText = async (scope: SeatOverlayScope) => {
+    overlaysFor({ [scope]: [{ kind: 'pin', slug: 'rules', version: '1.2.0', content: '' }] });
+    const view = renderPage();
+    await screen.findByLabelText('Compose level');
+    const blocks = await screen.findByRole('list', { name: 'Composed blocks' });
+    const row = within(blocks).getByText('rules@1.2.0').closest('li') as HTMLElement;
+    const label = row.querySelector(`[data-pinned-at="${scope}"]`) as HTMLElement;
+    expect(label, `the label must declare the scope it names (${scope})`).not.toBeNull();
+    const text = label.textContent ?? '';
+    // Properties 2 and 3 are per-scope too: no protection word inside the label, no lock glyph
+    // anywhere in the row, and the removal control is enabled rather than disabled.
+    expect(text).not.toMatch(PROTECTION_VOCABULARY);
+    expect(row.querySelector('svg[class*="lock"]')).toBeNull();
+    expect(within(row).getByRole('button', { name: /Remove here/ })).toBeEnabled();
+    view.unmount();
+    return text;
+  };
+
+  // One case per scope, because a property written against one literal holds for the scope the
+  // author had in mind and not necessarily for the family.
+  for (const scope of ['company', 'room', 'seat'] as SeatOverlayScope[]) {
+    it(`labels a pinned block with the scope it is pinned at, and claims nothing more - ${scope}`, async () => {
+      const text = await pinnedLabelText(scope);
+
+      expect(text).toContain(scope);
+      expect(text.replace(new RegExp(`\\b${scope}\\b`, 'g'), '')).not.toMatch(PROTECTION_VOCABULARY);
+    });
+  }
+
+  // THE RELATION, with no phrase pinned at all: the three labels must be ONE TEMPLATE whose only
+  // variable is the scope name. A literal-based case cannot see a divergence between scopes; this
+  // one fails the moment any scope's copy stops matching the others.
+  it('uses one label template whose only variable is the scope it names', async () => {
+    const labels = {
+      company: await pinnedLabelText('company'),
+      room: await pinnedLabelText('room'),
+      seat: await pinnedLabelText('seat'),
+    };
+    const normalise = (text: string, scope: string) =>
+      text.replace(new RegExp(`\\b${scope}\\b`, 'g'), '<scope>');
+
+    expect(normalise(labels.room, 'room')).toBe(normalise(labels.company, 'company'));
+    expect(normalise(labels.seat, 'seat')).toBe(normalise(labels.company, 'company'));
   });
 });
 

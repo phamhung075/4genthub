@@ -20,7 +20,6 @@ type UserTaskController interface {
 	UpdateTask(ctx context.Context, taskID string, req *dtostask.UpdateTaskRequest, userID string) (UserTaskResult, error)
 	DeleteTask(ctx context.Context, taskID, userID string) (UserTaskResult, error)
 	CompleteTask(ctx context.Context, taskID, summary string, notes *string, userID string) (UserTaskResult, error)
-	GetTaskStatistics(ctx context.Context, userID string) (UserTaskStatsResult, error)
 }
 
 // UserTaskResult mirrors create/get/update/delete/complete result attributes.
@@ -37,13 +36,6 @@ type UserTaskListResult struct {
 	Success bool
 	Error   *string
 	Tasks   []any
-}
-
-// UserTaskStatsResult mirrors get_task_statistics.
-type UserTaskStatsResult struct {
-	Success    bool
-	Message    *string
-	Statistics *taskdomain.OrderedMap[any]
 }
 
 // UserSubtaskController is the minimal SubtaskAPIController surface.
@@ -158,26 +150,6 @@ func CompleteUserTask(ctx context.Context, taskID, completionSummary string, tes
 	out.Set("success", true)
 	out.Set("task", result.Task)
 	out.Set("message", "Task completed successfully")
-	return out, nil
-}
-
-// GetUserTaskStats ports get_user_task_stats (GET /stats/summary).
-func GetUserTaskStats(ctx context.Context, currentUser *authdomain.User, c UserTaskController) (*taskdomain.OrderedMap[any], error) {
-	result, err := c.GetTaskStatistics(ctx, currentUserID(currentUser))
-	if err != nil {
-		return nil, httpErr(500, "Failed to get task statistics")
-	}
-	if !result.Success {
-		return nil, httpErr(500, pyOrStr(result.Message, "Failed to get task statistics"))
-	}
-	stats := result.Statistics
-	if stats == nil {
-		stats = taskdomain.NewOrderedMap[any]()
-	}
-	stats.Set("user", currentUser.Email)
-	out := taskdomain.NewOrderedMap[any]()
-	out.Set("success", true)
-	out.Set("stats", stats)
 	return out, nil
 }
 

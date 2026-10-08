@@ -403,10 +403,6 @@ func mountTaskSummaryRoutes(mux *http.ServeMux, deps routeDeps) {
 			body, err := routes.GetTaskSummaries(r.Context(), req, u, deps.taskRoutes, deps.contexts)
 			writeResult(w, body, err)
 		}))
-		mux.HandleFunc("GET /api/tasks/{task_id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-			body, err := routes.GetFullTask(r.Context(), r.PathValue("task_id"), u, deps.taskRoutes)
-			writeResult(w, body, err)
-		}))
 		mux.HandleFunc("GET /api/tasks/{task_id}/context/summary", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 			body, err := routes.GetTaskContextSummary(r.Context(), r.PathValue("task_id"), u, deps.contexts)
 			writeResult(w, body, err)
@@ -610,15 +606,6 @@ func (a taskRoutesAdapter) ListTasksSummary(ctx context.Context, filters *entiti
 		}
 	}
 	return routes.TaskListSummaryResult{Success: r.Success, Error: r.Error, Tasks: tasks}, nil
-}
-
-func (a taskRoutesAdapter) GetFullTask(ctx context.Context, taskID, userID string) (routes.FullTaskResult, error) {
-	r := a.c.GetFullTask(ctx, taskID, userID)
-	res := routes.FullTaskResult{Success: r.Success, Error: r.Error}
-	if r.Task != nil {
-		res.Task = r.Task.ModelDump()
-	}
-	return res, nil
 }
 
 // subtaskRoutesAdapter satisfies routes.SubtaskRoutesController over SubtaskAPIController.

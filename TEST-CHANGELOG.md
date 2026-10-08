@@ -2,6 +2,627 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - seat config pins the compaction tail and the thinking trial
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: two tests (every seat has `compaction.keepRecentTokens`; only `writer` has `defaultThinkingLevel: medium`); the byte comparison now passes the rig. `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py src/tests/scripts/test_openrig_seat_sync.py` -> 125 passed.
+
+## 2026-10-08 - a witnessed compaction is followed by one resume message
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: two tests pin the resume send (once after a witnessed compaction, never without a witness). `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_compact_supervisor.py` -> 9 passed.
+
+## 2026-10-08 - the two always-500 task routes are pinned absent, with a control so the assertion cannot pass vacuously
+
+- `agenthub_go/fastmcp/server/httpapp/routes_mount_test.go`: `GET /api/v2/tasks/stats/summary` leaves `handlerPatterns`, `GET /api/tasks/task-1` leaves `expectedProbes()` because `mountRoutes` no longer registers it, and a new `TestRemovedTaskRoutesAreAbsent` asserts `404` for `/api/tasks/task-1` with its live neighbour `/api/tasks/task-1/context/summary` as a control that must stay mounted.
+- **THE FIRST DRAFT PASSED VACUOUSLY, AND THE CONTROL IS WHY IT CANNOT NOW.** `testRouteDeps()` mounts `mountRoutes`, but the v2 task routes come from `App.registerTaskRoutes`, which that harness never calls — so a 404 on the v2 stats path meant "this mux never mounted it", not "it was removed". A control probe in each harness is what turns the 404 into an observation instead of a silence.
+- **AND THE v2 PATH CANNOT BE ASSERTED AS 404 AT ALL.** It sits under the `GET /api/v2/tasks/` prefix route, which matches the whole subtree and answers 403 before auth whether or not the dedicated handler exists; the test says so in its own comment, and that half is evidenced by the symbol grep and the build instead of by a request.
+- Commands and results: `cd agenthub_go && go test ./fastmcp/server/... ./fastmcp/task_management/interface/api_controllers/...` -> every package `ok`; `gofmt -l` over the tracked `.go` files -> empty; `go vet ./fastmcp/server/... ./fastmcp/task_management/interface/...` -> clean; the acceptance grep -> **21 matches in 10 files at HEAD, 0 after**; `go test ./fastmcp/seat_management/domain/seedlibrary/...` -> `ok`; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q` -> **12 passed**.
+
+## 2026-10-08 - the room definition and the policy table are compared to each other and to the live roster
+
+- `agenthub_main/src/tests/scripts/test_team_roster.py` (new): loads `team.json` and asserts the seat keys equal the live ten measured 2026-10-08, that the architect seat runs `claude-code`, that every `seat_overlays` key is a declared seat and every module `file` exists, and that team.json's `omp` seats equal the keys of `SEAT_ROLES["4genthub-min"]`. **RED BEFORE THE FIX, in the shape the decision note predicted**: `2 failed, 2 passed` — the seat set reported `go-dev2` where the roster has `architect`, the architect assertion reported that the live rig runs one, and the two that passed did so only because both files still carried `go-dev2` together.
+- **THE LAST ASSERTION IS THE ONE THAT MATTERS OVER TIME.** The stale definition was not a typo; it was two files agreeing with each other and disagreeing with the rig, and nothing compared them. Asserting the two sets are equal is what makes the next drift report itself.
+- `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py`: its counts follow the tree — "the ten policy modules" is now nine, in the docstring, the loader test's name and assertion, and both commit-form tests. THE SIBLING FAILED THE MOMENT THE SEAT WAS RETIRED (`2 failed, 313 passed` on the first full run), which is the suite doing its job on a file the dispatch did not name; it is corrected here rather than left red.
+- Commands and results: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> **315 passed, 9 warnings in 69.49s**. The count before this work is **306** as recorded in the entry below, so the arithmetic is not all mine: this change contributes the four in the new file, and the rest are other seats' additions in the shared tree. `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; the scope grep `git grep -n "go-dev2" -- scripts/team scripts/openrig_seat_policy.py agenthub_go/fastmcp/seat_management ai_docs/operations/seat-guides` -> **18 at HEAD, 0 after**.
+
+## 2026-10-08 - compaction notice no longer asks the seat to compact itself
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: `test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself` (new); the still-working test now asserts "do not compact yourself" instead of the old `rig send ... /compact` instruction. 33 script tests pass (`--noconftest`).
+
+## 2026-10-08 - the commit form the seats read, pinned on both sides (go + python)
+
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go`: reads the EMBEDDED `shared-modules/guide-common.md` and fails if the shelf does not say `do not stage first`, or still carries the old first form. **RED BEFORE THE FIX**, both assertions reporting (`does not say "do not stage first"`; `still prescribes the old form ("`git add -- <path>` then")`), green after. The second test is a NEGATIVE CONTROL rather than a second assertion: it first asserts the shipped shelf passes `VerifyGuidePairing`, then hands `verifyGuideLocks` the same digest map with ONLY guide-common's digest moved, and requires it to REFUSE, naming the guide and the recorded digest — so the lock is still checked and not bypassed.
+- `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py`: loads all ten `scripts/team/4genthub-min/policy-*.json` and asserts (B2) that no sibling contains `stage explicit paths` — **RED before the fix** (`1 failed, 3 passed` for this file) — and (B3) that the commit-form siblings agree, within each module and across the ten.
+- **B3 IS SCOPED TO THE CHANGED KEY, DELIBERATELY.** The literal "all siblings for one match are identical across the ten files" is FALSE of the tree and has been since `c91e7997`: three matches genuinely diverge (the rig's up/down/remove lifecycle — `policy-lead.json` reads "the principal does that; ask it.", the other nine "ask the lead."). An assertion that is false for a reason unrelated to the change is a permanently red test, which is worse than none, because it teaches people to ignore the suite; scoping keeps it true and still able to fire.
+- **AND THE RUN PROVED THE GUIDE LINE IN THE SAME COMMIT:** the ruling's command, posted without `--noconftest`, gave `4 errors SystemExit: 1` for these four tests and took **545s** (22 passed, 4 errors); the canonical command with the flag and no cache provider gave **306 passed in 69.33s**. The repository conftest reaches for PostgreSQL before every test, so the flag is what makes the run finish rather than hang.
+- Commands and results: `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; `gofmt -l <the new file>` -> empty; `go vet <those packages>` with the exit code read WITHOUT a pipe -> `rc=0`, 0 bytes; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> `306 passed, 8 warnings in 69.33s`.
+
+## 2026-10-08 - the seat-attribution hook, pinned by a suite that was made to detect (python)
+
+- `agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py`, rewritten for the config delivery: six
+  cases, self-contained (a throwaway repository per case, git identity set inline, cleanup is pytest's
+  `tmp_path`, no `rm` anywhere). The trailer lands with the address when the variable is set; a CONTROL hook
+  that writes nothing turns that same case red; an unset variable adds NOTHING and the commit still
+  succeeds; a hand-written `Seat:` trailer is left alone rather than duplicated; a body line reading
+  `Gates: ...` and a mid-body `Seat:` line are PROSE, and the parser still returns exactly one Seat value;
+  and a missing message file (the framework's own `run` mode) exits 0 and writes nothing.
+- **THE INSTRUMENT IS GIT'S PARSER, NOT A GREP.** Every assertion reads
+  `git log -1 --format=%(trailers:key=Seat,valueonly)`, because the trailer census measured this
+  repository's own commit bodies carrying `Gates:` and `UserTaskController:` mid-paragraph - lines a
+  `^[A-Z][A-Za-z-]+:` grep counts as trailers and `git interpret-trailers --parse` does not. Two `--check`
+  cases were deleted with the mode they covered, because the config entry replaces the hand install.
+- **A REWRITE'S OWN REGRESSION, and the suite caught it:** `REPO_ROOT` was left one level too shallow, so
+  five cases failed reading `<repo>/agenthub_main/scripts/git-hooks/prepare-commit-msg`. That is the failure
+  of a test that reads the real file rather than a stub, which is what these cases are for.
+- **AND THE DELIVERY WAS PROVEN END TO END, not only the script.** In a scratch repository with
+  `pre_commit install --hook-type prepare-commit-msg`, a seat commit gains the trailer through the
+  framework's own generated hook, a commit with the variable removed gains none, a body line reading
+  `Gates:` is prose, and two amends leave exactly one trailer.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_prepare_commit_msg_seat.py -q`
+  -> 6 passed. `--noconftest` because the repository conftest connects to PostgreSQL before every test.
+
+## 2026-10-08 - compaction supervisor tests
+
+- `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py` (new, 5 tests): under the limit is left alone; past 200k and still working is told once and not compacted; quiet past 200k is told then compacted; a seat that dropped below is told again later; at 400k it is compacted while working. Run with `pytest --noconftest` because the repo conftest connects to PostgreSQL before every test. Together with the watch tests: 28 pass.
+
+## 2026-10-08 - the task-event ledger's acceptance tests, written failing-first
+
+- `fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: 2 tests added for O1a, and BOTH SKIP HERE - all six PostgreSQL binaries are absent and both gate on `AGENTHUB_TEST_PG_URL`.
+  - `TestTaskEventAppendAssignsGaplessSeq` - two concurrent Appends on ONE task get seq 1 and 2, never a duplicate, and `after_seq=1` returns only seq>1. This is the acceptance's behavioural claim, and the package's `ok` is NOT evidence of it: the package reports `ok` with both tests skipped.
+  - `TestTaskEventAppendRefusesBogusKind` - `kind='bogus'` is refused by the database's own CHECK constraint rather than by Go.
+  - THE FAILING-FIRST ARTIFACT is the RED run captured BEFORE the implementation: `FAIL [build failed]`, eight undefined symbols. A later green build is not evidence of the gapless guarantee.
+- `fastmcp/task_management/infrastructure/database/task_event_tables_test.go`: 2 tests added for O1a's schema route, AND BOTH RUN HERE WITHOUT POSTGRES, so they are real passes rather than skips.
+  - `TestTaskEventTableRegisteredAfterTasks` - `task_events` is in `Tables` at an index AFTER `tasks`. The table is hand-written and registered from its own `init()`, which is exactly the kind of registration that silently does not happen, and `createAll` walks `Tables` in slice order with no dependency sort, so a foreign key to a table not yet created fails.
+  - `TestTaskEventTableDeclaresItsConstraints` - the DDL carries `ck_task_event_kind`, `ck_task_event_actor_kind` and `uq_task_event_seq`, read from the DDL string rather than a live database, and carries no `ON DELETE CASCADE`.
+  - CORRECTION CARRIED WITH THEM: the vocabularies are CHECK constraints in the DDL, NOT PostgreSQL enum types. `1d6c09d4`'s message says types and that is wrong - the architect ruled CHECKs, because extending one is a single DDL string and the registry has no lifecycle for `CREATE TYPE`.
+
+## 2026-10-08 - the seat watch token bar and the Claude Code log in the feed
+
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: replaced the pane-mirror test; added `test_a_claude_code_call_and_its_result_show_like_an_omp_one`, `test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage`, `test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point`. 23 pass.
+
+## 2026-10-08 - the seat watch follows live tmux sessions and mirrors a non-omp seat
+
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: added `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror` (seat list from tmux sessions of the rig only; omp seat gets the feed command, a Claude seat gets a capture-pane mirror). 20 pass.
+
+## 2026-10-08 - the View-details dialog after ONE click, at full fidelity (a guard, not a reproduction)
+
+- `src/tests/components/TaskRowDetailsOneClick.test.tsx`, **NEW FILE — a PASSING guard whose value is the fidelity it keeps and the boundary
+  it records.** It mocks only the process boundaries (the network via `../../api`, auth, toasts, the websocket transport, the logger) and runs
+  the REAL react-query client, the REAL `useTasks`/`useTaskMutations`, the REAL `useDialogManager`, the REAL `DialogSection`, the REAL
+  `Dialog` and the REAL `TaskDetailsDialog`, with the router set up the way `App.tsx` sets it up — no mocked query client and no
+  `['task', id, false]` stub, which is what the earlier list-only guard (`LazyTaskListDialogOpen.test.tsx`) had to use.
+  - **IT IS GREEN ON TODAY'S TREE, AND ITS FIRST RUN WAS RED — AND THAT RED WAS THE INSTRUMENT.** The first run reported the owner's flash
+    exactly (the dialog present when awaited, then `ABSENT` in all ten 50 ms samples), and the log carried `No "getTaskContext" export is
+    defined on the "../../api" mock`: the now-REAL dialog was throwing on an incomplete mock. Adding that one export turned it green. **A
+    failing reading from a broken instrument is not a finding**, which is why the mock spells out every export the real tree imports.
+  - **IT RECORDS THE NAMED ENVIRONMENT GAP RATHER THAN WORKING AROUND IT:** jsdom dispatches ONE synthetic click with no intervening
+    `pointerdown`/`mousedown`, and the overlay mounts after that click completes, so "the opening gesture is read as a dismiss" is
+    unreachable there. That gap was then crossed in a real Chromium (the real `ui/dialog.tsx` behind a real button, capture-phase listeners
+    on all five gesture events) and the result was **NEGATIVE**: every event targeted the trigger button, and `onOpenChange` was never
+    called. So the candidate the shared dialog's full-viewport overlay suggested is DISPROVED, not merely unreproduced — a named limit can
+    conceal an unknown or a disproof, and only crossing it tells you which.
+
+## 2026-10-08 - a task UPDATE must move the row without a refetch (owner bug, frontend)
+
+- `src/tests/hooks/useTaskMutations.update.test.tsx`, **NEW FILE — the update mutation had no test at all**. The create path is
+  pinned by the realtime tests and the update path was not, which is how the asymmetry between them survived.
+  - **SEEN FAILING FIRST on the old tree:** `AssertionError: expected 'todo' to be 'in_progress' // Object.is equality`, exit
+    code 1 — the list cache the row reads still held the old status after the update had been issued.
+  - **THE HARNESS SEEDS ONLY WHAT A LIST PAGE HAS** — `['tasks', <branch>]` and nothing else. A harness that also seeded
+    `['task', id, false]` **passes on the old tree**, because that seed is precisely the cache the broken resolution read from;
+    the absent seed is what makes the fixture mean anything.
+  - **THE ROUND TRIP IS DELIBERATELY LEFT UNSETTLED** inside the assertion window (the mocked `updateTask` returns a promise
+    that never resolves), so the only thing that can have put the new status in the cache is the optimistic write — the case
+    cannot be satisfied by a refetch, which is what makes a failure here a statement about the UI.
+  - A second case pins the CREATE half of the owner's own sentence ("while CREATE works"), so the contrast that gives the bug
+    its meaning lives in the same file rather than only in a commit message.
+  - Full suite after the fix: **107 files / 1753 tests passed, exit 0**; `tsc --noEmit` exit 0 with 0 errors.
+
+## 2026-10-08 - the composer purposes: a mirror that fails on divergence, falsified before it was trusted
+
+- `src/tests/components/SeatComposerPurposes.test.tsx`, NEW, 3 cases. (1) **THE MIRROR**: reads
+  `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`, compares its kind literals with `SEAT_MODULE_KINDS` in
+  BOTH directions, then asserts the purposes' kind union equals that list with no kind appearing twice. It FAILS rather than
+  skips when the Go file cannot be read, because a mirror check that cannot see the other side proves nothing.
+  **SEEN FAILING BEFORE IT WAS TRUSTED:** with `'policy'` removed from the array (the historical drift, put back for the
+  run and restored after) it reports `expected [ 'document', 'instruction', …(4) ] to deeply equal [ …(5) ]` with
+  `- "policy"` in the diff, while the other two cases stay green. (2) **THE FAMILIES**: `mcp-usage` and `delegate-deepseek`
+  (both KindInstruction) resolve to Tools/MCP, `guide-web-dev` stays in Guide, and a `policy` block is untouched - so the
+  override discriminates rather than swallowing every instruction block. (3) **THE VIEW**: rendered with three blocks, the
+  five purposes appear in fixed order, `policy-web-dev` sits between Policy and Tools/MCP, `mcp-usage` between Tools/MCP and
+  Skills, and an empty purpose shows its own empty state.
+- No existing test needed changing: `SeatAuthoringPage.test.tsx` 27 passed, because the `Composed blocks` list label and the
+  row markup the page asserts on are preserved - the grouping is additive to that surface.
+
+## 2026-10-08 - the duplicate LazySubtaskList pair, merged then retired: one ported case, and a correction to the audit that ordered it
+
+- `src/tests/components/LazySubtaskList.test.tsx` gains `should hold the edit dialog closed while the full subtask is still loading`,
+  ported from `src/components/__tests__/LazySubtaskList.test.tsx` (the file being retired). It pins the PENDING moment of the lazy
+  full-subtask load; this file already pins what happens when that load FAILS (`should handle load full subtask errors`, Error
+  Handling) and nothing about the state while it is in flight, so the ported case is the complement rather than a copy.
+- **CORRECTION TO MY OWN AUDIT, which is why the merge is one case and not two.** The audit told the lead that the v2-fallback
+  property was pinned "twice by different mechanisms, each a weaker half", and that A's `listSubtasks`-was-called assertion was
+  unique. It is NOT: `LazySubtaskList.test.tsx:169` and `:194` both already assert `api.listSubtasks` was called, so the file being
+  retired is subsumed on that property rather than weakened by its loss. The audit read only the first 20 lines of that test body
+  and my `head` cut the assertion off — a window, not a measurement.
+- The ported case uses `vi.mocked(...)` rather than the `as ReturnType<typeof vi.fn>` cast the surrounding cases use, per the
+  repository's `ts-no-return-type` rule, and types its deferred promise with `unknown` rather than an inferred helper type.
+- RETIRED IN ITS OWN COMMIT: `src/components/__tests__/LazySubtaskList.test.tsx` is deleted, its one genuine unique having been
+  ported above. Both files resolved the same barrel (`src/components/LazySubtaskList/index.ts`, default `LazySubtaskListRefactored`)
+  and mocked the same `../../api`; the exact-name overlap was 1 of 44; of the retired file's 11 name-uniques, eight were this
+  file's cases under different wording and one (the `listSubtasks`-was-called assertion) was already here twice. The suite
+  collected both, so 12 duplicate declarations leave with it.
+- **THE PORTED CASE WAS RENAMED, AND THE OLD NAME IS NOWHERE - which is the trap for anyone auditing this pair, because the merge
+  subject counts test BODIES rather than uniques.** `2f7ada9a` says it ported "the one case"; `86cf4513` then deletes the file. The
+  case left the retired file as `should show loading state while loading full subtask` and landed here as `should hold the edit
+  dialog closed while the full subtask is still loading` (`src/tests/components/LazySubtaskList.test.tsx:785`). So a reader who
+  greps the merge's wording finds the old name NOWHERE, sees a 480-line file deleted, and concludes a ruled unique was dropped -
+  when it was renamed, not dropped. `context-dev` nearly drew that conclusion and the lead would have; the name is what this line
+  is for, not the count.
+
+## 2026-10-08 - the absent-hash class: three sites, one failing case each, each seen red at its own line
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx`: a module list whose entry OMITS `sha256`. **SEEN FAILING FIRST** as
+  `Cannot read properties of undefined (reading 'slice')` at `SeatAuthoringPage.tsx:183:78`, propagating through
+  `SeatAuthoringPage` (:178) — the whole page, which is the shape the owner reported. Green after the guard.
+- `src/tests/components/SubtaskDetailsDialog.test.tsx`, **NEW FILE — the site had no test at all**: a fetch whose result omits `id`
+  (so `fullSubtask` is truthy but id-less — the producer's absence rather than the type's) then the JSON tab. **SEEN FAILING FIRST**
+  as the same TypeError at `SubtaskDetailsDialog.tsx:451:55`.
+- `src/tests/components/TaskSearch.test.tsx`: a search result omitting `id`. **SEEN FAILING FIRST** as
+  `Cannot read properties of undefined (reading 'substring')` at `TaskSearch.tsx:317:109`, with the file's other 31 cases passing —
+  so the new case is the only thing that moved.
+- After the guard: the three files **60 tests passed** (SeatAuthoringPage 27, TaskSearch 32, SubtaskDetailsDialog 1).
+- Instrument note: my FIRST enumeration of this class was a grep that MISSED `SubtaskDetailsDialog.tsx:451` and reported one site;
+  context-dev's enumeration over all three shapes found the third (`TaskSearch.tsx:317`), which my `.slice(0, 8)`-only pattern could
+  not have matched because it uses `substring`. The count is trustworthy only once the pattern covers the family over the whole tree
+  and every hit is read — which is the same lesson as the wrapper-versus-artefact readings.
+
+## 2026-10-07 - the task-row dialog: a negative result with its boundary stated
+
+- `tests/components/LazyTaskListDialogOpen.test.tsx`: NEW, for the owner's report that View details needs two clicks (task
+  200afce7). It renders the REAL LazyTaskListRefactored with the REAL useDialogManager, clicks View details ONCE, and
+  asserts the dialog is still there afterwards AS THE SAME DOM NODE - the node identity, because "still open" is satisfied
+  by a close-and-reopen, and a close-and-reopen is what a flash would be.
+- IT DOES NOT REPRODUCE THE BUG, and the file's header says so rather than implying otherwise. What it establishes is a
+  BOUNDARY: at this fidelity, with two routes that reconcile to the same element, no close and no remount occurs. A passing
+  test is kept as a GUARD and labelled a guard; it is not dressed up as a reproduction.
+- THE HYPOTHESIS IT NAMES for whoever picks this up: `openDialog` navigates to `/.../task/<id>` for 'details', and if the
+  real router mounts a DIFFERENT element for that path the list REMOUNTS, destroying the dialog state - after which the
+  URL-sync effect's other branch (`LazyTaskListRefactored.tsx:123`) REOPENS it. That is a flash the owner would read as
+  "closes instantly", while a SECOND click (same URL, no route change) leaves it alone. Settling it needs a harness whose
+  route element identity matches the app's; it is recorded UNPROVEN.
+- RULED OUT BY READING, each with its reason: the overlay's onClick (`dialog.tsx:32`) cannot receive the opening click,
+  because the button stopPropagation's it (`TaskRowActions.tsx:12`) and the overlay mounts only afterwards; the Escape
+  handler is a KEYDOWN rather than a click; and the focus-restore effect's deps are `[opener]` - a `useState` - so its
+  cleanup runs on unmount only and focuses the opener without closing anything.
+- Verified: the file 1 passed, as a guard.
+
+## 2026-10-07 - the task UPDATE animation: the chain is sound, and the test that proved it
+
+- `src/tests/services/taskUpdateAnimation.test.ts`: NEW, and its whole reason for existing is that the
+  service's own suite COULD NOT have caught this. `WebSocketAnimationService.test.ts` replaces
+  `animationFactory.animate` with `vi.fn().mockReturnValue(true)`, so it proves the CALL and never the
+  LANDING - the same defect shape as the delete finding earlier tonight. This file unmocks the factory,
+  registers a REAL `<tr>`, calls the service, and asserts the ELEMENT'S CLASS.
+- RESULT, and it is a bounded one: `taskRowUpdateAnimation` LANDS for an `updated` event and
+  `taskRowCompleteAnimation` for a `completed` event. So service->factory->element is NOT the break in the
+  owner's report, and the second half is a BACKEND wiring defect recorded in CHANGELOG.md and on task
+  60ae8b03 - the frontend chain has no defect in it.
+- Kept as a guard rather than as a reproduction: it passes today, and what it pins is that the landing stays
+  real if the factory's rules or the service's handlers change.
+- Verified: 2 passed.
+
+## 2026-10-07 - the seat chat input: absence asserted with the right instrument, a refusal in the server's words, a transcript that must not blink
+
+- `src/tests/components/SeatInputBox.test.tsx`, NEW, 6 tests. (1) "renders no input on the first mount"
+  asserts ABSENCE with `queryByRole` rather than a `getBy*` - a getBy-shaped assertion for absence throws
+  instead of reporting, so it cannot express the claim at all; the same case pins `aria-expanded="false"`
+  and that no request went out. (2) the send path posts the TRIMMED text as `{ text }` to the seat key and
+  clears the box on success - this is also the INTERFACE PIN, since the route does not exist yet. (3) a
+  refused message renders the SERVER's sentence verbatim and KEEPS the text, so a retry does not cost the
+  user what they typed. (4) after a mount that was opened, a fresh mount renders no input again, which is
+  "closed on every mount" as behaviour rather than as a reading of the source.
+- The third property belongs to the WINDOW, so its coverage lives in the same file: with the drawer open,
+  the transcript line AND its sequence number are both still rendered - the toggle does not touch the read.
+  Plus: a window with no seat renders no toggle, because the idle branch has no window to attach one to.
+- Verified: `SeatInputBox.test.tsx` 6 passed; the full suite and `npx vite build` counts are in the commit
+  notes, and the directly affected page test (`SessionsPage.test.tsx`, which renders the window and does
+  not mock `seatApi`, so it exercises the new hook) was run on its own first.
+- `src/tests/pages/SessionsPage.test.tsx` gained a `QueryClientProvider` wrapper, and it is a REAL finding
+  about the change rather than test housekeeping: that file mocks both query hooks, so it needed no client
+  before, and the window's new chat input performs a real mutation inside the component under test's own
+  child - the raw `@testing-library` render then threw "No QueryClient set, use QueryClientProvider". The
+  fix is the provider and NOT a mock of the new hook, because the mutation is part of the component now,
+  and mocking it away would let the file pass while the page could not render. Seen failing first (1 failed
+  / 2 passed) and green after (3 passed).
+
+## 2026-10-07 - watch tools: the `watch` command
+
+- `tests/scripts/test_openrig_watch_tools.py`: one spec, `watch` opens the grid and the lead window with feed and input.
+
+## 2026-10-07 - room deletion: the real contract, the predicted refusal, and the server's own sentence
+
+- `src/tests/pages/SeatsPage.test.tsx`, `describe('delete room')` rewritten around the contract the server enforces (an
+  EMPTY room only), because the old success case asserted a cascade the server REFUSES: it deleted a room that held a
+  seat and asserted the dialog's promise that the seats went with it. Three paths now, with the fixture split by whether
+  the room holds seats. An empty room deletes and closes its seat list. A room that holds a seat refuses BEFORE the call,
+  names the count (`still holds 1 seat`), leaves the confirm disabled, and `deleteRoom` is never called. A server 409 -
+  raised while the page had seen the room as empty, which is the case the client's own count cannot cover - renders the
+  SERVER's sentence (`room "dev" still holds 2 seat(s); remove them first`) under the refusal framing. A non-409 failure
+  keeps the plain error and must NOT show the refusal framing (asserted, so the branch is discriminating).
+- `src/tests/services/apiRequest.test.ts`, one new case: a 409 rejects with the server detail AS the message AND
+  `status: 409` on the error. Both halves are asserted deliberately - the sentence is the only useful thing in the
+  response, and the status is what lets a caller render "refused, because X" instead of "failed" - so the assertion
+  cannot pass on a bare throw.
+- Verified: `SeatsPage.test.tsx` 32 passed, `apiRequest.test.ts` 9 passed, `SeatDetailPage.test.tsx` green in the same
+  focused run (61 across the three files before the apiV2 case was added; 41 across the two after it).
+
+## 2026-10-07 - watch tools: JSON result with a trailer, cut JSON, and prose
+
+- `tests/scripts/test_openrig_watch_tools.py`: three specs for `pretty()` (trailer kept, cut-off JSON indented, prose untouched).
+
+## 2026-10-07 - the toast hooks' violation: one pin that discriminates, and one that does not
+
+- `tests/components/ui/toast.test.tsx`, two new cases for task e6ca3f6c. PIN ONE (identity) asserts the SAME function
+  reference across re-renders, both inside and outside a provider. SHOWN FAILING against the hooks as committed, with
+  exactly the predicted error - `expected [Function] to be [Function]`, because outside a provider every call returned a
+  fresh `() => ''`. That is the harness's red run; the old file was swapped in and back out in one command so the tree was
+  never left broken.
+- PIN TWO (hook order) toggles the provider between renders and asserts no throw. IT PASSES ON BOTH VERSIONS, which is a
+  finding about the PIN rather than about the hook: RTL's `act` wraps the rerender, so React's hooks-count mismatch never
+  escapes as a throw the assertion can see. It is kept and LABELLED as an invariant rather than a reproduction, not
+  adjusted silently to look like one. A discriminating order pin needs a different mechanism and is not claimed here.
+- Also settled while writing them: `useToast` handles a missing provider by THROWING, so it has no violation - the
+  early-return pattern was FOUR sites (the four convenience hooks), not five. A grep for `if (!context) {` counts five, and
+  one of the five is correct.
+- Verified: `toast.test.tsx` 9 passed with the fix.
+
+## 2026-10-07 - grid input panes
+
+- `src/tests/scripts/test_openrig_watch_tools.py`: 4 specs for `inputs open|hide` and the `input` loop (herdr and `rig send`
+  faked): open splits one input pane per seat pane, a second open adds none, hide closes only the input panes, a typed
+  line reaches the right seat and `/hide` leaves the loop. 14 pass.
+
+## 2026-10-07 - the websocket-protocol-v2 file: a bounded flake, and a mock that matched neither production nor any failure
+
+- `src/tests/e2e/websocket-protocol-v2.test.tsx` was the last intermittent failure in the frontend suite: the task recorded
+  1 test failing in about half of the full-suite runs and once in 5 isolated runs. MEASURED NOW: 0 failures in 20
+  consecutive isolated runs, and the full-suite counts are in the commit notes. The flake does NOT reproduce at the recorded
+  rate on the current tree, and the task's measurements are from 2026-10-04 - the tree has moved since, including this
+  file's own hardening. NOTHING WAS CHANGED TO MAKE THE RATE FALL; the rate is the finding.
+- The toast mock returned a NEW function per call (`() => vi.fn()`), where production's hooks return a `useCallback`'d
+  function inside the app's ToastProvider - so the hook's effect saw an unstable dependency. Corrected to stable identities,
+  and the claim is bounded to what was measured: an unstable mock does NOT make these cases fail, because they render the
+  hook once and never re-render it. The churn was a shape the fixture permitted, not a failure it showed.
+- One invariant added: exactly one websocket registration per mount, pinned as an INVARIANT and not as a reproduction - it
+  passes under either mock.
+- Ruled out with an argument rather than a run: the fixed 700ms sleeps (each is followed by a waitFor with its own 1000ms
+  budget, so the tolerance is ~1700ms against a 600ms timer) and the module-global toast dedupe (per-entity keys, and every
+  case uses its own id, so its 2s window cannot cross cases).
+- Verified: the file 20 passed across 24 consecutive isolated runs; full suite in the commit notes.
+
+## 2026-10-07 - the animation dedupe: two count proofs on the create path
+
+- `test_useRealtimeSync_task.test.tsx` and `test_useRealtimeSync_subtask.test.tsx`: one new case each, on the owner's
+  report that the repeat happens on CREATE. Each feeds ONE created websocket event and asserts the hook makes NO
+  `animate(..., 'create', ...)` call, because WebSocketAnimationService owns the task create and the row's mount effect
+  owns the subtask one (the service deliberately skips subtask creates). Each also asserts the cache update DID happen,
+  so the test cannot pass by the message never arriving. Both were shown FAILING against the pre-fix code before the fix
+  was kept: restoring the old 50ms call produced exactly the call the assertion forbids.
+- `BranchItem.test.tsx` (the update path - no duplicate left to delete there, since the prop-change effects are gone): one
+  new case asserting a prop change animates NOTHING, paired with the service's existing cases that pin its update call.
+  Shown FAILING against the pre-fix prop-change effect ("expected spy to not be called with arguments:
+  ['branch-1','update',Anything]"). It changes `git_branch_name` deliberately: the hook derives its name from that field
+  first, so changing only `name` left the pre-fix effect comparing the same value and proved nothing - the first version of
+  this test passed against the bug.
+- `BranchItem.test.tsx`: its two tracker-driven delete cases are REMOVED with the trackers they drove (the 50ms poll and
+  the tracker's mock in setUp). What remains pinning the delete path is the useRealtimeSync suites' cache-removal
+  assertion, which is where the animation is actually triggered from.
+- Dead-code tests removed with the code they covered: `tests/components/SubtaskRow/SubtaskRowRefactored.test.tsx` and
+  `SubtaskRowRefactored.phase1.test.tsx` (54 tests), after the probe proved that module unreachable.
+- Verified: the two create-proof files 21 passed; `npx tsc --noEmit -p .` 0 errors; the full suite in the commit notes.
+
+## 2026-10-07 - the animation factory's suite: the fixture's reset, and the defect's reproduction
+
+- `AnimationFactory.test.ts`: the `afterEach` reset moved from `unregisterElement` to the factory's supported
+  `clearAnimationState`. The played record now deliberately outlives an unmount (a real remount is unregister + register,
+  and must not replay the create), so unregistering is no longer a reset, and a shared element id let one case's record
+  block the next - which is why 19 of the 29 existing cases failed against the fixed factory, and why all 29 passed again
+  once the fixture reset properly. No existing assertion was weakened or deleted.
+- THREE CASES ADDED for the owner's report, written before the fix: "does NOT replay create when the row remounts" and
+  "does NOT fire twice for one event when a callback and a WebSocket both report it" FAILED against the pre-fix factory -
+  that failure was the reproduction - and "still animates a different type for the same element once the cooldown has
+  passed" records the boundary the two new rules must not overreach.
+- Verified: `npx vitest run src/tests/services/AnimationFactory.test.ts` → 32 passed; `npx tsc --noEmit -p .` → 0 errors;
+  `npx vitest run` → 105 files, 1798 passed.
+
+## 2026-10-08 - the committed artefact gets a gate, and the gate is proven red before it is believed
+
+- NEW `internal/apiref/committed_artefact_test.go`: `TestTheCommittedArtefactMatchesTheProducer` reads the real
+  `agenthub-frontend/src/docs/apiReference.ts`, parses the renderer's envelope, and compares **both directions**
+  against `apiref.Entries` — routes and tools, missing and stale. It closes a gap the package's own witness
+  cannot: that witness compares the producer to an independent extractor, and **both sides are code**, so the
+  file the frontend imports was never opened by anything.
+- `TestTheArtefactGateCanFailBothWays` perturbs the **parsed** reference, so both directions are shown failing
+  without editing the tree — the rule the witness header states: a check is only a check once each direction has
+  been seen failing. Its first version was wrong and the run caught it: it reused a set that was already missing
+  an entry, so direction 1 fired for the wrong reason. Each direction now builds from the pristine set.
+- **SEEN RED BY CONSTRUCTION, verbatim:** removing `POST /api/auth/dev-login` from the artefact produced
+  `DIRECTION 1 FAILS: 1 route(s) are registered in the code and absent from the committed artefact … POST
+  /api/auth/dev-login`; restoring it returned `sha256 7be90f01e6d54efd05d9ebc03c7e0fc43f08154e6136b12a6d851e99b2336458`
+  exactly — the same value as before the proof — and the gate to PASS.
+- Verified: `go test -count=1 ./internal/apiref/...` → ok (the witness and the new gate together); `gofmt -l`
+  clean on the new file; the artefact unmodified in git after the red proof.
+
+## 2026-10-08 - the dormant task-event family is deleted, with the compiler as the blast-radius check
+
+- Deleted with their subject: `task_event_handlers_test.go` (the handler suite) and the two source files it
+  covered. Nothing else referenced any of the symbols — **`go build ./...` exit 0, `go vet ./...` exit 0,
+  `go test -count=1 ./...` → 143 packages ok, 0 FAIL** — which is the mechanical form of the claim that the
+  deletion broke nothing reachable.
+- The one near-miss, recorded because it is the same class as the finding itself: an initial grep listed
+  `event_bus.go` as a reference to the initializer, and the lines it matched hold `events.EventQueue` — the
+  LIVE async queue. Deleting on that grep's word would have removed a live type; reading the line first is what
+  kept the package intact, and the compiler check came after as confirmation rather than as the only guard.
+
+## 2026-10-07 - the completion path broadcasts, pinned by a test that could not compile before the fix
+
+- `complete_task_test.go`: `TestCompleteTaskSuccessBroadcasts`, with a `completeTaskFakeHooks` spy mirroring
+  `createTaskFakeHooks`. **IT COULD NOT COMPILE BEFORE THE FIX** — `CompleteTaskHooks` did not declare
+  `NotifyTaskEvent`, so the call the test asserts was unwritable at that site — which is the strongest
+  failing-before evidence available: the compiler, not a runtime assertion.
+- **It also caught a real placement bug during the change:** the broadcast was first put inside the
+  context-facade guard, and the test's own case (a completion with no facade) proved it would never fire
+  there. The assertion failed on the first run, the call moved out, and the assertion then passed - a test
+  that found its own fix's mistake on the first execution.
+- Verified: all eight `TestCompleteTask*` PASS; `gofmt -l` clean on the package; `go vet` exit 0;
+  `go test -count=1 ./...` -> **143 packages ok, 0 FAIL**.
+
+## 2026-10-07 - the fixtures catch up with the rename, and the suite stops throwing on render
+
+- `SeatsPage.test.tsx`: the two machine-row literals now carry `pinned_hash` instead of `hash`. The failure it
+  fixes was a **render crash**, not a wrong assertion — `shortHash(seat.pinned_hash)` threw
+  `Cannot read properties of undefined` — so **10 tests in that file** were red while `tsc` was clean, which is
+  the point worth keeping: a fixture that omits a field is not type-checked against it, only against the type it
+  claims to satisfy.
+- Verified: that file **32/32 passed** (it was 10 failing); `npx tsc --noEmit -p .` → **0 errors**. Before the
+  fix the suite measured **11 failed / 1745 passed**; the full suite is re-run after this commit and its count
+  is reported separately rather than assumed from the one file.
+
+## 2026-10-07 - the pinned-hash rename, and the three failures that proved it was incomplete
+
+- `seat_status_mount_test.go`: `TestSeatStatusPostStoresAndGetServes` gained the discriminating pair — a posted
+  pinned hash against a **different** stored expected hash, asserting `pinned_hash:abc123` and
+  `expected_hash:cloud999` on the wire, so a wiring that served the intended hash under `pinned_hash` fails.
+  All eight `TestSeatStatus*` PASS.
+- `test_openrig_bridge.py` + `test_openrig_seat_sync.py`: **166 passed** after the reader fix. Three tests were
+  failing before it — two in the bridge suite and the seat_sync one — and all three were the same cause:
+  `openrig_bridge.py:568` read the renamed key, so the verdict became `unknown`. The seat_sync test now asserts
+  the `rig whoami` exemption is FIRST and that the denies that follow it are exactly the list it always named.
+- `machineSeats.test.ts`: 3 passed. `npx tsc --noEmit -p .` → **0 errors** (it was 4, all from one
+  `Pick<…,'hash'>` that the rename missed).
+
+## 2026-10-07 - the deletion invariants get the one proof a tombstone would fail
+
+- `deletion_paths_integration_test.go`: **CLAIM 5** added — after `RemoveSeat`, the same seat key is created
+  again; after `DeleteRoom`, a room with the removed slug is created again. Both must succeed, and **nothing
+  else in the file can catch a tombstone**: it satisfies every row count, the scoping triples and the
+  cross-owner check, and collides only at the unique constraint.
+- The audit that produced it also produced a **wrong gap**, which is why the counts are worth writing down: a
+  grep for `user2|otherUser|second user|cross` reported cross-tenant scoping as untested, but the fixture's
+  second user is named `other` and the `CROSS-OWNER` block already asserts `ErrRoomNotFound` for it and that
+  it deletes no link. The gap list was corrected before the report, not after.
+- Verified: `gofmt -l` clean on the touched file; `go vet ./fastmcp/seat_management/application/services/`
+  exit 0; the package `ok`. **CLAIM 5 CANNOT BE RUN HERE** — the file skips without `SEAT_TEST_DATABASE_URL`
+  and no Postgres tooling is present, so what is verified is that it compiles and that the ordinary suite is
+  unaffected; running it needs a throwaway database.
+
+## 2026-10-07 - an allowance may not come from a seat-scoped override
+
+- `seatrenderer/policy_fold_test.go`: `TestFoldRefusesASeatScopedAllowance` — a seat-scoped **override**
+  carrying an allowance is refused with the module, the pattern, "seat-scoped", "room owner's act" and the
+  way out all named in the message; and **two positive controls** keep it a scope rule rather than a ban:
+  the same allowance from the room scope folds, and an **added** module (the owner's publish, no overlay
+  content) folds at any scope — the case the ten room policy modules take.
+- `resolver/resolver_test.go`: the seat-scope literal now uses the exported `ScopeSeat`, the value the
+  renderer and this test share.
+- Verified: `go test -count=1 ./...` → **143 packages ok, 0 FAIL**; `gofmt -l` and `go vet` clean on both
+  packages; the new test PASSES by name.
+
+## 2026-10-07 - the policy guard's second approval, and the words that must not lie
+
+- `seatrenderer/policy_test.go`: `TestParsePolicyModuleAcceptsAnAllowanceWithoutASibling` pins the
+  asymmetry (an allowance parses with no sibling), and
+  `TestParsePolicyModuleStillRefusesAnUnknownApprovalByName` pins the property that must survive the
+  widening — an approval the kind cannot express is still refused, with a message naming **both** values
+  it can express and the reason (`silently not apply`).
+- `seatrenderer/policy_fold_test.go`: `TestRenderPolicyConfigEmitsAnAllowanceFirst` asserts the allowance
+  reaches the document the client installs and sits **first**, so the exemption is safe under either match
+  order; `TestFoldRefusesAMatchThatIsBothAllowedAndDenied` asserts the fold refuses a contradiction instead
+  of picking a winner; `TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals` asserts the section
+  ordering and that the allowed section names **no** alternative — the check that the seat's words cannot
+  say the opposite of its policy.
+- Renamed with the code (`BashDeny`→`BashRules`, `ToolDeny`→`ToolRules`) in both test files; no assertion
+  weakened, and the existing `unknown_approval` subtest still passes against the new message.
+- Verified: `go test -count=1 ./...` → **143 packages ok, 0 FAIL**; `gofmt -l` clean on the package; the
+  build clean before the test files were touched, and the four new tests PASS by name.
+
+## 2026-10-07 - the config check separates allow from deny, and pins the one allowance
+
+- `src/tests/scripts/test_openrig_seat_policy.py`: `deny_patterns()` used to **assert** that every
+  `bash.patterns` entry is a deny, so the new exemption would have failed the helper rather than been
+  described by it. It now filters on `approval == "deny"` and the allowance is asserted on its own by
+  `test_every_seat_exempts_the_startup_rig_whoami_and_only_that`, which pins the exact list —
+  `["rig whoami*"]` — for **every** seat in the rig. Pinning the whole list rather than membership is the
+  point: a second allowance added later would be a silent widening of an exemption that exists to stop one
+  blocking call, and this test refuses it loudly.
+- The exemption was also checked against the **deny** side rather than assumed compatible: for every
+  seat/role, no deny pattern in the table matches `rig whoami --json`. That is why the entry can sit first
+  and win under either match order, and it is the assertion a reader would otherwise have to make in their
+  head.
+- Verified: `pytest … test_openrig_seat_policy.py` → **12 passed** (11 before, plus the new test);
+  `ruff check` on both changed files → All checks passed; the rendered YAML eyeballed via
+  `show go-dev --rig 4genthub-min`, where the allow entry is the first pattern under `bash:`.
+
+## 2026-10-07 - the search filters accept the forms a caller's integers arrive in (Go)
+
+- `validators/validators_test.go`: `TestParameterValidatorSearchIntegersArriveAsJSONNumbers` covers `limit` and `offset`
+  with the forms that actually arrive - `float64(3)`, `float64(0)`, `"3"` - plus the Go `int` literal the suite already
+  used, and the refusals that must stay: over the bound, under it, and a word.
+- **Written before the fix and SEEN FAILING**, and the failure named the diagnosis: every float64 and string case
+  FAILED while `limit as a Go int` PASSED. That is why the bug shipped - the only `limit` case in the file (`:172`)
+  passes an `int` literal, the one form that cannot come from JSON.
+- After the fix: 10/10 subtests PASS; the validators package `ok`; the whole `./fastmcp/task_management/...` tree
+  reports **0 FAIL lines**; `gofmt -l` empty; `go vet` exit 0.
+- The WIRED path was checked rather than assumed: `task_mcp_controller.go:264` routes `list` AND `search` to
+  `ValidateSearchRequest` → `validation_factory.go:164` → the validator; and the consumer at `handler_adapters.go:73,:94`
+  (`adapterKwInt`) already coerces int, int64, float64 and string - so the newly accepted value is usable downstream
+  and no silent misread replaces the refusal.
+
+
+## 2026-10-07 - no test changed for the dependency upgrades; the suite is what verified them
+
+- The Trivy CRITICAL/HIGH task changed two manifests and two lockfiles and NO test file, so there
+  is no new assertion to record. What the suite contributed is the other half - the verification
+  that the bumps are behaviour-preserving, which a lockfile cannot show: `npx vitest run` -> 105
+  files / 1795 tests passed, and `npx tsc --noEmit -p .` -> exit 0 with 0 errors. The react-router
+  jump (7.9.1 -> 7.18.4) was the change most likely to have broken something, and it did not.
+- NAMED SO IT IS NOT READ AS A GAP: no test asserts the LOCKFILE VERSIONS. The gate that fails on
+  them is Trivy's, in the pipeline, and a repository test would be a second and weaker witness to
+  the same fact - one that every future dependency bump would have to re-pin. The protection for
+  these findings is the pipeline gate plus this record, not a test.
+
+## 2026-10-07 - the notice generator's tests retire with it, and their properties have successors (python)
+
+- `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`: **SEVEN tests removed** with the notice verb they
+  covered — `test_every_notice_lists_every_refused_command_of_its_seat`,
+  `test_the_notice_names_what_to_do_instead_of_pushing`,
+  `test_only_the_non_lead_notice_hands_rig_control_to_the_lead`,
+  `test_apply_writes_the_notice_next_to_the_config_and_check_sees_it_drift`,
+  `test_every_notice_tells_the_seat_to_track_work_in_4genthub_and_offload_to_deepseek`,
+  `test_every_seat_has_a_guide_and_its_notice_carries_the_common_procedure_and_its_own`,
+  `test_a_seat_without_a_guide_file_is_an_error` — plus the `notice()` helper and the `GUIDES_DIR` monkeypatch.
+- WHERE EACH PROPERTY WENT, so the retirement is not a gap: the refusal list is now the policy MODULE's, checked by
+  its own parse and the fold (`policy_fold_test.go`, `modulecontent`'s per-kind gate) and verified element-for-element
+  against the generator's own tables when the ten artefacts were authored; the working procedure and the offload
+  instructions live in the **guide modules**, whose render is covered by `library_guide_render_test.go` and whose
+  pairing rule by `TestGuidePairingRefusesAStaleRecord`.
+- ONE ASSERTION REPOINTED RATHER THAN DELETED:
+  `test_the_default_state_root_survives_a_home_that_points_at_a_seat` asserted the path the tool uses is
+  single-nested under the machine state root; it now checks `config_path` / `agent/config.yml`, the file that remains,
+  instead of `notice_path` / `agent/AGENTS.md`.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts/test_openrig_seat_policy.py -q`
+  -> **11 passed**; `python3 -m ruff check` on both changed files -> **All checks passed**;
+  `python3 scripts/openrig_seat_policy.py --help` -> verbs `{show,apply}`.
+
+## 2026-10-07 - the connector client's redaction and frame shapes are pinned by tests (Go client)
+
+- `agenthub_go/internal/clientsync/connector_test.go` (new, 9 cases incl. 8 redaction subtests): the
+  connector's wire proofs need the real server plus a database, so the tests that run WITHOUT one pin
+  what is entirely the client's job - that redaction happens BEFORE the frame is built (the assertion is
+  on the event that would be uploaded, not on the helper), that ordinary transcript lines survive, that
+  the newest `--lines` lines are the ones kept, and that `MessageEvent` carries the server's own shape
+  (`{type: "message", payload: …}`, whose other direction lives in `ws_connector_test.go:149`).
+- THE TESTS CAUGHT TWO DEFECTS IN MY OWN FIRST DRAFT, both fixed in place: the redactor deleted the
+  space after `AGENTHUB_TOKEN: ` (it sliced the match at the separator instead of capturing the prefix),
+  and it KEPT the token on the whole-token patterns because `${1}` expanded a capture group that should
+  not have been there at all. Both are recorded in the CHANGELOG entry rather than quietly corrected.
+- NOT covered here, and stated rather than implied: the wire itself (a real session reaching the cloud
+  under the right account). That needs the server's ingest path, which needs a database; a test against
+  a fake socket would prove the fake.
+- Commands: `go test -count=1 ./internal/clientsync/` -> **ok** (0.305s, the package's existing suites
+  included); `go build ./...` -> rc=0; `go vet ./internal/clientsync/` -> rc=0; `gofmt -l` -> empty.
+
+## 2026-10-07 - apply reads the stored seat types, and an empty company overlay is not sent (scripts)
+
+- `agenthub_main/src/tests/scripts/test_openrig_team_setup.py`: the fake server counts `GET /api/v2/openrig/seat-types` apart (`seat_type_reads`) so every existing write-order and request-count assertion stays about writes; its default answer is an empty store, so the existing cases still run the seed. Four cases added: the seed is skipped when every needed seat type is stored; the seed runs first when one is missing; an unreadable seat-type list stops before any write (`requests == []`); an empty `company_overlay` yields no `overlay company` step. 50 passed.
+
+## 2026-10-07 - the docs page's mock follows its import, and the fixture assertions are the proof (frontend)
+
+- `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: ONE path change, `vi.mock('../../docs/api-reference-prose.en.md?raw')`, and it is
+  REQUIRED rather than cosmetic - the page now imports the writer's prose as its written half, so a mock still naming the retired file would load
+  the real prose and the fixture's heading assertions (three headings, and `first-section-1` for the duplicate) would stop meaning anything. THE
+  PASS IS ITSELF THE PROOF: those assertions run against the FIXTURE, so they cannot pass while the real document is what loads - a stale path
+  fails them, which is what makes this a check rather than a formality.
+- WHAT WAS NOT DELETED, and this is the test-side half of a premise correction: the markdown machinery's cases all STAY - `applyTokens` (two),
+  `slugifyHeading`, `toSanitizedHtml`, and the contents-list-follows-the-headings case - because the prose is STILL MARKDOWN rendered through them.
+  The row that commissioned this said to delete them rather than re-pin them; deleting them would have removed the coverage of the machinery that
+  renders the replacement, which is the opposite of a retirement.
+- Commands: `npx vitest run src/tests/pages/ApiDocsPage.test.tsx src/tests/pages/ApiDocsPage.mcpConfig.test.tsx` -> 2 files, 10 passed;
+  `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> green.
+
+## 2026-10-07 - the reference tier is exercised against the REAL artefact, and a lexical assertion is corrected by it (frontend)
+
+- `src/tests/components/ApiReferenceView.real.test.tsx` (new, 6 cases) imports the module go-dev2's generator committed
+  (`a5ff17a0`: 73003 bytes, 144 routes, 10 tools) - the same build-time import the page uses. The fixture suite proves
+  the component; this proves the integration, which is why it was PARKED outside the tree while the artefact was
+  withdrawn rather than left collecting on a missing import.
+- EVERY EXPECTATION IS DERIVED FROM THE ARTEFACT rather than from tonight's numbers: the counts come from its own
+  arrays, the inline-closure row is found by INDEX over its own order, the action badges are counted against the tools
+  whose actions are non-empty, and every tool's schema is parsed back and compared to that tool's own `parameters`. The
+  only fixed expectation is that neither list is empty - so 144 routes pass where 57 did, and an artefact that emitted
+  nothing cannot render "0 routes" and pass.
+- THE EXERCISE FOUND A DEFECT IN MY OWN ASSERTION, and it is the reason to run a negative against real data: the "no
+  loading and no failure state" case used `/loading/i` and `/could not|failed|error/i`, which PASS ON THE FIXTURE and
+  FAIL ON THE REAL ARTEFACT - `Found multiple elements with the text: /could not|failed|error/i` - because the real MCP
+  tool descriptions carry their own "ERRORS: ..." sections. The pattern was measuring the DATA. Both files now assert
+  structurally: no `role="alert"`, no `[aria-busy="true"]`, and exactly the two labelled regions.
+- Counts: the fixture file 7, the real file 6, 13 together. Commands: `npx vitest run` on both files -> 13 passed;
+  `npx tsc --noEmit -p .` -> 0 errors; `npx vite build` -> exit 0, built in 13.04s; the full suite in the commit notes.
+
+## 2026-10-06 - the docs page's generated tier is mounted, and its two cases are pinned by removal (frontend)
+
+- `agenthub-frontend/src/tests/pages/ApiDocsPage.test.tsx`: two cases over the MOUNT, not over the view's internals - those are
+  web-dev's seven, in the component's own file. `renders the generated tier from the imported reference, counts included`
+  drives the page with the module MOCKED (the pattern this file already used for the markdown) and asserts the counts come
+  from the reference's own length, so the page cannot print a number the data does not support. `still renders the
+  hand-written document beside it` pins the lead's mount-alongside ruling AND its date: it is a ruled cost rather than an
+  oversight, and it goes with the markdown tier when follow-up `cd77527c` retires it.
+- PROVED SENSITIVE BY REMOVAL: with the mount's `data-testid` taken out, exactly those two fail ("Unable to find an element by:
+  [data-testid=api-docs-reference]") while the seven existing cases stay green - so they detect the mount rather than passing
+  beside it. The testid was restored and the file re-run green.
+- WHAT THESE TWO DO NOT COVER, stated rather than implied: nothing here renders the REAL 144-route artefact, because the
+  module is mocked. That is deliberate - a fixture proves the mount, and a test over generated content would pin the
+  generator's output rather than the page's behaviour - so the real surface is covered by a browser smoke instead: `/docs`
+  renders the real counts (144 routes, 10 tools) and the auth family.
+- Commands: `npx vitest run src/tests/pages/ApiDocsPage.test.tsx src/tests/pages/ApiDocsPage.mcpConfig.test.tsx` -> 2 files,
+  10 passed (8 before these two); `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> green.
+
+## 2026-10-06 - the pin label's property rather than its wording (frontend)
+
+- `src/tests/pages/SeatAuthoringPage.test.tsx` gains four cases in the composer describe, and they exist because the
+  cases before them pinned the WORDING for one scope (`pinned at company`): the property is a relation and a negative,
+  driven at ALL THREE SCOPES because a property written against one literal holds for the scope the author had in mind
+  and not necessarily for the family.
+- Per scope (company, room, seat): the label NAMES the scope it is pinned at (`toContain(scope)`, derived per scope),
+  CLAIMS NO PROTECTION by vocabulary with word boundaries, renders NO lock glyph in the row, and leaves the removal
+  control ENABLED. Plus one relation case: the three labels normalise to ONE TEMPLATE, so a divergence in any scope
+  fails even when no protection word is involved.
+- THE BOUNDARY IS THE POINT OF THE VOCABULARY CHECK: a bare `lock` matches `block`, so the boundary-free form would
+  pass on any code at all while reading like a check. The pattern is `\block(?:s|ed|ing)?\b|\bprotect(?:s|ed|ing|ion)?\b|\bread-?only\b|\bimmutable\b`.
+- PROVED BY PROBE, both directions: `locked at <scope>` fails the three per-scope cases on the vocabulary
+  (`expected 'locked at company' not to match /.../`); `pin at <scope>` at the seat scope fails ONLY the relation case
+  (`expected 'pin at <scope>' to be 'pinned at <scope>'`). The second probe is the evidence that the two clauses are
+  independent detectors rather than one check written twice.
+- Counts: that file 22 -> 26. Commands: `npx vitest run src/tests/pages/SeatAuthoringPage.test.tsx` -> 26 passed;
+  `npx tsc --noEmit -p .` -> 0 errors; the full suite and `npx vite build` green in the commit notes.
+
+## 2026-10-07 - the binder is exonerated for the wired user_id column (Go, identity split)
+
+- `fastmcp/task_management/infrastructure/repositories/base_orm_repository_test.go`:
+  `TestBindDoesNotCoerceAWiredVarcharUserID` is the discriminator the identity-split investigation needed.
+  It reads the WIRED registry - `database.Tables`, not a file - finds `tasks.user_id`, LOGS its SQLType and
+  asserts `bind()` passes the dev literal through unchanged.
+- WHAT IT SETTLED, and it halved the search space: the wired `tasks.user_id` is **VARCHAR** (logged by the
+  test) and the literal passes through, so the column defs are EXONERATED and the coercion that produces the
+  `uuid5` seen in the statement log happens **upstream of the repository**. The two candidates had been
+  "the wired def is UUID after all" and "something coerced the value before the repository"; this test kills
+  the first. `models_prod.go`'s UUID defs are not the answer either: its own header says its tables are
+  "intentionally not appended to Tables" and nothing references it.
+- The value itself was confirmed rather than assumed, which is why the test could be aimed at all:
+  `uuid5(NAMESPACE_DNS, "dev-user-00000000-0000-0000-0000-000000000000")` equals the `708b1d8f...` bound in
+  the statement log, exactly, with the email and the users-row id checked and ruled out.
+- Commands: `go test ./fastmcp/task_management/infrastructure/repositories/ -count=1` -> ok.
+
 ## 2026-10-06 - the guard's store is a build-time fact, and the fixture stops writing machine state
 
 - `test_openrig_seatcheck_guard.py`: `installed_checker` now stubs `seat_sync.checker_link` instead of relying on

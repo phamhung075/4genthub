@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { TaskSearch } from '../../components/TaskSearch';
 import * as api from '../../api';
+import type { Task } from '../../api';
 import logger from '../../utils/logger';
 
 // Mock the api module
@@ -129,6 +130,32 @@ describe('TaskSearch', () => {
         expect(screen.getByText('Implement authentication')).toBeInTheDocument();
         expect(screen.getByText('Tasks (2)')).toBeInTheDocument();
       });
+    });
+
+    it('renders a result whose task id is absent instead of taking the list down', async () => {
+      // The producer's absence, not the type's: Task.id is declared as a required string, so a
+      // result that omits the key is invisible to the compiler. Unfixed this threw while rendering
+      // the row's "ID: …" line and took the results list with it.
+      vi.mocked(api.searchTasks).mockResolvedValue([
+        { title: 'Implement authentication', status: 'in_progress', priority: 'high' } as unknown as Task,
+      ]);
+      vi.mocked(api.listTasks).mockResolvedValue([]);
+
+      render(
+        <TaskSearch
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          onTaskSelect={mockOnTaskSelect}
+          onSubtaskSelect={mockOnSubtaskSelect}
+        />
+      );
+
+      await userEvent.type(
+        screen.getByPlaceholderText('Search tasks and subtasks by ID or name...'),
+        'auth'
+      );
+
+      expect(await screen.findByText('Implement authentication')).toBeInTheDocument();
     });
 
     it('should search subtasks when typing', async () => {

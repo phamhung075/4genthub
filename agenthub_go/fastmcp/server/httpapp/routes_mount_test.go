@@ -73,9 +73,6 @@ func (fakeTaskRoutes) CountTasks(context.Context, *entities.OrderedMap[any], str
 func (fakeTaskRoutes) ListTasksSummary(context.Context, *entities.OrderedMap[any], int, int, string) (routes.TaskListSummaryResult, error) {
 	return routes.TaskListSummaryResult{Success: true}, nil
 }
-func (fakeTaskRoutes) GetFullTask(context.Context, string, string) (routes.FullTaskResult, error) {
-	return routes.FullTaskResult{Success: true, Task: entities.NewOrderedMap[any]()}, nil
-}
 
 type fakeSubtaskRoutes struct{}
 
@@ -153,7 +150,6 @@ func expectedProbes() []routeProbe {
 		{http.MethodPost, "/api/v2/tokens/validate?token=x", ""},
 		{http.MethodPost, "/api/v2/tokens/cleanup", ""},
 		{http.MethodPost, "/api/tasks/summaries", `{"git_branch_id":"b1"}`},
-		{http.MethodGet, "/api/tasks/task-1", ""},
 		{http.MethodGet, "/api/tasks/task-1/context/summary", ""},
 		{http.MethodPost, "/api/subtasks/summaries", `{"parent_task_id":"task-1"}`},
 		{http.MethodGet, "/api/performance/metrics", ""},
@@ -199,7 +195,6 @@ func TestMountRoutesDoesNotDuplicateHandlerPatterns(t *testing.T) {
 		"POST /api/v2/branches/summaries/bulk",
 		"POST /api/v2/tasks/",
 		"GET /api/v2/tasks/",
-		"GET /api/v2/tasks/stats/summary",
 		"GET /api/v2/tasks/{id}",
 		"PUT /api/v2/tasks/{id}",
 		"DELETE /api/v2/tasks/{id}",
@@ -255,4 +250,41 @@ func TestNewRouteDepsEmptyAppDoesNotPanic(t *testing.T) {
 	}()
 	mux := http.NewServeMux()
 	mountRoutes(mux, newRouteDeps(&App{}))
+}
+
+// TestRemovedTaskRoutesAreAbsent pins the removal of the two task routes that
+// could only answer 500 (owner ruling 2026-10-08; decision note
+// ai_docs/architecture-design/decision-task-stats-endpoint.md, option C).
+//
+// THE 404 ASSERTION IS OBSERVABLE FOR /api/tasks/{task_id} ONLY. The v2 stats
+// path sits UNDER THE "GET /api/v2/tasks/" PREFIX ROUTE, which in Go's ServeMux
+// matches every path in that subtree and answers 403 before auth: it returns 403
+// whether or not the dedicated stats handler exists, so it can never 404 and a
+// 403 there is NOT evidence of removal. (The first draft of this test asserted
+// 404 for it and could not pass.) That half is evidenced instead by the
+// acceptance instrument the decision note names - the symbol grep over .go
+// files, 21 lines at HEAD and 0 after - and by the build, since the whole
+// handler chain from route to panicking method is gone.
+//
+// THE CONTROL MUST STAY MOUNTED. Without it a 404 cannot distinguish "the route
+// was removed" from "this mux never mounted it", which is how the first draft
+// also passed VACUOUSLY on the v2 path: testRouteDeps mounts mountRoutes, while
+// the v2 task routes come from App.registerTaskRoutes, which it never calls.
+func TestRemovedTaskRoutesAreAbsent(t *testing.T) {
+	mux := mountedTestMux()
+	for _, c := range []struct {
+		p       routeProbe
+		want404 bool
+	}{
+		{routeProbe{http.MethodGet, "/api/tasks/task-1/context/summary", ""}, false}, // control: live neighbour stays mounted
+		{routeProbe{http.MethodGet, "/api/tasks/task-1", ""}, true},                  // removed
+	} {
+		req := httptest.NewRequest(c.p.method, c.p.path, strings.NewReader(c.p.body))
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		is404 := rec.Code == http.StatusNotFound
+		if is404 != c.want404 {
+			t.Errorf("%s %s: status %d, want404=%v", c.p.method, c.p.path, rec.Code, c.want404)
+		}
+	}
 }

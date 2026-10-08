@@ -1,3 +1,724 @@
+## Seats compact to a smaller floor, and the writer seat trials a lower thinking level
+
+### Changed
+- `scripts/openrig_seat_policy.py`: every seat's generated `config.yml` now carries `compaction.keepRecentTokens: 8000` (omp default 20000), which should bring the post-compaction context floor from ~42k to ~30k. The `writer` seat also gets `defaultThinkingLevel: medium` (default high) as a trial, because reasoning is ~41% of a live context. `render_config` takes the rig so the trial table `SEAT_THINKING` is per rig; `openrig_seat_sync.py` passes it.
+- Takes effect when each seat next starts. Lazy loading was measured and left alone: fixed overhead is ~11.8k tokens and skills already load descriptions only.
+
+## A seat is told to resume as soon as its compaction is witnessed
+
+### Fixed
+- `scripts/openrig_compact_supervisor.py`: the witness check sat below the "under the limit" guard, so after a real compaction (context ~42k) it was skipped and `WITNESSED` could never be logged. It now runs first.
+
+### Added
+- On a witnessed compaction the supervisor sends the seat `RESUME` (re-read the role file and board item, check the working tree, carry on), once, so a compacted seat keeps working without the owner typing continue. A send with no witness sends nothing.
+- Tests: `test_a_witnessed_compaction_is_followed_by_a_resume_message_once`, `test_a_send_with_no_compaction_witness_sends_no_resume`; 9 supervisor tests pass.
+
+## The Python backend's removal has a decision note, and the note's gate is a gap list rather than the eight unticked boxes
+
+### Added
+- `ai_docs/architecture-design/decision-remove-python-backend.md` (owner decision 2026-10-08: no Python backend, no ORM, all code in Go). It reads each of the eight unchecked `agenthub_go/MIGRATION.md` boxes as PORTED, UNPORTED or NOT A GAP, and names six gate rows G1-G6. The deletion cannot be filed while any of them is open. Those rows are: Go still reads Python's init SQL at runtime (`db_initializer.go:239`); Go's root detection is keyed on the `agenthub_main` directory; behaviour-shaped "dropped" markers; `/ws/task-polling`, which Python mounts and Go does not; proof on the running Go server; and the open T/P/N deviations. It recommends versioned SQL migrations, held to the Go row definitions by a Go test against a scratch database, as the new source of truth. The stages are: the migrations, the script tests moved to `scripts/tests/`, then CI, docker, the pre-commit config and `CLAUDE.local.md`, and finally the tag `python-backend-final` with the deletion last and alone. The Python tooling scope stays an open owner question, with its own inventory.
+
+### Fixed
+- `ai_docs/architecture-design/decision-task-stats-endpoint.md`: the "failing first" line said both route assertions are red at HEAD. Only `GET /api/tasks/{task_id}` can be observed as 404. The stats path sits under the `GET /api/v2/tasks/` prefix route, which answers 403 before auth, so the note now says so and points that half's evidence at the grep and the build.
+
+### Measured
+- The script tests: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` → 315 passed. This is the baseline the move must reproduce.
+- With pre-commit 4.4.0, a missing configured config makes `git commit` exit 1 with no commit, measured in a scratch repository. The installed hook points at `agenthub_main/.pre-commit-config.yaml`, so the config moves before the tree is deleted.
+
+## The surface inventory's drift checker exists, is not in the repo, and was already red — so the gate is now stated with its failing half
+
+### Fixed
+- `ai_docs/api-integration/surface-inventory.md`: the paragraph naming `COUNTS-AUDIT.py` as the checker that re-derives its headline figures is TRUE, and what it did not say was where the script is or that it is outside this repository — so a reader of the tree could not reach it. It now carries the exact path (`/home/daihu/.openrig/agenthub-seats/4genthub-min/COUNTS-AUDIT.py`), the fact that a seat runs it and CI cannot, and the evidence for both halves: **exit 0 on the tree it describes, and `--self-test` perturbs one expectation by one and requires the audit to notice.** The failing half is stated because a checker never seen to fail is the same object as no checker at all.
+
+### Measured
+- The audit against this tree: **11 numbers, 10 matching, `httpapp route registrations` differing.** Its expectation read **124** while the tree had read **125** since `O1a` added `GET /{id}/events` — so **it was red before `e6829b32`, for a reason that had nothing to do with this work**, and that was found by running it rather than by reading it. Re-derived, not adjusted: `git grep -c 'mux.HandleFunc('` over `fastmcp/server/httpapp` minus `_test.go` gives **125** at both `1a1ae32c` and `88d27758`, and **123** at HEAD. The expectation is corrected to 123, which is what the inventory paragraph already recorded (`125 -> 123`), and the audit now exits 0.
+- The failing half, demonstrated twice and independently: `--self-test` prints `perturbed 'httpapp route registrations' by +1 -> exit 1 (PASS)`, and a copy perturbed by hand (`core tables` 20 -> 21) exits **1** and names that row.
+
+## Two task routes that could only answer 500 are gone, and the statistic they promised is left to O8
+
+### Removed
+- `GET /api/v2/tasks/stats/summary` and `GET /api/tasks/{task_id}`, by owner ruling on the architect's decision note (`ai_docs/architecture-design/decision-task-stats-endpoint.md`, option C). Both were deliberate Python parity: `handlerTaskFacade.GetTaskStatistics` and `.GetTaskWithRelations` panicked carrying the Python `AttributeError` text and the handlers turned the panic into a 500. Neither had a caller, and the parity reason expired with the archived Python server, so a caller now gets 404 by absence — the only option in which a route that is listed can also answer.
+- The whole chain under both, because a deletion that leaves a caller is a build error rather than a cleanup: the two registrations (`task_routes.go`, `routes_mount.go`), `routes.GetUserTaskStats` and `routes.GetFullTask` with their controller interface methods, the two `httpapp` adapters, `TaskAPIController.GetTaskStatistics` and `.GetFullTask`, `TaskSearchHandler.GetTaskStatistics` and `.GetFullTask`, the two `TaskHandlerFacade` methods, the test fakes, and the four types that then became unused — `types.StatisticsResponse` (with `NewStatisticsResponse` and its `ModelDump`), `routes.UserTaskStatsResult`, `routes.FullTaskResult` and `thStatsFailure`, each confirmed unused by the compiler rather than by eye.
+- `ai_docs/api-integration/surface-inventory.md`: the two rows are struck, the neighbouring task-route line references are re-resolved by reading the file's own registrations rather than by arithmetic, and the dated registration count carries the change — **`125 -> 123` in `httpapp`, `145 -> 143` total**, exactly the two removed registrations, under the pattern and scope the paragraph states.
+
+### Not done, on purpose
+- O8's statistic is NOT built here. It would have been a second source of task counts before O8 builds the first from the O1 ledger, which is the "counts disagree" failure O8 exists to prevent.
+- The two `apiReference.ts` entries in `agenthub-frontend` are a separate row (fe-dev), so this change touches one repo.
+
+### Measured
+- The decision note's acceptance instrument, `command grep -rn "GetTaskWithRelations\|GetTaskStatistics\|stats/summary" . --include=*.go` from `agenthub_go`: **21 matches in 10 files at HEAD `1a1ae32c`, 0 after.**
+- `GET /api/tasks/{task_id}` is the only half observable as 404. The v2 path sits under the `GET /api/v2/tasks/` prefix route, which matches the whole subtree and answers 403 before auth, so it returns 403 whether or not the dedicated handler exists; that half is evidenced by the grep and the build.
+
+## The room definition follows the live roster: the retired backend seat is gone, the architect is declared, and a test keeps the two writes in step
+
+### Changed
+- `scripts/team/4genthub-min/team.json`: the removed `go-dev2` seat, its `seat_overlays` key and its two module entries are gone, and the `architect` seat is declared — `seat_type` `architect`, runtime `claude-code`, model `opus`, no overlay. `pinned_version` is deliberately absent rather than copied: the column is nullable and no file in `seedlibrary/seat-types/` carries a version field, so the siblings' `1.3.0` would have been an invented pin.
+- `scripts/openrig_seat_policy.py`: `SEAT_ROLES["4genthub-min"]` loses the same seat. The architect is NOT added: this script writes an omp `config.yml` under the omp state root, an architect has none there, and listing it would make `apply` exit at the architect — the same walk that stops at the first missing state directory.
+- `scripts/team/4genthub-min/NOTES.md`: the seat-type table and its 7 + 3 sentence are rewritten for the new ten, with the module counts. The split was RE-MEASURED from the OpenRig ledger (`nodes`, rig `01M447FRCC0P2WBKPA45R21M8N`), not read from `team.json`: the architect resolves `architect`, a seeded type, so it takes the retired seat's place and the split stays seven clean with three `orchestrator` seats flagged. The opening line's "ten seats on `omp`" went stale the moment the architect arrived, and now reads nine on `omp` plus an architect on `claude-code`.
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides.lock.json`: the retired guide's pairing is removed, and the two counts in its header (`_what`, `_deletion`) corrected from eleven to ten.
+- `ai_docs/index.json`: regenerated by its own generator, `.claude/hooks/utils/docs_indexer.py`, and never hand-edited — so it stops pointing at a file that is gone: the seat-guides `count` 11 -> 10, the `go-dev2.md` entry and its `structure` name dropped, `total_files` 79 -> 78.
+
+### Removed
+- `scripts/team/4genthub-min/guide-go-dev2.md`, `scripts/team/4genthub-min/policy-go-dev2.json`, `agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev2.md` and `ai_docs/operations/seat-guides/go-dev2.md` — one guide, in all three of the places it was copied to, for a seat that no longer runs. `guides_test.go`'s `guideSeats` loses the name with it.
+
+### Fixed
+- The wrong first `apply` stops being possible. `openrig_team_setup.py apply` only creates — 409 accepted, deleting nothing — and writes to the API room rather than the live rig, so against this stale definition its first run would have BUILT the retired seat and never created the architect: a cloud room describing a team that does not exist. Nothing here authorises either `apply`. The owner's move of the stale `~/.openrig/state/omp/4genthub-min-go-dev2@4genthub-min` directory (aside, not delete, in case it holds transcripts) comes AFTER this commit on purpose: `openrig_seat_policy.py apply` exits at the first missing state directory, so moving it first would stop the run at that seat and the seven after it would never be checked.
+
+### Measured
+- The scope grep, `git grep -n "go-dev2" -- scripts/team scripts/openrig_seat_policy.py agenthub_go/fastmcp/seat_management ai_docs/operations/seat-guides`: **18 lines at HEAD, 0 after**. History is left as written — both changelogs, `NEXT_GEN.md`, the status reports, the frontend comments crediting the seat for past work, and the frozen `clientbridge` fixtures.
+
+## A seat past 200k is told to stop, not to compact itself; the supervisor waits 20 s, not 60
+
+### Changed
+- `scripts/openrig_compact_supervisor.py`: the notice no longer tells the seat to run `rig send <self> /compact --raw`. A `/compact` typed while the seat works is only queued as text (observed on skills-dev at 228k: it said "compacting now", nothing compacted). The notice now says to finish the job, stop, and not compact itself; the supervisor sends `/compact` once the seat is idle. `--quiet` default 60 -> 20 s, `--every` default 30 -> 10 s, so the compaction lands about 20-30 s after the seat goes quiet (skills-dev took 84 s before). The 400k hard limit is unchanged.
+- `~/.openrig/briefs/4genthub-min.txt` (outside the repo): the context-limit rule says the same.
+
+## Decision: the 4genthub-min room definition follows the live roster (go-dev2 out, architect in), before any apply
+
+### Added
+- `ai_docs/architecture-design/decision-team-json-live-roster.md`: `scripts/team/4genthub-min/team.json`, `SEAT_ROLES` and the guide shelf still declare go-dev2 and have no architect seat, while the live rig is the opposite. `openrig_team_setup.py apply` only creates and deletes nothing, so its first run would build a removed seat and never create a live one. `openrig_seat_policy.py apply` stops at the first missing state directory, so the code fix has to land before the stale `~/.openrig/state/omp/4genthub-min-go-dev2@4genthub-min` is moved away (an owner step). Recommends aligning the definition now. The acceptance commands were run at HEAD: 12 passed, seedlibrary ok, and the scope grep prints 18 lines that must go to 0.
+- `ai_docs/index.json`: regenerated with the note's entry.
+
+## Two rules about how a claim is made: a reproduce line cites a command that ran here, and a citation says which part of its sentence it supports
+
+### Added
+- `agenthub_go/NEXT_GEN.md` process lessons 62 and 63, from the writer's two findings. Rule 62: a reproduce line cites a command that was run in this environment. The environment is per seat: `rg` has no binary on PATH, but in the claude-code seat's shell it is a function that runs the harness's embedded copy, while a plain login shell does not find it. Rule 63: a citation can resolve and still support only half its sentence, as `PROD_READINESS_REPORT.md:179` → `MIGRATION.md:951` shows. The instance where it was applied is `782302f1`.
+
+## Decision: the two task routes that can only return 500 — remove them (recommended), keep them for Python parity, or build a statistic now
+
+### Added
+- `ai_docs/architecture-design/decision-task-stats-endpoint.md` (board row 6d520676): `GET /api/v2/tasks/stats/summary` and `GET /api/tasks/{task_id}` both end in a deliberate `panic` in `httpapp/task_adapter.go:70-76`, ported from Python's AttributeError. The board row named only the first route. Neither route has a frontend caller (`apiReference.ts` only lists them). The note compares keeping parity, building a statistic now, and removing both routes, and recommends removal: the statistic arrives once, under O8, from the ledger. The owner rules. The acceptance command was run at HEAD: build, vet and test pass, and the symbol grep prints 21 lines (red), which is the instrument for the removal.
+- `ai_docs/index.json`: regenerated with the note's entry.
+
+### Changed
+- `agenthub_go/NEXT_GEN.md` O1a: records that the ledger's entity, table and read route (`bc6349ac`, `task_routes.go:107`) are in the tree. The box stays open until the PostgreSQL tests are reported as run.
+
+### Fixed
+- The no-prestage decision's entry below gave the wrong reason why the ten policy modules change together (the fold). It now gives the consistency reason, matching the note's correction in `20fcf17a`.
+
+## The surface inventory's counts re-measured at the tip: 145 routes, ten MCP tools, and five rotted rows repaired
+
+### Changed
+- `ai_docs/api-integration/surface-inventory.md`: the route count is **125 in `httpapp` + 20 in `fastmcp/auth` = 145**, re-measured at HEAD `88d27758` with the control that makes it a drift figure rather than a preference — the identical pattern returns **124** at `6dc06203` (the figure it replaces, REPRODUCED) and **125** at HEAD, so exactly ONE registration was added: `GET /api/v2/tasks/{id}/events` (`task_routes.go:107`), the task-event ledger's read route, which now has its row (`routes.GetTaskEvents`, `after_seq` query). Three further rows had rotted by exactly +10 (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and two by exactly +4 (`seat_status_mount.go` 91->95, 94->98); each shift is a single insertion, which is the control that names the cause rather than assuming it. **The Reproduce line was itself a defect: it cited `rg -n`, which is not installed in this environment, over a scope that includes `*_test.go` — 127 lines at HEAD rather than the figure's 125.** It now cites the command that produced the number: `grep -rn "mux.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> 145.
+- `ai_docs/api-integration/mcp-tools-api-complete.md`: the ten-tool figure re-dated to `88d27758` and verified from the CLIENT side — the ten routes a connected session exposes — rather than from the registry alone. The set is unchanged since `763b8196`.
+- `agenthub_go/PROD_READINESS_REPORT.md:179`: cited `MIGRATION.md:996` in a **972-line** file, so the citation pointed past EOF. It now cites `MIGRATION.md:951`, **verified by reading that line** (it carries the `stats returns 500` half of the sentence) and records that the `PUT {id}` requires-`task_id` half has **no line in MIGRATION.md** — so a reader cannot take the citation for more than it supports.
+
+### Tested
+- All 145 route rows re-checked against the tree with a resolver that searches for the cited file's basename and accepts a row only when its line is a registration of that method: **145 verified, 0 problems** (the five repairs above were the only mismatches found).
+
+## The watch wall comes back in the same style after every relaunch, resume or runtime switch
+
+### Changed
+- `scripts/openrig_watch_tools.py`: `grid` and `lead_window` first close the rig's earlier `<rig> grid` and `<rig> lead` workspaces (`close_workspaces`), so running `watch` again replaces the wall instead of stacking a second one. The layout is fixed in the script (2 columns, `--back 40 --width 200 --lines 60 --detail`, lead window with its input pane), not in a saved herdr state, so it cannot drift.
+- `~/.openrig/bin/rig-continue.sh` (outside the repo): `open_watch` runs `watch --rig <rig>` at the end of every restore; `RIG_CONTINUE_WATCH=0` skips it, `WATCH_TOOL` points at another copy. The `spawn-team` and `rig-runtime-switch` skills and `ai_docs/operations/watching-openrig-seats.md` (new section "Same style on every relaunch, resume or runtime switch") say the same.
+- Earlier in the same area, now recorded: a compaction shows as a green `COMPACTED  <before> -> <after>` line and resets the meter to `tokensAfter`; every event line carries the seat's percent and tokens; the header reads `== <seat> | <model> ==  <bar>` (model from the seat's newest log, `claude-opus-5-5` for the architect, `deepseek-flash` for omp seats).
+
+### Tested
+- `test_a_relaunched_grid_replaces_the_old_one_and_keeps_the_same_layout`; the herdr fake now answers `workspace create`. 26 script tests pass (`--noconftest`).
+
+## The seat instructions now teach the commit form they were changed to (ten policy modules, three guide-common copies, one lock re-record)
+
+### Changed
+- `scripts/team/4genthub-min/policy-*.json` (ten files, nine identical siblings each, 90 strings): the sibling every denied git command answers with no longer says "stage explicit paths (`git add -- <path>`)" first. It now says to commit with `git commit -m "..." -- <paths>` **without** staging first, that the index is shared so a staged line can be taken by another seat's commit, that a new file is the one exception and is marked with `git add -N -- <new>` (intent-to-add, no content enters the index), and that just before committing the seat reads `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>` and names every line: if a line is not yours, do not commit that file, commit your other paths and hold it until its owner commits. Copied verbatim from `ai_docs/architecture-design/decision-commit-form-in-seat-instructions.md` at `4cc8790b`, which carries both later corrections (`4f375115`: add -N; `4cc8790b`: hold the file).
+- `ai_docs/operations/seat-guides/_common.md` (the source) and `scripts/team/4genthub-min/guide-common.md`: line 22 rewritten to the same form, keeping its commit-types and changelog sentences; a new paragraph beside it adds the canonical script-test command and the reason the flag is not decoration (`--noconftest`), which until now lived only in the reviewer's guide.
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/shared-modules/guide-common.md`: re-copied from the source, so the shelf is no longer behind it — it was missing the whole "Startup and the approval gate" section. All three copies are now one byte-identical file (`1b0a2f11`).
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides.lock.json`: guide-common's `sha256` and `source_sha256` re-recorded to `1b0a2f11…`; both had been `1df9362d…`, stale for the shelf and for the source.
+
+### Added
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go` and `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py` — both red before this change; see `TEST-CHANGELOG.md`.
+
+### Not in this commit
+- The ten live `~/.openrig/state/omp/*/agent/AGENTS.md`: outside the repository, and the lead takes that step separately.
+- `ai_docs/index.json`: the generated docs index, whose diff is the architect's two decision notes rather than this change.
+
+## The seat trailer ships as a hook-framework config entry, not as an install
+
+### Changed
+- `agenthub_main/.pre-commit-config.yaml`: the seat trailer is one `repo: local` entry at stage `prepare-commit-msg`, so the repository owns the mechanism it runs through. What remains of the install is ONE reproducible command, `pre-commit install --hook-type prepare-commit-msg`, which writes the framework's own generated hook (its header says "File generated by pre-commit") into `.git/hooks`; nothing hand-copied and nothing of ours lives there, and the note's copy-into-`.git/hooks` instruction is superseded. The reason the note forbade this file is stale: it recorded that config as archived, and it is live - the generated `.git/hooks/pre-commit` execs `pre_commit --config=agenthub_main/.pre-commit-config.yaml`, with `core.hooksPath` unset.
+- **The delivery changed; the hook's contract did not.** For this stage `pre_commit` replaces the file list with the commit MESSAGE FILE (`commands/run.py:_all_filenames`), so the script still receives the message file as `$1`. The entry must therefore not carry `pass_filenames: false`, which would pass no message file at all - the note in the config says so where the next reader will be.
+- Measured end to end in a throwaway repository whose `.git/hooks/prepare-commit-msg` is the framework's own generated hook: a commit with `OPENRIG_SESSION_NAME` set gains `Seat: <address>`; a commit with the variable removed gains nothing and still succeeds; a body line reading `Gates: ...` is prose and does not disturb the trailer; and two amends leave exactly one trailer.
+
+### Removed
+- `scripts/git-hooks/prepare-commit-msg`: the `--check` mode is deleted together with the install step it existed for, and two guards replace it - no message file (the framework's `run` mode) and no `OPENRIG_SESSION_NAME` both exit 0 and write nothing, so an instrument can never refuse a commit. Its comment now carries what the census measured: **an absent trailer means "not a seat" only once this is live**, because seat commits made before it carried no trailer either.
+
+## Seat instructions will teach the no-prestage commit form, decided (architect's decision note, 2026-10-08)
+
+- **Decision**: `ai_docs/architecture-design/decision-commit-form-in-seat-instructions.md` (`1248b534`, `4f375115`). Every copy of the seat instructions says to commit by pathspec without staging first, and to mark a new file with `git add -N` (intent-to-add, no content in the shared index). The live `AGENTS.md` files still teach `git add -- <path>` first, which keeps open the window behind tonight's ride-ins.
+- **Where the words are**: the policy modules' siblings (`scripts/team/4genthub-min/policy-*.json`, ten files that change together so every seat reads the same rule; the fold compares only one seat's own modules, so it does not force them to agree), and `guide-common` in three copies, with the embedded one pinned by `seedlibrary/guides.lock.json`. The ten live `AGENTS.md` have no generator since `288fe6ac`, so they are edited by hand as a separate, lead-approved step.
+- **Not implemented here**: feedback-dev takes the repository change. The attribution note (`decision-seat-attribution.md`) gains the trailer census: `Gate:`/`Gates:` lines are prose, not trailers, according to git's parser. It also gains option D (the runtime writing `Seat:` itself), and an acceptance instrument that reads trailers only through git's parser.
+
+## Seats may pass 200k tokens, never 400k, and a supervisor compacts them
+
+### Added
+- `scripts/openrig_compact_supervisor.py`: a host-level loop (log `~/.openrig/logs/compact-supervisor.log`). When a seat passes 200k it tells the seat once that the limit is reached and that it should finish its job and then run `rig send <own session> /compact --raw`. If the seat stays quiet for 180s the supervisor sends `/compact`; at 400k it sends it at once. `--raw` is required: without it `rig send` wraps the text in a From/To envelope and the seat reads `/compact` as a message (the first 8 sends were not witnessed for that reason; with `--raw`, fe-dev, go-dev and feedback-dev each gained a `compaction` record). A compaction is logged WITNESSED only when a new `compaction` record appears or the context drops below 60%.
+
+### Changed
+- `scripts/openrig_watch_tools.py`: one `COMPACT_LIMIT = 200_000` for every seat (it was 850k for omp seats, an assumed 200k for Claude Code) plus `HARD_LIMIT = 400_000`. The pinned bar turns red with ` LIMIT REACHED ` past 200k. The omp harness still compacts at about 850k on its own, as a backstop. The Claude Code limit remains an assumption.
+
+## Commits will name their seat: a hook-written `Seat:` trailer, decided
+
+### Added
+- `ai_docs/architecture-design/decision-seat-attribution.md`: every commit in this tree has the same git author, so git cannot name the seat that made it. The decision is a `prepare-commit-msg` hook that adds `Seat: $OPENRIG_SESSION_NAME` (measured: every seat shell exports it) through `git interpret-trailers`, with the script kept under `scripts/git-hooks/` and its install into `.git/hooks` approved by the owner. Board rows stay the record of who owns a workstream. Limit stated: a trailer names the seat that committed, not the author of every line in the commit (`0c8122a9` is the counterexample), so it is true only together with the pre-commit ladder. Decision only, no code.
+- The same note now answers the lead's follow-up. The runtime already writes a `Claude-Session:` trailer, which is how the seat-watch tooling was traced to the owner's session. The hook appends `Seat:` into that same trailer block rather than creating a parallel convention, because `Claude-Session` names a session, only one runtime writes it, and a seat's identity is in its environment on every runtime.
+
+## O1a's table is defined in Go and its events read gets its own interface
+
+### Changed
+- `agenthub_go/NEXT_GEN.md` O1a: the architect's note had told go-dev to append the `task_events` definition to `infrastructure/database/models.go`, which is generated from the archived Python metadata. The table is now a hand-written `TableDef` in a new `infrastructure/database/task_event_tables.go`, registered through `init()` the way `seat_tables.go` and `email_token_repository.go` already do. `kind`/`actor_kind` are CHECK constraints there. `GET /api/v2/tasks/{id}/events` gets a narrow `TaskEventReader` and reaches 404 through the existing `GetTask` with the caller's id; `UserTaskController` is not widened. Two acceptance tests run without PostgreSQL: the table's registry order and the handler's 404. Decision only, no code.
+- `agenthub_go/NEXT_GEN.md` standing duty (7) is restated from the writer's draft: the writer owns the content and the architect owns the file. It points to the per-pass state and the fleet evidence standard by absolute path, and adds the `git grep` check for a standing decision before gating a doc edit. Its stale example of a doc still held behind the client fold now records that the fold was superseded and the doc's interim wording landed in `4a1a818b`.
+
+## The seat watch shows each seat's context against its compaction point, and a Claude Code seat in the same style
+
+- **WHAT CHANGED.** `scripts/openrig_watch_tools.py`: the top row of every feed pane is pinned (the feed scrolls below it) and reads `== seat ==  <bar> <percent> <used>/<limit> to compact`, updated each second from the latest usage in the seat log. A Claude Code seat (the `architect`) is read from its `--session-id` log in `~/.claude/projects` and shown with the same tool-call, result, thinking and say lines as an omp seat, replacing the plain `tmux capture-pane` mirror.
+- **LIMITS.** omp seats compact at 850k (the last compaction was at 852312 tokens). The Claude Code limit is an assumed 200k (`COMPACT_AT["claude"]`): the log does not carry the real one, so the architect bar may be wrong until it is checked.
+- **VALIDATED.** 23 tests pass; the reopened grid shows the bar on the lead (52 percent), fe-dev (41 percent) and architect panes.
+
+## Architecture follow-ups: O1 split by risk, the seat-client fold superseded, and a wrong "skeleton" claim corrected
+
+- **`syncing-seats-with-the-cloud.md` carries the client fold's interim wording (architect decision `ai_docs/architecture-design/decision-seat-client-fold.md`, 2026-10-08)** — the writer's held edit is released and landed, and it landed as a NOTE rather than a rewrite: one note near the top of the doc's script section says `openrig_seat_client.py` is retiring into `agenthub-client sync`, that `status` is already ported (`agenthub-client sync status <room>` is the same check), that `sync` and `watch` stay on the script until `agenthub-client sync rig` and `sync watch` are ported, and that **the script and its test are deleted in that commit**. **The six references the doc carried before this note are untouched; the note adds one of its own**, because they are accurate while it exists — the note names the destination and the interim path, and the six citations keep naming the thing that runs today. **Why it is an interim note rather than a claim:** folding was superseded, so the doc's references go wrong only when the port lands, and the note makes that moment explicit instead of leaving six citations reading as a destination.
+- **O1 IS SPLIT** in `agenthub_go/NEXT_GEN.md`, because as written it was not additive. **O1a** (assigned) adds the
+  `task_events` table, repository, recorder and read route only, with a may-touch and must-not-touch file list,
+  a failing-first test, three negatives and the exact command. **O1b** moves every status write into one
+  transaction with its event, which changes the status path. **O1c** removes `progress_history` (19 non-test
+  Go files plus the details dialog) and lands with O8. go-dev2 was removed, so O2 and O4 are go-dev's.
+- **THE FOLD OF `scripts/openrig_seat_client.py` INTO `openrig_seat_sync.py` IS SUPERSEDED**
+  (`ai_docs/architecture-design/decision-seat-client-fold.md`). The script retires into `agenthub-client sync`
+  verb by verb: `status` is already ported (`64f8ecde`), and `sync`/`watch` map to the declared `sync rig`/`sync
+  watch`. No code changes. The note gives the writer interim doc wording and the retirement's acceptance.
+- **CORRECTED:** the architecture doc and the orchestration decision note called `agenthub-client` a skeleton.
+  It runs `sync status`, `sync pull`, `sync connector` and `bridge` in Go (`internal/clientsync`,
+  `internal/clientbridge`). Which bridge the seats run today was not checked.
+
+## The seat watch follows live seats: a removed seat leaves the grid and a Claude seat gets a pane mirror
+
+- **WHAT CHANGED.** `scripts/openrig_watch_tools.py`: `rig_seats` now lists the live tmux sessions of the rig instead of the omp state directories, which outlive a removed seat (the grid kept a pane for `go-dev2` after `rig remove`). `seat_command` gives an omp seat the tool-call feed and any other runtime (the Claude Code `architect`) a read-only `tmux capture-pane` mirror, because only omp writes the session logs the feed reads.
+- **VALIDATED.** `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror`; 20 tests pass; the reopened grid shows 10 panes including `architect` and no `go-dev2`.
+
+## The architecture is rewritten as an AI software orchestration layer, and NEXT_GEN gains group O
+
+- **WHAT CHANGED (docs only, no code).** `ai_docs/core-architecture/agenthub-system-architecture.md`
+  is written new. The file of that name was deleted in `dad51589` and described the Python backend. It
+  positions 4genthub as an orchestration layer (orchestrator, brain and worker seats, MCP task/subtask/context,
+  git and tests, a validation gate with accept/reject/uncertain, an observable per-task state machine,
+  resume/continue, project memory), with KPI = verified software per unit of human attention. Each part is
+  labelled BUILT, PARTIAL or NEW with the file it rests on.
+- **THE DECISION** is `ai_docs/architecture-design/decision-orchestration-layer.md`. Of three options
+  (phases as statuses; an append-only `task_events` ledger with client-collected evidence and a two-stage
+  gate; server-side orchestration), the ledger option is recommended because the gate then checks facts
+  the agent did not write.
+- **`agenthub_go/NEXT_GEN.md`**: a new "Orchestration layer" section with a built-versus-new table, and
+  checklist group O (O1 ledger, O2 seat identity on MCP calls, O3 evidence, O4 acceptance criteria and
+  resume, O5 gate in shadow mode, O6 enforcement, O7 routing and wake-on-open-work, O8 timeline and KPI
+  panel, O9 owner decisions), each with an acceptance check.
+- **THREE STATUS LINES CORRECTED, EACH MEASURED.** G7 becomes `[~]`, superseded by group O, and its
+  recorded hook point (`HandleTaskCompleted`, `event_handler_initializer.go`) is marked deleted by
+  `e1970dc5`. F2 changes from "queued" to "ported, not wired": `9924b1fc` holds the package, `go test` on it
+  passes, and it has no importer outside its tests. F4 is noted as half built: the `policy` module kind
+  exists and no usage-samples code exists in Go.
+- **NOT VERIFIED HERE:** the Jev API facts carried over from G7 (recorded 2026-10-03) are to be
+  re-verified against the live docs when O5 starts.
+
+## The MCP task read path: filters the caller sent were discarded, and a failed call handed out a handle
+
+- **TWO DEFECTS, BOTH MEASURED BEFORE BEING FIXED, BOTH ON THE READ PATH.**
+- **A FAILED CALL RETURNED A HANDLE TO NOTHING.** `MergeMetadata`
+  (`application/services/response_optimizer.go`) promoted `operation_id` into `meta.id` regardless of
+  outcome, so a refused `create` - and a refused `add_insight` - came back with `persisted:false` AND an
+  `id`. A caller that recorded it, which is the natural thing since a successful create is identified by
+  its id, then got "Task not found" on every later update. Measured by context-dev, who proved the first
+  one was phantom by searching for its title and finding no such row. The id is now exposed only when
+  `data_persisted` is true; `persisted`, `operation` and `timestamp` still report.
+- **THE LIST IGNORED ITS ASSIGNEE FILTER.** `ListTasksMinimal` takes an `assigneeID` and its SQL filters on
+  it, but the facade passed a literal `nil` in that position on every call - and `IsPerformanceMode()` is
+  unconditionally true, so the minimal path was the only path taken. A list filtered by `@go-dev` returned
+  50 rows including other seats' work, and a filter matching nothing still returned rows. The facade now
+  forwards the assignee, and declines the minimal path when the request cannot be expressed there (labels,
+  or more than one assignee) rather than over-returning.
+- **THE SEARCH DID NOT IGNORE ITS QUERY - IT DISCARDED ITS FILTERS.** A made-up phrase returns nothing,
+  measured, so the query always worked. What `SearchHandler.SearchTasks` did was open with
+  `_ = status; _ = priority; _ = assignee; _ = tag`, so a filtered search answered with rows the caller had
+  excluded. Those filters are now plumbed through the request DTO, the use case and the repository in the
+  same clause shape `FindByCriteria` uses. Recorded because the ticket read "the search ignores its query",
+  which measurement did not support.
+- **THE TESTS PROVE NEGATIVES, NOT JUST POSITIVES:** a refused call exposes no field that reads as a handle
+  while a persisted call still exposes one, an unfiltered list invents no assignee, and a forwarded
+  assignee reaches the SQL boundary.
+- **NOT IN THIS COMMIT, NAMED RATHER THAN LEFT SILENT:** `offset` is still discarded in `SearchTasks`.
+  And the status-change broadcast path no longer exists to be dead - the `TaskEventHandlers` /
+  `TaskEventNotificationService` family was DELETED in `e1970dc5` as dormant (zero references remain in
+  `agenthub_go`), so anything still describing it as "constructed with three nil dependencies" is
+  describing the tree before that deletion.
+
+## The task UPDATE animation: the frontend chain is sound and the status-change path broadcasts nothing
+
+- **Owner report, 2026-10-07:** CREATE fires once (confirmed on screen), but UPDATE of a task does not
+  animate and neither does a status change. **DIAGNOSED TO ONE CAUSE WITH TWO FACES, and the frontend half
+  has no defect in it.**
+- **SOUND, PROVEN BY REPRODUCTION RATHER THAN BY READING:** `src/tests/services/taskUpdateAnimation.test.ts`
+  unmocks the factory, registers a real `<tr>`, and asserts the element's CLASS - the animation LANDS. The
+  service subscribes (`init` -> `client.on('update')`, `WebSocketAnimationService.ts:32`); the row registers
+  (`TaskRowRefactored.tsx:78`/`:97` wire the refs the register effect reads); and the ordinary update route
+  calls the LIVE hooks (`task_wiring.go:130` wires `NewUpdateTaskUseCase(...).WithHooks(taskHooks)`, and
+  `update_task.go:160` emits `NotifyTaskEvent(ctx, "updated", ...)`), which the service maps. **An ordinary
+  task update therefore DOES animate.**
+- **BROKEN, AND IT IS A BACKEND WIRING DEFECT:** the status-change path is DEAD. Status changes route through
+  `TaskEventHandlers`, and `event_handler_initializer.go:69` constructs them as
+  `NewTaskEventHandlers(nil, nil, nil)` - **all three dependencies nil** - so every
+  `h.NotificationService.NotifyTaskStarted / NotifyTaskCompleted / NotifyTaskBlocked / NotifyTaskReady /
+  NotifyTaskNeedsReview` call goes nowhere. **No type anywhere in the repo implements
+  `TaskEventNotificationService`; the only implementation that exists is the TEST's stub.** A status change
+  therefore broadcasts NOTHING, which is why it neither animates nor updates the cache - the data seen
+  changing came from React Query's own refetch, not from a frame.
+- **SUPERSEDED (added 2026-10-08), AND THE DIAGNOSIS ABOVE IS LEFT INTACT ON PURPOSE — it was right about the tree it
+  was written against.** The family in the bullet above was DELETED in `e1970dc5` — see **"The dormant task-event family
+  is deleted"** below — so `NewTaskEventHandlers(nil, nil, nil)` describes a tree that no longer exists:
+  `grep -rn --include=*.go NewTaskEventHandlers agenthub_go` returns nothing, and both files are gone from every package
+  directory. **AND MEASURED SINCE, which is why the alarm above does not survive that deletion:** a status change still
+  reaches the live path this entry's FIRST bullet proved sound — `update_task.go:66-73` handles `request.Status` through
+  `UpdateStatus` and `:160` emits `NotifyTaskEvent(ctx, "updated", ...)` — so the deleted family was a SECOND, parallel
+  path rather than the only one, and the client-side half of this owner report was fixed on the mutation
+  (`updateMutation.onMutate` resolved the branch id from a cache a list page never fills; `e42fdbdc`).
+- **The two observations are therefore one bug**, and it belongs to the backend: either that path must
+  broadcast (the handlers are already registered to the bus at `:73`), or a status change must route through
+  the update use case that has live hooks. The backend's own allowed action vocabulary is
+  `created/updated/deleted/completed/assigned/unassigned`, so **`started`/`blocked` are not in it** and
+  inventing client-side mappings for them would be guessing rather than fixing.
+- **A method note, since it cost time twice tonight:** the service's suite mocking `animate` is what made a
+  passing test prove less than it appeared to, and a read that ELIDES a function body made me claim `init`
+  "subscribes to nothing" when it does - the third partial read of the night, retracted on the task record.
+
+## The dev-toolchain's own HIGH/CRITICAL alerts are cleared too, and pnpm's settings moved house
+
+- **Owner ruling 2026-10-07.** Cleared **eleven** of the twelve modules `pnpm audit` reports at HIGH/CRITICAL for the
+  frontend lock. Every patched version was a **patch or minor** of what was installed (`vitest` 3.2.4->3.2.7,
+  `vite` 7.1.7->>=7.3.5, `postcss` 8.5.6->>=8.5.18, `rollup` >=4.59.0, `ws` >=8.21.0, `browserslist` >=4.28.7,
+  `flatted` >=3.4.0, `nanoid` >=3.3.18, `minimatch` >=9.0.7, `tinypool` >=2.1.2) except **`glob` >=12**, which is a
+  **major** - the one real risk, settled by data rather than judgement: the `vite build` runs tailwind's chain through
+  `sucrase`->`glob` and **built green in 22.15s**, so the major stands rather than being reverted.
+- **THE ONE REMAINING HIGH IS `braces`**, through `tailwindcss@3.4.17 -> micromatch@4.0.8` (already latest), which needs
+  a **tailwind MAJOR** - the open owner decision, unchanged and deliberately not taken. The root lock audits clean at
+  HIGH and CRITICAL both before and after this change.
+- **MEASURED, BECAUSE IT INVALIDATES AN EARLIER LINE OF MY OWN REPORT:** pnpm **12.10.1** now warns *"The 'pnpm' field in
+  package.json is no longer read by pnpm... 'pnpm.onlyBuiltDependencies', 'pnpm.overrides'"* and **ignores** it - so the
+  overrides that `90a739f8` wrote into `package.json` became inert the moment the toolchain moved, which a static read
+  of the diff could not have shown. Both settings now live in `agenthub-frontend/pnpm-workspace.yaml` (the documented new
+  home), the `package.json` block is **removed rather than left as a second voice**, and `onlyBuiltDependencies` is also
+  passed per-install because the yaml key alone did not satisfy pnpm 12's build-script check.
+- **The lockfile is the artefact, not the manifest:** the Trivy step is `scan-type: fs` and no workflow runs pnpm, so
+  every fix here is verified in `pnpm-lock.yaml`.
+- Gates: `npx tsc --noEmit -p .` 0 errors; `npx vite build` green in 22.15s; the suite in the commit notes.
+
+## One command to watch a rig: `openrig_watch_tools.py watch`
+
+- `scripts/openrig_watch_tools.py`: new `watch` opens the seat grid and a second `<rig> lead` workspace (detailed
+  lead feed on top, `lead > input` pane below). Docs: `ai_docs/operations/watching-openrig-seats.md`.
+
+## The ten policy modules advance to `1.1.0`, which is the version the seat overlays resolve
+
+- **Owner ruling 2026-10-07.** A **minor** bump rather than the patch the apply's self-heal would have picked,
+  because the change adds a capability — an **allowance** in every seat's policy (the `rig whoami` startup
+  exemption) — and semver gives an added capability a minor. `scripts/team/4genthub-min/team.json`'s ten
+  `policy-<seat>` entries move `1.0.0` → `1.1.0`; the eleven `guide-*` entries stay `1.0.0`, and the seat overlays
+  carry **slugs only** and resolve their version from that array, so they follow in the same change: **the PUT
+  target and the overlay refs name the same thing**, which the apply's own plan shows (`module policy-<seat>@1.1.0`
+  for all ten, then the ten seat-overlay PUTs).
+- **Why the version had to move at all, measured:** the published `1.0.0` predates `6ef91fc2`, which wrote the
+  exemption into all ten module files at 20:23Z — *after* the apply (≤19:58Z) — and versions are immutable with the
+  content gate on the PUT, so the exemption could only ever reach the room as a **new version**. The audit that
+  established it ran the ten committed files through the real `ParsePolicyModule`/`FoldPolicies` twice (the room's
+  `add` shape, and the seat-scoped-`override` shape the fold refuses by name) and read one live render: repo side 30
+  bash rules with the allow at index 0, published side 29 patterns all `deny` and no allowance section.
+- **And why the bump is not optional:** the apply plans `NEW_VERSION` and pushes changed content as the next patch
+  by itself, but `overlay_body` resolves `module_versions(team)` — the **declared** version — so while `team.json`
+  said `1.0.0` a successful-looking run would print a new version, and each seat would keep adding `1.0.0` and
+  rendering the old content: a green run, a correct-looking plan, and no exemption in the room.
+- **Not published here** — the publish is the owner's, and it is now one `apply` run: this commit puts the code in
+  the state that makes that run correct.
+
+## A seat trailer on every commit made from a seat (architect's decision note, 2026-10-08)
+
+- **Why**: every commit in this tree carries one machine identity, so git cannot name the seat that made
+  it. Eleven attribution instruments across five seats failed on 2026-10-08 to name the author of a file we
+  all needed to name, and the answer turned out to be a trailer in a commit BODY that nobody had opened -
+  every search read the header, because that is where authorship usually lives.
+- **What landed**: `scripts/git-hooks/prepare-commit-msg`, a versioned `prepare-commit-msg` hook running
+  `git interpret-trailers --in-place --if-exists doNothing --trailer "Seat: $OPENRIG_SESSION_NAME"`, and
+  ONLY when that variable is set, so a commit made by a human from the host is untouched.
+  **`OPENRIG_SESSION_NAME` is the `rig send` address**, so a reader who finds the trailer can message the
+  seat directly - the reach-back no other attribution instrument had. **And the absence reads positively:**
+  the owner commits from the host where the variable is unset, so a commit with no `Seat:` trailer says
+  "not a seat", which would have answered the whole question in one `git log`.
+- **What it does not fix**, in the note's words: a trailer names the seat that RAN `git commit`, not the
+  author of every line - `0c8122a9` is the counterexample, where a trailer would have said go-dev while the
+  commit carried the architect's two staged lines. The hook and the pre-commit ladder are ONE FIX IN TWO
+  PARTS, and the script's own comment says so rather than implying more.
+- **Not installed here**: `.git/hooks` belongs to the owner's environment and is not versioned, so the
+  install is one approved step. The script carries a read-only `--check` mode that reports whether the path
+  is already occupied, so nobody overwrites another seat's hook. Measured today: the path is free.
+- **Verified**: red first (7 failed with the script absent), then green (7 passed); a CONTROL in which a
+  do-nothing hook replaced the script turned the positive case red with the trailer absent, and the script
+  was restored byte-identical before the final green run.
+
+## The third retirement now names the architect as its first step (team flow, 2026-10-08)
+
+- The team flow changed: a change that touches **structure, an interface, a boundary or the data model** goes to the
+  **architect** first — it reads the code, compares at least two options, writes a short decision note and recommends
+  one — and the lead then assigns the work with that decision attached. **The third retirement is that kind of
+  change**: it removes a writer of `config.yml` and the source of the eleven guide blocks, so its note now says so
+  in both places a would-be deleter reads — `guides.lock.json`'s `_deletion` and
+  `ai_docs/operations/openrig-seat-limits.md` — beside the trigger, which has **not** fired (all ten seats still
+  carry the generator's header, and `go-dev2`'s removal and the architect's arrival were verified against the live
+  rig rather than taken from the brief). No code changed and nothing was deleted; the gate for this commit is the
+  seed library's own load test, because the file it edits is read at load.
+
+## Sessions watch shows JSON results indented even with a trailer or a cut-off tail
+
+- `scripts/openrig_watch_tools.py` `pretty()` only indented a result that was wholly valid JSON, so results ending in
+  `Wall time: ...` or cut by the log at 768 characters stayed on one line. It now indents the leading JSON value and
+  keeps what follows as it is; JSON cut mid-value is indented by the new `indent_cut_json`. Tested by three specs.
+
+## Release `0.0.26` — the marker the deploy above `b367aa0d` should have carried
+
+- **Why this bump exists and `0.0.25`'s did not:** the range pushed above `b367aa0d` **changes server
+  behaviour** — `6ef91fc2` (the policy render can express `allow`, the limits text stops putting an
+  allowance under a `Refused` heading, and a match that is both refused and allowed is now refused by
+  name), `fd5754bc` (a seat-scoped `override` may not introduce an allowance), `bd7fa93e` (the task-MCP
+  search filters accept the integer forms a caller actually sends) — and it shipped under an **unchanged**
+  `ReleaseVersion`, so `/health` reported `0.0.25` for it exactly as it did for the deploy before. There
+  were bytes to mark this time; the marker was simply missed while the commits landed one at a time.
+- **Consequence, stated plainly:** until a push carries this commit, **`/health` cannot distinguish the
+  current deploy from the previous one**, so the version check confirms nothing about the behaviour above.
+  This commit moves the reported version to `0.0.26` and needs **one more push** to take effect — the push
+  is the owner's, and the range it marks is already deployed.
+- Files: `agenthub_go/fastmcp/config/version.go`, `CHANGELOG.md`.
+
+## The TypeScript claim in NEXT_GEN loses the assertion its own parenthetical contradicted
+
+- **What it said:** that web-dev measured `npx tsc --noEmit -p .` at 0 errors **"and 0 again through a
+  throwaway test-inclusive config because `tsconfig.json` excludes `src/tests`."** Two assertions, and only the
+  first holds: the exclusion offered as the reason the zero extends is exactly why it cannot. Re-measured today,
+  a test-inclusive config over `src` gives **779 errors across 68 files** (446 with `vitest/globals` and `node`
+  in scope), while the shipped `tsc -p .` is **0**.
+- **The fix removes the claim rather than editing a digit**, which is the point: the row exists to correct the
+  stale "23 pre-existing TypeScript errors" baseline, and `tsc -p .` = 0 carries that by itself. The sentence now
+  ends at *"at 0 errors today, twice."* Nothing else on the line changed.
+- Files: `agenthub_go/NEXT_GEN.md`, `CHANGELOG.md`.
+
+## The committed API-reference artefact is gated at last, and the gate was proven red before it was trusted
+
+- **The gap, measured:** `agenthub-frontend/src/docs/apiReference.ts` is consumed by the page, and **no code
+  path opened it** — the only mentions of the filename were the writer's default (`cmd/apirefgen/main.go:33`), a
+  comment in `reference.go`, and `reference_test.go:103`, which renders into `t.TempDir()`. The drift witness in
+  `docs_page_drift_test.go` is a real check, but **both of its sides come from the code** — its own walk of the
+  mount files against `apiref.Entries`, the producer — so it proves the producer agrees with an independent
+  extractor and **cannot see whether the file on disk matches either**. A stale artefact would have been served
+  with every test green. The renderer's own comment predicted this check (*"if this file and the code disagree,
+  the artefact is wrong rather than the test"*) and the page note asserted `reference_test.go` performed it: the
+  intent existed and the instrument did not.
+- **The gate:** `internal/apiref/committed_artefact_test.go` reads the real file, parses the renderer's own
+  envelope, and compares **both directions** against `apiref.Entries` — a registered route absent from the
+  artefact, and an artefact route registered nowhere — with the same two directions for tools.
+- **STRUCTURAL, NEVER TEXTUAL, which is the trap the page note records:** the comparison is entry-by-entry on the
+  method and the path exactly as written, so `{$}` is never rewritten into a parameter (it is Go's end-anchor for
+  a trailing slash) and an absorbed literal segment is never mistaken for a missing route. A substring gate would
+  have been red on correct code and would have been disabled rather than fixed.
+- **PROVEN RED, THEN GREEN:** removing one registered route from the artefact turned the gate red naming exactly
+  that route — *"DIRECTION 1 FAILS: 1 route(s) are registered in the code and absent from the committed
+  artefact … POST /api/auth/dev-login"* — and restoring it returned the artefact to its exact bytes
+  (`sha256 7be90f01…` before and after, `git status` clean for the file), with the gate green.
+- **AND THE GATE'S OWN PROOF NEEDS NO SCRATCH COPY:** `TestTheArtefactGateCanFailBothWays` perturbs the PARSED
+  reference, so both directions are shown failing without editing the tree — the rule the witness header states:
+  a check is only a check once each direction has been seen failing.
+- Files: `internal/apiref/committed_artefact_test.go`, `CHANGELOG.md`, `TEST-CHANGELOG.md`. **The artefact itself
+  is UNCHANGED**: the gate was written against the tree as it stands and passes on it.
+
+## The dormant task-event family is deleted: its purpose was already served by the live path
+
+- **What went:** `infrastructure/events/event_handler_initializer.go` (the whole registration path, including
+  `InitializeEventHandlers`, `SetEventHandlerInitializerEventBus` and the three `register*Handlers`),
+  `application/event_handlers/task_event_handlers.go` (the handlers, their statistics maps, and
+  `TaskEventNotificationService` with its nine `Notify*` declarations) and the handler's test file.
+- **THREE INDEPENDENT MEASURES AGREE, which is what makes this the house style rather than a hunch.**
+  (1) **Unreachable from any binary:** `InitializeEventHandlers` and `SetEventHandlerInitializerEventBus` had no
+  callers anywhere and no reference from `cmd/` or `fastmcp/` outside their own file. (2) **No reachable
+  consumer:** the statistics' only reader is `/stats/summary`, whose facade adapter **panics** — *"'the Python
+  facade has no get_task_statistics'"* — a faithful port of an absence. (3) **The purpose is already served:**
+  the durable half of the Python divergence **is** the missed-notification store plus its reconnect replay
+  (`websocket_routes.go:598` writes it, `ws_mount.go:179` reads it, the store is wired at startup), and the real
+  `infrastructure/notification_service.go` is uncalled besides its own `NotifyBatch`.
+- **THE CARVE-OUT, UNTOUCHED:** the `missed_notifications` store, its repository and the replay are **live**, and
+  they are precisely what makes the deleted nine methods redundant.
+- **A false positive worth recording, because the deletion depended on it:** the first grep for references
+  matched `event_bus.go`, which turned out to reference `events.EventQueue` — the **live** async queue — and not
+  the initializer at all. The package stays; only the registration file went. Deleting on that grep's word would
+  have removed a live type, and reading the line first is what kept it.
+- **The blast radius was then checked by the compiler rather than by the grep:** `go build ./...` exit 0,
+  `go vet ./...` exit 0, `go test -count=1 ./...` → **143 packages ok, 0 FAIL**.
+- Files deleted: the three above. Nothing else changed.
+
+## A completed task now broadcasts, because the interface it was handed did not declare the capability
+
+- **The defect, and its shape:** `CompleteTaskHooks` (`complete_task.go:34-39`) declared only
+  `SyncTaskStatus` and `SyncTaskMetadata`, while the object the wiring passes to `CompleteTaskUseCase`
+  implements `NotifyTaskEvent` as well — `create_task.go:172` and `update_task.go:160` call it on that same
+  object. **The compiler proved the call could not exist at the completion site**, so a completion reached the
+  client only through React Query's own refetch: no frame and no animation, while created and updated tasks
+  animated. It is the evening's recurring class in one line: **an interface that does not declare a capability
+  its object has.**
+- **The fix is one interface method and one call.** `CompleteTaskHooks` now **embeds `TaskEventHooks`** — the
+  interface already exists in the same package, so no signature is restated and the capability keeps one
+  source — and the completion path calls `NotifyTaskEvent` where the completion succeeds, mirroring
+  `update_task.go:160` literal-for-literal and branch-deref-for-branch-deref. No wiring change, no new
+  dependency, no new type, no frontend change.
+- **PLACEMENT, AND THE TEST CAUGHT IT: THE BROADCAST IS NOT GATED ON THE CONTEXT FACADE**, which is where the
+  first attempt put it. A completion this process cannot build a facade for still HAPPENED — the test's own
+  case — so the call was moved out, while the two context syncs stay inside because they synchronise the
+  context they follow.
+- **THE VOCABULARY, DECIDED RATHER THAN DISCOVERED:** a completion emits **`completed`** — the terminal
+  transition the client animates distinctly — and every other status move emits **`updated`**, matching
+  `update_task.go`'s literal. Both are already in the client's allowlist, so the frontend mapping needs no
+  change; a distinct animation per transition would be a vocabulary addition and the owner's decision.
+- **NOT BUNDLED, DELIBERATELY:** `InitializeEventHandlers` and `SetEventHandlerInitializerEventBus` still have
+  no callers, so the event-bus handlers are written but never subscribed. That is a real and separate defect
+  whose semantics need examining — in the Python, `notification_service` and `WebSocketNotificationService`
+  were two different things — and it rides on no other change.
+- Files: `agenthub_go/fastmcp/task_management/application/use_cases/complete_task.go` and its test.
+
+## The mission's item 4 fits its word budget again, which my own amendment had broken
+
+- **What broke:** the `mission-4genthub` context file is held to **350–520 words** by a test in
+  `test_openrig_team_setup.py` (`test_context_files_respect_word_limits[mission-4genthub]`), and the item-4
+  rewrite that removed the dead cleanups took the file to **614** — so the fix for a stale entry broke a live
+  budget. Caught by running the script suite rather than by the change's own gates, which is the only place it
+  could be caught: nothing about a Markdown edit looks like a word count.
+- **The repair, and why trimming rather than de-duplicating:** the same sentence states the live set, strikes
+  both cleanups as measured gone, and points at the measurements by line — shortened to 22 words while keeping
+  every clause, because the point of the entry is that a reader can tell dead work from live work **without
+  running `gofmt` and `tsc`**, and dropping the pointer would restore the problem it fixed. The file is **516
+  words** and `pytest -k word_limits` reports **7 passed**.
+- Files: `scripts/team/4genthub/mission.md`, `CHANGELOG.md`.
+
+## The status surface says WHICH hash it shows: pinned (resolved) versus expected (intended)
+
+- **What was ambiguous:** the bridge reports a per-seat hash that **is** the resolved-seat snapshot the seat has
+  **pinned** — it reads the seat's own `pinned.json` — but it travelled as `hash` on the wire and in the status
+  response, beside the cloud's `expected_hash`. An operator could see both numbers and not know which one said
+  what the seat was **actually on**, which is the same intended-versus-resolved confusion as tonight's vacuous
+  `/health` check.
+- **The rename is end to end now, AND THE FIRST ATTEMPT WAS NOT — recorded because the failures are the proof.**
+  The writer side was mechanical: the bridge's payload key (`openrig_bridge.py:260`), the Go ingest struct
+  (`seat_status_mount.go:79-86`, typed `PinnedHash`), its length guard and message, the mapping to the stored
+  `RunningHash` (`:283`), the served response key (`:330`), and the frontend's type. **The READER was missed**:
+  `openrig_bridge.py:568` read `seat.get("hash")`, so the verdict fell to `unknown` and **three** script-suite
+  tests failed. **A second type-position reference was missed too** — `Pick<MachineSeatStatus, 'sync' | 'hash' |
+  'expected_hash'>` in `MachinesPanel.tsx:39`, which alone produced **four** tsc errors across two files. Both
+  are the same shape: **a rename counted over writers and not over readers.**
+- **THE ASSERTION THAT MAKES IT AN INSTRUMENT, which is the point of the change:**
+  `TestSeatStatusPostStoresAndGetServes` posts a pinned hash and sets the fake's stored expected hash to a
+  **different** value, then asserts the served pair is `pinned_hash:abc123` and `expected_hash:cloud999`. A
+  wiring that served the intended hash under `pinned_hash` satisfies every earlier check in that test and fails
+  this one — so the field cannot silently mean the wrong thing.
+- Files: `scripts/openrig_bridge.py`, `seat_management/**/seat_status_mount.go` and its test,
+  `agenthub-frontend` types + panel, the two script test files, both changelogs.
+
+## The deletion paths' invariants are audited against their tests, and the one missing proof is added
+
+- **What the audit found:** both DELETE paths the surface exposes — a room, and a single seat link — are
+  implemented and mostly tested already. `DeleteRoom` **refuses a non-empty room** with `ErrRoomNotEmpty`
+  naming the count rather than cascading seats away; `RemoveSeat` hard-deletes one seat with its links in
+  both directions, its overlay, its resolved snapshots and its reported statuses; and the link delete
+  removes exactly one row scoped by the `(from, to, kind)` triple. The row counts, a keeper-room isolation
+  control, the **cross-owner** answer (another user gets not-found, not forbidden) and the transactional
+  rollback are asserted by `deletion_paths_integration_test.go`, and the link's consequence for the sending
+  seat's **policy** is asserted at the mount level by `TestSeatAdminDeleteLinkRemovesItFromTheResolvedPolicy`.
+- **The one thing nothing proved, and it is the ruling itself:** nothing re-created what a delete removed.
+  The owner's ruling (`945648f5`, *"removing a seat is a hard delete"*) and `RemoveSeat`'s own doc (*"so the
+  seat key can be added again from scratch"*) are claims about the **uniqueness constraints** — and a
+  tombstone would satisfy every row count, every scoping assertion and the cross-owner check, failing only
+  at the create. **CLAIM 5** now removes a seat and creates the same key again, and creates a room with the
+  slug `DeleteRoom` removed; those two creates are the only place a tombstone can be caught.
+- **An instrument correction, recorded because it is the same class as everything else today:** the first
+  pass of this audit reported cross-tenant scoping as an untested gap. **It is not.** The fixture's second
+  user is named `other`, and the `CROSS-OWNER` block asserts that user gets `ErrRoomNotFound` and deletes no
+  link — the grep that "found" the gap searched for `user2|otherUser|second user|cross` and missed the name
+  the file actually uses. The gap list was wrong, not the file.
+- Files: `seat_management/application/services/deletion_paths_integration_test.go`, `CHANGELOG.md`,
+  `TEST-CHANGELOG.md`.
+
+## The mission's item 4 no longer sends seats after work that does not exist
+
+- **What it said, and why it mattered:** the standing mission (`scripts/team/4genthub/mission.md`, the source of the
+  `mission-4genthub` module every seat in that room carries) listed two cleanups under item 4 — `the 23 TypeScript
+  errors` (already struck) and **`the gofmt finding in the subtask controller`**, which was listed as though it were
+  live work. It had been **measured as not existing** twice already (`NEXT_GEN.md:571`, `:94` under rule 20) and was
+  measured again for this change: `git ls-files '*.go' | xargs gofmt -l` prints **nothing**, `gofmt -l
+  fastmcp/task_management/` prints **nothing**. **A STANDING INSTRUCTION WAS SENDING SEATS AFTER DEAD WORK**, and
+  because the mission is the one document nobody re-measures and everybody obeys, nothing downstream caught it.
+- **What it says now:** item 4 points at the **live set** — the unticked Checklist boxes in `NEXT_GEN.md` — strikes
+  **both** cleanups with their measurements inline, and names the rule that makes the entry self-checking
+  (`NEXT_GEN.md:571`, `:94`, rule 20: *a cleanup-list entry is a claim like any other, measured before it is worked
+  or repeated*). A reader can now tell dead work from live work **without running `gofmt` and `tsc` first**, which
+  is the whole of what this change was for.
+- Files: `scripts/team/4genthub/mission.md`, `CHANGELOG.md`.
+
+## An allowance is an owner's act: the room scope is the only one that may grant
+
+- **The rule, and where it is enforced:** a policy block may DENY from any scope, because adding a denial
+  can only make a seat safer — but it may not GRANT from a **seat-scoped `override`**, because that content
+  is the overlay's own and at the seat scope it is the seat's own act. `FoldPolicies` refuses it **by name**,
+  with the way out in the message ("move the block to the room scope, or make this a denial") — the same
+  form as the guard's refusal of an approval it cannot express.
+- **The scope travels from where it is known:** `ResolvedModule.ContentScope` records the scope of the
+  `override` that supplied a module's content (empty when the content came from the catalogue), set in
+  `resolver.applyOp`, which is the one place the scope and the content are both in hand. `computeHash`
+  deliberately does **not** read it: provenance is not content, the rendered bytes are the same wherever the
+  same text came from, so no seat re-resolves and no hash moves.
+- **`resolver.ScopeSeat` is exported** because the renderer has to name the scope this rule turns on; the
+  other two scopes stay unexported, because naming them has no production reader.
+- **AND THE LINE THE RULING NEEDED REFINING AT, named rather than passed over: the ruling reads "never a
+  seat-scoped block", but the ten room policy modules are delivered by SEAT-scoped `add` ops.** An `add`
+  carries a version and **no content**, and a room-scoped op applies to *every* seat in the room, so a
+  per-seat module cannot be attached any other way — refusing seat-scoped blocks outright would refuse the
+  very modules that carry the `rig whoami` exemption. What is enforced is the narrower, sufficient rule: a
+  seat-scoped **override** may not introduce an allowance. That closes the self-grant vector — the only path
+  by which a seat's own act supplies content — and leaves the ten modules folding, which the test's second
+  positive control pins.
+- Files: `seat_management/domain/resolver/{resolver.go,resolver_test.go}`,
+  `seat_management/domain/seatrenderer/{policy_fold.go,policy_fold_test.go}`.
+
+## Grid input panes: open or hide an input under each seat pane (2026-10-07)
+
+### Added
+- `scripts/openrig_watch_tools.py`: `inputs open|hide [--rig R]` opens or closes a small `<seat> > input` pane under every
+  seat pane of the herdr grid, and `input --seat S` is the loop each runs: a typed line goes to the seat with `rig send`.
+  Off by default, idempotent (a second `open` adds nothing), `hide` closes only the input panes. Owner request: the grid
+  panes were watch-only. Documented in `ai_docs/operations/watching-openrig-seats.md`.
+- Tested: 4 new specs in `test_openrig_watch_tools.py` (14 pass); `open` and `hide` run on the live 10-seat grid
+  (opened 10, second open 0, hid 10, second hide 0). A line was not sent to a live seat during the test.
+
+## The render can emit an allowance, so the `rig whoami` exemption survives the first client install
+
+- **Why it was needed, in the renderer's own words:** the client merges a SERVER-RENDERED document into the
+  seat's `config.yml` with the `bash.patterns` list replaced wholesale, and the guard accepted only `deny` —
+  so the exemption landed in the hand-written generator (`d9d93182`) would have **vanished at the first
+  install while its own check still passed**. A fix that works today and disappears silently tomorrow is
+  worse than one that fails.
+- **The guard keeps the property that makes it worth having.** `parsePolicyRules` now expresses `deny` and
+  `allow`, and still refuses anything else **BY NAME** — *"an unknown approval would silently not apply"* —
+  so this is one more expressible value rather than a hole. The message names both values it can express,
+  so a publisher who sees only the error knows what to write.
+- **The SIBLING is required of a denial and not of an allowance, and the asymmetry is the rule:** a denial
+  without a sanctioned alternative is a trap, while an allowance **is** the alternative, so a sibling would
+  be a second voice saying the same thing.
+- **The fields now say what they carry:** `BashDeny`/`ToolDeny` became `BashRules`/`ToolRules` on both the
+  parsed module and the folded set, because each list holds both approvals.
+- **The fold refuses a contradiction rather than picking a winner:** one match declared as both `deny` and
+  `allow` fails the fold by name. The union's rationale is restated where it now applies — a deny unions
+  safely, because adding one can only make a seat safer; an allowance **grants**, so its safety comes from
+  elsewhere: a seat cannot compose itself, and every block in its stack was put there by whoever owns the
+  room. The collision rule is what keeps that honest.
+- **The words emission splits allowed from refused.** `RenderPolicyLimits` gives allowances their own
+  section: a seat reading an allowance under a `### Refused shell commands` heading would be told the
+  opposite of what its policy says, and it reads these words rather than the document. The `— instead:`
+  count stays one per denial, which is the check that no denial was written without a sibling.
+- **The ten room policy modules carry the entry FIRST** (`scripts/team/4genthub-min/policy-<seat>.json`), so
+  the exemption reaches the rendered document from the same table that produces the denials — one source,
+  not two. Publishing them is what puts the entry in the catalogue, and that step is the owner's.
+- Files: `agenthub_go/fastmcp/seat_management/domain/seatrenderer/{policy.go,policy_fold.go,policy_test.go,policy_fold_test.go}`,
+  `scripts/team/4genthub-min/policy-<seat>.json` (ten).
+
+## The startup `rig whoami` is exempt on every seat, because it was the one call that could block startup
+
+- **The defect, measured:** any policy that is not `builtin:yolo` — including **absent** — resolves to
+  `floor`, the live pi adapter maps `floor` to `omp --approval-mode always-ask`, the shipped startup file
+  *orders* `rig whoami --json` first, and `ask.timeout` is `0` live, which its own key text says **disables**
+  the auto-select. So on a floor seat the mandated first call is a gated call and an unanswered prompt waits
+  indefinitely: the seat blocks on its first action. `ai_docs/operations/seat-approval-and-the-startup-call.md`
+  carries the mechanism with file and line.
+- **The fix lands in the writer that owns `agent/config.yml` today, and that is the hand-written script, not
+  the render** — checked rather than assumed, from the file itself: all three sampled seats' on-disk
+  `config.yml` begin `# generated by scripts/openrig_seat_policy.py …`, so no client install has happened and
+  `scripts/openrig_seat_policy.py` is the live writer. `render_config` now emits, **first** in the pattern
+  list, `- match: "rig whoami*"` with `approval: allow`, ahead of every `deny`; and proved **no deny pattern
+  in any role's table also matches that call**, so the entry wins under either match order rather than relying
+  on first-match.
+- **THE TAKEOVER GAP, named rather than left for the next install to discover:** `openrig_seat_sync.py` merges
+  a **server-rendered** document into the same file once a seat installs, and the render's guard accepts
+  **only** `deny` — `seatrenderer/policy.go:90-100`, *"approval %q is not one this kind expresses; only
+  \"deny\" is, and an unknown approval would silently not apply."* Merging replaces the `bash.patterns` list
+  wholesale, so **this exemption would vanish at the first install while the check still passed** — the exact
+  shape the writer flagged in `f7179df1`. The exemption therefore needs the render to express `allow` before
+  the config half's handover, and that is a follow-up with its own reason to be careful: the guard refuses an
+  unknown approval *precisely so it cannot silently not apply*, and widening it must keep that property.
+- Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`.
+
+## Trivy CRITICAL/HIGH: both lockfiles upgraded, and the one finding upgrading cannot fix
+
+- The Production Deployment Pipeline's Trivy step (`severity: CRITICAL,HIGH`, `exit-code: 1`)
+  scans the FILESYSTEM (`scan-type: fs`), and NEITHER workflow runs pnpm - so the LOCKFILES are
+  the artefact that must change, and every change below is visible in them rather than only in a
+  manifest.
+- UPGRADED, each the minimum that clears its finding: react-router 7.9.1 -> 7.18.4 (frontend; the
+  RCE plus six other React Router advisories, and a MINOR within v7 rather than the major the
+  brief anticipated), js-cookie 3.0.5 -> 3.0.8 (CVE-2026-46625), immutable 5.1.3/5.1.4 -> 5.1.9
+  (prototype pollution and a List trie-overflow DoS), picomatch 2.3.1 -> 2.3.2 and 4.0.3 -> 4.0.4
+  (ReDoS, both majors), source-map-js 1.2.1 -> 1.2.2 (path traversal).
+- `braces@3.0.3` IS GONE FROM THE ROOT LOCK, and it could not have been fixed by pinning braces:
+  no released version is outside its advisory. The chain was sass -> @parcel/watcher@2.5.1 ->
+  micromatch -> braces, and @parcel/watcher 2.6.0 REPLACED micromatch with picomatch, so
+  overriding that one package shed braces without touching braces at all.
+- `braces@3.0.3` REMAINS IN THE FRONTEND LOCK AND IS NOT FIXABLE BY UPGRADING IN RANGE: its only
+  consumer there is `tailwindcss@3.4.17` -> `micromatch@4.0.8` (already the latest), so clearing it
+  means a tailwindcss MAJOR, which is a migration rather than a bump. Reported as the blocking
+  finding rather than worked around, and `.trivyignore` is deliberately untouched: this repository
+  fixes findings by upgrading.
+- The overrides live in each package.json's `pnpm.overrides`, which is the home that MEASURABLY
+  takes effect: an identical block added to `agenthub-frontend/pnpm-workspace.yaml` was INERT (the
+  lock recorded the package.json set and not that one), so it was removed rather than left as a
+  second voice - the same rule this week applied to the docs page's two copies of one surface.
+- Verified: `npx tsc --noEmit -p .` exit 0 with 0 errors; `npx vitest run` 105 files / 1795 tests
+  passed; `npx vite build` green. Both lockfiles keep `lockfileVersion: '9.0'` - the upgrades ran
+  with pnpm 9 at the root and pnpm 10 in the frontend, the versions that write that format and
+  that read that workspace file respectively.
+
+## apiref generator reads every mounted family, including auth
+
+- The route walk follows each `RegisterRoutes` call to its package through `go.mod`, so the
+  auth registrations are counted: the generator now reports **144 routes** where it reported 124.
+- The drift witness was widened to the same three families; a witness that reads less than the
+  producer fails direction two, which is the property it exists to assert.
+- Verified by the lead: `go run ./cmd/apirefgen -out <tmp>` reports 144 routes and 10 tools,
+  `pathParams: null` count 0 (79 empty lists), 144 method+path pairs, no duplicates;
+  `gofmt` clean; `go test ./internal/apiref/` ok.
+
+## The connector client exists: `sync connector` sends a rig session to `/ws/connector`
+
+- Owner ruling 2026-10-07 19:47Z, item 2 (C1). The consumer (the Sessions page) and the server
+  (`ws_mount.go:69` mounts the route; `session_stream` writes the rows) were both delivered and **no
+  client existed in either language** — which is why registering the machine did not move the page. New
+  verb `agenthub-client sync connector [--session <name>] [--connector-id <id>] [--lines <n>]`:
+  discovers one local session from `rig ps --json` (with `--session` as an explicit override), reads it
+  with `rig transcript`, **redacts each line locally before the frame is built**, then does hello →
+  session → events and reports the connector id, the cloud's session id and `last_seq`. Files:
+  `agenthub_go/internal/clientsync/connector.go`, `connectorverb.go`, `sync.go`.
+- **It adds NO dependency.** The repository speaks WebSocket by hand on both sides (`wsUpgrade` at
+  `ws_mount.go:704`, the hand-rolled dialer at `ws_mount_test.go:49`), so the client implements one
+  masked text-frame connection rather than introducing a third-party library for a protocol this tree
+  already has. The token travels in an `Authorization: Bearer` header rather than `?token=`, because a
+  URL is what ends up in logs, error strings and process listings.
+- Deliberately NOT in this slice: JSONL tailing, `rig capture`, multi-session, reconnect with backoff,
+  the frontend, and any server change (`handleConnector` lives in `ws_mount.go`, which is on the
+  do-not-edit-without-asking list).
+- Verified: `go build ./...` rc=0, `go vet ./internal/clientsync/` rc=0, `gofmt -l` empty,
+  `go test -count=1 ./internal/clientsync/` **ok**; the verb is reachable (`agenthubclient sync` lists
+  it) and its failure path was exercised live (`rig transcript` error surfaced, exit 1). **The wire
+  itself is NOT yet proven** — the connector's ingest path needs the real server, which needs a
+  database, and no Postgres client tooling is on `PATH` in this environment; the run that proves it is
+  named in the handoff rather than simulated.
+- Two defects in my own first draft were caught by these tests and fixed in place: the redactor deleted
+  the space after `AGENTHUB_TOKEN: `, and it kept the token itself on the whole-token patterns because
+  `${1}` expanded their capture group.
+
 # Changelog
 
 All notable changes to the agenthub AI Agent Orchestration Platform.
@@ -8,6 +729,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 
 ### Added
 
+- **`manage_task`'s `limit` and `offset` accept the integers a caller actually sends**: the validator asserted `int` on a value that Go's `encoding/json` decodes as **float64**, so **every** `limit` that arrived over the wire was refused — `3`, `0` and `"3"` alike — with `Invalid field: limit. Expected: An integer between 0 and 1000`, while the tool's own schema declares it an unbounded integer and its description says `Range: 1-100`. The single `limit` case in the suite passed a Go `int` literal, which is the one form that cannot arrive from JSON, so the suite stayed green over a field no caller could use. Both keys now convert with the same `coerceInt` the `progress_percentage` block already used, the range check is unchanged, and `handler_adapters.adapterKwInt` already coerced those same forms downstream — so the fix accepts exactly what the consumer was always ready to take.
+
+- **The third retirement's trigger is written where its next reader will look** (owner call 2026-10-07, `PLAN-CALL-SEATS-2026-10-07.md`): three things retire **together** and only on one trigger — the generator's **config half** (`render_config`, `cmd_apply`, `config_path` and the tables), the **eleven guide blocks** in the seed library, and the **interim guide files** under `ai_docs/operations/seat-guides/`. **The trigger: once every seat has installed from a render carrying a policy module.** It now sits in `guides.lock.json`'s `_deletion`, in `ai_docs/operations/seat-limits.md` and in the withdrawal table, each carrying the check that reads it off the artefacts — the first line of each seat's `agent/AGENTS.md` must be the render's `<!-- seat-hash: … -->` marker rather than the generator's header (`<!-- generated by scripts/openrig_seat_policy.py … -->`). **The lock's old gate is corrected rather than left standing: it named the owner ruling on the 4genthub-min room, which has since landed, so a reader taking it as the gate would have deleted on a condition that is already true.** Measured at 2026-10-07: all ten seats still carry the generator's header, so the trigger has **not** fired.
+- **And a second condition is measured rather than assumed, because it narrows a claim this seat had carried**: a room whose seats pin a seat-type version that **mounts** the blocks renders them and must be re-pointed first — and **today no such room exists outside this rig**: `call_seat` on `4genthub-dev/lead` returns `agent.yaml` at seat-type **1.0.0** and **no `AGENTS.md` at all** (measured 2026-10-07), because the guide blocks ride with the **1.3.0** seat types. The earlier note that "another room resolves them today" was true of the library and false of any live seat, and it is corrected in the same places.
+
+- **The notice generator is withdrawn, and a seat's limits now come from a policy module** (owner ruling 2026-10-07, `qitem-20261007194746`; the pair's second half beside `c91e7997`): `scripts/openrig_seat_policy.py` no longer carries `render_notice`, `render_guide`, `GUIDES_DIR`, `notice_path`, `cmd_notice` or the `notice` subcommand — its verbs are `show` and `apply`, and `apply` writes only `config.yml`. **THE FOUR SENTENCES THE COMMIT CARRIES, from the withdrawal table:** (1) **the files already on disk are left in place** — MEASURED rather than hypothetical: all ten seats' `AGENTS.md` still carry the generator's header, so no client install has happened on this rig; (2) **the path is owned by the render after this change, and the generator's copies are superseded at the next install**; (3) **a seat that does not re-install keeps the generator's text until it does — a known and accepted state rather than drift**; (4) **`cmd_notice --check` dies with the subcommand, and the commit says why** — once the render owns the path the check would report a false alarm against a file another writer legitimately rewrote, so its signal is retired rather than lost.
+- **Why the pair and not the deletion alone:** the render's limits section is guarded by `policySet.Role != ""`, and until `c91e7997` no seat in this tree carried a policy module — the generator was the only thing putting the limits words in front of a seat, so deleting it alone would have removed the in-context statement of ten seats' limits while `config.yml` kept enforcing them. The modules landed first and a live seat's render was proven to carry them end to end (`call_seat` on room `4genthub-min`, seat `skills-dev`: hash `7ba3421c` → `e944a8c5`, `AGENTS.md` carrying `## Your limits as seat (dev)` with **29** refused shell commands and their alternatives plus the three refused tools, and `runtime/omp-config.yml` carrying the same policy document).
+- **What did NOT go, and is named rather than swept:** (a) the **config half** stays — `apply` still writes `config.yml`, the file that ENFORCES the limits, and the render reaches that path only through a client install in merge mode (`openrig_seat_sync.py:144-145`, `:768`), so retiring it now would remove the enforcement while removing the description of it; (b) the **guide files** under `ai_docs/operations/seat-guides/` stay — they are the `source_path` of the eleven seed-library guide blocks (`guides.lock.json`), so they go WITH those blocks in a third retirement whose TRIGGER is written in `guides.lock.json` and `ai_docs/operations/seat-limits.md` (owner ruling: once every seat has installed from a render carrying a policy module — **not fired at 2026-10-07**, when all ten seats still carry the generator's header); (c) the library blocks, their lock and their provenance are untouched.
+- **Tests retired with their successors named, so the retirement is not a gap:** the seven notice tests go; "every refusal is listed" is now the policy module's parse plus the fold (`policy_fold_test.go`, `modulecontent`'s per-kind gate) and was verified element-for-element against the generator's own tables at authoring time; "the seat is told how to work and to offload" lives in the **guide modules** the render carries. `pytest … test_openrig_seat_policy.py` → **11 passed**; `ruff check` clean on both changed files; the state-root test now asserts `config_path`/`config.yml` (the file that remains) instead of `notice_path`/`AGENTS.md`.
+
+- **One policy module per seat, authored from the generator's own tables, so a seat's limits can move from the script into the render** (owner ruling 2026-10-07, `qitem-20261007194746`): ten `scripts/team/4genthub-min/policy-<seat>.json` files of `kind: policy`, derived mechanically from `openrig_seat_policy.py`'s `SEAT_ROLES` + `policy_for`, so **every refusal is the generator's own pattern** and **every sibling is its own sentence where it worded one** (push, commit, delete, seat/rig lifecycle, secrets, and the reviewer's two tools). **Seven patterns the generator refuses but never worded a sibling for** — `sudo *`, `ssh *`, `scp *`, `docker *`, `tmux kill-*`, `pkill *`, `killall *` — carry one now, because the render's format requires a sibling per rule: a denial without one is refused at parse time as a trap rather than a rule. `team.json` gains the ten module entries, and each seat's overlay carries `policy-<seat>` beside `guide-<seat>` — the shape the `apply` path already publishes and the room already resolves.
+- **Verified rather than asserted**: identity against the generator (all ten: role equal, `bash.patterns` and `tools.patterns` **element-for-element in order**, `mcp.startupTimeoutMs` 0, and 0 rules with a missing sibling or a non-`deny` approval); the plan (`apply --dry-run --team scripts/team/4genthub-min`) publishes all ten policy modules and rewrites the ten seat overlays; and a throwaway probe read the ten committed files off disk through the real `ParsePolicyModule` → `FoldPolicies` → `RenderPolicyLimits`/`RenderPolicyConfig` (PASS: limits text 3769 bytes for `lead`, 4286 for the `dev` seats, 4457 for `reviewer`, 4289 for `writer`; the config carries `startupTimeoutMs: 0`). **The live half was the principal's** (the token is theirs): that `apply` run made a live seat's render carry the limits section — `call_seat` on room `4genthub-min`, seat `skills-dev`, hash `7ba3421c` → `e944a8c5` — and the generator's withdrawal followed it, so the pair landed together rather than in sequence. Measured before-state for the record: room `4genthub-min`, seat `skills-dev`, hash `7ba3421c…` renders `AGENTS.md` **guides-only, with no limits section** — the gap these modules close.
+
+- **Release `0.0.25`, which is the release the deploy above `443e83f1` reports**: the range already pushed as `443e83f1` deployed `0.0.24`, so a push of the commits above it would have reported the SAME version and `/health` could not distinguish a landed release from an unchanged one. This bump is the last commit before that push, so the string covers the range it marks. WHAT THE RANGE CARRIES (ten commits): the generated API reference tier — the artefact committed as a build output with its provenance (`a5ff17a0`), the walk widened to every mounted family including the auth registrations (`bcc37083`, done by a DeepSeek worker through the offload), its header naming the scope the walk actually has (`fd2e76fd`), the empty-pathParams edge withdrawn with the call site cited (`9f470a96`) — the docs page that renders it (`c236acde`, `2d849817`), the drift witness that exercises the tier against the REAL artefact (`ac273fe2`), and the retirement of the hand-written API reference for the writer's prose (`d48e6858`); plus two test-side pins: the binder exonerated for the wired `user_id` column (`95fc974d`) and the pin label's PROPERTY at every scope (`d8726fe6`). Files: `agenthub_go/fastmcp/config/version.go`, `CHANGELOG.md`.
+
+- **The production catalog is published and the seat types are reseeded to 1.3.0; the `4genthub-min` seats now carry comm-guard** (owner ruling 2026-10-07; run by the principal): `publish-skills --source-root <openrig checkout>` pushed **51 of 52** skill blocks (all new); the one refused is `openrig-user` (HTTP 400 `content must be 1 to 65536 bytes`), which is NOT curated for any seat (`unused_by_default`) and so is not a ref of any seat type. The seed then ran (200, 9 seat types): every seat type is now `latest_version 1.3.0` and references the VALID `comm-guard-skill@1.3.0`, replacing the raw-markdown `1.1.1`. The ten min seats were deleted and re-created with `pinned_version: "1.3.0"` (a pin is settable only at create), and `team.json` carries it. The seed's own `guide-common@1.3.0` is byte-identical to the team's `guide-common` (3537 bytes), so the seat types already carry it and the seat overlays now add only the seat's own guide - adding `guide-common` again is refused (`module already present`). Verified on production: 10/10 `GET /api/v2/openrig/seats/4genthub-min/<seat>` return 200 with 12 rendered files each (the seat's guide, the shared guide, `skills/comm-guard-skill/SKILL.md`, the curated skills, `runtime/omp-mcp.json`) and a hash; the other room still renders and its company overlay is unchanged. NOT FIXED: the `smoke` room's lead still 500s (its own overlay adds `comm-guard-skill@1.1.1`). Supersedes the 1.0.0 pin recorded below. Files: `scripts/team/4genthub-min/team.json`.
+- **The `4genthub-min` room exists in production, and `apply` no longer touches what it does not own** (owner ruling 2026-10-07; run by the principal, who holds the token): the 11 `guide-*` modules (1.0.0), the room, its 10 seats and the 10 seat overlays were written; the other room and its company overlay (`project-4genthub`, `delegate-deepseek`) were read back unchanged. Three defects in `apply` surfaced on the first real run and are fixed: (1) the seat-types **seed** ran unconditionally and failed with HTTP 500 (`queue-handoff@1.0.0` is not in the production catalog) although production already stores all nine seat types - it now runs only when a seat type the team uses is missing from `GET /seat-types`, or when no credentials are set so the stored set is unknown; (2) the **company overlay** is account-wide and its PUT replaces it, so the min team's `['guide-common']` would have wiped the other room's overlay - `guide-common` moved into each seat's overlay, `company_overlay` is `[]`, and an empty company overlay sends no request; (3) the server refuses an ALLOWING link for any seat whose runtime is not `claude-code` (rule G3), and all ten seats are `omp`, so the 26 links could not be created - `links` is `[]` in the min team definition and the topology stays in the rig spec. **Render acceptance, MET after a second pass:** the first render of every seat returned 500 `skill "comm-guard-skill": content is not one JSON value`. Root cause, measured with three read-only production reads: the seat types `lead`/`developer`/`reviewer`/`writer` stop at version 1.1.1 and reference `comm-guard-skill@1.1.1`, which is RAW MARKDOWN (980 bytes, the pre-fix seeder's write; versions are immutable); `comm-guard-skill@1.3.0` is a valid block but no seat type references it, and the reseed that would move them cannot run because the curated catalog refs (`queue-handoff@1.0.0` and others) are not in production. The new seats were created pinned to the latest (1.1.1); the existing room's seats are pinned to 1.0.0, which carries no comm-guard modules, and render. Fix: the ten seats were deleted (no occupants) and re-created with `pinned_version: "1.0.0"` (the pin is settable only at create; an existing seat answers 409), which `team.json` now carries per seat. Result: 10/10 `GET /api/v2/openrig/seats/4genthub-min/<seat>` return 200 with `guide-common` and the seat's own guide in the rendered files and a hash each; the other room still renders and its company overlay is unchanged. NOT FIXED, and not caused here: the `smoke` room's lead still 500s (its own overlay adds `comm-guard-skill@1.1.1`), and the seat types still reference the raw module until the catalog is published and reseeded. Files: `scripts/openrig_team_setup.py`, `scripts/team/4genthub-min/team.json`, `agenthub_main/src/tests/scripts/test_openrig_team_setup.py`, `TEST-CHANGELOG.md`. Verified: 50 tests pass; dry-run against production plans 32 steps; real apply rc=0.
+- **The standing way to watch a team is recorded** (owner's choice, 2026-10-07): after restoring or spawning an omp rig, run `python3 scripts/openrig_watch_tools.py grid --rig <rig>` (one herdr pane per seat, live tool calls and reasoning), with `rig terminal open <rig>` as the secondary raw-tile view. Files: `.claude/skills/spawn-team/SKILL.md` (new "Watching a team" section), `.claude/skills/rig-runtime-switch/SKILL.md` (step 10), `ai_docs/operations/watching-openrig-seats.md` (standing-choice note). No code changed; verified by running `grid --rig 4genthub-min` (10 seats, 2 columns).
+- **The API reference artefact is committed as a build output, with its provenance line** (`agenthub-frontend/src/docs/apiReference.ts`): **REGENERATED, not hand-edited** — produced by `go run ./cmd/apirefgen -out agenthub-frontend/src/docs/apiReference.ts` from the tree at `d8726fe6` (the generator whose route walk was widened to read every mounted family, including auth). Its own first line says `// GENERATED - do not edit by hand.`, so the next reader meets the rule before the data. Verified at emission: **144 routes, 10 tools, 144 distinct method+path pairs (zero duplicates), ZERO `pathParams: null`** — the 79 empty lists are the legitimate no-parameter case the ruling distinguishes from a nil slice — and `gofmt -l` clean, `go vet` clean, `go test ./internal/apiref/` **ok** (that package now holds the drift witness as a landed test, so the admission gate and the producer are checked by one `go test`). One apparent edge, WITHDRAWN after reading the call site rather than inferring from the field shape: `POST /api/v2/branches/{$}` is the single templated route whose `pathParams` is empty, and **that is correct** — `internal/apiref/routes.go:445` skips the `$` match deliberately, with the comment that `{$}` is Go 1.22's **exact-match marker** rather than a parameter, so the path keeps the marker (the artefact reports the pattern as registered) while the parameter list names no value a handler receives. No row and no defect: 65 of 66 templated routes populated is what one deliberate skip looks like, not a defect boundary. The first version of this line called it a generator defect before the call site was read; the correction is in this commit rather than in the next reader's head.
+- **The artefact's own header was stale, which is the one place a reader would never check**: it still said "every mounted route read from the `*_mount.go` source text", a scope the walk stopped having at `bcc37083` when it began following each `pkg.RegisterRoutes` call into the package that owns it (144 routes where it saw 124). Because the file is regenerated, the false sentence reproduced on every run. Fixed at the source rather than in the output — `internal/apiref/reference.go`'s header string, plus the same stale scope in two more places a sweep found: `internal/apiref/routes.go`'s package doc (which mis-described what the drift witness must read) and `cmd/apirefgen/main.go`'s `defaultMountDir` comment and `-mount-dir` description (the path is the walk's SEED directory, not the whole scope it covers). Regenerating changed the artefact by **4 insertions and 2 deletions, all inside the header comment** — the 73 KB body is byte-identical, 144 routes and 10 tools and zero nulls unchanged — which is also the proof the generator is deterministic. No test pinned the old wording.
 - **The bridge's three machine-level defaults resolve from the account, not from HOME** (`openrig_bridge.py:87,88,92`: `DEFAULT_ENV_FILE`, `DEFAULT_PINS`, `DEFAULT_SYNC_STATE` — the third script with this defect, after `openrig_seat_policy.py` and `openrig_seat_sync.py`): OpenRig launches a seat with `HOME` pointed at the seat's OWN state directory (`/home/<user>/.openrig/state/omp/<rig>-<seat>@<rig>`), so `Path.home()`, `os.path.expanduser("~")` and any read of `$HOME` all resolve there and every machine-level default built on them lands inside that seat's tree instead of the account's. The bridge is run from a seat **in practice, not by expectation** — the owner ran it from their own session, fe-dev ran it from a seat to document the hazard, and go-dev ran its `--print` from inside this rig. The fix is the established one: `real_home` is LOADED from the per-seat policy module (the one home resolution this tree has, via the `sys.path` entry the bridge already inserts for `openrig_scrub`) rather than copied a third time, and **no call site in the file derives a path from HOME any more** (the only remaining occurrence of the string is the comment that names the trap). `test_the_path_defaults_do_not_follow_home` states the property as an EQUALITY ACROSS TWO HOMEs — the shape the sync script's own test uses — so anything that follows HOME cannot survive the second load. **THIS IS NOT THE FIX FOR THE UNKNOWN-SEAT ROW**: go-dev refuted that attribution by measurement (0 of 36 non-empty hashes under both a seat-like HOME and the real home), and the row says so, because a real fix credited to a row it did not fix is the outcome to avoid. Files: `scripts/openrig_bridge.py`, `agenthub_main/src/tests/scripts/test_openrig_bridge.py`, `TEST-CHANGELOG.md`.
 
 - **The `rig` path's validation half, before the build it guards** (ONE-CLIENT.md step 1): `ValidateName` ports `NAME_RE` (`[a-zA-Z0-9][a-zA-Z0-9_-]*`, the rule a room or seat name must satisfy because it becomes a directory name) and `ReadRigspec` ports `cmd_rig`'s shape checks — the room is validated **before the fetch**, so a bad name never reaches the network (MEASURED: the test counts the requests and requires zero), and then SIX refusals, each with the Python's own message: a rigspec for a different room, no yaml text, no seats (missing, not a list, or empty), a malformed seat entry (not an object, or a seat that is not a string), an entry with no hash, and a seat listed twice — plus the name rule applied to each seat. The split is kept: a badly NAMED room or seat is `EXIT_USAGE` while a malformed ANSWER is `EXIT_REMOTE`, so a caller scripting retries can tell "you asked wrongly" from "the cloud answered wrongly". Files: `agenthub_go/internal/clientsync/rig.go`, `.../rig_test.go`, `TEST-CHANGELOG.md`.
@@ -58,7 +799,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **AND THE REFUSAL CLASS WAS THEN CLOSED RATHER THAN THE INCIDENT, handed here by `skills-dev` on the same terms (2026-10-06)** — *"A malformed guide-lock record is refused as a record, naming the field, rather than silently never matching and blaming the shelf for bytes nobody recorded."* **`0c067fa5` (test, same hour) moves `guides.lock.json` parsing behind `parseGuideLock(data []byte)` so every refusal can be driven with input chosen to break it — not JSON, no records, a missing field, a digest that is not a digest, an absolute path, and the same slug twice — and EACH REFUSAL NAMES THE FIELD IT IS ABOUT, so a record that cannot be read says which field is wrong rather than failing later as a shelf mismatch.** **Two record rules nothing validated before are now real: a digest must be 64 lowercase hex (the same rule the skill blocks record) and a path must be relative to a root.** **So the panic above is one symptom of a class, and the class is what the test now enumerates — which is why the record names both commits rather than only the fix.** **⚠ RE-SCOPED BY THE OWNER, IN WRITING, 2026-10-06: THE TRACK THIS TEST BELONGS TO IS STOPPED AND IS WITHDRAWN WITH THE SEED-LIBRARY GUIDE BLOCKS. The withdrawal commit is PENDING; this line becomes "withdrawn in `<commit>`" when it lands and is never removed.**
 - **`scripts/openrig_seat_client.py`**: the client that keeps local OpenRig seats in step with the cloud. `status` compares each seat's pinned snapshot hash with the cloud's, `sync` adopts newer snapshots (through `openrig_seat_sync.py rig --update`, so the pinning rules stay in one place), `--relaunch quiet` restarts a changed seat only after 30 s idle, `watch` repeats on an interval. Run read-only against production: room `4genthub-dev`, 9 of 9 seats in sync; the cloud has no room for the local `4genthub-min` team. Documented in `ai_docs/operations/syncing-seats-with-the-cloud.md`. Tests: `agenthub_main/src/tests/scripts/test_openrig_seat_client.py`. **⚠ RE-SCOPED BY THE OWNER, IN WRITING, 2026-10-06: THIS SCRIPT IS TO BE FOLDED INTO `openrig_seat_sync.py` AS SUBCOMMANDS AND DELETED** (the lead has authorised the fold and it is **in flight**), **so a reader should not take this entry as the shape of the tooling that will stand. This line becomes "folded and deleted in `<commit>`" when it lands and is never removed.**
 
-- **A guide per seat**: `ai_docs/operations/seat-guides/` holds `_common.md` (the working procedure with exact `manage_task` / `manage_subtask` / `manage_context` / `deepseek_agent` calls, taken from the live tool schemas) and one guide for each of the 10 seats (its tools, workflow, checks, don'ts). `openrig_seat_policy.py` appends the common guide and the seat's own guide to that seat's generated `AGENTS.md`; a seat with no guide file is an error. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`, `ai_docs/operations/seat-guides/*.md`. **⚠ RE-SCOPED BY THE OWNER, IN WRITING, 2026-10-06: THESE FILES AND THIS GENERATOR ARE THE ONES BEING DELETED.** The seat-context source of truth is `scripts/team/4genthub/team.json` applied by `scripts/openrig_team_setup.py`, so **the guides become modules there and `ai_docs/operations/seat-guides/*.md` plus the `notice` generator are retired rather than kept alongside — DO NOT KEEP BOTH, the owner's words. The withdrawal commit is PENDING; this line becomes "deleted in `<commit>`" when it lands and is never removed.**
+- **A guide per seat**: `ai_docs/operations/seat-guides/` holds `_common.md` (the working procedure with exact `manage_task` / `manage_subtask` / `manage_context` / `deepseek_agent` calls, taken from the live tool schemas) and one guide for each of the 10 seats (its tools, workflow, checks, don'ts). `openrig_seat_policy.py` appends the common guide and the seat's own guide to that seat's generated `AGENTS.md`; a seat with no guide file is an error. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`, `ai_docs/operations/seat-guides/*.md`. **⚠ RE-SCOPED BY THE OWNER, IN WRITING, 2026-10-06: THESE FILES AND THIS GENERATOR ARE THE ONES BEING DELETED.** The seat-context source of truth is `scripts/team/4genthub/team.json` applied by `scripts/openrig_team_setup.py`, so **the guides become modules there and `ai_docs/operations/seat-guides/*.md` plus the `notice` generator are retired rather than kept alongside — DO NOT KEEP BOTH, the owner's words. UPDATE 2026-10-07: THE NOTICE GENERATOR IS DELETED — `render_notice`, `render_guide`, `GUIDES_DIR`, `notice_path`, `cmd_notice` and the `notice` subcommand are gone from `scripts/openrig_seat_policy.py`, and the limits words now come from the render fed by the per-seat policy modules (`scripts/team/4genthub-min/policy-<seat>.json`); see the entry below. **THE GUIDE FILES THEMSELVES ARE NOT DELETED YET, and this line must not be read as saying they are:** they are the `source_path` of the eleven seed-library guide blocks (`guides.lock.json`), so they go WITH those blocks, after the other rooms are re-pointed. The ten seats' on-disk `AGENTS.md` files were left in place, as the withdrawal's sentences say.**
 
 - **Seats are told to work through 4genthub and deepseek-offload**: every seat's generated `AGENTS.md` now has a "How you work" section: a task in `manage_task` before work, progress in `manage_context`, a recorded result on completion, and bulk work offloaded to `deepseek_agent` (decisions, commits and messages are not). Baseline measured first: `deepseek_agent` calls per seat were 3-7, nearly all principal verification pings, and only five seats had touched `manage_task`. Files: `scripts/openrig_seat_policy.py`, `agenthub_main/src/tests/scripts/test_openrig_seat_policy.py`.
 
@@ -346,6 +1087,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) | Versioning: [
 - **Docs pass 3 — the tree's release literal has moved ahead of the deployed one, and the README said the opposite (2026-10-06)** — README's deploy-marker row carried pass 2's sentence *"the first deploy where the two agree"*; **this pass measures the three literals rather than relaying them, and they now disagree: the tree's release literal is `0.0.23` (`agenthub_go/fastmcp/config/version.go:21`, read by `healthVersion = config.ReleaseVersion` at `agenthub_go/fastmcp/server/httpapp/http.go:160`), while `origin/main` and production's `/health` both still report `0.0.22`** (`fcd4c268`, packet 4; `git rev-list --count origin/main..HEAD` = **44**). **So the state is a deploy prepared but not pushed; the falsified sentence is corrected beside its own date rather than dropped, and the footer carries the same two values.** **Measured this pass and labelled by instrument, not by convenience: the `tools/list` surface is TEN — at its REGISTRATION SITE (`ToolDefinitions()` returns six at `ddd_compliant_mcp_tools.go:221`; `mcp_routes.go:253-313` appends `manage_seat`, `call_seat`, `submit_feedback` and the connection tool) rather than by a repeated boot, which pass 2 used and this pass did not.** **And the heading-set reconciliation over this seat's own four `CHANGELOG.md` replacements reads 0 headings missing against 5 new, so no entry was consumed by any of them.** **RULE 60'S TEST IS STILL UNMET and recorded as such: a search of `README.md` and `ai_docs/**` for the provenance question asked outside tonight's conversation returns one file, written tonight.**
 - **README's two remaining unverified claim blocks are labelled rather than asserted (2026-10-06)** — the standing duty's own unverified list, discharged where the tree decides it. **(1) The `[2025-09-19] - Iteration 107` "recent highlight" (541 tests, 107 iterations, "self-healing", "zero maintenance") is a record of the RETIRED PYTHON TREE presented as a current release** — `agenthub_main/` is archived and no longer built or tested (`55c33107`, "ci: stop building and testing the archived Python server") — so the bullet now carries `HISTORY` in its own heading, names the archive and the commit that stopped building it, and says whose tests the numbers are. **Kept and labelled rather than deleted, because the standing rule is that a retired thing is either removed or marked as history WITH the commit that removed it.** **(2) The `Performance & Scale` block asserted `<200ms average`, `10-50 concurrent users` and `Context Sync <5ms overhead` with NO measurement behind them and none in the tree** — removed rather than restated, with the reason left in their place, and the scaling roadmap relabelled **targets, not measured capacity**, because its quarters (Q2-Q4 2025) have passed and nothing measures them. **Both rows were on `DOCS-MAINTENANCE.md`'s unverified table; the table now points at what the README says rather than tracking a divergence.** The badge and the Live Demo feature list remain listed as unverified.
 - **The release literal's home move propagated to the documents that still cited its old path (2026-10-06; the code half of this entry belongs to `d6386e40`, which landed without it and is completed here)** — pass 3 measured the tree's release literal at `config.ReleaseVersion` (`agenthub_go/fastmcp/config/version.go:21`, read into `healthVersion` at `agenthub_go/fastmcp/server/httpapp/http.go:160`), and **two LIVE instructions still sent a successor to `http.go:159`, where the literal lived until it moved and where `origin/main` still holds it**: `ai_docs/verification/of4-local-stack.md`'s bring-up recipe — whose citation would send a reader to a reference rather than to the value — and the docs pass checklist's item 2(ii). **Both now name `config.ReleaseVersion` as the thing to read and to bump, carry the change dated, and make the deployed half's read explicit (`git show origin/main:<path-at-that-commit>`, because the path differs across the two commits).** **The class is the reader's version of a stale instrument: A PATH A VALUE HAS LEFT STILL ANSWERS THE QUESTION IT WAS ASKED ONCE, AND SILENTLY ANSWERS A DIFFERENT ONE AFTERWARDS.**
+- **Owner ruling 5 recorded in NEXT_GEN's G3 box: the level is revised DOWN to the current policy-module enforcement, and `links` stays empty for omp seats (2026-10-07, queue row `qitem-20261007194808-1dccb6e9e991952d`)** — **the box no longer names a level the build does not reach.** The ruling's own evidence, recorded beside it: **enforcement exists as policy modules and a fold (`e49205a9`, `827c6d6e`), both gated and falsified by the reviewer**, so the *policy-module half* of the box's check is met at the enforced level; **and `links` is empty for omp seats by DECISION rather than by gap** — rule G3 refuses allowing links for omp seats, and `links` is empty in the `4genthub-min` team definition, **measured by the principal on the first real apply**. **The two sub-bullets that named the old level were amended so the box stops naming it: the label now reads "the guarded enforcement this box now records (named \"L2\" before the 2026-10-07 ruling)", with the properties unchanged.** **WHAT THE RULING DOES NOT CLOSE is recorded so the box stays honest: the client-side install (nothing builds or links `<pins dir>/bin/seatcheck`, so a guarded seat cannot yet send) and the codex-level decision remain open.** Edit confined to G3 and its sub-bullets; explicit pathspec.- **`ai_docs/index.json` resolved by regeneration, so it stops being a rider candidate (2026-10-07, leaf assignment from the worktree-hazard review)** — **evidence first: the file's own `generated_at` was `2026-10-07T16:55:00`, five and a half hours stale, and it indexed 71 files against a tree that now has 72 — its 20:55Z mtime was the pre-commit hook's RESTORE, not a generation.** HEAD's copy is staler still (`generated_at 2026-10-06T19:37`, 57 files). **DECISION: regenerate and land rather than revert** — reverting to HEAD would have restored an index missing fifteen real files, so the clean-looking action was the wrong one; the regeneration is the same class of resolution (leave the tree correct) and removes the rider in the same movement. **Ran the hook's own indexer (`.claude/hooks/utils/docs_indexer.py`, md5 over the file contents, `update_index` writes only `index.json`), which reported `72 files in 22 directories`; the fresh output differs from the stale dirty copy by EXACTLY one entry, `operations/seat-approval-and-the-startup-call.md`, and drops nothing.** Verified independently rather than trusted: the index's md5 for that entry equals the md5 computed from the file. The change relative to HEAD carries the accumulated drift (the surface inventory's hash and size, three `operations/` files, the eleven seat guides) plus this seat's new document and the new timestamp.
+- **The startup `rig whoami` prompt on a non-yolo seat, measured to its file and line, with the fix (2026-10-07, owner item from PLAN-CALL-SEATS-2026-10-07.md)** — new: `ai_docs/operations/seat-approval-and-the-startup-call.md`. **The gate is the launch POSTURE, not a permission list:** every policy that is not `builtin:yolo` — `locked`, `standard`, `open`, a deliberate `none`, **or absent** — resolves to `floor` (`packages/daemon/src/domain/permission-policy/policy-ref.ts:122`), and the live pi adapter maps floor to **`--approval-mode always-ask`** (`packages/daemon/src/adapters/pi-runtime-adapter.ts:241,244`; also `pi-resume.ts:93`, `pi-runner-protocol.ts:248,279`, and `pi-runner.ts:625,638`, which rejects Pi trust flags for OMP). **The startup file then orders the gated call first** (`openrig-start.md:9,12`, and the daemon types the same order into every fresh conversation at `startup-orchestrator.ts:602`). **IT BLOCKS:** `omp config get ask.timeout` is `0` live and the key's own text says `0` DISABLES the auto-select, so an unanswered prompt waits indefinitely. **The fix is two lines in a file this repo already generates** — `scripts/openrig_seat_policy.py:145-161` renders each seat's own omp config, whose `bash.patterns` today carry only `approval: deny`; omp's schema says an entry may be `allow` and that overrides are "honored in every approval mode", so `- match: "rig whoami*"` + `approval: allow` exempts the mandated startup call and nothing else. **One caveat on WHERE it lands, because a change is in flight:** today the writer is the hand-written script (both on-disk files carry its header, and no seat has installed from a render yet), but `scripts/openrig_seat_sync.py:144-145` installs a server-rendered `runtime/omp-config.yml` into the same `config.yml`, merged at the key level (`:1022`, `:1051`, apply at `:768-770`) — so the two lines belong in whichever writer is live when they land. **Landed: this document plus the expectation line in `scripts/team/4genthub-min/guide-common.md` and its mirror `ai_docs/operations/seat-guides/_common.md`; the generator change is SPECIFIED rather than landed because `scripts/` is code and code is not this seat's lane.** **The measurement carries its own incident and its repair, and both are evidence: a scratch-`HOME` semantics test wrote the LIVE omp config** (omp resolves config from the real home, not `$HOME`), replacing this seat's `bash.patterns`; **the repo's generator restored it — `apply --rig 4genthub-min` → `writer: written` with nine `ok`, then `apply --check` → all ten `ok`** — and the incident is also the proof that the generator's drift check works, since it reported `writer: DRIFT` against nine `ok`. Also recorded, because the record would otherwise be wrong: the live daemon is the SOURCE tree (`__projects__/openrig/packages/daemon`), not the installed `@openrig/cli` 0.6.3, which contains no `approval-mode` string at all.- **Two citations in the surface inventory drifted by one line, caught within the hour — and the pass turned up two defects in the instrument that caught them (2026-10-07)** — tonight's commits to `mcp_routes.go` (`31bb55e3`, `5cd293bb`) inserted a line above the two `/mcp` registrations, so the inventory's `:73` and `:138` became `:74` and `:139`. **`CITATION-AUDIT.py` named both; the document is corrected and the audit is back to 144 rows / 0 stale / 0 unresolved.** **AND THE TWO INSTRUMENT DEFECTS ARE RECORDED RATHER THAN SILENTLY FIXED: (1) its `norm()` dropped the `{$}` marker TOGETHER WITH ITS PRECEDING SLASH, so `/api/v2/branches/{$}` normalised to `/api/v2/branches` — THE FORM THE MUX REDIRECTS (301) RATHER THAN THE FORM THAT REACHES THE HANDLER (measured against the mux itself: `POST /api/v2/branches/` → 200 with that pattern, `POST /api/v2/branches` → 301, `/api/v2/branches/x` → 404), so the tool reported a CORRECT document as stale; the normalisation now keeps the slash. (2) ITS SELF-TEST DEMANDED EXACTLY ONE STALE ROW, so it failed the moment the document carried real drift of its own — the perturbation was fine and THE PRECONDITION WAS WRONG; it now measures a baseline and asserts the DELTA plus the name.** **The class this pass keeps meeting: AN INSTRUMENT THAT ASSUMES ITS INPUT IS CLEAN REPORTS ITS OWN PRECONDITION AS A RESULT** — the same shape as a witness that inherits its producer's scope.
+- **Directive (A) step 2's endpoint acceptance, measured repo-wide (2026-10-07)** — the directive's rule is *"every documented endpoint must grep to a real mount"*, and it had been verified for the surface inventory and for the docs page's generated reference only. **It is now measured over the whole documentation set: 72 documents, 145 distinct endpoint mentions in BOTH shapes (prose `METHOD /path` and table `| METHOD | \`/path\` |`), and ZERO mentions without a mount — allowing the mux's own slash-redirect, which the first scan did not.** The one candidate the first pass flagged (`POST /api/v2/branches/` in `complete-setup-guide.md`) was **the instrument's `{$}` handling, not the document**: the trailing-slash form is the one that reaches the handler.- **The written half of the docs page lands at its ruled coordinate — `agenthub-frontend/src/docs/api-reference-prose.en.md` (2026-10-06/07)** — the hand-written `api-reference.en.md` is replaced by the generated reference PLUS PROSE, and this is the prose: **the eight inventoried blocks carried over before the old file goes, with NO route tables, NO per-family headings and NO restated route count.** **The shape was ruled by the lead as (b): the page keeps ONE FLAT generated route list, because family grouping is an editorial structure the hand-written file imposed while the artefact's principle is to report what the server states.** **WHAT THE PROSE CARRIES BECAUSE A GENERATOR CANNOT: Base URL and the three tokens (with the rule that an unobtainable value stays VISIBLE rather than being replaced); authentication — both credential kinds, the `Bearer` header, and the corrected scope sentence (`NO DEFAULT in Go — a token minted without scopes carries none`, with the Pydantic mechanism that explains why it went unnoticed); the token-lifecycle pointer to where the shapes are defined; the ten Supabase routes and WHEN they are mounted; the identifiers and conventions (assignees as `@<seat-key>`, the 404-not-403 ownership rule, the `{param}` glossary, `{$}` as an exact match rather than a parameter); the MCP surface (transport, the protocol methods that are not tools, the three facts about the published list that the generated table cannot state — `manage_context` is database-conditional, no `TOOL_*` gating, and the two dispatch-only names); calling a tool with the schema's home; the WebSocket refusal with its reason text quoted IN FULL rather than its first two words; the seat-composition model (rooms and seats, seat types and versions, modules and kinds with both block examples and the no-secret rule, overlays, links, rendering a room); the error and status-code table; and version and health.** **The file is inert until the page imports it — the import swap and the deletion of `api-reference.en.md` are fe-dev's (with `cd77527c` recording the mount-alongside and its retirement, which is now gated on this landing rather than a follow-up).** Verified: 0 route rows, 0 family headings, 0 restated route counts, and the three corrections present.
 - **The drift test lands, with the producer and the witness agreeing at 124 and 10 (2026-10-06)** — `internal/apiref/docs_page_drift_test.go` is `package apiref_test` — the SAME DIRECTORY as the producer, a DIFFERENT PACKAGE, which is Go's own way of expressing producer-and-witness — and both sides read the code independently: the route side by this file's own AST walk of the tree (string literals, `+`-concatenation, and base declarations of BOTH shapes — function-scoped `const base = …` and assignments — nearest preceding declaration winning, `{$}` dropped, the trailing slash KEPT), and the tool side from the ADVERTISED surface (`Name: "manage_*"` in the registry, the three controller constants resolved through their identifiers, and the connection tool's own literal) rather than by calling the builder `Entries()` calls. **Unresolvable ⇒ an error, never a skip, because silence is the defect class.**
   **AND THE TWO DIRECTION-1 FAILURES IT PRODUCED ON THE WAY ARE THE POINT OF IT: 29 routes when the producer walked only the `_mount.go` family (every route registered in `app.go`, `mcp_routes.go`, `branch_routes.go`, `task_routes.go`, `subtask_routes.go`, `session_stream_routes.go`), and — after that was fixed — NINE NAMES THAT ARE NOT TOOLS (the handler's own JSON-RPC envelope `initialize`/`ping`, the dispatch-only `get_mcp_status`/`check_session_health`) PLUS A THREE-NAME GAP (`manage_seat`, `call_seat`, `submit_feedback`, dispatched outside that file): this witness's first version keyed on every `case` label and read one dispatch site, so it reported the wrong surface in both directions at once. The producer's side was correct in both cases and did not move.**
   **AND THE LESSON, which is the file's own doc comment: THE FIRST VERSION OF THIS TEST PASSED, because the witness had mirrored the producer's `_mount.go` filter and BOTH SIDES SHARED THE BLIND SPOT — the own-shadow failure, in the instrument, ninety seconds after a comment in it said the instrument could not suffer it. One widened filter turned a green test into the 29-item failure.** **It also carries `TestTheDriftComparisonCanFailBothWays`, the falsifiability criterion rule 61 states: it perturbs a set by one item in each direction, calls the SAME comparison function the two real tests call, and requires each direction to name the perturbed item. Its own first version asserted direction 1 clean on a set that omitted an item the code had, so THE SELF-TEST WAS WHAT FAILED — a perturbed world must isolate one direction.**

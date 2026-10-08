@@ -32,9 +32,6 @@ func (s listControllerStub) DeleteTask(context.Context, string, string) (UserTas
 func (s listControllerStub) CompleteTask(context.Context, string, string, *string, string) (UserTaskResult, error) {
 	return UserTaskResult{}, nil
 }
-func (s listControllerStub) GetTaskStatistics(context.Context, string) (UserTaskStatsResult, error) {
-	return UserTaskStatsResult{}, nil
-}
 
 // TestListUserTasksKeepsTheInheritedEnvelope pins what the WIRE does when the listing FAILED: 200 with
 // {"success": true, "tasks": [], "count": 0, "user": <email>}.

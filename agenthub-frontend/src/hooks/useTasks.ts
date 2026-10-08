@@ -146,7 +146,23 @@ export const useTaskMutations = () => {
       await queryClient.cancelQueries({ queryKey: ['task', taskId] });
 
       const previousTask = queryClient.getQueryData<Task>(['task', taskId, false]);
-      const git_branch_id = previousTask?.git_branch_id || updates.git_branch_id;
+
+      // The branch id is NOT always in the individual task cache: a LIST page never fills
+      // ['task', taskId, false], because nothing fetches a single task until the details dialog is
+      // opened, and api.ts's updateTask does not send one either (its payload filter has no
+      // git_branch_id). Resolving it from the task lists as well is the same scan useRealtimeSync
+      // already uses for this exact problem; without it the optimistic write below is skipped and
+      // the row does not move until something else refetches.
+      let git_branch_id = previousTask?.git_branch_id || updates.git_branch_id;
+      if (!git_branch_id) {
+        for (const [, tasks] of queryClient.getQueriesData<Task[]>({ queryKey: ['tasks'] })) {
+          const found = tasks?.find(t => t.id === taskId);
+          if (found?.git_branch_id) {
+            git_branch_id = found.git_branch_id;
+            break;
+          }
+        }
+      }
 
       if (git_branch_id) {
         await queryClient.cancelQueries({ queryKey: ['tasks', git_branch_id] });
@@ -186,9 +202,13 @@ export const useTaskMutations = () => {
         queryClient.setQueryData(['tasks', context.git_branch_id], context.previousTasks);
       }
     },
-    onSuccess: (data, { taskId }) => {
+    onSuccess: (data, { taskId }, context: any) => {
       logger.debug('[useTaskMutations] Task updated:', data);
-      const git_branch_id = data.git_branch_id;
+      // The response is not the only place the branch id can come from: the delete and complete
+      // mutations in this file already take it from the mutation context, and onMutate has just
+      // resolved it. Reading it from `data` alone skipped this invalidation whenever the response
+      // left the branch out - which is the owner's "nothing changes in the UI until a refetch".
+      const git_branch_id = context?.git_branch_id || data.git_branch_id;
 
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       if (git_branch_id) {

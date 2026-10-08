@@ -72,13 +72,17 @@ type seatStatusReport struct {
 }
 
 type seatStatusReportRow struct {
-	Room     string `json:"room"`
-	Seat     string `json:"seat"`
-	State    string `json:"state"`
-	Runtime  string `json:"runtime"`
-	Hash     string `json:"hash"`
-	Detail   string `json:"detail"`
-	Redacted bool   `json:"redacted"`
+	Room    string `json:"room"`
+	Seat    string `json:"seat"`
+	State   string `json:"state"`
+	Runtime string `json:"runtime"`
+	// PinnedHash is the hash of the resolved-seat snapshot the reporting seat actually has PINNED,
+	// which the bridge reads from the seat's own pin. It is NOT the cloud's intended hash - that is
+	// the stored seat's ExpectedHash, and the sync verdict compares this one against it. The name
+	// says which, because a bare `hash` left an operator unable to tell the two apart.
+	PinnedHash string `json:"pinned_hash"`
+	Detail     string `json:"detail"`
+	Redacted   bool   `json:"redacted"`
 }
 
 type seatStatusAgent struct {
@@ -266,8 +270,8 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 		if utf8.RuneCountInString(s.Detail) > seatStatusMaxDetail {
 			return nil, fmt.Errorf("seats[%d].detail cannot exceed %d characters", i, seatStatusMaxDetail)
 		}
-		if len(s.Hash) > seatStatusMaxField {
-			return nil, fmt.Errorf("seats[%d].hash cannot exceed %d characters", i, seatStatusMaxField)
+		if len(s.PinnedHash) > seatStatusMaxField {
+			return nil, fmt.Errorf("seats[%d].pinned_hash cannot exceed %d characters", i, seatStatusMaxField)
 		}
 		key := [2]string{s.Room, s.Seat}
 		if seen[key] {
@@ -276,7 +280,7 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 		seen[key] = true
 		machine.Seats = append(machine.Seats, repositories.SeatStatus{
 			Room: s.Room, Seat: s.Seat, State: s.State, Runtime: s.Runtime,
-			RunningHash: s.Hash, Detail: s.Detail, Redacted: s.Redacted, ReportedAt: reportedAt.UTC(),
+			RunningHash: s.PinnedHash, Detail: s.Detail, Redacted: s.Redacted, ReportedAt: reportedAt.UTC(),
 		})
 	}
 	for i, a := range rep.Agents {
@@ -323,7 +327,7 @@ func machineBody(m *repositories.Machine, now time.Time) *entities.OrderedMap[an
 		seat.Set("seat", s.Seat)
 		seat.Set("state", s.State)
 		seat.Set("runtime", s.Runtime)
-		seat.Set("hash", s.RunningHash)
+		seat.Set("pinned_hash", s.RunningHash)
 		seat.Set("expected_hash", s.ExpectedHash)
 		seat.Set("sync", seatsync.Sync(s.RunningHash, s.ExpectedHash))
 		seat.Set("detail", s.Detail)

@@ -26,10 +26,8 @@ type TaskHandlerFacade interface {
 	DeleteTask(ctx context.Context, taskID, userID string) *entities.OrderedMap[any]
 	ListTasks(ctx context.Context, request *taskdto.ListTasksRequest, includeDependencies, minimal bool) *entities.OrderedMap[any]
 	CompleteTask(ctx context.Context, taskID, completionSummary string, testingNotes *string, userID string) *entities.OrderedMap[any]
-	GetTaskStatistics(ctx context.Context, userID string) any
 	CountTasks(ctx context.Context, filters map[string]any) any
 	ListTasksSummary(ctx context.Context, filters map[string]any, offset, limit int) *entities.OrderedMap[any]
-	GetTaskWithRelations(ctx context.Context, taskID string) any
 }
 
 // TaskFacadeService mirrors FacadeService.get_task_facade. The signature matches

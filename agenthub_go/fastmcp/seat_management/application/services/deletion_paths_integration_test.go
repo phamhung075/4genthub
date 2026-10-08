@@ -321,4 +321,22 @@ func TestDeletionPathsIntegration(t *testing.T) {
 	if d := deletionDiff(before, after); d != "(no table changed)" {
 		t.Fatalf("CROSS-OWNER FAILED: the other user's deletes moved %q", d)
 	}
+
+	// CLAIM 5: BOTH DELETES ARE HARD - what they removed can be created AGAIN with the same
+	// identity. This is the owner's ruling for a seat (`945648f5`, "removing a seat is a hard
+	// delete") and the property RemoveSeat's own doc claims ("so the seat key can be added again
+	// from scratch"). NO OTHER CLAIM ABOVE CAN CATCH A TOMBSTONE: a tombstone satisfies every row
+	// count and every scoping assertion here, and fails only at the unique constraint, which is
+	// what these two creates exercise - the seat key on the room that survived, and the room slug
+	// on the room that was deleted.
+	must(t, svc.RemoveSeat(ctx, user, "keeper", "k"))
+	if _, err := seats.Create(ctx, user, repositories.Seat{
+		RoomID: keeper.ID, SeatKey: "k", SeatTypeID: version.SeatTypeID,
+		Runtime: "claude-code", Model: "sonnet", PermissionPolicy: "standard",
+	}); err != nil {
+		t.Fatalf("CLAIM 5 FAILED: a seat key was not reusable after RemoveSeat: %v", err)
+	}
+	if _, err := rooms.Save(ctx, user, repositories.Room{Slug: "probe", Name: "probe"}); err != nil {
+		t.Fatalf("CLAIM 5 FAILED: a room slug was not reusable after DeleteRoom: %v", err)
+	}
 }

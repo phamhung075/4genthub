@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
+import { animationFactory } from '../../services/AnimationFactory';
 import { isTaskDeletePayload, getEntityId, WSMessage } from '../../types/websocket-protocol';
 
 // Mock toast hooks
@@ -178,6 +179,66 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
       };
 
       expect(getEntityId(message)).toBe(null);
+    });
+  });
+
+  describe('Task Create Handler - ONE created event animates ONCE', () => {
+    it('does NOT animate a create: WebSocketAnimationService owns that one', async () => {
+      // THE OWNER'S REPORT, on the CREATE path: triggers A (this hook's 50ms call plus
+      // WebSocketAnimationService's 150ms) and C (the mount effect) made one created
+      // event animate more than once. This hook's call is the duplicate on the task
+      // path: the service animates the same event and ITS call lands, because by then
+      // the row is mounted. FAILED BEFORE THE FIX - this assertion used to see 1 call.
+      const createdMessage: WSMessage = {
+        id: 'msg-create-1',
+        version: '2.0',
+        type: 'update',
+        timestamp: '2025-11-06T19:00:00Z',
+        sequence: 1,
+        payload: {
+          entity: 'task',
+          action: 'created',
+          data: {
+            primary: {
+              id: 'task-created-1',
+              title: 'Task to Create',
+              git_branch_id: 'branch-created-1',
+            },
+          },
+        },
+        metadata: {
+          source: 'mcp-ai',
+        },
+      };
+
+      const mockWebSocketClient = {
+        on: vi.fn((event: string, handler: (msg: WSMessage) => void) => {
+          if (event === 'update') {
+            setTimeout(() => handler(createdMessage), 10);
+          }
+        }),
+        off: vi.fn(),
+      };
+
+      const wrapper = createWrapper();
+      renderHook(() => useRealtimeSync(mockWebSocketClient, true), { wrapper });
+
+      // The cache update IS still this hook's job, so the row really was added.
+      await waitFor(
+        () => {
+          expect(queryClient.getQueryData(['tasks', 'branch-created-1'])).toBeDefined();
+        },
+        { timeout: 1000 }
+      );
+
+      // Past the 50ms the duplicate used to wait for, so this is not a race.
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      expect(animationFactory.animate).not.toHaveBeenCalledWith(
+        'task-created-1',
+        'create',
+        expect.anything()
+      );
     });
   });
 

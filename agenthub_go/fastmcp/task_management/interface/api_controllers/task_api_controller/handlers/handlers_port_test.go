@@ -37,12 +37,10 @@ func (f *fakeTaskFacade) ListTasks(context.Context, *taskdto.ListTasksRequest, b
 func (f *fakeTaskFacade) CompleteTask(context.Context, string, string, *string, string) *entities.OrderedMap[any] {
 	return nil
 }
-func (f *fakeTaskFacade) GetTaskStatistics(context.Context, string) any  { return nil }
 func (f *fakeTaskFacade) CountTasks(context.Context, map[string]any) any { return f.countResult }
 func (f *fakeTaskFacade) ListTasksSummary(context.Context, map[string]any, int, int) *entities.OrderedMap[any] {
 	return nil
 }
-func (f *fakeTaskFacade) GetTaskWithRelations(context.Context, string) any { return nil }
 
 type fakeFacadeService struct{ facade TaskHandlerFacade }
 

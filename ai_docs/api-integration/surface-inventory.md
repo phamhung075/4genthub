@@ -21,13 +21,13 @@ registrations compose the path from a `const base = "…"` declared in the same 
 so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/projects/`.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && rg -n 'mux\.HandleFunc\(' fastmcp/server/httpapp fastmcp/auth`
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **143** (httpapp 123, auth 20), re-run at `db9d2bc3`; the same command returned **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than the figure's 123; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 ---
 
 ## 1. Mounted routes
 
-**Counts (DATED — carry the date and the pattern, per the counting rule).** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **124** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **144 total.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** **THESE COUNTS ARE RE-DERIVABLE IN ONE COMMAND, WHICH IS THE POINT OF THEM BEING NUMBERS AT ALL: `COUNTS-AUDIT.py`, beside the seat area, re-runs every headline figure this document states — the two registration counts, the tool counts, the table counts, the 39 total and the SQL statement count — and exits non-zero when any of them differs from the tree. It is read-only by construction (no `--write` at all), so a gate may run it as it stands.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
+**Counts (DATED — carry the date and the pattern, per the counting rule).** **RE-MEASURED 2026-10-08 by go-dev, after the owner ruled both always-500 task routes removed: the `httpapp` figure falls `125 -> 123`, exactly the two removed registrations (`GET /api/v2/tasks/stats/summary` in `task_routes.go` and `GET /api/tasks/{task_id}` in `routes_mount.go`), under the same pattern and scope stated below. The auth half is unchanged at 20, so the total falls `145 -> 143`. The two rows are struck from the tables in this file, and the task-route line references below are renumbered by the same four-line deletion.** **CORRECTED 2026-10-06 (docs duty pass 3): the figure this paragraph has carried since it was written was TWO SHORT. The same pattern returns **125** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **145 total.** **RE-MEASURED 2026-10-08 at HEAD `88d27758`, with the control that makes it a drift figure rather than a preference:** **the identical pattern run at `6dc06203` returns 124 — the previous figure, REPRODUCED — and HEAD returns 125: exactly ONE registration was added, and it is named here.** *The addition is `GET /api/v2/tasks/{id}/events` (`task_routes.go:107`), the task-event ledger's read route, which is the `O1a` board row and the only `mux.HandleFunc(` line the two commits differ by `+1` on.* The auth half is unchanged at 20. **Pattern and scope, stated because the previous Reproduce line used a WIDER scope than the figure: non-test `.go` files under `fastmcp/server/httpapp` and `fastmcp/auth`.** AND THE TREE HAD NOT MOVED — the check that makes this a documentation shortfall rather than drift: the identical pattern run at this file's own last commit (**`6dc06203`**) already returns **124**, with **0 registration lines added or removed** between that commit and the tip (compare the `mux.HandleFunc(` line sets). **The two missing registrations are the friction channel's**, now documented in **§1.21** (`seat_feedback_mount.go:73`, `:76`) — which is also why the earlier **122** figure and the sentence built on it (`the 2026-10-05 figure below plus PUT /api/v2/openrig/rooms/{room}/team`) do not close arithmetically.** The earlier dated figures below are kept as the snapshots they are and were **not** re-derived in this pass.** **THESE COUNTS ARE RE-DERIVABLE IN ONE COMMAND, WHICH IS THE POINT OF THEM BEING NUMBERS AT ALL: `COUNTS-AUDIT.py`, **beside the seat area at `/home/daihu/.openrig/agenthub-seats/4genthub-min/COUNTS-AUDIT.py` and deliberately NOT in this repository — so a seat runs it and CI cannot**, re-runs every headline figure this document states — the two registration counts, the tool counts, the table counts, the 39 total and the SQL statement count — and exits non-zero when any of them differs from the tree. It is read-only by construction (no `--write` at all), so a gate may run it as it stands. **Both halves of it have been seen to work: it exits 0 on the tree it currently describes, and `python3 COUNTS-AUDIT.py --self-test` perturbs one expectation by one and REQUIRES the audit to notice — that is the control, because a checker never seen to fail is the same object as no checker at all. It was in fact RED before `e6829b32`: its `httpapp` expectation still read 124 while the tree had moved to 125 when `O1a` added `GET /{id}/events`, so the number it was one behind on was found by running it, not by reading it. The expectation now reads 123, which is what both the tree and this paragraph state.** At HEAD **2026-10-06** *(as this paragraph was first written)*, the same pattern gave **122** registrations in `httpapp` + **20** in `fastmcp/auth/{interface,api}` = **142 total**: the 2026-10-05 figure below plus `PUT /api/v2/openrig/rooms/{room}/team` (the D5 room-sharing route, `seat_admin_mount.go:301`). At HEAD **2026-10-05**, the pattern `grep -rn 'mux.HandleFunc(' --include='*.go' fastmcp/server/httpapp | grep -v _test.go` gives **121** registrations across 15 files, plus **20** in `fastmcp/auth/{interface,api}` = **141 total registrations**. The earlier figure — **120** in `httpapp` + 20 = **140 total** — was the snapshot at `c4ff8d42`, before the seat-type create route (`POST /api/v2/openrig/seat-types`, `seat_admin_mount.go:307` today) was added; the two counts differ by that one route, not by a wrong method. No routes are registered outside those packages (`grep -rn 'HandleFunc(' cmd/` → 0 matches; the process only calls `app.Handler()` at `cmd/agenthub/main.go:52`).
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
@@ -73,11 +73,13 @@ and the two auth `RegisterRoutes` methods.
 |---|---|---|---|
 | POST | `/api/v2/tasks/` | `routes.CreateUserTask` | `task_routes.go:50` |
 | GET | `/api/v2/tasks/` | `routes.ListUserTasks` | `task_routes.go:85` |
-| GET | `/api/v2/tasks/stats/summary` | `routes.GetUserTaskStats` | `task_routes.go:99` |
-| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:103` |
-| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:107` |
-| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:130` |
-| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:134` |
+| GET | `/api/v2/tasks/{id}` | `routes.GetUserTask` | `task_routes.go:99` |
+| GET | `/api/v2/tasks/{id}/events` | `routes.GetTaskEvents` | `task_routes.go:103` |
+| PUT | `/api/v2/tasks/{id}` | `routes.UpdateUserTask` | `task_routes.go:113` |
+| DELETE | `/api/v2/tasks/{id}` | `routes.DeleteUserTask` | `task_routes.go:136` |
+| POST | `/api/v2/tasks/{id}/complete` | `routes.CompleteUserTask` | `task_routes.go:140` |
+
+**DRIFT FOUND AND REPAIRED 2026-10-08 at HEAD `88d27758` (docs duty pass 4).** *Three rows in the table above cited a line that is no longer a registration (`PUT {id}` 107->117, `DELETE {id}` 130->140, `complete` 134->144) and one route had no row at all.* **The control that names the cause rather than assuming it: every moved row moved by EXACTLY +10, and the insertion that did it is the `GET /{id}/events` route — one registration plus its closure, added above them.** *So this is the rotted-pointer class the §1 citation pass predicted, reproduced on schedule, and the fix is a line number, not a re-reading of the table.* **Re-resolve a row by reading the file's own `base` const and matching the row's method+path to the registration that carries it — never by trusting the number.**
 
 ### 1.4 Subtasks — base `/api/v2/subtasks` (`subtask_routes.go:12`)
 
@@ -101,8 +103,8 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:73` |
-| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:138` |
+| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:74` |
+| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:139` |
 
 ### 1.7 WebSockets (`ws_mount.go`)
 
@@ -197,11 +199,10 @@ and the two auth `RegisterRoutes` methods.
 | Method | Path | Handler | Registration |
 |---|---|---|---|
 | POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:391` |
-| GET | `/api/tasks/{task_id}` | `routes.GetFullTask` | `routes_mount.go:406` |
-| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:410` |
-| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:416` |
-| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:425` |
-| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:428` |
+| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:406` |
+| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:412` |
+| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:421` |
+| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:424` |
 
 ### 1.16 OpenRig seat management — admin (`seat_admin_mount.go`)
 
@@ -250,8 +251,10 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 | GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:105` |
 | POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:41` |
 | DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:44` |
-| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:91` |
-| GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:94` |
+| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:95` |
+| GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:98` |
+
+**DRIFT FOUND AND REPAIRED 2026-10-08 (same pass as §1.3).** *Both rows in this section cited a line no longer in the file (`seat-status` 91->95, `machines` 94->98).* **The control: both moved by EXACTLY +4 — four lines were added above them in one change, so the drift is one insertion rather than two coincidences.**
 
 ### 1.18 Auth — `/api/auth/*` (`fastmcp/auth/interface/auth_endpoints.go:1087`)
 

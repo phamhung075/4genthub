@@ -781,6 +781,46 @@ describe('LazySubtaskList', () => {
         expect(api.listSubtasks).toHaveBeenLastCalledWith('task-456');
       });
     });
+
+    it('should hold the edit dialog closed while the full subtask is still loading', async () => {
+      // The one case that lived ONLY in the retired file (src/components/__tests__/): this file
+      // pins what a caller sees when the full load FAILS (Error Handling) and nothing about the
+      // state WHILE it is in flight, so the pending moment would have gone unpinned with it.
+      let resolveFullLoad: (value: unknown) => void = () => {};
+      const fullLoad = new Promise<unknown>(resolve => {
+        resolveFullLoad = resolve;
+      });
+
+      // vi.mocked rather than a cast, so the mock's signature is the api module's own rather than
+      // an opaque ReturnType<typeof …> (ts-no-return-type).
+      vi.mocked(api.listSubtasks).mockResolvedValue(mockSubtasks);
+      vi.mocked(api.getSubtask).mockImplementation(() => fullLoad as never);
+
+      render(
+        <LazySubtaskList
+          projectId={mockProjectId}
+          taskTreeId={mockTaskTreeId}
+          parentTaskId={mockParentTaskId}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Subtask 1')).toBeInTheDocument();
+      });
+
+      // Second subtask is the non-done one, so its edit action performs a real full load
+      fireEvent.click(screen.getAllByTitle('Edit')[1]);
+
+      // In flight: the dialog stays SHUT rather than opening empty and filling in late
+      expect(screen.queryByText('Edit Subtask')).not.toBeInTheDocument();
+
+      resolveFullLoad(mockSubtasks[1]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Edit Subtask')).toBeInTheDocument();
+      });
+      expect(screen.getByPlaceholderText('Enter subtask title...')).toHaveValue('Subtask 2');
+    });
   });
 
   describe('Error Handling', () => {

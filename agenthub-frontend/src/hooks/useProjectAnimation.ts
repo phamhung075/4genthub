@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { animationFactory, AnimationType } from '../services/AnimationFactory';
 import { Project } from '../types/api.types';
 import logger from '../utils/logger';
-import { projectDeletionTracker } from '../services/projectDeletionTracker';
 
 // Animation CSS classes are defined in: src/styles/task-animations.css
 // They are applied globally via AnimationFactory
@@ -18,12 +17,6 @@ export function useProjectAnimation(
   const [isVisible, setIsVisible] = useState(true);
   const mobileElementRef = useRef<HTMLDivElement>(null);
   const desktopElementRef = useRef<HTMLDivElement>(null);
-
-  // Track previous values to detect updates
-  const prevNameRef = useRef<string>(project.name);
-  const prevStatusRef = useRef<string | undefined>(project.status);
-  const prevDescriptionRef = useRef<string | undefined>(project.description);
-  const hasMountedRef = useRef(false);
 
   const playCreateAnimation = useCallback((source: 'websocket' | 'mount' = 'mount') => {
     logger.debug('🎬 [useProjectAnimation] playCreateAnimation called', {
@@ -130,6 +123,12 @@ export function useProjectAnimation(
 
   // Mount-time animation check for newly created projects
   useEffect(() => {
+    // KEPT SO THE EFFECT CAN CLEAR IT. This timer used to outlive the row: it fires
+    // 50ms after mount, and on a remount that was long enough to land in the NEW row
+    // and replay its create animation. The factory now dedupes that by element id,
+    // but a pending timer should still not outlive the effect that started it.
+    let timer: NodeJS.Timeout | undefined;
+
     // Only animate if project was created recently (within last 2 seconds)
     // This prevents ALL projects from animating when the list re-renders
     if (project.created_at) {
@@ -140,64 +139,27 @@ export function useProjectAnimation(
 
       if (isNewProject) {
         // Small delay to ensure DOM is ready, then trigger animation
-        setTimeout(() => {
+        timer = setTimeout(() => {
           playCreateAnimation('mount');
-          hasMountedRef.current = true;
         }, 50);
-      } else {
-        hasMountedRef.current = true;
       }
-    } else {
-      hasMountedRef.current = true;
     }
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, []); // Only run on mount
 
-  // Detect ANY changes after mount and trigger update animation
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      // Skip on first mount (create animation handles that)
-      return;
-    }
+  // NO prop-change update animation. The effect that used to sit here compared the
+  // previous props and called playUpdateAnimation('websocket') - passing 'websocket'
+  // for what is a RENDER, not a websocket event - and the real event is animated by
+  // WebSocketAnimationService, so every update animated twice.
 
-    // Check if ANY field changed
-    const nameChanged = prevNameRef.current !== project.name;
-    const statusChanged = prevStatusRef.current !== project.status;
-    const descriptionChanged = prevDescriptionRef.current !== project.description;
-
-    if (nameChanged || statusChanged || descriptionChanged) {
-      logger.debug('🎬 [useProjectAnimation] Project update detected', {
-        projectId: project.id,
-        nameChanged,
-        statusChanged,
-        descriptionChanged,
-        oldName: prevNameRef.current,
-        newName: project.name
-      }, 'useProjectAnimation.ts');
-
-      // Trigger update animation
-      playUpdateAnimation('websocket');
-
-      // Update refs for next comparison
-      prevNameRef.current = project.name;
-      prevStatusRef.current = project.status;
-      prevDescriptionRef.current = project.description;
-    }
-  }, [project.name, project.status, project.description, playUpdateAnimation]); // Run when any field changes
-
-  // Detect when project is marked for deletion and trigger delete animation
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      if (projectDeletionTracker.isMarkedForDeletion(project.id)) {
-        logger.debug('🗑️ [useProjectAnimation] Project marked for deletion, triggering animation', { projectId: project.id }, 'useProjectAnimation.ts');
-        playDeleteAnimation('websocket');
-        // Stop checking once we've triggered the animation
-        clearInterval(checkInterval);
-      }
-    }, 50); // Check every 50ms
-
-    // Cleanup interval on unmount
-    return () => clearInterval(checkInterval);
-  }, [project.id, playDeleteAnimation]);
+  // The deletion tracker's 50ms poll used to live here. Nothing ever marked one - the
+  // trackers had no writer anywhere in the app - and the delete animation it guarded is
+  // triggered from the delete site, where the cache removal is deferred 600ms so the row
+  // is still registered when the animation fires. Removed with the trackers rather than
+  // left in place looking live.
 
   // Helper function to get fallback animation class - matches task/subtask implementation
   // ✅ FIX 2025-11-22: Updated to use project-specific CSS classes instead of task classes

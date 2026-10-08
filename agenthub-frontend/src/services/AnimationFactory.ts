@@ -44,8 +44,18 @@ class AnimationFactory {
   // Element registry for targeted animations
   private elementRegistry = new Map<string, ElementRegistration>();
 
-  // Animation coordination to prevent double-triggering
-  private animationStates = new Map<string, AnimationState>();
+  // Animation coordination, PER ELEMENT AND TYPE. One entry per element was not
+  // enough to answer the two questions this has to answer: has THIS element played
+  // its create already (so a remount must not replay it), and has THIS element
+  // played THIS type inside the cooldown (so one event reported by two sources
+  // animates once). Widened 2026-10-07 after the owner reported animations firing
+  // more than once per event.
+  private animationStates = new Map<string, Partial<Record<AnimationType, AnimationState>>>();
+
+  // How many elements keep their played-types record. The record deliberately
+  // OUTLIVES unregisterElement - that is what makes a remount idempotent - so it
+  // needs a bound: the oldest element is evicted past this many.
+  private readonly MAX_TRACKED_ELEMENTS = 10_000;
 
   // Minimum time between animations for same element (ms)
   private readonly ANIMATION_COOLDOWN = 100;
@@ -67,11 +77,14 @@ class AnimationFactory {
   }
 
   /**
-   * Unregister an element from animations
+   * Unregister an element from animations.
+   *
+   * THE PLAYED-TYPES RECORD IS DELIBERATELY NOT CLEARED HERE. A remount is not a
+   * new element: the same row re-rendering must not animate its create again, and
+   * the only way to know it already has is to keep what it played. The record is
+   * bounded by MAX_TRACKED_ELEMENTS rather than by unmounting.
    */
   unregisterElement(elementId: string): void {
-    // Clean up any active animation state
-    this.animationStates.delete(elementId);
     this.elementRegistry.delete(elementId);
   }
 
@@ -97,12 +110,19 @@ class AnimationFactory {
       return false;
     }
 
-    // Record animation start
-    this.animationStates.set(elementId, {
-      type,
-      startTime: Date.now(),
-      source
-    });
+    // Record that this element has played this type. The record OUTLIVES
+    // unregisterElement on purpose (a remount is not a new element), so it is kept
+    // bounded here instead: past MAX_TRACKED_ELEMENTS the oldest element is evicted.
+    let played = this.animationStates.get(elementId);
+    if (!played) {
+      if (this.animationStates.size >= this.MAX_TRACKED_ELEMENTS) {
+        const oldest = this.animationStates.keys().next().value;
+        if (oldest !== undefined) this.animationStates.delete(oldest);
+      }
+      played = {};
+      this.animationStates.set(elementId, played);
+    }
+    played[type] = { type, startTime: Date.now(), source };
 
     // Apply animation
     this.applyAnimation(registration, animationDef, type);
@@ -114,20 +134,28 @@ class AnimationFactory {
    * Check if an animation is currently in progress for an element
    */
   isAnimationInProgress(elementId: string): boolean {
-    const state = this.animationStates.get(elementId);
-    if (!state) return false;
+    const played = this.animationStates.get(elementId);
+    if (!played) return false;
 
-    const animationDef = this.animationRegistry[state.type];
-    const elapsed = Date.now() - state.startTime;
-
-    return elapsed < animationDef.duration;
+    const now = Date.now();
+    return Object.values(played).some((state) =>
+      state ? now - state.startTime < this.animationRegistry[state.type].duration : false
+    );
   }
 
   /**
    * Get current animation state for an element
    */
   getAnimationState(elementId: string): AnimationState | null {
-    return this.animationStates.get(elementId) || null;
+    const played = this.animationStates.get(elementId);
+    if (!played) return null;
+    let latest: AnimationState | null = null;
+    for (const state of Object.values(played)) {
+      if (state && (!latest || state.startTime > latest.startTime)) {
+        latest = state;
+      }
+    }
+    return latest;
   }
 
   /**
@@ -210,51 +238,69 @@ class AnimationFactory {
   }
 
   /**
-   * Coordination logic to prevent double-triggering
+   * Coordination logic, PER ELEMENT AND TYPE.
+   *
+   * TWO RULES CARRY THE OWNER'S REPORT (2026-10-07 - "animation triggers multiple
+   * times"):
+   *  1. MOUNT IS ALLOWED ONCE PER ELEMENT ID. It used to return true
+   *     unconditionally, so any remount of a row - a list re-render, a key change,
+   *     another page of results - replayed the create animation for a row nothing
+   *     had happened to.
+   *  2. THE SAME TYPE FOR THE SAME ELEMENT IS DEDUPED INSIDE THE COOLDOWN,
+   *     whichever source asks. One event reported by both the callback path and the
+   *     WebSocket path animated twice, because a WebSocket animation was allowed to
+   *     override a callback one.
    */
   private shouldAllowAnimation(elementId: string, type: AnimationType, source: AnimationSource): boolean {
-    const currentState = this.animationStates.get(elementId);
+    const played = this.animationStates.get(elementId);
     const now = Date.now();
 
-    // Allow if no animation is currently running
-    if (!currentState) {
+    // Every block names its reason and is LOGGED. This is the one place in the
+    // animation system that used to fail with no output at all, and a dropped
+    // animation and a message that never arrived look identical in a console while
+    // having opposite fixes - so each new rule added here has to say why it fired.
+    let blocked: string | null = null;
+
+    // Rule 2: this element has already played THIS type inside the cooldown, so
+    // this is the same event arriving twice rather than a new one.
+    const sameType = played?.[type];
+    if (sameType && now - sameType.startTime <= this.ANIMATION_COOLDOWN) {
+      blocked = `the same '${type}' already played for this element ${now - sameType.startTime}ms ago`;
+    } else if (source === 'mount') {
+      // Rule 1: a mount is a new element's first appearance, and "once per element
+      // id" is what new means here - a remount is not a new element.
+      if (played?.create?.source !== 'mount') {
+        return true;
+      }
+      blocked = 'this element already played its mount animation, so a remount is not a new element';
+    } else {
+      let mostRecent: AnimationState | undefined;
+      for (const state of Object.values(played ?? {})) {
+        if (state && (!mostRecent || state.startTime > mostRecent.startTime)) {
+          mostRecent = state;
+        }
+      }
+      if (!mostRecent || now - mostRecent.startTime > this.ANIMATION_COOLDOWN) {
+        return true;
+      }
+      // A WebSocket animation may override a callback one: that is a DIFFERENT event
+      // arriving mid-animation, which is why it is allowed and the same type twice
+      // is not.
+      if (!(source === 'websocket' && mostRecent.source === 'callback')) {
+        blocked = `a '${source}' request arrived ${now - mostRecent.startTime}ms after this element's last '${mostRecent.source}' animation`;
+      }
+    }
+
+    if (blocked === null) {
       return true;
     }
 
-    const timeSinceLastAnimation = now - currentState.startTime;
-
-    // Priority system:
-    // 1. Mount-time animations have highest priority (new task just created)
-    // 2. WebSocket animations have medium priority (real-time updates)
-    // 3. Callback animations have lowest priority (user interactions)
-
-    // Allow if enough time has passed (cooldown period)
-    if (timeSinceLastAnimation > this.ANIMATION_COOLDOWN) {
-      return true;
-    }
-
-    // Allow mount-time animations to override others
-    if (source === 'mount') {
-      return true;
-    }
-
-    // Allow WebSocket animations to override callbacks
-    if (source === 'websocket' && currentState.source === 'callback') {
-      return true;
-    }
-
-    // Block everything else. LOGGED DELIBERATELY, and it is the only point in the animation system that
-    // used to fail with no output at all: a dropped animation and a message that never arrived look
-    // IDENTICAL in a console, and they have opposite fixes - one is a client timing window, the other is
-    // a server that never sent. Naming the cooldown in the message teaches the rule, not just the fact.
     logger.debug(
-      `🎬 [AnimationFactory] Animation dropped for '${elementId}': a '${source}' request arrived ${timeSinceLastAnimation}ms after the element's last '${currentState.source}' animation, inside the ${this.ANIMATION_COOLDOWN}ms cooldown`,
+      `🎬 [AnimationFactory] Animation dropped for '${elementId}': ${blocked} (cooldown ${this.ANIMATION_COOLDOWN}ms)`,
       {
         elementId,
         requestedType: type,
         requestedSource: source,
-        previousSource: currentState.source,
-        timeSinceLastAnimation,
         cooldownMs: this.ANIMATION_COOLDOWN
       },
       'AnimationFactory.ts'
@@ -284,10 +330,11 @@ class AnimationFactory {
   } {
     return {
       registeredElements: Array.from(this.elementRegistry.keys()),
-      activeAnimations: Array.from(this.animationStates.entries()).map(([elementId, state]) => ({
-        elementId,
-        state
-      })),
+      activeAnimations: Array.from(this.animationStates.entries()).flatMap(([elementId, played]) =>
+        Object.values(played)
+          .filter((state): state is AnimationState => Boolean(state))
+          .map((state) => ({ elementId, state }))
+      ),
       animationDefinitions: this.animationRegistry
     };
   }

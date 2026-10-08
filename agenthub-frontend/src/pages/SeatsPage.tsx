@@ -90,6 +90,16 @@ export const SeatsPage: React.FC = () => {
   const [seatToRemove, setSeatToRemove] = useState<Seat | null>(null);
   const [deleteRoomOpen, setDeleteRoomOpen] = useState(false);
 
+  // The server deletes an EMPTY room only (room_deletion_service.DeleteRoom refuses a room
+  // that still holds seats with 409 and names how many remain), so what the dialog may claim
+  // depends on whether the seats are KNOWN: a loaded empty list means empty, while a pending
+  // or failed query is not evidence of it. The server stays the authority either way, which
+  // is why the refusal is rendered from its sentence as well as predicted from this count.
+  const seatsKnown = !seatsLoading && !seatsError;
+  const roomSeatCount = seats.length;
+  const roomNotEmpty = seatsKnown && roomSeatCount > 0;
+  const deleteRoomStatus = (deleteRoom.error as (Error & { status?: number }) | null)?.status;
+
   const roomSlugValid = isValidSeatName(roomSlug);
   const roomSlugInvalid = roomSlug !== '' && !roomSlugValid;
   const seatKeyValid = isValidSeatName(seatForm.seat_key);
@@ -608,27 +618,49 @@ export const SeatsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete room confirmation */}
+      {/* Delete room confirmation. An empty room only: the server refuses one that still holds
+          seats with 409 and names how many remain, so the copy states that contract rather than
+          promising a cascade that does not happen, and the refusal is shown in the server's own
+          words (the dialog stays open on failure, so the sentence is where the button was). */}
       <Dialog open={deleteRoomOpen} onOpenChange={setDeleteRoomOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete room?</DialogTitle>
             <DialogDescription>
-              Room "{selectedRoom}" is deleted with all of its seats, their links and overlays, and its room
-              overlay. This cannot be undone.
+              Room "{selectedRoom}" can be deleted only while it holds no seats. Deleting it removes its room
+              overlay, its reported seat statuses and the room itself - seats are never deleted with it. This
+              cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          {roomNotEmpty && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                This room still holds {roomSeatCount} seat{roomSeatCount === 1 ? '' : 's'}; remove{' '}
+                {roomSeatCount === 1 ? 'it' : 'them'} first.
+              </AlertDescription>
+            </Alert>
+          )}
           {deleteRoom.isError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{deleteRoom.error.message}</AlertDescription>
+              <AlertDescription>
+                {deleteRoomStatus === 409 && (
+                  <span className="font-medium">The room was not deleted. </span>
+                )}
+                {deleteRoom.error.message}
+              </AlertDescription>
             </Alert>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteRoomOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteRoom} disabled={deleteRoom.isPending}>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteRoom}
+              disabled={deleteRoom.isPending || roomNotEmpty}
+            >
               {deleteRoom.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete room
             </Button>

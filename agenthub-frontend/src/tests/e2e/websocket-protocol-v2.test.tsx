@@ -40,13 +40,31 @@ vi.mock('../../utils/logger', () => ({
   },
 }));
 
-// Mock toast hooks
-vi.mock('../../components/ui/toast', () => ({
-  useSuccessToast: () => vi.fn(),
-  useInfoToast: () => vi.fn(),
-  useWarningToast: () => vi.fn(),
-  useErrorToast: () => vi.fn(),
-}));
+// Mock toast hooks with STABLE identities, matching the shape the real ones have inside
+// a provider: toast.tsx returns a useCallback'd function, and every useRealtimeSync call
+// site sits inside the app's ToastProvider, so production's identity is stable.
+// `() => vi.fn()` returns a NEW function on every call, which makes the hook's effect
+// dependency array unstable BY SHAPE - a re-render would then tear down and re-register
+// the websocket handler.
+// MEASURED, SO THE CLAIM IS BOUNDED: an unstable mock does NOT make these tests churn,
+// because they render the hook once and never re-render it - restoring `() => vi.fn()`
+// leaves all 20 cases passing, and the registration count stays 1. The fix is therefore
+// a fixture-correctness fix rather than a repair of an observed failure; whether the
+// churn ever manifests here is untested and not claimed.
+// The real hooks have a SEPARATE defect - a fresh no-op per call outside a provider,
+// returned BEFORE useCallback, i.e. a rules-of-hooks violation. That is task e6ca3f6c.
+vi.mock('../../components/ui/toast', () => {
+  const success = vi.fn();
+  const info = vi.fn();
+  const warning = vi.fn();
+  const error = vi.fn();
+  return {
+    useSuccessToast: () => success,
+    useInfoToast: () => info,
+    useWarningToast: () => warning,
+    useErrorToast: () => error,
+  };
+});
 
 describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   let queryClient: QueryClient;
@@ -161,6 +179,11 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
         // Note: In real scenario, cache would be invalidated and refetched
         // Here we're testing that the message was processed without errors
         expect(mockWebSocketClient.on).toHaveBeenCalledWith('update', expect.any(Function));
+        // One registration per mount, pinned as an invariant. NOT a reproduction of a
+        // churn: an unstable toast mock also leaves this at 1, because these tests render
+        // the hook once and never re-render it - so this pins the contract, it does not
+        // prove the failure mode.
+        expect(mockWebSocketClient.on).toHaveBeenCalledTimes(1);
       });
     });
 

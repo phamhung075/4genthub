@@ -2,37 +2,42 @@
 
 The room definition for the minimum team, applied by `scripts/openrig_team_setup.py`. It mirrors the
 SHAPE of `scripts/team/4genthub/team.json` and **inherits nothing from it**: that room is nine seats
-on `claude-code` with an empty model, this one is ten seats on `omp` with
-`deepseek/deepseek-flash`, and `seat_type`, `runtime` and `model` are stated **per seat** here — a
-room definition copied from the other file would describe a fleet that does not exist, and it would
-do it silently because every field would be filled in.
+on `claude-code` with an empty model, this one is nine seats on `omp` with
+`deepseek/deepseek-flash` plus an architect on `claude-code`, and `seat_type`, `runtime` and `model`
+are stated **per seat** here — a room definition copied from the other file would describe a fleet
+that does not exist, and it would do it silently because every field would be filled in.
 
-## The eleven modules
+## The ten modules
 
-`guide-common` is carried by the **company overlay**, because every seat must have it. The ten
+`guide-common` is carried by the **company overlay**, because every seat must have it. The nine
 `guide-<seat>` modules are in each seat's own overlay (slug lists — the script builds the ops). The
 texts are a **pure copy** of the seed-library blocks, verified byte-identical to the digests recorded
-in `seedlibrary/guides.lock.json`, 11 of 11.
+in `seedlibrary/guides.lock.json`, 10 of 10.
 
 *Measured 2026-10-06: the sha256 of each text file compared with its entry in that lock — 11 of 11 — at
-the commit that created this directory (`10e5222b`), and again after the note edits.*
+the commit that created this directory (`10e5222b`), and again after the note edits. The count is now
+ten because the second backend seat's guide retired with that seat on 2026-10-08, and the
+roster alignment that removed them is the change that carries this line.*
 
 ## The seat types: seven clean, three flagged (7 + 3 = 10)
 
 | seats | seat_type | why |
 |---|---|---|
-| `lead`, `reviewer`, `writer` | `lead`, `reviewer`, `writer` | match by name |
-| `go-dev`, `go-dev2`, `fe-dev`, `web-dev` | `developer` | match by name |
+| `lead`, `reviewer`, `writer`, `architect` | `lead`, `reviewer`, `writer`, `architect` | match by name |
+| `go-dev`, `fe-dev`, `web-dev` | `developer` | match by name |
 | `skills-dev`, `context-dev`, `feedback-dev` | `developer` **(flagged)** | they resolve the **orchestrator** spec today, and `orchestrator` is not one of the nine seeded types |
 
-Seven seats match a seeded type by name — `lead`, `reviewer`, `writer`, `go-dev`, `go-dev2`, `fe-dev`,
-`web-dev` — and three do not: `skills-dev`, `context-dev`, `feedback-dev`. Seven plus three is the ten
-seats in `team.json`, which is the check to run on this paragraph rather than counting table rows.
+Seven seats match a seeded type by name — `lead`, `reviewer`, `writer`, `architect`, `go-dev`,
+`fe-dev`, `web-dev` — and three do not: `skills-dev`, `context-dev`, `feedback-dev`. Seven plus three
+is the ten seats in `team.json`, which is the check to run on this paragraph rather than counting
+table rows.
 
-*Measured 2026-10-06: `resolved_spec_name` per seat from the OpenRig ledger (`nodes`, rig
+*Measured 2026-10-08: `resolved_spec_name` per seat from the OpenRig ledger (`nodes`, rig
 `01M447FRCC0P2WBKPA45R21M8N`) compared against the nine files in `seedlibrary/seat-types/`. NOT from
 `team.json` — that file states `developer` for the three, so a check reading it would be comparing the
-file with itself, which is how a first version of this check answered ten and zero and looked right.*
+file with itself, which is how a first version of this check answered ten and zero and looked right.
+The architect resolves `architect`, which is a seeded type, so putting it in the retired seat's place
+keeps the split at seven clean: the three flagged seats are the `orchestrator` ones.*
 
 The three flagged seats are a **product choice still open with the owner**: either `orchestrator`
 becomes a tenth seed type — which means a new `seat-types/orchestrator.yaml` in the seed library, and

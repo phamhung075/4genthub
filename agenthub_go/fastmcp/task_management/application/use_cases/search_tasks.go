@@ -21,7 +21,20 @@ func NewSearchTasksUseCase(taskRepository repositories.TaskRepository) *SearchTa
 // TaskListResponse.from_domain_list(tasks, query=request.query); the git branch and
 // task repositories default to None, so both batch dependencies are nil here.
 func (uc *SearchTasksUseCase) Execute(ctx context.Context, request *task.SearchTasksRequest) (*task.TaskListResponse, error) {
-	tasks, err := uc.taskRepository.Search(ctx, request.Query, request.Limit)
+	filters := map[string]any{}
+	if request.Status != nil && *request.Status != "" {
+		filters["status"] = *request.Status
+	}
+	if request.Priority != nil && *request.Priority != "" {
+		filters["priority"] = *request.Priority
+	}
+	if len(request.Assignees) > 0 {
+		filters["assignees"] = request.Assignees
+	}
+	if len(request.Labels) > 0 {
+		filters["labels"] = request.Labels
+	}
+	tasks, err := uc.taskRepository.Search(ctx, request.Query, filters, request.Limit)
 	if err != nil {
 		return nil, err
 	}

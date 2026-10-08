@@ -5,6 +5,9 @@ Read-only. It reads the seats' session logs and never talks to a seat.
 
 Tool: `scripts/openrig_watch_tools.py`. Needs `herdr` for the grid view.
 
+**Standing choice (owner, 2026-10-07):** after restoring or spawning a team, watch it with `grid`
+(below), not with `rig terminal open` tiles. The `spawn-team` skill records the same rule.
+
 ## Grid: one pane per seat (the usual way)
 
 ```bash
@@ -29,6 +32,20 @@ at start, default 40; a pane holds only what was printed since it started, so ra
 
 Run it again for a fresh grid. It does not reuse or close an earlier one; close the old workspace
 in herdr (`herdr workspace close <id>`).
+
+## Input panes: type to a seat from the grid (optional)
+
+The grid panes are read-only. To talk to a seat from the grid, open a small input pane under each seat pane:
+
+```bash
+python3 scripts/openrig_watch_tools.py inputs open    # one "<seat> > input" pane under every seat pane
+python3 scripts/openrig_watch_tools.py inputs open --seat lead   # only the lead gets one
+python3 scripts/openrig_watch_tools.py inputs hide    # close them again; the grid is back to watch-only
+```
+
+A line typed in an input pane is sent to that seat with `rig send <rig>-<seat>@<rig>`; `/hide` or Ctrl-D leaves the loop.
+Opening twice adds nothing. Keep backticks, apostrophes and `$` out of a message: `rig send` mangles them.
+The inputs are off by default; the grid itself never writes to a seat.
 
 ## Feed: one merged stream
 
@@ -87,3 +104,20 @@ the replayed lines at start all share one time.
 - A seat's own screen (not its tool calls) is a different tool: `rig terminal open <rig>` opens one
   tile per seat in herdr.
 - Seats other than omp seats have no such log, so they do not appear.
+
+## One command: grid plus lead window
+
+```bash
+python3 scripts/openrig_watch_tools.py watch --rig 4genthub-min
+```
+
+Opens the seat grid and a `<rig> lead` workspace: the lead's detailed feed on top, a `lead > input` pane below
+(a line typed there goes to the lead with `rig send`). Never type or press Ctrl-C in a raw `tmux attach` pane of a seat.
+
+## Same style on every relaunch, resume or runtime switch
+
+`watch` is the one entry point and it is idempotent: it closes the rig's earlier `<rig> grid` and `<rig> lead` workspaces, then rebuilds both with the same layout (2 columns, `--back 40 --width 200 --lines 60 --detail`, seat name + model + token bar in each pane, the lead window with its input pane). The layout lives in the script, not in a saved herdr state, so it cannot drift.
+
+- `~/.openrig/bin/rig-continue.sh <rig>` runs it at the end of every restore (skip with `RIG_CONTINUE_WATCH=0`; point `WATCH_TOOL` at another copy of the script).
+- After `rig up` or a runtime switch (`rig-runtime-switch` skill, step 10) run it by hand: `python3 scripts/openrig_watch_tools.py watch --rig <rig>`.
+- Panes are matched to seats by tmux session name (`<rig>-<seat>@<rig>`), so a seat that changes LLM keeps its pane; the model in the header follows the seat's newest log. A runtime with no log reader (Codex, agy) keeps the pane and header but shows no events.

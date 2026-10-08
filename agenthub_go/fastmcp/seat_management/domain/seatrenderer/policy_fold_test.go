@@ -29,11 +29,11 @@ func TestFoldPoliciesUnionsDenyListsAndRefusesDisagreeingScalars(t *testing.T) {
 	if folded.StartupTimeoutMs == nil || *folded.StartupTimeoutMs != 0 {
 		t.Errorf("startupTimeoutMs = %v, want a set 0", folded.StartupTimeoutMs)
 	}
-	if len(folded.BashDeny) != 2 || folded.BashDeny[0].Match != "a" || folded.BashDeny[1].Match != "c" {
-		t.Errorf("bash deny did not union: %+v", folded.BashDeny)
+	if len(folded.BashRules) != 2 || folded.BashRules[0].Match != "a" || folded.BashRules[1].Match != "c" {
+		t.Errorf("bash deny did not union: %+v", folded.BashRules)
 	}
-	if len(folded.ToolDeny) != 1 {
-		t.Errorf("tool deny = %+v", folded.ToolDeny)
+	if len(folded.ToolRules) != 1 {
+		t.Errorf("tool deny = %+v", folded.ToolRules)
 	}
 
 	// A block that does not speak about a scalar does not veto it: nil is silent, not zero.
@@ -89,8 +89,8 @@ func TestFoldPoliciesUnionsDenyListsAndRefusesDisagreeingScalars(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an identical rule declared twice did not fold: %v", err)
 	}
-	if len(repeated.BashDeny) != 1 {
-		t.Errorf("bash deny = %+v, want the rule once", repeated.BashDeny)
+	if len(repeated.BashRules) != 1 {
+		t.Errorf("bash deny = %+v, want the rule once", repeated.BashRules)
 	}
 }
 
@@ -195,5 +195,114 @@ func TestRenderPolicyLimitsNamesASiblingForEveryDenial(t *testing.T) {
 	// One denial, one alternative: the count is the check that no rule was written without one.
 	if got := strings.Count(text, "— instead:"); got != 2 {
 		t.Errorf("alternatives = %d, want one per denial (2)", got)
+	}
+}
+
+// TestRenderPolicyConfigEmitsAnAllowanceFirst: the document the CLIENT installs carries the allowance,
+// and it carries it FIRST - the same choice the hand-written generator makes, so the exemption is safe
+// under either match order rather than only under first-match.
+func TestRenderPolicyConfigEmitsAnAllowanceFirst(t *testing.T) {
+	folded, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+	})
+	if err != nil {
+		t.Fatalf("FoldPolicies: %v", err)
+	}
+	doc, err := RenderPolicyConfig(folded)
+	if err != nil {
+		t.Fatalf("RenderPolicyConfig: %v", err)
+	}
+	allow := strings.Index(doc, "rig whoami*")
+	deny := strings.Index(doc, "git push*")
+	if allow < 0 || deny < 0 {
+		t.Fatalf("the document lacks a rule:\n%s", doc)
+	}
+	if allow > deny {
+		t.Errorf("the allowance must come first so either match order is safe:\n%s", doc)
+	}
+	if !strings.Contains(doc, "approval: allow") {
+		t.Errorf("the allowance did not reach the document:\n%s", doc)
+	}
+}
+
+// TestFoldRefusesAMatchThatIsBothAllowedAndDenied: one match cannot be both, and the fold REFUSES
+// rather than picking a winner - a seat would then have to guess which one the runtime applied.
+func TestFoldRefusesAMatchThatIsBothAllowedAndDenied(t *testing.T) {
+	_, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`),
+		policyModule("policy.b", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"deny","sibling":"ask the lead"}]}}`),
+	})
+	if err == nil {
+		t.Fatal("a match declared both allowed and denied was folded instead of refused")
+	}
+	if !strings.Contains(err.Error(), "both refused and allowed") {
+		t.Errorf("error = %q, want it to name the contradiction", err.Error())
+	}
+}
+
+// TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals: the SEAT reads these words, so an
+// allowance listed under a "Refused" heading would tell it the opposite of what its policy says.
+func TestRenderPolicyLimitsSeparatesTheAllowanceFromTheRefusals(t *testing.T) {
+	folded, err := FoldPolicies([]resolver.ResolvedModule{
+		policyModule("policy.a", `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"},{"match":"git push*","approval":"deny","sibling":"commit and tell the lead"}]}}`),
+	})
+	if err != nil {
+		t.Fatalf("FoldPolicies: %v", err)
+	}
+	text := RenderPolicyLimits(folded)
+	allowedAt := strings.Index(text, "### Allowed in every approval mode")
+	refusedAt := strings.Index(text, "### Refused shell commands")
+	whoamiAt := strings.Index(text, "`rig whoami*`")
+	pushAt := strings.Index(text, "`git push*`")
+	if allowedAt < 0 || refusedAt < 0 || whoamiAt < 0 || pushAt < 0 {
+		t.Fatalf("the limits text lacks a section or a rule:\n%s", text)
+	}
+	if !(allowedAt < whoamiAt && whoamiAt < refusedAt && refusedAt < pushAt) {
+		t.Errorf("the allowance belongs under the allowed heading and the denial under the refused one:\n%s", text)
+	}
+	if strings.Contains(text[:refusedAt], "— instead:") {
+		t.Errorf("the allowed section names an alternative, which an allowance does not have:\n%s", text)
+	}
+}
+
+// TestFoldRefusesASeatScopedAllowance: an allowance is the ROOM OWNER'S act. A seat cannot compose
+// itself, so every block in its stack was put there by whoever owns the room - with one exception the
+// resolver records, an OVERRIDE, whose content the overlay supplied. At the seat scope that is the
+// seat's own act, so the allowance is refused BY NAME with the way out, the same form as the guard's
+// refusal of an approval it cannot express.
+func TestFoldRefusesASeatScopedAllowance(t *testing.T) {
+	const allowRule = `{"role":"dev","bash":{"patterns":[{"match":"rig whoami*","approval":"allow"}]}}`
+
+	seatScoped := policyModule("policy.a", allowRule)
+	seatScoped.Overridden = true
+	seatScoped.ContentScope = resolver.ScopeSeat
+
+	_, err := FoldPolicies([]resolver.ResolvedModule{seatScoped})
+	if err == nil {
+		t.Fatal("a seat-scoped allowance was folded instead of refused")
+	}
+	for _, want := range []string{`"policy.a"`, `"rig whoami*"`, "seat-scoped", "room owner's act", "move the block to the room scope"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error = %q, want it to contain %q", err.Error(), want)
+		}
+	}
+
+	// POSITIVE CONTROL 1: the same allowance from the ROOM scope folds, so this is a scope rule rather
+	// than a ban on allowances.
+	roomScoped := policyModule("policy.a", allowRule)
+	roomScoped.Overridden = true
+	roomScoped.ContentScope = "room" // ScopeRoom is unexported on purpose: only ScopeSeat has a production reader.
+	if _, err := FoldPolicies([]resolver.ResolvedModule{roomScoped}); err != nil {
+		t.Errorf("a room-scoped allowance was refused: %v", err)
+	}
+
+	// POSITIVE CONTROL 2, and the reason the rule keys on the OVERRIDE rather than on the scope alone:
+	// an ADDED module carries the owner's PUBLISH and no overlay content, so it folds at any scope.
+	// This is the case the ten room policy modules take, and it must not be refused.
+	added := policyModule("policy.a", allowRule)
+	added.Overridden = false
+	added.ContentScope = resolver.ScopeSeat
+	if _, err := FoldPolicies([]resolver.ResolvedModule{added}); err != nil {
+		t.Errorf("an added module was refused: %v", err)
 	}
 }

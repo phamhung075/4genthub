@@ -53,7 +53,7 @@ func (f *useCasesGroup1TaskRepo) Save(_ context.Context, task *entities.Task) (*
 	return task, nil
 }
 
-func (f *useCasesGroup1TaskRepo) Search(_ context.Context, query string, limit int) ([]*entities.Task, error) {
+func (f *useCasesGroup1TaskRepo) Search(_ context.Context, query string, _ map[string]any, limit int) ([]*entities.Task, error) {
 	f.searchQuery, f.searchLimit = query, limit
 	return f.searchTasks, nil
 }

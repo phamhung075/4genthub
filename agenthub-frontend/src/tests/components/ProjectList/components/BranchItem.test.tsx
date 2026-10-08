@@ -3,7 +3,6 @@ import { render, screen, fireEvent, act } from './../../../test-utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BranchItem } from '../../../../components/ProjectList/components/BranchItem';
 import { animationFactory } from '../../../../services/AnimationFactory';
-import { branchDeletionTracker } from '../../../../services/branchDeletionTracker';
 import type { BranchSummary } from '../../../../types';
 
 // Mock the animation factory
@@ -129,7 +128,6 @@ describe('BranchItem', () => {
     });
 
     afterEach(() => {
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReset();
       vi.useRealTimers();
       vi.mocked(animationFactory.animate).mockReturnValue(true);
     });
@@ -161,28 +159,30 @@ describe('BranchItem', () => {
       expect(container()).toHaveClass('branchRowCreateAnimation');
     });
 
-    it('plays the delete animation for a branch marked for deletion and then removes it', () => {
-      render(<BranchItem {...defaultProps} />);
-      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
+    it('does NOT animate an update when a prop changes: the websocket event owns that', () => {
+      // The owner's report on the UPDATE path. The row used to compare its previous
+      // props in an effect and call playUpdateAnimation('websocket') - passing
+      // 'websocket' for what is a RENDER, not an event - while WebSocketAnimationService
+      // animated the real websocket update. One update, two animations. That effect is
+      // deleted; this pins its absence. FAILED BEFORE THE FIX.
+      const { rerender } = render(<BranchItem {...defaultProps} />);
 
-      act(() => { vi.advanceTimersByTime(50); });
-      expect(animationFactory.animate).toHaveBeenCalledWith('branch-1', 'delete', 'websocket');
-      expect(container()).toBeInTheDocument();
+      // The hook derives its name from git_branch_name FIRST, so that is the prop the
+      // pre-fix effect actually compared - changing only `name` would leave the effect
+      // looking at the same value and prove nothing.
+      rerender(
+        <BranchItem
+          {...defaultProps}
+          branch={{ ...mockBranch, git_branch_name: 'feature/renamed', name: 'Renamed Branch' } as BranchSummary}
+        />
+      );
+      act(() => { vi.advanceTimersByTime(100); });
 
-      act(() => { vi.advanceTimersByTime(800); });
-      expect(screen.queryByRole('button', { name: /feature\/test-branch/ })).not.toBeInTheDocument();
-    });
-
-    it('applies the CSS delete class while a branch is being removed without the factory', () => {
-      vi.mocked(animationFactory.animate).mockReturnValue(false);
-      render(<BranchItem {...defaultProps} />);
-      // src/setupTests.ts auto-mocks the tracker, so state is set through the mock
-      vi.mocked(branchDeletionTracker.isMarkedForDeletion).mockReturnValue(true);
-
-      act(() => { vi.advanceTimersByTime(50); });
-
-      expect(container()).toHaveClass('branchRowDeleteAnimation');
+      expect(animationFactory.animate).not.toHaveBeenCalledWith(
+        'branch-1',
+        'update',
+        expect.anything()
+      );
     });
   });
 

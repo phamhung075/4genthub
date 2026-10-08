@@ -153,19 +153,24 @@ func (v *ParameterValidator) ValidateSearchParams(query *string, filters map[str
 	}
 
 	if val, ok := filters["limit"]; ok && val != nil {
-		limit, isInt := val.(int)
-		if !isInt || limit < 0 || limit > 1000 {
+		// coerceInt, not a type assertion: a caller's integer arrives as float64 through
+		// encoding/json (or as digits in a string), so `val.(int)` refused every value that came
+		// over the wire. Same conversion the progress_percentage block above uses.
+		limit, converted := v.coerceInt(val)
+		if !converted || limit < 0 || limit > 1000 {
 			return false, v.createValidationError(
 				"limit", "An integer between 0 and 1000", "Use a reasonable limit for results")
 		}
+		filters["limit"] = limit
 	}
 
 	if val, ok := filters["offset"]; ok && val != nil {
-		offset, isInt := val.(int)
-		if !isInt || offset < 0 {
+		offset, converted := v.coerceInt(val)
+		if !converted || offset < 0 {
 			return false, v.createValidationError(
 				"offset", "A non-negative integer", "Offset should be 0 or greater")
 		}
+		filters["offset"] = offset
 	}
 
 	return true, nil

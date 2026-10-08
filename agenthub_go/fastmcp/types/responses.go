@@ -330,27 +330,6 @@ func (r *AgentsResponse) ModelDump() *entities.OrderedMap[any] {
 	)
 }
 
-// StatisticsResponse is the task/project metrics response.
-type StatisticsResponse struct {
-	Success    bool
-	Statistics any
-	Error      *string
-	Message    *string
-	Timestamp  *string
-}
-
-func NewStatisticsResponse() *StatisticsResponse { return &StatisticsResponse{Success: true} }
-
-func (r *StatisticsResponse) ModelDump() *entities.OrderedMap[any] {
-	return dtoMap(
-		"success", r.Success,
-		"statistics", r.Statistics,
-		"error", dtoOpt(r.Error),
-		"message", dtoOpt(r.Message),
-		"timestamp", dtoOpt(r.Timestamp),
-	)
-}
-
 // CountResponse is the filtered-count response.
 type CountResponse struct {
 	Success   bool

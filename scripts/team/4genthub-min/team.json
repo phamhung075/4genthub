@@ -23,12 +23,6 @@
       "file": "guide-go-dev.md"
     },
     {
-      "slug": "guide-go-dev2",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "guide-go-dev2.md"
-    },
-    {
       "slug": "guide-fe-dev",
       "version": "1.0.0",
       "kind": "instruction",
@@ -69,6 +63,60 @@
       "version": "1.0.0",
       "kind": "instruction",
       "file": "guide-writer.md"
+    },
+    {
+      "slug": "policy-lead",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-lead.json"
+    },
+    {
+      "slug": "policy-go-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-go-dev.json"
+    },
+    {
+      "slug": "policy-fe-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-fe-dev.json"
+    },
+    {
+      "slug": "policy-web-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-web-dev.json"
+    },
+    {
+      "slug": "policy-skills-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-skills-dev.json"
+    },
+    {
+      "slug": "policy-context-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-context-dev.json"
+    },
+    {
+      "slug": "policy-feedback-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-feedback-dev.json"
+    },
+    {
+      "slug": "policy-reviewer",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-reviewer.json"
+    },
+    {
+      "slug": "policy-writer",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-writer.json"
     }
   ],
   "seats": [
@@ -76,228 +124,110 @@
       "seat_key": "lead",
       "seat_type": "lead",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "go-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
-    },
-    {
-      "seat_key": "go-dev2",
-      "seat_type": "developer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "fe-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "web-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "skills-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "context-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "feedback-dev",
       "seat_type": "developer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "reviewer",
       "seat_type": "reviewer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
     },
     {
       "seat_key": "writer",
       "seat_type": "writer",
       "runtime": "omp",
-      "model": "deepseek/deepseek-flash"
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "architect",
+      "seat_type": "architect",
+      "runtime": "claude-code",
+      "model": "opus"
     }
   ],
-  "links": [
-    {
-      "from": "lead",
-      "to": "go-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "go-dev2",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "fe-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "web-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "skills-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "context-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "feedback-dev",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "reviewer",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "lead",
-      "to": "writer",
-      "kind": "delegates_to"
-    },
-    {
-      "from": "go-dev",
-      "to": "reviewer",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev",
-      "to": "fe-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev2",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "skills-dev",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "context-dev",
-      "to": "go-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "web-dev",
-      "to": "fe-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "writer",
-      "to": "reviewer",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "feedback-dev",
-      "to": "web-dev",
-      "kind": "collaborates_with"
-    },
-    {
-      "from": "go-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "go-dev2",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "fe-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "web-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "skills-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "context-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "feedback-dev",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "reviewer",
-      "to": "lead",
-      "kind": "escalates_to"
-    },
-    {
-      "from": "writer",
-      "to": "lead",
-      "kind": "escalates_to"
-    }
-  ],
-  "company_overlay": [
-    "guide-common"
-  ],
+  "links": [],
+  "company_overlay": [],
   "seat_overlays": {
     "lead": [
-      "guide-lead"
+      "guide-lead",
+      "policy-lead"
     ],
     "go-dev": [
-      "guide-go-dev"
-    ],
-    "go-dev2": [
-      "guide-go-dev2"
+      "guide-go-dev",
+      "policy-go-dev"
     ],
     "fe-dev": [
-      "guide-fe-dev"
+      "guide-fe-dev",
+      "policy-fe-dev"
     ],
     "web-dev": [
-      "guide-web-dev"
+      "guide-web-dev",
+      "policy-web-dev"
     ],
     "skills-dev": [
-      "guide-skills-dev"
+      "guide-skills-dev",
+      "policy-skills-dev"
     ],
     "context-dev": [
-      "guide-context-dev"
+      "guide-context-dev",
+      "policy-context-dev"
     ],
     "feedback-dev": [
-      "guide-feedback-dev"
+      "guide-feedback-dev",
+      "policy-feedback-dev"
     ],
     "reviewer": [
-      "guide-reviewer"
+      "guide-reviewer",
+      "policy-reviewer"
     ],
     "writer": [
-      "guide-writer"
+      "guide-writer",
+      "policy-writer"
     ]
   }
 }

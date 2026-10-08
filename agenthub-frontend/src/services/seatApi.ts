@@ -30,6 +30,8 @@ import type {
   SeatPermissionPolicy,
   SeatLinkRequest,
   SeatLinkResponse,
+  SeatMessageRequest,
+  SeatMessageResponse,
   SeatOverlayResponse,
   SeatOverlayScope,
   SeatResponse,
@@ -152,6 +154,10 @@ export const seatApi = {
       `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/links/${segment(to)}/${segment(kind)}`,
       { method: 'DELETE' }
     ),
+
+  // Messages. The seat key is the whole path: this route is not room-scoped, unlike the rest.
+  sendSeatMessage: (seat: string, data: SeatMessageRequest) =>
+    apiRequest<SeatMessageResponse>(`${OPENRIG}/seats/${segment(seat)}/messages`, jsonBody(data)),
 
   // Bridge machines
   fetchMachines: () => apiRequest<MachinesResponse>(`${OPENRIG}/machines`),

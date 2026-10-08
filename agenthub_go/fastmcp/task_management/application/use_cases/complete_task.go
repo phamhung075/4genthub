@@ -33,7 +33,15 @@ type completeTaskContextFacadeFactory interface {
 
 // CompleteTaskHooks is the TaskContextSyncService part of the completion flow
 // (the service imports this package, so it is injected).
+//
+// TaskEventHooks IS EMBEDDED because a completion must BROADCAST, and this interface did not declare
+// the capability the object handed to it already has: task_wiring.go passes one object to CreateTask,
+// UpdateTask and CompleteTask alike, and create_task.go/update_task.go call NotifyTaskEvent on it
+// while the completion path could not - the compiler proved the call impossible here, which is why a
+// completed task neither animated nor refreshed the client while a created or updated one did.
+// MIGRATION.md records the hooks pattern as "Done: create_task" with complete_task among the TODOs.
 type CompleteTaskHooks interface {
+	TaskEventHooks
 	SyncTaskStatus(ctx context.Context, taskID string, newStatus string) error
 	SyncTaskMetadata(ctx context.Context, taskID string, task *entities.Task, userID string) error
 }
@@ -407,6 +415,24 @@ func (uc *CompleteTaskUseCase) executeCore(
 				_ = uc.hooks.SyncTaskStatus(ctx, taskIDStr, "done")
 				_ = uc.hooks.SyncTaskMetadata(ctx, taskIDStr, task, "")
 			}
+		}
+		// THE BROADCAST IS NOT GATED ON THE CONTEXT FACADE, and my first attempt had it inside that
+		// guard - which the test caught: a completion this process cannot touch the facade for still
+		// HAPPENED, and a completed task nobody is told about is exactly the defect being repaired.
+		// The two syncs above stay where they are because they synchronise the CONTEXT they follow.
+		//
+		// create_task.go:172 and update_task.go:160 both call this on the same object the wiring hands
+		// to this use case; CompleteTaskHooks simply did not declare it, so the compiler made the call
+		// impossible at this site. THE VOCABULARY IS THE CLIENT'S: a completion emits "completed" (its
+		// own distinct animation) and every other status move emits "updated", matching update_task.go's
+		// literal - a distinct animation per transition would be a vocabulary addition and the owner's
+		// decision, not something to discover from a copy-paste.
+		if uc.hooks != nil {
+			branchID := ""
+			if task.GitBranchID != nil {
+				branchID = *task.GitBranchID
+			}
+			uc.hooks.NotifyTaskEvent(ctx, "completed", task, nil, nil, branchID)
 		}
 	}
 

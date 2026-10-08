@@ -83,7 +83,7 @@ const machineSeat = {
   seat: 'alice',
   state: 'running' as const,
   runtime: 'claude-code',
-  hash: 'abcdef0123456789',
+  pinned_hash: 'abcdef0123456789',
   expected_hash: 'abcdef0123456789',
   sync: 'in_sync' as const,
   detail: '<b>working</b>',
@@ -152,25 +152,71 @@ describe('SeatsPage', () => {
   });
 
   describe('delete room', () => {
-    const openDeleteDialog = async () => {
+    // Only an empty room can be deleted: the server refuses one that still holds seats with 409,
+    // so "empty" and "occupied" are separate fixtures rather than one flow, and the refusal is
+    // covered twice - the page's own count, and the server's sentence when its count is larger.
+    const openDeleteDialog = async ({ withSeats = true }: { withSeats?: boolean } = {}) => {
+      if (!withSeats) {
+        mockApi.listSeats.mockResolvedValue({ success: true, seats: [] });
+      }
       renderPage();
       fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
-      await screen.findByText('alice');
+      await screen.findByText(withSeats ? 'alice' : /no seats yet/i);
       fireEvent.click(screen.getByRole('button', { name: /delete room/i }));
       return screen.findByText('Delete room?');
     };
 
-    it('deletes the selected room after confirmation and closes its seat list', async () => {
+    it('deletes an empty room after confirmation and closes its seat list', async () => {
       mockApi.deleteRoom.mockResolvedValue({ success: true });
-      const title = await openDeleteDialog();
+      const title = await openDeleteDialog({ withSeats: false });
       const dialog = title.closest('.theme-modal') as HTMLElement;
-      expect(within(dialog).getByText(/Room "dev" is deleted with all of its seats/)).toBeInTheDocument();
 
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
 
       await waitFor(() => expect(mockApi.deleteRoom).toHaveBeenCalledWith('dev'));
       await waitFor(() => expect(screen.queryByText('Seats in dev')).not.toBeInTheDocument());
       await waitFor(() => expect(mockApi.listRooms).toHaveBeenCalledTimes(2));
+    });
+
+    it('refuses before the call and names the count while the room still holds seats', async () => {
+      const title = await openDeleteDialog();
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      expect(within(dialog).getByText(/still holds 1 seat/)).toBeInTheDocument();
+      expect(within(dialog).getByRole('button', { name: 'Delete room' })).toBeDisabled();
+      expect(mockApi.deleteRoom).not.toHaveBeenCalled();
+    });
+
+    it("renders the server's own refusal sentence when it refuses a room the page had seen as empty", async () => {
+      // The page's list can be stale - the server counts what it holds - so a 409 still has to
+      // read as a refusal, in the server's words, naming seats the page never showed.
+      mockApi.deleteRoom.mockRejectedValue(
+        Object.assign(new Error('room "dev" still holds 2 seat(s); remove them first'), { status: 409 })
+      );
+      const title = await openDeleteDialog({ withSeats: false });
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
+
+      expect(
+        await within(dialog).findByText(/room "dev" still holds 2 seat\(s\); remove them first/)
+      ).toBeInTheDocument();
+      expect(within(dialog).getByText('The room was not deleted.')).toBeInTheDocument();
+      expect(screen.getByText('Seats in dev')).toBeInTheDocument();
+    });
+
+    it('shows any other failure as a plain error with no refusal framing', async () => {
+      mockApi.deleteRoom.mockRejectedValue(
+        Object.assign(new Error('room "dev" not found'), { status: 404 })
+      );
+      const title = await openDeleteDialog({ withSeats: false });
+      const dialog = title.closest('.theme-modal') as HTMLElement;
+
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
+
+      expect(await within(dialog).findByText('room "dev" not found')).toBeInTheDocument();
+      expect(within(dialog).queryByText('The room was not deleted.')).not.toBeInTheDocument();
+      expect(screen.getByText('Seats in dev')).toBeInTheDocument();
     });
 
     it('does not delete when the confirmation is cancelled', async () => {
@@ -181,17 +227,6 @@ describe('SeatsPage', () => {
 
       await waitFor(() => expect(screen.queryByText('Delete room?')).not.toBeInTheDocument());
       expect(mockApi.deleteRoom).not.toHaveBeenCalled();
-      expect(screen.getByText('Seats in dev')).toBeInTheDocument();
-    });
-
-    it('shows the server error and keeps the room when the delete fails', async () => {
-      mockApi.deleteRoom.mockRejectedValue(new Error('room "dev" not found'));
-      const title = await openDeleteDialog();
-      const dialog = title.closest('.theme-modal') as HTMLElement;
-
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete room' }));
-
-      expect(await within(dialog).findByText('room "dev" not found')).toBeInTheDocument();
       expect(screen.getByText('Seats in dev')).toBeInTheDocument();
     });
   });
@@ -456,7 +491,7 @@ describe('SeatsPage', () => {
             seats: [
               {
                 ...machineSeat,
-                hash: 'aaaaaaaa11111111',
+                pinned_hash: 'aaaaaaaa11111111',
                 expected_hash: 'bbbbbbbb22222222',
                 sync: 'drift' as const,
               },
@@ -563,7 +598,7 @@ describe('SeatsPage', () => {
               {
                 ...machineSeat,
                 reported_at: iso(0),
-                hash: 'aaaaaaaa11111111',
+                pinned_hash: 'aaaaaaaa11111111',
                 expected_hash: 'bbbbbbbb22222222',
                 sync: 'drift' as const,
               },

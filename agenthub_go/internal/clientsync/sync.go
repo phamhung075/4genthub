@@ -24,7 +24,7 @@ func Commands() []clientcmd.Command {
 // syncVerbs are the verbs this package answers under `sync`. Each is ported test-for-test; until one
 // is, it REFUSES BY NAME rather than answering something plausible, which is the same rule the platform
 // matrix follows.
-var syncVerbs = []string{"status", "pull", "rig", "bundle", "switch", "watch"}
+var syncVerbs = []string{"status", "pull", "rig", "bundle", "switch", "watch", "connector"}
 
 type syncCommand struct{}
 
@@ -44,6 +44,8 @@ func (syncCommand) Run(ctx context.Context, _ *clientcmd.Rig, args []string, std
 		return RunStatusVerb(ctx, args[1:], stdout, stderr)
 	case "pull":
 		return RunPullVerb(ctx, args[1:], stdout, stderr)
+	case "connector":
+		return RunConnectorVerb(ctx, args[1:], stdout, stderr)
 	}
 	want := args[0]
 	for _, verb := range syncVerbs {

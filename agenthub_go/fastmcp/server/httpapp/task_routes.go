@@ -96,12 +96,18 @@ func (a *App) registerTaskRoutes(mux *http.ServeMux) {
 		body, err := routes.ListUserTasks(r.Context(), req, u, c)
 		writeResult(w, body, err)
 	}))
-	mux.HandleFunc("GET "+base+"/stats/summary", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		body, err := routes.GetUserTaskStats(r.Context(), u, c)
-		writeResult(w, body, err)
-	}))
 	mux.HandleFunc("GET "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		body, err := routes.GetUserTask(r.Context(), r.PathValue("id"), u, c)
+		writeResult(w, body, err)
+	}))
+	mux.HandleFunc("GET "+base+"/{id}/events", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		afterSeq := 0
+		if raw := r.URL.Query().Get("after_seq"); raw != "" {
+			if n, convErr := strconv.Atoi(raw); convErr == nil {
+				afterSeq = n
+			}
+		}
+		body, err := routes.GetTaskEvents(r.Context(), r.PathValue("id"), afterSeq, u, c, taskEventReaderAdapter{sessions: a.Sessions})
 		writeResult(w, body, err)
 	}))
 	mux.HandleFunc("PUT "+base+"/{id}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {

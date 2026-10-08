@@ -3,6 +3,237 @@
 ## [Unreleased]
 
 ### Added
+- **The composer groups blocks by purpose, and the kind list is back in step with the Go resolver** - 2026-10-08
+  - `src/components/seats/SeatComposer.tsx`: five purposes (Guide / Policy / Tools / MCP / Skills / Documents and memory)
+    in a FIXED order, each block under its purpose, and each empty purpose carrying its own empty state. The mapping lives
+    at module scope beside `SCOPE_LABEL`, and `BLOCK_PURPOSES`, `PURPOSE_LABEL`, `purposeOf` and `kindsOfPurpose` are
+    exported so the test asserts against the SAME source the view renders.
+  - THE TWO NAMING FAMILIES OVERRIDE THE KIND, each with its reason beside the constant: `mcp-usage` is KindInstruction
+    while its own comment in seedlibrary.go calls it the seat's MCP guidance, and `delegate-deepseek` is KindInstruction
+    while it tells a seat to use the deepseek tool. Both resolve to Tools/MCP rather than Guide.
+  - **`src/types/seatTypes.ts` — SHARED FILE, ADDITIVE CHANGE, NAMED HERE BECAUSE IT IS NOT INCIDENTAL: `policy` is added
+    to `SeatModuleKind` and to `SEAT_MODULE_KINDS`.** That comment used to claim the list "mirrors resolver.ModuleKind" and
+    it had drifted by one kind: Go has `KindPolicy` (in `ValidKind` and in `Kinds()`, "enumerated ONCE") and the seeded team
+    files carry ten `policy-*` blocks, while the frontend list did not carry `policy` at all — so a policy block could not
+    even be published from `ModulePublishForm`, whose kind selector renders from that array.
+  - **THE MIRROR IS NOW A CHECK RATHER THAN A CLAIM:** `src/tests/components/SeatComposerPurposes.test.tsx` reads
+    `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`, compares its kind literals with `SEAT_MODULE_KINDS`,
+    and fails in EITHER direction. **SEEN FAILING:** with `'policy'` removed from the array the case reports
+    `expected […] to deeply equal […]` with `- "policy"` in the diff while the other two cases stay green; restored, 3 pass.
+  - Gates: `npx tsc --noEmit -p .` exit 0; the purpose tests 3 passed; `SeatAuthoringPage.test.tsx` 27 passed UNCHANGED,
+    because the `Composed blocks` list label and the row markup are preserved.
+  - WAITING ON fe-dev's half, recorded rather than stubbed: hosting the preview in `SeatAuthoringPage.tsx` needs their
+    `SeatPreview.tsx`, which does not exist yet.
+- **The API reference's prose now names the two traps that make a client-versus-route diff lie, and states who actually witnesses the tables** - 2026-10-08
+  - `src/docs/api-reference-prose.en.md` gains **"Comparing a client against these tables"**. `{$}` is Go's **end-anchor for a
+    trailing slash, not a parameter**, so a normaliser that rewrites `{...}` as a placeholder turns `/api/v2/branches/{$}` into
+    `/api/v2/branches/:p` and reports the collection route as missing from the tables **when the tables are the only one of the
+    two that is right**. And a path parameter absorbs a literal segment: `/seats/{room}/{seat}` also serves
+    `/seats/{room}/messages`, so a caller of the latter is not calling a route that is missing. **Both produce FALSE mismatches
+    rather than missed ones**, which is why the note says an unmatched row has to be explained before the drift is believed.
+  - It also records that **the tables' currency is witnessed by `agenthub_go/internal/apiref/committed_artefact_test.go`,
+    `TestTheCommittedArtefactMatchesTheProducer`, a GO test** — so a green FRONTEND run says nothing about whether
+    `apiReference.ts` is current. The frontend's own `ApiReferenceView.real` suite asserts the **component against the
+    artefact**, not the artefact against the code.
+  - **CORRECTED THE SAME DAY, after go-dev built the gate: the first version of this entry named
+    `agenthub_go/internal/apiref/reference_test.go` as the witness, which was wrong in exactly the way the note was — that
+    file renders into `t.TempDir()` and never opens the committed artefact, and the package's `docs_page_drift_test.go` takes
+    both of its sides from the code. The name came from a FILENAME MATCH rather than from reading the test, which is the
+    document-over-artefact error this whole note is about. The gate's own header names this note as the intent it implements.**
+  - Found while running a frontend caller-versus-route drift check: 39 call sites resolved by call syntax, 35 exact matches, and
+    **all four remainders traced to the checking instrument rather than to the code** — which is what makes "no drift at breadth"
+    believable rather than merely stated.
+
+### Fixed
+- **The generated API reference no longer carries the two always-500 task routes, which the owner ruled removed** - 2026-10-08
+  - `src/docs/apiReference.ts`: **regenerated, not hand-edited** — `cd agenthub_go && go run ./cmd/apirefgen`, the same invocation as the entry below, after go-dev's `e6829b32 refactor(tasks): remove the two task routes that could only answer 500` took the routes out of Go. The artefact goes 2056 -> 2040 lines with **16 deletions and zero insertions**: exactly the two objects, `GET /api/tasks/{task_id}` (9 lines) and `GET /api/v2/tasks/stats/summary` (7 lines), and nothing else moved. The generator reports **143 routes** where it reported 145, which is the two.
+  - **NO MANUFACTURED DELETION WAS NEEDED, AND THAT WAS A REAL QUESTION RATHER THAN A FORMALITY:** it was flagged that the v2 stats path sits under the `GET /api/v2/tasks/` prefix route, so the route walk may never have emitted it at all — in which case a regeneration would remove nothing and a hand deletion would hide an entry that never described a live route. It WAS emitted (it sat at line 877 before the change), so the regeneration removed it. Reported explicitly because a route that was never emitted and a route that was just removed look identical in the line count.
+  - The delta was read from the diff rather than trusted from the generator's exit line, for the reason recorded in the entry below: the walk reads Go source from disk, so another seat's uncommitted registration could ride into a committed artefact.
+  - Verified: `go test ./internal/apiref/ -count=1` -> `ok` (the gate checks BOTH directions, so the artefact still matches the producer); `npx tsc --noEmit -p .` -> 0 `error TS` lines; `npx vite build` -> built in 15.59s; `npx vitest run` on `ApiReferenceView.real.test.tsx`, `ApiReferenceView.test.tsx` and `ApiDocsPage.test.tsx` -> 3 files, 22 tests, all passed.
+- **The generated API reference is back in step with the mounts: the ledger's `GET /api/v2/tasks/{id}/events` was missing, and the gate that reads it was red at HEAD** - 2026-10-08
+  - `src/docs/apiReference.ts`: **regenerated, not hand-edited** — the file's own header says `GENERATED - do not edit by hand`, and `agenthub_go/internal/apiref/committed_artefact_test.go` compares it entry by entry against the producer on every run, so a hand edit would be both reverted by the next generation and caught by that gate. The documented invocation is `cd agenthub_go && go run ./cmd/apirefgen`.
+  - THE STALENESS, MEASURED: `bc6349ac feat(tasks): the ledger's read path` registered the route at `agenthub_go/fastmcp/server/httpapp/task_routes.go:107` and the artefact was never regenerated afterwards, so `go test ./internal/apiref/` was RED at HEAD with `DIRECTION 1 FAILS: 1 route(s) are registered in the code and absent from the committed artefact, so the page understates the API`. Found while checking whether this file had to be hand-edited for board row `3240085a`; it did not, and this red is a separate defect that the same regeneration clears.
+  - THE DELTA IS EXACTLY THE ONE ROUTE: 2047 -> 2056 lines, `9 insertions(+)`, one object added (`GET /api/v2/tasks/{id}/events`) and nothing else — verified by reading the diff rather than trusting the generator's exit line, because the route walk reads the Go source from disk and a second seat's uncommitted registration would otherwise ride into a committed artefact.
+  - The two always-500 task routes are **untouched**, deliberately: they are still mounted in Go, and board row `3240085a`'s rule holds in both directions — the reference must not describe routes that do not exist, and must not drop ones that do.
+  - Verified: `go test ./internal/apiref/ -count=1` -> `ok` (was `FAIL`); `npx tsc --noEmit -p .` -> 0 `error TS` lines; `npx vite build` -> built in 15.89s; `npx vitest run` on `ApiReferenceView.real.test.tsx`, `ApiReferenceView.test.tsx` and `ApiDocsPage.test.tsx` -> 3 files, 22 tests, all passed.
+- **A task UPDATE now moves the row without waiting for a refetch — the update mutation resolved its branch id from a cache a list page never fills** - 2026-10-08
+  - Owner-reported: **"task UPDATE does not trigger the row animation or the status change in the frontend, while CREATE works."** CREATE is optimistic — `createMutation.onMutate` inserts the new task into `['tasks', branch]` — and UPDATE was not, which is the asymmetry the owner saw.
+  - `useTasks.ts`'s `updateMutation.onMutate` resolved the branch as `previousTask?.git_branch_id || updates.git_branch_id`, where `previousTask` comes from the **individual** cache `['task', taskId, false]` — which a **LIST page never fills**, because nothing fetches a single task until the details dialog is opened — and `api.ts`'s `updateTask` sends no branch either (its payload filter lists title/description/status/priority/progress_percentage/assignees/labels/estimated_effort/due_date/dependencies/context_data/details and **not** `git_branch_id`). Both halves were therefore undefined on the path the UI actually uses, so the `if (previousTasks && git_branch_id)` guard skipped the optimistic list write and the row did not move until an unrelated refetch.
+  - The fix resolves the branch from the task lists as well — **the same scan `useRealtimeSync.ts:286-302` already performs for this exact problem** — so there is one resolver shape in the codebase rather than a second one.
+  - **AND A QUIETER HALF OF THE SAME DEFECT, FOUND BY COMPARING SIBLINGS:** `updateMutation.onSuccess` read the branch from `data.git_branch_id` only, while the **delete** and **complete** mutations in the same file both read it from `context?.git_branch_id`. It now prefers the context, so an update whose response omits the branch still invalidates the list — the owner's "nothing changes until a refetch" had two causes, not one.
+  - **NOT THE WEBSOCKET PATH, and that was eliminated by reading rather than assumed:** `update_task.go:160` does call `NotifyTaskEvent(ctx, "updated", ...)`, `websocket_routes.go`'s `BroadcastDataChange` sets `version "2.0"`, `type "update"`, `action` = the event type verbatim, so every guard in `useRealtimeSync`'s `case 'updated'` matches; and the list key is `['tasks', git_branch_id]`, which `invalidateQueries(['tasks'])` prefix-matches.
+  - Verified: the new fixture is red on the old tree (`expected 'todo' to be 'in_progress'`, exit 1) and green after; `npx tsc --noEmit -p .` exit 0 with 0 `error TS` lines; the full suite 107 files / 1753 tests passed, exit 0. Counts are in `TEST-CHANGELOG.md`.
+- **An absent hash or id degrades one cell instead of unmounting the page — three more sites of the class the seat panel's guard closed** - 2026-10-08
+  - `SeatAuthoringPage.tsx:183` (`module.sha256.slice(0, 8)`), `SubtaskDetailsDialog.tsx:451` (`fullSubtask.id.slice(0, 8)`) and
+    `TaskSearch.tsx:317` (`task.id.substring(0, 8)`) each threw `Cannot read properties of undefined (reading 'slice')` /
+    `(reading 'substring')` **during render** when the producer omitted the field: the type declares it as a required string, so a
+    missing key is invisible to the compiler, and a throw in render unmounts the tree — the whole page goes down instead of one
+    cell. The owner reported exactly that shape on the seat page.
+  - **THE GUARD IS CITED, NOT INVENTED.** The house form already exists in this codebase — `types/websocket-protocol.ts:473`
+    reads `id?.substring(0, 8) || 'unknown'`, an optional chain plus a named fallback — and all three sites now take that shape,
+    so there is ONE convention rather than a second one. (An earlier draft of this fix introduced a shared `shortHash` helper; it
+    was withdrawn in favour of the convention already in force.)
+  - **The class was enumerated and every hit read, not counted:** `slice(0,N) | substring(0,N) | substr(0,N)` over
+    `agenthub-frontend/src`. The hits that are NOT this defect were left alone deliberately — length-guarded sites
+    (`ProgressHistoryTimeline.tsx:39`, `ProgressDisplay.tsx:79,165`), array slices (`TaskSearch.tsx:93,194`, `DockerSetup.tsx:93`)
+    and `toUpperCase()` results (`UserProfileDropdown.tsx:240`, `Profile.tsx:63`). Changing a correct site to match a fix is how a
+    fix becomes a regression.
+  - `MachinesPanel.tsx:42`, the seat panel's own guard from `cd163bb7`, is untouched; this closes the sites outside that commit's
+    blast radius.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the three files **60 tests passed**; full-suite and `npx vite build` counts in the
+    commit notes.
+- **The machine-row fixtures follow the renamed field, so the bridge-machines tests stop throwing on render** - 2026-10-07
+  - `src/tests/pages/SeatsPage.test.tsx`: the two machine-row literals carry `pinned_hash` instead of `hash`.
+    The failure was a RENDER crash, not a wrong assertion - `shortHash(seat.pinned_hash)` threw
+    `Cannot read properties of undefined (reading 'slice')` - so 10 tests in that file were red while
+    `tsc --noEmit` stayed clean: a fixture that omits a field is not type-checked against it, only against the
+    type it claims to satisfy.
+  - THE THIRD INSTANCE OF ONE MECHANISM IN A SINGLE RENAME: the bridge's own reader, the `Pick<...>` in
+    `MachinesPanel.tsx`, and now these fixtures - writers counted, readers and producers not. Recorded rather
+    than smoothed because the next rename needs the reader/fixture grep, not just the writer one.
+  - Verified: that file 32/32 passed (it was 10 failing); `npx tsc --noEmit -p .` 0 errors.
+  - **And the render path was hardened in the same pass, as an OPTIONAL guard rather than a bug fix:** the
+    fixtures were the only producer that ever omitted the key. The Go emitter cannot - `PinnedHash string
+    json:"pinned_hash"` has no `omitempty`, `:330-331` sets both hashes on every seat unconditionally, and the
+    empty case cannot throw because the domain sends `''` for a seat with no snapshot and `''.slice(0, 8)` is
+    `''`. `shortHash` now takes `string | undefined` and falls back to `''`, so a FUTURE producer that omits the
+    key degrades one row to the `unknown` state the badge already models instead of taking the whole panel
+    down. Taken because the empty-absence is already the domain's own representation, so this adds no second
+    convention - and it is named here rather than left as an unexplained `?? ''`.
+
+### Added
+- **The sessions page gains a chat input per seat window, shut every time it mounts** - 2026-10-07
+  - `src/components/sessions/SeatInputBox.tsx` and its mounting in `SessionLiveView.tsx`: the toggle sits
+    in the window's chrome and the input is a drawer at the window's FOOT, rendered into a foot node the
+    window owns, so opening it takes its own height and the transcript above keeps the rest of the window.
+    A window that streams what it is watching must not have its newest lines covered by the thing that is
+    typing, which is why the drawer is a portal into the foot rather than an overlay.
+  - CLOSED ON EVERY MOUNT, by construction: the open flag is component state - no app state, no URL, no
+    storage - so a reload returns the window to watch-only. The seat key is a prop and is the only seat
+    fact the component carries.
+  - It calls ONE endpoint, `POST /api/v2/openrig/seats/{seat_key}/messages` (new `seatApi.sendSeatMessage`),
+    which has not landed on the backend yet, so the component and its tests are built against the interface
+    with the call mocked. THE SHAPE LIVES IN ONE PLACE - `SeatMessageRequest`/`SeatMessageResponse` in
+    `src/types/seatTypes.ts` and the single method in `src/services/seatApi.ts` - so a rename is those two
+    edits and nothing in the component.
+  - A refusal is rendered VERBATIM. A seat can be refused by scope, and the server's sentence is the only
+    actionable thing in that response, so it lands beside the input and the typed text is kept for a retry
+    rather than cleared.
+  - ONE OPEN QUESTION, recorded rather than guessed: the page's only seat identifier is the session's NAME
+    (a session row carries no seat key), so `SessionsPage.tsx` passes that as `seatKey`. If the route wants
+    a bare seat key, that is one line at the call site and the component is unchanged.
+  - Gates: `npx tsc --noEmit -p .` exit 0, 0 errors; `SeatInputBox.test.tsx` 6 passed; full-suite and
+    `npx vite build` counts in the commit notes.
+
+### Fixed
+- **Room deletion states the contract the server enforces, and the refusal arrives with its reason** - 2026-10-07
+  - `src/pages/SeatsPage.tsx`: the delete-room confirmation claimed the room "is deleted with all of its seats, their
+    links and overlays" - WHICH THE SERVER REFUSES. `RoomDeletionService.DeleteRoom` hard-deletes an EMPTY room only and
+    answers 409 for one that still holds seats (`room "... still holds N seat(s); remove them first"`, mapped to 409 at
+    `seat_admin_mount.go:1170`; seats are never cascaded). The dialog now states that contract, and when the loaded seat
+    list is non-empty it PREDICTS the refusal - naming the count and disabling the confirm - so the user cannot walk
+    into a 409 the page could see coming.
+  - The refusal is still RENDERED when it arrives anyway (a stale list, or seats the page never loaded): keyed on the
+    status, the server's own sentence is shown under "The room was not deleted." rather than being flattened into a
+    generic failure. The dialog stays open on failure, so the sentence sits where the button was.
+  - What a room deletion actually removes is corrected with it: the room overlay, the reported seat statuses and the
+    room row - not the seats.
+  - Gates: `npx tsc --noEmit -p .` exit 0, 0 errors; focused run `SeatsPage.test.tsx` + `apiRequest.test.ts` +
+    `SeatDetailPage.test.tsx` 61 passed; after the apiV2 case was added, `SeatsPage.test.tsx` 32 + `apiRequest.test.ts` 9
+    = 41 passed; full-suite and `npx vite build` counts are in the commit notes.
+
+### Changed
+- **`apiRequest` keeps the HTTP status on a refusal** - 2026-10-07
+  - `src/services/apiV2.ts`: the fallthrough error dropped the status (`throw new Error(error.detail || ...)`), so a rule
+    refusal (409) and a server fault (500) reached callers as indistinguishable messages and no caller could render one
+    as a refusal. The status now rides on the thrown error; the 404 and 422 branches already carried their own. The
+    MESSAGE is unchanged, so everything that rendered `error.message` before renders the same text - only callers that
+    want to branch gained information.
+
+### Removed
+- **The dead half of the SubtaskRow pair - proved dead before deleting it** - 2026-10-07
+  - `src/components/SubtaskRow/index.ts` (the barrel), its target `SubtaskRowRefactored.tsx`, the copied hook
+    `components/SubtaskRow/hooks/useSubtaskAnimation.ts`, and `SubtaskRowActions`/`SubtaskRowBadges`/`SubtaskRowAssignees`.
+    The consumer imports `SubtaskRow from "../../SubtaskRow"`, and a throwaway probe through Vite's own resolver showed that
+    specifier resolves to the FILE `SubtaskRow.tsx`: its default export is named `SubtaskRow` and the resolved module exposes
+    ONLY a default, so the barrel's re-exports were unreachable. The three sub-components said "for reuse" and nothing reused
+    them - the live row inlines what it needs and imports the SHARED `src/hooks/useSubtaskAnimation.ts`.
+  - Their tests go with them (`tests/components/SubtaskRow/SubtaskRowRefactored.*.tsx`), and the three prop interfaces they
+    owned (`SubtaskRowActionsProps`, `SubtaskRowBadgesProps`, `SubtaskRowAssigneesProps`) are removed from
+    `src/types/subtaskTypes.ts`. `SubtaskRowProps` STAYS - the live row uses it.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the full suite green in the commit notes.
+
+### Added
+- **The reference tier is exercised against the REAL generated artefact - and doing it corrected one of my own assertions** - 2026-10-07
+  - `src/tests/components/ApiReferenceView.real.test.tsx` imports the module the generator committed (`a5ff17a0`,
+  `src/docs/apiReference.ts`, 73003 bytes): the same BUILD-TIME import the page uses, so a regeneration that drops a key,
+  empties a list or changes a field reaches a suite instead of the page. EVERY EXPECTATION IS DERIVED FROM THE ARTEFACT
+  - its own route and tool counts, its own order for the inline-closure row, the tools whose actions are non-empty, each
+  tool's schema parsed back and compared to that tool's own object - so 144 routes pass by construction where 57 did, and
+  the only fixed expectation is that neither list is empty (a generator that emitted nothing would otherwise render
+  "0 routes" and pass every count check).
+  - FIRST CHECK ON ARRIVAL, per the contract ruling and deliberately BEFORE the counts: `pathParams` is a LIST on ALL 144
+  ROUTES, zero nulls - the property `src/types/apiReference.ts` asserts. The artefact carries 144 routes, 10 tools, 134
+  inline closures (empty handler) and 10 empty action lists (the enum slice is still deferred).
+  - THE EXERCISE CORRECTED ONE OF MY OWN ASSERTIONS, which is the whole argument for running it against real data: the
+  "no loading and no failure state" case used word-based negatives (`/loading/i`, `/could not|failed|error/i`) THAT PASS
+  ON THE FIXTURE AND FAIL ON THE REAL ARTEFACT, because the real MCP tool descriptions carry their own "ERRORS: ..."
+  sections - so the pattern was measuring the DATA rather than the component, and it reported a failure that was not one.
+  Both files now assert STRUCTURALLY: no `role="alert"`, no `[aria-busy="true"]`, and EXACTLY the two labelled regions
+  and nothing else.
+  - Gates: both files 13 passed (7 fixture + 6 real); `npx tsc --noEmit -p .` 0 errors; the full suite and
+    `npx vite build` green in the commit notes.
+- **The docs page renders the generated reference tier (DOCS-PAGE.md step 1, fe-dev's half)** - 2026-10-06
+  - `src/pages/ApiDocsPage.tsx` imports the generated module and renders web-dev's `ApiReferenceView` with it as a REQUIRED
+    prop, so `/docs` shows what the server advertises - every mounted HTTP route and every MCP tool - instead of a table
+    someone typed.
+  - PROVENANCE OF THE MODULE IT RENDERS, because a tracked build artefact whose origin is nowhere cannot be reasoned about by
+    the next reader: `agenthub-frontend/src/docs/apiReference.ts` is BUILD OUTPUT, regenerated by
+    `go run ./cmd/apirefgen -out agenthub-frontend/src/docs/apiReference.ts` (generator: `agenthub_go/cmd/apirefgen`) and
+    committed as such by go-dev2 at `a5ff17a0`, which is the input this change names. IT IS NEVER HAND-EDITED - the file says
+    so in its own header and regenerating it is the only supported change. It covers every mounted route and every MCP tool as
+    the generator reads them: at `a5ff17a0` that is 144 routes and 10 tools with no null `pathParams`, and this entry
+    deliberately does NOT restate their contents, because a hand-written summary of generated data is a second source of truth
+    of exactly the kind this packet removes.
+  - MOUNTED ALONGSIDE THE HAND-WRITTEN DOCUMENT for now, on the lead's ruling and not by oversight: retiring the hand-written
+    tier inside a commit scoped to "mount the section" would smuggle a change and would drop `MCP_URL`, which has no other
+    home on the page (`Base URL` and `Version` survive in the header; `Version` is read from `/health` at runtime). THE COST
+    IS STATED AND DATED: two renderings of the API reference on `/docs` - the generated tier first, the document below - which
+    is the second-copy shape this packet exists to remove. Follow-up `cd77527c` retires the markdown tier and its machinery
+    when the prose has a home, deleting those tests rather than re-pinning them.
+  - NO LOADING STATE AND NO FAILURE STATE on this tier, because the reference is a build-time import and a required prop: an
+    absent reference is a compile error at the import. The spec's "a page that cannot load shows the failure" therefore has no
+    runtime branch here and becomes load-bearing at step 2, where the guide tier reads documents at runtime. Confirmed in the
+    smoke below: with no backend running, `/health` fails and the version token stays visible while the generated tier renders
+    in full - the tier depends on nothing the page fetches.
+  - Tests: two cases in `src/tests/pages/ApiDocsPage.test.tsx` (the tier renders from the imported reference with counts taken
+    from its own length; the hand-written document still renders beside it), PROVED SENSITIVE BY REMOVAL - removing the
+    mount's testid fails exactly those two with `Unable to find an element by: [data-testid=api-docs-reference]` while the
+    seven existing cases stay green.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors WITH the real 73 KB artefact in the tree; the page's two test files ->
+    10 passed (8 before); `npx vite build` green.
+  - SMOKE against the real surface rather than the mocked one, because the tests mock the module and a mock cannot show that
+    144 real entries render: `/docs` renders `144 routes, generated from the mounts rather than typed by hand` and `10 tools,
+    with the parameters the server advertises`, with the auth family (`/api/auth/dev-login`, `/api/auth/login`, ...) present -
+    those being the registrations whose absence made the first emission premature.
+- **The pin label's PROPERTY is pinned by test, at every scope, rather than its wording (PIN semantics A, part 4)** - 2026-10-06
+  - The label change itself landed earlier tonight (`6ec69c5c`: the badge reads `pinned at <scope>` with no glyph, and a
+  pinned row carries the sentence that a pin sets a version and is not a lock), with its assertions in `5aada744` and
+  `9137f657`. THIS is the row's fourth requirement - a test that pins the property - and it needed one invisible hook:
+  `data-pinned-at={block.pinnedAt}` on the badge, an automation attribute rather than user-facing copy, so the phrasing
+  stays free to change without rewriting the test.
+  - FOUR CLAUSES, ALL EXPRESSED, NONE DROPPED: (1) the label NAMES the scope it is pinned at, asserted per scope across
+  company, room and seat rather than against one literal; (2) it CLAIMS NO PROTECTION by vocabulary, WITH WORD
+  BOUNDARIES - `\block(?:s|ed|ing)?\b`, `\bprotect(?:s|ed|ing|ion)?\b`, `read-?only`, `immutable` - and the boundary is
+  not decoration: a bare `lock` matches `block`, so the boundary-free form would pass on any code at all while looking
+  like a check; (3) no lock GLYPH anywhere in the row; (4) a removal stays ALLOWED, asserted by the Remove here control
+  being ENABLED. A fifth case pins the RELATION: the three scopes' labels normalise to ONE TEMPLATE, so a divergence in
+  any scope fails even where no protection word is involved.
+  - BOTH CLAUSES PROVED BY PROBE RATHER THAN ARGUED: with the copy changed to `locked at <scope>` the three per-scope
+  cases fail on the vocabulary (`expected 'locked at company' not to match /.../`), and with the seat scope changed to
+  `pin at <scope>` ONLY the relation case fails (`expected 'pin at <scope>' to be 'pinned at <scope>'`) - which is what
+  makes them independent detectors rather than one check written twice. Both probes reverted; the component's diff is
+  the hook and its comment.
 - **The docs page's reference tier renderer (DOCS-PAGE.md step 1, web-dev half)** - 2026-10-06
   - `src/components/docs/ApiReferenceView.tsx` renders the generated reference: every mounted HTTP route
   (method, path as registered, the handler when the mount names one, that handler's doc comment) and every MCP
@@ -363,6 +594,91 @@
     `SubtaskEditDialog` no longer swallows the seat error with `.catch(() => [])`.
 
 ### Fixed
+- **The toast hooks' rules-of-hooks violation, at four sites, found by looking rather than by trusting a count of three** - 2026-10-07
+  - `src/components/ui/toast.tsx`: `useSuccessToast`, `useErrorToast` (`:233` - its own `duration: 8000`, written from the same
+    pattern), `useWarningToast` and `useInfoToast` all did `const context = useContext(...); if (!context) return () => '';`
+    BEFORE a `useCallback`. TWO defects in six lines: the hook COUNT depended on a context value - a rules-of-hooks
+    violation, latent only while a provider's presence cannot change between renders of one component, and UNDEFINED
+    behaviour rather than absent behaviour if it ever does - and OUTSIDE a provider every call returned a fresh `() => ''`,
+    an unstable value in any dependency array.
+  - Fixed by hoisting a module-level `noop` and calling `useCallback` unconditionally with `showToast` through optional
+    chaining, so both the hook order and the identity are stable.
+  - NOTE THE CONTRAST, because it decides whether this was a mistake or a choice: `useToast` handles the same missing
+    provider by THROWING. The convenience hooks silently substituted a no-op, and this change keeps that deliberately -
+    making them throw would be a behaviour change beyond the violation.
+  - PINNED, RED RUN FIRST: a re-render probe asserts the SAME function reference across renders, and it FAILED against the
+    old code with exactly the predicted error (`expected [Function] to be [Function]` - the fresh no-op per call). A second
+    pin toggles the provider between renders and passes on BOTH versions in this harness - RTL's `act` wraps the rerender,
+    so React's mismatch error does not escape - hence it is labelled an invariant rather than a reproduction.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `toast.test.tsx` 9 passed; the full suite in the commit notes.
+- **The duplicate animation sources are gone: one event, one animation** - 2026-10-07
+  - `useRealtimeSync` no longer animates the task and subtask CREATE. `WebSocketAnimationService` is the single websocket
+    source for those, it animates the same events, and by the time its call fires the row is mounted, so its call lands - the
+    duplicate really was a second animation. The subtask create goes for a different reason: the service deliberately SKIPS
+    subtask creates ("mount animation handles this"), and so does the hook now - a newly appearing subtask mounts its row, and
+    the row's mount effect animates it. The cache invalidation and the toasts, which are this hook's own job, are untouched.
+  - The DELETE calls STAY, and they are a REAL source rather than a duplicate to remove: the cache removal in this hook is
+    already deferred by 600ms ("Delay cache update to allow delete animation to play (~800ms total)"), so the row is still
+    mounted and registered when the call fires at ~150ms and the animation LANDS. WebSocketAnimationService animates the
+    same event on the same delay, so both land in the same tick and the factory's per-element, per-type cooldown collapses
+    them into ONE visible animation - an improvement this change made rather than a risk it took. (An earlier version of
+    this entry claimed the delete path was broken from both ends; that came from reading the delete case only as far as its
+    toast, with the 600ms removal block below it. Corrected here and in the code comments.)
+  - The four deletion trackers are REMOVED in the follow-up commit, with their four row-side readers and the subtask list
+    filter they fed. They were a complete api (markForDeletion, isMarkedForDeletion, clearDeletion, getPendingDeletions)
+    with NO writer anywhere in the app, so every reader was a no-op - unused rather than broken, because the 600ms deferral
+    above is what actually keeps a departing row registered long enough to animate. Keeping an unwired second mechanism is
+    how the next reader ends up debugging the one nobody calls.
+  - The SEAT calls STAY: the service has no seat branch at all, so `useRealtimeSync` is the only source for seat animations.
+  - The three prop-change effects (`useTaskAnimation`, `useBranchAnimation`, `useProjectAnimation`) are deleted. They compared
+    previous props and called `playUpdateAnimation('websocket')` - passing `'websocket'` for what is a RENDER, not a
+    websocket event - and the real event is already animated by the service, so every update animated twice. Their now-dead
+    refs go with them; `useTaskAnimation`'s `hasMountedRef` STAYS, because the row's hidden-until-animated class reads it.
+  - THE UPDATE PATH HAS NO DUPLICATE LEFT TO DELETE - the prop-change effects were the duplicate and they are gone - so its
+    pin is a different shape, and two-sided on purpose: `BranchItem.test.tsx` asserts a prop change animates NOTHING (shown
+    failing against the pre-fix prop-change effect), while the service's own cases pin that its update call HAPPENS. Neither
+    half alone is a proof: a row test passes if the service is dead, and a service test passes if the duplicate is still
+    there. Together: the only live path is the service's, and an update leaves the row mounted, so its call lands.
+  - PROOF, which the owner asked for by name (one created event must animate create exactly once): two count tests pin
+    it. `test_useRealtimeSync_task.test.tsx` and `test_useRealtimeSync_subtask.test.tsx` each feed ONE created websocket
+    event and assert this hook makes NO create call - while still asserting the cache update happened, so the row really
+    was added. Both FAILED against the pre-fix code: the restored 50ms call produced exactly the call they forbid.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; the affected suites (`src/tests/hooks/`, `src/tests/integration/`,
+    `ProjectList/`) 251 passed; the full suite green in the commit notes.
+- **The three 50ms mount timers no longer outlive the effect that starts them (the rest of the owner's animation item)** - 2026-10-07
+  - `useBranchAnimation` and `useProjectAnimation`: the mount-create effect started a 50ms `setTimeout` and returned NOTHING,
+    so the handle was unreachable - and on a remount that timer fired into the new row and replayed its create animation.
+  - `useSubtaskAnimation`: its cleanup unregisters the element but never cleared the same timer, which is the subtler shape,
+    because a cleanup that does something looks like a cleanup that does everything. That effect also re-runs whenever
+    `hasPlayedCreateAnimation` flips, so the previous run's callback could still fire.
+  - `useTaskAnimation` needs nothing: its mount animation is already DISABLED, with the comment "WebSocket notifications are
+    the source of truth for animations (MCP trigger)".
+  - The factory fix (`13afeb6a`) already dedupes the replay by element id, so what remained was a real but silent leak: a
+    pending timer, a debug line and a blocked `animate` per unmount. Named rather than dropped for exactly that reason.
+    Each effect now keeps its handle and clears it in the cleanup it returns - the EFFECT's timer, not the row's.
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `src/tests/hooks/` + `BranchItem.test.tsx` 137 passed; the full suite green in
+    the commit notes.
+- **The reported "animation triggers multiple times" is now two rules per element and type, with a reason logged for every block** - 2026-10-07
+  - `src/services/AnimationFactory.ts`: coordination is kept PER ELEMENT AND TYPE, and the played record deliberately
+    OUTLIVES `unregisterElement` - a real remount is unregister + register (all five animation hooks unregister in their
+    cleanup, plus `SeatsPage`), and the same row coming back is not a new row. One entry per element could not answer both
+    questions this now has to answer: has this element played its create (so a remount must not replay it), and has it
+    played THIS type inside the cooldown (so one event reported by two sources animates once).
+  - RULE 1 - MOUNT IS ALLOWED ONCE PER ELEMENT ID. `shouldAllowAnimation` returned true unconditionally for
+    `source === 'mount'`, so ANY remount - a list re-render, a key change, another page of results - replayed the create
+    animation for a row nothing had happened to. THIS IS THE REPORTED DEFECT'S CORE.
+  - RULE 2 - THE SAME TYPE FOR THE SAME ELEMENT IS DEDUPED INSIDE THE COOLDOWN, whichever source asks, so an event reported
+    by both the callback path and the WebSocket path animates once. The WebSocket-over-callback allowance is KEPT for a
+    DIFFERENT type: that is a different event arriving mid-animation, not the same one twice.
+  - EVERY BLOCK NAMES ITS REASON and is logged at `debug` with the element, the requested type and source, and the cooldown
+    - the same silent path the 2026-10-06 entry logs, extended to the two new ways it has to be silent, because a dropped
+    animation and a message that never arrived look identical in a console while having opposite fixes.
+  - THE RECORD IS BOUNDED BY `MAX_TRACKED_ELEMENTS`, not by unmounting, precisely because unmounting no longer clears it.
+  - THE THREE CONSUMERS OF THE WIDENED STATE were found by the type checker rather than by reading: `isAnimationInProgress`
+    (any type in flight for the element), `getAnimationState` (the element's most recent) and `getDebugInfo` (per element
+    and type, flattened).
+  - Gates: `npx tsc --noEmit -p .` 0 errors; `src/tests/services/AnimationFactory.test.ts` 32 passed; the full suite
+    105 files / 1798 passed.
 - **A refused notification was invisible on the client: an error frame with no animation route was dropped in silence** - 2026-10-06
   - `src/services/WebSocketAnimationService.ts` `handleWebSocketMessage` routed task/subtask/branch/project and had NO branch
     for anything else, so every error frame the server sends was discarded without a trace. THE FRAME THAT FOUND IT, from a
@@ -670,6 +986,23 @@
     callers already match, `createBranch` was the only offender.
 
 ### Removed
+- **The hand-written API reference is retired: the page renders the writer's prose, and the old file is deleted in the same commit** - 2026-10-07
+  - THE SWAP, exactly as ruled: `src/pages/ApiDocsPage.tsx` imports `api-reference-prose.en.md?raw` as `apiReferenceProse` and passes THAT to
+    `applyTokens`, and `src/docs/api-reference.en.md` (447 lines) is deleted in this commit. The writer's prose is the written half of
+    DOCS-PAGE.md:12's "output plus prose" and carries no route rows and no restated counts - VERIFIED HERE RATHER THAN TAKEN ON TRUST: zero
+    route-shaped table rows and zero "N routes" / "N tools" phrases in the file - which is what leaves the generated tier as the only place a route
+    or a tool is enumerated. This is follow-up `cd77527c` landing, and it removes the page's second copy of the same surface (144 generated routes
+    rendered beside 127 hand-written ones).
+  - AND THE MACHINERY IS NOT REMOVED, WHICH CORRECTS THE PREMISE `cd77527c` WAS WRITTEN UNDER - by me, who wrote it. The row said the markdown
+    machinery and its tests would go with the file, "deleted rather than re-pinned". THAT IS WRONG FOR THIS SHAPE: the prose is STILL MARKDOWN
+    rendered through the same path, so `applyTokens`, `slugifyHeading`, the table of contents built from rendered headings and `<Markdown>` all
+    REMAIN, as does every case that asserts them - deleting them would break the page rather than retire anything. What is deleted is the FILE and
+    nothing else. The distinction is the point: a retirement removes the thing being REPLACED, not the machinery that renders its replacement.
+  - The one test change is the mock's PATH (`vi.mock('../../docs/api-reference-prose.en.md?raw')`), and it is REQUIRED rather than cosmetic: the
+    fixture exists to prove the contents list FOLLOWS the rendered headings, so a mock no longer matching the module the page imports would
+    silently load the real prose and the fixture's heading assertions would stop meaning anything.
+  - Gate: `npx tsc --noEmit -p .` -> exit 0, 0 errors; the page's two test files -> 10 passed (an unchanged count, and the fixture assertions
+    passing IS the proof the mock path is right - a stale path fails them); `npx vite build` green.
 - **A dead WebSocket sender — removed as unreachable code, not as a fix** - 2026-10-06
   - Deleted the `updateTask` property from the object `useTaskWebSocket` returns in `src/hooks/useWebSocketV2.ts`. It
     sent `{ type: 'update', payload: { entity: 'task', action: 'update', ... } }` and had NO CALLER anywhere in `src`:
