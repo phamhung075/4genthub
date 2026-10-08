@@ -17,47 +17,47 @@
       {
         "match": "git reset --hard*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git clean*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git checkout -- *",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git stash drop*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git stash clear*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git commit*--amend*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git add -A*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git add --all*",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "git add .",
         "approval": "deny",
-        "sibling": "stage explicit paths (`git add -- <path>`) and commit with `git commit -m ... -- <path>`. The tree is shared with other seats, so never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
+        "sibling": "commit with `git commit -m \"...\" -- <paths>` and do not `git add` first: the index is shared, and a staged line can be taken by another seat's commit. A new file is the one exception: mark it with `git add -N -- <new>` (intent-to-add, no content enters the index), then commit it by pathspec like any other file. Just before committing, read `git status --porcelain -- <paths>` (MM: stop) and `git diff HEAD -- <paths>`, and name every line, because the commit takes each file's whole content, including another seat's unsaved edits. If a line is not yours, do not commit that file: commit your other paths, and hold your lines in it until its owner has committed. Never `git add .`, `-A` or `--amend`, and never reset, clean or discard."
       },
       {
         "match": "rm -rf*",

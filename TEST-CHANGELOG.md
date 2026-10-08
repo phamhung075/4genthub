@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the commit form the seats read, pinned on both sides (go + python)
+
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_commit_form_test.go`: reads the EMBEDDED `shared-modules/guide-common.md` and fails if the shelf does not say `do not stage first`, or still carries the old first form. **RED BEFORE THE FIX**, both assertions reporting (`does not say "do not stage first"`; `still prescribes the old form ("`git add -- <path>` then")`), green after. The second test is a NEGATIVE CONTROL rather than a second assertion: it first asserts the shipped shelf passes `VerifyGuidePairing`, then hands `verifyGuideLocks` the same digest map with ONLY guide-common's digest moved, and requires it to REFUSE, naming the guide and the recorded digest — so the lock is still checked and not bypassed.
+- `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py`: loads all ten `scripts/team/4genthub-min/policy-*.json` and asserts (B2) that no sibling contains `stage explicit paths` — **RED before the fix** (`1 failed, 3 passed` for this file) — and (B3) that the commit-form siblings agree, within each module and across the ten.
+- **B3 IS SCOPED TO THE CHANGED KEY, DELIBERATELY.** The literal "all siblings for one match are identical across the ten files" is FALSE of the tree and has been since `c91e7997`: three matches genuinely diverge (the rig's up/down/remove lifecycle — `policy-lead.json` reads "the principal does that; ask it.", the other nine "ask the lead."). An assertion that is false for a reason unrelated to the change is a permanently red test, which is worse than none, because it teaches people to ignore the suite; scoping keeps it true and still able to fire.
+- **AND THE RUN PROVED THE GUIDE LINE IN THE SAME COMMIT:** the ruling's command, posted without `--noconftest`, gave `4 errors SystemExit: 1` for these four tests and took **545s** (22 passed, 4 errors); the canonical command with the flag and no cache provider gave **306 passed in 69.33s**. The repository conftest reaches for PostgreSQL before every test, so the flag is what makes the run finish rather than hang.
+- Commands and results: `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; `gofmt -l <the new file>` -> empty; `go vet <those packages>` with the exit code read WITHOUT a pipe -> `rc=0`, 0 bytes; `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> `306 passed, 8 warnings in 69.33s`.
+
 ## 2026-10-08 - the seat-attribution hook, pinned by a suite that was made to detect (python)
 
 - `agenthub_main/src/tests/scripts/test_prepare_commit_msg_seat.py`, rewritten for the config delivery: six
