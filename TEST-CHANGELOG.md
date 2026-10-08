@@ -9,6 +9,10 @@ Track test suite changes, fixes, and improvements for agenthub.
   - `TestTaskEventAppendRefusesBogusKind` - `kind='bogus'` is refused by the database's own PostgreSQL type rather than by Go.
   - THE FAILING-FIRST ARTIFACT is the RED run captured BEFORE the implementation: `FAIL [build failed]`, eight undefined symbols. A later green build is not evidence of the gapless guarantee.
 
+## 2026-10-08 - the seat watch token bar and the Claude Code log in the feed
+
+- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: replaced the pane-mirror test; added `test_a_claude_code_call_and_its_result_show_like_an_omp_one`, `test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage`, `test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point`. 23 pass.
+
 ## 2026-10-08 - the seat watch follows live tmux sessions and mirrors a non-omp seat
 
 - `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: added `test_seats_are_the_live_tmux_sessions_and_a_non_omp_seat_gets_a_pane_mirror` (seat list from tmux sessions of the rig only; omp seat gets the feed command, a Claude seat gets a capture-pane mirror). 20 pass.
