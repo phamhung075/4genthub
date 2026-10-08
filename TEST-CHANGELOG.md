@@ -2,9 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-08 - the seat watch token bar and the Claude Code log in the feed
+## 2026-10-08 - the task-event ledger's acceptance tests, written failing-first
 
-- `agenthub_main/src/tests/scripts/test_openrig_watch_tools.py`: replaced the pane-mirror test; added `test_a_claude_code_call_and_its_result_show_like_an_omp_one`, `test_context_tokens_reads_both_runtimes_and_ignores_records_without_usage`, `test_the_token_bar_shows_percent_and_tokens_of_the_compaction_point`. 23 pass.
+- `fastmcp/task_management/infrastructure/repositories/task_event_repository_test.go`: 2 tests added for O1a, and BOTH SKIP HERE - all six PostgreSQL binaries are absent and both gate on `AGENTHUB_TEST_PG_URL`.
+  - `TestTaskEventAppendAssignsGaplessSeq` - two concurrent Appends on ONE task get seq 1 and 2, never a duplicate, and `after_seq=1` returns only seq>1. This is the acceptance's behavioural claim, and the package's `ok` is NOT evidence of it: the package reports `ok` with both tests skipped.
+  - `TestTaskEventAppendRefusesBogusKind` - `kind='bogus'` is refused by the database's own PostgreSQL type rather than by Go.
+  - THE FAILING-FIRST ARTIFACT is the RED run captured BEFORE the implementation: `FAIL [build failed]`, eight undefined symbols. A later green build is not evidence of the gapless guarantee.
 
 ## 2026-10-08 - the seat watch follows live tmux sessions and mirrors a non-omp seat
 
