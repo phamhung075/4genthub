@@ -3,6 +3,27 @@
 ## [Unreleased]
 
 ### Added
+- **The composer groups blocks by purpose, and the kind list is back in step with the Go resolver** - 2026-10-08
+  - `src/components/seats/SeatComposer.tsx`: five purposes (Guide / Policy / Tools / MCP / Skills / Documents and memory)
+    in a FIXED order, each block under its purpose, and each empty purpose carrying its own empty state. The mapping lives
+    at module scope beside `SCOPE_LABEL`, and `BLOCK_PURPOSES`, `PURPOSE_LABEL`, `purposeOf` and `kindsOfPurpose` are
+    exported so the test asserts against the SAME source the view renders.
+  - THE TWO NAMING FAMILIES OVERRIDE THE KIND, each with its reason beside the constant: `mcp-usage` is KindInstruction
+    while its own comment in seedlibrary.go calls it the seat's MCP guidance, and `delegate-deepseek` is KindInstruction
+    while it tells a seat to use the deepseek tool. Both resolve to Tools/MCP rather than Guide.
+  - **`src/types/seatTypes.ts` — SHARED FILE, ADDITIVE CHANGE, NAMED HERE BECAUSE IT IS NOT INCIDENTAL: `policy` is added
+    to `SeatModuleKind` and to `SEAT_MODULE_KINDS`.** That comment used to claim the list "mirrors resolver.ModuleKind" and
+    it had drifted by one kind: Go has `KindPolicy` (in `ValidKind` and in `Kinds()`, "enumerated ONCE") and the seeded team
+    files carry ten `policy-*` blocks, while the frontend list did not carry `policy` at all — so a policy block could not
+    even be published from `ModulePublishForm`, whose kind selector renders from that array.
+  - **THE MIRROR IS NOW A CHECK RATHER THAN A CLAIM:** `src/tests/components/SeatComposerPurposes.test.tsx` reads
+    `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go`, compares its kind literals with `SEAT_MODULE_KINDS`,
+    and fails in EITHER direction. **SEEN FAILING:** with `'policy'` removed from the array the case reports
+    `expected […] to deeply equal […]` with `- "policy"` in the diff while the other two cases stay green; restored, 3 pass.
+  - Gates: `npx tsc --noEmit -p .` exit 0; the purpose tests 3 passed; `SeatAuthoringPage.test.tsx` 27 passed UNCHANGED,
+    because the `Composed blocks` list label and the row markup are preserved.
+  - WAITING ON fe-dev's half, recorded rather than stubbed: hosting the preview in `SeatAuthoringPage.tsx` needs their
+    `SeatPreview.tsx`, which does not exist yet.
 - **The API reference's prose now names the two traps that make a client-versus-route diff lie, and states who actually witnesses the tables** - 2026-10-08
   - `src/docs/api-reference-prose.en.md` gains **"Comparing a client against these tables"**. `{$}` is Go's **end-anchor for a
     trailing slash, not a parameter**, so a normaliser that rewrites `{...}` as a placeholder turns `/api/v2/branches/{$}` into

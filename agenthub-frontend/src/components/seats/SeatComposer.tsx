@@ -34,6 +34,7 @@ import { mcpServerLabel } from '../../lib/mcpBlock';
 import type { McpServerEntry } from '../../hooks/useSeats';
 import type {
   ModuleSummary,
+  SeatModuleKind,
   SeatOverlayOp,
   SeatOverlayScope,
   SeatOverlays,
@@ -58,6 +59,62 @@ const SCOPE_LABEL: Record<SeatOverlayScope, string> = {
   room: 'Room',
   seat: 'Seat',
 };
+
+/**
+ * The five purposes the composer groups blocks by, IN THIS ORDER. The order is fixed so the view
+ * does not reshuffle as blocks are added, and it is asserted by the purpose test.
+ */
+export const BLOCK_PURPOSES = ['guide', 'policy', 'tools-mcp', 'skills', 'documents'] as const;
+export type BlockPurpose = (typeof BLOCK_PURPOSES)[number];
+
+export const PURPOSE_LABEL: Record<BlockPurpose, string> = {
+  guide: 'Guide',
+  policy: 'Policy',
+  'tools-mcp': 'Tools / MCP',
+  skills: 'Skills',
+  documents: 'Documents and memory',
+};
+
+/**
+ * Which kinds each purpose owns. THE UNION EQUALS SEAT_MODULE_KINDS AND NO KIND APPEARS TWICE -
+ * both asserted by the purpose test, so a kind added in Go fails there instead of silently
+ * vanishing from this view.
+ */
+const PURPOSE_KINDS: Record<BlockPurpose, SeatModuleKind[]> = {
+  guide: ['instruction'],
+  policy: ['policy', 'tool'],
+  'tools-mcp': ['mcp'],
+  skills: ['skill'],
+  documents: ['document', 'memory'],
+};
+
+/**
+ * The two slug families that OVERRIDE their kind, each with the reason it exists:
+ *  - `mcp-*`: `mcp-usage` is KindInstruction while its own comment in seedlibrary.go calls it the
+ *    seat's MCP guidance, so the kind alone would file it under Guide.
+ *  - `delegate-*`: `delegate-deepseek` is KindInstruction while it tells a seat to use the deepseek
+ *    tool (scripts/team/4genthub/team.json), so it belongs where the tools are.
+ */
+const MCP_FAMILY_PREFIXES = ['mcp-', 'delegate-'];
+
+/**
+ * The purpose a block belongs to: the slug family first, then the kind.
+ *
+ * The `guide` fallback cannot be reached while the mirror holds - the purpose test fails first if a
+ * kind has no purpose - and it exists so an unrecognised kind still renders somewhere rather than
+ * throwing inside the list.
+ */
+export function purposeOf(slug: string, kind: SeatModuleKind): BlockPurpose {
+  if (MCP_FAMILY_PREFIXES.some((prefix) => slug.startsWith(prefix))) {
+    return 'tools-mcp';
+  }
+  return BLOCK_PURPOSES.find((purpose) => PURPOSE_KINDS[purpose].includes(kind)) ?? 'guide';
+}
+
+/** The kinds one purpose owns, exported so the test asserts against the SAME source the view uses. */
+export function kindsOfPurpose(purpose: BlockPurpose): SeatModuleKind[] {
+  return PURPOSE_KINDS[purpose];
+}
 
 const ABSENT_BLOCK: BlockAtScope = { slug: '', present: false, block: null, removedHere: false };
 
@@ -100,6 +157,25 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
   const scopeOps = overlays[scope]?.ops ?? [];
   const presentRows = rows.filter((row) => row.present);
   const absentRows = rows.filter((row) => !row.present);
+
+  // Blocks are grouped by PURPOSE for the view, not by kind: two purposes own two kinds each, and
+  // the slug families above override the kind. A block whose kind the modules list does not carry
+  // falls back to `instruction` here and lands in Guide, which is where an unknown block was
+  // rendered before this grouping existed.
+  const rowsByPurpose = useMemo(() => {
+    const grouped: Record<BlockPurpose, BlockAtScope[]> = {
+      guide: [],
+      policy: [],
+      'tools-mcp': [],
+      skills: [],
+      documents: [],
+    };
+    presentRows.forEach((row) => {
+      const kind = (kindBySlug[row.slug] ?? 'instruction') as SeatModuleKind;
+      grouped[purposeOf(row.slug, kind)].push(row);
+    });
+    return grouped;
+  }, [presentRows, kindBySlug]);
 
   const selectedEntry = addSlug ? bySlug[addSlug] ?? { ...ABSENT_BLOCK, slug: addSlug } : ABSENT_BLOCK;
   const addOutcome = additionOutcome(selectedEntry, scope);
@@ -154,7 +230,17 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
           aria-label="Composed blocks"
           className="divide-y divide-surface-border-hover rounded-md border border-surface-border-hover"
         >
-          {presentRows.map((row) => {
+          {BLOCK_PURPOSES.map((purpose) => (
+            <React.Fragment key={purpose}>
+              <li className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-base-secondary">
+                {PURPOSE_LABEL[purpose]}
+              </li>
+              {rowsByPurpose[purpose].length === 0 && (
+                <li className="px-3 py-2 text-sm text-base-secondary">
+                  No {PURPOSE_LABEL[purpose]} blocks at this level.
+                </li>
+              )}
+              {rowsByPurpose[purpose].map((row) => {
             const block = row.block;
             if (!block) return null;
             const outcome = removalOutcome(row, scope);
@@ -208,7 +294,9 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                 )}
               </li>
             );
-          })}
+              })}
+            </React.Fragment>
+          ))}
 
           {absentRows.map((row) => {
             const outcome = removalOutcome(row, scope);

@@ -22,10 +22,37 @@ export const SEAT_RUNTIMES: SeatRuntime[] = ['claude-code', 'codex', 'agy', 'omp
 export const SEAT_PERMISSION_POLICIES = ['locked', 'standard', 'open', 'yolo', 'none'] as const;
 export type SeatPermissionPolicy = (typeof SEAT_PERMISSION_POLICIES)[number];
 
-export type SeatModuleKind = 'instruction' | 'document' | 'skill' | 'tool' | 'mcp' | 'memory';
+export type SeatModuleKind =
+  | 'instruction'
+  | 'document'
+  | 'skill'
+  | 'tool'
+  | 'mcp'
+  | 'memory'
+  | 'policy';
 
-/** Single source of truth for the module kinds offered in the UI (mirrors resolver.ModuleKind). */
-export const SEAT_MODULE_KINDS: SeatModuleKind[] = ['instruction', 'document', 'skill', 'tool', 'mcp', 'memory'];
+/**
+ * Single source of truth for the module kinds offered in the UI, and the list `ModulePublishForm`
+ * renders its kind selector from.
+ *
+ * THE MIRROR IS NOW CHECKED, NOT CLAIMED. This comment used to say the list "mirrors
+ * resolver.ModuleKind" while it had already drifted by one kind: Go has `KindPolicy` (in
+ * `resolver.ValidKind` and in `resolver.Kinds()`, "enumerated ONCE"), the seeded team files carry
+ * ten `policy-*` blocks, and this list did not carry `policy` at all - so a policy block could not
+ * even be published from the form that renders from this array. The check that keeps them equal is
+ * `src/tests/components/SeatComposerPurposes.test.tsx`, which READS
+ * `agenthub_go/fastmcp/seat_management/domain/resolver/resolver.go` and fails when either side
+ * gains or loses a kind.
+ */
+export const SEAT_MODULE_KINDS: SeatModuleKind[] = [
+  'instruction',
+  'document',
+  'skill',
+  'tool',
+  'mcp',
+  'memory',
+  'policy',
+];
 
 /** The transports an mcp block distinguishes (mcpblock.TypeHTTP / TypeStdio). */
 export const MCP_SERVER_TYPES = ['http', 'stdio'] as const;
