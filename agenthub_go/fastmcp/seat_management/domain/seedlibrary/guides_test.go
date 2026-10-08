@@ -17,7 +17,7 @@ import (
 // shared-modules/guide-common.md and is asserted separately, because it reaches seats by a
 // different route (every seat type carries it) than the per-seat ones.
 var guideSeats = []string{
-	"context-dev", "fe-dev", "feedback-dev", "go-dev", "go-dev2",
+	"context-dev", "fe-dev", "feedback-dev", "go-dev",
 	"lead", "reviewer", "skills-dev", "web-dev", "writer",
 }
 

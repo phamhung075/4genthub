@@ -70,7 +70,6 @@ SEAT_ROLES = {
     "4genthub-min": {
         "lead": "lead",
         "go-dev": "dev",
-        "go-dev2": "dev",
         "fe-dev": "dev",
         "web-dev": "dev",
         "skills-dev": "dev",

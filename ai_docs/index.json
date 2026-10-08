@@ -390,7 +390,7 @@
       "path": "operations"
     },
     "operations/seat-guides": {
-      "count": 11,
+      "count": 10,
       "files": [
         {
           "hash": "d8a4b6bb04416474a18024f0b2ef230a",
@@ -398,13 +398,6 @@
           "name": "fe-dev.md",
           "path": "operations/seat-guides/fe-dev.md",
           "size": 1850
-        },
-        {
-          "hash": "630d64b1b3224d1b5d776b095dd75699",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "go-dev2.md",
-          "path": "operations/seat-guides/go-dev2.md",
-          "size": 1472
         },
         {
           "hash": "86166336f81c376f4b54a9a22d8ebee2",
@@ -690,7 +683,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T20:24:14.261669",
+  "generated_at": "2026-10-08T20:28:31.454627",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -813,7 +806,6 @@
           "fe-dev.md",
           "feedback-dev.md",
           "go-dev.md",
-          "go-dev2.md",
           "lead.md",
           "reviewer.md",
           "skills-dev.md",
@@ -859,5 +851,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 79
+  "total_files": 78
 }

@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the room definition and the policy table are compared to each other and to the live roster
+
+- `agenthub_main/src/tests/scripts/test_team_roster.py` (new): loads `team.json` and asserts the seat keys equal the live ten measured 2026-10-08, that the architect seat runs `claude-code`, that every `seat_overlays` key is a declared seat and every module `file` exists, and that team.json's `omp` seats equal the keys of `SEAT_ROLES["4genthub-min"]`. **RED BEFORE THE FIX, in the shape the decision note predicted**: `2 failed, 2 passed` — the seat set reported `go-dev2` where the roster has `architect`, the architect assertion reported that the live rig runs one, and the two that passed did so only because both files still carried `go-dev2` together.
+- **THE LAST ASSERTION IS THE ONE THAT MATTERS OVER TIME.** The stale definition was not a typo; it was two files agreeing with each other and disagreeing with the rig, and nothing compared them. Asserting the two sets are equal is what makes the next drift report itself.
+- `agenthub_main/src/tests/scripts/test_seat_policy_commit_form.py`: its counts follow the tree — "the ten policy modules" is now nine, in the docstring, the loader test's name and assertion, and both commit-form tests. THE SIBLING FAILED THE MOMENT THE SEAT WAS RETIRED (`2 failed, 313 passed` on the first full run), which is the suite doing its job on a file the dispatch did not name; it is corrected here rather than left red.
+- Commands and results: `cd agenthub_main && python3 -m pytest --noconftest -p no:cacheprovider src/tests/scripts -q` -> **315 passed, 9 warnings in 69.49s**. The count before this work is **306** as recorded in the entry below, so the arithmetic is not all mine: this change contributes the four in the new file, and the rest are other seats' additions in the shared tree. `cd agenthub_go && go test ./fastmcp/seat_management/domain/seedlibrary/... ./fastmcp/seat_management/domain/seatrenderer/...` -> `ok`, `ok`; the scope grep `git grep -n "go-dev2" -- scripts/team scripts/openrig_seat_policy.py agenthub_go/fastmcp/seat_management ai_docs/operations/seat-guides` -> **18 at HEAD, 0 after**.
+
 ## 2026-10-08 - compaction notice no longer asks the seat to compact itself
 
 - `agenthub_main/src/tests/scripts/test_openrig_compact_supervisor.py`: `test_the_notice_tells_the_seat_to_stop_and_not_to_compact_itself` (new); the still-working test now asserts "do not compact yourself" instead of the old `rig send ... /compact` instruction. 33 script tests pass (`--noconftest`).
