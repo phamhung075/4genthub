@@ -121,17 +121,17 @@
           "size": 19440
         },
         {
-          "hash": "68b252327f681578b365165cec63ff9f",
-          "modified": "2026-10-08T20:17:30.700222",
+          "hash": "1605e8f64c07a295ccfc53903f31762d",
+          "modified": "2026-10-08T20:38:41.620589",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 53158
+          "size": 54291
         }
       ],
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 10,
+      "count": 11,
       "files": [
         {
           "hash": "6548667b2352f61bc248afd01f19dd34",
@@ -190,6 +190,13 @@
           "size": 4787
         },
         {
+          "hash": "cdc5192871016d3148b682ee96983b94",
+          "modified": "2026-10-08T20:41:59.402769",
+          "name": "decision-remove-python-backend.md",
+          "path": "architecture-design/decision-remove-python-backend.md",
+          "size": 27993
+        },
+        {
           "hash": "1b55e24d349ff95ec7a54f499c2f39b7",
           "modified": "2026-10-08T20:24:14.160524",
           "name": "decision-team-json-live-roster.md",
@@ -197,11 +204,11 @@
           "size": 8855
         },
         {
-          "hash": "7cb0df4e60b56472ef16fca479cd85e7",
-          "modified": "2026-10-08T20:20:10.666756",
+          "hash": "f7538414a25a62632f5c443c03752ff8",
+          "modified": "2026-10-08T20:38:53.164486",
           "name": "decision-task-stats-endpoint.md",
           "path": "architecture-design/decision-task-stats-endpoint.md",
-          "size": 7376
+          "size": 8036
         }
       ],
       "path": "architecture-design"
@@ -683,7 +690,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T20:28:31.454627",
+  "generated_at": "2026-10-08T20:43:36.413313",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -732,6 +739,7 @@
         "decision-agy-runtime.md",
         "decision-commit-form-in-seat-instructions.md",
         "decision-orchestration-layer.md",
+        "decision-remove-python-backend.md",
         "decision-seat-attribution.md",
         "decision-seat-client-fold.md",
         "decision-task-stats-endpoint.md",
@@ -851,5 +859,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 78
+  "total_files": 79
 }
