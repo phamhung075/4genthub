@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Keep every seat of a rig under the per-session context limit without cutting a job short.
 
-A seat may run past the limit, up to ``HARD_LIMIT`` where it is compacted whatever it is doing. When its context crosses ``COMPACT_LIMIT`` the supervisor tells the
+A seat may run past the limit, up to ``HARD_LIMIT`` where it is compacted as soon as it is idle (a /compact sent to a working seat is read as text). When its context crosses ``COMPACT_LIMIT`` the supervisor tells the
 seat once, in its terminal, that the limit is reached and how to compact itself. When the seat then
 finishes (its session log is silent for ``--quiet`` seconds) and is still over the limit, the
 supervisor sends ``/compact`` for it. A compaction counts only when a new compaction record appears
@@ -10,6 +10,7 @@ Run it from the host, not inside a seat pane: a loop in a seat dies with the sea
 """
 
 import argparse
+import json
 import subprocess
 import sys
 import time
@@ -44,6 +45,20 @@ def say(rig: str, seat: str, text: str, raw: bool = False) -> None:
     )
 
 
+def idle(rig: str, seat: str) -> bool:
+    """True when OpenRig reports the seat idle. A /compact typed into a working seat is queued as a
+    steering message and read as text, not run, so it is sent only to an idle prompt."""
+    out = subprocess.run(["rig", "ps", "--nodes", "--rig", rig, "--json"], capture_output=True, text=True).stdout
+    try:
+        nodes = json.loads(out)
+    except json.JSONDecodeError:
+        return False
+    return any(
+        n.get("canonicalSessionName") == f"{rig}-{seat}@{rig}" and (n.get("agentActivity") or {}).get("state") == "idle"
+        for n in nodes
+    )
+
+
 def log(text: str) -> None:
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {text}", flush=True)
 
@@ -55,7 +70,7 @@ def notice(rig: str, seat: str) -> str:
         "When it is finished, compact your own session: run this and nothing else: "
         f"rig send {rig}-{seat}@{rig} /compact --raw. "
         f"If you do not, the supervisor sends /compact for you once you have been quiet for a while, "
-        f"or at once at {watch.kilo(watch.HARD_LIMIT)} tokens."
+        f"or, at {watch.kilo(watch.HARD_LIMIT)} tokens, as soon as you are idle."
     )
 
 
@@ -79,7 +94,8 @@ def step(rig: str, state: dict, quiet: int) -> None:
             s["told"] = True
             log(f"{seat}: told, {watch.kilo(used)} of {watch.kilo(watch.COMPACT_LIMIT)} ({runtime})")
         silent = now - path.stat().st_mtime
-        if (silent >= quiet or used >= watch.HARD_LIMIT) and now - s["sent"] > COOLDOWN:
+        due = silent >= quiet or used >= watch.HARD_LIMIT
+        if due and now - s["sent"] > COOLDOWN and idle(rig, seat):
             s.update(sent=now, before=used, count=compactions(path))
             say(rig, seat, "/compact", raw=True)
             log(f"{seat}: quiet {silent:.0f}s at {watch.kilo(used)}, sent /compact{' (hard limit)' if used >= watch.HARD_LIMIT else ''}")

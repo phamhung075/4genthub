@@ -24,10 +24,11 @@ def seat_log(tmp_path, tokens, age):
     return path
 
 
-def run_step(monkeypatch, path, state):
+def run_step(monkeypatch, path, state, working=False):
     sent = []
     monkeypatch.setattr(sup.watch, "rig_seats", lambda rig: ["lead"])
     monkeypatch.setattr(sup.watch, "seat_log", lambda rig, seat: (path, "omp"))
+    monkeypatch.setattr(sup, "idle", lambda rig, seat: not working)
     monkeypatch.setattr(
         sup,
         "say",
@@ -70,8 +71,15 @@ def test_a_seat_that_dropped_below_the_limit_is_told_again_next_time(
     assert state["lead"]["told"] is False
 
 
-def test_a_seat_at_the_hard_limit_is_compacted_even_while_working(
+def test_a_seat_at_the_hard_limit_is_compacted_without_waiting_for_quiet(
     monkeypatch, tmp_path
 ):
     sent = run_step(monkeypatch, seat_log(tmp_path, 420_000, 5), {})
     assert [t[:5] for t in sent] == ["Conte", "/comp"]
+
+
+def test_a_working_seat_is_never_sent_compact_even_at_the_hard_limit(
+    monkeypatch, tmp_path
+):
+    sent = run_step(monkeypatch, seat_log(tmp_path, 420_000, 600), {}, working=True)
+    assert [t[:5] for t in sent] == ["Conte"]
