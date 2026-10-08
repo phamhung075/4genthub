@@ -61,4 +61,11 @@ measured rather than assumed: a room whose seats pin a seat-type version that **
 them and must be re-pointed first — today no such room exists outside this rig (`4genthub-dev` pins 1.0.0 and
 renders no `AGENTS.md` at all). `guides.lock.json` carries the same note beside the pairing it protects.
 
+**And since 2026-10-08 the trigger is not the only gate — the flow adds a first step.** A change that touches
+structure, an interface, a boundary or the data model goes to the **architect** first: it reads the code, compares
+at least two options, writes a short decision note and recommends one, and the lead then assigns the work with that
+decision attached. This retirement removes a writer of `config.yml` and the source of the guide blocks, so it is
+that kind of change: **on the trigger, the architect decides first, the lead assigns, and a dev seat implements.**
+Not from this note, and not by a dev seat alone.
+
 Changing a limit is a decision about risk, so state it in the commit and keep `--check` clean.
