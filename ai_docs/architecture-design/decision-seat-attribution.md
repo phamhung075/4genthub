@@ -19,7 +19,7 @@ What C does not fix: a trailer names the seat that ran `git commit`, not the aut
 Consequences:
 - This is additive to the code (a new script, nothing changed) and changes the commit convention for every seat: each commit message gains one line, and no seat changes what it types. Installing a hook into the shared `.git` is a change to the owner's environment, so the owner approves the install step. The lead assigns the script.
 - `web-dev`'s six hand-written trailers stay as history. Its next commits get the hook's form, and it should stop writing the trailer by hand so one source writes it.
-- Attribution reading for every seat: `git log --format='%h %(trailers:key=Seat,valueonly)'`. A commit without the trailer was made before the install or by a human, and says so by having no trailer.
+- Attribution reading for every seat: `git log --format='%h %(trailers:key=Seat,valueonly)'`. After the install, a commit WITHOUT a `Seat:` trailer positively means "not a seat": the owner commits from the host, where `OPENRIG_SESSION_NAME` is unset, so the hook writes nothing. On 2026-10-08 that one absence would have answered the seat-watch question that five instruments could not. Before the install, an absence means nothing, so a reader compares the commit's date with the install commit before treating an absence as an answer.
 
 Acceptance (dev seat: skills-dev, whose area is seat tooling; go-dev if the lead prefers):
 - May touch: new `scripts/git-hooks/prepare-commit-msg`, its test under `agenthub_main/src/tests/scripts/` (the valid test path), and CHANGELOG/TEST-CHANGELOG.
