@@ -131,7 +131,7 @@
       "path": "api-integration"
     },
     "architecture-design": {
-      "count": 9,
+      "count": 10,
       "files": [
         {
           "hash": "6548667b2352f61bc248afd01f19dd34",
@@ -188,6 +188,13 @@
           "name": "decision-seat-client-fold.md",
           "path": "architecture-design/decision-seat-client-fold.md",
           "size": 4787
+        },
+        {
+          "hash": "1b55e24d349ff95ec7a54f499c2f39b7",
+          "modified": "2026-10-08T20:24:14.160524",
+          "name": "decision-team-json-live-roster.md",
+          "path": "architecture-design/decision-team-json-live-roster.md",
+          "size": 8855
         },
         {
           "hash": "7cb0df4e60b56472ef16fca479cd85e7",
@@ -683,7 +690,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T20:20:10.762159",
+  "generated_at": "2026-10-08T20:24:14.261669",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -735,6 +742,7 @@
         "decision-seat-attribution.md",
         "decision-seat-client-fold.md",
         "decision-task-stats-endpoint.md",
+        "decision-team-json-live-roster.md",
         "product-architecture-complete.md"
       ]
     },
@@ -851,5 +859,5 @@
     }
   },
   "total_directories": 22,
-  "total_files": 78
+  "total_files": 79
 }
