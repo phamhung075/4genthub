@@ -104,7 +104,7 @@ def step(rig: str, state: dict, quiet: int) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--rig", default="4genthub-min")
-    ap.add_argument("--quiet", type=int, default=180, help="seconds of log silence that mean the job is finished")
+    ap.add_argument("--quiet", type=int, default=60, help="seconds of log silence that mean the job is finished")
     ap.add_argument("--every", type=int, default=30)
     ap.add_argument("--once", action="store_true")
     a = ap.parse_args()
