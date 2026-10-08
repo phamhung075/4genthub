@@ -2,6 +2,20 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-08 - the duplicate LazySubtaskList pair, merged then retired: one ported case, and a correction to the audit that ordered it
+
+- `src/tests/components/LazySubtaskList.test.tsx` gains `should hold the edit dialog closed while the full subtask is still loading`,
+  ported from `src/components/__tests__/LazySubtaskList.test.tsx` (the file being retired). It pins the PENDING moment of the lazy
+  full-subtask load; this file already pins what happens when that load FAILS (`should handle load full subtask errors`, Error
+  Handling) and nothing about the state while it is in flight, so the ported case is the complement rather than a copy.
+- **CORRECTION TO MY OWN AUDIT, which is why the merge is one case and not two.** The audit told the lead that the v2-fallback
+  property was pinned "twice by different mechanisms, each a weaker half", and that A's `listSubtasks`-was-called assertion was
+  unique. It is NOT: `LazySubtaskList.test.tsx:169` and `:194` both already assert `api.listSubtasks` was called, so the file being
+  retired is subsumed on that property rather than weakened by its loss. The audit read only the first 20 lines of that test body
+  and my `head` cut the assertion off — a window, not a measurement.
+- The ported case uses `vi.mocked(...)` rather than the `as ReturnType<typeof vi.fn>` cast the surrounding cases use, per the
+  repository's `ts-no-return-type` rule, and types its deferred promise with `unknown` rather than an inferred helper type.
+
 ## 2026-10-08 - the absent-hash class: three sites, one failing case each, each seen red at its own line
 
 - `src/tests/pages/SeatAuthoringPage.test.tsx`: a module list whose entry OMITS `sha256`. **SEEN FAILING FIRST** as
