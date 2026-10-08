@@ -576,7 +576,7 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    finding: it shared the old tool set and predated the seat tools. It now carries a
    `Seat (manage_seat, call_seat)` row and states that the seat tools are the exception
    to the `action` rule.
-3. **`ai_docs/architecture-design/Architecture_Technique.md`** — **CLOSED** (`95ffca45`
+3. **`ai_docs/core-architecture/agenthub-system-architecture.md section 3`** — **CLOSED** (`95ffca45`
    and the 2026-10-06 truth-audit). The original finding: "32+ specialized agents", a
    **SQLite (fallback)** claim, and SQLAlchemy/Alembic described as the persistence path.
    The Python module tree and its SQLAlchemy examples are now covered by the

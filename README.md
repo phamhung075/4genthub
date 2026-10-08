@@ -351,7 +351,7 @@ mcp__agenthub_http__manage_context(
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/architecture-design/` |
+| 🏗️ **Architecture Guide** | Deep dive into system design | `ai_docs/core-architecture/agenthub-system-architecture.md` |
 | 🔧 **Development Guide** | Setup and contribution guide | `ai_docs/development-guides/` |
 | 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
 | 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |

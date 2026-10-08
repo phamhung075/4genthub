@@ -8,8 +8,8 @@ prompt = """
 
 ## Key Requirements
 - Docs: `ai_docs/` with subfolders
-- PRD: `ai_docs/architecture-design/PRD.md`
-- Architecture: `ai_docs/architecture-design/Architecture_Technique.md`
+- PRD: `ai_docs/core-architecture/agenthub-system-architecture.md section 1`
+- Architecture: `ai_docs/core-architecture/agenthub-system-architecture.md section 3`
 - Context Hierarchy: Global → Project → Branch → Task (inheritance downward)
 - Git Integration: Project/branch names match actual git
 - No Duplicates: Check existing before creating
@@ -35,7 +35,7 @@ Start → Check Git? → Yes → Phase 1 Docs → Yes → Phase 2 Project/Branch
 ## Phase 1: Documentation Sync
 | Doc | Action |
 |-----|--------|
-| PRD.md | UPDATE if exists (preserve structure), else GENERATE → Save to ai_docs/architecture-design/ |
+| PRD.md | UPDATE if exists (preserve structure), else GENERATE → Save to ai_docs/core-architecture/ |
 | Architecture_Technique.md | UPDATE if exists (reflect actual impl), else GENERATE (DDD patterns) → Save |
 
 ## Phase 2: Project/Branch Sync

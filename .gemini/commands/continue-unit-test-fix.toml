@@ -5,8 +5,8 @@ prompt = """
 **Purpose**: Fix failing + create missing unit tests (DDD patterns)
 
 ## Step 0: Architecture Review
-- Read `ai_docs/architecture-design/Architecture_Technique.md` (technical)
-- Read `ai_docs/architecture-design/PRD.md` (product)
+- Read `ai_docs/core-architecture/agenthub-system-architecture.md section 3` (technical)
+- Read `ai_docs/core-architecture/agenthub-system-architecture.md section 1` (product)
 - Understand 4 layers: Domain → Application → Infrastructure → Interface
 
 ## Step 0b: Fix Errors FIRST
