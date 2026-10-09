@@ -121,6 +121,17 @@
 ### Tested
 - Committed through a temporary index built from HEAD, so `git diff HEAD~1 HEAD` shows only additions to `CHANGELOG.md` and only the D9 hunks in the architecture file. The paths staged in the shared index and the uncommitted lines of `CHANGELOG.md` in the worktree were not taken.
 
+## Every `4genteam` verb answers `--help`, and a start that dies is no longer reported as a success
+
+### Fixed
+- `agenthub_client/src/agenthub_client/cli.py`: `4genteam compact --help` **started a supervisor**. `main()` inspected only the FIRST token for help, so the verb dispatched, `lifecycle()` read `rest[0]` as the RIG, and `--help` became the rig name: the child died instantly on `error: argument --rig: expected one argument` — the log file was literally `compact-supervisor---help.log` — while the verb still printed `compact supervisor: pid N` and returned 0. Reproduced verbatim before the fix; `4genteam status --help` ran a status for the rig `--help` the same way.
+- **A failed start now reads as one.** `start_supervisor` waits `SUPERVISOR_START_GRACE` (1.5 s) for the child and returns whether it SURVIVED: a child that exits prints `4genteam: the compaction supervisor exited immediately (status N); nothing is supervising this rig` on stderr and prints NO pid, and `compact` returns 3. `up` prints the same failure and carries on, so the stack still comes up. The outcome is read from the child rather than assumed from a successful `Popen`.
+- **Help is help for every verb**: a `LIFECYCLE_USAGE` table beside `LIFECYCLE` carries one usage line per verb (up, compact, stop, status, log, ui) and `main()` answers `-h`/`--help` with that line before dispatching. `4genteam feedback --help` is covered by the same check: it used to hand the flag to the packaged shell client, which refused it as an unknown option and exited 2.
+
+### Tested
+- `agenthub_client/tests/test_cli.py` (**NEW**, five tests). **Failing first** against the unfixed file: `3 failed, 1 passed` — the help tests failed through `watch` receiving `--rig --help` (`SystemExit: 2`), the dying-start test on `returned 0`, and the surviving-start control passed. `_no_side_effects()` replaces every action a verb can take, because unfixed `up --help` reaches `ensure_daemon`/`start_supervisor`/`watch`/`execvp herdr` and `log --help` hangs on `execvp tail`: a test whose failure can start a stack or hang is not a test.
+- Commands and results: `cd agenthub_client && python3 -m pytest tests/test_cli.py -q` -> **5 passed**; the full client suite -> **310 passed, 1 failed**, and that failure is not this change: `compact.py` carries another seat's UNCOMMITTED edit in the worktree, routing the hard-limit path through a new `type_compact()` the test does not stub. Reported, not touched.
+
 ## The client package's last four files are tracked, so a fresh checkout has all of it
 
 ### Added
