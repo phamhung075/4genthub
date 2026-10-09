@@ -40,24 +40,20 @@ func (e Env) FindProjectRoot() string {
 	if has(e.Cwd) {
 		return e.Cwd
 	}
-	for cur := e.Anchor; parentOf(cur) != cur; cur = parentOf(cur) {
-		if filepath.Base(cur) == "agenthub_go" {
-			return parentOf(cur)
-		}
-	}
+	// NO path-NAME fallback lives here, deliberately. A second walk used to return the parent of any
+	// directory literally named agenthub_go, which took the decision away from Env.Exists - the stub
+	// guards Exists, not names, so it could not stop it. A binary under such a path then resolved to
+	// that component's parent instead of to its own project, which is red on every host whose build
+	// caches sit in agenthub_go/.gotmp (task 0f965914; deleted, not gated: gating would leave an
+	// unreachable branch, because a hit at cur means Exists(parentOf(cur)/agenthub_go) already held).
+	//
+	// The invariant every return below satisfies: a directory that holds agenthub_go, the data path
+	// when it exists, or the temp fallback. TestFindProjectRootIsHostIndependent pins it.
 	dataPath, ok := e.Getenv("AGENTHUB_DATA_PATH")
 	if !ok {
 		dataPath = "/data"
 	}
 	if !e.Exists(dataPath) {
-		if has(e.Cwd) {
-			return e.Cwd
-		}
-		for cur := e.Anchor; parentOf(cur) != cur; cur = parentOf(cur) {
-			if has(cur) {
-				return cur
-			}
-		}
 		return "/tmp/agenthub_project"
 	}
 	return dataPath
