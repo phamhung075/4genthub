@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the no-MCP feedback door is guarded where it broke: the path the box executes, and the fall-through that would start a rig
+
+- `agenthub_go/fastmcp/server/httpapp/seat_feedback_script_test.go`: the submission script's path follows its move to `agenthub_client/src/agenthub_client/seat_feedback.sh`. **Failing first, on the tree as it stood**: both tests in the file FAIL with `cannot find the submission script: stat ../../../../scripts/seat_feedback.sh: no such file or directory` (`:37` and `:82`), because the relocation deleted the file the guard executes. After the repoint, `go test ./fastmcp/server/httpapp/ -run TestSeatFeedback -count=1` -> `ok agenthub/fastmcp/server/httpapp 0.108s`.
+- `agenthub_client/tests/test_feedback_door.py` (new, 2 tests) covers the wiring the Go guard cannot see. (i) `cli.main(["feedback", "--layer", "harness", ...])` returns 2 while `cli.lifecycle` is monkeypatched to FAIL: without a verb of its own the call falls through to `lifecycle("up", ...)` and starts a rig instead of reporting friction. The layer is deliberately outside the vocabulary, because the script refuses it before dialing, so this test needs neither a server nor a token. (ii) `cli.FEEDBACK_SCRIPT` is still `seat_feedback.sh` beside the module and exists, because `[tool.setuptools.package-data]` names it by filename — a rename inside the package would drop it from the wheel with no error anywhere.
+- Commands and results, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider agenthub_client/tests -q` -> **306 passed in 77.16s** (304 before this file, 2 in it). In `agenthub_go`: `go test ./fastmcp/server/httpapp/ -run TestSeatFeedback -count=1` -> `ok agenthub/fastmcp/server/httpapp 0.108s`.
+
 ## 2026-10-09 - render_config's rig is required, and the omitted-rig caller now fails instead of rendering
 
 - `agenthub_client/src/agenthub_client/seat_policy.py`: `render_config(seat, role, rig)` — the `rig: str | None = None` default is GONE, and the docstring states why. With the default, a caller that omitted the rig rendered a document whose per-rig thinking level was silently ABSENT: no exception, no log line, no test, so a seat came up on the wrong level and only a reader of the rendered file could tell.
