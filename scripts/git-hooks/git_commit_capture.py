@@ -10,7 +10,7 @@ to recover from. The framework's patch lands in the COMMITTING seat's store, whi
 seat's $HOME - so a victim looking in their own cache finds nothing - and nothing ever removes it.
 
 WHAT THIS DOES. Before the hooks can take anything, it records the unstaged diff to
-`<git-dir>/parked-diffs/<UTC stamp>-<seat or pid>/NN-<name>.patch`, ONE patch per path, plus a
+`<git-dir>/parked-diffs/<UTC stamp>-<seat>-<pid>/NN-<name>.patch`, ONE patch per path, plus a
 `MANIFEST.txt` naming each path with its byte count and sha1. `<git-dir>` is the SHARED repository, so
 any seat finds the capture by `git rev-parse --absolute-git-dir` - not by knowing whose commit it was.
 It then runs the real `git commit` and, after it returns, VERIFIES every captured path: the content is
