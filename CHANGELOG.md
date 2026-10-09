@@ -11,6 +11,18 @@
 - **ATTRIBUTION, BECAUSE THIS SECTION ARRIVED IN TWO STEPS AND THE BULLET ABOVE IS TRUE ONLY OF THE SECOND:** this section was **first carried by `7fec56fb`** — a pathspec commit on a shared file whose `CHANGELOG.md` hunk took an uncommitted draft of it from this seat, so for about two minutes the file carried two identical Rule 70 headings — and it was **committed for real by `6d6b4be4`**, the commit the change described above belongs to (it touched `agenthub_go/NEXT_GEN.md` +5 and this file +12). The duplicate heading the split produced was removed in `8b8f3332`, whose own subject is about route tests: the removal rode in as one of its two ride-along doc fixes, which is why blame on the deletion points at a commit that did not intend it. **Nothing here is rewritten; the record is stated rather than repaired.**
 - Documentation only: no code touched, no test changed.
 
+## A catalogue that cannot be read is CANNOT TELL, so it no longer unlocks the DROP
+
+### Fixed
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer.go` — **`ExistingTables` returned the read's error as an empty set**, so to both of its callers a FAILED READ and an EMPTY DATABASE were the same value. The query filters `table_schema = current_schema()`, so a wrong `search_path` or any query failure answered empty — and `Initialize` read an empty catalogue as licence to run a schema whose first statements are **23 `DROP TABLE IF EXISTS ... CASCADE`** (counted, not assumed: 24 raw hits, 23 statements). `c595f9cc` is what made that dangerous: those chunks used to be skipped along with their `-- Table:` comment and now execute. `ExistingTables` returns `(map, error)`; `Initialize` treats a failed read as CANNOT TELL and **returns false without running the DDL** — fail closed — with the reason logged; `VerifyTableStructure` refuses an unread catalogue instead of reporting a structure it could not read.
+- Both conditions of the gate are now written where the gate is stated: that branch's comment records that safety is TWO conditions — the catalogue **ANSWERED**, and it answered **EMPTY** — and says plainly that the guard in `db_initializer_verify_test.go` **cannot see a failed read**, because the fake it drives reports one as empty, so the failed read has its own case. A guard that cannot see a case must not read as though it could.
+
+### Verified
+- **SEEN RED FIRST, both cases:** on the parent `TestInitializeRefusesTheDDLWhenTheCatalogueCannotBeRead` failed with `an unread catalogue unlocked the DDL: "DROP TABLE IF EXISTS users CASCADE"`, and `TestVerifyTableStructureRefusesAnUnreadCatalogue` failed with `the refusal is silent: log=""` — the parent already answered false there, because a swallowed error meant "no tables", so that case failed on the silence rather than on the return value. Both pass with the fix and the whole package is **ok**.
+- The scripted driver gained the one seam that can show this: `failTablesRead`, applied to the `information_schema.tables` query itself rather than to the column query, because only failing THAT read distinguishes a failed catalogue read from an empty database.
+- `go vet` clean; `gofmt -l` prints nothing.
+- **NOT RUN:** a real Postgres with a broken `search_path`. The case drives the scripted driver.
+
 ## Rule 2 consults real ownership, not an environment string
 
 ### Fixed

@@ -8,7 +8,7 @@ package database
 // source path at runtime: that path resolved through runtime.Caller and failed inside the distroless
 // image, whose contents and working directory are not a source tree (row b231a84b). The naive
 // "split on ;" stays verbatim; the comment rule does NOT - skipping a chunk that STARTS with a comment
-// discarded the statement underneath it, so all 24 CREATE TABLE statements never ran (row 12444cc2).
+// discarded the statement underneath it, so all 23 CREATE TABLE statements never ran (row 12444cc2).
 
 import (
 	"context"
@@ -54,7 +54,9 @@ func NewDatabaseInitializer(ctx context.Context, deps Deps, cfg *DatabaseConfig)
 
 // Initialize mirrors initialize(): verify, then either verify the existing structure or run
 // the PostgreSQL init SQL file. The init SQL file is DDL, so it only runs when AUTO_MIGRATE=true;
-// without the opt-in a missing schema is reported as not initialized. It returns the Python bool.
+// without the opt-in a missing schema is reported as not initialized. A catalogue that cannot be READ
+// is neither empty nor populated - it is CANNOT TELL, and it refuses the DDL rather than unlocking it
+// (row 8ee196db). It returns the Python bool.
 func (d *DatabaseInitializer) Initialize() bool {
 	if d.cfg == nil || d.cfg.Engine == nil {
 		return false
@@ -63,9 +65,23 @@ func (d *DatabaseInitializer) Initialize() bool {
 		return false
 	}
 	// The schema also carries `DROP TABLE IF EXISTS ... CASCADE` statements, and they DO run. Safety
-	// here is not luck: this branch is reached only when the catalogue reported no tables at all, so
-	// an empty database drops nothing and a populated one never reaches the SQL.
-	if len(d.ExistingTables()) > 0 {
+	// here is TWO conditions, and the second is the one that used to be missing: the catalogue must have
+	// ANSWERED - a failed read is not an empty database, it is CANNOT TELL, and it returns false above -
+	// and it must have answered EMPTY, so an empty database drops nothing and a populated one never
+	// reaches the SQL.
+	//
+	// The guard in db_initializer_verify_test.go covers the branch order those conditions create. It
+	// CANNOT see a failed read, because the fake it drives reports it as empty; the failed read is
+	// covered by TestInitializeRefusesTheDDLWhenTheCatalogueCannotBeRead. A guard that cannot see a case
+	// must not read as though it could.
+	existing, err := d.ExistingTables()
+	if err != nil {
+		// FAIL CLOSED. The next statements of that SQL are DROP TABLE IF EXISTS ... CASCADE, so an
+		// unreadable catalogue must refuse the run rather than pass for an empty database and unlock it.
+		log.Printf("database: could not read the existing tables (%v); refusing to run the init SQL, whose DROP TABLE IF EXISTS statements would run against a catalogue that could not be read", err)
+		return false
+	}
+	if len(existing) > 0 {
 		d.VerifyTableStructure()
 		d.Initialized = true
 		return true
@@ -96,17 +112,22 @@ func (d *DatabaseInitializer) VerifyConnection() bool {
 	return err == nil
 }
 
-// ExistingTables returns the current table names as a set.
-func (d *DatabaseInitializer) ExistingTables() map[string]bool {
-	out := map[string]bool{}
+// ExistingTables returns the current table names as a set, AND the error the read produced.
+//
+// The set alone cannot tell "the catalogue answered empty" from "the catalogue could not be read": the
+// query filters table_schema = current_schema(), so a wrong search_path or any failure answers empty.
+// That distinction is load-bearing here, because Initialize reads an empty catalogue as licence to run
+// a schema whose first statements are `DROP TABLE IF EXISTS ... CASCADE` (row 8ee196db).
+func (d *DatabaseInitializer) ExistingTables() (map[string]bool, error) {
 	tables, err := tableNames(d.ctx, d.cfg.Engine.DB)
 	if err != nil {
-		return out
+		return nil, err
 	}
+	out := map[string]bool{}
 	for _, t := range tables {
 		out[t] = true
 	}
-	return out
+	return out, nil
 }
 
 // RequiredTables returns the table names from Tables (Base.metadata).
@@ -187,7 +208,11 @@ func stripLeadingComments(chunk string) string {
 
 // VerifyTableStructure checks the required core tables are present.
 func (d *DatabaseInitializer) VerifyTableStructure() bool {
-	existing := d.ExistingTables()
+	existing, err := d.ExistingTables()
+	if err != nil {
+		log.Printf("database: could not read the existing tables (%v); the table structure cannot be verified", err)
+		return false
+	}
 	for _, name := range databaseInitializerRequiredTables {
 		if !existing[name] {
 			return false

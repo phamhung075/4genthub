@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - a failed catalogue read is asserted to be CANNOT TELL, not an empty database
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_catalogue_test.go` (new) — `TestInitializeRefusesTheDDLWhenTheCatalogueCannotBeRead` is the fail-first case: with `AUTO_MIGRATE=true` (the gate open) and ONLY the catalogue read failing, `Initialize` must return false, leave `Initialized` unset, execute **no** `DROP TABLE`, and say why; `TestVerifyTableStructureRefusesAnUnreadCatalogue` requires the second caller to refuse an unread catalogue and to say so. Both are red on the parent with the messages quoted in `CHANGELOG.md`.
+- `agenthub_go/fastmcp/task_management/infrastructure/database/fakedriver_test.go` — one seam added, `failTablesRead`, applied to the `information_schema.tables` query. The existing `failQuery` covers the column query and could not show this: distinguishing a failed catalogue read from an empty database means failing THAT read.
+- Commands: `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `go vet` clean; `gofmt -l` prints nothing.
+- **NOT RUN:** a real Postgres with a broken `search_path` — the cases drive the scripted driver.
+
 ## 2026-10-09 - the ownership checker is asserted to be ASSIGNED, and to be what decides
 
 - `agenthub_go/fastmcp/server/httpapp/ownership_wiring_test.go` (new) — `TestNewAppAssignsTheOwnershipChecker` is the fail-first case: with the call removed from `NewApp`, `routes.Ownership` stays nil and it fails with the message quoted in `CHANGELOG.md`, while `TestWireOwnershipCheckerAssignsGlobal` pins the assignment alone so a failure has exactly one reason. Both follow `TestWireMissedNotificationStoreAssignsGlobal` next door, which is the same defect class.

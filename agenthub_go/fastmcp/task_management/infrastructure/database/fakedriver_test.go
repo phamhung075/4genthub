@@ -17,6 +17,9 @@ type fakeDB struct {
 	statements []string
 	tables     map[string][]string
 	failExec   func(q string) error
+	// failTablesRead fails the information_schema.tables read specifically: a failed catalogue read and
+	// an empty database must be distinguishable, and only a seam that fails THAT query can show it.
+	failTablesRead func(q string) error
 	// schema is what the column drift query returns; blocking marks a NOT NULL column without a default.
 	schema    []fakeColumn
 	failQuery func(q string) error
@@ -73,6 +76,11 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 	s.f.record(s.q)
 	switch {
 	case strings.Contains(s.q, "information_schema.tables"):
+		if s.f.failTablesRead != nil {
+			if err := s.f.failTablesRead(s.q); err != nil {
+				return nil, err
+			}
+		}
 		var rows [][]driver.Value
 		for _, t := range []string{"subtasks", "tasks"} {
 			if _, ok := s.f.tables[t]; ok {
