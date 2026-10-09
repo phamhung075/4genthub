@@ -23,6 +23,15 @@
 ### Verified
 - `agenthub_client/tests/test_cli.py`: new `test_up_initialises_every_service_in_order`; 5 passed. Live: `lead` 499k to 33k by the tool, `reviewer` and `context-dev` witnessed by the supervisor. The supervisor's own hard-limit call has not yet fired (no seat past 300k).
 
+## The metrics citation in the Monitoring block was off by one line
+
+### Fixed
+- `ai_docs/operations/complete-operations-guide.md:276`: the Monitoring block cited `misc_mount.go:72` for `GET /ws/metrics`; the registration is at `:73`, and `:72` is the closing `})` of the registration above it. One line, no adjacent sweep. **In scope now rather than merely reported, because that block is the citation for the Prometheus correction landed in `12006c50`.**
+
+### Verified
+- `misc_mount.go` read at lines 55–80: `:72` is `})`, `:73` is `mux.HandleFunc("GET /ws/metrics", handleWebSocketMetrics)`, and the handler is defined at `:238`.
+- `grep -n 'misc_mount\.go:' ai_docs/operations/complete-operations-guide.md` -> one line, the Monitoring block, now `:73`.
+
 ## The operations guide contradicted itself on Prometheus; the Quick Reference row now names the surface that exists
 
 ### Fixed

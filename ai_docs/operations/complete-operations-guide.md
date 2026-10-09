@@ -273,7 +273,7 @@ AUTO_MIGRATE=true ./agenthub
 
 **Monitoring, as this repository actually provides it**:
 - **`GET /health`** — liveness plus the deployed version (the deploy-confirmation signal).
-- **`GET /ws/metrics`** — WebSocket connection metrics (`fastmcp/server/httpapp/misc_mount.go:72`).
+- **`GET /ws/metrics`** — WebSocket connection metrics (`fastmcp/server/httpapp/misc_mount.go:73`).
 - **Performance metrics** — `GET /api/v1/performance/metrics/overview`, `/timeseries` and `/alerts`.
 - **PostgreSQL** — the `pg_stat_statements` queries below.
 
