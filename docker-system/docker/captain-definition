@@ -5,7 +5,7 @@
     "# This file is used by CapRover for deployment",
     "# Environment variables are injected by CapRover",
     "",
-    "# Use the production backend Dockerfile",
-    "FROM ../docker-system/docker/Dockerfile.backend.production"
+    "# Use the Go backend Dockerfile",
+    "FROM ../docker-system/docker/Dockerfile.backend.go"
   ]
 }
