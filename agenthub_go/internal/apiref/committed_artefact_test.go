@@ -25,6 +25,11 @@ package apiref_test
 // This gate's job is the different one the producer cannot do for itself - to say whether the FILE the
 // frontend imports is the file the producer would write today - so it must compare the producer to the
 // artefact, not to a third opinion.
+//
+// AND IT COMPARES THE SERVED PAYLOAD, NOT ONLY THE IDENTITY: the page renders the descriptions, the path
+// parameters, the handler names and the tool parameter schemas, so an artefact whose text has drifted is
+// a stale serve even when every route is present and every name matches. routeFingerprints states why
+// that comparison is on the encoded entry rather than field by field.
 
 import (
 	"encoding/json"
@@ -81,25 +86,51 @@ func readCommittedArtefact(t *testing.T, path string) apiref.Reference {
 	return reference
 }
 
-// routeKeys reduces entries to the identity the two sides must agree on. NO normalisation happens here:
-// the method and the path are used exactly as written, which is the whole point - a {$} stays a {$} and
-// a parameter stays a parameter, so neither trap in the package note can fire.
-func routeKeys(reference apiref.Reference) []string {
-	keys := make([]string, 0, len(reference.Routes))
-	for _, r := range reference.Routes {
-		keys = append(keys, r.Method+" "+r.Path)
+// routeFingerprints reduces entries to everything the two sides must agree on: the identity AND the
+// payload the page serves. NO normalisation happens on the identity - the method and the path are used
+// exactly as written, which is the whole point, because a {$} stays a {$} and a parameter stays a
+// parameter and neither trap in the package note can fire.
+//
+// THE PAYLOAD IS PART OF THE PROJECTION BECAUSE THE PAGE SERVES IT: the description, the path parameters
+// and the handler name reach users, so an artefact whose text has drifted serves what the server no
+// longer carries, and a keys-only projection reports that file as matching. That is the hole this
+// projection closes, and it is the one the page's own prose note cannot close for itself.
+//
+// THE COMPARISON IS ON THE ENCODED ENTRY RATHER THAN FIELD BY FIELD, for a reason this package measured:
+// ToolEntry.Parameters is map[string]any, built in memory on the producer's side and unmarshalled from
+// JSON on the artefact's, so one schema arrives as int on one side and float64 on the other and a
+// field-wise comparison disagrees on a file that is correct. The renderer's own encoding maps those two
+// forms to one document, and it normalises nothing else: no path is rewritten and no field is dropped.
+func routeFingerprints(reference apiref.Reference) []string {
+	fingerprints := make([]string, 0, len(reference.Routes))
+	for _, route := range reference.Routes {
+		fingerprints = append(fingerprints, encodedEntry(route))
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Strings(fingerprints)
+	return fingerprints
 }
 
-func toolKeys(reference apiref.Reference) []string {
-	keys := make([]string, 0, len(reference.Tools))
+// toolFingerprints is the same projection for the tool list, and it is where the encoding above earns
+// its keep: every tool carries a parameters schema, and Parameters is exactly the field that does not
+// survive a naive field-wise comparison.
+func toolFingerprints(reference apiref.Reference) []string {
+	fingerprints := make([]string, 0, len(reference.Tools))
 	for _, tool := range reference.Tools {
-		keys = append(keys, tool.Name)
+		fingerprints = append(fingerprints, encodedEntry(tool))
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Strings(fingerprints)
+	return fingerprints
+}
+
+// encodedEntry is the projection's one primitive. A value that cannot be encoded yields a marker naming
+// the failure rather than an empty string, because an entry dropped silently here reads as a difference
+// in the other direction and would blame the committed file for the encoder's problem.
+func encodedEntry(entry any) string {
+	encoded, err := json.Marshal(entry)
+	if err != nil {
+		return fmt.Sprintf("unencodable %T: %v", entry, err)
+	}
+	return string(encoded)
 }
 
 // TestTheCommittedArtefactMatchesTheProducer is the gate. Both directions fail, because both are
@@ -113,8 +144,8 @@ func TestTheCommittedArtefactMatchesTheProducer(t *testing.T) {
 		t.Fatalf("Entries(%q): %v", mountDir(t), err)
 	}
 
-	fromCode := routeKeys(produced)
-	inFile := routeKeys(committed)
+	fromCode := routeFingerprints(produced)
+	inFile := routeFingerprints(committed)
 	if missing := difference(fromCode, inFile); len(missing) > 0 {
 		t.Errorf("DIRECTION 1 FAILS: %d route(s) are registered in the code and absent from the "+
 			"committed artefact, so the page understates the API. Re-run the generator and commit the "+
@@ -125,8 +156,8 @@ func TestTheCommittedArtefactMatchesTheProducer(t *testing.T) {
 			"so the page advertises what the server does not answer:\n  %s", len(stale), strings.Join(stale, "\n  "))
 	}
 
-	codeTools := toolKeys(produced)
-	fileTools := toolKeys(committed)
+	codeTools := toolFingerprints(produced)
+	fileTools := toolFingerprints(committed)
 	if missing := difference(codeTools, fileTools); len(missing) > 0 {
 		t.Errorf("DIRECTION 1 FAILS for tools: %d tool(s) exist in the server and are absent from the "+
 			"committed artefact:\n  %s", len(missing), strings.Join(missing, "\n  "))
@@ -169,8 +200,8 @@ func TestTheArtefactGateCanFailBothWays(t *testing.T) {
 		Tools:  committed.Tools,
 	}
 	missingOne.Routes = missingOne.Routes[:len(missingOne.Routes)-1]
-	fromCode := routeKeys(committed)
-	inFile := routeKeys(missingOne)
+	fromCode := routeFingerprints(committed)
+	inFile := routeFingerprints(missingOne)
 	if got := difference(fromCode, inFile); len(got) != 1 {
 		t.Errorf("direction 1 did not name exactly the dropped route: got %v", got)
 	}
@@ -182,13 +213,36 @@ func TestTheArtefactGateCanFailBothWays(t *testing.T) {
 	// than from the perturbed one above, because a set that is already missing an entry makes direction
 	// 1 fire for the earlier reason and proves nothing about this one.
 	extraRoute := apiref.RouteEntry{Method: "GET", Path: "/a/route/that/is/registered/nowhere"}
-	inFile = routeKeys(committed)
+	inFile = routeFingerprints(committed)
 	inFile = append(inFile, extraRoute.Method+" "+extraRoute.Path)
 	if got := difference(inFile, fromCode); len(got) != 1 || got[0] != extraRoute.Method+" "+extraRoute.Path {
 		t.Errorf("direction 2 did not name exactly the invented route: got %v", got)
 	}
 	if got := difference(fromCode, inFile); len(got) != 0 {
 		t.Errorf("direction 1 fired on a set that only gained an entry: got %v", got)
+	}
+
+	// DIRECTION 3: THE STALE-TEXT CASE - an entry whose identity is untouched and whose SERVED TEXT has
+	// drifted. The method and the path are identical on both sides, so the keys-only projection this
+	// replaced reported the two sets as EQUAL; that is the hole, and these assertions are what show the
+	// value projection closes it. Both sides are named exactly as the renderer encodes them, which is
+	// also what keeps this assertion free of any assumption about how a description is spelled.
+	stale := apiref.Reference{
+		Routes: append([]apiref.RouteEntry{}, committed.Routes...),
+		Tools:  append([]apiref.ToolEntry{}, committed.Tools...),
+	}
+	stale.Routes[0].Description = committed.Routes[0].Description + " (text that is not what the server serves)"
+	dropped := difference(routeFingerprints(committed), routeFingerprints(stale))
+	if len(dropped) != 1 || dropped[0] != encodedEntry(committed.Routes[0]) {
+		t.Errorf("the pristine route did not leave the set as the named entry: got %v", dropped)
+	}
+	added := difference(routeFingerprints(stale), routeFingerprints(committed))
+	if len(added) != 1 || added[0] != encodedEntry(stale.Routes[0]) {
+		t.Errorf("the route whose text drifted did not arrive as the named entry, text included: got %v", added)
+	}
+	stale.Tools[0].Description = committed.Tools[0].Description + " (text that is not what the server serves)"
+	if got := difference(toolFingerprints(committed), toolFingerprints(stale)); len(got) != 1 || got[0] != encodedEntry(committed.Tools[0]) {
+		t.Errorf("the value projection did not name exactly the tool whose text drifted: got %v", got)
 	}
 
 	// AND THE PARSER ITSELF: a body that is not the renderer's envelope must be refused rather than

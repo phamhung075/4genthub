@@ -1,3 +1,14 @@
+## The artefact gate now compares the served payload, and the stale-text hole is closed (row `ee2611a6`)
+
+### Changed
+- **`agenthub_go/internal/apiref/committed_artefact_test.go` — `routeFingerprints`/`toolFingerprints` replace `routeKeys`/`toolKeys`, so the artefact the frontend imports is compared to the producer by DESCRIPTION, path parameters, handler name and tool parameter schema, not only by method+path and tool name.** The gate already read and decoded all of that — `readCommittedArtefact` unmarshals the whole `Reference` — and then discarded everything but the identity, so a stale description on a route that is present was served with every test green.
+- **The comparison is on the renderer's own encoding of each entry, and the reason is measured rather than stylistic:** `ToolEntry.Parameters` is `map[string]any`, built in memory on the producer's side and unmarshalled from JSON on the artefact's, so one schema arrives as `int` on one side and `float64` on the other. Encoding maps both onto one document, and it rewrites no path, so the `{$}` end-anchor and the parameter-absorption trap the file's own note forbids stay out of this gate.
+- **The supersession is named, not rewritten:** the earlier entry in this file that recorded the gate as comparing tool NAMES (`toolKeys`) and not descriptions was true of the commit it describes; that gap is what this change closes, and the dated entry stays as the record of what it did.
+
+### Verified
+- One served description perturbed in the committed file made the gate fail in BOTH directions, each printing the entry it named; the restore was byte-identical (`sha256` equal to the backup) and the package green again. `go vet ./internal/apiref/...` clean, `go test ./...` → 142 ok / 0 FAIL, root `gofmt -l` → 0 of 1267 tracked `.go` files. Exact commands and results in `TEST-CHANGELOG.md`.
+- **The `TEST-CHANGELOG.md` entry for this row is not in this commit, and it is there because of a shared-worktree race rather than a decision:** it landed inside `1751922e` (another seat's commit), whose `git add` executed after the entry was written. The text is in the tree and correct; it is simply recorded under a commit whose message does not mention it.
+
 ## Both recorded digests of a mirrored skill are read, not just the source's: 2 of the 54 sides carried a digest nothing verified
 
 ### Fixed
