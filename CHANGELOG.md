@@ -25,6 +25,17 @@
 - Selection, on the same residue: `... --prune --max-age-hours 0.01 --json` → **moved 14, every one `class=applied`**, leaving all 749 `drifted` and the 1 `empty` in the live set. With the default 24h retention the same command moves **0** — no `applied` patch on this box is old enough yet — which is the conservative rule doing its job.
 - The manifests made a duplicate visible that the row's design predicted: the **same** patch (sha1 `d148a418…`) sits in **four** seats' stores, because the framework writes the tree-wide diff into the *committing* seat's store. That is exactly why a victim searching only their own cache finds nothing.
 
+## Rule 67's trailer instrument is corrected: its population is partial, and the trailer parser has a false-negative mode
+
+### Changed
+- `agenthub_go/NEXT_GEN.md`, rule 67, instrument (i): the sentence claiming the `Seat:` trailer first appeared at `cd472751`, 2026-10-09 19:00:03Z, **is false in all three of its parts**, and a census replaced it. **Measured over the 164 commits since 2026-10-08, reading BOTH `%(trailers:key=Seat)` and the raw body:** the earliest commit carrying a `Seat:` line is **`44c81bcb`, 2026-10-08 18:33:49Z** — a day earlier; **`cd472751` is not the first — its direct parent `5a2fc602`, and `4814b711` a minute before it, already carry one**; and the population is **partial**, with `12006c50` and `9ba5a358` carrying none inside the same hour. **So absence of a trailer is not evidence about authorship: read it as "no trailer", never as "not this seat".**
+- The same edit names **the instrument's false-negative mode as a LIMIT rather than a footnote: five commits carry a `Seat:` line that `%(trailers:key=Seat)` does not parse** (`ff6fed10`, `12bc9bce`, `ec220212`, `b10ed919`, `ba19e624` — the parsed trailer comes back empty while the body shows the seat), so **the parsed trailer and the body line must be read together.** A parser answering "no trailer" for a commit that visibly carries one is **the same shape as rule 69's store path, where an empty answer and a negative answer look identical.**
+
+### Verified
+- The census is a read-only command over `git log --since=2026-10-08T00:00:00Z` carrying `%h`, `%cI`, `%(trailers:key=Seat,valueonly)` **and the full body**, so the parsed trailer and the body line are compared on every commit in the window; the five false negatives are the commits where the two disagree.
+- **What survives, stated because a correction must not read as a retreat: rule 67's central claim — a hash appearing in a transcript is not an attribution method — and instruments (ii) the per-commit gate file and (iii) the commit confirmation in the authoring seat's own store are untouched. This narrows one instrument.**
+- Documentation only: no code touched, no test changed.
+
 ## Rule 69 — a stale instrument is not an absent fact: the fourth instrument rule names when it was last read
 
 ### Added
