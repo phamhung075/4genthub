@@ -5,64 +5,64 @@
   },
   "modules": [
     {
-      "slug": "guide-common",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "guide-common.md"
-    },
-    {
       "slug": "guide-lead",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-lead.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md"
     },
     {
       "slug": "guide-go-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-go-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev.md"
     },
     {
       "slug": "guide-fe-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-fe-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md"
     },
     {
       "slug": "guide-web-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-web-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-web-dev.md"
     },
     {
       "slug": "guide-skills-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-skills-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-skills-dev.md"
     },
     {
       "slug": "guide-context-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-context-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-context-dev.md"
     },
     {
       "slug": "guide-feedback-dev",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-feedback-dev.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-feedback-dev.md"
     },
     {
       "slug": "guide-reviewer",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-reviewer.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md"
     },
     {
       "slug": "guide-writer",
       "version": "1.0.0",
       "kind": "instruction",
-      "file": "guide-writer.md"
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md"
+    },
+    {
+      "slug": "guide-architect",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-architect.md"
     },
     {
       "slug": "policy-lead",
@@ -117,6 +117,12 @@
       "version": "1.1.0",
       "kind": "policy",
       "file": "policy-writer.json"
+    },
+    {
+      "slug": "policy-architect",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "policy-architect.json"
     }
   ],
   "seats": [
@@ -228,6 +234,10 @@
     "writer": [
       "guide-writer",
       "policy-writer"
+    ],
+    "architect": [
+      "guide-architect",
+      "policy-architect"
     ]
   }
 }
