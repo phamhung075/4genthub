@@ -455,6 +455,16 @@ Track test suite changes, fixes, and improvements for agenthub.
   handler is a KEYDOWN rather than a click; and the focus-restore effect's deps are `[opener]` - a `useState` - so its
   cleanup runs on unmount only and focuses the opener without closing anything.
 - Verified: the file 1 passed, as a guard.
+- **2026-10-09 FOLLOW-UP — the mock this file carries had to move with the dialog, and the FULL SUITE is what said so.** The
+  details dialog now reads its data through `useTask` from `hooks/useTasks` (the open-dialog realtime fix, `c694ee5d`), while this
+  file's `vi.mock('../../hooks/useTasks')` factory listed only `useTasks` and `useTaskMutations`. Under that factory the mocked
+  module had no `useTask` export, so the import was `undefined`, the dialog threw before rendering anything, and this case failed
+  with `Unable to find role="dialog"` — a green file turned red by a change three files away from it.
+- **THE FOCUSED RUNS WERE ALL GREEN WHILE THIS WAS RED**, which is the whole argument for the full pass: `TaskDetailsDialog.test.tsx`
+  (30 passed), the new realtime case (1 passed) and the hooks contract file (16 passed) held, and `npx vitest run` reported
+  **1 failed | 1777 passed (1778)**, the single failure being exactly this case. The factory now carries
+  `useTask: () => ({ data: undefined, isLoading: false })` — undefined data deliberately leaves the dialog on its `task` PROP,
+  which is the path this file exercises — and the full suite is **113 files, 1778 tests, 0 failed**.
 
 ## 2026-10-07 - the task UPDATE animation: the chain is sound, and the test that proved it
 

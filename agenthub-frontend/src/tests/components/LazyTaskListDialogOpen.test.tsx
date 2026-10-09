@@ -60,6 +60,10 @@ vi.mock('../../hooks/useTasks', () => ({
     isLoading: false,
     refetch: vi.fn(),
   }),
+  // The details dialog now subscribes to ['task', taskId, false] through useTask. The mocked
+  // module has to carry the export, and undefined data deliberately leaves the dialog on its
+  // task PROP, which is the path this case exercises.
+  useTask: () => ({ data: undefined, isLoading: false }),
   useTaskMutations: () => ({}),
 }));
 vi.mock('@tanstack/react-query', async () => {
