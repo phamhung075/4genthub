@@ -6,7 +6,7 @@ import "agenthub/fastmcp/task_management/domain/entities"
 
 // ManageAgentDescription ports MANAGE_AGENT_DESCRIPTION.
 const ManageAgentDescription = `
-AGENT MANAGEMENT - Registration & assignment: 33 specialized agents (coding, testing, architecture, DevOps, security, ML, etc.)
+AGENT MANAGEMENT - Registration, assignment and lifecycle of project agents
 
 ACTIONS: register | assign | get | list | update | unassign | unregister | rebalance
 
@@ -29,8 +29,7 @@ var ManageAgentParametersDescription = map[string]string{
 }
 
 // LegacyManageAgentParameters ports the legacy MANAGE_AGENT_PARAMETERS map.
-// (Named with a prefix to avoid colliding with a concurrently-added
-// unified_agent_description.go that also declares ManageAgentParameters.)
+// Nothing in Go references it.
 var LegacyManageAgentParameters = map[string]string{
 	"action":        "Agent management action to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance. (string)",
 	"project_id":    "Project identifier for agent management. Required for all actions. Must be provided. (string)",

@@ -1813,7 +1813,7 @@ export const apiReference: ApiReference = {
     },
     {
       "name": "manage_agent",
-      "description": "\nAGENT MANAGEMENT - Registration \u0026 assignment: 33 specialized agents (coding, testing, architecture, DevOps, security, ML, etc.)\n\nACTIONS: register | assign | get | list | update | unassign | unregister | rebalance\n\nKEY PARAMS: project_id (REQUIRED for all) | name (REQUIRED for register) | agent_id (REQUIRED for most except register/list/rebalance) | git_branch_id (REQUIRED for assign/unassign)\n\nREGISTRATION: agent_id auto-generated if not provided\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
+      "description": "\nAGENT MANAGEMENT - Registration, assignment and lifecycle of project agents\n\nACTIONS: register | assign | get | list | update | unassign | unregister | rebalance\n\nKEY PARAMS: project_id (REQUIRED for all) | name (REQUIRED for register) | agent_id (REQUIRED for most except register/list/rebalance) | git_branch_id (REQUIRED for assign/unassign)\n\nREGISTRATION: agent_id auto-generated if not provided\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
       "parameters": {
         "properties": {
           "action": {
