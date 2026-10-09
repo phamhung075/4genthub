@@ -409,7 +409,7 @@ describe('SeatsPage', () => {
     it('shows the empty state when no bridge is connected', async () => {
       renderPage();
       expect(
-        await screen.findByText('No bridge connected. Run scripts/openrig_bridge.py on your PC.')
+        await screen.findByText('No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.')
       ).toBeInTheDocument();
     });
 

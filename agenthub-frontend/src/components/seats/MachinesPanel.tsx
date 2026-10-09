@@ -176,7 +176,7 @@ export const MachinesPanel: React.FC = () => {
       {!isLoading && !error && machines.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No bridge connected. Run scripts/openrig_bridge.py on your PC.
+            No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.
           </CardContent>
         </Card>
       )}

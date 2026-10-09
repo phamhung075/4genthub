@@ -454,7 +454,7 @@ describe('SeatDetailPage', () => {
       expect(model.value).toBe('sonnet');
       expect((screen.getByLabelText('LLM runtime') as HTMLSelectElement).value).toBe('claude-code');
       expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-      expect(screen.getByText(/openrig_seat_sync.py switch/)).toBeInTheDocument();
+      expect(screen.getByText(/4genteam sync switch/)).toBeInTheDocument();
     });
 
     it('disables Save and explains the rule when the model is invalid', async () => {

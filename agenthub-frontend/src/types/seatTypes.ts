@@ -229,7 +229,7 @@ export interface ResolvedSeat {
 }
 
 // =============================================================================
-// Bridge machines (live status reported by scripts/openrig_bridge.py)
+// Bridge machines (live status reported by the 4genteam bridge)
 // =============================================================================
 
 export type SeatRunState = 'running' | 'idle' | 'blocked' | 'stopped' | 'unknown';

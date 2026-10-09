@@ -96,7 +96,7 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
         <p className="mt-4 text-xs text-muted-foreground">
           Saved in 4genthub. A model change is applied to the running seat with{' '}
           <code className="rounded bg-muted px-1 font-mono">
-            openrig_seat_sync.py switch &lt;room&gt; &lt;seat&gt; --model &lt;id&gt;
+            4genteam sync switch &lt;room&gt; &lt;seat&gt; --model &lt;id&gt;
           </code>
           ; a runtime change takes effect after the room is restarted with{' '}
           <code className="rounded bg-muted px-1 font-mono">rig up</code>.

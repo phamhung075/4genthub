@@ -619,7 +619,7 @@ const PreviewTab: React.FC = () => {
 
   const files = resolvedSeat?.files ?? [];
   const activeFile = files[fileIndex];
-  const command = `scripts/openrig_seat_sync.py pull ${room} ${seat}`;
+  const command = `4genteam sync pull ${room} ${seat}`;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(command);
