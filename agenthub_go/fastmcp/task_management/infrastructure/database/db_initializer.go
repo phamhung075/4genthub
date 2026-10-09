@@ -11,6 +11,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -107,15 +108,19 @@ func (d *DatabaseInitializer) RequiredTables() map[string]bool {
 	return out
 }
 
-// ExecuteInitSQLFile runs the init SQL file's statements in one transaction.
+// ExecuteInitSQLFile runs the init SQL file's statements in one transaction. Every false return says
+// which asset and which error produced it: the read failure that a fresh database in the distroless
+// image hits (row b231a84b) was previously indistinguishable from a completed run.
 func (d *DatabaseInitializer) ExecuteInitSQLFile(filename string) bool {
 	path := databaseInitializerSQLFilePath(filename)
 	data, err := os.ReadFile(path)
 	if err != nil {
+		log.Printf("database: could not read init SQL asset %s from %s: %v", filename, path, err)
 		return false
 	}
 	tx, err := d.cfg.Engine.DB.BeginTx(d.ctx, nil)
 	if err != nil {
+		log.Printf("database: could not begin the init SQL transaction: %v", err)
 		return false
 	}
 	statements := strings.Split(string(data), ";")
@@ -130,10 +135,12 @@ func (d *DatabaseInitializer) ExecuteInitSQLFile(filename string) bool {
 		}
 		if _, err := tx.ExecContext(d.ctx, statement); err != nil {
 			_ = tx.Rollback()
+			log.Printf("database: init SQL statement failed, rolled back: %v: %s", err, statement)
 			return false
 		}
 	}
 	if err := tx.Commit(); err != nil {
+		log.Printf("database: could not commit the init SQL transaction: %v", err)
 		return false
 	}
 	return true

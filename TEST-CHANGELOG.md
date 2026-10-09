@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the init SQL runner's silent false is pinned by two cases, one of them the container's not-a-directory shape
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_init_sql_test.go`, **NEW FILE**, 2 cases over the scripted fake driver: (1) an asset whose resolved PARENT IS A FILE must return false, must not touch the database at all, and must log; (2) a failing statement must return false and log the error. Case (1) is the container's shape: with the working directory at the image root, `/agenthub` IS the binary, so a source path built from `runtime.Caller` walks through a file and the read fails with not-a-directory.
+- **BOTH WERE RED FIRST, TODAY'S RED:** before the log lines, (1) failed with `the read failure is silent: log=""` and (2) with `the statement failure is silent: log=""`.
+- The `captureLog` helper already existed in `missing_tables_test.go`; this file REUSES it rather than adding a second way to capture the standard logger. The first draft duplicated it and the compiler refused the redeclaration, which is the cheap version of the same lesson.
+- Commands: `go test -count=1 -run 'TestExecuteInitSQLFileLogs' -v ./fastmcp/task_management/infrastructure/database/` → both PASS after the fix and both FAIL before it; `gofmt -l` on the new file prints nothing.
+
 ## 2026-10-09 - the guide text gets a content guard, and the guard's own red is what turned up the missing rule
 
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_script_tests_test.go`, **NEW FILE**, 3 cases over the embedded shelf and the repo-side publish sources: (A) the path is taken OUT OF THE DOCUMENTED COMMAND and asked of `git ls-files`, so a documented path with zero tracked files fails; (C) the source and its byte-identical mirror must not diverge, and both txt sources must carry the command; (B) the no-pipe rule must be stated beside the command.
