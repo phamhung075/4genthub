@@ -22,6 +22,7 @@ import { Select } from '../components/ui/select-simple';
 import { ModulePublishForm } from '../components/seats/ModulePublishForm';
 import { McpBlockForm } from '../components/seats/McpBlockForm';
 import { SeatComposer } from '../components/seats/SeatComposer';
+import { SeatPreview } from '../components/seats/SeatPreview';
 import { SeatTypeVersionForm } from '../components/seats/SeatTypeVersionForm';
 import {
   useMcpServers,
@@ -136,17 +137,23 @@ export const SeatAuthoringPage: React.FC = () => {
         ) : seats.length === 0 ? (
           <p className="text-sm text-muted-foreground">This room has no seats yet.</p>
         ) : (
-          <SeatComposer
-            room={roomSlug}
-            seat={seatKey}
-            seatType={selectedSeatType}
-            modules={modules}
-            mcpServers={mcpServers}
-            overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
-            isSaving={updateOverlay.isPending}
-            saveError={composerError}
-            onApply={handleApply}
-          />
+          <>
+            <SeatComposer
+              room={roomSlug}
+              seat={seatKey}
+              seatType={selectedSeatType}
+              modules={modules}
+              mcpServers={mcpServers}
+              overlays={{ company: companyOverlay, room: roomOverlay, seat: seatOverlay }}
+              isSaving={updateOverlay.isPending}
+              saveError={composerError}
+              onApply={handleApply}
+            />
+            {/* The SAME component the seat-detail page renders, given this page's own selection as
+                PROPS: /seats/authoring carries no :room/:seat, so a component that read the route
+                would show an empty snapshot here and read as a data problem. */}
+            <SeatPreview room={roomSlug} seat={seatKey} />
+          </>
         )}
       </section>
 

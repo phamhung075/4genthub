@@ -20,6 +20,7 @@ vi.mock('../../services/seatApi', () => ({
     getOverlay: vi.fn(),
     putOverlay: vi.fn(),
     getModuleVersion: vi.fn(),
+    getResolvedSeat: vi.fn(),
   },
 }));
 
@@ -126,6 +127,17 @@ beforeEach(() => {
           : JSON.stringify({ name: 'sequential-thinking', type: 'stdio', command: 'npx', args: ['-y', 'pkg'] }),
     },
   }));
+  mockApi.getResolvedSeat.mockResolvedValue({
+    success: true,
+    resolved_seat: {
+      room: 'dev',
+      seat: 'alice',
+      hash: 'abc123',
+      runtime: 'claude-code',
+      files: [{ path: 'rules.md', content: 'rule: do the thing' }],
+      policy: { max_turns: 5 },
+    },
+  });
 });
 
 describe('SeatAuthoringPage', () => {
@@ -344,6 +356,61 @@ describe('SeatAuthoringPage', () => {
 
     expect(vi.mocked(useWebSocket)).toHaveBeenCalledWith('test-user', 'test-token');
     expect(vi.mocked(useRealtimeSync)).toHaveBeenCalled();
+  });
+});
+
+// The preview is the SAME component the seat-detail page renders, given THIS page's selection as
+// props. The authoring route is /seats/authoring and carries no :room/:seat, so a component that
+// read the route would render an empty snapshot here while looking like a data problem - these two
+// cases pin the props wiring and the fact that a changed selection carries through.
+describe('SeatAuthoringPage preview', () => {
+  it('renders the resolved snapshot for the selected room and seat', async () => {
+    renderPage();
+
+    expect(await screen.findByText('Resolved snapshot')).toBeInTheDocument();
+    expect(mockApi.getResolvedSeat).toHaveBeenCalledWith('dev', 'alice');
+    expect(await screen.findByText('abc123')).toBeInTheDocument();
+    // The path renders twice by design (the Files list button and the active-file heading), so pin
+    // the file's CONTENT, which is unique and proves the file pane rendered.
+    expect(screen.getByText('rule: do the thing')).toBeInTheDocument();
+  });
+
+  it('follows the seat selection rather than a route parameter', async () => {
+    mockApi.listSeats.mockResolvedValue({
+      success: true,
+      seats: [
+        {
+          id: 'seat-1',
+          room_id: 'room-dev',
+          seat_key: 'alice',
+          seat_type: 'coder',
+          seat_type_id: 'type-1',
+          pinned_version: '1.0.0',
+          runtime: 'claude-code',
+          model: '',
+          permission_policy: 'standard',
+        },
+        {
+          id: 'seat-2',
+          room_id: 'room-dev',
+          seat_key: 'bob',
+          seat_type: 'coder',
+          seat_type_id: 'type-1',
+          pinned_version: '1.0.0',
+          runtime: 'claude-code',
+          model: '',
+          permission_policy: 'standard',
+        },
+      ],
+    });
+    renderPage();
+    await screen.findByText('Resolved snapshot');
+
+    fireEvent.change(screen.getByLabelText('Compose seat'), { target: { value: 'bob' } });
+
+    await waitFor(() => {
+      expect(mockApi.getResolvedSeat).toHaveBeenCalledWith('dev', 'bob');
+    });
   });
 });
 
