@@ -81,7 +81,6 @@ vi.mock('../ui/toast', () => ({
 // The transport boundary: no socket exists under jsdom, so this is stated rather than hidden.
 vi.mock('../../hooks/useWebSocketV2', () => ({
   useWebSocket: () => ({ isConnected: false, client: null }),
-  useWebSocketV2: () => ({ isConnected: false, client: null }),
 }));
 
 vi.mock('../../utils/logger', () => ({
