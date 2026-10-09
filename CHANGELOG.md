@@ -1,3 +1,27 @@
+## Rule 64's strong form is a tool: the diff you commit must equal the diff you made
+
+### Changed
+- `scripts/git-hooks/added_line_check.py` (new) — rule 64's own recorded strong form (**ADDED-LINE SET EQUALITY**) as a committer's precondition rather than a duty to remember. `--snapshot -- <paths>` is run immediately AFTER the edit and records, per path, the added-line and removed-line **sets** and their sha1s under `<git-dir>/hunk-baselines/` — the same store the parked-diff captures use, so a victim can find it; `--verify <baseline> -- <paths>` is run immediately BEFORE the commit, re-computes both sets, requires **equality**, names every SURPLUS line (present now, not in your snapshot — the mixing class) and every MISSING line (your own, gone), and **exits 3** on any difference so a commit can be gated on it. `--show` and `--list` read a baseline back; nothing is written outside the git directory and the index is never touched. **A path that is NEW (untracked at HEAD) is diffed against `/dev/null`**, because `git diff HEAD` reports nothing for it — found by running the tool over this very commit, whose snapshot read `+0/-0` for the two new files and would have vouched for content it had never read.
+- The hunk parser reads the **hunk body only**, because skipping by prefix swallows a removed markdown rule: `----` is a removed line whose own text begins `---`, and it was being discarded as a file header.
+- `agenthub_go/NEXT_GEN.md`, **rule 64** — the strong form it already named now names this tool, and says which of its five guard limits the tool closes (i, ii, iii, v) and which it does not (iv: `--verify` and the commit are still two commands, so the window is narrowed, not closed).
+- **WHY IT EXISTS, stated as the reverse of the case that wrote the rule:** `f344a64f` carried a peer's uncommitted line that sat **inside** an existing `CHANGELOG.md` entry, so the heading count guarding that file never moved — a guard that reads clean on the mixing class is the smoke-alarm defect rule 64 warns about.
+
+### Verified
+- `python3 -m pytest tests/test_added_line_check.py -q` from `scripts/` → **8 passed**, including a case that implements the shipped heading count in-test: on the mixed diff it reads **1 heading before and 1 after** the peer's line, while `--verify` names that line as `SURPLUS` and exits **3**.
+- The real CLI driven on a **scratch** repository: snapshot `CHANGELOG.md +2/-0 added_sha1=7ffc7f7cfa57`, the peer's line appended, then `--verify` → `SURPLUS CHANGELOG.md ... - a peer's uncommitted sentence`, **exit 3**; rule 64's count in that repository reads 1.
+- **The untracked-path gap was found by this tool's first real use, and the red is its output rather than an argument:** the snapshot over this commit read `scripts/git-hooks/added_line_check.py +0/-0` and `scripts/tests/test_added_line_check.py +0/-0` — two new files read as empty — which is what prompted comparing an untracked path against `/dev/null`; the new case pins that a peer's line in a new file is `SURPLUS` and exits 3.
+- The whole `scripts/tests` directory was re-run, not just the new file: `python3 -m pytest tests -q` → **36 passed** (8 of them this file, so `test_git_commit_capture.py`, `test_prepare_commit_msg_seat.py`, `test_seat_policy_commit_form.py`, `test_stash_patch_scan.py` and `test_team_roster.py` still pass).
+- **SEEN RED, labeled by its mechanism:** the first run failed with `assert 0 == 3`, and that was the **case's own sequencing bug** (it snapshotted before writing its entry, so the peer's line had nothing to replace into) rather than the tool missing the case; with the sequence corrected the case is green and the demonstrated blind spot is rule 64's count, not the check.
+- The tool's own limit is asserted rather than assumed: `test_the_stated_blind_spot_a_snapshot_taken_after_a_peer_edit_calls_their_line_yours` passes with exit 0, pinning that a late snapshot swears to the mixed diff.
+- **NOT RUN:** no case replays the real `f344a64f`; each case builds its two-seat sequence on a scratch repository, and the shared tree's own `CHANGELOG.md` was read rather than rewritten.
+
+## Rule 70 keeps its heading: the retirement entry displaced it, and the check that would have caught it
+
+### Changed
+- **`CHANGELOG.md`**: the retirement entry landed with `1c7b6631` and its prepend **took a heading with it** — `## Rule 70 — a correction check runs at a later tip and against every home the claim lives in` was removed, leaving that entry's body (`### Changed` onward) under no heading. **Restored by the commit that carries this entry.** Measured: `grep -c '^## Rule 70' CHANGELOG.md` returned **0** at `1c7b6631` and returns **1** after the restore; the restoring commit's diff adds the heading line and this entry, and touches no other line in that region.
+- **The check that should have run is the rule's own, one level up from where it was applied.** Rule 70 says a correction check runs at a later tip and against every home the claim lives in; the retirement guard read the entry it was **writing** and never counted the **headings** in the file it was writing **into**, so the paragraph was checked and the heading above it was not. **The guard for a prepend is therefore a heading census before and after — `grep -c '^## '` — not a look at the text that was added.**
+- **It is the second time in this changelog that a heading has been the casualty of a prepend or a pathspec commit**: `7fec56fb` left two identical Rule 70 headings for about two minutes, removed in `8b8f3332`. Same instrument, opposite direction — a duplicate then, a deletion now.
+
 ## The Python fleet scripts leave the tree: 33 paths deleted, 13 017 deletions, on a gate rather than a repair
 
 ### Changed
@@ -14,6 +38,8 @@
 - **NOT RUN:** the Python suite — nine of its files are inside this deletion, and the remaining `scripts/tests` files were not exercised here.
 
 
+
+## Rule 70 — a correction check runs at a later tip and against every home the claim lives in
 
 ### Changed
 - `agenthub_go/NEXT_GEN.md`, **rule 70**: **a correction check is run at a later tip AND against every home the claim lives in.** The criterion is written from a measurement rather than from principle: the rule-67 correction removed the sentence "IT EXISTS ONLY AFTER THE HOOK LANDED" from `NEXT_GEN.md` at `390e6e1a`, and that string now returns **0** in that file at `390e6e1a`, `bd9d96c5`, `4954ad07` and `c595f9cc` — **while the identical claim, standing rather than quoted, remained in `CHANGELOG.md` at the first three tips** (1 at each; added by `dba6a8cb`, removed only by `7b690084`). A check on the edited file alone was therefore green on every tip of the night, with the sentence a later reader quotes alive next door.
