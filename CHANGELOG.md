@@ -1,3 +1,16 @@
+## The spawn-team playbook required a configuration injection that a rig seat does not need
+
+### Fixed
+- **`.claude/skills/spawn-team/SKILL.md:13` — "Both need the team lead to fetch each seat's or agent's configuration and inject it into the worker's prompt, because the workers have no MCP access of their own" applied the Proxy Pattern's premise to BOTH forms of team, and it is false for the rig form.** OpenRig renders each seat's `agent.yaml` and guidance at launch, and a seat has its own MCP whenever its render carries mcp blocks — so the sentence had a lead hand-injecting configuration that is already rendered, into a seat that can already reach `manage_task` itself. It is now scoped: the in-session Claude Code team needs that injection (its `Task`-tool teammates do not inherit MCP connections — the skill's own claim, kept as a claim because that runtime is not testable from here), and the rig case is stated beside it with what a seat actually gets.
+- **The same file's own rig sections are the evidence that the line was over-generalised rather than deliberate:** they tell the operator to continue a rig with `rig-continue.sh`, watch the grid, and `rig send` briefs to seats — none of it the Proxy Pattern, all of it assuming a seat that runs itself.
+
+### Verified
+- **Measured on this rig, not recalled:** a seat resolves `mcp__agenthub_http__*` and `mcp__deepseek__*` — the launch dir's `.mcp.json` declares `deepseek` and `agenthub_http` (keys read, NO VALUES PRINTED: it carries a bearer token) — and `agenthub_go/fastmcp/seat_management/domain/seatrenderer/renderer.go:134` is the branch that emits the per-seat file for an omp seat, while `:223-227` emits none for a seat with no mcp block.
+- **Both edited skills are still what the publish path reads over the real directory:** `4genteam team import-project --dry-run` → `plan: import-project … (18 module(s))` with `plan: module spawn-team@1.0.0` and `plan: module rig-runtime-switch@1.0.0` among them.
+- **Like its neighbour, this file is IGNORED — `.gitignore:559 (.agents/)`, reached through `.claude/skills → ../.agents/skills` — so this commit is the record and not the change;** the skill travels to the cloud through `import-project`/`publish-skills`, which read the real directory.
+- **The supersession is named rather than the earlier entry rewritten:** the entry below recorded `spawn-team/SKILL.md` as "checked and left alone", which was true when written — its claim was about the watch section, and that section is untouched here.
+- **NOT RUN:** nothing executes a skill file — an agent reads it — so there is no runtime path to exercise, and no test reads `.agents/skills/`; the previous entry's suite run stands (`agenthub_client/tests/test_team_setup.py` → **54 passed**).
+
 ## The runtime-switch playbook told the next kickoff to deny omp seats the MCP tools they now have
 
 ### Fixed
