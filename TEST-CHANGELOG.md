@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - `team_setup`'s project-root test pins the property, not the module-level import
+
+- `agenthub_client/tests/test_team_setup.py`: `test_import_project_uses_the_hooks_project_root_derivation` asserted `team_setup.get_project_root is utils.env_loader.get_project_root` - an identity that could only hold while `team_setup` imported the hooks AT MODULE LEVEL. That import is what killed an installed client (`ModuleNotFoundError: No module named 'utils'`), so the identity is now the wrong pin: the test's name survived the move to a call-time import, its old assertion could not.
+- It now asserts the two things that must remain true: `team_setup.get_project_root()` returns what the hooks' own derivation returns (the behaviour a checkout depends on), and the two functions are **not** the same object (the proof that the import is no longer at module level). The module name and seam are unchanged, so the other 43 tests in the file that replace `team_setup.get_project_root` pass untouched.
+- Commands and results: `cd agenthub_client && python3 -m pytest tests/test_team_setup.py -q` -> **44 passed**; and the same file run against the WHEEL install (the surface that was broken) with no `AGENTHUB_REPO_ROOT` -> the named SystemExit, not a `ModuleNotFoundError`.
+
 ## 2026-10-09 - the `4genteam` verb contract: help is help, and a failed start is a failure
 
 - `agenthub_client/tests/test_cli.py`, **NEW FILE**, five tests for the two faults skills-dev found in `cli.py`. **SEEN FAILING FIRST on the unfixed file: `3 failed, 1 passed`** — `test_help_is_help_for_every_lifecycle_verb` and `test_help_after_a_verb_never_runs_a_lifecycle_action` failed with `SystemExit: 2` (the verb dispatched with `--help` as the rig and `watch` received `--rig --help`), and `test_a_start_that_dies_immediately_prints_no_pid_and_does_not_return_zero` failed on `returned 0`; `test_a_start_that_survives_still_reports_its_pid` passed, which is the control that says the dying-start case is the defect and not a broken harness.
