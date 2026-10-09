@@ -70,7 +70,10 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'u1' }, tokens: { access_token: 't' } }),
 }));
 
-vi.mock('../ui/toast', () => ({
+// THE TOAST BOUNDARY, pointed at the REAL module (src/components/ui/toast): the path used to be
+// '../ui/toast', which resolves to src/tests/ui/toast — nonexistent — so this factory shielded nothing
+// and the real hooks ran. Ruled by the lead: aim it rather than delete it.
+vi.mock('../../components/ui/toast', () => ({
   useErrorToast: () => vi.fn(),
   useSuccessToast: () => vi.fn(),
   useInfoToast: () => vi.fn(),
