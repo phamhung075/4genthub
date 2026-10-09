@@ -1,3 +1,15 @@
+## Appendix A gains the citation census, and the quotation rule gains a third instance and its own proof
+
+### Added
+- `ai_docs/api-integration/surface-inventory.md` Appendix A: **the census, so the rot model is not argued from its own three passes** — a resolver over every `*.go:<line>` citation in `ai_docs/**` + `README.md` returns **299 distinct pairs over 61 cited basenames (79 file strings as written)**, 292 resolving, **none with a line beyond EOF**, and **all 7 flags are the resolver's own prefix gap, not a document defect**: the docs are written for a reader standing in `agenthub_go/`, so `server/routes/websocket_routes.go:25` means `agenthub_go/fastmcp/server/routes/websocket_routes.go:25`, and **202 of the 292 resolve ONLY through that prefix**.
+- Both traps are named with their measured figures: **the same-name trap** — 52 of the 299 pairs are written as a bare basename that matches more than one `.go` file, and 12 of the 61 cited basenames are ambiguous in this tree (`main.go` alone matches 122 files, `server.go` 14, `version.go` 10, `runtime.go` 9, `http.go` 7, `resolver.go` 5, `names.go` 3, and `task_routes.go`, `subtask_routes.go`, `session_stream_routes.go`, `rigspec.go`, `models.go` 2 each; the two `branch_routes.go` are the worked case) — and **the silent filter** — excluding `_test.go` hides a case rather than reporting it, and exactly 1 citation lands in a test file, so the exclusion is counted and its one hit named.
+- Same appendix, the companion rule: **`CHANGELOG.md:1940` named as the third worked instance** — the 2026-10-06 entry quoting `app.go:135` and `:137-144`, the pre-fix state, kept as the dated record while the dated correction at `:38` carries the live state. **The reviewer cited that line as `:1934` minutes earlier; it reads `:1940` because the commits above it inserted six lines at the top of the file — the rot model demonstrated on a citation made and broken inside ten minutes, and the reason a quotation is not "repaired" when the sweep lands on it.**
+
+### Verified
+- The census commands reproduce: `grep -rhoE '[A-Za-z0-9_./-]+\.go:[0-9]+' ai_docs README.md | sort -u | wc -l` → **299**; the same pipeline with `sed 's/.*\///; s/:.*//' | sort -u | wc -l` → **61**; the written-string form → **79**.
+- All 7 flags exist at the deeper path (`find . -name websocket_routes.go` → `agenthub_go/fastmcp/server/routes/websocket_routes.go`, and the same for the other six), and the ambiguous-basename counts come from `find . -name <basename>` per cited basename.
+- Documentation only: no `.go` change, so no Go suite was run.
+
 ## Appendix A gains the companion rule: a citation asserts the now, a quotation asserts the then
 
 ### Added
