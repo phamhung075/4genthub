@@ -11,10 +11,18 @@ that does not exist, and it would do it silently because every field would be fi
 
 ## The ten modules
 
-`guide-common` is carried by the **company overlay**, because every seat must have it. The nine
-`guide-<seat>` modules are in each seat's own overlay (slug lists — `4genteam team apply` builds the
-ops). The texts are a **pure copy** of the seed-library blocks, verified byte-identical to the
-digests recorded in `seedlibrary/guides.lock.json`, 10 of 10.
+`guide-common` is carried by the **seat types**, not by a room overlay: `seedlibrary.go`'s
+`sharedModuleFiles` (`:45-64`) mounts it on every seat type. The ten `guide-<seat>` modules are in each
+seat's own overlay (slug lists — `4genteam team apply` builds the ops). The texts are a **pure copy**
+of the seed-library blocks, verified byte-identical to the digests recorded in
+`seedlibrary/guides.lock.json`, 10 of 10.
+
+*Corrected 2026-10-09 (row `2458e090`): the company overlay is EMPTY — `team.json:200` reads
+`"company_overlay": []` — and `grep -rn guide-common scripts/team/` matches no line of `team.json` at
+all, because `f8d3eaab` dropped it. `guide-common` reaches every seat through the seat types'
+shared-module list, which is what the delivered renders show: every installed seat's `AGENTS.md` opens
+with `## Working procedure (every seat)`. The count of per-seat guides is TEN, not nine — `guide-architect`
+is the one the earlier count missed.*
 
 *Measured 2026-10-06: the sha256 of each text file compared with its entry in that lock — 11 of 11 — at
 the commit that created this directory (`10e5222b`), and again after the note edits. The count is now
@@ -55,7 +63,7 @@ while their local `agent.yaml` says developer.
   seats in production is the owner's decision, not a data change.
 - **The three-home deletion waits** on a live-seat observation that a seat's `AGENTS.md` came from a
   module rather than from the notice generator.
-- **The company overlay carries `guide-common` alone.** Porting `project-*`, `mission-*` and
+- **The company overlay is EMPTY** (`team.json:200` reads `"company_overlay": []`, corrected 2026-10-09: `guide-common` is carried by the seat types — see above). Porting `project-*`, `mission-*` and
   `delegate-deepseek` from the other room is a named follow-on, not part of a guide move.
 - **The 26 links are derived from `rig-omp.yaml`**, so they describe the team that is running rather
   than a team somebody imagined; a room without them would describe ten seats that do not know each
