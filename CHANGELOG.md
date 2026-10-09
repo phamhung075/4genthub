@@ -1,3 +1,19 @@
+## Rule 66 lands: state which tree you measured, and the line the rule's own commit owed
+
+### Added
+- `agenthub_go/NEXT_GEN.md`: **rule 66** — state which tree you measured, worktree, index or HEAD, and when the instrument is a string match rather than a reading, say that too. The three trees disagree by construction in a repository mid-move, so a claim that does not name its tree reads as a fact about all three. It carries the three instances that earned it: (iii) `ls: cannot access 'scripts/openrig_seat_sync.py'` was true of the worktree, where `git rm` had already removed the file, and false of every committed tree, while the sweep that found the docs ran `git grep --cached` — the index — and neither was HEAD, so the severity was written as "names a deleted path" when the measurement said "a path **staged** for deletion"; (i) the reviewer's wheel arm reused the author's gitignored `agenthub_client/build/`, so it measured the worktree while its claim was about the commit — setuptools reused the stale output, both arms agreed, and the verdict superseded itself inside its own file (`GATE-ff6fed10-feedbackdoor-2026-10-09.md`, section (3)); and the same pair as a number: the client suite was reported as **306 passed** and measured on the worktree as **302 passed, 9 failed** out of 311 collected, so even the collected counts differ and the two numbers do not describe one suite. Instance (ii) is the rule's **limit** rather than an instance: naming the tree does not make a string match a reading, because `git grep` cannot tell a struck citation from a live instruction (rule 65's own limit paragraph), so the honest claim is "a string match over the index".
+
+### Changed
+- `CHANGELOG.md`: the entry `4814b711` owed. That commit landed rule 66 and named this file's absence in its own message rather than leaving it silent — `CHANGELOG.md` then carried 15 uncommitted lines that are not this seat's (`git diff HEAD --numstat` → 15/0 for a foreign entry), and rule 64 says read the path first and confirm the change is yours and only yours. The reason no longer holds, measured at the moment of acting rather than recalled: the foreign entry has since landed in a peer's commit and the file equals HEAD (`git diff HEAD --numstat -- CHANGELOG.md` and `git status --porcelain -- CHANGELOG.md` both empty, and the worktree size equals the HEAD blob's 844596 bytes), so this is an ordinary one-path commit. The architect's temporary-index route — written to keep foreign content out of a shared index — is recorded at `CHANGELOG-ENTRY-VIA-TEMPORARY-INDEX-2026-10-09.md` for the case it was written for, and was not needed here.
+
+### Verified
+- `git show --numstat 4814b711` → `2	0	agenthub_go/NEXT_GEN.md`, pure additions. Rule 64's discipline ran on it: numstat before → 2/0 for that one path, identical after.
+- The commit that writes the rule proves the instrument the rule is about: `git log -1 --format='%(trailers:key=Seat)'` on `4814b711` returns this seat — the first non-empty one in 17 commits.
+- `agenthub_go/NEXT_GEN.md` was itself measured in all three trees before the ask to its owner, which is how rule 66's own landing avoided the error it names: no diff worktree/index, index/HEAD or worktree/HEAD, no status line.
+
+### Not in this commit
+- The empty-trailer measurement stays in the branch record and does not go into the rule: 16 of the last 16 commits carry an empty `Seat:` trailer and only three of the last 400 carry one, which is why naming the author of the force-compact work took five alibis instead of one lookup. The rule's text was cleared by its owner as it stood, and a cleared text is not reopened to grow it.
+
 ## The context-pack bundle port trimmed like Go, not like the assembler it ports
 
 ### Fixed
