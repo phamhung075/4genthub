@@ -1,3 +1,10 @@
+## The §1 route pointers were re-resolved row by row, and none has drifted
+
+### Verified
+- `ai_docs/api-integration/surface-inventory.md` §1: **all 143 route rows re-resolved at `257a4ab1` by the document's own method** — read the file's `base` const, match the row's method+path to the registration that carries it, compare with the cited line — and **zero had drifted**.
+- **Two controls, so the negative result is a measurement rather than an impression.** (1) Coverage: the tables hold 143 rows and the appendix's own count commands return `123` (httpapp) + `20` (auth) = `143`. (2) A registration with no row is the class a row-by-row pass cannot see, so each cited file's registration lines were counted against its rows — **all eighteen cited files balance exactly** (`routes_mount.go` 44/44, `seat_admin_mount.go` 26/26, `app.go` 7/7, `auth_endpoints.go` 10/10, `supabase_endpoints.go` 10/10, `team_mount.go` 8/8, and the rest down to `seat_rigspec_mount.go` 1/1).
+- The dated note lands beside the 2026-10-06 re-derivation it repeats, and records what the pass does NOT claim: it establishes that each pointer resolves, not that any route behaves as documented. `aa2c9a0`'s edits to `mcp_routes.go` and `routes_mount.go` moved no cited line.
+
 ## The operations guide told an operator to run nine deployment scripts the tree no longer has
 
 ### Fixed
