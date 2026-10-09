@@ -22,7 +22,11 @@ pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_JSON = REPO_ROOT / "scripts" / "team" / "4genthub-min" / "team.json"
-POLICY_PATH = REPO_ROOT / "scripts" / "openrig_seat_policy.py"
+# `SEAT_ROLES` moved with the client relocation (2026-10-09): it was
+# `scripts/openrig_seat_policy.py`, and the file is now part of the installed client package. This
+# path is a string, not an import, so nothing but a grep finds it - and this test failed with
+# `FileNotFoundError` from the moment the old file was deleted until the path was repointed here.
+POLICY_PATH = REPO_ROOT / "agenthub_client" / "src" / "agenthub_client" / "seat_policy.py"
 RIG = "4genthub-min"
 
 # The team the rig is RUNNING, measured 2026-10-08. `go-dev2` was removed that day; `architect`
@@ -42,7 +46,7 @@ LIVE_SEATS = [
 
 
 def load_policy():
-    spec = importlib.util.spec_from_file_location("openrig_seat_policy", POLICY_PATH)
+    spec = importlib.util.spec_from_file_location("seat_policy", POLICY_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
