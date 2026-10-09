@@ -3,7 +3,7 @@
 // register_session_health_tool is not ported: it is a FastMCP @server.tool
 // decorator with no Go meaning. The check and the human-readable formatting are
 // ported; the registered tool is present here as a plain function, dispatched
-// from the MCP route as `check_session_health` (httpapp/mcp_routes.go:332).
+// from the MCP route's `case "check_session_health"` in httpapp/mcp_routes.go.
 package server
 
 import (

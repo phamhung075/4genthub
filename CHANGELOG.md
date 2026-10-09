@@ -12,6 +12,11 @@
 - Every anchor read at HEAD rather than inferred: `func (a *App) Handler()` at `app.go:120`; `func (a *App) registerProjectRoutes` at `:144`; `const base = "/api/v2/projects"` at `:145`; the `POST` registration at `:146`; `_ = r.ParseForm()` at `:151`; `missingForm(r, "name")` at `:152`; `func missingForm` at `http.go:129` with `r.PostForm.Has` at `:132`; `writeMissing`'s `http.StatusUnprocessableEntity` at `http.go:124`.
 - **Why these three survived passes that found everything else exact:** they are in PROSE, and both recorded passes were row-by-row over tables — §1's 143 row citations and §2's pointers are exact at this HEAD, while a paragraph's citations are never re-run by a row pass. The rot model names the file; the table pass only covers the file's rows.
 
+## `session_health_tool.go` names the dispatch symbol instead of a line that had rotted
+
+### Fixed
+- `agenthub_go/fastmcp/server/session_health_tool.go:6`: the doc comment said the check is dispatched "from the MCP route as `check_session_health` (httpapp/mcp_routes.go:332)". At HEAD the `case "check_session_health"` arm is `mcp_routes.go:386` (`case "get_mcp_status"` is `:380`, the default arm `:492`). **The number is dropped rather than corrected:** the comment now names the dispatch symbol and its file (the MCP route's `case "check_session_health"`, in `httpapp/mcp_routes.go`) — because a symbol cannot rot and this number already did. The citing file carries exactly ONE citation, re-measured here; no other number in it was touched.
+
 ## The rot model's first catch: six stale `mcp_routes.go` citations, and a wrong protocol revision
 
 ### Fixed
