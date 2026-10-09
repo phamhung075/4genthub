@@ -4,7 +4,7 @@ This document provides pytest fixture definitions to add to `conftest.py` for th
 
 ## How to Add These Fixtures
 
-Add these fixtures to `/home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/conftest.py` after the existing fixtures (around line 1400+).
+Add these fixtures to `agenthub_main/src/tests/conftest.py` after the existing fixtures (around line 1400+).
 
 ## Fixtures to Add
 

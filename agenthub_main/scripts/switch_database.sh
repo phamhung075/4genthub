@@ -5,6 +5,12 @@
 
 set -e
 
+# Repository root derived from this script's own location
+# (agenthub_main/scripts/ -> repo root), never a hard-coded path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+AGENTHUB_DIR="$ROOT_DIR/agenthub_main"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -31,7 +37,7 @@ check_postgres() {
     local user=$3
     local pass=$4
     local db=$5
-    
+
     PGPASSWORD=$pass psql -h $host -p $port -U $user -d $db -c "SELECT 1" > /dev/null 2>&1
     return $?
 }
@@ -39,7 +45,7 @@ check_postgres() {
 # Function to switch to local database
 switch_to_local() {
     print_info "Switching to LOCAL PostgreSQL database..."
-    
+
     # Check if local PostgreSQL is running
     if ! docker ps | grep -q agenthub-postgres-local; then
         print_warning "Local PostgreSQL container not running. Starting it..."
@@ -50,11 +56,11 @@ switch_to_local() {
             -e POSTGRES_DB=agenthub \
             -p 5432:5432 \
             postgres:15-alpine
-        
+
         print_info "Waiting for PostgreSQL to be ready..."
         sleep 5
     fi
-    
+
     # Check connection
     if check_postgres localhost 5432 postgres dev123 agenthub; then
         print_info "✅ Local PostgreSQL is accessible"
@@ -62,15 +68,15 @@ switch_to_local() {
         print_error "❌ Cannot connect to local PostgreSQL"
         exit 1
     fi
-    
+
     # Copy local env file
     cp .env.local .env
-    
+
     # Export environment variables
     export DATABASE_TYPE=postgresql
     export DATABASE_URL=postgresql://postgres:dev123@localhost:5432/agenthub
     export PERFORMANCE_MODE=true
-    
+
     print_info "✅ Switched to LOCAL database"
     print_info "   URL: postgresql://localhost:5432/agenthub"
     print_info "   Performance Mode: ENABLED"
@@ -81,20 +87,20 @@ switch_to_local() {
 # Function to switch to Supabase
 switch_to_supabase() {
     print_info "Switching to SUPABASE cloud database..."
-    
+
     # Check if .env.supabase exists
     if [ ! -f .env.supabase ]; then
         print_error ".env.supabase file not found!"
         print_info "Please create .env.supabase with your Supabase credentials"
         exit 1
     fi
-    
+
     # Copy Supabase env file
     cp .env.supabase .env
-    
+
     # Source the env file to get credentials
     source .env
-    
+
     print_info "✅ Switched to SUPABASE database"
     print_info "   Performance Mode: ${PERFORMANCE_MODE:-false}"
     print_warning "⚠️  Expected latency: 500ms-5s depending on location"
@@ -103,13 +109,13 @@ switch_to_supabase() {
 # Function to show current configuration
 show_current() {
     print_info "Current Database Configuration:"
-    
+
     if [ -f .env ]; then
         source .env
         echo "   DATABASE_TYPE: ${DATABASE_TYPE:-not set}"
         echo "   DATABASE_URL: ${DATABASE_URL:0:50}..."
         echo "   PERFORMANCE_MODE: ${PERFORMANCE_MODE:-false}"
-        
+
         # Test connection
         if [ "$DATABASE_TYPE" = "postgresql" ] && [[ "$DATABASE_URL" == *"localhost"* ]]; then
             if check_postgres localhost 5432 postgres dev123 agenthub; then
@@ -128,14 +134,14 @@ show_current() {
 # Function to initialize local database
 init_local_db() {
     print_info "Initializing local database schema..."
-    
+
     # Run database initialization
-    cd /home/daihungpham/agentic-project/agenthub_main
-    
+    cd "$AGENTHUB_DIR"
+
     # Set environment for local database
     export DATABASE_TYPE=postgresql
     export DATABASE_URL=postgresql://postgres:dev123@localhost:5432/agenthub
-    
+
     # Run the database initializer
     python -c "
 from src.fastmcp.task_management.infrastructure.database.database_initializer import DatabaseInitializer

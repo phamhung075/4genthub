@@ -12,8 +12,11 @@ echo "Working directory: $(pwd)" >&2
 echo "Python version: $(python3 --version)" >&2
 echo "Python path: $(which python3)" >&2
 
-# Change to the correct directory
-cd /home/daihungpham/agentic-project/agenthub_main
+# Change to agenthub_main, derived from this script's own location
+# (agenthub_main/scripts/ -> agenthub_main), never a hard-coded path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENTHUB_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$AGENTHUB_DIR"
 
 # Activate virtual environment if it exists
 if [ -f ".venv/bin/activate" ]; then
@@ -23,10 +26,10 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 
 # Set Python path
-export PYTHONPATH="/home/daihungpham/agentic-project/agenthub_main/src:$PYTHONPATH"
+export PYTHONPATH="$AGENTHUB_DIR/src:$PYTHONPATH"
 
 echo "PYTHONPATH: $PYTHONPATH" >&2
 echo "Running MCP server..." >&2
 
 # Run the MCP server
-python3 src/minimal_mcp_server_for_test.py 
+python3 src/minimal_mcp_server_for_test.py

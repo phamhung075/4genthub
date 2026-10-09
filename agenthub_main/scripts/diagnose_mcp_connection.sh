@@ -4,9 +4,14 @@ echo "🔍 MCP Connection Diagnostic Tool"
 echo "=================================="
 echo ""
 
+# Repo root derived from this script's own location
+# (agenthub_main/scripts/ -> repo root), never a hard-coded path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
 # Check if we're in the right directory
 echo "📍 Current directory: $(pwd)"
-echo "📍 Expected directory: /home/daihungpham/agentic-project"
+echo "📍 Expected directory: $ROOT_DIR"
 echo ""
 
 # Check if the MCP configuration file exists
@@ -32,7 +37,7 @@ echo ""
 
 # Test if the MCP server module can be imported
 echo "📦 Testing MCP server module..."
-cd /home/daihungpham/agentic-project
+cd "$ROOT_DIR"
 export PYTHONPATH="agenthub_main/src"
 export TASKS_JSON_PATH=".cursor/rules/tasks/tasks.json"
 export PROJECT_ROOT_PATH="."

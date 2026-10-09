@@ -201,7 +201,10 @@ class TestWebSocketV2Integration:
             "agenthub-frontend/src/hooks/useWebSocket.ts",  # old version
         ]
 
-        project_root = "/home/daihungpham/__projects__/4genthub"
+        # repo root derived from this test file's location (src/tests/integration/ -> root)
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+        )
 
         for file in legacy_files:
             file_path = os.path.join(project_root, file)

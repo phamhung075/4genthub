@@ -111,7 +111,9 @@ def estimate_effort(
 
 
 def main():
-    htmlcov_dir = Path("/home/daihungpham/__projects__/4genthub/agenthub_main/htmlcov")
+    # agenthub_main/ derived from this script's own location (agenthub_main/scripts/ -> agenthub_main)
+    agenthub_main = Path(__file__).resolve().parent.parent
+    htmlcov_dir = agenthub_main / "htmlcov"
 
     # Top priority files (91-93% coverage)
     tier1_files = [
@@ -198,9 +200,7 @@ def main():
     print("=" * 100)
 
     # Save detailed JSON
-    output_file = Path(
-        "/home/daihungpham/__projects__/4genthub/agenthub_main/scripts/coverage_analysis_tier1.json"
-    )
+    output_file = agenthub_main / "scripts" / "coverage_analysis_tier1.json"
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
 

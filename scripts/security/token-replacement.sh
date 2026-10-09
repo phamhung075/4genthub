@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 RESET='\033[0m'
 
 echo -e "${YELLOW}Creating Git backup before token removal...${RESET}"
-BACKUP_DIR="../agentic-project-backup-$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR="../4genthub-backup-$(date +%Y%m%d-%H%M%S)"
 cp -r . "$BACKUP_DIR"
 echo -e "${GREEN}✅ Backup created at: $BACKUP_DIR${RESET}"
 

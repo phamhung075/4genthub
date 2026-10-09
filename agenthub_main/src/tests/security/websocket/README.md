@@ -126,8 +126,8 @@ async def test_attack_unauthorized_data_access(self, attacker):
 ### Execute Full Security Test Suite
 
 ```bash
-# Run all security tests
-cd /home/daihungpham/__projects__/4genthub/agenthub_main/src/tests/security/websocket
+# Run all security tests (from the repository root)
+cd agenthub_main/src/tests/security/websocket
 pytest -v --tb=short
 
 # Run with coverage report

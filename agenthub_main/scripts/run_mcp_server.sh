@@ -3,8 +3,11 @@
 # Script to run the agenthub server for testing with MCP Inspector
 # This script sets up the proper environment and runs the server
 
-# Set working directory to project root
-cd /home/daihungpham/agentic-project
+# Set working directory to project root, derived from this script's own location
+# (agenthub_main/scripts/ -> repo root), never a hard-coded path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+cd "$ROOT_DIR"
 
 # Set environment variables
 export PYTHONPATH="agenthub_main/src"

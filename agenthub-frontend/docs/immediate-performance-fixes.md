@@ -9,27 +9,27 @@
 -- File: agenthub_main/database/migrations/add_performance_indexes.sql
 
 -- Critical: Task list queries (git_branch_id + status + ordering)
-CREATE INDEX IF NOT EXISTS idx_tasks_efficient_list 
+CREATE INDEX IF NOT EXISTS idx_tasks_efficient_list
 ON tasks(git_branch_id, status, created_at DESC);
 
--- Subtask counting queries  
-CREATE INDEX IF NOT EXISTS idx_subtasks_parent_status 
+-- Subtask counting queries
+CREATE INDEX IF NOT EXISTS idx_subtasks_parent_status
 ON task_subtasks(task_id, status);
 
 -- Assignee counting queries
-CREATE INDEX IF NOT EXISTS idx_assignees_task_lookup 
+CREATE INDEX IF NOT EXISTS idx_assignees_task_lookup
 ON task_assignees(task_id, assignee_id);
 
 -- Label queries
-CREATE INDEX IF NOT EXISTS idx_task_labels_lookup 
+CREATE INDEX IF NOT EXISTS idx_task_labels_lookup
 ON task_labels(task_id, label_id);
 
 -- Dependency queries
-CREATE INDEX IF NOT EXISTS idx_dependencies_task_lookup 
+CREATE INDEX IF NOT EXISTS idx_dependencies_task_lookup
 ON task_dependencies(task_id, depends_on_task_id);
 
 -- Branch filtering
-CREATE INDEX IF NOT EXISTS idx_tasks_branch_priority 
+CREATE INDEX IF NOT EXISTS idx_tasks_branch_priority
 ON tasks(git_branch_id, priority, created_at DESC);
 ```
 
@@ -42,7 +42,7 @@ from fastmcp.task_management.infrastructure.database.database_config import get_
 
 def apply_performance_indexes():
     db_config = get_db_config()
-    
+
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_tasks_efficient_list ON tasks(git_branch_id, status, created_at DESC)",
         "CREATE INDEX IF NOT EXISTS idx_subtasks_parent_status ON task_subtasks(task_id, status)",
@@ -51,7 +51,7 @@ def apply_performance_indexes():
         "CREATE INDEX IF NOT EXISTS idx_dependencies_task_lookup ON task_dependencies(task_id, depends_on_task_id)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_branch_priority ON tasks(git_branch_id, priority, created_at DESC)"
     ]
-    
+
     with db_config.SessionLocal() as session:
         for index_sql in indexes:
             try:
@@ -77,11 +77,11 @@ def list_tasks_optimized(self, status: str | None = None, priority: str | None =
                         assignee_id: str | None = None, limit: int = 20,
                         offset: int = 0) -> list[TaskEntity]:
     """Optimized task listing with single query and computed counts"""
-    
+
     with self.get_db_session() as session:
         # Single optimized query with subquery joins for counts
         base_query = """
-        SELECT 
+        SELECT
             t.*,
             COALESCE(subtask_counts.count, 0) as subtask_count,
             COALESCE(assignee_counts.count, 0) as assignee_count,
@@ -89,24 +89,24 @@ def list_tasks_optimized(self, status: str | None = None, priority: str | None =
             CASE WHEN t.context_id IS NOT NULL AND t.context_id != '' THEN 1 ELSE 0 END as has_context
         FROM tasks t
         LEFT JOIN (
-            SELECT task_id, COUNT(*) as count 
-            FROM task_subtasks 
+            SELECT task_id, COUNT(*) as count
+            FROM task_subtasks
             WHERE status != 'deleted'
             GROUP BY task_id
         ) subtask_counts ON t.id = subtask_counts.task_id
         LEFT JOIN (
-            SELECT task_id, COUNT(*) as count 
-            FROM task_assignees 
+            SELECT task_id, COUNT(*) as count
+            FROM task_assignees
             GROUP BY task_id
         ) assignee_counts ON t.id = assignee_counts.task_id
         LEFT JOIN (
-            SELECT task_id, COUNT(*) as count 
-            FROM task_labels 
+            SELECT task_id, COUNT(*) as count
+            FROM task_labels
             GROUP BY task_id
         ) label_counts ON t.id = label_counts.task_id
         WHERE t.git_branch_id = :git_branch_id
         """
-        
+
         # Add filters
         params = {"git_branch_id": self.git_branch_id}
         if status:
@@ -115,15 +115,15 @@ def list_tasks_optimized(self, status: str | None = None, priority: str | None =
         if priority:
             base_query += " AND t.priority = :priority"
             params["priority"] = priority
-            
+
         # Add ordering and pagination
         base_query += " ORDER BY t.created_at DESC LIMIT :limit OFFSET :offset"
         params.update({"limit": limit, "offset": offset})
-        
+
         # Execute optimized query
         result = session.execute(text(base_query), params)
         rows = result.fetchall()
-        
+
         # Convert to entities efficiently
         entities = []
         for row in rows:
@@ -150,9 +150,9 @@ def list_tasks_optimized(self, status: str | None = None, priority: str | None =
             entity._subtask_count = row.subtask_count
             entity._assignee_count = row.assignee_count
             entity._has_context = bool(row.has_context)
-            
+
             entities.append(entity)
-            
+
         return entities
 ```
 
@@ -211,22 +211,22 @@ async def get_task_summaries(
 ):
     """Get lightweight task summaries with optimized performance"""
     start_time = time.time()
-    
+
     # Use optimized repository method
     task_repo = get_optimized_task_repository(git_branch_id)
     offset = (page - 1) * limit
-    
+
     # Get total count (use optimized count query)
     total_count = task_repo.get_task_count_optimized(status=status, priority=priority)
-    
+
     # Get paginated tasks
     tasks = task_repo.list_tasks_optimized(
         status=status,
-        priority=priority, 
+        priority=priority,
         limit=limit,
         offset=offset
     )
-    
+
     # Convert to lightweight DTOs
     task_summaries = [
         TaskSummaryDTO(
@@ -243,10 +243,10 @@ async def get_task_summaries(
         )
         for task in tasks
     ]
-    
+
     end_time = time.time()
     load_time_ms = (end_time - start_time) * 1000
-    
+
     return TaskSummariesResponse(
         tasks=task_summaries,
         total=total_count,
@@ -256,7 +256,7 @@ async def get_task_summaries(
         load_time_ms=round(load_time_ms, 2)
     )
 
-@router.get("/tasks/{task_id}/details")  
+@router.get("/tasks/{task_id}/details")
 async def get_task_full_details(task_id: str):
     """Get complete task details only when needed"""
     # This endpoint loads full relationships only when user clicks "expand"
@@ -292,7 +292,7 @@ async def get_cached_task_summaries(git_branch_id: str, page: int, status: str =
 
 The lazy loading frontend components are already created and ready:
 - ✅ **LazyTaskList.tsx** - Main component with pagination
-- ✅ **LazySubtaskList.tsx** - On-demand subtask loading  
+- ✅ **LazySubtaskList.tsx** - On-demand subtask loading
 - ✅ **api-lazy.ts** - Enhanced API with caching
 - ✅ **Client-side caching** - TTL-based cache system
 
@@ -302,7 +302,7 @@ The lazy loading frontend components are already created and ready:
 
 ### **Step 1: Database Optimization (30 minutes)**
 ```bash
-cd /home/daihungpham/agentic-project/agenthub_main
+cd agenthub_main
 python scripts/apply_performance_indexes.py
 ```
 
@@ -333,7 +333,7 @@ python scripts/apply_performance_indexes.py
 ### **Before Optimization:**
 ```
 Database Query: 800ms (N+1 queries)
-API Response: 1200ms  
+API Response: 1200ms
 Network Transfer: 500KB
 Total Time: 2-3 seconds
 ```
@@ -342,13 +342,13 @@ Total Time: 2-3 seconds
 ```
 Database Query: 80ms (single optimized query)
 API Response: 120ms
-Network Transfer: 50KB  
+Network Transfer: 50KB
 Total Time: 400-600ms
 ```
 
 ### **Performance Improvement:**
 - **90% faster** database queries
-- **90% faster** API responses  
+- **90% faster** API responses
 - **90% smaller** network payloads
 - **75% faster** overall loading
 

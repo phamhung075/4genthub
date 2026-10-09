@@ -10,7 +10,8 @@ import subprocess
 
 def main():
     # Change to agenthub_main directory (as fixed in test-menu.sh)
-    project_root = "/home/daihungpham/__projects__/agentic-project"
+    # repo root derived from this file's own location (ai_docs/ -> repo root), never hard-coded
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     agenthub_dir = f"{project_root}/agenthub_main"
 
     # Set PYTHONPATH

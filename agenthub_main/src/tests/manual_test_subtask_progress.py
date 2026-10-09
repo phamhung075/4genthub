@@ -1,13 +1,17 @@
 """Manual test to verify subtask progress fix"""
 
+import os
 import sys
 
-sys.path.insert(0, "/home/daihungpham/__projects__/4genthub/agenthub_main/src")
+# agenthub_main/src derived from this file's location (src/tests/ -> src)
+SRC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-from fastmcp.task_management.domain.entities.subtask import Subtask
-from fastmcp.task_management.domain.value_objects.priority import Priority
-from fastmcp.task_management.domain.value_objects.task_id import TaskId
-from fastmcp.task_management.domain.value_objects.task_status import TaskStatus
+sys.path.insert(0, SRC_DIR)
+
+from fastmcp.task_management.domain.entities.subtask import Subtask  # noqa: E402, I001 - Import must come after sys.path modification
+from fastmcp.task_management.domain.value_objects.priority import Priority  # noqa: E402, I001 - Import must come after sys.path modification
+from fastmcp.task_management.domain.value_objects.task_id import TaskId  # noqa: E402, I001 - Import must come after sys.path modification
+from fastmcp.task_management.domain.value_objects.task_status import TaskStatus  # noqa: E402, I001 - Import must come after sys.path modification
 
 
 def test_is_completed_property():
@@ -102,7 +106,10 @@ def test_task_progress_service():
 
     # Read the file to verify
     with open(
-        "/home/daihungpham/__projects__/4genthub/agenthub_main/src/fastmcp/task_management/application/services/task_progress_service.py"
+        os.path.join(
+            SRC_DIR,
+            "fastmcp/task_management/application/services/task_progress_service.py",
+        )
     ) as f:
         content = f.read()
         if "if subtask.is_completed:" in content:
