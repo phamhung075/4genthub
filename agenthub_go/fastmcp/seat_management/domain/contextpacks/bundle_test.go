@@ -75,3 +75,52 @@ func TestAssembleBundleReadErrorIsLoud(t *testing.T) {
 		t.Fatalf("error = %v, want a %s ContextPackError", err, CodeFileReadFailed)
 	}
 }
+
+func TestAssembleBundleFileEntryCarriesRoleAndProjection(t *testing.T) {
+	abs := "/p/a.md"
+	pack := BundlePack{Name: "x", Version: "1", Files: []BundleFile{{Path: "a.md", Role: "prd", AbsolutePath: &abs}}}
+	got, err := AssembleBundle(pack, func(string) (string, error) { return "body", nil })
+	if err != nil {
+		t.Fatalf("assemble: %v", err)
+	}
+	if len(got.Files) != 1 {
+		t.Fatalf("files = %+v, want the one present file", got.Files)
+	}
+	if f := got.Files[0]; f.Path != "a.md" || f.Role != "prd" || f.Bytes != 4 || f.EstimatedTokens != 1 {
+		t.Errorf("file entry = %+v, want a.md/prd/4 bytes/1 token in ONE entry", f)
+	}
+}
+
+func TestAssembleBundleTrimsEndLikeJavaScript(t *testing.T) {
+	// Every character JavaScript's trimEnd removes must go; U+0085 (NEL) is Go's unicode.IsSpace
+	// whitespace but NOT ECMAScript whitespace, so it must SURVIVE. That control is what separates
+	// this trim from strings.TrimSpace, which would have eaten it.
+	jsRun := "js\v\f\u00a0\u2003\u2028\u2029\u3000\ufeff"
+	nel := "nel\u0085"
+	absA, absB := "/p/a.md", "/p/b.md"
+	pack := BundlePack{Name: "x", Version: "1", Files: []BundleFile{
+		{Path: "a.md", Role: "prd", AbsolutePath: &absA},
+		{Path: "b.md", Role: "evidence", AbsolutePath: &absB},
+	}}
+	got, err := AssembleBundle(pack, func(p string) (string, error) {
+		if p == absA {
+			return jsRun, nil
+		}
+		return nel, nil
+	})
+	if err != nil {
+		t.Fatalf("assemble: %v", err)
+	}
+	if !strings.Contains(got.Text, "\n\njs\n\n") {
+		t.Errorf("the ECMAScript whitespace run was not trimmed: %q", got.Text)
+	}
+	if strings.ContainsAny(got.Text, "\u2003\u2028\u3000\ufeff") {
+		t.Errorf("a trimmed character survived into the bundle: %q", got.Text)
+	}
+	if !strings.HasSuffix(got.Text, "nel\u0085\n") {
+		t.Errorf("the NEL was trimmed, and ECMAScript trimEnd keeps it: %q", got.Text)
+	}
+	if got.Files[0].Bytes != len(jsRun) {
+		t.Errorf("bytes = %d, want the UNTRIMMED %d", got.Files[0].Bytes, len(jsRun))
+	}
+}

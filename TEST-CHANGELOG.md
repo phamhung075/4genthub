@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the bundle port's trim and per-file shape are pinned against the source contract, not against Go's idea of whitespace
+
+- `agenthub_go/fastmcp/seat_management/domain/contextpacks/bundle_test.go`: two new tests, five in the file now. `TestAssembleBundleTrimsEndLikeJavaScript` is the one that would have caught the defect: **U+0085 (NEL) is Go's `unicode.IsSpace` whitespace but NOT ECMAScript whitespace**, so it must SURVIVE the trim while VT, FF, NBSP, U+2003, LS, PS, U+3000 and U+FEFF must go — an assertion set `strings.TrimSpace` cannot satisfy, which is what makes it the discriminating control rather than a decoration. `TestAssembleBundleFileEntryCarriesRoleAndProjection` pins that role, bytes and tokens travel in ONE entry, and that the byte count is the UNTRIMMED content as in the source (`bundle-assembler.ts`).
+- Both tests pin behaviour the package's own green run could not have found: the port was green before the fix, because the gap was against the TypeScript contract, not against the Go tests. They were written after a rule-by-rule read of the source, and the trim set itself was cross-checked against node over all 65 535 BMP code points (`("x"+c).trimEnd()==="x"` versus the Go predicate) -> **no difference in either direction**.
+- Commands and results: `cd agenthub_go && go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok agenthub/fastmcp/seat_management/domain/contextpacks 0.003s` (31 test funcs in the package, 2 of them new); `go vet ./fastmcp/seat_management/domain/contextpacks/` -> rc 0; `gofmt -l` on the package -> nothing; `go build ./...` -> rc 0.
+
 ## 2026-10-09 - `team_setup`'s project-root test pins the property, not the module-level import
 
 - `agenthub_client/tests/test_team_setup.py`: `test_import_project_uses_the_hooks_project_root_derivation` asserted `team_setup.get_project_root is utils.env_loader.get_project_root` - an identity that could only hold while `team_setup` imported the hooks AT MODULE LEVEL. That import is what killed an installed client (`ModuleNotFoundError: No module named 'utils'`), so the identity is now the wrong pin: the test's name survived the move to a call-time import, its old assertion could not.

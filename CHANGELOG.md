@@ -1,3 +1,18 @@
+## The context-pack bundle port trimmed like Go, not like the assembler it ports
+
+### Fixed
+- `agenthub_go/fastmcp/seat_management/domain/contextpacks/bundle.go`: a pack file's trailing whitespace was cut with `strings.TrimRight(content, " \t\r\n")`, which is **not** what the source contract does — `bundle-assembler.ts` calls `content.trimEnd()`, the ECMAScript WhiteSpace + LineTerminator set. A file ending in a form feed, vertical tab, NBSP, U+2000–U+200A, LS/PS, U+3000 or U+FEFF therefore kept bytes the TypeScript assembler removes, so a cloud bundle and an OpenRig bundle could differ byte for byte. `jsTrimEnd` now spells the ECMAScript set out, and deliberately does **not** delegate to `strings.TrimSpace`/`unicode.IsSpace`: that set adds U+0085 (NEL) and would eat a byte the contract keeps.
+- The same file's `AssembledBundle` split the per-file projection across `Files` (path+role) and `FilesMeta` (path+bytes+tokens), a shape the source does not have: `bundle-assembler.ts` returns one entry per file carrying path, role, bytes and tokens. They are one `BundleFileEntry` now, so a consumer cannot zip two slices whose alignment only the append order maintains. `PlainFileEntry` stays for the plain-assembly projection, which has no role.
+
+### Verified
+- `agenthub_go/fastmcp/seat_management/domain/contextpacks/bundle_test.go`: `TestAssembleBundleTrimsEndLikeJavaScript` and `TestAssembleBundleFileEntryCarriesRoleAndProjection`. The trim test carries its own control — U+0085 must **survive** while the ECMAScript-whitespace characters go, which is exactly the case `strings.TrimSpace` fails.
+- The character set was validated against the engine rather than assumed: a node sweep of every BMP code point comparing `("x"+c).trimEnd()==="x"` against the Go set reports **no difference in either direction**, with spot checks showing NEL and U+180E kept and NBSP, EM space and U+FEFF removed.
+- `cd agenthub_go && gofmt -l fastmcp/seat_management/domain/contextpacks/` -> nothing; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok agenthub/fastmcp/seat_management/domain/contextpacks 0.003s`; `go vet ./fastmcp/seat_management/domain/contextpacks/` -> rc 0; `go build ./...` -> rc 0.
+- No consumer exists to break, which is why the struct shape could be corrected without a caller: `grep -rn "domain/contextpacks" --include=*.go` outside the package is still empty.
+
+### Found by
+- A parity audit of the whole ported package against `packages/daemon/src/domain/context-packs/` (source read in full against the Go in full, rule by rule), not by the package's own green tests. The rest of the algebra is parity-exact: the three situations and their selection tags, the closure over `requires` with both failure modes, the order-then-id walk, `refsafety.go`'s two regexes and per-segment ref walk, and `recap.go`'s advisory contract (same case-insensitive marker, same `UNVERIFIED:` canonical check, same 0-based line index). `profile-source-resolver.ts` has no Go counterpart and should not have one: it imports `node:fs`.
+
 ## `4genteam up` starts every service the client needs, and the supervisor force-compacts omp seats at the hard limit
 
 ### Added
