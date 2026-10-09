@@ -51,7 +51,7 @@ from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
 ./scripts/deployment/deploy-production.sh --environment production
 
 # 3. Monitor deployment
-docker-compose -f docker-system/docker-compose.production-enhanced.yml logs -f
+docker-compose -f docker-system/docker/docker-compose.production.yml logs -f
 
 # 4. Health checks
 ./scripts/deployment/health-checks/comprehensive-health-check.sh --environment production
@@ -480,7 +480,7 @@ pg_restore -d agenthub backup.dump
 **Horizontal Scaling**:
 ```bash
 # Scale MCP backend
-docker-compose -f docker-system/docker-compose.production-enhanced.yml \
+docker-compose -f docker-system/docker/docker-compose.production.yml \
     up -d --scale mcp-backend=3
 ```
 
