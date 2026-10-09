@@ -74,37 +74,53 @@ type ComposeInput struct {
 	Runtime      Runtime
 	ReadFile     func(ref string) (string, error)
 	BudgetTokens *int
-	// SourceKindFor labels each atom's source; nil means every piece is labelled library.
+	// SourceKindFor is the caller's per-atom producer for a graph gathered across sources; nil
+	// means every piece is labelled library. A named profile's CONTEXT phases do not consult it:
+	// those pieces take the name they were supplied under (B2).
 	SourceKindFor func(Atom) SourceKind
 }
 
-func resolvePieces(atoms []Atom, readFile func(string) (string, error), sourceKindFor func(Atom) SourceKind, phaseID string) ([]Piece, error) {
+// labelled is one atom plus the source label it was SELECTED under. The label travels with the
+// atom rather than with the phase because one phase may carry several context sources, and the
+// SAME atom may be supplied under two of them (project and mission) — a per-phase or per-atom
+// labeller collapses those two pieces onto one label and throws the provenance away (B2).
+type labelled struct {
+	atom Atom
+	kind SourceKind
+}
+
+// atomLabeller returns the caller's per-atom producer for a graph gathered across sources, or the
+// library default when the caller supplied none: whoever supplied the bytes labels them.
+func atomLabeller(sourceKindFor func(Atom) SourceKind) func(Atom) SourceKind {
+	if sourceKindFor != nil {
+		return sourceKindFor
+	}
+	return func(Atom) SourceKind { return SourceLibrary }
+}
+
+func resolvePieces(atoms []labelled, readFile func(string) (string, error), phaseID string) ([]Piece, error) {
 	pieces := make([]Piece, 0, len(atoms))
 	for _, a := range atoms {
-		parsed, err := ParseAddress(a.Address)
+		parsed, err := ParseAddress(a.atom.Address)
 		if err != nil {
-			return nil, &ProfileComposeError{Msg: fmt.Sprintf("atom %q (%s): %v", a.ID, a.Address, err)}
+			return nil, &ProfileComposeError{Msg: fmt.Sprintf("atom %q (%s): %v", a.atom.ID, a.atom.Address, err)}
 		}
 		fileText, err := readFile(parsed.Ref)
 		if err != nil {
 			return nil, &ProfileComposeError{Msg: fmt.Sprintf(
-				"atom %q (%s): source file %q is unreadable — %v", a.ID, a.Address, parsed.Ref, err)}
+				"atom %q (%s): source file %q is unreadable — %v", a.atom.ID, a.atom.Address, parsed.Ref, err)}
 		}
 		text := fileText
 		if len(parsed.HeaderPath) > 0 {
 			section, err := ResolveAddress(fileText, parsed.HeaderPath)
 			if err != nil {
-				return nil, &ProfileComposeError{Msg: fmt.Sprintf("atom %q (%s): %v", a.ID, a.Address, err)}
+				return nil, &ProfileComposeError{Msg: fmt.Sprintf("atom %q (%s): %v", a.atom.ID, a.atom.Address, err)}
 			}
 			text = section.Text
 		}
-		kind := SourceLibrary
-		if sourceKindFor != nil {
-			kind = sourceKindFor(a)
-		}
 		pieces = append(pieces, Piece{
-			AtomID: a.ID, Address: a.Address, SourceKind: kind, Order: a.Order, Priority: a.Priority,
-			Text: text, EstimatedTokens: EstimateTokensOf(text), PhaseID: phaseID,
+			AtomID: a.atom.ID, Address: a.atom.Address, SourceKind: a.kind, Order: a.atom.Order,
+			Priority: a.atom.Priority, Text: text, EstimatedTokens: EstimateTokensOf(text), PhaseID: phaseID,
 		})
 	}
 	return pieces, nil
@@ -216,8 +232,14 @@ func ComposeProfile(in ComposeInput) (ComposedProfile, error) {
 		return walk[i].ID < walk[j].ID
 	})
 
-	// 4. RESOLVE every piece; label its source.
-	pieces, err := resolvePieces(walk, in.ReadFile, in.SourceKindFor, "")
+	// 4. RESOLVE every piece; label its source through the caller's per-atom producer, library
+	// when none was supplied.
+	labelAtom := atomLabeller(in.SourceKindFor)
+	labelledWalk := make([]labelled, 0, len(walk))
+	for _, a := range walk {
+		labelledWalk = append(labelledWalk, labelled{atom: a, kind: labelAtom(a)})
+	}
+	pieces, err := resolvePieces(labelledWalk, in.ReadFile, "")
 	if err != nil {
 		return ComposedProfile{}, err
 	}
@@ -234,6 +256,14 @@ func ComposeProfile(in ComposeInput) (ComposedProfile, error) {
 // ComposeNamedProfile composes one explicit manifest profile. Profiles change only selection and
 // sequence: every atom still resolves through the same source graph, while context-source atoms
 // are supplied by the caller from its configured roots.
+//
+// Labelling happens AT SELECTION, from the phase being walked: a context phase's pieces carry the
+// name they were supplied under (the phase's contextAtoms key), and an atom phase carries no
+// source name of its own, so it is library by construction. The kind is never read from a store
+// and never derived from the address, because a ref is untyped and the caller's resolver owns what
+// it names (address.go:46-50). This is where the port parts company with profile-composer.ts,
+// which hands one caller-supplied sourceKindFor to every phase and so throws away the provenance
+// of a context phase's atoms — the defect the B2 ruling corrects.
 func ComposeNamedProfile(in ComposeInput, profile Profile, contextAtoms map[string][]Atom) (ComposedProfile, error) {
 	if !containsSituation(profile.Situations, in.Situation) {
 		return ComposedProfile{}, &ProfileComposeError{Msg: fmt.Sprintf(
@@ -248,10 +278,11 @@ func ComposeNamedProfile(in ComposeInput, profile Profile, contextAtoms map[stri
 		atomsByID[a.ID] = a
 	}
 
+	labelAtom := atomLabeller(in.SourceKindFor)
 	phases := make([]ProfilePhaseResult, 0, len(profile.Phases))
 	all := []Piece{}
 	for _, phase := range profile.Phases {
-		var selected []Atom
+		var selected []labelled
 		kind := "context"
 		if len(phase.Atoms) > 0 {
 			kind = "atoms"
@@ -261,20 +292,31 @@ func ComposeNamedProfile(in ComposeInput, profile Profile, contextAtoms map[stri
 					return ComposedProfile{}, &ProfileComposeError{Msg: fmt.Sprintf(
 						"profile %q phase %q references missing atom %q", profile.ID, phase.ID, atomID)}
 				}
-				selected = append(selected, atom)
+				selected = append(selected, labelled{atom: atom, kind: labelAtom(atom)})
 			}
 		} else {
 			for _, source := range phase.Context {
+				sourceKind, ok := sourceKindsByName[source]
+				if !ok {
+					return ComposedProfile{}, &ProfileComposeError{Msg: fmt.Sprintf(
+						"profile %q phase %q names context source %q, which the vocabulary does not define "+
+							"(project, mission, seat, slice) — the phase cannot label it truthfully.",
+						profile.ID, phase.ID, source)}
+				}
 				sourceAtoms := contextAtoms[source]
 				if len(sourceAtoms) == 0 {
 					return ComposedProfile{}, &ProfileComposeError{Msg: fmt.Sprintf(
 						"profile %q phase %q needs %s context, but the caller did not supply its exact selection",
 						profile.ID, phase.ID, source)}
 				}
-				selected = append(selected, sourceAtoms...)
+				// The name the caller supplied these bytes under IS their label: the same atom can
+				// arrive under two sources and each piece keeps its own provenance.
+				for _, atom := range sourceAtoms {
+					selected = append(selected, labelled{atom: atom, kind: sourceKind})
+				}
 			}
 		}
-		pieces, err := resolvePieces(selected, in.ReadFile, in.SourceKindFor, phase.ID)
+		pieces, err := resolvePieces(selected, in.ReadFile, phase.ID)
 		if err != nil {
 			return ComposedProfile{}, err
 		}

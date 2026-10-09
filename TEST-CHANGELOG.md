@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the context-phase label is pinned by the case a per-atom labeller cannot pass
+
+- `agenthub_go/fastmcp/seat_management/domain/contextpacks/compose_test.go`: `TestComposeNamedProfileLabelsContextSourcesFromThePhase`. **Failing first, on the tree as it stood** (`SourceSlice` was added first so the failure is behavioural rather than a build error): `compose_test.go:327: labels = ["library" "library"], want [project mission] — a context phase takes the name it was supplied under`. Its core case supplies the SAME atom under `project` and under `mission` and asserts the two pieces carry two different labels: a labeller that receives only the atom cannot produce that, which is exactly why it is the acceptance test for the B2 ruling, and why the provenance must not be thrown away at selection.
+- Three adjuncts in the same test, so the fix cannot pass by relabelling everything: a `slice` source labels `slice` (the constant that arrived with it); an atom phase is `library` by construction; and a source name the vocabulary does not define (`handover`) is refused loudly instead of being silently labelled library.
+- Commands and results: `cd agenthub_go && go test -count=1 -run TestComposeNamedProfileLabelsContextSourcesFromThePhase -v ./fastmcp/seat_management/domain/contextpacks/` -> `--- FAIL` before, `--- PASS` after; the whole package `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok agenthub/fastmcp/seat_management/domain/contextpacks 0.003s`, including the two existing pins this change had to leave standing (`TestComposeNamedProfile`, `TestComposeLabelsSources` — the second still asserts that a caller-supplied producer overrides the library default for the base walk).
+
 ## 2026-10-09 - the no-MCP feedback door is guarded where it broke: the path the box executes, and the fall-through that would start a rig
 
 - `agenthub_go/fastmcp/server/httpapp/seat_feedback_script_test.go`: the submission script's path follows its move to `agenthub_client/src/agenthub_client/seat_feedback.sh`. **Failing first, on the tree as it stood**: both tests in the file FAIL with `cannot find the submission script: stat ../../../../scripts/seat_feedback.sh: no such file or directory` (`:37` and `:82`), because the relocation deleted the file the guard executes. After the repoint, `go test ./fastmcp/server/httpapp/ -run TestSeatFeedback -count=1` -> `ok agenthub/fastmcp/server/httpapp 0.108s`.

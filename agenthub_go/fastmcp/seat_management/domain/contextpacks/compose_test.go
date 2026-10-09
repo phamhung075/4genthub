@@ -302,6 +302,70 @@ func TestComposeLabelsSources(t *testing.T) {
 	}
 }
 
+// B2 — whoever supplies the bytes labels them, resolved from the PHASE BEING WALKED. A context
+// phase takes the name it was supplied under, so the SAME atom supplied under two sources yields
+// two pieces carrying two different labels. A labeller that receives only the atom cannot produce
+// this, which is why the provenance must not be thrown away at selection.
+func TestComposeNamedProfileLabelsContextSourcesFromThePhase(t *testing.T) {
+	shared := Atom{ID: "shared", Address: "notes.md#beta", Order: 1, Priority: PriorityCore,
+		Situations: []Situation{SituationFresh}, Runtime: RuntimeAny}
+	profile := Profile{
+		ID: "install-v1", Situations: []Situation{SituationFresh}, Runtimes: []Runtime{RuntimeClaude},
+		Phases: []ProfilePhase{{ID: "ctx", Context: []string{"project", "mission"}}},
+	}
+	// The graph itself holds no context atoms: they arrive from the caller's configured roots.
+	got, err := ComposeNamedProfile(
+		ComposeInput{Situation: SituationFresh, Runtime: RuntimeClaude, ReadFile: reader(t)},
+		profile, map[string][]Atom{"project": {shared}, "mission": {shared}})
+	if err != nil {
+		t.Fatalf("named profile: %v", err)
+	}
+	if len(got.Pieces) != 2 {
+		t.Fatalf("pieces = %d, want 2 — the same atom supplied under two sources", len(got.Pieces))
+	}
+	if got.Pieces[0].SourceKind != SourceProject || got.Pieces[1].SourceKind != SourceMission {
+		t.Fatalf("labels = [%q %q], want [project mission] — a context phase takes the name it was supplied under",
+			got.Pieces[0].SourceKind, got.Pieces[1].SourceKind)
+	}
+
+	// The vocabulary names four context sources; a slice source must be labelable truthfully.
+	sliceProfile := profile
+	sliceProfile.Phases = []ProfilePhase{{ID: "ctx", Context: []string{"slice"}}}
+	got, err = ComposeNamedProfile(
+		ComposeInput{Situation: SituationFresh, Runtime: RuntimeClaude, ReadFile: reader(t)},
+		sliceProfile, map[string][]Atom{"slice": {shared}})
+	if err != nil {
+		t.Fatalf("slice source: %v", err)
+	}
+	if got.Pieces[0].SourceKind != SourceSlice {
+		t.Errorf("slice label = %q, want slice", got.Pieces[0].SourceKind)
+	}
+
+	// An atom phase carries no source name of its own, so its pieces are library by construction.
+	atomProfile := profile
+	atomProfile.Phases = []ProfilePhase{{ID: "pack", Atoms: []string{"shared"}}}
+	got, err = ComposeNamedProfile(
+		ComposeInput{Atoms: []Atom{shared}, Situation: SituationFresh, Runtime: RuntimeClaude, ReadFile: reader(t)},
+		atomProfile, nil)
+	if err != nil {
+		t.Fatalf("atom phase: %v", err)
+	}
+	if got.Pieces[0].SourceKind != SourceLibrary {
+		t.Errorf("atom-phase label = %q, want library by construction", got.Pieces[0].SourceKind)
+	}
+
+	// A source name the vocabulary does not define cannot be labelled truthfully: loud, never a
+	// silent library.
+	badProfile := profile
+	badProfile.Phases = []ProfilePhase{{ID: "ctx", Context: []string{"handover"}}}
+	_, err = ComposeNamedProfile(
+		ComposeInput{Situation: SituationFresh, Runtime: RuntimeClaude, ReadFile: reader(t)},
+		badProfile, map[string][]Atom{"handover": {shared}})
+	if err == nil || !strings.Contains(err.Error(), "handover") {
+		t.Errorf("unknown source name error = %v, want a loud refusal naming the source", err)
+	}
+}
+
 func pieceIDs(pieces []Piece) []string {
 	out := make([]string, 0, len(pieces))
 	for _, p := range pieces {

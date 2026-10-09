@@ -42,7 +42,20 @@ const (
 	SourceProject SourceKind = "project"
 	SourceSeat    SourceKind = "seat"
 	SourceMission SourceKind = "mission"
+	// SourceSlice labels a context phase's slice source. ProfilePhase's own vocabulary names
+	// project/mission/seat/slice, so the fourth name had no truthful label to resolve to.
+	SourceSlice SourceKind = "slice"
 )
+
+// sourceKindsByName is the context-phase vocabulary, and the ONLY place a context source's kind is
+// resolved: the name a caller supplies its bytes under IS the label (B2 — whoever supplies the
+// bytes labels them). Nothing here reads a store, and nothing derives the kind from an address.
+var sourceKindsByName = map[string]SourceKind{
+	"project": SourceProject,
+	"mission": SourceMission,
+	"seat":    SourceSeat,
+	"slice":   SourceSlice,
+}
 
 // dropOrder is the drop-first ranking: optional, then recommended, then core.
 var dropOrder = map[Priority]int{PriorityOptional: 0, PriorityRecommended: 1, PriorityCore: 2}
