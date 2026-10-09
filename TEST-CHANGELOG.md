@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - two test-file comments named deleted scripts, and no test asserted either live string
+
+- `agenthub_go/internal/clientsync/lock_test.go:13` and `status_test.go:12` — **comments only, no assertion touched.** `lock_test.go`'s comment named `openrig_seat_sync.py` as the source of `read_lock`; `status_test.go`'s named `scripts/tests/test_openrig_seat_client.py` as the source of the party-spec case. Both now name the tracked files (`agenthub_client/src/agenthub_client/seat_sync.py`, `agenthub_client/tests/test_seat_client.py`), verified in the index before the edit, and the second keeps the move in the sentence rather than dropping it.
+- **NO CASE WAS ADDED, WEAKENED OR DELETED, because neither live string is asserted anywhere.** Checked both ways and stated rather than left implicit: `grep` for the refusal sentence (`not ported into the Go client yet`) and for `deploy-backend.sh` / `deploy-frontend.sh` across `*_test.go`, `*_test.py` and `*.bats` finds no assertion — the only hit is `lock_test.go:13`, and it is prose. That gap is recorded as the reason the strings rotted; it is not papered over by adding a new pin on a sentence, which would pin wording rather than behaviour.
+- **THE LIVE PATH WAS EXERCISED, so the changed string is verified as behaviour and not as text:** `go run ./cmd/agenthubclient sync bundle` → the new refusal sentence on stderr, exit **3** (`ExitUnavailable`). No test covers that path, which is exactly why it was run.
+- Commands: `gofmt` from the **repository root** over **1275** tracked `.go` files → nothing of mine listed (two pre-existing non-Go parse findings stand); `go build ./...` → rc=0; `go vet ./...` → clean; `go test -count=1 ./internal/clientsync/` → **ok 0.309s**; `go test -count=1 ./...` → **ok, every package**.
+- **NOT RUN:** the shell helper's echoes have no test harness — `bash -n scripts/deployment/caprover-env-setup.sh` → exit 0 is the whole of its verification.
+
 ## 2026-10-09 - the orphaned mapping module's test file goes with the module, and the absence is proven before the deletion
 
 - `agenthub_go/fastmcp/task_management/application/use_cases/agent_mappings_test.go` **DELETED with `agent_mappings.go`**, not separately: its two remaining cases (`TestResolveAgentName`, `TestIsDeprecatedAgent`) asserted the behaviour of the module's own functions and nothing else, so keeping them would have required the implementation they test to stay. `TestResolverRegistered` had already gone in `73f7b253`, which removed the seam they were registered into.

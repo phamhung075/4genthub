@@ -10,7 +10,7 @@ import (
 	"agenthub/internal/clientcmd"
 )
 
-// TestReadLockMirrorsThePythonBranches pins all three outcomes of openrig_seat_sync.py's read_lock,
+// TestReadLockMirrorsThePythonBranches pins all three outcomes of agenthub_client/src/agenthub_client/seat_sync.py's read_lock,
 // including the two failure ones, because a port that silently drops a refusal is the failure this
 // tree keeps finding in the other direction (a refusal that arrives as a success).
 func TestReadLockMirrorsThePythonBranches(t *testing.T) {

@@ -1,6 +1,7 @@
 // Package clientsync is the sync half of agenthub-client: pull, rig, bundle, switch, status and watch,
-// ported test-for-test from the Python test now at scripts/tests/test_openrig_seat_sync.py (it lived at
-// agenthub_main/src/tests/scripts/ until 2026-10-08, when the script tests left the archived tree).
+// ported test-for-test from the Python test now at agenthub_client/tests/test_seat_sync.py (it lived at
+// scripts/tests/test_openrig_seat_sync.py until 2026-10-09, when the scripts left the tree, and at
+// agenthub_main/src/tests/scripts/ until 2026-10-08).
 // Those Python tests are the parity spec, so a verb here is done when the Go tests assert WHAT THEY
 // ASSERT, not when the Go tests pass.
 //
@@ -54,8 +55,9 @@ func (syncCommand) Run(ctx context.Context, _ *clientcmd.Rig, args []string, std
 			continue
 		}
 		fmt.Fprintf(stderr,
-			"agenthub-client sync %s: not ported into the Go client yet, so openrig_seat_sync.py is still "+
-				"the authority for it. This build refuses rather than doing something weaker.\n", want)
+			"agenthub-client sync %s: not ported into the Go client yet, so the client package's seat_sync "+
+				"module (agenthub_client/src/agenthub_client/seat_sync.py) is still the authority for it. "+
+				"This build refuses rather than doing something weaker.\n", want)
 		return clientcmd.ExitUnavailable
 	}
 	fmt.Fprintf(stderr, "agenthub-client sync: unknown verb %q; the verbs are %s\n", want, verbList())

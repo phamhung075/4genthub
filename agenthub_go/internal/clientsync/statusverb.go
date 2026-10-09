@@ -21,7 +21,7 @@ func DefaultSeatStore() string {
 	return filepath.Join(home, ".openrig", "agenthub-seats")
 }
 
-// RequireEnv ports openrig_seat_sync.py's require_env: an unset or empty variable is a usage error with
+// RequireEnv ports agenthub_client/src/agenthub_client/seat_sync.py's require_env: an unset or empty variable is a usage error with
 // the Python's message ("<name> is not set"), NOT a silent default - which is why the URL and the token
 // are read through it rather than with a fallback.
 func RequireEnv(name string) (string, error) {

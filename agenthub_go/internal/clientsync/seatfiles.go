@@ -11,7 +11,7 @@ import (
 	"agenthub/internal/clientcmd"
 )
 
-// PathsPath is SEATS_PATH in openrig_seat_sync.py: one resolved seat, by room and seat.
+// PathsPath is SEATS_PATH in agenthub_client/src/agenthub_client/seat_sync.py: one resolved seat, by room and seat.
 const PathsPath = "/api/v2/openrig/seats"
 
 // hashPattern is HASH_RE: a hash is a directory name, so it may not contain a separator, a space or
