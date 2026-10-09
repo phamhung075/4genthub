@@ -3,7 +3,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Separator } from "./ui/separator";
-import { Task, Subtask, getTask, getTaskContext } from "../api";
+import { Task, Subtask, getTaskContext } from "../api";
 import ClickableAssignees from "./ClickableAssignees";
 import { formatContextDisplay } from "../utils/contextHelpers";
 import logger from "../utils/logger";
@@ -12,6 +12,7 @@ import RawJSONDisplay from "./ui/RawJSONDisplay";
 import { EnhancedJSONViewer } from "./ui/EnhancedJSONViewer";
 import { CopyableId } from "./ui/CopyableId";
 import { ProgressHistoryTimeline } from "./ProgressHistoryTimeline";
+import { useTask } from '../hooks/useTasks';
 
 
 interface TaskDetailsDialogProps {
@@ -29,59 +30,31 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
   onClose,
   onAgentClick
 }) => {
-  const [fullTask, setFullTask] = useState<Task | null>(null);
   const [taskContext, setTaskContext] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
   const [contextLoading, setContextLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'context'>('details');
   const [jsonCopied, setJsonCopied] = useState(false);
 
-  // Use fullTask if available for displayTask - Task type is already the entity itself
-  const displayTask = fullTask || task;
+  // THE DIALOG IS A LIVE READER OF THE CACHE THE REALTIME LAYER WRITES. useRealtimeSync's
+  // 'updated' branch writes ['task', taskId, false] and ['task', taskId, true]; this subscribes
+  // to the first, so a status that arrives over the socket reaches an OPEN dialog. It used to
+  // render a local snapshot (fullTask, seeded from the prop and from its own getTask call),
+  // which nothing refreshed while the dialog stayed open - the operator's report.
+  const { data: liveTask, isLoading } = useTask(task?.id, false);
 
-  // Set initial task when it changes - but don't clear if null
-  useEffect(() => {
-    logger.debug('[TaskDetailsDialog] Task prop changed:', task);
-    // Task type is already the entity itself, no need to access .task property
-    if (task && task.id) {
-      logger.debug('[TaskDetailsDialog] Setting fullTask from prop:', task);
-      setFullTask(task);
-    } else {
-      logger.debug('[TaskDetailsDialog] Task prop is null or has no ID, not clearing fullTask');
-    }
-  }, [task]);
+  // Task type is already the entity itself. The prop is the fallback for the render(s) before
+  // the query answers, so a task handed in by the list host still displays immediately.
+  const displayTask = liveTask ?? task;
 
-  // Fetch full task with context when dialog opens
+  // Fetch the task CONTEXT when the dialog opens. The TASK itself is no longer fetched here:
+  // useTask above owns that request (the same getTask call, on the key the realtime layer
+  // writes), so this effect's own getTask was a duplicate of it.
   useEffect(() => {
-    // Only fetch if we have a task ID, either from prop or from fullTask
-    const taskId = task?.id || fullTask?.id;
-    logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task, fullTask });
+    const taskId = task?.id;
+    logger.debug('[TaskDetailsDialog] Dialog open', { open, taskId, taskProp: task });
 
     if (open && taskId) {
-      setLoading(true);
       setContextLoading(true);
-
-      logger.debug('[TaskDetailsDialog] Fetching task details for ID:', taskId);
-      // Fetch task details
-      getTask(taskId) // Fixed: removed invalid second parameter
-        .then(fetchedTask => {
-          logger.debug('[TaskDetailsDialog] Fetched task:', fetchedTask);
-          // Task type is already the entity itself, no wrapper object
-          if (fetchedTask && fetchedTask.id) {
-            logger.debug('[TaskDetailsDialog] Setting fullTask to:', fetchedTask);
-            setFullTask(fetchedTask);
-          } else {
-            logger.warn('[TaskDetailsDialog] No valid task data in response');
-          }
-          // Don't clear on failure - keep the initial task data
-        })
-        .catch(error => {
-          logger.error('[TaskDetailsDialog] Error fetching task:', error);
-          // Don't overwrite with null - keep existing data
-        })
-        .finally(() => {
-          setLoading(false);
-        });
 
       // Fetch task context separately
       getTaskContext(taskId)
@@ -127,7 +100,6 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
     if (!open) {
       // Delay clearing to avoid flashing when dialog quickly reopens
       const timer = setTimeout(() => {
-        setFullTask(null);
         setTaskContext(null);
         setActiveTab('details');
       }, 300);
@@ -197,7 +169,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
             >
               <Info className="w-4 h-4" />
               Details
-              {loading && <span className="text-xs">(Loading...)</span>}
+              {isLoading && <span className="text-xs">(Loading...)</span>}
             </button>
 
             <button
