@@ -12,6 +12,26 @@
 ### Not in this commit
 - No consumer is migrated, because there is none: a grep for `domain/contextpacks` outside the package still returns nothing. O4 (`NEXT_GEN.md:424`, the resume brief) remains its first intended consumer and is not built here — the wiring site is a design decision this row does not own.
 
+## The architecture doc's D2 record still said the fleet scripts "move in stage 2"
+
+### Fixed
+- `ai_docs/core-architecture/agenthub-system-architecture.md`, D2's "Python tooling outside the backend" paragraph: it said the eight fleet scripts "survive the backend removal unchanged and move in stage 2". The move has happened — the modules live in `agenthub_client/src/agenthub_client/` (`bridge.py`, `compact.py`, `scrub.py`, `seat_client.py`, `seat_policy.py`, `seat_sync.py`, `team_setup.py`, `watch.py`) and are reached through `4genteam` — and **every `scripts/openrig_*.py` path, with all seven of its tests, is absent from the working tree AND the index**. The dated note added there also states the trap a reader will otherwise walk into: **the deletion is STAGED, not committed** (it is held with the pending line decision), so `git show HEAD:scripts/openrig_seat_sync.py` still resolves while the file on disk does not — which is why git history keeps showing scripts no developer has.
+- The same section's status line asserted the canonical test command still covered twelve script tests. The command runs, but `scripts/tests/` now collects three files, and the line says so with its measurement instead of leaving the difference to be read as a deleted suite.
+- The compaction-supervisor marker in the turn-time findings named `openrig_compact_supervisor.py`, a path that no longer exists; it now names `agenthub_client/src/agenthub_client/compact.py` and the verbs that run it (`4genteam compact`, `compact-run`).
+
+### An instrument failure worth recording, because it nearly became the edit
+- My first look at this tree was an `ls scripts/` and `ls scripts/tests/` whose output **still listed `openrig_bridge.py` and the eight script tests**, while `[ -e … ]`, `find` and `stat` all said they do not exist. I re-measured with absolute paths before writing a word, and the re-measurement is what the note above records. **The listing lied, not the tree** — and written from the first reading, the document would have said the opposite of the fact. Same family as the rule this repository already carries: before trusting a check, ask what dimension it can see.
+
+### Verified
+- `find /home/daihu/__projects__/4genthub/scripts -maxdepth 1 -name "openrig_*.py"` -> empty; `stat scripts/openrig_bridge.py` -> `No such file or directory`; `git ls-files --error-unmatch scripts/openrig_seat_sync.py` -> exit 1; `ls -la scripts/tests/` -> `pytest.ini`, `test_prepare_commit_msg_seat.py`, `test_seat_policy_commit_form.py`, `test_team_roster.py`.
+- The modules are where the note says (`ls agenthub_client/src/agenthub_client/`) and the verb exists (`4genteam --help` lists `compact-run`).
+
+## A second caller of the relocation: the roster test read a script the tree no longer has
+
+### Fixed
+- `scripts/tests/test_team_roster.py`: `POLICY_PATH` still named `scripts/openrig_seat_policy.py`, deleted by the client relocation, so `test_the_omp_seats_are_exactly_the_seat_roles_table` died with `FileNotFoundError` on every run since. Repointed at the relocated module, `agenthub_client/src/agenthub_client/seat_policy.py` (it imports nothing, so loading it by file path still works), and the loaded module is now named `seat_policy` rather than after a file that is gone. **Kept rather than deleted**: the invariant it holds — `team.json`'s omp seats equal `SEAT_ROLES[RIG]`, the two writes that once drifted apart — is untouched by where the module lives. Measured: `1 failed, 3 passed` before, `4 passed` after; the `scripts/tests` directory, 14 passed.
+- **This is the second instance of one class, which is why the sweep was worth more than the fix.** Both were found by a person seeing a red test, not by the relocation, because the deleted path is held as a STRING — once in a Go test (`scripts/seat_feedback.sh`, `ff6fed10`) and once here (`scripts/openrig_seat_policy.py`) — so it is in no import graph and no dependency check. The sweep over the nine deleted names, tracked files only, is in the report to the lead; what remains divides into `scripts/team/4genthub-min/NOTES.md` and four `ai_docs` documents that still instruct a deleted path to a reader who would follow it (`ai_docs/verification/of4-local-stack.md` and `ai_docs/operations/syncing-seats-with-the-cloud.md`, plus two of the seven line-B paths, which ride that decision), and deliberate history, which stays as written (`CHANGELOG.md`, `TEST-CHANGELOG.md`, the dated reports and the decision records).
+
 ## The seat-sync doc instructed a script the tree no longer has
 
 ### Fixed
