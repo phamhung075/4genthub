@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useRealtimeSync } from '../../hooks/useRealtimeSync';
 import { animationFactory } from '../../services/AnimationFactory';
 import { isTaskDeletePayload, getEntityId, WSMessage } from '../../types/websocket-protocol';
+import type { Task } from '../../types/api.types';
 
 // Mock toast hooks
 vi.mock('../../components/ui/toast', () => ({
@@ -450,6 +451,121 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
         },
         { timeout: 1000 }
       );
+    });
+  });
+
+  // THE OWNER'S REPORT, UPDATE PATH: a task status changes and the frontend does not show it.
+  // The layer split was GO - the frame is stamped user 'system' and the delivery gate refuses
+  // it - so this block pins the CLIENT half of the contract instead: whether the real handler,
+  // on the real keys, applies a frame that DOES arrive. Both are the keys production reads:
+  //   detail: ['task', taskId, includeContext]  (useTasks.ts:40, both variants are written)
+  //   list:   ['tasks', git_branch_id]          (useTasks.ts:14)
+  describe('Task Update Handler - an arriving status change must reach the detail and the list', () => {
+    const BRANCH_ID = 'branch-status-1';
+    const TASK_ID = 'task-status-1';
+
+    const taskAt = (status: string): Task =>
+      ({
+        id: TASK_ID,
+        title: 'Status Task',
+        description: '',
+        status,
+        priority: 'high',
+        git_branch_id: BRANCH_ID,
+        progress_percentage: 0,
+        assignees: ['fe-dev-agent'],
+        labels: [],
+        created_at: '2026-10-09T18:00:00Z',
+        updated_at: '2026-10-09T18:00:00Z',
+      }) as unknown as Task;
+
+    // FIELD FOR FIELD the frame agenthub_go's BroadcastDataChange builds for a task update
+    // (fastmcp/server/routes/websocket_routes.go): version 2.0, type 'update', payload.entity
+    // 'task', payload.data.primary = the task dict. metadata.source is 'user' because 'updated'
+    // is in that function's userTriggered set, and metadata.userId is the literal 'system' the
+    // facade stamps - the value the delivery gate then refuses for every real connection.
+    const updateFrame = (status: string): WSMessage =>
+      ({
+        id: 'broadcast-task-424242',
+        version: '2.0',
+        type: 'update',
+        timestamp: '2026-10-09T20:00:00.000000+00:00',
+        sequence: 4242,
+        payload: {
+          entity: 'task',
+          action: 'updated',
+          data: { primary: taskAt(status) },
+        },
+        metadata: {
+          source: 'user',
+          userId: 'system',
+          entity_type: 'task',
+          entity_id: TASK_ID,
+          event_type: 'updated',
+        },
+      }) as unknown as WSMessage;
+
+    it('writes the frame values into both detail variants, and invalidates the list so a live list refetches', async () => {
+      const wrapper = createWrapper();
+
+      // What the operator is looking at before the change.
+      queryClient.setQueryData(['task', TASK_ID, false], taskAt('todo'));
+      queryClient.setQueryData(['task', TASK_ID, true], taskAt('todo'));
+      queryClient.setQueryData(['tasks', BRANCH_ID], [taskAt('todo')]);
+
+      // A REAL subscriber on the REAL list key. It answers with whatever status the server holds
+      // at fetch time, so a cache merely left alone stays distinguishable from one that was
+      // invalidated and refetched.
+      let servedStatus = 'todo';
+      const fetches: string[] = [];
+      const listObserver = renderHook(
+        () =>
+          useQuery({
+            queryKey: ['tasks', BRANCH_ID],
+            queryFn: async () => {
+              fetches.push(servedStatus);
+              return [taskAt(servedStatus)];
+            },
+            staleTime: 0,
+          }),
+        { wrapper }
+      );
+
+      await waitFor(() => expect(listObserver.result.current.data?.[0].status).toBe('todo'));
+      expect(fetches).toEqual(['todo']);
+
+      servedStatus = 'in_progress';
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      const mockWebSocketClient = {
+        on: vi.fn((event: string, handler: (msg: WSMessage) => void) => {
+          if (event === 'update') {
+            setTimeout(() => handler(updateFrame('in_progress')), 10);
+          }
+        }),
+        off: vi.fn(),
+      };
+      renderHook(() => useRealtimeSync(mockWebSocketClient, true), { wrapper });
+
+      // The handler holds its cache write for 150ms to let the update animation play.
+      await waitFor(
+        () => {
+          expect(queryClient.getQueryData<Task>(['task', TASK_ID, false])?.status).toBe('in_progress');
+          expect(queryClient.getQueryData<Task>(['task', TASK_ID, true])?.status).toBe('in_progress');
+        },
+        { timeout: 2000 }
+      );
+
+      // The list is not written directly - it is invalidated, on the real key, and a live
+      // subscriber re-reads it.
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks', BRANCH_ID] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+      await waitFor(
+        () => expect(listObserver.result.current.data?.[0].status).toBe('in_progress'),
+        { timeout: 2000 }
+      );
+      expect(fetches[fetches.length - 1]).toBe('in_progress');
+
+      invalidateSpy.mockRestore();
     });
   });
 });
