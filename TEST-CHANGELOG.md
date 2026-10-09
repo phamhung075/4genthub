@@ -10,6 +10,8 @@ Track test suite changes, fixes, and improvements for agenthub.
 - **NOT RUN, and it cannot be:** no case replays the deleted functions' behaviour — there is no implementation left to exercise, and re-asserting a deleted table's values would be the re-pin the project rule forbids.
 
 
+## 2026-10-09 - the shipped inventory's digests are watched by the suite, and the guard was seen red before green
+
 - `agenthub_client/tests/test_team_setup.py` (new cases) — the guard for `ai_docs/agent-system/skill-library.json`, whose only former enforcer was `publish-skills`, a networked action. Both cases recompute **through `skill_library_modules()`** (`team_setup.py:709`) and copy no verification logic:
   - `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` runs the real inventory against the real `OPENRIG_SKILLS_ROOT` checkout, then pins the two invariants a silent edit would break: `count == len(skills)`, and `len(modules) == count`.
   - `test_the_inventory_guard_names_the_skill_and_both_digests` is the non-vacuity case. It perturbs one digest in a **copy** of the inventory under `tmp_path` — the shipped file is never touched — and requires the failure to name the skill, the RECORDED digest and the RECOMPUTED one. The pairing is the assertion: without both, a reader cannot tell which side moved.
