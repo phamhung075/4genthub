@@ -39,6 +39,7 @@
 - Commit hooks read `scripts/git-hooks/pre-commit-config.yaml` (reinstall with `pre-commit install -c ... --hook-type pre-commit --hook-type prepare-commit-msg`).
 - `.claude` hooks and `CLAUDE.local.md` / `.gemini/gemini.local.md` use the Go layout.
 - `agenthub_go/NEXT_GEN.md:415` (commit `0d712f48`): the publish-skills step named the removed `python3 scripts/openrig_team_setup.py publish-skills` and cited `openrig_team_setup.py:708-722`; it now names `4genteam team publish-skills` and `agenthub_client/src/agenthub_client/team_setup.py:764-778` (`cmd_publish_skills`). The dated history lines `:191` and `:543` keep the old name.
+- `agenthub_go/NEXT_GEN.md:533`: the delivered-items record said a machine token is bound to exactly one route and that tests refuse it on every other route. The code has two routes, `POST /api/v2/openrig/seat-status` and `POST /api/v2/openrig/feedback` (a deliberate widening dated 2026-10-06, `machine_token_mount.go:8-15`), and the scope test refuses it on seven named routes (`machine_token_mount_test.go:281-306`); the line now says both, with the widening date.
 
 ### Testing
 - With the tree absent: `go build ./...` and `go test ./...` pass, `agenthub_client` 314 passed, `bash -n` clean on every remaining script.
