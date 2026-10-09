@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the guide-shelf tests cover the tenth seat, and a count pin they broke is corrected
+
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides_test.go`: `guideSeats` gains `architect`, so the existing load/render/lock tests now cover `guide-architect` and assert its heading appears once in the rendered context. No new test was written and no assertion was weakened — the same checks that held for the other nine hold for the tenth.
+- `scripts/tests/test_seat_policy_commit_form.py`: the policy-module count moves **nine → ten** and the wording follows. This was a genuine regression introduced by adding a tenth policy module, not a stale pin: the suite read `AssertionError: assert 10 == 9` before the change. The invariant the file exists to test — every policy module carries the same commit-form siblings — now holds for the architect file too, because its deny set was copied verbatim rather than paraphrased.
+- Commands and results. From `agenthub_go`: `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/... ./modulecontent/... ./seatrenderer/...` -> `ok` for all three packages. From the repository root: `python3 scripts/tests/test_seat_policy_commit_form.py` -> **4 passed** (2 failed before the fix).
+- Known, pre-existing, not this change: `scripts/tests/test_team_roster.py` fails one case on `FileNotFoundError` for `scripts/openrig_seat_policy.py`, which is staged-deleted while the retirement trigger has not fired. That failure is independent of this commit.
+
 ## 2026-10-09 - the gone-source contract pinned end to end, and exit 2 made reachable from a test
 
 - `agenthub_go/cmd/blockdrift/main.go`: the usage refusal moved out of `main` into `execute(root, stdout, stderr) int`, so every exit status this command can produce is reachable from a test. The refusal prints exactly what `main` printed, and `main` is now only flag parsing and `os.Exit`. The 2026-10-08 entry below recorded that the command's status is only observable through a built binary — exit 2 was not observable at all.

@@ -1,11 +1,11 @@
-"""The nine seat policy modules must carry the CURRENT commit form, and agree on it.
+"""The ten seat policy modules must carry the CURRENT commit form, and agree on it.
 
 The fleet commits with ``git commit -m "..." -- <paths>`` and NO prior ``git add``, because the
 index is shared: a staged line can be taken by another seat's commit. A new file is the one
 exception - ``git add -N`` records an empty blob (e69de29b) so the pathspec commit has something to
 name without putting content in the index. The policy modules still told every seat to "stage
 explicit paths", which is the old form, so a seat reading its limits text would stage and lose the
-line; these tests hold the nine files to the current form.
+line; these tests hold the ten files to the current form.
 
 The suite runs ``python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q`` from the
 repository root, so this file is self-contained: the repository root is derived from ``__file__``
@@ -27,8 +27,8 @@ POLICY_FILES = sorted(POLICY_DIR.glob("policy-*.json"))
 # and no prior git add, so no sibling may still carry this phrase.
 OLD_COMMIT_FORM = "stage explicit paths"
 
-# A sibling is a "commit-form" sibling when it prescribes a commit, which is the key the nine-file
-# edit changes; each file declares nine of them. SCOPED ON PURPOSE: the nine modules are not
+# A sibling is a "commit-form" sibling when it prescribes a commit, which is the key the ten-file
+# edit changes; each file declares nine of them. SCOPED ON PURPOSE: the ten modules are not
 # byte-identical as a whole - policy-lead.json legitimately says different things for some matches
 # it owns (rig up*, rig down*, rig remove*) - so the invariant asserted below is the one the edit
 # needs and can hold, not a global cross-file identity the data does not have.
@@ -36,7 +36,7 @@ COMMIT_FORM_MARKER = "git commit -m"
 
 
 def _siblings() -> list[tuple[str, str, str]]:
-    """Every (module, match, sibling) the nine policy modules declare under bash.patterns.
+    """Every (module, match, sibling) the ten policy modules declare under bash.patterns.
 
     A rule that carries no sibling is skipped: it has no words for the seat and is not what these
     tests are about.
@@ -50,11 +50,11 @@ def _siblings() -> list[tuple[str, str, str]]:
     return out
 
 
-def test_all_nine_policy_modules_are_loaded() -> None:
+def test_all_ten_policy_modules_are_loaded() -> None:
     names = [p.name for p in POLICY_FILES]
     assert (
-        len(names) == 9
-    ), f"expected the nine policy modules, found {len(names)}: {names}"
+        len(names) == 10
+    ), f"expected the ten policy modules, found {len(names)}: {names}"
 
 
 def test_no_sibling_prescribes_the_old_commit_form() -> None:
@@ -80,7 +80,7 @@ def _commit_form_siblings() -> list[tuple[str, str, str]]:
 
 
 def test_the_commit_form_siblings_agree_within_each_module() -> None:
-    """(a) Within each of the nine files, the nine commit-form siblings are byte-identical.
+    """(a) Within each of the ten files, the nine commit-form siblings are byte-identical.
 
     One file that kept a divergent copy of the changed key would fold against its own siblings -
     FoldPolicies refuses one match declared with two different siblings - so the edit must move all
@@ -98,26 +98,26 @@ def test_the_commit_form_siblings_agree_within_each_module() -> None:
         f"{disagreeing}"
     )
     assert (
-        len(by_file) == 9
-    ), f"expected commit-form siblings in all nine modules, found {sorted(by_file)}"
+        len(by_file) == 10
+    ), f"expected commit-form siblings in all ten modules, found {sorted(by_file)}"
     assert all(len(sibs) == 1 for sibs in by_file.values()), by_file
 
 
-def test_one_commit_form_match_declares_one_sibling_across_the_nine_modules() -> None:
-    """(b) For each commit-form match, the sibling is identical across all nine files.
+def test_one_commit_form_match_declares_one_sibling_across_the_ten_modules() -> None:
+    """(b) For each commit-form match, the sibling is identical across all ten files.
 
-    This is the invariant that makes the nine-file change safe: replacing the changed key in one
+    This is the invariant that makes the ten-file change safe: replacing the changed key in one
     place per match keeps every file consistent, and no file is left prescribing the old form.
     """
     by_match: dict[str, set[str]] = defaultdict(set)
     for _name, match, sibling in _commit_form_siblings():
         by_match[match].add(sibling)
 
-    assert by_match, "no commit-form sibling found in the nine policy modules"
+    assert by_match, "no commit-form sibling found in the ten policy modules"
     disagreeing = {
         match: sorted(sibs) for match, sibs in by_match.items() if len(sibs) > 1
     }
     assert not disagreeing, (
-        "a commit-form match is declared with two different siblings across the nine policy "
+        "a commit-form match is declared with two different siblings across the ten policy "
         f"modules: {disagreeing}"
     )
