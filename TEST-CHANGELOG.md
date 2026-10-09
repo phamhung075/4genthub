@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the project-root search is pinned host-independently, and the parity case now states the invariant its 120 fixtures exercise (`30dfd7e9`)
+
+- `agenthub_go/fastmcp/task_management/infrastructure/utilities/directory_utils_test.go`: `TestFindProjectRootIsHostIndependent` builds its fixture root as `t.TempDir()/agenthub_go/r` BY CONSTRUCTION, so no directory on the machine is named for the search to match.
+- **SEEN FAILING FIRST, AND IT FAILED ON THE MERGED TREE, NOT ONLY IN A SCRATCH REPLICA:** on the parent commit it is red with `returned ".../001", the parent of the fixture's own agenthub_go: the search matched a NAME`. Both directions were measured on the same tree - `TMPDIR=/tmp/...` ok, `TMPDIR=agenthub_go/.gotmp/...` FAIL - which is why the red reproducible on the host's real TMPDIR is the evidence the fix is judged against.
+- The old form of the case passed under `TMPDIR=/tmp` while the real tree was red, because the search's second walk answered from the host's directory names. The new case does not consult the host's TMPDIR for its fixture at all.
+- `TestFindProjectRootParity` asserts the RETURN INVARIANT over each fixture - every return is the data path when it exists, `/tmp/agenthub_project`, or a directory that holds `agenthub_go` - and logs `parity cases exercised: 120`, so a fixture that silently exercises zero cases can no longer look green.
+- `directory_utils_test.go` is the only test file touched. Commands, run on the current tip with only this change's two Go paths dirty: `gofmt -l` on both files -> prints nothing; `TMPDIR=/tmp/gotmp-t1 go test -count=1 -v ./fastmcp/task_management/infrastructure/utilities/` -> exit 0, **10 tests PASS, 0 FAIL**; `TMPDIR=agenthub_go/.gotmp/t1 go test -count=1 -v ./fastmcp/task_management/infrastructure/utilities/` -> exit 0, **10 tests PASS, 0 FAIL**; `TMPDIR=agenthub_go/.gotmp/tsuite go test -count=1 ./...` -> exit 0, **144 packages ok, 0 FAIL**.
+
 ## 2026-10-09 - the publish form's prefill is pinned, and both refusals assert that NO request was sent
 
 - `agenthub-frontend/src/tests/components/ModulePublishForm.test.tsx`, **NEW FILE**, 6 cases: the form prefills slug, version, kind and content from the block it was handed, reads THAT version rather than the latest, and fixes the kind while editing; an UNCHANGED block sends nothing, so a no-change edit never earns the 409; content changed at the original version also sends nothing and names the version that exists; the new-version path calls `putModuleVersion(slug, '1.4.0', {kind, content})` and is asserted NOT to have been called with the version being edited; create mode is unaffected and reads no block content at all; and the fields are held until the block lands.
