@@ -87,7 +87,7 @@ const ClaudeHooks = ({ expandedSections, toggleSection, deploymentMode }: Claude
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>Only 5 .md files allowed in project root: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md</li>
                   <li>All documentation must go in <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">ai_docs/</code> folder</li>
-                  <li>Test files must be in <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">agenthub_main/src/tests/</code></li>
+                  <li>Test files must be in <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">agenthub_go/</code></li>
                   <li>Scripts must be in <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">scripts/</code> or <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded">docker-system/</code></li>
                   <li>ai_docs subfolders must use kebab-case (lowercase-with-dashes)</li>
                 </ul>

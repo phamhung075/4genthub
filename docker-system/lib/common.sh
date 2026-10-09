@@ -40,13 +40,13 @@ error() {
 # Utility functions
 confirm() {
     local prompt="${1:-Continue?}"
-    
+
     # In test mode, always confirm
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         echo "$prompt [y/N] y"
         return 0
     fi
-    
+
     read -p "$prompt [y/N] " -n 1 -r
     echo
     [[ $REPLY =~ ^[Yy]$ ]]
@@ -57,12 +57,12 @@ check_docker() {
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         return 0
     fi
-    
+
     if ! command -v docker &> /dev/null; then
         error "Docker is not installed or not in PATH"
         exit 1
     fi
-    
+
     if ! docker info &> /dev/null; then
         error "Docker daemon is not running"
         exit 1
@@ -74,7 +74,7 @@ check_docker_compose() {
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         return 0
     fi
-    
+
     if ! command -v docker compose &> /dev/null; then
         if command -v docker-compose &> /dev/null; then
             # Use docker-compose as fallback
@@ -90,19 +90,19 @@ wait_for_service() {
     local service="$1"
     local max_attempts="${2:-30}"
     local attempt=0
-    
+
     info "Waiting for $service to be ready..."
-    
+
     while [ $attempt -lt $max_attempts ]; do
         if docker compose ps --format json | jq -r '.[] | select(.Service == "'$service'") | .Health' | grep -q "healthy"; then
             success "$service is ready"
             return 0
         fi
-        
+
         sleep 2
         ((attempt++))
     done
-    
+
     error "$service failed to become ready within $(($max_attempts * 2)) seconds"
     return 1
 }
@@ -112,9 +112,9 @@ wait_for_services() {
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         return 0
     fi
-    
+
     local services=("backend" "frontend" "postgres" "redis")
-    
+
     for service in "${services[@]}"; do
         if docker compose ps --format json | jq -r '.[].Service' | grep -q "^$service$"; then
             wait_for_service "$service" || return 1
@@ -124,7 +124,7 @@ wait_for_services() {
 
 get_container_id() {
     local service="$1"
-    
+
     # In test mode, check environment variable for simulated container absence
     if [[ "${DOCKER_CLI_TEST_MODE:-}" == "true" ]]; then
         if [[ "${DOCKER_CLI_TEST_MOCK_NO_CONTAINERS:-}" == "true" ]]; then
@@ -134,7 +134,7 @@ get_container_id() {
         echo "mock-container-id-$service"
         return 0
     fi
-    
+
     # Try with docker ps first (more reliable)
     docker ps -q --filter "name=agenthub-$service" 2>/dev/null | head -1
 }
@@ -152,7 +152,7 @@ load_environment() {
     local env="${ENV:-dev}"
     # Use root .env file for all environments
     local env_file="${PROJECT_ROOT}/.env"
-    
+
     if [[ -f "$env_file" ]]; then
         info "Loading environment from: $env_file"
         export $(grep -v '^#' "$env_file" | xargs) 2>/dev/null || true
@@ -173,7 +173,7 @@ is_development() {
 # Network helpers
 ensure_network() {
     local network_name="${1:-agenthub-network}"
-    
+
     if ! docker network ls --format '{{.Name}}' | grep -q "^${network_name}$"; then
         info "Creating network: $network_name"
         docker network create "$network_name" --driver bridge
@@ -183,7 +183,7 @@ ensure_network() {
 # Volume helpers
 ensure_volume() {
     local volume_name="$1"
-    
+
     if ! docker volume ls --format '{{.Name}}' | grep -q "^${volume_name}$"; then
         info "Creating volume: $volume_name"
         docker volume create "$volume_name"
@@ -197,23 +197,23 @@ compose_file_args() {
         echo ""
         return
     fi
-    
-    # Use the unified docker-compose.yml from docker subdirectory
-    local args="-f ${SCRIPT_DIR}/docker/docker-compose.yml"
-    
+
+    # Use the Go backend + frontend compose file from the docker subdirectory
+    local args="-f ${SCRIPT_DIR}/docker/docker-compose.backend-go-frontend.yml"
+
     # Set up profiles based on configuration
     local profiles=""
-    
+
     # Add PostgreSQL profile only if using local database (not Supabase)
     if [[ "${DATABASE_TYPE:-postgresql}" == "postgresql" ]]; then
         profiles="${profiles} --profile postgresql"
     fi
-    
+
     # Add Redis profile if enabled
     if [[ "${ENABLE_REDIS:-false}" == "true" ]]; then
         profiles="${profiles} --profile redis"
     fi
-    
+
     echo "$args $profiles"
 }
 
@@ -221,13 +221,13 @@ compose_file_args() {
 validate_service_name() {
     local service="$1"
     local valid_services=("backend" "frontend" "postgres" "redis" "nginx")
-    
+
     for valid in "${valid_services[@]}"; do
         if [[ "$service" == "$valid" ]]; then
             return 0
         fi
     done
-    
+
     error "Invalid service name: $service"
     error "Valid services: ${valid_services[*]}"
     return 1
@@ -240,11 +240,11 @@ measure_time() {
     local exit_code=$?
     local end=$(date +%s)
     local duration=$((end - start))
-    
+
     if [[ $duration -gt 0 ]]; then
         info "Execution time: ${duration}s"
     fi
-    
+
     return $exit_code
 }
 

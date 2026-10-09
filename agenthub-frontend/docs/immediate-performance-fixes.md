@@ -1,5 +1,7 @@
 # Immediate Performance Fixes - Implementation Guide
 
+> History: the `File:` paths below name the retired Python backend (`agenthub_main/`, recoverable from git tag `python-backend-final`). The live server is `agenthub_go/`.
+
 ## 🎯 High-Impact Quick Wins (Implement First)
 
 ### 1. Database Index Optimization (Expected: 50-60% improvement)

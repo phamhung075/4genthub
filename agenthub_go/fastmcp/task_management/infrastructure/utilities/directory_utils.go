@@ -26,11 +26,11 @@ func DefaultEnv() Env {
 	return Env{Anchor: exe, Cwd: cwd, Getenv: os.LookupEnv, Exists: func(p string) bool { _, err := os.Stat(p); return err == nil }}
 }
 
-// FindProjectRoot finds the project root by looking for the agenthub_main directory,
+// FindProjectRoot finds the project root by looking for the agenthub_go directory,
 // falling back to the data path and finally to a temp directory.
 func (e Env) FindProjectRoot() string {
 	parentOf := func(p string) string { return filepath.Dir(p) }
-	has := func(dir string) bool { return e.Exists(filepath.Join(dir, "agenthub_main")) }
+	has := func(dir string) bool { return e.Exists(filepath.Join(dir, "agenthub_go")) }
 
 	for cur := e.Anchor; parentOf(cur) != cur; cur = parentOf(cur) {
 		if has(cur) {
@@ -41,7 +41,7 @@ func (e Env) FindProjectRoot() string {
 		return e.Cwd
 	}
 	for cur := e.Anchor; parentOf(cur) != cur; cur = parentOf(cur) {
-		if filepath.Base(cur) == "agenthub_main" {
+		if filepath.Base(cur) == "agenthub_go" {
 			return parentOf(cur)
 		}
 	}

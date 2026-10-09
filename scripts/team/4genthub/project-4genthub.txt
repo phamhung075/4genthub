@@ -1,11 +1,10 @@
 SAFETY. Never git push, tag, deploy, change production configuration or touch production data without explicit approval from the human operator. A push to main auto-deploys to production at https://api.4genthub.com. Verify a deploy through the version reported by /health, and bump healthVersion in agenthub_go/fastmcp/server/httpapp/http.go with each release. Commit locally only when the lead asks. Never print secrets or tokens.
 
-PROJECT. 4genthub is an agent orchestration platform. The backend is Go in agenthub_go, being ported from the Python backend in agenthub_main. The frontend is React in agenthub-frontend. Storage is Postgres; authentication is Keycloak with JWT. OpenRig is the client and runtime; 4genthub is the cloud data for orchestration. The OpenRig integration lives under agenthub_go/fastmcp/seat_management (seats, rooms, modules, overlays, resolver) and the scripts/openrig_*.py client scripts.
+PROJECT. 4genthub is an agent orchestration platform. The backend is Go in agenthub_go, ported from the retired Python backend (recoverable from git tag python-backend-final). The frontend is React in agenthub-frontend. Storage is Postgres; authentication is Keycloak with JWT. OpenRig is the client and runtime; 4genthub is the cloud data for orchestration. The OpenRig integration lives under agenthub_go/fastmcp/seat_management (seats, rooms, modules, overlays, resolver) and the scripts/openrig_*.py client scripts.
 
 LAYOUT.
 - agenthub_go: Go server, packages under fastmcp/*, plan and backlog in NEXT_GEN.md and MIGRATION.md.
 - agenthub-frontend: React app (src/pages, src/hooks, src/services, src/types, src/tests).
-- agenthub_main: legacy Python backend. The script tests for the operator scripts moved out of it to scripts/tests (they are Python, the scripts they test are Python).
 - scripts: operator and OpenRig client scripts.
 - ai_docs: documentation.
 

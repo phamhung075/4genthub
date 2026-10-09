@@ -66,7 +66,7 @@ func (m *DatabaseSourceManager) findProjectRoot() string {
 		root = filepath.Dir(exe)
 	}
 	for root != "" {
-		if _, err := os.Stat(filepath.Join(root, "agenthub_main")); err == nil {
+		if _, err := os.Stat(filepath.Join(root, "agenthub_go")); err == nil {
 			return root
 		}
 		parent := filepath.Dir(root)
@@ -77,7 +77,7 @@ func (m *DatabaseSourceManager) findProjectRoot() string {
 	}
 
 	if cwd, err := os.Getwd(); err == nil {
-		if _, err := os.Stat(filepath.Join(cwd, "agenthub_main")); err == nil {
+		if _, err := os.Stat(filepath.Join(cwd, "agenthub_go")); err == nil {
 			return cwd
 		}
 	}
@@ -85,7 +85,7 @@ func (m *DatabaseSourceManager) findProjectRoot() string {
 	if err == nil {
 		current := filepath.Dir(exe)
 		for {
-			if filepath.Base(current) == "agenthub_main" {
+			if filepath.Base(current) == "agenthub_go" {
 				return filepath.Dir(current)
 			}
 			parent := filepath.Dir(current)
@@ -114,7 +114,7 @@ func (m *DatabaseSourceManager) setDatabasePath() error {
 
 	switch m.currentMode {
 	case DatabaseModeTest:
-		p := filepath.Join(projectRoot, "agenthub_main", "database", "data", "agenthub_test.db")
+		p := filepath.Join(projectRoot, "data", "agenthub_test.db")
 		m.databasePath = &p
 	case DatabaseModeDocker:
 		p := os.Getenv("DOCKER_DB_PATH")
@@ -126,7 +126,7 @@ func (m *DatabaseSourceManager) setDatabasePath() error {
 		}
 		m.databasePath = &p
 	case DatabaseModeStdin:
-		p := filepath.Join(projectRoot, "agenthub_main", "database", "data", "agenthub.db")
+		p := filepath.Join(projectRoot, "data", "agenthub.db")
 		m.databasePath = &p
 	default: // NORMAL
 		p := "/data/agenthub.db"
@@ -169,8 +169,8 @@ func (m *DatabaseSourceManager) GetMode() DatabaseMode { return m.currentMode }
 // same conditions; Python logs warnings and never raises.
 func (m *DatabaseSourceManager) validateSingleSource() {
 	projectRoot := m.findProjectRoot()
-	mainDB := filepath.Join(projectRoot, "agenthub_main", "database", "data", "agenthub.db")
-	testDB := filepath.Join(projectRoot, "agenthub_main", "database", "data", "agenthub_test.db")
+	mainDB := filepath.Join(projectRoot, "data", "agenthub.db")
+	testDB := filepath.Join(projectRoot, "data", "agenthub_test.db")
 
 	mainInfo, mainErr := os.Stat(mainDB)
 	testInfo, testErr := os.Stat(testDB)

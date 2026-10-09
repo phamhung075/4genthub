@@ -189,7 +189,7 @@ deploy_production() {
 
 # Development deployment function
 deploy_development() {
-    local compose_file="${DOCKER_DIR}/docker-compose.dev.yml"
+    local compose_file="${DOCKER_DIR}/docker-compose.backend-go-frontend.yml"
     local env_file="${PROJECT_ROOT}/.env.dev"
 
     log "🛠️ Starting development deployment..."

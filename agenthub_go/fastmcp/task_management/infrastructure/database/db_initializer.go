@@ -227,14 +227,11 @@ func ResetDatabase(ctx context.Context, deps Deps, confirm bool) bool {
 	return inst.ResetDatabase(confirm)
 }
 
-// databaseInitializerSQLFilePath resolves the generated SQL in the Python source tree,
-// relative to this Go source file (repository root is five levels up).
+// databaseInitializerSQLFilePath resolves the init SQL next to this Go source file.
 func databaseInitializerSQLFilePath(filename string) string {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
 		return filename
 	}
-	dir := filepath.Dir(file)
-	root := filepath.Clean(filepath.Join(dir, "..", "..", "..", "..", ".."))
-	return filepath.Join(root, "agenthub_main", "src", "fastmcp", "task_management", "infrastructure", "database", filename)
+	return filepath.Join(filepath.Dir(file), filename)
 }

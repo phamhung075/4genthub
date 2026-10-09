@@ -79,7 +79,7 @@ func (c *DualModeConfig) getProjectRoot() string {
 		}
 	}
 	for _, p := range withParents(current) {
-		for _, ind := range []string{"pyproject.toml", "src", "agenthub_main"} {
+		for _, ind := range []string{"pyproject.toml", "src", "agenthub_go"} {
 			if c.env.Exists(utilities.PyJoin(p, ind)) {
 				return p
 			}

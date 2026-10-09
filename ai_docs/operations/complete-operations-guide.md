@@ -33,9 +33,8 @@
   dispatch (with an `environment` choice of `production` or `staging`). Jobs: **Security Scan**
   (Trivy, results uploaded as SARIF to the Security tab) → **Build Images** (backend and
   frontend) → **Deploy to Staging** → **Deploy to Production**. **DATED NOTE 2026-10-09: that file is absent from the working tree and the index — staged for deletion and held with the pending line decision (`git status --porcelain -- .github/workflows/` → `D .github/workflows/production-deployment.yml`) — so this paragraph describes the workflow at HEAD, not on disk.**
-- **`test_coverage.yml`** — triggered by push/PR and a daily schedule. Jobs: a test matrix,
-  performance tests and a coverage report, all running the **archived Python tree**
-  (`working-directory: agenthub_main`).
+- **`test_coverage.yml`** — removed with the Python tree: it only ran the archived Python
+  suite (`working-directory: agenthub_main`). No workflow now runs Go or frontend tests.
 
 **Two facts about that pipeline worth stating in the operations manual:** neither workflow
 installs or runs Go, and neither runs the frontend test runner — so a green pipeline says

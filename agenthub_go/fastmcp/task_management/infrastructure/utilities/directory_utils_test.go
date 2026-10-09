@@ -39,7 +39,7 @@ func TestFindProjectRootParity(t *testing.T) {
 		env.Anchor = filepath.Join(root, c.Anchor, "directory_utils.py")
 		env.Cwd = filepath.Join(root, c.Cwd)
 		// Only paths under root exist: the tree above a TMPDIR inside the repository holds a real
-		// agenthub_main directory that the upward search would otherwise find.
+		// agenthub_go directory that the upward search would otherwise find.
 		env.Exists = func(p string) bool {
 			if p != root && !strings.HasPrefix(p, root+string(filepath.Separator)) {
 				return false
@@ -70,7 +70,7 @@ func TestEnsureBrainDir(t *testing.T) {
 		t.Fatal("directory not created")
 	}
 	root := t.TempDir()
-	if err := os.Mkdir(filepath.Join(root, "agenthub_main"), 0o755); err != nil {
+	if err := os.Mkdir(filepath.Join(root, "agenthub_go"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	env := utilities.DefaultEnv()
