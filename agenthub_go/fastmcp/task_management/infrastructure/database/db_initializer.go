@@ -4,17 +4,16 @@ package database
 // task_management/infrastructure/database/db_initializer.py).
 //
 // Base.metadata.create_all/drop_all map to createAll and dropAllSchemaTables over Tables.
-// The init SQL file is read from the Python source tree (the generated SQL has no Go copy),
-// exactly as the Python reads it from its own directory. The naive "split on ;" and the
-// "skip statements starting with -- or /*" rule are kept verbatim.
+// The init SQL is EMBEDDED in this package, so the binary carries the schema instead of reading a
+// source path at runtime: that path resolved through runtime.Caller and failed inside the distroless
+// image, whose contents and working directory are not a source tree (row b231a84b). The naive
+// "split on ;" and the "skip statements starting with -- or /*" rule are kept verbatim.
 
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"log"
-	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 )
@@ -70,7 +69,7 @@ func (d *DatabaseInitializer) Initialize() bool {
 	if !autoMigrateEnabled() {
 		return false
 	}
-	if d.ExecuteInitSQLFile("init_schema_postgresql.sql") {
+	if d.ExecuteInitSQLFile() {
 		d.Initialized = true
 		return true
 	}
@@ -108,22 +107,24 @@ func (d *DatabaseInitializer) RequiredTables() map[string]bool {
 	return out
 }
 
-// ExecuteInitSQLFile runs the init SQL file's statements in one transaction. Every false return says
-// which asset and which error produced it: the read failure that a fresh database in the distroless
-// image hits (row b231a84b) was previously indistinguishable from a completed run.
-func (d *DatabaseInitializer) ExecuteInitSQLFile(filename string) bool {
-	path := databaseInitializerSQLFilePath(filename)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		log.Printf("database: could not read init SQL asset %s from %s: %v", filename, path, err)
-		return false
-	}
+// databaseInitializerInitSQL is the schema this binary runs on a fresh database. It is EMBEDDED so the
+// asset travels with the binary: the source-path read it replaces resolved through runtime.Caller
+// against the working directory and failed in the distroless image, whose root holds the binary itself
+// and no source tree (row b231a84b). The .sql file stays the single source - edit it, never a copy.
+//
+//go:embed init_schema_postgresql.sql
+var databaseInitializerInitSQL []byte
+
+// ExecuteInitSQLFile runs the embedded schema's statements in one transaction. Every false return says
+// which error produced it: with the schema embedded, an unreadable asset - the failure that used to
+// hide behind a bare bool here (row b231a84b) - is impossible by construction.
+func (d *DatabaseInitializer) ExecuteInitSQLFile() bool {
 	tx, err := d.cfg.Engine.DB.BeginTx(d.ctx, nil)
 	if err != nil {
 		log.Printf("database: could not begin the init SQL transaction: %v", err)
 		return false
 	}
-	statements := strings.Split(string(data), ";")
+	statements := strings.Split(string(databaseInitializerInitSQL), ";")
 	for _, raw := range statements {
 		statement := strings.TrimSpace(raw)
 		if statement == "" {
@@ -232,13 +233,4 @@ func ResetDatabase(ctx context.Context, deps Deps, confirm bool) bool {
 		return false
 	}
 	return inst.ResetDatabase(confirm)
-}
-
-// databaseInitializerSQLFilePath resolves the init SQL next to this Go source file.
-func databaseInitializerSQLFilePath(filename string) string {
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		return filename
-	}
-	return filepath.Join(filepath.Dir(file), filename)
 }

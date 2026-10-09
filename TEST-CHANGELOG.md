@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the init SQL test becomes an asset-and-execution guard, and its own coverage assertion turns up the dropped DDL
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_init_sql_test.go` — the source-path case is gone with the resolver it tested, because its condition cannot exist now. Three cases remain, all over the scripted fake driver: the embedded asset must create every table `VerifyTableStructure` requires (a content check on the bytes, no server); `ExecuteInitSQLFile` must run the embedded schema in ONE committed transaction, with every statement the driver saw proven to be a substring of the embedded schema, which a source-path read could not satisfy; and a failing statement must still log, which is the other half of the row.
+- **THE COVERAGE ASSERTION IS THE ONE THAT FOUND SOMETHING, AND IT WAS RED FOR A REAL REASON.** Asserting that every required table reaches the driver failed for **all 11 of them**: the chunks that begin with a `-- Table: X` comment are skipped whole, so **all 24 `CREATE TABLE` statements never execute** (75 of 177 chunks dropped), while foreign-key `ALTER TABLE`, `CREATE INDEX` and `DROP TABLE IF EXISTS` chunks do. That is a separate defect on its own row, so this file now states plainly in the case's own comment that it does NOT assert coverage either way — pinning the current rule would lock the bug in, and a red test left in the tree would hide it differently.
+- Commands: `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `gofmt -l` on the package prints nothing; the `-trimpath` container-shape run (a scratch directory holding a FILE named `agenthub`) → 3 PASS, `101 statements to the driver in one transaction`.
+
 ## 2026-10-09 - the init SQL runner's silent false is pinned by two cases, one of them the container's not-a-directory shape
 
 - `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_init_sql_test.go`, **NEW FILE**, 2 cases over the scripted fake driver: (1) an asset whose resolved PARENT IS A FILE must return false, must not touch the database at all, and must log; (2) a failing statement must return false and log the error. Case (1) is the container's shape: with the working directory at the image root, `/agenthub` IS the binary, so a source path built from `runtime.Caller` walks through a file and the read fails with not-a-directory.

@@ -1,6 +1,6 @@
 // Production tables that the generated models.go does not cover. The columns and types are
-// transcribed from the authoritative production DDL,
-// agenthub_main/src/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql
+// transcribed from the authoritative production DDL, the embedded
+// fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql
 // (plus applied_migrations, created by the Python migration runner), and follow the row-struct
 // / ColumnDef conventions of models.go: json.RawMessage for JSONB, string for UUID, time.Time
 // for timestamps and pointers for nullable columns.

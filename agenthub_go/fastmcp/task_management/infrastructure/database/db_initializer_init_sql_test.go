@@ -1,13 +1,14 @@
 package database
 
-// The init SQL is an ASSET the binary must carry. Reading it by a source path is what failed on a
-// fresh database inside the distroless image (row b231a84b), so these tests hold the properties that
-// failure broke: a false return is never silent, and what the initializer runs is what the binary
-// holds rather than what happens to sit next to a source file.
+// The init SQL is an ASSET the binary must carry. Reading it by a source path is what failed on a fresh
+// database inside the distroless image (row b231a84b), so the schema is embedded and these tests hold
+// the properties that failure broke: the asset creates the tables Initialize verifies, the statements
+// reach the database in one committed transaction, and a false return says why.
 
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -29,33 +30,70 @@ func newFakeInitializer(t *testing.T, f *fakeDB) *DatabaseInitializer {
 	return inst
 }
 
-// TestExecuteInitSQLFileLogsTheUnreadableAsset is the not-a-directory case: the parent of the
-// resolved path is a FILE, which is the shape the distroless image has for /agenthub and therefore
-// the shape in which the container's read fails. It must return false, touch no database, and say so.
-func TestExecuteInitSQLFileLogsTheUnreadableAsset(t *testing.T) {
-	buf := captureLog(t)
-	f := &fakeDB{tables: map[string][]string{}}
-	inst := newFakeInitializer(t, f)
+// createsTable reports whether sqlText creates the named table. The word boundary matters: `labels`
+// must not be satisfied by `task_labels`, and every name passed here is a real table name.
+func createsTable(sqlText, table string) bool {
+	return regexp.MustCompile(`CREATE TABLE[^;]*\b` + regexp.QuoteMeta(table) + `\b`).MatchString(sqlText)
+}
 
-	if ok := inst.ExecuteInitSQLFile("init_schema_postgresql.sql/nested.sql"); ok {
-		t.Fatal("ExecuteInitSQLFile returned true for an asset it cannot read")
+// TestEmbeddedInitSQLCreatesEveryRequiredTable guards the asset itself: the schema the binary carries
+// must create each table VerifyTableStructure demands, so a truncated or stale embed cannot pass as a
+// good one and leave a fresh database half-built. It needs no server - the check is on the bytes.
+func TestEmbeddedInitSQLCreatesEveryRequiredTable(t *testing.T) {
+	if len(databaseInitializerInitSQL) == 0 {
+		t.Fatal("the embedded init SQL is empty")
 	}
-	if len(f.statements) != 0 {
-		t.Fatalf("an unreadable asset still touched the database: %v", f.statements)
-	}
-	if !strings.Contains(buf.String(), "nested.sql") {
-		t.Fatalf("the read failure is silent: log=%q", buf.String())
+	schema := string(databaseInitializerInitSQL)
+	for _, table := range databaseInitializerRequiredTables {
+		if !createsTable(schema, table) {
+			t.Errorf("the embedded schema does not create %s, which VerifyTableStructure requires", table)
+		}
 	}
 }
 
-// TestExecuteInitSQLFileLogsAFailedStatement is the same silence on the execution path.
+// TestExecuteInitSQLFileRunsTheEmbeddedStatements replaces the source-path case this file was opened
+// on: what runs must be the bytes the binary carries, in one committed transaction. The scripted fake
+// driver records each statement, so no server is needed. DELIBERATELY NOT ASSERTED HERE: that every
+// required table reaches the driver. The inherited "skip a chunk that starts with -- or /*" rule drops
+// whole DDL chunks, so today it does not, and that is a SEPARATE defect on its own row rather than a
+// property this row may pin either way.
+func TestExecuteInitSQLFileRunsTheEmbeddedStatements(t *testing.T) {
+	f := &fakeDB{tables: map[string][]string{}}
+	inst := newFakeInitializer(t, f)
+
+	if !inst.ExecuteInitSQLFile() {
+		t.Fatal("ExecuteInitSQLFile returned false for the embedded schema")
+	}
+	if last := f.statements[len(f.statements)-1]; last != "COMMIT" {
+		t.Fatalf("the schema did not run in one committed transaction, last statement %q: %v", last, f.statements)
+	}
+	schema := string(databaseInitializerInitSQL)
+	executed := 0
+	for _, statement := range f.statements {
+		switch statement {
+		case "BEGIN", "COMMIT", "ROLLBACK":
+			continue
+		}
+		executed++
+		if !strings.Contains(schema, statement) {
+			t.Fatalf("a statement that is not in the embedded schema reached the driver: %q", statement)
+		}
+	}
+	if executed == 0 {
+		t.Fatal("no statement from the embedded schema reached the driver")
+	}
+	t.Logf("the embedded schema sent %d statements to the driver in one transaction", executed)
+}
+
+// TestExecuteInitSQLFileLogsAFailedStatement holds the other half of row b231a84b: a false return is
+// never silent.
 func TestExecuteInitSQLFileLogsAFailedStatement(t *testing.T) {
 	buf := captureLog(t)
 	f := &fakeDB{tables: map[string][]string{}}
 	f.failExec = func(string) error { return errors.New("injected exec failure") }
 	inst := newFakeInitializer(t, f)
 
-	if ok := inst.ExecuteInitSQLFile("init_schema_postgresql.sql"); ok {
+	if ok := inst.ExecuteInitSQLFile(); ok {
 		t.Fatal("ExecuteInitSQLFile returned true although a statement failed")
 	}
 	if !strings.Contains(buf.String(), "injected exec failure") {
