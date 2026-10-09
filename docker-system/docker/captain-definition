@@ -1,11 +1,4 @@
 {
   "schemaVersion": 2,
-  "dockerfileLines": [
-    "# CapRover deployment configuration",
-    "# This file is used by CapRover for deployment",
-    "# Environment variables are injected by CapRover",
-    "",
-    "# Use the Go backend Dockerfile",
-    "FROM ../docker-system/docker/Dockerfile.backend.go"
-  ]
+  "dockerfilePath": "./docker-system/docker/Dockerfile.backend.go"
 }
