@@ -48,4 +48,13 @@ describe('seatApi', () => {
     expect(url).toMatch(/\/api\/v2\/openrig\/rooms\/dev%20room$/);
     expect(init.method).toBe('DELETE');
   });
+
+  it('sets the occupant with PUT .../occupant and the runtime and model in the body', async () => {
+    await seatApi.updateSeatOccupant('dev', 'alice', { runtime: 'omp', model: 'deepseek-flash' });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toMatch(/\/api\/v2\/openrig\/rooms\/dev\/seats\/alice\/occupant$/);
+    expect(init.method).toBe('PUT');
+    expect(init.body).toBe(JSON.stringify({ runtime: 'omp', model: 'deepseek-flash' }));
+  });
 });
