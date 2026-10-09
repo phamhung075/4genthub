@@ -833,6 +833,65 @@ func TestMachineDeleteSeatStatusForRoomIsTenantAndRoomScoped(t *testing.T) {
 	}
 }
 
+// A report replaces the machine's edge set, and the EMPTY set is a value like any other: a report
+// that carries no edges deletes what was there and inserts nothing. The delete is machine- and
+// tenant-scoped, so one machine's report cannot clear another machine's topology.
+func TestMachineReplaceSnapshotReplacesTheEdgeSet(t *testing.T) {
+	now := time.Now().UTC()
+	edges := []domainrepo.MachineEdge{
+		{Room: "eng", From: "lead", To: "coder", Kind: "delegates_to"},
+		{Room: "eng", From: "qa", To: "lead", Kind: "escalates_to"},
+	}
+	run := func(machine domainrepo.Machine) []string {
+		t.Helper()
+		f := &fakeDriver{}
+		repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := repo.ReplaceSnapshot(context.Background(), testUser, machine); err != nil {
+			t.Fatalf("ReplaceSnapshot: %v", err)
+		}
+		var order []string
+		for _, q := range f.recorded() {
+			switch {
+			case strings.Contains(q, `DELETE FROM "machine_edges"`) && strings.Contains(q, `"user_id" = $1 AND "machine_id" = $2`):
+				order = append(order, "edges-delete")
+			case strings.Contains(q, `INSERT INTO "machine_edges"`):
+				order = append(order, "edges-insert")
+			}
+		}
+		return order
+	}
+
+	if got := strings.Join(run(domainrepo.Machine{MachineID: "pc-home", LastSeen: now, Edges: edges}), ","); got != "edges-delete,edges-insert,edges-insert" {
+		t.Fatalf("edge statements = %s, want the machine's delete then two inserts", got)
+	}
+	if got := strings.Join(run(domainrepo.Machine{MachineID: "pc-home", LastSeen: now}), ","); got != "edges-delete" {
+		t.Fatalf("edge statements for a report with no edges = %s, want the delete alone (replace, not merge)", got)
+	}
+}
+
+func TestMachineDeleteMachineEdgesForRoomIsTenantAndRoomScoped(t *testing.T) {
+	f := &fakeDriver{}
+	repo, err := NewORMMachineStatusRepository(newFakeManager(t, f))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.DeleteMachineEdgesForRoom(context.Background(), testUser, "eng"); err != nil {
+		t.Fatalf("DeleteMachineEdgesForRoom: %v", err)
+	}
+	found := false
+	for _, q := range f.recorded() {
+		if strings.Contains(q, `DELETE FROM "machine_edges" WHERE "user_id" = $1 AND "room" = $2`) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("no tenant and room scoped edge delete: %v", f.recorded())
+	}
+}
+
 func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 	now := time.Now().UTC()
 	f := &fakeDriver{}
@@ -846,6 +905,11 @@ func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 		case strings.Contains(q, `FROM "seat_status"`):
 			return []string{"machine_id", "room", "seat", "state", "runtime", "running_hash", "expected_hash", "detail", "redacted", "reported_at"}, [][]driver.Value{
 				fakeRow("pc-home", "eng", "coder", "running", "claude-code", "abc", "def", "busy", true, now),
+			}, nil
+		case strings.Contains(q, `FROM "machine_edges"`):
+			return []string{"machine_id", "room", "from_seat", "to_seat", "kind"}, [][]driver.Value{
+				fakeRow("pc-home", "eng", "lead", "coder", "delegates_to"),
+				fakeRow("pc-home", "eng", "qa", "lead", "escalates_to"),
 			}, nil
 		}
 		return nil, nil, nil
@@ -862,8 +926,15 @@ func TestMachineListGroupsSeatsAndAgentsPerMachine(t *testing.T) {
 		len(got[0].Agents) != 1 || got[0].Agents[0].PaneID != "w5:p3" || len(got[1].Seats) != 0 {
 		t.Fatalf("List = %+v", got)
 	}
+	// The edges land on the machine that reported them and nowhere else: pc-home carries both,
+	// pc-work none, and the second machine's emptiness is the half that would break if the rows
+	// were attached to the first machine unconditionally. A machine that reported none is nil
+	// here, like its seats, and the machines response renders that as [].
+	if len(got[0].Edges) != 2 || got[0].Edges[0].Kind != "delegates_to" || got[0].Edges[1].From != "qa" || len(got[1].Edges) != 0 {
+		t.Fatalf("edges per machine = %+v / %+v", got[0].Edges, got[1].Edges)
+	}
 	for _, q := range f.recorded() {
-		if strings.Contains(q, `FROM "machines"`) || strings.Contains(q, `FROM "seat_status"`) {
+		if strings.Contains(q, `FROM "machines"`) || strings.Contains(q, `FROM "seat_status"`) || strings.Contains(q, `FROM "machine_edges"`) {
 			if !strings.Contains(q, `"user_id" = $1`) {
 				t.Fatalf("machine list not tenant-scoped: %s", q)
 			}
@@ -900,6 +971,7 @@ func TestSeatTableMetadataMatchesStructs(t *testing.T) {
 		{"seat_settings", reflect.TypeOf(seatdb.SeatSettingsORM{})},
 		{"machines", reflect.TypeOf(seatdb.MachineORM{})},
 		{"seat_status", reflect.TypeOf(seatdb.SeatStatusORM{})},
+		{"machine_edges", reflect.TypeOf(seatdb.MachineEdgeORM{})},
 		{"seat_feedback", reflect.TypeOf(seatdb.SeatFeedbackORM{})},
 	}
 	byName := map[string]database.TableDef{}

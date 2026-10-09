@@ -156,3 +156,16 @@ type SeatStatusORM struct {
 	Redacted    bool      `db:"redacted"`
 	ReportedAt  time.Time `db:"reported_at"`
 }
+
+// MachineEdgeORM is a row of machine_edges: one directed link of the topology a machine reported.
+// (user_id, machine_id, room, from_seat, to_seat, kind) is the primary key, so a report that
+// repeats a link stores it once. The columns are from_seat and to_seat because `from` and `to`
+// are SQL keywords; the wire names them from and to.
+type MachineEdgeORM struct {
+	UserID    string `db:"user_id"`
+	MachineID string `db:"machine_id"`
+	Room      string `db:"room"`
+	From      string `db:"from_seat"`
+	To        string `db:"to_seat"`
+	Kind      string `db:"kind"`
+}

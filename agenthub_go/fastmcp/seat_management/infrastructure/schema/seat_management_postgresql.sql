@@ -333,3 +333,23 @@ CREATE TABLE IF NOT EXISTS seat_status (
     reported_at TIMESTAMP WITH TIME ZONE NOT NULL,
     PRIMARY KEY (user_id, machine_id, room, seat)
 );
+
+-- Table: machine_edges
+-- The topology a machine reported: one row per directed link of one room, replaced wholesale by
+-- each report exactly like seat_status. room, from_seat and to_seat are reported names, not
+-- foreign keys, so an edge is removed by the application layer when its room is deleted - the
+-- no-CASCADE rule the rest of this schema follows. `from` and `to` are SQL keywords, hence the
+-- from_seat/to_seat spellings; the wire names the two ends from and to.
+CREATE TABLE IF NOT EXISTS machine_edges (
+    user_id TEXT NOT NULL,
+    machine_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    from_seat TEXT NOT NULL,
+    to_seat TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    CONSTRAINT ck_machine_edges_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),
+    CONSTRAINT ck_machine_edges_distinct CHECK (from_seat <> to_seat),
+    PRIMARY KEY (user_id, machine_id, room, from_seat, to_seat, kind)
+);
+
+CREATE INDEX IF NOT EXISTS ix_machine_edges_user_room ON machine_edges (user_id, room);

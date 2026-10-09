@@ -37,6 +37,7 @@ type fakeSeatAdmin struct {
 
 	deletedStatusRooms []string
 	deletedStatusSeats []string
+	deletedEdgeRooms   []string
 }
 
 func newFakeSeatAdmin() *fakeSeatAdmin {
@@ -313,6 +314,11 @@ func (f *fakeSeatAdmin) DeleteSeatStatusForRoom(_ context.Context, _, roomSlug s
 
 func (f *fakeSeatAdmin) DeleteSeatStatusForSeat(_ context.Context, _, roomSlug, seatKey string) error {
 	f.deletedStatusSeats = append(f.deletedStatusSeats, roomSlug+"/"+seatKey)
+	return nil
+}
+
+func (f *fakeSeatAdmin) DeleteMachineEdgesForRoom(_ context.Context, _, roomSlug string) error {
+	f.deletedEdgeRooms = append(f.deletedEdgeRooms, roomSlug)
 	return nil
 }
 
@@ -1270,6 +1276,9 @@ func TestSeatAdminDeleteRoom(t *testing.T) {
 	}
 	if strings.Join(fake.deletedStatusRooms, ",") != "dev" {
 		t.Errorf("seat status deleted for rooms %v, want only dev", fake.deletedStatusRooms)
+	}
+	if strings.Join(fake.deletedEdgeRooms, ",") != "dev" {
+		t.Errorf("topology edges deleted for rooms %v, want only dev", fake.deletedEdgeRooms)
 	}
 	if rec := doTestRequest(t, mux, http.MethodDelete, "/api/v2/openrig/rooms/dev", ""); rec.Code != http.StatusNotFound {
 		t.Errorf("delete again: status = %d, want 404", rec.Code)

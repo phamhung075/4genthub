@@ -89,6 +89,10 @@ func (s *deletionStore) DeleteSeatStatusForSeat(ctx context.Context, userID, roo
 	return s.machines.DeleteSeatStatusForSeat(ctx, userID, roomSlug, seatKey)
 }
 
+func (s *deletionStore) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.machines.DeleteMachineEdgesForRoom(ctx, userID, roomSlug)
+}
+
 func (s *deletionStore) DeleteRoom(ctx context.Context, userID, roomID string) error {
 	return s.rooms.Delete(ctx, userID, roomID)
 }
@@ -99,7 +103,7 @@ func (s *deletionStore) InTransaction(ctx context.Context, fn func(ctx context.C
 
 // deletionTables is every table either path could reach, so "nothing else moved" is measured
 // rather than asserted.
-var deletionTables = []string{"rooms", "seats", "seat_links", "overlays", "resolved_seats", "seat_status", "machines", "seat_types", "seat_type_versions"}
+var deletionTables = []string{"rooms", "seats", "seat_links", "overlays", "resolved_seats", "seat_status", "machine_edges", "machines", "seat_types", "seat_type_versions"}
 
 func deletionCounts(t *testing.T, db *sql.DB, userID string) map[string]int {
 	t.Helper()

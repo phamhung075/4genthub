@@ -302,12 +302,26 @@ type MachineAgent struct {
 	PaneID string `json:"pane_id"`
 }
 
+// MachineEdge is one directed link of the topology a machine reported, with the room (pod) it
+// belongs to: the bridge's `rig whoami` edge, flat rather than nested per rig. Kind is one of
+// OpenRig's five link kinds. Room, From and To are reported names, not foreign keys, exactly like
+// SeatStatus.Room and SeatStatus.Seat.
+type MachineEdge struct {
+	Room string
+	From string
+	To   string
+	Kind string
+}
+
 // Machine is one bridge machine with its latest seat statuses and agent snapshot.
 type Machine struct {
 	MachineID string
 	LastSeen  time.Time
 	Seats     []SeatStatus
 	Agents    []MachineAgent
+	// Edges is the topology the machine reported. A report replaces it wholesale, like Seats
+	// and Agents.
+	Edges []MachineEdge
 }
 
 // MachineStatusRepository stores the latest status snapshot per machine.
@@ -322,4 +336,7 @@ type MachineStatusRepository interface {
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	// DeleteSeatStatusForSeat removes the reported statuses of one seat on every machine.
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	// DeleteMachineEdgesForRoom removes the reported topology edges of the room, on every
+	// machine; machine_edges stores the room slug, not a foreign key.
+	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
 }

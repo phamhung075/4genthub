@@ -5,7 +5,7 @@ package httpapp
 //	POST /api/v2/openrig/seat-status
 //	GET  /api/v2/openrig/machines
 //
-// A report replaces its machine's seat set and agent snapshot. Every string field of a
+// A report replaces its machine's seat set, agent snapshot and edge set. Every string field of a
 // report is scanned for credentials before anything is stored. POST takes a machine token
 // (see machine_token_mount.go) and stores under the token's user and machine; GET takes a
 // user token and is tenant-scoped by the caller's user id.
@@ -22,6 +22,7 @@ import (
 	"unicode/utf8"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	"agenthub/fastmcp/seat_management/domain/commpolicy"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seatsync"
@@ -36,6 +37,9 @@ const (
 	seatStatusMaxSeats  = 500
 	seatStatusMaxDetail = 200
 	seatStatusMaxField  = 128
+	// seatStatusMaxEdges caps one machine's reported topology. A room's edge list is small - the
+	// five kinds over the room's seats - so the cap is a body-size guard, not a product limit.
+	seatStatusMaxEdges  = 1000
 	machineOnlineWindow = 90 * time.Second
 )
 
@@ -69,6 +73,20 @@ type seatStatusReport struct {
 	ReportedAt string                `json:"reported_at"`
 	Seats      []seatStatusReportRow `json:"seats"`
 	Agents     []seatStatusAgent     `json:"agents"`
+	// Edges is the machine's topology, flat rather than nested per rig: one entry per directed
+	// link. It is optional in the wire sense - a bridge that sends no `edges` key reports no
+	// topology, and a report replaces the machine's edge set like its seats and agents.
+	Edges []seatStatusEdge `json:"edges"`
+}
+
+// seatStatusEdge is one reported link: the room (pod) it belongs to and the two ends, with the
+// kind one of OpenRig's five. The ends are `from` and `to` on the wire, which is also how a
+// rendered rigspec names them.
+type seatStatusEdge struct {
+	Room string `json:"room"`
+	From string `json:"from"`
+	To   string `json:"to"`
+	Kind string `json:"kind"`
 }
 
 type seatStatusReportRow struct {
@@ -247,11 +265,15 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 	if len(rep.Seats) > seatStatusMaxSeats {
 		return nil, fmt.Errorf("seats cannot exceed %d", seatStatusMaxSeats)
 	}
+	if len(rep.Edges) > seatStatusMaxEdges {
+		return nil, fmt.Errorf("edges cannot exceed %d", seatStatusMaxEdges)
+	}
 	machine := &repositories.Machine{
 		MachineID: rep.MachineID,
 		LastSeen:  lastSeen,
 		Seats:     make([]repositories.SeatStatus, 0, len(rep.Seats)),
 		Agents:    make([]repositories.MachineAgent, 0, len(rep.Agents)),
+		Edges:     make([]repositories.MachineEdge, 0, len(rep.Edges)),
 	}
 	seen := make(map[[2]string]bool, len(rep.Seats))
 	for i, s := range rep.Seats {
@@ -294,6 +316,35 @@ func (rep *seatStatusReport) toMachine(lastSeen time.Time) (*repositories.Machin
 			return nil, fmt.Errorf("agents[%d].pane_id cannot exceed %d characters", i, seatStatusMaxField)
 		}
 		machine.Agents = append(machine.Agents, repositories.MachineAgent{Agent: a.Agent, Status: a.Status, PaneID: a.PaneID})
+	}
+	// The topology. A repeated link is refused rather than stored twice: the table's primary key
+	// would silently collapse it, so a bridge whose dump carries a duplicate learns that its own
+	// dump is wrong instead of reading back fewer edges than it sent.
+	seenEdges := make(map[repositories.MachineEdge]bool, len(rep.Edges))
+	for i, e := range rep.Edges {
+		if err := repositories.ValidateName("room slug", e.Room); err != nil {
+			return nil, fmt.Errorf("edges[%d]: %v", i, err)
+		}
+		if err := repositories.ValidateName("seat key", e.From); err != nil {
+			return nil, fmt.Errorf("edges[%d]: %v", i, err)
+		}
+		if err := repositories.ValidateName("seat key", e.To); err != nil {
+			return nil, fmt.Errorf("edges[%d]: %v", i, err)
+		}
+		// The kind vocabulary is commpolicy's, so a kind added to OpenRig's language is accepted
+		// here without a second list to keep in step.
+		if !commpolicy.ValidKind(commpolicy.LinkKind(e.Kind)) {
+			return nil, fmt.Errorf("edges[%d].kind %q is invalid", i, e.Kind)
+		}
+		if e.From == e.To {
+			return nil, fmt.Errorf("edges[%d]: from and to are the same seat %q", i, e.From)
+		}
+		edge := repositories.MachineEdge{Room: e.Room, From: e.From, To: e.To, Kind: e.Kind}
+		if seenEdges[edge] {
+			return nil, fmt.Errorf("edges[%d]: duplicate edge %s.%s -> %s (%s)", i, e.Room, e.From, e.To, e.Kind)
+		}
+		seenEdges[edge] = true
+		machine.Edges = append(machine.Edges, edge)
 	}
 	return machine, nil
 }
@@ -343,11 +394,23 @@ func machineBody(m *repositories.Machine, now time.Time) *entities.OrderedMap[an
 		agent.Set("pane_id", a.PaneID)
 		agents = append(agents, agent)
 	}
+	// Always present, empty when the machine reported none, so a consumer reads the topology the
+	// same way whether or not the bridge that fed this row sends edges.
+	edges := make([]any, 0, len(m.Edges))
+	for _, e := range m.Edges {
+		edge := entities.NewOrderedMap[any]()
+		edge.Set("room", e.Room)
+		edge.Set("from", e.From)
+		edge.Set("to", e.To)
+		edge.Set("kind", e.Kind)
+		edges = append(edges, edge)
+	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("machine_id", m.MachineID)
 	body.Set("last_seen", m.LastSeen.UTC().Format(time.RFC3339))
 	body.Set("online", now.Sub(m.LastSeen) <= machineOnlineWindow)
 	body.Set("seats", seats)
 	body.Set("agents", agents)
+	body.Set("edges", edges)
 	return body
 }

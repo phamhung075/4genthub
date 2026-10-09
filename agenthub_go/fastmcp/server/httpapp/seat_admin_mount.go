@@ -84,6 +84,7 @@ type seatAdminSource interface {
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
@@ -262,6 +263,10 @@ func (s *seatAdminRepos) DeleteSeatStatusForSeat(ctx context.Context, userID, ro
 
 func (s *seatAdminRepos) DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error {
 	return s.machines.DeleteSeatStatusForRoom(ctx, userID, roomSlug)
+}
+
+func (s *seatAdminRepos) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.machines.DeleteMachineEdgesForRoom(ctx, userID, roomSlug)
 }
 
 func (s *seatAdminRepos) DeleteResolvedSeats(ctx context.Context, userID, seatID string) error {

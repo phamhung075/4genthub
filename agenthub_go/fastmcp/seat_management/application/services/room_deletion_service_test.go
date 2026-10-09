@@ -70,6 +70,10 @@ func (f *fakeRoomDeletionStore) DeleteSeatStatusForSeat(_ context.Context, _, ro
 	return f.record("status:" + roomSlug + "/" + seatKey)
 }
 
+func (f *fakeRoomDeletionStore) DeleteMachineEdgesForRoom(_ context.Context, _, roomSlug string) error {
+	return f.record("edges:" + roomSlug)
+}
+
 func (f *fakeRoomDeletionStore) DeleteRoom(_ context.Context, _, roomID string) error {
 	return f.record("room:" + roomID)
 }
@@ -102,14 +106,14 @@ func TestDeleteRoomRefusesARoomThatHoldsSeats(t *testing.T) {
 	}
 }
 
-// An empty room deletes its room overlay, its reported statuses and itself, in one
-// transaction, and nothing else.
+// An empty room deletes its room overlay, its reported statuses, its reported topology edges and
+// itself, in one transaction, and nothing else.
 func TestDeleteRoomDeletesAnEmptyRoom(t *testing.T) {
 	store := &fakeRoomDeletionStore{room: &repositories.Room{ID: "r1", Slug: "dev"}}
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
 	}
-	want := "tx-begin,room-overlay:r1,status:dev,room:r1,tx-end"
+	want := "tx-begin,room-overlay:r1,status:dev,edges:dev,room:r1,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}

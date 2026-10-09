@@ -310,6 +310,30 @@ var seatDatabaseTables = []taskdb.TableDef{
 			"\tPRIMARY KEY (user_id, machine_id, room, seat)\n" +
 			")",
 	}},
+	// The topology a machine reported. Like seat_status it is a reported snapshot replaced
+	// wholesale by each report, so room, from_seat and to_seat are names rather than foreign
+	// keys, and the room's rows are removed by the application layer when the room goes.
+	{Name: "machine_edges", Model: "MachineEdgeORM", Columns: []taskdb.ColumnDef{
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "from_seat", Attr: "from_seat", GoField: "From", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "to_seat", Attr: "to_seat", GoField: "To", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+		{Name: "kind", Attr: "kind", GoField: "Kind", SQLType: "TEXT", Nullable: false, PrimaryKey: true},
+	}, DDL: []string{
+		"CREATE TABLE machine_edges (\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\tmachine_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tfrom_seat TEXT NOT NULL,\n" +
+			"\tto_seat TEXT NOT NULL,\n" +
+			"\tkind TEXT NOT NULL,\n" +
+			"\tCONSTRAINT ck_machine_edges_kind CHECK (kind IN ('delegates_to', 'spawned_by', 'can_observe', 'collaborates_with', 'escalates_to')),\n" +
+			"\tCONSTRAINT ck_machine_edges_distinct CHECK (from_seat <> to_seat),\n" +
+			"\tPRIMARY KEY (user_id, machine_id, room, from_seat, to_seat, kind)\n" +
+			")",
+		"CREATE INDEX ix_machine_edges_user_room ON machine_edges (user_id, room)",
+	}},
 	// The seat friction channel (Directive H). layer's CHECK is checked against
 	// domain/feedback's vocabulary by TestSeatFeedbackLayerCheckMatchesDomain, and the columns
 	// here must agree with the schema file's CREATE TABLE - TestSeatDDLParity owns that, columns,

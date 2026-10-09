@@ -20,6 +20,7 @@ type RoomDeletionStore interface {
 	DeleteRoomOverlay(ctx context.Context, userID, roomID string) error
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
 	// InTransaction runs fn so that all its store calls commit or roll back together.
 	InTransaction(ctx context.Context, fn func(ctx context.Context) error) error
@@ -35,9 +36,10 @@ func NewRoomDeletionService(store RoomDeletionStore) *RoomDeletionService {
 	return &RoomDeletionService{store: store}
 }
 
-// DeleteRoom hard-deletes an empty room: its room overlay, its reported seat statuses and the
-// room row, in one transaction. A room that still holds seats is refused with ErrRoomNotEmpty
-// naming how many remain, so seats are never cascaded away; remove them with RemoveSeat first.
+// DeleteRoom hard-deletes an empty room: its room overlay, its reported seat statuses, its
+// reported topology edges and the room row, in one transaction. A room that still holds seats is
+// refused with ErrRoomNotEmpty naming how many remain, so seats are never cascaded away; remove
+// them with RemoveSeat first.
 // An absent room is ErrRoomNotFound.
 func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug string) error {
 	room, err := s.store.GetRoomBySlug(ctx, userID, roomSlug)
@@ -59,6 +61,11 @@ func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug s
 			return err
 		}
 		if err := s.store.DeleteSeatStatusForRoom(ctx, userID, room.Slug); err != nil {
+			return err
+		}
+		// The reported topology edges of the room go with it: machine_edges carries the room
+		// slug, not a foreign key, so nothing else would remove them.
+		if err := s.store.DeleteMachineEdgesForRoom(ctx, userID, room.Slug); err != nil {
 			return err
 		}
 		return s.store.DeleteRoom(ctx, userID, room.ID)
