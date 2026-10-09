@@ -1,3 +1,14 @@
+## A run that creates nothing is no longer reported as initialized
+
+### Fixed
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer.go` — `Initialize` returned `true` as soon as `ExecuteInitSQLFile` reported success, so a database the run had not actually built was reported as initialized: the caller was told the schema exists, and nothing else was going to create it, because the SQL branch is reached only when the catalogue reported no tables at all. It now calls `VerifyTableStructure` and returns `false`, with a log line naming the reason, when the required tables are missing.
+- The DROP-chunk gate is now stated where the DROP runs. The schema carries `DROP TABLE IF EXISTS ... CASCADE` statements and they DO run; the branch is safe only because it is reached when the catalogue reported no tables, so an empty database drops nothing and a populated one never reaches the SQL. A comment records that rather than leaving the next reader to infer it.
+
+### Verified
+- **SEEN RED FIRST, and the red was TAKEN, not reconstructed:** `Initialize` was temporarily edited back to the parent behaviour (one `d.Initialized = true; return true`) and `TestInitializeVerifiesTheTablesAfterRunningTheSchema` failed with `Initialize reported success although the run left no required table behind (180 statements accepted)`; with the verification restored it passes. The 180 is what the scripted driver recorded — statements, not tables.
+- `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `go vet` clean; `gofmt -l` prints nothing.
+- **NOT RUN, and it stays parked:** the real-Postgres half. The fake driver accepts any statement, and its `information_schema` answer reports only the two tables it is seeded with, so the success branch *after* the SQL run is not reachable through it — that branch is left to the parked real-Postgres test.
+
 ## A statement under a comment now reaches the database, so the embedded schema actually creates its tables
 
 ### Fixed

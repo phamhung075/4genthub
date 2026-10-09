@@ -62,6 +62,9 @@ func (d *DatabaseInitializer) Initialize() bool {
 	if !d.VerifyConnection() {
 		return false
 	}
+	// The schema also carries `DROP TABLE IF EXISTS ... CASCADE` statements, and they DO run. Safety
+	// here is not luck: this branch is reached only when the catalogue reported no tables at all, so
+	// an empty database drops nothing and a populated one never reaches the SQL.
 	if len(d.ExistingTables()) > 0 {
 		d.VerifyTableStructure()
 		d.Initialized = true
@@ -71,6 +74,13 @@ func (d *DatabaseInitializer) Initialize() bool {
 		return false
 	}
 	if d.ExecuteInitSQLFile() {
+		// Running the schema is not the same as having it: VerifyTableStructure is what separates
+		// "the statements were accepted" from "the required tables exist", and the run used to report
+		// success for a database it had not built (rows b231a84b and 12444cc2).
+		if !d.VerifyTableStructure() {
+			log.Printf("database: the init SQL ran but the required tables are not all present; leaving the database uninitialized")
+			return false
+		}
 		d.Initialized = true
 		return true
 	}

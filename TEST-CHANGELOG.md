@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - Initialize is asserted to verify the tables it claims to have created
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_verify_test.go` — one case, `TestInitializeVerifiesTheTablesAfterRunningTheSchema`. Over the scripted fake with an empty catalogue and `AUTO_MIGRATE=true` the whole path runs — connection, DDL, then the required-table check — and because the catalogue is still empty the run must NOT report success. The case also pins that the init SQL actually ran (otherwise it would prove nothing) and that the failure is not silent by asserting the log line.
+- **THE RED WAS TAKEN, NOT RECONSTRUCTED.** With `Initialize` temporarily edited back to the parent behaviour, the case fails with `Initialize reported success although the run left no required table behind (180 statements accepted)`; restored, it passes. `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `go vet` clean; `gofmt -l` prints nothing.
+- **NOT RUN — the fake's ceiling, stated plainly:** the driver is seeded with two tables and its `information_schema` answer lists only those, so `VerifyTableStructure` can never see the full required set through it. The true branch *after* the SQL run is therefore unreachable in this package and stays with the parked real-Postgres test.
+
 ## 2026-10-09 - the update frame's client contract gets its first guard: the real Go frame, the real keys, and the red that proves it is a gate
 
 - `agenthub-frontend/src/tests/hooks/test_useRealtimeSync_task.test.tsx` — one new case in a new block, `Task Update Handler - an arriving status change must reach the detail and the list`. It emits FIELD FOR FIELD the frame `agenthub_go`'s `BroadcastDataChange` builds for a task update (`payload.data.primary` is the task dict, `metadata.source` is `'user'` because `updated` is in that function's `userTriggered` set, `metadata.userId` is the literal `'system'` the facade stamps) through the REAL `useRealtimeSync`, on a shared QueryClient, and pins the two keys production reads: both detail variants `['task', taskId, false]` and `['task', taskId, true]` take the frame's status, and `['tasks', git_branch_id]` is the key that is invalidated - proven by a REAL `useQuery` observer on that exact key whose server answer changes between the two fetches, so a cache left alone stays distinguishable from one that was invalidated and refetched.
