@@ -356,39 +356,11 @@ func TestSeatStatusGetReportsExpectedHashAndSync(t *testing.T) {
 	}
 }
 
-// ACCEPTANCE (b), AND IT IS THE CASE THE ROLLING BRIDGE IS IN: the bridge in flight sends NO
-// `edges` key at all, so such a report must still be accepted, must not disturb the seats and
-// agents it does send, and the machine it describes must read back with an EMPTY edge set rather
-// than a missing key. Written against the HTTP contract only (raw JSON), so it compiles and runs
-// against the server as it was BEFORE `edges` existed - where it fails on the missing key - and
-// that is the red this change was written to turn green.
-func TestSeatStatusPostWithoutEdgesIsAcceptedAndServesAnEmptyEdgeSet(t *testing.T) {
-	fake := &fakeSeatStatus{}
-	mux := seatStatusTestMux(t, fake)
-	if rec := postSeatStatus(mux, validSeatStatusBody); rec.Code != http.StatusOK {
-		t.Fatalf("POST without an edges key = %d %s", rec.Code, rec.Body.String())
-	}
-	if stored := fake.byUser["11111111-1111-4111-8111-111111111111"]["pc-home"]; len(stored.Seats) != 1 {
-		t.Fatalf("the report without edges must still store its seats: %+v", stored)
-	}
-	rec := getMachines(mux)
-	var got struct {
-		Machines []map[string]json.RawMessage `json:"machines"`
-	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
-		t.Fatalf("decode: %v\n%s", err, rec.Body.String())
-	}
-	if len(got.Machines) != 1 {
-		t.Fatalf("GET = %s", rec.Body.String())
-	}
-	edges, ok := got.Machines[0]["edges"]
-	if !ok {
-		t.Fatalf("the machine body carries no edges key: %s", rec.Body.String())
-	}
-	if string(edges) != "[]" {
-		t.Fatalf("edges = %s, want []", edges)
-	}
-}
+// ACCEPTANCE (b) - a report WITHOUT `edges` is accepted, keeps its seats, and reads back with an
+// EMPTY edge set rather than a missing key - lives ALONE in seat_status_no_edges_test.go. It is
+// alone on purpose: every test in THIS file needs a symbol the `edges` change adds, so this file
+// cannot compile at 02bfd416^, and the red for the wire contract has to be something a stranger can
+// run against the parent. See that file's header for the two commands that reproduce it.
 
 // ACCEPTANCE (a): well-formed edges persist and GET /machines returns them unchanged, in the
 // order reported. The exact rendered string is asserted, so a column name leaking onto the wire
