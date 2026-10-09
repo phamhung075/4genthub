@@ -25,16 +25,6 @@ vi.mock('../../utils/contextHelpers', () => ({
   }))
 }));
 
-// Mock the WebSocket hook
-vi.mock('../../hooks/useTaskWebSocket', () => ({
-  useTaskWebSocket: vi.fn(() => ({
-    isConnected: true,
-    isReconnecting: false,
-    error: null,
-    handleTaskChanges: vi.fn()
-  }))
-}));
-
 // Mock js-cookie
 vi.mock('js-cookie', () => ({
   default: {
