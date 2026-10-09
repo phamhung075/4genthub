@@ -9,6 +9,16 @@ package database
 // image, whose contents and working directory are not a source tree (row b231a84b). The naive
 // "split on ;" stays verbatim; the comment rule does NOT - skipping a chunk that STARTS with a comment
 // discarded the statement underneath it, so all 23 CREATE TABLE statements never ran (row 12444cc2).
+//
+// DELIBERATE DEPARTURE FROM THE REFERENCE - it must NOT be "restored" as a fidelity fix. The Python
+// `_get_existing_tables` (agenthub_main db_initializer.py:133-146 at a50929c6^, the commit that removed
+// the Python tree) catches `Exception`, logs "Failed to get existing tables" and returns an EMPTY SET;
+// initialize() then reads that failed read as an empty database - line 69 falls into the "Database is
+// empty - initializing with SQL files..." branch at 84-85 - and runs the init file, DROP TABLE IF
+// EXISTS ... CASCADE included. THIS PORT REFUSES INSTEAD: ExistingTables returns the error, Initialize
+// treats a failed read as CANNOT TELL and returns false WITHOUT running the SQL (row 8ee196db, lead
+// directed). A parity sweep that finds this difference and moves it back toward the Python re-opens
+// exactly that DROP.
 
 import (
 	"context"
@@ -66,7 +76,8 @@ func (d *DatabaseInitializer) Initialize() bool {
 	}
 	// The schema also carries `DROP TABLE IF EXISTS ... CASCADE` statements, and they DO run. Safety
 	// here is TWO conditions, and the second is the one that used to be missing: the catalogue must have
-	// ANSWERED - a failed read is not an empty database, it is CANNOT TELL, and it returns false above -
+	// ANSWERED - a failed read is not an empty database, it is CANNOT TELL, and the ERROR BRANCH BELOW
+	// returns false on it -
 	// and it must have answered EMPTY, so an empty database drops nothing and a populated one never
 	// reaches the SQL.
 	//
