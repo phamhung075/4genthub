@@ -84,6 +84,14 @@
     **all four remainders traced to the checking instrument rather than to the code** — which is what makes "no drift at breadth"
     believable rather than merely stated.
 
+### Removed
+- **`useWebSocketV2` loses `useTaskWebSocket`: an export with no `src` consumer, kept alive only by four test mocks** - 2026-10-09
+  - `src/hooks/useWebSocketV2.ts`: `useTaskWebSocket(userId, token, taskId?)` is **DELETED (-29 lines)**. Its last real consumer was `src/hooks/useTaskWebSocket.ts`, deleted in `2459cce0` together with the task dialog's dead callback path; what remained were four `vi.mock('../../hooks/useWebSocketV2', ...)` factories listing `useTaskWebSocket: () => ({ isConnected: false, client: null })`. `grep -rn useTaskWebSocket agenthub-frontend/src` -> **0** after the change.
+  - The four mock keys go with it: `TaskRowDetailsReopen.test.tsx`, `TaskRowDetailsOneClick.test.tsx`, `SubtaskRowDetailsReopen.test.tsx`, `LazyTaskListDialogOpen.test.tsx`. A mock factory may carry a key that no importer ever asks for, and that is exactly how this export outlived its consumer — **the mocks made it look consumed**.
+  - **WHAT REMAINS STILL HAS CONSUMERS**, stated because the row asked rather than because it was in doubt: `useWebSocket` (`:28`) is imported by `SeatDetailPage`, `SeatAuthoringPage`, `SeatsPage`, `TopologyPage`, `AuthContext`, `ProjectList`, `LazySubtaskListRefactored` and `LazyTaskListRefactored`; `useBranchWebSocket` (`:234`) by `BranchDetailsDialog.tsx:37`. The module is not left orphaned.
+  - OBSERVED, NOT FIXED: those same four factories also mock a key `useWebSocketV2` that the module does not export — the same kind of phantom as the one removed. It is out of this change's scope (one export plus four mock lines) and is named here so the next reader does not rediscover it as a surprise.
+  - Verified with only these seven paths carrying changes over tip `67af511f`: `npx tsc --noEmit -p .` -> exit 0, **0** `error TS` lines; `npx vitest run` -> **113 files, 1778 tests, 0 failed**; `npx vite build` -> exit 0 in 21.37s, **3.2M** js+css. The counts are identical to before the removal, which is the finding rather than a coincidence: nothing asserted the symbol.
+
 ### Fixed
 - **The authoring page hosts the shared seat preview instead of waiting for a copy of it: one preview component, two pages** - 2026-10-09
   - `src/pages/SeatAuthoringPage.tsx` imports `SeatPreview` from `../components/seats/SeatPreview` (:25) and renders it beside the composer (:155) as `{room: roomSlug, seat: seatKey}` - the room and seat this page is already composing, in the same branch that guards `rooms.length` and `seats.length`. The props are REQUIRED and the component reads NO route parameter: `/seats/authoring` carries no `:room/:seat`, while the seat-detail page's page-local `PreviewTab` read `useParams`, which is exactly why fe-dev extracted it (`ac6e5b57`).

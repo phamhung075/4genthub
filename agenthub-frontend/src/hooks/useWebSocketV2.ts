@@ -257,33 +257,3 @@ export function useBranchWebSocket(userId: string, token: string, branchId?: str
     sendMessage
   };
 }
-
-/**
- * Specialized hook for task real-time updates
- */
-export function useTaskWebSocket(userId: string, token: string, taskId?: string) {
-  const { sendMessage, ...wsState } = useWebSocket(userId, token);
-
-  const subscribeToTask = useCallback(() => {
-    if (taskId) {
-      sendMessage({
-        type: 'subscribe',
-        scope: 'task',
-        filters: {
-          task_id: taskId
-        }
-      });
-    }
-  }, [taskId, sendMessage]);
-
-  useEffect(() => {
-    if (wsState.isConnected && taskId) {
-      subscribeToTask();
-    }
-  }, [wsState.isConnected, taskId, subscribeToTask]);
-
-  return {
-    ...wsState,
-    sendMessage
-  };
-}

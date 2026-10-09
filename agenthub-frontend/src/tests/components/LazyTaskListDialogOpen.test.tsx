@@ -39,7 +39,6 @@ vi.mock('../../components/ui/toast', () => ({
 }));
 vi.mock('../../hooks/useWebSocketV2', () => ({
   useWebSocket: () => ({ isConnected: false, client: null }),
-  useTaskWebSocket: () => ({ isConnected: false, client: null }),
   useWebSocketV2: () => ({ isConnected: false, client: null }),
 }));
 vi.mock('../../hooks/useRealtimeSync', () => ({ useRealtimeSync: vi.fn() }));
