@@ -74,11 +74,11 @@
           "size": 3448
         },
         {
-          "hash": "07dc7f2faa821a00979abac90cd04ce4",
-          "modified": "2026-10-05T21:25:15.819659",
+          "hash": "74211fa530810d367a67922d3ee70cf9",
+          "modified": "2026-10-08T23:21:29.318959",
           "name": "repo-agent-rules.md",
           "path": "agent-system/repo-agent-rules.md",
-          "size": 3835
+          "size": 9241
         },
         {
           "hash": "59c1599dc8066845220c990978b247c0",
@@ -121,97 +121,14 @@
           "size": 19440
         },
         {
-          "hash": "1605e8f64c07a295ccfc53903f31762d",
-          "modified": "2026-10-08T20:38:41.620589",
+          "hash": "377f3e2f5a1725344f2391cf4573c20b",
+          "modified": "2026-10-08T22:00:46.275560",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 54291
+          "size": 56008
         }
       ],
       "path": "api-integration"
-    },
-    "architecture-design": {
-      "count": 11,
-      "files": [
-        {
-          "hash": "6548667b2352f61bc248afd01f19dd34",
-          "modified": "2026-10-08T19:39:30.735067",
-          "name": "decision-seat-attribution.md",
-          "path": "architecture-design/decision-seat-attribution.md",
-          "size": 9510
-        },
-        {
-          "hash": "3ec8f120ff8f6ef3cf920c32be084727",
-          "modified": "2026-10-03T22:31:18.057918",
-          "name": "decision-agy-runtime.md",
-          "path": "architecture-design/decision-agy-runtime.md",
-          "size": 1841
-        },
-        {
-          "hash": "15d3994dacafe3785c7626f6bbc23826",
-          "modified": "2026-10-08T19:02:18.606265",
-          "name": "decision-orchestration-layer.md",
-          "path": "architecture-design/decision-orchestration-layer.md",
-          "size": 5678
-        },
-        {
-          "hash": "20c633cc733ae3aa9df35cadf09aeb6f",
-          "modified": "2026-10-08T19:39:32.463053",
-          "name": "decision-commit-form-in-seat-instructions.md",
-          "path": "architecture-design/decision-commit-form-in-seat-instructions.md",
-          "size": 10300
-        },
-        {
-          "hash": "d35676668eab828233e375accd41f235",
-          "modified": "2026-10-06T19:00:35.112098",
-          "name": "product-architecture-complete.md",
-          "path": "architecture-design/product-architecture-complete.md",
-          "size": 17923
-        },
-        {
-          "hash": "5469368fa28710782a1ac433e34fddbf",
-          "modified": "2026-10-06T18:30:38.686281",
-          "name": "PRD.md",
-          "path": "architecture-design/PRD.md",
-          "size": 24353
-        },
-        {
-          "hash": "41b16b8490da91c48040ec322dcba518",
-          "modified": "2026-10-06T18:30:38.686281",
-          "name": "Architecture_Technique.md",
-          "path": "architecture-design/Architecture_Technique.md",
-          "size": 40950
-        },
-        {
-          "hash": "3761e049b942b937a0f1d01f60d75a82",
-          "modified": "2026-10-08T19:02:18.346267",
-          "name": "decision-seat-client-fold.md",
-          "path": "architecture-design/decision-seat-client-fold.md",
-          "size": 4787
-        },
-        {
-          "hash": "cdc5192871016d3148b682ee96983b94",
-          "modified": "2026-10-08T20:41:59.402769",
-          "name": "decision-remove-python-backend.md",
-          "path": "architecture-design/decision-remove-python-backend.md",
-          "size": 27993
-        },
-        {
-          "hash": "1b55e24d349ff95ec7a54f499c2f39b7",
-          "modified": "2026-10-08T20:24:14.160524",
-          "name": "decision-team-json-live-roster.md",
-          "path": "architecture-design/decision-team-json-live-roster.md",
-          "size": 8855
-        },
-        {
-          "hash": "f7538414a25a62632f5c443c03752ff8",
-          "modified": "2026-10-08T20:38:53.164486",
-          "name": "decision-task-stats-endpoint.md",
-          "path": "architecture-design/decision-task-stats-endpoint.md",
-          "size": 8036
-        }
-      ],
-      "path": "architecture-design"
     },
     "authentication": {
       "count": 1,
@@ -289,28 +206,14 @@
       "path": "claude-code"
     },
     "core-architecture": {
-      "count": 3,
+      "count": 1,
       "files": [
         {
-          "hash": "2a90f6a82e400133b1d3e520a659b5a2",
-          "modified": "2026-10-05T20:47:50.894148",
-          "name": "agent-knowledge-skill-system-specs.md",
-          "path": "core-architecture/agent-knowledge-skill-system-specs.md",
-          "size": 102344
-        },
-        {
-          "hash": "390f73a0d9f534b34b06d6acd6d61a66",
-          "modified": "2026-10-08T19:02:18.606265",
+          "hash": "57a16b26375825791eb91fc443a104a0",
+          "modified": "2026-10-08T23:13:34.739209",
           "name": "agenthub-system-architecture.md",
           "path": "core-architecture/agenthub-system-architecture.md",
-          "size": 19739
-        },
-        {
-          "hash": "224d2d44fb3f207f10320f4162bfcb58",
-          "modified": "2026-10-05T20:47:50.894148",
-          "name": "agent-knowledge-skill-system-summary.md",
-          "path": "core-architecture/agent-knowledge-skill-system-summary.md",
-          "size": 11474
+          "size": 74242
         }
       ],
       "path": "core-architecture"
@@ -359,39 +262,39 @@
       "count": 5,
       "files": [
         {
-          "hash": "821439ebd17c176332fdadbd2846f9ac",
-          "modified": "2026-10-08T18:58:43.483696",
+          "hash": "52953ce8cf70c548d7767fdb6e6337e1",
+          "modified": "2026-10-08T23:20:11.587655",
           "name": "openrig-seat-limits.md",
           "path": "operations/openrig-seat-limits.md",
-          "size": 5574
+          "size": 5680
         },
         {
-          "hash": "7bec6cd9a4e1c99efe027573b1ab34fb",
-          "modified": "2026-10-06T18:36:09.502345",
+          "hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "modified": "2026-10-08T23:28:21.143272",
           "name": "complete-operations-guide.md",
           "path": "operations/complete-operations-guide.md",
-          "size": 20129
+          "size": 0
         },
         {
-          "hash": "2fa4a087bf1caf5ad98ed402d4d06b01",
-          "modified": "2026-10-08T20:13:25.818485",
+          "hash": "b66ac94273e67ca7b7fb626b1557dcb3",
+          "modified": "2026-10-09T18:35:40.948058",
           "name": "watching-openrig-seats.md",
           "path": "operations/watching-openrig-seats.md",
-          "size": 7041
+          "size": 7497
         },
         {
-          "hash": "2b9b2685b5247b90125f52a4cb288b8d",
-          "modified": "2026-10-07T22:18:55.760770",
+          "hash": "78af71a2ad99950852590807db4829e4",
+          "modified": "2026-10-08T23:20:11.587655",
           "name": "seat-approval-and-the-startup-call.md",
           "path": "operations/seat-approval-and-the-startup-call.md",
-          "size": 11316
+          "size": 11532
         },
         {
-          "hash": "7d92d31bf265e8ace51a72878ba13d5c",
-          "modified": "2026-10-08T19:02:01.382380",
+          "hash": "ac3399dc0e3ac544e784e564376916ba",
+          "modified": "2026-10-08T22:00:46.275560",
           "name": "syncing-seats-with-the-cloud.md",
           "path": "operations/syncing-seats-with-the-cloud.md",
-          "size": 2919
+          "size": 2923
         }
       ],
       "path": "operations"
@@ -442,18 +345,18 @@
           "size": 2029
         },
         {
-          "hash": "b9ba3418c8bb650adcebe1a14473cea7",
-          "modified": "2026-10-08T19:41:40.906013",
+          "hash": "64d02643769b42104498d5a44d827aec",
+          "modified": "2026-10-08T23:13:34.739209",
           "name": "_common.md",
           "path": "operations/seat-guides/_common.md",
-          "size": 4781
+          "size": 4783
         },
         {
-          "hash": "84cdf3f0e32fd6344d1595ae95067cc2",
-          "modified": "2026-10-06T21:15:44.524850",
+          "hash": "ec95d1601a34054d121156dc189bd72e",
+          "modified": "2026-10-08T23:13:34.739209",
           "name": "reviewer.md",
           "path": "operations/seat-guides/reviewer.md",
-          "size": 1939
+          "size": 1941
         },
         {
           "hash": "8686af95ae452a00ba1c5648076fe749",
@@ -690,7 +593,7 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-08T20:43:36.413313",
+  "generated_at": "2026-10-09T18:35:41.024119",
   "structure": {
     "_absolute_docs": {
       "scripts": {
@@ -732,21 +635,6 @@
         "surface-inventory.md"
       ]
     },
-    "architecture-design": {
-      "files": [
-        "Architecture_Technique.md",
-        "PRD.md",
-        "decision-agy-runtime.md",
-        "decision-commit-form-in-seat-instructions.md",
-        "decision-orchestration-layer.md",
-        "decision-remove-python-backend.md",
-        "decision-seat-attribution.md",
-        "decision-seat-client-fold.md",
-        "decision-task-stats-endpoint.md",
-        "decision-team-json-live-roster.md",
-        "product-architecture-complete.md"
-      ]
-    },
     "authentication": {
       "files": [
         "complete-authentication-guide.md"
@@ -766,8 +654,6 @@
     },
     "core-architecture": {
       "files": [
-        "agent-knowledge-skill-system-specs.md",
-        "agent-knowledge-skill-system-summary.md",
         "agenthub-system-architecture.md"
       ]
     },
@@ -858,6 +744,6 @@
       ]
     }
   },
-  "total_directories": 22,
-  "total_files": 79
+  "total_directories": 21,
+  "total_files": 66
 }
