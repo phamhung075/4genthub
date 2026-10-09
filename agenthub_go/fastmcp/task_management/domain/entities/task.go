@@ -14,12 +14,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
-// AgentNameResolver is task.to_dict's lazy import of
-// application.use_cases.agent_mappings.resolve_agent_name. The domain package
-// cannot import the application layer in Go (import cycle), so the use_cases
-// package registers the function in its init().
-var AgentNameResolver func(name string) string
-
 // NormalizeDatetime converts a naive or aware datetime to a UTC-aware one.
 func NormalizeDatetime(s string) (time.Time, error) {
 	t, err := value_objects.ParseISO(s)
@@ -1077,22 +1071,20 @@ func (t *Task) MarkAsRetrieved() error {
 	return nil
 }
 
-// ToDict converts the task to its dictionary representation; it needs AgentNameResolver
-// (registered by the application layer) to normalize assignee names.
+// ToDict converts the task to its dictionary representation. Assignees are carried AS STORED:
+// normalizeAssignee already made them '@<seat_key>' or '@<role>' (task.go:320-337, via
+// NormalizeAssignees at :443-462) and the client compares on exactly that form
+// (agenthub-frontend/src/api.ts:366, TaskEditDialog.tsx:169), so resolving them here would strip the
+// '@' and append '-agent' and make every comparison miss (row 0adcfe7f). The Python normalised in
+// to_dict (task_response.py:182-190); that is a DELIBERATE departure, not an oversight, and must not
+// be "restored" as a fidelity fix.
 func (t *Task) ToDict() (map[string]any, error) {
-	if AgentNameResolver == nil {
-		return nil, errors.New("entities.AgentNameResolver is not registered (application use_cases.agent_mappings)")
-	}
-	assignees := []string{}
-	for _, a := range t.Assignees {
-		assignees = append(assignees, AgentNameResolver(a))
-	}
 	deps := t.GetDependencyIDs()
 	result := map[string]any{
 		"id": t.idStr(), "title": t.Title, "description": t.Description, "git_branch_id": strOrNil(t.GitBranchID),
 		"status": t.Status.Value, "priority": t.Priority.Value,
 		"progress_history": t.ProgressHistory, "progress_count": t.ProgressCount,
-		"estimatedEffort": t.EstimatedEffort, "assignees": assignees,
+		"estimatedEffort": t.EstimatedEffort, "assignees": append([]string{}, t.Assignees...),
 		"labels": append([]string{}, t.Labels...), "dependencies": deps, "dependency_count": len(t.Dependencies),
 		"subtasks": append([]string{}, t.Subtasks...), "subtask_count": len(t.Subtasks),
 		"completed_subtasks": t.CompletedSubtasks, "dueDate": nil,

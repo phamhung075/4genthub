@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"agenthub/fastmcp/task_management/application"
@@ -114,15 +113,20 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		details = task.GetProgressHistoryText()
 	}
 
-	assigneesNormalized := []string{}
+	// THE ENTITY IS THE SOURCE OF TRUTH for what an assignee is: normalizeAssignee stores '@<seat_key>'
+	// or '@<role>' (entities/task.go:320-337, reached via NormalizeAssignees at :443-462); the picker
+	// offers '@<seat_key>' and the client compares against exactly those strings
+	// (agenthub-frontend/src/api.ts:366, TaskEditDialog.tsx:169, useTaskFilters.ts:62), and the client's
+	// validator WARNS when the '@' is missing (src/utils/responseValidator.ts:148-152). This response
+	// used to STRIP the '@' and append '-agent', so a REST-sourced 'go-dev-agent' could not match the
+	// picker's '@go-dev' - for ANY name, not just a role ending in -research (row 0adcfe7f).
+	//
+	// DELIBERATE DEPARTURE FROM THE REFERENCE, and it must not be "restored" as a fidelity fix: the
+	// Python stripped and appended at task_response.py:182-190, so this is a behaviour being CORRECTED
+	// rather than ported. The stored value is carried through unchanged.
+	assignees := []string{}
 	if assigneesRaw, ok := taskDict["assignees"].([]string); ok {
-		for _, a := range assigneesRaw {
-			name := strings.TrimLeft(a, "@")
-			if !strings.HasSuffix(name, "-agent") {
-				name = name + "-agent"
-			}
-			assigneesNormalized = append(assigneesNormalized, name)
-		}
+		assignees = append(assignees, assigneesRaw...)
 	}
 
 	actualCompleted := 0
@@ -147,7 +151,7 @@ func TaskResponseFromDomain(ctx context.Context, task *entities.Task, gitBranchR
 		Priority:                stringFromAny(taskDict["priority"]),
 		Details:                 details,
 		EstimatedEffort:         stringFromAny(taskDict["estimatedEffort"]),
-		Assignees:               assigneesNormalized,
+		Assignees:               assignees,
 		Labels:                  stringSliceFromAny(taskDict["labels"]),
 		Dependencies:            stringSliceFromAny(taskDict["dependencies"]),
 		Subtasks:                subtasks,

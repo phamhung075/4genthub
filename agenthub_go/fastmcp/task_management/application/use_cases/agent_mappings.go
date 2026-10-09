@@ -4,7 +4,6 @@ package use_cases
 import (
 	"strings"
 
-	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
@@ -124,8 +123,4 @@ func IsDeprecatedAgent(agentName string) bool {
 		return v != hyphenated
 	}
 	return false
-}
-
-func init() {
-	entities.AgentNameResolver = ResolveAgentName
 }

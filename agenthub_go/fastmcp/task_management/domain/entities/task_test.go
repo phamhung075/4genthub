@@ -82,17 +82,18 @@ func TestTaskProgressMilestones(t *testing.T) {
 	}
 }
 
-func TestTaskToDictNeedsResolver(t *testing.T) {
+// ToDict carries assignees as stored: the client compares the response's assignees against
+// '@<seat_key>' values, so resolving them here (which stripped the '@' and appended '-agent') made
+// every comparison miss. The Python normalised in to_dict; this departure is deliberate.
+func TestTaskToDictCarriesAssigneesAsStored(t *testing.T) {
 	task := newTestTask(t)
-	AgentNameResolver = nil
-	if _, err := task.ToDict(); err == nil {
-		t.Fatal("expected resolver error")
-	}
-	AgentNameResolver = func(s string) string { return strings.TrimPrefix(s, "@") }
-	defer func() { AgentNameResolver = nil }()
+	task.Assignees = []string{"@coding-agent", "bob"}
 	d, err := task.ToDict()
 	if err != nil || d["overall_progress"] != 0 || d["completion_summary"] != "" {
 		t.Fatalf("dict: %v %v", err, d)
+	}
+	if got, ok := d["assignees"].([]string); !ok || !reflect.DeepEqual(got, []string{"@coding-agent", "bob"}) {
+		t.Fatalf("assignees = %#v, want the stored values unchanged", d["assignees"])
 	}
 }
 

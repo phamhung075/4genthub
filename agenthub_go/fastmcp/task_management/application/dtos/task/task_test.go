@@ -8,7 +8,6 @@ import (
 
 	"agenthub/fastmcp/task_management/application/dtos/subtask"
 	. "agenthub/fastmcp/task_management/application/dtos/task"
-	usecases "agenthub/fastmcp/task_management/application/use_cases"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
@@ -182,9 +181,6 @@ func TestTaskResponseToDictDependencyError(t *testing.T) {
 }
 
 func TestTaskResponseFromDomain(t *testing.T) {
-	entities.AgentNameResolver = usecases.ResolveAgentName
-	defer func() { entities.AgentNameResolver = nil }()
-
 	task := sampleDomainTask()
 	resp, err := TaskResponseFromDomain(context.Background(), task, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -193,8 +189,8 @@ func TestTaskResponseFromDomain(t *testing.T) {
 	if want := task.GetProgressHistoryText(); resp.Details != want {
 		t.Fatalf("details = %q, want %q", resp.Details, want)
 	}
-	if !reflect.DeepEqual(resp.Assignees, []string{"coding-agent", "bob-agent"}) {
-		t.Fatalf("assignees = %v", resp.Assignees)
+	if !reflect.DeepEqual(resp.Assignees, []string{"@coding-agent", "bob"}) {
+		t.Fatalf("assignees = %v, want the stored values unchanged", resp.Assignees)
 	}
 	if resp.SubtaskCount() != 2 || resp.CompletedSubtasks != 1 {
 		t.Fatalf("counts = %d %d", resp.SubtaskCount(), resp.CompletedSubtasks)
@@ -266,9 +262,6 @@ func (f fakeTaskRepo) GetCompletedSubtaskCounts(ctx context.Context, ids []strin
 }
 
 func TestTaskListResponseFromDomainList(t *testing.T) {
-	entities.AgentNameResolver = usecases.ResolveAgentName
-	defer func() { entities.AgentNameResolver = nil }()
-
 	gb := "gb-1"
 	task := sampleDomainTask()
 	task.GitBranchID = &gb

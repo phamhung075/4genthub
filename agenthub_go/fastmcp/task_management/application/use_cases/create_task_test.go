@@ -111,8 +111,8 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 	if tr.Details != "=== Progress 1 ===\nfirst steps" {
 		t.Fatalf("details = %q", tr.Details)
 	}
-	if !reflect.DeepEqual(tr.Assignees, []string{"coding-agent", "bob-agent"}) {
-		t.Fatalf("assignees = %v", tr.Assignees)
+	if !reflect.DeepEqual(tr.Assignees, []string{"@coding-agent", "@bob"}) {
+		t.Fatalf("assignees = %v, want the stored values unchanged", tr.Assignees)
 	}
 	if !reflect.DeepEqual(tr.Labels, []string{"bug"}) {
 		t.Fatalf("labels = %v", tr.Labels)

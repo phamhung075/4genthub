@@ -132,8 +132,8 @@ func TestUpdateTaskUseCaseUpdatesFields(t *testing.T) {
 	if tr.ProgressPercentage != 40 {
 		t.Fatalf("progress_percentage = %v", tr.ProgressPercentage)
 	}
-	if !reflect.DeepEqual(tr.Assignees, []string{"alice-agent"}) {
-		t.Fatalf("response assignees = %v", tr.Assignees)
+	if !reflect.DeepEqual(tr.Assignees, []string{"@alice"}) {
+		t.Fatalf("response assignees = %v, want the stored values unchanged", tr.Assignees)
 	}
 	if !reflect.DeepEqual(tr.Labels, []string{"new"}) {
 		t.Fatalf("response labels = %v", tr.Labels)
@@ -197,8 +197,8 @@ func TestUpdateTaskUseCaseNilFieldsAreNotChanged(t *testing.T) {
 		!reflect.DeepEqual(entity.Labels, []string{"old"}) {
 		t.Fatalf("entity changed: %+v", entity)
 	}
-	if !reflect.DeepEqual(resp.Task.Assignees, []string{"bob-agent"}) {
-		t.Fatalf("response assignees = %v", resp.Task.Assignees)
+	if !reflect.DeepEqual(resp.Task.Assignees, []string{"bob"}) {
+		t.Fatalf("response assignees = %v, want the stored values unchanged", resp.Task.Assignees)
 	}
 }
 

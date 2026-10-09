@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -351,23 +350,17 @@ func (s *Subtask) GetEvents() []events.Event {
 	return out
 }
 
-// ToDict converts the subtask to a dictionary; parent_task_id only when requested.
-// Needs AgentNameResolver (see Task.ToDict).
+// ToDict converts the subtask to a dictionary; parent_task_id only when requested. Assignees are
+// carried AS STORED, the same rule as Task.ToDict - see the departure note there.
 func (s *Subtask) ToDict(includeParentID bool) (map[string]any, error) {
-	if AgentNameResolver == nil {
-		return nil, errors.New("entities.AgentNameResolver is not registered (application use_cases.agent_mappings)")
-	}
-	assignees := []string{}
-	for _, a := range s.Assignees {
-		assignees = append(assignees, AgentNameResolver(a))
-	}
 	var id any
 	if s.ID != nil {
 		id = s.ID.Value
 	}
 	result := map[string]any{
 		"id": id, "title": s.Title, "description": s.Description,
-		"status": s.Status.String(), "priority": s.Priority.String(), "assignees": assignees,
+		"status": s.Status.String(), "priority": s.Priority.String(),
+		"assignees":           append([]string{}, s.Assignees...),
 		"progress_percentage": s.ProgressPercentage, "progress_history": s.ProgressHistory,
 		"progress_count": s.ProgressCount, "created_at": nil, "updated_at": nil,
 	}

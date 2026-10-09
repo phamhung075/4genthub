@@ -2,8 +2,6 @@ package use_cases
 
 import (
 	"testing"
-
-	"agenthub/fastmcp/task_management/domain/entities"
 )
 
 func TestResolveAgentName(t *testing.T) {
@@ -35,14 +33,5 @@ func TestIsDeprecatedAgent(t *testing.T) {
 	}
 	if IsDeprecatedAgent("unknown-agent") {
 		t.Fatalf("unknown-agent should not be deprecated")
-	}
-}
-
-func TestResolverRegistered(t *testing.T) {
-	if entities.AgentNameResolver == nil {
-		t.Fatalf("AgentNameResolver not registered")
-	}
-	if got := entities.AgentNameResolver("@coding-agent"); got != "coding-agent" {
-		t.Fatalf("resolver = %q", got)
 	}
 }
