@@ -25,6 +25,16 @@
 - Selection, on the same residue: `... --prune --max-age-hours 0.01 --json` → **moved 14, every one `class=applied`**, leaving all 749 `drifted` and the 1 `empty` in the live set. With the default 24h retention the same command moves **0** — no `applied` patch on this box is old enough yet — which is the conservative rule doing its job.
 - The manifests made a duplicate visible that the row's design predicted: the **same** patch (sha1 `d148a418…`) sits in **four** seats' stores, because the framework writes the tree-wide diff into the *committing* seat's store. That is exactly why a victim searching only their own cache finds nothing.
 
+## Rule 64 gains the shared-file guard's stated limit: what it guarantees, and the five things it cannot see
+
+### Changed
+- `agenthub_go/NEXT_GEN.md` rule 64: the commit-time guard used on `CHANGELOG.md` — the hottest path in the tree — now carries **what it guarantees and what it cannot catch**, on the lead's ruling that **a mechanism which reads as a guarantee when it is a smoke alarm is the exact defect class this pod has hunted all night**, and that it would be worse coming from the seat that found it. **As run:** one file's `git diff HEAD -- <path>`, the added lines beginning with `## `, counted after excluding the author's own heading, the commit conditional on that count being zero, with check and commit in one shell invocation. **What it guarantees:** that at that instant no other seat had an uncommitted entry in that file whose first line begins with `## `. **What it cannot see — five cases, each now written into the rule:** a foreign **edit inside** an existing entry (no new heading appears, so the count stays zero); a foreign entry at another heading level, or with no heading at all; foreign added lines that are not headings; a foreign hunk landing **between** the check and the commit, since the window is one command rather than zero; and **any other path** — the same commit checked its second file, `NEXT_GEN.md`, by a different and weaker count, and a weaker check is not the strong one wearing fewer words.
+- **The strong form, recorded for whoever generalizes it: added-line SET EQUALITY** for the file (set equality against your own entry's lines rather than a heading count), or re-compute the diff immediately before the commit and require it to equal the one taken immediately after the edit. The lead is filing that as its own row for go-dev rather than trusting a mechanism because it worked once.
+
+### Verified
+- The guard was exercised on the three commits it gated this session (`a9041461`, `9e6fe571`, `390e6e1a`): each printed the added-heading list, computed the foreign count, and committed only on zero, with both paths clean afterwards — and **the limit, not the success, is what is written down.**
+- Documentation only: no code touched, no test changed.
+
 ## Rule 67's trailer instrument is corrected: its population is partial, and the trailer parser has a false-negative mode
 
 ### Changed
