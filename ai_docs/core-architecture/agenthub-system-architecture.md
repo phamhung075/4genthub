@@ -54,6 +54,7 @@ Secondary: DevOps engineers (deployment automation), security auditors (audit tr
 | Keycloak authentication, multi-tenant isolation | BUILT |
 | Real-time sync over websocket v2.0 | BUILT |
 | Execution ledger, evidence, validation gate, wake, task resume | NEW (section 2.5-2.9) |
+| Work survives a 4genthub cloud outage: with the cloud unreachable and the model API (DeepSeek or Claude) reachable, seats would keep working through a local MCP endpoint in the client, record facts, queue decisions, and sync on reconnect | DEFERRED by the owner 2026-10-08, not a current goal: a design only (D9 part 3), not built and not scheduled. Fully offline inference with local models is also deferred |
 | Agent library of 42+ specialised role templates | RETIRED. Agents are registry rows managed through `manage_agent`; roles come from seat types |
 | "Dynamic Tool Enforcement v2.0" through `call_agent` | RETIRED. Per-seat tool scope comes from the seat's `tool`, `mcp` and `policy` modules |
 | AI "vision system" enrichment and in-server AI planning | Not wired (section 2.3 and 2.13) |
@@ -271,7 +272,7 @@ The panel (item O8) is computed by one backend query so the counts agree everywh
 - A server-side LLM runtime for planning (2.2).
 - A cloud copy of OpenRig's `queue_items` for task work. The task is the cloud's work item and the local queue stays OpenRig's coordination channel. This affects NEXT_GEN directive (F) item F3 and needs the owner's confirmation (D1).
 - `manage_rule` as a tool.
-- Rust. The bottlenecks are model latency, network and tools.
+- A second local runtime, in Rust or any other language. Measured 2026-10-08: model generation is 33–75% of active turn time, tools are their own subprocesses, and a compaction stall (about 50 s) is a model call. Sync needs a cursor, an outbox and a cache, which the Go `agenthub-client` provides (D9). The decision reopens only if the owner reverses the 2026-10-08 "no" to 4genthub owning the agent loop, or if a local bottleneck is measured.
 - Python parity as a goal. With the backend archived there is no server left to match (D2, D3).
 
 ---
@@ -547,6 +548,145 @@ Siblings need not be identical across the ten policy files: the renderer folds e
 
 **Status.** Applied in the repository: all three `guide-common` copies carry `do not stage first`. The live-file step needs the lead's approval and was not verified here.
 
+### D9. Sync is a server-sequenced ledger with a client cursor and outbox; the local runtime stays the Go `agenthub-client`, not a Rust engine
+
+**This decision went against the owner's original direction, and the owner accepted it on 2026-10-08.** The owner asked for a local Rust runtime as session engine and context optimizer. Part 1 adopts the sync and event model the idea asks for. Part 2 recommended against the Rust runtime and keeping the Go client, on the measurements given there. It was put to the owner as a recommendation, not as an implementation of the request, and the owner accepted it as drafted, including "no" on whether 4genthub owns the agent loop (owner decision 15, closed as no).
+
+**Order of this decision.** The owner asked (2026-10-08) for a "next level" built on a local Rust runtime, and ruled that the sync protocol and event model matter more than Go versus Rust. This note therefore decides the sync and event model first (part 1). The language and runtime question follows in part 2, and is answered from what part 1 needs. This order was chosen on purpose: the language follows from the protocol, not the reverse.
+
+**Context.** The idea ("4gent Runtime/Edge") puts orchestration, tasks, routing, MCP and auth in the Go cloud. A local Rust runtime would own sessions, the context manager, compaction, files, tools, streaming and cache. Context would sync as versioned deltas (`{task_id, context_version, events}`) instead of being resent. Concurrent workers would prepare the next context while the model is still generating. With local models the system would keep working offline. What exists on 2026-10-08:
+
+- `task_events` exists but is not the ledger 2.5 describes. Its kinds are `created`, `updated`, `status_changed`, `completed` and `deleted`, and its actors are `user`, `system` and `agent`. It has no `subtask_id`. `seq` is gapless per task, assigned under `pg_advisory_xact_lock(hashtext(task_id))` with `MAX(seq)+1`. There is no cursor across tasks. Reads are `GET /{task_id}/events?after_seq=`. *Checked by reading* `infrastructure/database/task_event_tables.go`, `task_event_repository.go` and `server/routes/task_event_routes.go`.
+- **Nothing emits events.** `TaskEventRecorder` opens its own transaction, so it cannot share the task row's transaction. *Checked by:*
+  - `grep -rnE '\.Record\(' --include=*.go agenthub_go`, excluding `_test.go`: the only hit is inside the Go toolchain in `.gomodcache`;
+  - `TaskEventRecorder` appears in no non-test file except its own;
+  - that file says `NOTHING EMITS EVENTS YET` at line 18.
+- The context tables (`global_`, `project_`, `branch_`, `task_contexts`) each carry an integer `version`. *Checked in* `infrastructure/database/models.go` (the `version` column definitions at lines 708, 800, 840 and 948).
+- A local runtime already exists in Go: `agenthub-client` (`cmd/agenthubclient`, `internal/clientsync`, `internal/clientbridge`). Its `/ws/connector` client already speaks a cursor protocol: `hello`/`ready`, then `session`/`session_ack {last_seq}`, then `events`/`events_ack {last_seq}`, over `agent_sessions.last_seq` and `agent_session_events (session_id, seq)`. The owner's directive is ONE CLIENT for the local-to-cloud bridge. *Checked by reading* `server/httpapp/ws_mount.go` (the `session` and `events` cases, about lines 334–389), the `agent_sessions` and `agent_session_events` definitions in `models.go`, and the directive in the header comment of `internal/clientsync/connector.go`.
+- The model's context never passes through the cloud. Seats run Claude Code or omp, which send the full prompt to a stateless provider API each turn. Prefix caching on the provider side is what makes that cheap, and neither the cloud nor a local runtime of ours sits on that path. *Source:* how the seats are set up, and the providers' prompt-caching documentation as known in 2026. The provider documentation was not re-checked for this note.
+- Where turn time goes. *Measured by* a script over three Claude Code transcripts dated 2026-10-08 (sessions `ccd12a01`, `64e2e5da`, `0d77a692`):
+  - Model time is the gap from a user or tool-result record to the next assistant record.
+  - Tool time is the gap from an assistant `tool_use` record to its `tool_result`.
+  - Gaps that start with human or rig input, and gaps of 600 s or more, are excluded.
+
+  Model generation was 75%, 53% and 33% of active time, and tools took the rest. The tool time is subprocesses such as `pytest`, `go test` and builds.
+- Compaction stalls. *Measured from* the 17 `compact_boundary` records in two of those transcripts, as the gap from the previous record: 13 were 39–76 s (median 51 s) at about 168k tokens, and 4 were under 10 s. Those 4 are probably gaps the script did not attribute correctly, and they are left out of the median. That time is the model writing the summary.
+- Compaction belongs to the harness. `openrig_compact_supervisor.py` can only nudge a seat and send `/compact` to it when idle. The context packs (FRESH, HANDOVER, POST-COMPACTION in `seat_management/domain/contextpacks`) are built but have no caller. *Checked by reading* the supervisor (lines 1–60) and from the earlier caller search for the packs, which found no caller.
+
+#### Part 1: the sync and event model
+
+**Options.**
+
+- **A. Server-sequenced ledger, client cursor, idempotent client outbox.** The cloud is the only sequencer. `task_events` gains a per-user gapless `user_seq`, and a client reads "everything after N" across all its tasks. The client writes through an outbox of intents keyed by `client_event_id`. The server accepts each intent with its sequence numbers, or rejects it with a reason and the current task `seq`.
+- **B. CRDT, multi-master.** Every client applies its own events locally and states merge.
+- **C. Versioned documents with JSON-patch deltas** (the idea's `context_version: 43` shape) as the primary model, one version counter per task or context.
+
+B fails on what the system is for. Claims, status transitions and gate verdicts do not commute. Two clients that each claim a task offline both succeed locally, and no merge rule makes "two owners" or "ACCEPT then REJECT" correct. The gate (2.7) needs one order. C gives each document its own order but none across documents, and the gate needs the order of evidence relative to a verdict on the same task, and of a context change relative to the evidence produced under it. C also turns every reader into a patch applier for a gain nobody has measured: the context documents are small JSON, and their `version` already supports a "changed since" check. A is the only option that keeps the gate correct. It is also the shape the connector already uses for sessions.
+
+**Decision: A, with C kept only as a version check on context documents.** The rule that decides conflicts: **facts sync, decisions sequence.**
+
+- *Facts* are `progress`, `evidence_submitted`, `handover` and `context_loaded`. They are append-only observations, and the client may record them offline. When the client reconnects, the server accepts them in arrival order and keeps the client's time in the payload. A fact is never rejected for being late.
+- *Decisions* are `claimed`, `status_changed`, `gate_verdict`, `assigned` and `human_decision`. Each carries `base_seq`, the task `seq` the client had seen. The server rejects one whose `base_seq` is behind the task's current `seq`, unless every event since then is a fact. Offline, a client cannot claim, transition or judge. It queues the intent, and the intent is decided when the client reconnects.
+- *Context changes* append a `context_updated {level, id, version}` event, so one cursor covers work and context together. A client holding an older version fetches the whole document; there are no patches.
+
+**Interfaces and shape.**
+
+- Migration on `task_events`:
+  - add `user_seq BIGINT NOT NULL` with `UNIQUE (user_id, user_seq)`;
+  - add `client_event_id UUID NULL` with `UNIQUE (user_id, client_event_id)`;
+  - add `subtask_id UUID NULL`;
+  - widen the kind CHECK to the vocabulary in 2.5 plus `context_updated`;
+  - change the actor CHECK to 2.5's `seat`, `client`, `gate`, `human`.
+
+  `user_seq` is assigned under a **per-user** advisory lock with `MAX+1`, the same mechanism as today's per-task lock, and the per-task `seq` is computed under the same lock. A `bigserial` cursor is rejected on purpose: values become visible in commit order, not number order, so a reader that has passed N can miss a transaction that took a lower number and committed later.
+- `TaskEventRepository.AppendInTx(tx, ev)` lets the task service write the row and its event in one transaction, as 2.5 requires. `Append` remains a wrapper that opens its own transaction.
+- `GET /api/v2/ledger?after=<user_seq>&limit=` returns events oldest first, plus the current tip.
+- `POST /api/v2/ledger/intents`, body `[{client_event_id, task_id, subtask_id?, kind, base_seq?, payload}]`. For each item it returns `{accepted, user_seq, seq}` or `{rejected, reason, task_seq}`. Resending a `client_event_id` returns the first answer, so the outbox can retry without risk.
+- `/ws/connector` gains one server frame, `ledger_tip {user_seq}`. It is a nudge only: the client still pulls with `GET` from its cursor. Correctness has one path, pull, as 2.8 already decides, and the socket only shortens the delay. QUIC is not needed; a nudge is a few bytes.
+- `agenthub-client` keeps `{cursor, outbox}` in its state directory. Its bridge loop drains the outbox, pulls past the cursor, and runs the wake in 2.8 from the pulled events instead of a separate `/work` poll. **"Next context ready when the turn ends"** is met here and without a new runtime: when the client pulls an event on a task held by one of its seats, it prefetches that task's resume brief (2.9) and POST-COMPACTION pack. The supervisor or the seat then reads the cached pack after `/compact`, instead of re-reading files.
+
+#### Part 2: the local runtime and its language
+
+**Options.**
+
+- **R1. Keep `agenthub-client` (Go) as the one local runtime** and add the cursor, the outbox and the pack prefetch from part 1 to it.
+- **R2. A new Rust runtime as session engine and context optimizer.** It would own the model loop, compaction, tools and streaming.
+- **R3. Rust for one measured hot component only** (for example a local file or embedding index), as a separate process or library behind the Go client.
+
+What part 1 needs locally is a cursor, an outbox, a JSON cache and a WebSocket. None of that is bound by CPU or memory, and the Go client already does each kind of work. R2 does not shorten the costs measured above:
+
+- Model time is the provider's.
+- Tool time is the tools' own subprocesses.
+- A compaction stall is a model call.
+
+R2 can only hide compaction by running the model loop itself, which means replacing Claude Code and omp with a harness of our own. That reverses D1 (4genthub is an orchestration layer over seats), and beside the Go client it would be a second client, against the ONE CLIENT directive. Surviving a 4genthub cloud outage (part 3, a deferred design) would need a local stand-in for the cloud's MCP endpoint, and that fits in the Go client; the model API is not affected. R3 is a fair answer to a measured local bottleneck, but none has been measured.
+
+**Decision: R1. This went against the owner's request for a Rust runtime; the owner accepted it on 2026-10-08.** Section 2.15 keeps "no Rust", and its reason is replaced with these measurements. **Two conditions reopen the decision:**
+
+1. 4genthub takes ownership of the agent loop (owner decision 15). That is the real decision inside the idea. The owner closed it as no on 2026-10-08, so this reopens only by a new owner decision. Language comes after it and is judged against that loop.
+2. A measured local bottleneck in `agenthub-client` or a local index costs a significant share of active turn time; this would lead to R3, not R2.
+
+#### Part 3: work that survives the 4genthub cloud being unreachable (DEFERRED design: not built, not scheduled)
+
+**Deferred by the owner on 2026-10-08 (principal relay 20:54Z).** Do not build the local MCP endpoint. This part is recorded as a design only and reopens only if the owner asks. It is not a current goal and implies no NEXT_GEN work items. Parts 1 and 2 stand and are buildable without it.
+
+
+**How the question was framed before the deferral.** On 2026-10-08 the owner first decided that offline work with local models is a product goal. Later the same day, on learning that no local model is served (below), the owner narrowed it:
+- the goal is work that survives the **4genthub cloud** being unreachable while the **model API** (DeepSeek or Claude) is still reachable;
+- it is NOT fully offline model inference;
+- local models are deferred, to revisit only if one is actually served.
+
+In this decision, "offline" means exactly that: the 4genthub cloud is unreachable, and the model API is not affected. Part 1's offline rule (facts sync; claims, status changes and verdicts wait for the cloud) is unchanged. Owner decision 15 (own the agent loop) is NOT reopened by this goal: the seats keep their harnesses and providers.
+
+**What is true today.** *Measured 2026-10-08:*
+- Seats reach the 4genthub cloud through the `agenthub_http` MCP server (`.mcp.json`). With the cloud unreachable, every `manage_task` and `manage_context` call fails, even though the model keeps answering.
+- No model is served locally: `curl http://localhost:11434/api/tags` is refused (exit 7), and `ollama` is not on the WSL `PATH`. This is why local models are deferred. For when they are revisited:
+  - omp's model cache lists `ollama-cloud` (hosted) and no local provider;
+  - the omp binary contains an `ollama` provider and the `llama.cpp`, `lm-studio` and `litellm` discovery types (*checked by* `strings` on the binary, a weaker check than running it).
+
+So surviving a cloud outage needs a local answer to the seats' MCP calls. It needs no change to how seats reach their model.
+
+**Options for the MCP side.**
+- **O1. A local MCP endpoint in `agenthub-client`**, which seats use instead of the cloud URL. Online, it forwards every call unchanged. Offline, it:
+  - answers reads from the client's cache, labelled with the cursor they were read at;
+  - accepts fact writes (`progress`, `evidence_submitted`, `handover`) into the outbox;
+  - answers decisions (claim, status change, verdict) with "queued: cloud unreachable" and holds them in the outbox for the cloud to decide.
+- **O2. Seats keep the cloud URL, and gain client CLI verbs for offline use** (for example, record a fact into the outbox).
+
+O2 makes a seat behave differently depending on connectivity, so every seat's instructions would need an offline branch. That is a second path that drifts from the first, the same kind of defect as the stale rendered seat files D8 found: a rule kept in two places goes wrong in one of them. O1 keeps one set of instructions for the seat and puts the connectivity difference in one place, the client.
+
+**Design choice, if part 3 is ever reopened: O1.** It would stay in Go, in the one client. This is a recorded preference, not a scheduled build.
+
+**Interfaces.**
+- `agenthub-client` serves MCP on a local port, and the seats' `agenthub_http` entry points at it.
+- The cache holds:
+  - the pulled ledger since the cursor;
+  - the context documents at their last `version`;
+  - the prefetched resume briefs and packs (part 1).
+- An offline read is never presented as current: each answer carries `as_of_user_seq` and `cloud_unreachable: true`.
+- On reconnect, the client drains the outbox (facts first, then decisions with their `base_seq`) before forwarding new calls. Rejected decisions are shown to the seat with the server's reason.
+- The gate does not run offline. Evidence is recorded as facts, and verdicts wait for the cloud.
+
+**Acceptance test for part 3 (NOT SCHEDULED; it runs only if the owner reopens part 3 and asks for it).** It needs a network block, which the owner does not want now. If it is ever run, it must prove that a seat keeps working on a task with the 4genthub cloud blocked and the model API reachable, through the local MCP endpoint, the cache, the outbox and the queued claims:
+- block the client's route to the cloud only, leaving the provider reachable;
+- the seat reads its task and context from the cache, records progress and evidence, and has its "done" queued;
+- unblock; the outbox drains, the facts appear in the ledger in order, and the queued decision is accepted or rejected with a reason.
+
+**Note on that test: the session hooks, read 2026-10-08.** *Checked by reading the code only; nothing was run against a blocked route.*
+- *Proven by reading:* the hooks fail open on errors. `pre_tool_use.py:645-655` wraps context injection in `except Exception: pass`, and its `main` exits 0 on any exception (`:931-943`). `post_tool_use.py:196-205` catches context-sync errors, and its `main` exits 0 (`:339-350`). In `utils/mcp_client.py:559-594`, `_execute_with_retry` returns `None` after its retries and does not raise. `.claude/settings.json` sets no `timeout` on any of its nine hooks.
+- *Inferred, not measured:* the hooks are not bounded in wall time on a route that drops packets rather than refusing them. The client's per-request timeout is 10 s (`mcp_client.py:272`) with 3 retries and exponential backoff (`:273-274`), and `OptimizedMCPClient` adds a urllib3 `Retry` on top. `context_updater.py:38` sets `update_timeout_ms` to 1000, but `:571` only compares it after the call has finished, so it is not a bound. `context_injector.py:805,809` waits 1 s, but whether that cancels a blocking `requests` call underneath has not been checked.
+- *Requirement if part 3 is reopened:* every hook call to the cloud gets a hard wall-time bound (a hook `timeout` in settings, or one bounded attempt with no retries), so that "fails open" also means "does not stall".
+
+**Risks.**
+
+- **D9 depends on 2.5 being built.** Nothing emits events today, so the cursor has nothing to carry until the task service writes events through `AppendInTx`. That is step one of the build.
+- **Lock contention.** The per-user lock serializes all of one user's ledger writes. With about ten seats per user this is acceptable; measure lock wait in the build, and fall back to a per-user sequence row updated in the same transaction if it shows up.
+- **Late facts.** A fact recorded offline can arrive after a verdict it predates, and the order is server arrival. The gate judges by arrival order and shows the client's time from the payload. A late `evidence_submitted` after an ACCEPT opens a new gate round and does not rewrite the old one.
+- **Offline drift.** A seat working through a long cloud outage acts on a cache the cloud has moved past. Answers carry `as_of_user_seq`, and the reconnect drain shows each rejected decision to the seat. The longer the outage, the more rework.
+- **Pack staleness.** A prefetched pack can be one event old when it is used. The pack carries its `user_seq`, and the reader re-pulls if the tip has moved.
+
+**Status.** Accepted by the owner 2026-10-08 (relayed by the principal session), including the offline rule in part 1. Owner decision 15 (own the agent loop) is closed as no. Owner decision 16 is closed 2026-10-08. Work that survives the 4genthub cloud being unreachable while the model API is reachable is deferred, and so is fully offline inference with local models. Parts 1 and 2 are adopted and buildable. Part 3 is a deferred design (owner, 2026-10-08): not built, not scheduled, and it reopens only if the owner asks. Build order for parts 1 and 2: (1) the `task_events` migration and `AppendInTx`, with the task service emitting events (2.5); (2) the ledger routes and the `ledger_tip` frame; (3) the cursor, outbox and wake-from-ledger in `agenthub-client`, replacing the `/work` poll; (4) the pack prefetch, plus a caller for the POST-COMPACTION pack in the supervisor. Update 2.4 and 2.14 as each step lands. NOT BUILT AND NOT SCHEDULED, part 3 only: (5) the local MCP endpoint with offline reads, the fact outbox and the reconnect drain; (6) the network-block acceptance test above. Neither is a NEXT_GEN work item.
+
 ---
 
 ## 5. Proposed and never built
@@ -573,6 +713,8 @@ Siblings need not be identical across the ten policy files: the renderer folds e
 | 12 | Move the stale go-dev2 state directory aside (D7); run the two `apply` commands (separate) | Anytime | Move yes; applies owner's call |
 | 13 | Approve editing the ten live `AGENTS.md` files (D8) | Anytime | Yes, keeping the before copies |
 | 14 | Pricing, marketplace, on-premise, mobile (1.6) | Product | Not yet asked |
+| 15 | CLOSED 2026-10-08: does 4genthub own the agent loop (model calls, compaction, tools), or stay an orchestration layer over Claude Code and omp (D1, D9)? | Closed | Owner decided NO on 2026-10-08, accepting D9: 4genthub stays an orchestration layer, with no Rust runtime |
+| 16 | CLOSED 2026-10-08: is work that survives an outage a product goal, and in which form? | Closed | Owner decided on 2026-10-08: DEFERRED, not a current goal. Work that survives a 4genthub cloud outage while the model API (DeepSeek or Claude) is reachable is kept as a design only (D9 part 3), not built and not scheduled, and reopens only if the owner asks. Fully offline inference with local models is also deferred |
 
 ---
 
@@ -596,6 +738,7 @@ Siblings need not be identical across the ten policy files: the renderer folds e
 | 2025-11-09 | Python-era architecture file deleted (`dad51589`). |
 | 2026-10-08 | Orchestration architecture written by the architect against `eaa41d18`, with decisions D1 to D8. |
 | 2026-10-08 | Consolidated into this file; the source files were deleted in a separate, revertible commit. |
+| 2026-10-09 | D9 added (sync ledger, no Rust runtime, outage survival deferred); owner decisions 15 and 16 recorded as closed. |
 
 ## 9. Maintenance rules for this file
 
