@@ -67,10 +67,13 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
           {/* WHAT IS TRUE TODAY, and it is measured rather than promised: delivery is the MANUAL pull
               above, so the files reach the machine when they are pulled and the seat relaunches,
               and a session already running keeps what it loaded. The renderer DOES describe startup
-              delivery (its YAML carries startupFileYAML{DeliveryHint}), but NO client reads that yet
-              - a search for delivery_hint / startup_files finds nothing under agenthub_client or
-              scripts - so this sentence must not promise it. WHEN THAT READER LANDS this sentence
-              changes with it, rather than ageing into a claim the tree cannot back. */}
+              delivery (its YAML carries startupFileYAML{DeliveryHint}), but NOTHING IN THE REPO
+              READS IT YET: a search for delivery_hint / startup_files finds the renderer writing the
+              field and no reader anywhere, the LIVE client included - the Go packages
+              agenthub_go/internal/clientsync, clientcmd, clientbridge, apiref and cmd/agenthubclient
+              grep to zero, and the scripts/ paths an earlier wording of this comment named are gone.
+              So this sentence must not promise it. WHEN THAT READER LANDS this sentence changes with
+              it, rather than ageing into a claim the tree cannot back. */}
           <p className="text-xs text-muted-foreground">
             A running session keeps what it loaded; the files reach the machine when they are pulled
             and the seat relaunches.
