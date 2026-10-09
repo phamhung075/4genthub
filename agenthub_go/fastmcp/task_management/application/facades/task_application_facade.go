@@ -632,15 +632,11 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 				userID = *u
 			}
 		}
-		var full *entities.OrderedMap[any]
-		if current != nil {
-			full, err = taskDictOf(current)
-			if err != nil {
-				full = completeTask
-			}
-		} else {
-			full = completeTask
-		}
+		// The payload describes the task AFTER the update. `current` is the PRE-update fetch that
+		// checkForMeaningfulUpdate compares against, so building from it delivered the old status,
+		// title and priority while updated_at came from the new row - and the frontend writes this
+		// dict straight into the task it displays.
+		full := completeTask
 		var validated any = taskDict
 		title, status, priority, branch := facadeDictGet(full, "title"), facadeDictGet(full, "status"), facadeDictGet(full, "priority"), facadeDictGet(full, "git_branch_id")
 		if title != nil && status != nil && priority != nil && branch != nil {

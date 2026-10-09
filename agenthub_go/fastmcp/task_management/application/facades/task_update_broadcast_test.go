@@ -124,3 +124,28 @@ func TestTheUpdateBroadcastIsStampedWithTheActingUser(t *testing.T) {
 		t.Fatalf("the 'updated' frame is stamped user %q, want the acting user %q: a system stamp matches no connection (Rule 1) and there is no ownership checker to fall back on (Rule 2), so EVERY browser is denied", got.UserID, actor)
 	}
 }
+
+// TestTheUpdateBroadcastCarriesThePostUpdateValues is the payload half of the row. The delivered dict
+// is what the frontend writes into the task it displays, and it was built from the PRE-update fetch
+// that checkForMeaningfulUpdate compares against - so after delivery was fixed, a status change would
+// still have arrived carrying the status the task had before it. Only updated_at came from the new row.
+func TestTheUpdateBroadcastCarriesThePostUpdateValues(t *testing.T) {
+	const actor = "u-actor"
+	facade, _, capture := newUpdateFacadeUnderTest(t, actor)
+
+	newStatus := "in_progress"
+	result := facade.UpdateTask(context.Background(), dtostask.UpdateTaskRequest{TaskID: "task-1", Status: &newStatus})
+	if !value_objects.PyTruthy(facadeDictGet(result, "success")) {
+		t.Fatalf("UpdateTask failed: %v", result)
+	}
+	if len(capture.tasks) != 1 {
+		t.Fatalf("the facade emitted %d task broadcasts, want 1", len(capture.tasks))
+	}
+	payload, ok := capture.tasks[0].TaskData.(*entities.OrderedMap[any])
+	if !ok {
+		t.Fatalf("task data is %T, want *entities.OrderedMap[any]", capture.tasks[0].TaskData)
+	}
+	if got := value_objects.PyStr(facadeDictGet(payload, "status")); got != newStatus {
+		t.Fatalf("the delivered payload carries status %q, want the post-update %q: it is built from the pre-update fetch, and the frontend writes this dict straight into the task it displays", got, newStatus)
+	}
+}
