@@ -25,6 +25,17 @@
 - Selection, on the same residue: `... --prune --max-age-hours 0.01 --json` → **moved 14, every one `class=applied`**, leaving all 749 `drifted` and the 1 `empty` in the live set. With the default 24h retention the same command moves **0** — no `applied` patch on this box is old enough yet — which is the conservative rule doing its job.
 - The manifests made a duplicate visible that the row's design predicted: the **same** patch (sha1 `d148a418…`) sits in **four** seats' stores, because the framework writes the tree-wide diff into the *committing* seat's store. That is exactly why a victim searching only their own cache finds nothing.
 
+## Rule 69 — a stale instrument is not an absent fact: the fourth instrument rule names when it was last read
+
+### Added
+- `agenthub_go/NEXT_GEN.md`: **rule 69**, landed from a parked candidate at the lead's authorization. **The fourth instrument question, beside rule 66 (WHICH TREE) and rule 67 (WHICH ATTRIBUTION METHOD): this one names WHEN IT WAS LAST READ** — the easiest of the four to skip, because **a cached value looks exactly like a current one.** **The instance, with its numbers:** measuring the trial arm's window for `a9041461`, the first extraction returned **no records after 20:07Z** and the conclusion drawn was that **the session store lags the turn** — a conclusion that had been **correct twice earlier in the same session**. **It was wrong here: the store had grown 10 228 → 10 397 records while the measurement held a cached parse of the file in a kernel variable, so the instrument had stopped being the file.** Re-reading the source produced reading 24 (**110.3 s, 10 requests, input 12 883, cacheRead 2 105 216, output 24 386, reasoning 16 093, \$0.022880**).
+- **Why it is not rule 68, and the discriminator is the ACTION:** 68 is **the WORLD moving under a count** — the number changed because the tree changed, and the recovery is to publish the **tracked / untracked / staged** split; this is **the INSTRUMENT ceasing to track the world while nothing about its meaning changed** — the recovery is to **re-read the source**, not to qualify the number. Collapsed, they teach the right lesson and cause the **wrong act**: qualifying a number that was never about the wrong tree, and **waiting for a store that had already answered.**
+
+### Verified
+- **The honest form of the first reading was "my parse is eight minutes old", not "the store has not caught up"** — the two route to different actions (re-read, versus wait), and the second would have written a **false UNAVAILABLE** into a row whose acceptance forbids estimating, where a false UNAVAILABLE is a defect rather than a gap.
+- **The same failure's second form, measured in this store:** usage lives at `record['message']['usage']`; a parse that reads the record's `data` returns **nothing** for every assistant record, and the top level returns zeros — **so a wrong path and an empty file look identical.**
+- No code touched, no test changed: two documentation paths, and the numbers in the rule are the measured reading rather than a restatement.
+
 ## The project-root paragraph cites its probe correctly and names the fifth resolver — and rule 68 makes a test count carry its tree
 
 ### Changed
