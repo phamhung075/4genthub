@@ -257,7 +257,7 @@ Located in `.claude/hooks/`:
 - **pre_tool_use.py**: Enforces file system protection rules
 - **post_tool_use.py**: Updates documentation index
 - **utils/session_tracker.py**: Manages 2-hour work sessions
-- **utils/docs_indexer.py**: Generates/maintains index.json
+- **utils/docs_indexer.py**: Generates/maintains index.json, including its final newline (`4d3247e`, `4genthub-hooks`). Before that commit a regenerated index had none, so this repository's own `end-of-file-fixer` refused the next commit over it and rewrote the file - the content was correct and only the terminal byte was missing.
 - **utils/env_loader.py**: Loads environment variables safely
 - **status_lines/status_line.py**: Displays environment paths
 
