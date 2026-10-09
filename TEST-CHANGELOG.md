@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - render_config's rig is required, and the omitted-rig caller now fails instead of rendering
+
+- `agenthub_client/src/agenthub_client/seat_policy.py`: `render_config(seat, role, rig)` — the `rig: str | None = None` default is GONE, and the docstring states why. With the default, a caller that omitted the rig rendered a document whose per-rig thinking level was silently ABSENT: no exception, no log line, no test, so a seat came up on the wrong level and only a reader of the rendered file could tell.
+- The two callers that genuinely omitted it were the rig-INDEPENDENT tests, and both are now explicit rather than absorbed by a default: `tests/test_seat_policy.py`'s `parsed(seat)` helper passes its own `RIG`, and `tests/test_seat_sync.py`'s single-source test passes `"room1"`, the rig its fixture actually governs — the rendered bytes there are unchanged, because `SEAT_THINKING` has no `room1` entry. The three production call sites already passed the rig.
+- `tests/test_seat_policy.py` gains `test_render_config_refuses_a_call_that_omits_the_rig`, asserting BOTH halves: the two-argument call raises `TypeError`, and `inspect.signature(...).parameters["rig"].default is inspect.Parameter.empty`, so a reintroduced default fails in this file rather than in a seat.
+- **FALSIFICATION, measured rather than asserted**: with the default restored, that one test fails `DID NOT RAISE TypeError` while the file's other 14 tests still pass — the guard bites exactly where it should and nowhere else. The mutation was reverted before the commit.
+- Commands and results, from the repository root: `python3 -m pytest --noconftest -p no:cacheprovider agenthub_client/tests -q` -> **304 passed in 69.76s**; the single file under the mutation -> `1 failed, 14 passed`.
+
 ## 2026-10-09 - the guide-shelf tests cover the tenth seat, and a count pin they broke is corrected
 
 - `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides_test.go`: `guideSeats` gains `architect`, so the existing load/render/lock tests now cover `guide-architect` and assert its heading appears once in the rendered context. No new test was written and no assertion was weakened — the same checks that held for the other nine hold for the tenth.
