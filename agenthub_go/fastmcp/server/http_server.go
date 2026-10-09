@@ -13,65 +13,10 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
-
-	"agenthub/fastmcp/auth/mcp_integration"
 )
-
-// TokenVerifierAdapter ports TokenVerifierAdapter from http_server.py: a bridge
-// between FastMCP's OAuthProvider (load_access_token) and MCP's TokenVerifier
-// (verify_token). Python uses hasattr duck-typing; Go uses method-set type
-// assertions with the same branch order. The dependency packages have no Go
-// OAuthProvider yet, so the minimal interfaces below are declared here.
-type TokenVerifierAdapter struct {
-	Provider any
-}
-
-// tokenVerifier mirrors the MCP TokenVerifier protocol.
-type tokenVerifier interface {
-	VerifyToken(ctx context.Context, token string) *mcp_integration.AccessToken
-}
-
-// accessTokenLoader mirrors FastMCP's OAuthProvider.load_access_token.
-type accessTokenLoader interface {
-	LoadAccessToken(ctx context.Context, token string) *mcp_integration.AccessToken
-}
-
-// userTokenExtractor mirrors the JWT middleware provider's
-// extract_user_from_token.
-type userTokenExtractor interface {
-	ExtractUserFromToken(token string) string
-}
-
-// NewTokenVerifierAdapter ports TokenVerifierAdapter.__init__.
-func NewTokenVerifierAdapter(provider any) *TokenVerifierAdapter {
-	return &TokenVerifierAdapter{Provider: provider}
-}
-
-// VerifyToken ports TokenVerifierAdapter.verify_token. The Python logger.error
-// for an unknown provider type is dropped (logging calls are dropped).
-func (a *TokenVerifierAdapter) VerifyToken(ctx context.Context, token string) *mcp_integration.AccessToken {
-	if p, ok := a.Provider.(tokenVerifier); ok {
-		return p.VerifyToken(ctx, token)
-	}
-	if p, ok := a.Provider.(accessTokenLoader); ok {
-		return p.LoadAccessToken(ctx, token)
-	}
-	if p, ok := a.Provider.(userTokenExtractor); ok {
-		if userID := p.ExtractUserFromToken(token); userID != "" {
-			return &mcp_integration.AccessToken{
-				Token:    token,
-				ClientID: userID,
-				Scopes:   []string{"execute:mcp"},
-			}
-		}
-		return nil
-	}
-	return nil
-}
 
 // MCPHeaderValidationMiddleware ports MCPHeaderValidationMiddleware: it enforces
 // the MCP protocol headers for /mcp endpoints and adds CORS headers to its

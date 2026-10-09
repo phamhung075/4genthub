@@ -1,68 +1,10 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"agenthub/fastmcp/auth/mcp_integration"
 )
-
-type fakeVerifier struct{ got string }
-
-func (f *fakeVerifier) VerifyToken(ctx context.Context, token string) *mcp_integration.AccessToken {
-	f.got = token
-	return &mcp_integration.AccessToken{Token: token, ClientID: "verify-provider"}
-}
-
-type fakeLoader struct{}
-
-func (fakeLoader) LoadAccessToken(ctx context.Context, token string) *mcp_integration.AccessToken {
-	return &mcp_integration.AccessToken{Token: token, ClientID: "oauth-provider"}
-}
-
-type fakeExtractor struct{}
-
-func (fakeExtractor) ExtractUserFromToken(token string) string { return "user-42" }
-
-type fakeExtractorEmpty struct{}
-
-func (fakeExtractorEmpty) ExtractUserFromToken(token string) string { return "" }
-
-func TestTokenVerifierAdapterVerifyToken(t *testing.T) {
-	v := &fakeVerifier{}
-	tok := NewTokenVerifierAdapter(v).VerifyToken(context.Background(), "abc")
-	if tok == nil || tok.ClientID != "verify-provider" || v.got != "abc" {
-		t.Fatalf("verify branch: got %+v", tok)
-	}
-}
-
-func TestTokenVerifierAdapterLoadAccessToken(t *testing.T) {
-	tok := NewTokenVerifierAdapter(fakeLoader{}).VerifyToken(context.Background(), "abc")
-	if tok == nil || tok.ClientID != "oauth-provider" {
-		t.Fatalf("load branch: got %+v", tok)
-	}
-}
-
-func TestTokenVerifierAdapterExtractUser(t *testing.T) {
-	tok := NewTokenVerifierAdapter(fakeExtractor{}).VerifyToken(context.Background(), "abc")
-	if tok == nil || tok.ClientID != "user-42" || tok.Token != "abc" {
-		t.Fatalf("extract branch: got %+v", tok)
-	}
-	if len(tok.Scopes) != 1 || tok.Scopes[0] != "execute:mcp" {
-		t.Fatalf("extract scopes: got %+v", tok.Scopes)
-	}
-	if got := NewTokenVerifierAdapter(fakeExtractorEmpty{}).VerifyToken(context.Background(), "abc"); got != nil {
-		t.Fatalf("empty extractor expected nil, got %+v", got)
-	}
-}
-
-func TestTokenVerifierAdapterUnknownProvider(t *testing.T) {
-	if got := NewTokenVerifierAdapter(struct{}{}).VerifyToken(context.Background(), "abc"); got != nil {
-		t.Fatalf("unknown provider expected nil, got %+v", got)
-	}
-}
 
 func newMiddleware(next http.Handler, origins []string) http.Handler {
 	return NewMCPHeaderValidationMiddleware(next, origins)

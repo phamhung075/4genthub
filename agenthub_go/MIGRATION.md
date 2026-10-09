@@ -526,11 +526,11 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 4-server-routes | `resources/template.py` | `fastmcp/resources/template.go` | 272 | done |
 | 4-server-routes | `resources/types.py` | `fastmcp/resources/types.go` | 151 | done |
 | 4-server-routes | `server/__main__.py` | `fastmcp/server/__main__.go` | 10 | done |
-| 4-server-routes | `server/auth/auth.py` | `fastmcp/server/auth/auth.go` | 73 | done |
-| 4-server-routes | `server/auth/mcp_auth_config.py` | `fastmcp/server/auth/mcp_auth_config.go` | 107 | done |
-| 4-server-routes | `server/auth/providers/bearer.py` | `fastmcp/server/auth/providers/bearer.go` | 401 | done |
-| 4-server-routes | `server/auth/providers/in_memory.py` | `fastmcp/server/auth/providers/in_memory.go` | 327 | done |
-| 4-server-routes | `server/auth/providers/jwt_bearer.py` | `fastmcp/server/auth/providers/jwt_bearer.go` | 223 | done |
+| 4-server-routes | `server/auth/auth.py` | `fastmcp/server/auth/auth.go` | 73 | removed-unreachable (no file outside `fastmcp/server/auth` imports the package; the live MCP auth is `fastmcp/auth.ValidateTokenUniversal`, `unified_token_validator.go:33`) |
+| 4-server-routes | `server/auth/mcp_auth_config.py` | `fastmcp/server/auth/mcp_auth_config.go` | 107 | removed-unreachable (its three entry points had no caller; `MCP_AUTH_TYPE` was read nowhere else) |
+| 4-server-routes | `server/auth/providers/bearer.py` | `fastmcp/server/auth/providers/bearer.go` | 401 | removed-unreachable (nothing constructed `BearerAuthProvider`; its `LoadAccessToken` was an adapter branch no call site reached) |
+| 4-server-routes | `server/auth/providers/in_memory.py` | `fastmcp/server/auth/providers/in_memory.go` | 327 | removed-unreachable (nothing constructed `InMemoryOAuthProvider`) |
+| 4-server-routes | `server/auth/providers/jwt_bearer.py` | `fastmcp/server/auth/providers/jwt_bearer.go` | 223 | removed-unreachable (its only constructor call was in the deleted `mcp_auth_config.go`; `NewJWTBackendFunc` was never assigned) |
 | 4-server-routes | `server/cache/cache_invalidation_hooks.py` | `fastmcp/server/cache/cache_invalidation_hooks.go` | 297 | done |
 | 4-server-routes | `server/cache/redis_cache_decorator.py` | `fastmcp/server/cache/redis_cache_decorator.go` | 380 | done |
 | 4-server-routes | `server/connection_health_tool.py` | `fastmcp/server/connection_health_tool.go` | 258 | done |

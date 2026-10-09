@@ -70,9 +70,9 @@ func (f mcpContextFacadeFactory) CreateFacade(userID, projectID, gitBranchID *st
 // JWT_SECRET_KEY is REQUIRED here and is read from the environment by
 // facades.NewTokenApplicationFacade, which refuses an unset secret with the
 // shared auth.JWTSecretNotSetError (500, "Server configuration error: JWT
-// secret not set"). That is the SAME decision providers.NewJWTBearerAuthProvider
-// and the REST dependency chain make (they refuse without a secret), so every
-// component agrees that "unset" means "refuse" and names the variable the same way.
+// secret not set"). The REST dependency chain makes the SAME decision (it
+// refuses without a secret), so every component agrees that "unset" means
+// "refuse" and names the variable the same way.
 //
 // This factory used to invent a value first: when the variable was empty it ran
 // os.Setenv("JWT_SECRET_KEY", "default-jwt-secret-key-for-token-facade-32b")

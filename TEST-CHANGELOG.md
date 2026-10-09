@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the auth chain's tests go with the chain, because they were the only reader of what they tested
+
+- `agenthub_go/fastmcp/server/auth/auth_test.go`, `mcp_auth_config_test.go`, `providers/jwt_bearer_test.go` **DELETED with the package** they exercised (row `ecea11ab`). No case was weakened or rewritten: each asserted the behaviour of a symbol removed in the same commit, and `TestResolverRegistered`'s precedent applies — when the subject goes, its test goes rather than being re-pointed at nothing.
+- `agenthub_go/fastmcp/server/http_server_test.go` — the four `TestTokenVerifierAdapter*` cases and their four fakes (`fakeVerifier`, `fakeLoader`, `fakeExtractor`, `fakeExtractorEmpty`) **removed with `TokenVerifierAdapter`**; the file's `MCPHeaderValidationMiddleware` cases stay and pass unchanged, which is what shows the file was edited rather than emptied. The `context` and `mcp_integration` imports left with the fakes.
+- **SEEN GREEN IN THE SURVIVING PACKAGE, so the edit is not read as "the file was deleted":** `go test -count=1 ./fastmcp/server/` → **ok 0.008s**; the full suite `go test -count=1 ./...` → **142 packages ok, 0 FAIL**, against 144 before — the two deleted packages are the whole difference.
+- **The absence was proven by reference search BEFORE the deletion, not inferred from the green:** nothing outside `fastmcp/server/auth` imports it, `MCP_AUTH_TYPE` had three hits repo-wide (the dead read, its test, one doc sentence), and a string-keyed sweep over the non-Go file types found every hit inside gitignored `scratch/` and `logs/` — zero tracked files. Details in `CHANGELOG.md`.
+- Commands: `gofmt` from the **repository root** over **1267** tracked `.go` files → nothing of mine (two pre-existing non-Go findings stand); `go build ./...` → rc=0; `go vet ./...` → clean.
+- **NOT RUN:** no case replays the deleted adapter's three branches — the adapter is gone, so there is no behaviour left to pin, and re-asserting its branch order against new fakes would test nothing that exists.
+
 ## 2026-10-09 - two test-file comments named deleted scripts, and no test asserted either live string
 
 - `agenthub_go/internal/clientsync/lock_test.go:13` and `status_test.go:12` — **comments only, no assertion touched.** `lock_test.go`'s comment named `openrig_seat_sync.py` as the source of `read_lock`; `status_test.go`'s named `scripts/tests/test_openrig_seat_client.py` as the source of the party-spec case. Both now name the tracked files (`agenthub_client/src/agenthub_client/seat_sync.py`, `agenthub_client/tests/test_seat_client.py`), verified in the index before the edit, and the second keeps the move in the sentence rather than dropping it.
