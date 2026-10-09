@@ -2,6 +2,23 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the orphaned mapping module's test file goes with the module, and the absence is proven before the deletion
+
+- `agenthub_go/fastmcp/task_management/application/use_cases/agent_mappings_test.go` **DELETED with `agent_mappings.go`**, not separately: its two remaining cases (`TestResolveAgentName`, `TestIsDeprecatedAgent`) asserted the behaviour of the module's own functions and nothing else, so keeping them would have required the implementation they test to stay. `TestResolverRegistered` had already gone in `73f7b253`, which removed the seam they were registered into.
+- **Proven red-by-absence first:** the modules of a deleted file cannot fail, so the proof is the reference search rather than a run — `grep -rn --include=*.go -E 'ResolveAgentName|IsDeprecatedAgent|DeprecatedAgentMappings' agenthub_go` → **19 matching lines in exactly 2 files** (13 module, 6 test), and **zero** after the deletion. Every hit was accounted for; none was another file's reader.
+- Commands: `go build ./...` → exit 0; `go test -count=1 ./fastmcp/task_management/application/use_cases/` → **ok**; `go test -count=1 ./...` → **ok, every package**; `go vet ./...` → clean; `gofmt -l` over the tracked `.go` files → prints nothing.
+- **NOT RUN, and it cannot be:** no case replays the deleted functions' behaviour — there is no implementation left to exercise, and re-asserting a deleted table's values would be the re-pin the project rule forbids.
+
+
+- `agenthub_client/tests/test_team_setup.py` (new cases) — the guard for `ai_docs/agent-system/skill-library.json`, whose only former enforcer was `publish-skills`, a networked action. Both cases recompute **through `skill_library_modules()`** (`team_setup.py:709`) and copy no verification logic:
+  - `test_the_shipped_inventory_digests_match_the_committed_openrig_checkout` runs the real inventory against the real `OPENRIG_SKILLS_ROOT` checkout, then pins the two invariants a silent edit would break: `count == len(skills)`, and `len(modules) == count`.
+  - `test_the_inventory_guard_names_the_skill_and_both_digests` is the non-vacuity case. It perturbs one digest in a **copy** of the inventory under `tmp_path` — the shipped file is never touched — and requires the failure to name the skill, the RECORDED digest and the RECOMPUTED one. The pairing is the assertion: without both, a reader cannot tell which side moved.
+  - `_openrig_root_or_skip()` **skips loudly**, saying `SKIPPED, NOT PASSED` and naming `OPENRIG_SKILLS_ROOT`, the value it holds and how to enable the check. A case whose green is "skipped" is the same silence this guard exists to end, one level down.
+- **SEEN RED, and red on the shipped inventory's own schema:** a scratch `AGENTHUB_REPO_ROOT` carrying a copy of the inventory with `agent-browser`'s canonical digest replaced by 64 zeros made the guard fail, `exit 1`: `SetupError: skill 'agent-browser': /home/daihu/__projects__/openrig/skills/_canonical/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000000000000000000000000000000000000000000000000000000000000000; the inventory is stale - regenerate it before publishing`. Then restored: **green**, and the shipped inventory's sha256 was byte-identical before and after the demonstration (`a862c7d8…`).
+- **MEASURED GAP, reported rather than papered over:** the guard verifies the **primary** side of each row only. Perturbing the *mirror* digest of `messaging-the-human` (one of the two rows carrying both edges) left the guard **green** — `skill_library_modules()` records `mirror_sha256` but never reads the mirror's file, so those 2 sides are verified nowhere but the cloud `drift-check`. The fix belongs to `skill_library_modules()` as its own change; this test must not grow a second copy of the rule.
+- Commands: `OPENRIG_SKILLS_ROOT=/home/daihu/__projects__/openrig python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **52 passed**; the same command with the variable unset (`env -u OPENRIG_SKILLS_ROOT`) → **50 passed, 2 skipped**, and `-rs` shows the skip reason naming the variable.
+- **NOT RUN:** `4genteam team drift-check` against the published blocks — it needs `AGENTHUB_URL`/`AGENTHUB_TOKEN` (production), and it is the owner item, not this row.
+
 ## 2026-10-09 - the assignee response cases assert the STORED form, and the seam they existed for is gone
 
 - `agenthub_go/fastmcp/task_management/domain/entities/task.go` / `subtask.go` — `AgentNameResolver` deleted; `Task.ToDict` and `Subtask.ToDict` carry `Assignees` unchanged.

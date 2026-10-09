@@ -1,3 +1,14 @@
+## The module the assignee cutover orphaned is deleted: nothing left read the retired-agent mapping table, and only its own tests kept it green
+
+### Removed
+- **`agenthub_go/fastmcp/task_management/application/use_cases/agent_mappings.go` and `agent_mappings_test.go`** — the module's three exported symbols (`ResolveAgentName`, `IsDeprecatedAgent`, `DeprecatedAgentMappings`, 131 lines plus a 37-line test) became unreachable in **`73f7b253`**, which removed `entities.AgentNameResolver` **and the `init()` registration inside this very file**: that var was their only non-test reader, and `TestResolverRegistered` was its only other assert. Its last use was the assignee rewrite that commit deleted, so this file was the residue of a strip that no longer exists anywhere in the tree.
+- **The absence was proven BEFORE the deletion, not asserted after it:** `grep -rn --include=*.go -E 'ResolveAgentName|IsDeprecatedAgent|DeprecatedAgentMappings' agenthub_go` (excluding `.gocache`/`.gotmp`) → **19 matching lines in exactly 2 files**, 13 in the module and 6 in its own test, and **zero** in the tree once the two are gone. A repo-wide sweep over `.py/.ts/.tsx/.js/.json/.yaml/.yml/.sh/.md` outside `agenthub_go` returns only this changelog's own prose from `73f7b253` — a sentence, not a reader. Had a real reader turned up, the deletion would have stopped there and named it.
+- A kept-warm mapping table sitting in the retired-agent-library neighbourhood reads as live to the next seat: it is the module that *looks* like the authority on which agent names are current, which is exactly why leaving it was the worse risk.
+
+### Verified
+- `go build ./...` → **exit 0**; `go test -count=1 ./fastmcp/task_management/application/use_cases/` → **ok**; `go test -count=1 ./...` → **ok, every package**; `go vet ./...` → clean; `gofmt -l` over the tracked `.go` files → prints nothing.
+- **No package broke:** the deletion surfaced no build error, so there is no "package no longer builds" finding to report — which was the standing risk of removing an exported module from `use_cases`.
+
 ## The local-rules twins stop pointing at a root file that no longer exists, and the generator that restores them is corrected
 
 ### Changed
