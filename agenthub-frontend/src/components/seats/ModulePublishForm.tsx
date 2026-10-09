@@ -33,12 +33,19 @@ import { SEAT_MODULE_KINDS } from '../../types/seatTypes';
 import { parseMcpBlock } from '../../lib/mcpBlock';
 import type { ModuleSummary, SeatModuleKind } from '../../types/seatTypes';
 
+/**
+ * The block shape the form needs: its REAL slug, version and kind. Exported so the callers that
+ * hand a block in - a modules row and the composer's edit row - and the page's editing selection
+ * name ONE type rather than repeating this Pick in three places and drifting apart.
+ */
+export type EditableBlock = Pick<ModuleSummary, 'slug' | 'version' | 'kind'>;
+
 export interface ModulePublishFormProps {
   /**
    * A block to EDIT. Its REAL slug, version and kind are carried into the form, and its content is
    * loaded so the two refusals above can be decided. Absent or null creates a new module.
    */
-  block?: Pick<ModuleSummary, 'slug' | 'version' | 'kind'> | null;
+  block?: EditableBlock | null;
   /** After a successful publish, so a caller can drop its editing selection. */
   onPublished?: () => void;
   /** When the caller's editing selection should be dropped WITHOUT publishing. */

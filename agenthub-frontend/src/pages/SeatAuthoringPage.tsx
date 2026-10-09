@@ -19,7 +19,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select-simple';
-import { ModulePublishForm } from '../components/seats/ModulePublishForm';
+import { ModulePublishForm, type EditableBlock } from '../components/seats/ModulePublishForm';
 import { McpBlockForm } from '../components/seats/McpBlockForm';
 import { SeatComposer } from '../components/seats/SeatComposer';
 import { SeatPreview } from '../components/seats/SeatPreview';
@@ -36,7 +36,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
-import type { ModuleSummary, SeatOverlayOp, SeatOverlayScope } from '../types/seatTypes';
+import type { SeatOverlayOp, SeatOverlayScope } from '../types/seatTypes';
 
 export const SeatAuthoringPage: React.FC = () => {
   const navigate = useNavigate();
@@ -53,8 +53,13 @@ export const SeatAuthoringPage: React.FC = () => {
 
   const [room, setRoom] = useState('');
   const [seat, setSeat] = useState('');
-  /** The block the publish form below is editing: prefills it, and cleared once it is published. */
-  const [editingModule, setEditingModule] = useState<ModuleSummary | null>(null);
+  /**
+   * The block the publish form below is editing: it prefills the form, and is cleared once it is
+   * published. Narrowed to the three fields the form reads, so the SAME setter takes a Modules
+   * row's full `ModuleSummary` and a composer row's composed block - which carries those three and
+   * nothing else - with neither widened nor cast.
+   */
+  const [editingModule, setEditingModule] = useState<EditableBlock | null>(null);
   const roomSlug = rooms.some((entry) => entry.slug === room) ? room : rooms[0]?.slug ?? '';
   const { seats } = useSeats(roomSlug);
   const seatKey = seats.some((entry) => entry.seat_key === seat) ? seat : seats[0]?.seat_key ?? '';
@@ -140,6 +145,8 @@ export const SeatAuthoringPage: React.FC = () => {
           <p className="text-sm text-muted-foreground">This room has no seats yet.</p>
         ) : (
           <>
+            {/* ONE form and now TWO entry points: the Modules row above, and the composer's own
+                rows, which hand in the block AS COMPOSED at the level being viewed. */}
             <SeatComposer
               room={roomSlug}
               seat={seatKey}
@@ -150,6 +157,7 @@ export const SeatAuthoringPage: React.FC = () => {
               isSaving={updateOverlay.isPending}
               saveError={composerError}
               onApply={handleApply}
+              onEditBlock={setEditingModule}
             />
             {/* The SAME component the seat-detail page renders, given this page's own selection as
                 PROPS: /seats/authoring carries no :room/:seat, so a component that read the route

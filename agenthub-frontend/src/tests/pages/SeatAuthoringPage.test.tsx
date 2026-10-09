@@ -688,4 +688,27 @@ describe('SeatAuthoringPage module prefill', () => {
     expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
     expect(screen.getByRole('button', { name: /publish new version/i })).toBeInTheDocument();
   });
+
+  it('prefills the same form from a COMPOSER row, because a block is edited where it is seen in context', async () => {
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: {
+        slug: 'rules',
+        kind: 'instruction',
+        version: '1.0.0',
+        content: 'rules body\n',
+        checksum: 'sum',
+      },
+    });
+    renderPage();
+
+    // The composer's row, not the Modules row above: this is the second entry point, and the
+    // accessible name carries the version so the two are never confused for one another.
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit and publish block rules@1.0.0' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Module slug')).toHaveValue('rules'));
+    expect(screen.getByLabelText('Module version')).toHaveValue('1.0.0');
+    await waitFor(() => expect(screen.getByLabelText('Module content')).toHaveValue('rules body\n'));
+    expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
+  });
 });
