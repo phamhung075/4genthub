@@ -262,12 +262,31 @@ export interface MachineAgentStatus {
   pane_id: string;
 }
 
+/**
+ * One edge as the per-PC bridge reports it.
+ *
+ * The report names its endpoints by seat KEY (`from`/`to`), not by seat id, and carries no `allow`
+ * flag: it says what the rig is RUNNING, not what the cloud denies. It arrives on
+ * `POST /api/v2/openrig/seat-status` under `edges` (replaced whole on every report) and comes back
+ * on each machine from `GET /api/v2/openrig/machines`. It is OPTIONAL on the read because the
+ * machines route did not carry it before the server half shipped; absent and empty mean the same
+ * thing to every consumer here.
+ */
+export interface MachineEdge {
+  room: string;
+  from: string;
+  to: string;
+  kind: SeatLinkKind;
+}
+
 export interface MachineStatus {
   machine_id: string;
   last_seen: string;
   online: boolean;
   seats: MachineSeatStatus[];
   agents: MachineAgentStatus[];
+  /** The edges this machine's rig is running; see {@link MachineEdge}. */
+  edges?: MachineEdge[];
 }
 
 // =============================================================================

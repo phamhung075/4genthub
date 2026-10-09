@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the topology selection rule is pinned in both directions, and the source label has its own pin
+
+- `agenthub-frontend/src/tests/hooks/useTopology.test.tsx`: `fetchMachines` joins the mocked API surface and three cases pin the rule where it lives. A room WITH cloud links is drawn from them and the report's edge for that SAME room is ignored rather than added - the difference between a selection and a merge; a room WITHOUT them is drawn from the report, resolved from seat KEYS to seat ids through the fetched seats and carrying `allow: null`; an OFFLINE machine's edges are ignored entirely, because its last report is not the rig running now; and an edge naming a seat the room does not have is dropped while `edgeSource` stays `'report'`, because a machine IS reporting.
+- `agenthub-frontend/src/tests/pages/TopologyPage.test.tsx`: the existing case gains the cloud-label assertion, and a new case renders a report-sourced room and pins BOTH the label and the DOM marker - one `line[data-link-kind="delegates_to"]` carrying `data-link-allow="unreported"`, so a report edge can never be silently handed an allow flag the report never sent.
+- No existing test was weakened: the hook test's `links` assertions moved to `edges` with the field they name, and the page fixture gained `edges`/`edgeSource` in the same commit the page gained them.
+- Commands and results, all run with only this change's six paths dirty and the dirty set measured in the same command: `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vitest run` -> exit 0, **112 files, 1776 tests passed**; `npx vite build` -> exit 0 in 23.89s.
+
 ## 2026-10-09 - the golden registry's `manage_agent` description follows the served text, and both pins were seen failing on a one-sided change
 
 - `agenthub_go/fastmcp/task_management/interface/testdata/tools_golden.json:635`: the `manage_agent` description's first line moved with the served text (`manage_agent_description.go:9`) - `Registration & assignment: 33 specialized agents (…)` out, `Registration, assignment and lifecycle of project agents` in. **The fixture IS the pin, so both sides had to move in one commit:** `TestToolDefinitionsMatchPythonToolRegistry` (`ddd_compliant_mcp_tools_test.go:86`, `d.Description != want.Description`) and `TestMCPToolsListMatchesGolden` (`mcp_routes_test.go:119`, the served `tools/list` body under `reflect.DeepEqual`).

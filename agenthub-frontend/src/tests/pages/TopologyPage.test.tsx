@@ -42,7 +42,14 @@ const link: SeatLink = {
 };
 
 const topology: RoomTopology[] = [
-  { room: { id: 'room-dev', slug: 'dev', name: 'Dev Room' }, seats: [seat('a', 'alice'), seat('b', 'bob')], links: [link] },
+  {
+    room: { id: 'room-dev', slug: 'dev', name: 'Dev Room' },
+    seats: [seat('a', 'alice'), seat('b', 'bob')],
+    edges: [
+      { id: link.id, from_seat_id: link.from_seat_id, to_seat_id: link.to_seat_id, kind: link.kind, allow: link.allow },
+    ],
+    edgeSource: 'cloud',
+  },
 ];
 
 describe('TopologyPage', () => {
@@ -67,6 +74,44 @@ describe('TopologyPage', () => {
     // The legend names every kind so a colour on the canvas is readable.
     expect(screen.getByText('Gives work to')).toBeInTheDocument();
     expect(screen.getByText('Escalates to')).toBeInTheDocument();
+
+    // Which source drew this room is stated, never implied: nothing here comes from the report.
+    expect(screen.getByText('Edges from cloud links')).toBeInTheDocument();
+  });
+
+  // The rule the owner asked for: a room the cloud leaves edgeless is drawn from the machine report,
+  // the page SAYS so, and a report edge is not given an allow flag the report never sent.
+  it('says a room was drawn from the machine report, and marks a report edge unreported', () => {
+    useTopologyMock.mockReturnValue({
+      rooms: [
+        {
+          room: { id: 'room-min', slug: '4genthub-min', name: 'Rig Room' },
+          seats: [seat('x', 'lead'), seat('y', 'go-dev')],
+          edges: [
+            {
+              id: 'report:4genthub-min:lead:go-dev:delegates_to:0',
+              from_seat_id: 'x',
+              to_seat_id: 'y',
+              kind: 'delegates_to',
+              allow: null,
+            },
+          ],
+          edgeSource: 'report',
+        },
+      ],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    render(<TopologyPage />);
+
+    expect(screen.getByText('Edges from the machine report')).toBeInTheDocument();
+
+    const edges = document.querySelectorAll('line[data-link-kind]');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].getAttribute('data-link-kind')).toBe('delegates_to');
+    expect(edges[0].getAttribute('data-link-allow')).toBe('unreported');
   });
 
   it('shows every seat in the seats table with its type, runtime and policy', async () => {
