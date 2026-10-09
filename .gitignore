@@ -36,7 +36,6 @@
 .claude/data/sessions/
 .claude/data/*.json
 .claude/runtime_agent_context.json
-agenthub_main/.claude/
 
 # Hook-generated files and caches
 .claude/hooks/__pycache__/
@@ -118,7 +117,6 @@ lerna-debug.log*
 dev-*.pid
 
 # Application logs (may contain sensitive data)
-agenthub_main/logs/
 **/*.log.*
 
 # =============================================================================
