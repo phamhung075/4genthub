@@ -64,6 +64,17 @@ export const SeatPreview: React.FC<SeatPreviewProps> = ({ room, seat }) => {
               Copy pull command
             </Button>
           </div>
+          {/* WHAT IS TRUE TODAY, and it is measured rather than promised: delivery is the MANUAL pull
+              above, so the files reach the machine when they are pulled and the seat relaunches,
+              and a session already running keeps what it loaded. The renderer DOES describe startup
+              delivery (its YAML carries startupFileYAML{DeliveryHint}), but NO client reads that yet
+              - a search for delivery_hint / startup_files finds nothing under agenthub_client or
+              scripts - so this sentence must not promise it. WHEN THAT READER LANDS this sentence
+              changes with it, rather than ageing into a claim the tree cannot back. */}
+          <p className="text-xs text-muted-foreground">
+            A running session keeps what it loaded; the files reach the machine when they are pulled
+            and the seat relaunches.
+          </p>
           {isLoading && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading snapshot...
