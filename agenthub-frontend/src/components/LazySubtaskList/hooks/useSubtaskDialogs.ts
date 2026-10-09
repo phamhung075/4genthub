@@ -45,12 +45,24 @@ export function useSubtaskDialogs(
   // Track if we're in the middle of closing to prevent race conditions
   const isClosingRef = useRef(false);
 
+  // The deferred writes a close schedules. They are cancellable because a newer open must supersede
+  // them: otherwise a dialog opened inside the close's 50ms window is wiped by the earlier close.
+  const pendingCloseTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  const clearPendingClose = useCallback(() => {
+    pendingCloseTimersRef.current.forEach(clearTimeout);
+    pendingCloseTimersRef.current = [];
+  }, []);
+
   /**
    * Handle subtask dialog close - navigate back to branch URL
    * Uses navigation timing to prevent race condition with useEffect
    */
   const handleSubtaskDialogClose = useCallback(() => {
     logger.debug('Starting dialog close process');
+
+    // This close supersedes any earlier one's deferred writes.
+    clearPendingClose();
 
     // Set closing flag to prevent useEffect from reopening
     isClosingRef.current = true;
@@ -60,7 +72,7 @@ export function useSubtaskDialogs(
     navigate(branchUrl);
 
     // Use setTimeout to allow navigation to complete before clearing state
-    setTimeout(() => {
+    const clearStateTimer = setTimeout(() => {
       // Close the details dialog
       setDetailsDialog({ open: false, subtask: null });
 
@@ -68,14 +80,16 @@ export function useSubtaskDialogs(
       setActiveDialog({ type: null });
 
       // Reset closing flag after state updates complete
-      setTimeout(() => {
+      const resetGuardTimer = setTimeout(() => {
         isClosingRef.current = false;
         logger.debug('Dialog close complete, reopening protection reset');
       }, 100);
+      pendingCloseTimersRef.current = [resetGuardTimer];
     }, 50);
+    pendingCloseTimersRef.current = [clearStateTimer];
 
     logger.debug('Navigated to branch URL:', branchUrl);
-  }, [navigate, projectId, taskTreeId]);
+  }, [navigate, projectId, taskTreeId, clearPendingClose]);
 
   /**
    * Handle opening create subtask dialog
@@ -89,6 +103,11 @@ export function useSubtaskDialogs(
    * Open details dialog for a subtask
    */
   const openDetailsDialog = useCallback((subtask: Subtask) => {
+    // Opening supersedes a close still in flight: cancel its deferred writes and lift the guard, or a
+    // dialog opened inside the close's 50ms window is wiped by the close that preceded it.
+    clearPendingClose();
+    isClosingRef.current = false;
+
     logger.debug('Opening details dialog for subtask:', subtask.id);
 
     setDetailsDialog({
@@ -104,7 +123,7 @@ export function useSubtaskDialogs(
 
     // Navigate to subtask URL
     navigate(`/dashboard/project/${projectId}/branch/${taskTreeId}/subtask/${subtask.id}`);
-  }, [navigate, projectId, taskTreeId]);
+  }, [navigate, projectId, taskTreeId, clearPendingClose]);
 
   /**
    * Open edit dialog for a subtask

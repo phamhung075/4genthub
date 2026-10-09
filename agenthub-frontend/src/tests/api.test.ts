@@ -33,6 +33,7 @@ import {
     updateTaskContext,
 } from '../api';
 import { seatApi } from '../services/seatApi';
+import * as apiV2 from '../services/apiV2';
 
 vi.mock('../services/seatApi', () => ({
   seatApi: { listRooms: vi.fn(), listSeats: vi.fn() },
@@ -81,7 +82,11 @@ vi.mock('../services/apiV2', () => ({
   isAuthenticated: vi.fn(),
 }));
 
-// Get mocked services for direct access in tests
+// Get mocked services for direct access in tests.
+// `deep: true` matters: the factory above replaces every METHOD with vi.fn(), and
+// vi.mocked's default is shallow - it mocks only top-level functions, so a namespace
+// keeps the real module's function types and `<api>.<method>.mockResolvedValue(...)`
+// is a TS2339. The deep form is the accurate type and changes nothing at runtime.
 const {
   taskApiV2,
   subtaskApiV2,
@@ -89,7 +94,7 @@ const {
   branchApiV2,
   contextApiV2,
   connectionApiV2,
-} = vi.mocked(await import('../services/apiV2'));
+} = vi.mocked(apiV2, { deep: true });
 
 describe('API V2 Module', () => {
   beforeEach(() => {

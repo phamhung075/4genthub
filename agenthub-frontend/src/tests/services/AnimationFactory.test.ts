@@ -154,7 +154,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'create');
 
       // Clear mock calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Wait past the 100ms cooldown so the second animation is not blocked
       vi.advanceTimersByTime(150);
@@ -179,7 +179,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'create');
 
       // applyAnimation removes all entity classes up front; ignore those calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Fast forward to just before cleanup time
       vi.advanceTimersByTime(799);
@@ -194,7 +194,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'delete');
 
       // applyAnimation removes all entity classes up front; ignore those calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Fast forward to just before cleanup time
       vi.advanceTimersByTime(799);
@@ -209,7 +209,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'update');
 
       // applyAnimation removes all entity classes up front; ignore those calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Fast forward to just before cleanup time
       vi.advanceTimersByTime(1699);
@@ -224,7 +224,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'complete');
 
       // applyAnimation removes all entity classes up front; ignore those calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Fast forward to just before cleanup time
       vi.advanceTimersByTime(1699);
@@ -347,7 +347,7 @@ describe('AnimationFactory', () => {
       animationFactory.animate('test-task', 'create');
 
       // applyAnimation removes all entity classes up front; ignore those calls
-      mockElement.classList.remove.mockClear();
+      vi.mocked(mockElement.classList.remove).mockClear();
 
       // Fast forward to cleanup time
       vi.advanceTimersByTime(800);

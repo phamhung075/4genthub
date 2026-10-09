@@ -1,0 +1,19 @@
+// The TEST-INCLUSIVE type gate.
+//
+// The base tsconfig.json EXCLUDES the whole test tree (src/tests, *.test.*, *.spec.*),
+// so `tsc -p .` cannot see a single test file, and until this config was added nothing
+// in CI ran tsc at all. That made the test tree's type errors invisible AND unmetered.
+//
+// This config re-includes the test tree and types vitest's globals, so the errors are
+// real rather than an untyped-dialect artifact. It is a MEASUREMENT and a ratchet, not
+// a passing gate yet: the population is pre-existing and is being retired by class.
+//
+// Run it:  npx tsc -p tsconfig.tests.json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["node_modules"]
+}
