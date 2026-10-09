@@ -481,10 +481,11 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
 
     // FIELD FOR FIELD the frame agenthub_go's BroadcastDataChange builds for a task update
     // (fastmcp/server/routes/websocket_routes.go): version 2.0, type 'update', payload.entity
-    // 'task', payload.data.primary = the task dict. metadata.source is 'user' because 'updated'
-    // is in that function's userTriggered set, and metadata.userId is the literal 'system' the
-    // facade stamps - the value the delivery gate then refuses for every real connection.
-    const updateFrame = (status: string): WSMessage =>
+    // 'task', payload.data.primary = the task dict, metadata.source 'user' (because 'updated'
+    // is in that function's userTriggered set). metadata.userId is the ACTING USER - it used to
+    // be the literal 'system', which is what the delivery gate refused for every connection
+    // before 62e76c3e. The client never reads this value, and the case below pins that.
+    const updateFrame = (status: string, userId = 'u-actor'): WSMessage =>
       ({
         id: 'broadcast-task-424242',
         version: '2.0',
@@ -498,7 +499,7 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
         },
         metadata: {
           source: 'user',
-          userId: 'system',
+          userId,
           entity_type: 'task',
           entity_id: TASK_ID,
           event_type: 'updated',
@@ -566,6 +567,31 @@ describe('useRealtimeSync - Task Handler with Type Guards', () => {
       expect(fetches[fetches.length - 1]).toBe('in_progress');
 
       invalidateSpy.mockRestore();
+    });
+
+    it('caches the frame whatever the userId stamp is, so the client is not a second gate', async () => {
+      // Delivery is the only place allowed to refuse a frame by its userId stamp (the Go gate
+      // does, deliberately, for 'system'). If the client also keyed on it, go-dev's choice of
+      // stamp would silently change client behavior, and the stale-'system' shape below would
+      // be dropped here as well as there.
+      const wrapper = createWrapper();
+      queryClient.setQueryData(['task', TASK_ID, false], taskAt('todo'));
+
+      const mockWebSocketClient = {
+        on: vi.fn((event: string, handler: (msg: WSMessage) => void) => {
+          if (event === 'update') {
+            setTimeout(() => handler(updateFrame('in_progress', 'system')), 10);
+          }
+        }),
+        off: vi.fn(),
+      };
+      renderHook(() => useRealtimeSync(mockWebSocketClient, true), { wrapper });
+
+      await waitFor(
+        () =>
+          expect(queryClient.getQueryData<Task>(['task', TASK_ID, false])?.status).toBe('in_progress'),
+        { timeout: 2000 }
+      );
     });
   });
 });
