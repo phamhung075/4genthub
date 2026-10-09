@@ -2,12 +2,12 @@
 DATABASE agenthub | rolname = 'agenthub_user'
 
 ## About This File
-This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It is NOT checked into version control and complements the main `CLAUDE.md` file.
+This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It IS tracked in this repository (`git ls-files` lists it; `git check-ignore` does not ignore it) and complements the main `CLAUDE.md` file.
 
 | File | Purpose | Version Control |
 |------|---------|----------------|
 | **CLAUDE.md** | Main AI agent instructions (shared across team) | ✅ Checked in |
-| **CLAUDE.local.md** | Local environment rules and overrides | ❌ NOT checked in |
+| **CLAUDE.local.md** | Local environment rules and overrides | ✅ Tracked in this repository |
 
 **Quick Dev Commands:**
 - Restart after code change: `echo "R" | ./docker-system/docker-menu.sh`
@@ -157,7 +157,7 @@ GLOBAL (per-user) → PROJECT → BRANCH → TASK
 | **Database** | PostgreSQL (dev), SQLite fallback | Path: `/data/agenthub.db` (Docker volume) |
 | **Auth** | Keycloak + JWT tokens | Source of truth for user identity |
 | **Container** | Docker + docker-compose | PostgreSQL Local (recommended for dev) |
-| **MCP** | 15+ tool categories | 32 specialized agents |
+| **MCP** | 15+ tool categories | project agents registered, assigned and rebalanced via `manage_agent` |
 
 ### Local URLs & Paths
 - **Backend**: http://localhost:8000
@@ -405,7 +405,6 @@ python scripts/generate_schema_sql.py
 **Other Resources**:
 - **Comprehensive Rules**: See CLAUDE.md for complete agent switching, MCP tasks, and delegation models
 - **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
-- **Agent Library**: 32 specialized agents documented in CLAUDE.md
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
 ---
 
