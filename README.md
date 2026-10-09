@@ -134,17 +134,19 @@ graph TD
 
 **OpenRig is the client and runtime; 4genthub is the cloud data for orchestration.** The installed `rig` CLI launches and supervises seats on your machine; this service stores the state they report and serves the configuration they pull. **The client initiates every exchange — the server never reaches into a user's machine.**
 
-Three client-side scripts carry the traffic. Each holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
+The **`4genteam` client** carries the traffic. It is a package in this repository (`agenthub_client/`), installed as the `4genteam` command (`agenthub_client/pyproject.toml:13`), which dispatches one module per verb (`agenthub_client/src/agenthub_client/cli.py:259-275`). Each module holds `AGENTHUB_TOKEN` (never a value in this repository) and talks to this API:
 
-| Script | What it does |
-|---|---|
-| `scripts/openrig_seat_sync.py` | **Pulls** a room's resolved seats and lays each one out on disk for OpenRig from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
-| `scripts/openrig_bridge.py` | **Pushes observations up**: OpenRig seat status and herdr agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
-| `scripts/openrig_team_setup.py` | **Applies** a team definition (modules, room, seats, links, overlays) through the same publish path the UI uses; `apply` is idempotent. |
+| Command | Module | What it does |
+|---|---|---|
+| `4genteam sync` | `seat_sync.py` | **Pulls** a room's resolved seats and lays each one out on disk for OpenRig from an immutable snapshot — `<out>/<room>/<seat>/<hash>/…` plus `policy.json` and `pinned.json`. A pull is pinned by default; `--update` adopts a newer snapshot. |
+| `4genteam bridge` | `bridge.py` | **Pushes observations up**: OpenRig seat status and herdr agent status, built from an allow-list, enums clamped to `unknown`, free text scrubbed. Status goes up only — it never receives commands and never reads terminal content. |
+| `4genteam team` | `team_setup.py` | **Applies** a team definition (modules, room, seats, links, overlays) through the same publish path the UI uses; `apply` is idempotent. |
+
+The client also carries `4genteam policy`, `seat`, `feedback`, `watch` and `compact`; `4genteam --help` prints the surface. **The scripts that used to carry this traffic were retired on 2026-10-09**: the eight `scripts/openrig_*.py` modules, `scripts/seat_feedback.sh`, the four `scripts/deployment` files, `.github/workflows/production-deployment.yml`, the ten `scripts/team/4genthub-min/guide-*.md` copies and the nine `scripts/tests/test_openrig_*.py` were deleted in `1c7b6631`, and `agenthub_client/` is their home.
 
 The seat model itself — rooms, seats, seat types, modules, overlays, links — is documented **once**, in `agenthub_go/NEXT_GEN.md` under "How the project and its seats work together", with the HTTP and MCP surface in `ai_docs/api-integration/surface-inventory.md`. **It is not repeated here.**
 
-**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and `scripts/seat_feedback.sh` for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
+**Seats can also report friction back.** The same channel has three doors onto one writer: the MCP tool `submit_feedback`, the HTTP routes `POST`/`GET /api/v2/openrig/feedback`, and the `4genteam feedback` verb, which runs the packaged `agenthub_client/src/agenthub_client/seat_feedback.sh` (`agenthub_client/src/agenthub_client/cli.py:196,199-209`), for runtimes without MCP. A report carries the **layer** it belongs to (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`), the room and seat, and what happened; the credential scan runs before storage, and the dashboard groups reports by layer so a theme several seats hit reads as one theme rather than as several notes.
 
 ## 🤖 **Agent Registry & Seat Model**
 
@@ -537,7 +539,7 @@ Track all changes, releases, and improvements to the agenthub platform through o
 | 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Measured 2026-10-06 (pass 3): production answers `healthy` with `"version":"0.0.22"` AND `origin/main` still declares `0.0.22`, while THE TREE'S RELEASE LITERAL HAS MOVED TO `0.0.23`** — the value lives in `agenthub_go/fastmcp/config/version.go:21` and is read by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so **the deployed and the prepared state now DIFFER and the tree sits 44 commits above the deployed tip** (packet 4, `fcd4c268`; the previous deploy was `0.0.21` at packet 3, `0018c644`). **Pass 2's sentence "the first deploy where the two agree" was true when it was written and is false now; it is corrected here rather than quietly dropped, because a row that says two versions agree is itself a claim that drifts.** The newest *released* section of the changelog is **`0.0.5` (2025-09-26)** — a separate numbering scheme — so this row carries the deploy marker and links the release history; the dated reads of both halves live in the packet-4 deploy record rather than here, where a bundle name would go stale. | [CHANGELOG.md](CHANGELOG.md) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Measured 2026-10-09: `origin/main` declares `0.0.27` (`07a66f8f`) and THE TREE'S RELEASE LITERAL READS `0.0.28`; production's own read still stands at `"version":"0.0.22"` from 2026-10-06 and was NOT re-read by this pass** — the value lives in `agenthub_go/fastmcp/config/version.go:21` and is read by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so **the deployed and the prepared state now DIFFER and the tree sits 44 commits above the deployed tip** (packet 4, `fcd4c268`; the previous deploy was `0.0.21` at packet 3, `0018c644`). **Pass 2's sentence "the first deploy where the two agree" was true when it was written and is false now; it is corrected here rather than quietly dropped, because a row that says two versions agree is itself a claim that drifts.** The newest *released* section of the changelog is **`0.0.5` (2025-09-26)** — a separate numbering scheme — so this row carries the deploy marker and links the release history; the dated reads of both halves live in the packet-4 deploy record rather than here, where a bundle name would go stale. | [CHANGELOG.md](CHANGELOG.md) |
 
 ### 🚀 **Latest Releases**
 
@@ -660,6 +662,6 @@ git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.
 
 <div align="center">
 
-**agenthub** • deployed marker **0.0.22** (production `GET /health` and `origin/main`, measured 2026-10-06) • tree release literal **0.0.23** (prepared, not pushed) • **Built with ❤️ for Human-AI Collaboration**
+**agenthub** • production `GET /health` last read **0.0.22** (measured 2026-10-06) • `origin/main` (`07a66f8f`) declares **0.0.27** and the tree's release literal reads **0.0.28** (both re-measured 2026-10-09 at `agenthub_go/fastmcp/config/version.go:21`) • **Built with ❤️ for Human-AI Collaboration**
 
 </div>
