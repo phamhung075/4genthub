@@ -18,10 +18,13 @@ back in the worktree (the framework restored it), or it is in HEAD (this commit 
 holds - and then the capture is the only copy, which the wrapper says LOUDLY with the exact command that
 puts it back (`git apply <patch>`), exiting 3.
 
-RETENTION. A run directory is swept only when it is BOTH older than `--keep-days` (default 7) and holds
-nothing at risk, as recorded by its own verification in `MANIFEST.txt`. A capture that holds the only
-copy of anything is never removed; `--list` names it instead. This mirrors the scan's rule in
-`stash_patch_scan.py`: never prune what might be the only copy.
+RETENTION. A run directory is swept only when it is BOTH older than `--keep-days` (default 7) AND every
+verdict its own manifest records PROVES nothing is at risk - every path either `landed` or `restored`. The
+rule requires proof, not the absence of the word `at-risk`: an `unverified` run (the wrapper died inside
+the window, before `verify` could write anything, which is exactly the case this tool exists for), a run
+with no readable manifest, and any verdict this file does not recognise all KEEP their capture. A capture
+that might hold the only copy is never removed; `--list` names what it keeps and why. This mirrors the
+scan's rule in `stash_patch_scan.py`: never prune what might be the only copy.
 
 LIMIT, STATED SO IT IS NOT MISTAKEN FOR COVERAGE. The framework never touches UNTRACKED files, so the
 window cannot lose them either; they are not captured here because capturing their contents on every
@@ -72,8 +75,17 @@ def parked_root(repo: Path) -> Path:
 
 
 def run_label() -> str:
-    seat = os.environ.get(SEAT_ENV) or f"pid{os.getpid()}"
-    return f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-{re.sub(r'[^A-Za-z0-9._@-]', '_', seat)}"
+    """Stamp + seat + pid: without the pid, two runs by one seat in the same SECOND share a run directory.
+
+    They would then overwrite each other's patches (same `NN-<name>.patch` slugs) and manifests, and a
+    second run with nothing to park would `rmtree` the first run's capture - a silent-loss path inside the
+    module whose whole purpose is that nothing is lost.
+    """
+    seat = os.environ.get(SEAT_ENV) or "seat"
+    return (
+        f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}"
+        f"-{re.sub(r'[^A-Za-z0-9._@-]', '_', seat)}-{os.getpid()}"
+    )
 
 
 def slug(index: int, path: str) -> str:
@@ -191,6 +203,26 @@ def manifest_verdicts(run_dir: Path) -> list[str]:
     return re.findall(r"verdict=(\S+)", manifest.read_text(encoding="utf-8"))
 
 
+SAFE_VERDICTS = frozenset({"landed", "restored"})
+
+
+def retention_of(run_dir: Path) -> tuple[bool, str]:
+    """Keep unless EVERY recorded verdict is PROVEN safe: proof, never the absence of a word.
+
+    An `unverified` manifest is the mid-window-death case this tool exists for - the wrapper died before
+    `verify` could write anything, so nothing recorded that the capture is safe to drop. A manifest that
+    cannot be read records nothing either, and a verdict this file does not recognise is not proof. All
+    three KEEP the capture; only a run whose every path is `landed` or `restored` may be swept.
+    """
+    verdicts = manifest_verdicts(run_dir)
+    if not verdicts:
+        return True, "no verdict it can read: its verification never recorded anything"
+    unsafe = sorted({v for v in verdicts if v not in SAFE_VERDICTS})
+    if unsafe:
+        return True, f"unproven verdict(s): {', '.join(unsafe)}"
+    return False, "every path verified landed or restored"
+
+
 def list_runs(parked: Path) -> int:
     runs = stored_runs(parked)
     if not runs:
@@ -201,7 +233,13 @@ def list_runs(parked: Path) -> int:
         patches = sorted(run_dir.glob("*.patch"))
         at_risk = verdicts.count("at-risk")
         age_days = (time.time() - run_dir.stat().st_mtime) / 86400
-        mark = "AT RISK" if at_risk else "safe to sweep once old"
+        keep, why = retention_of(run_dir)
+        if at_risk:
+            mark = f"AT RISK ({at_risk}) - never swept, the capture is the only copy"
+        elif keep:
+            mark = f"KEEP - {why}"
+        else:
+            mark = "safe to sweep once old (every path verified landed or restored)"
         print(f"{run_dir.name}  patches {len(patches):>3}  age {age_days:>6.1f}d  {mark}")
         for patch in patches:
             print(f"    {patch.name}")
@@ -209,15 +247,16 @@ def list_runs(parked: Path) -> int:
 
 
 def sweep(parked: Path, keep_days: float) -> int:
-    """Retention: an old run goes only when its own verification recorded nothing at risk."""
+    """Retention: an old run goes only when EVERY recorded verdict proves nothing is at risk."""
     removed = kept = 0
     for run_dir in stored_runs(parked):
         age_days = (time.time() - run_dir.stat().st_mtime) / 86400
         if age_days < keep_days:
             kept += 1
             continue
-        if "at-risk" in manifest_verdicts(run_dir):
-            print(f"kept {run_dir.name}: it holds the only copy of something")
+        hold, why = retention_of(run_dir)
+        if hold:
+            print(f"kept {run_dir.name}: {why}")
             kept += 1
             continue
         shutil.rmtree(run_dir)
@@ -273,7 +312,8 @@ def main(argv: list[str] | None = None) -> int:
     if proc.returncode != 0:
         print(f"git commit exited {proc.returncode}", file=sys.stderr)
     # The report runs whatever the commit did: a commit that died is exactly when the verdict matters.
-    code = report(run_dir, rows, verdicts) if rows else 0
+    # It runs with no rows too, so a seat that expected a capture learns it had none instead of silence.
+    code = report(run_dir, rows, verdicts)
     return code if code else proc.returncode
 
 

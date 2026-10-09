@@ -142,3 +142,101 @@ def test_the_sweep_keeps_a_run_that_holds_the_only_copy(tmp_path: Path) -> None:
     assert sorted(p.name for p in parked.glob("*")) == [
         "20260101T000000Z-risky"
     ], "the risky capture is never swept, however old it is"
+
+
+def _seed_run(parked: Path, name: str, verdict: str | None, age_days: float = 30.0) -> Path:
+    """A capture of the given age: a patch, a manifest carrying one verdict, or NO manifest at all."""
+    run_dir = parked / name
+    run_dir.mkdir()
+    (run_dir / "01-f.txt.patch").write_text("diff --git a/f.txt b/f.txt\n", encoding="utf-8")
+    if verdict is not None:
+        (run_dir / "MANIFEST.txt").write_text(
+            f"run {name}\nf.txt bytes=1 sha1=x patch=01-f.txt.patch verdict={verdict}\n", encoding="utf-8"
+        )
+    old = time.time() - age_days * 86400
+    os.utime(run_dir, (old, old))
+    return run_dir
+
+
+def test_an_unverified_capture_survives_the_sweep_and_is_never_called_safe(tmp_path: Path, capsys) -> None:
+    """THE MAJOR. The manifest written BEFORE the commit says `unverified`, and a wrapper killed with the
+    seat (the 2026-10-08 case) never reaches the second write. That capture IS the mid-window-death case
+    this tool exists for, so retention must KEEP it - the rule needs proof, and "nothing was recorded" is
+    not proof. The landed run beside it is the control: it is swept, so the rule still prunes.
+    """
+    module = _module()
+    repo = _repo(tmp_path)
+    parked = _parked(repo)
+    parked.mkdir(parents=True, exist_ok=True)
+    _seed_run(parked, "20260101T000000Z-killed", "unverified")
+    _seed_run(parked, "20260101T000000Z-gone", "landed")
+
+    assert module.main(["--repo", str(repo), "--list"]) == 0
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if "-killed" in ln]
+    assert len(lines) == 1, "the run must be listed once"
+    assert "KEEP" in lines[0], f"an unverified capture must be marked kept, not safe: {lines[0]}"
+    assert "safe to sweep" not in lines[0], lines[0]
+
+    assert module.main(["--repo", str(repo), "--sweep", "--keep-days", "7"]) == 0
+
+    survivors = sorted(p.name for p in parked.glob("*"))
+    assert survivors == ["20260101T000000Z-killed"], (
+        f"the unverified capture must survive the sweep and only the proven-safe one may go: {survivors}"
+    )
+
+
+def test_a_capture_with_no_readable_manifest_survives_the_sweep(tmp_path: Path) -> None:
+    """A torn run - the directory exists, the manifest never landed. Nothing recorded anything, so the
+    retention rule has no proof to act on and must keep the patches rather than read silence as safety."""
+    module = _module()
+    repo = _repo(tmp_path)
+    parked = _parked(repo)
+    parked.mkdir(parents=True, exist_ok=True)
+    _seed_run(parked, "20260101T000000Z-torn", None)
+
+    assert module.main(["--repo", str(repo), "--sweep", "--keep-days", "7"]) == 0
+
+    assert sorted(p.name for p in parked.glob("*")) == ["20260101T000000Z-torn"], "silence is not proof"
+
+
+def test_a_clean_tree_says_nothing_was_parked_instead_of_going_silent(tmp_path: Path, capsys) -> None:
+    """The no-op path used to be SILENT: report()'s no-rows branch was unreachable code. A seat that
+    expected a capture has to hear that the worktree held no unstaged change before the commit, and the
+    wrapper must still hand back git's own return code."""
+    module = _module()
+    repo = _repo(tmp_path)
+    module.COMMIT_COMMAND = ["git", "commit"]
+    _git(repo, "checkout", "--", "f.txt")  # a clean tree: nothing for the capture to park
+
+    rc = module.main(["--repo", str(repo), "--", "-m", "nothing to park"])
+
+    assert "nothing was parked" in capsys.readouterr().out, "the no-op path must speak"
+    assert rc == 1, "git's own non-zero survives the wrapper untouched"
+    assert list(_parked(repo).glob("*")) == [], "a run with no patch leaves no directory behind"
+
+
+def test_two_runs_in_the_same_second_do_not_share_a_run_directory(tmp_path: Path, monkeypatch) -> None:
+    """The label was second-granular, so two runs by one seat in the same second shared a run directory:
+    the second overwrote the first's `NN-<name>.patch` files and manifest, and a no-rows second run
+    `rmtree`d the first capture - a silent-loss path inside the module built so nothing is lost."""
+    module = _module()
+
+    class _AtAPid:
+        environ = os.environ
+
+        def __init__(self, pid: int) -> None:
+            self._pid = pid
+
+        def getpid(self) -> int:
+            return self._pid
+
+    monkeypatch.setattr(module.time, "strftime", lambda *a, **k: "20260101T000000Z")
+    monkeypatch.setenv(module.SEAT_ENV, "go-dev")
+
+    monkeypatch.setattr(module, "os", _AtAPid(1111))
+    first = module.run_label()
+    monkeypatch.setattr(module, "os", _AtAPid(2222))
+    second = module.run_label()
+
+    assert first != second, f"one second is not enough to tell two runs apart: {first}"
+    assert first.endswith("1111") and second.endswith("2222"), (first, second)

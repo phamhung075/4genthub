@@ -1,3 +1,17 @@
+## The commit wrapper keeps a capture it cannot prove is safe to drop
+
+### Fixed
+- `scripts/git-hooks/git_commit_capture.py` — **`--sweep` removed an `unverified` capture** (the reviewer's MAJOR, §5 of `GATE-2c3a88fc-commit-capture-2026-10-09.md`). The manifest is written BEFORE the commit and records `verdict=unverified` for every path; the second write, with real verdicts, happens after it. A wrapper **killed with the seat** — the 2026-10-08 case, and exactly the mid-window-death case this module exists for — never reaches that second write, so its capture stayed `unverified`; the sweep tested `"at-risk" in verdicts`, found nothing, and after `--keep-days` deleted the only **findable** copy, while `--list` called it *safe to sweep once old*. The rule is now **proof, not the absence of a word**: an old run goes only when EVERY verdict its manifest records is `landed` or `restored`. `unverified`, a missing or unreadable manifest, and any verdict this file does not recognise all KEEP the capture.
+- `--list` no longer marks such a run safe: it prints `KEEP - unproven verdict(s): unverified` or `KEEP - no verdict it can read`, and it keeps the `AT RISK (n) - never swept, the capture is the only copy` line for the case that already worked.
+- The no-op path spoke to nobody: `report()`'s `if not rows` branch was **unreachable** because its only caller was guarded by `if rows`. It runs unconditionally now, so a seat that expected a capture learns the worktree held no unstaged change before the commit instead of hearing silence.
+- `run_label()` was second-granular, so two runs by one seat in the same second shared a run directory: the second overwrote the first's `NN-<name>.patch` files and its manifest, and a second run with nothing to park removed the first capture outright. The label now carries the pid.
+
+### Verified
+- **SEEN RED FIRST — one run, four cases, against the parent wrapper itself:** `git show 2c3a88fc:scripts/git-hooks/git_commit_capture.py` was written over the working copy, and there the four new cases failed with `an unverified capture must be marked kept, not safe: 20260101T000000Z-killed patches 1 age 30.0d safe to sweep once old`; `assert [] == ['20260101T000000Z-torn']`; `assert 'nothing was parked' in ''`; and `assert '20260101T000000Z-go-dev' != '20260101T000000Z-go-dev'`. The working copy was then restored byte-identically (md5 `6a42af2834adbc2df07cba548e344e28`) and all four pass.
+- **The CLI, on a scratch repo with three 30-day-old captures:** `--list` printed `unverified … KEEP - unproven verdict(s): unverified`, `landed … safe to sweep once old (every path verified landed or restored)`, `at-risk … AT RISK (1) - never swept`; `--sweep --keep-days 7` printed `kept …unverified`, `kept …at-risk`, `swept 1 run(s) older than 7.0d, kept 2`, and the survivors were `at-risk` and `unverified`. The proven-safe control is still pruned, so the rule prunes as well as it keeps.
+- `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_git_commit_capture.py -q` → **8 passed**; the same command over `scripts/tests` → **28 passed** (was 24), 1 pre-existing `pytest.mark.unit` warning.
+- **NOT RUN:** `--sweep` against this repository. Every probe ran on scratch repos in `/tmp`; nothing was pruned here.
+
 ## A run that creates nothing is no longer reported as initialized
 
 ### Fixed
