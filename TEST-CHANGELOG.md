@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the ownership checker is asserted to be ASSIGNED, and to be what decides
+
+- `agenthub_go/fastmcp/server/httpapp/ownership_wiring_test.go` (new) — `TestNewAppAssignsTheOwnershipChecker` is the fail-first case: with the call removed from `NewApp`, `routes.Ownership` stays nil and it fails with the message quoted in `CHANGELOG.md`, while `TestWireOwnershipCheckerAssignsGlobal` pins the assignment alone so a failure has exactly one reason. Both follow `TestWireMissedNotificationStoreAssignsGlobal` next door, which is the same defect class.
+- `agenthub_go/fastmcp/server/routes/websocket_ownership_checker_test.go` (new) — two cases over the real `BroadcastDataChange` and a registered connection: a stub checker answering `owned=true` **delivers** the system-stamped task frame and `owned=false` **refuses** it; and the not-owned case is run under BOTH `ENVIRONMENT=development` and `ENVIRONMENT=production`, asserting no delivered `"action":"updated"` frame in either. That second case is the point of the row: once the checker answers, the environment fallback is out of the decision.
+- Ride-along in the same commit: `agenthub_go/fastmcp/task_management/application/facades/task_update_broadcast_test.go` had its header and its failure message corrected — they asserted Rule 2 had no implementation to consult, which this commit makes false — with no assertion changed.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/httpapp/ ./fastmcp/task_management/application/facades/` → **ok**; `go vet` clean; `gofmt -l` on all three packages prints nothing.
+- **NOT RUN:** the four SQL queries against a live Postgres — the cases are in-process, and the SQL was read from the Python reference rather than executed here.
+
 ## 2026-10-09 - the refusal is asserted by DELIVERY, not by the error code it happens to use
 
 - `agenthub_go/fastmcp/server/routes/websocket_task_update_test.go` — `TestSystemStampedTaskUpdateIsRefusedForEveryConnection` no longer requires `notification_blocked`. That code arrives only because Rule 2 returns early, so a refactor that denied the same frame at the gate's default (`authorization_denied`) would have failed the case while refusing just as well — inviting the very exemption it exists to forbid. It now asserts the MEANING: the connection is told something, and **NO DELIVERED FRAME CARRIES `"action":"updated"`**. The file header stops claiming the ownership checker has no implementation (a question row `0413a1ce` decides) and says plainly that delivery, not the error code, is the contract.

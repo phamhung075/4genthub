@@ -141,7 +141,8 @@ type OwnershipChecker interface {
 	ProjectOwnedBy(ctx context.Context, projectID, userID string) (bool, error)
 }
 
-// Ownership is the injected ownership checker; nil behaves as not-found.
+// Ownership is the injected ownership checker. NewApp assigns it (httpapp/ownership_wiring.go); while
+// it is nil, or when its query fails, CheckResourceOwnership falls through to its environment answer.
 var Ownership OwnershipChecker
 
 // wrGet reads an OrderedMap key, nil-safe.

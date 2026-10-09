@@ -80,6 +80,7 @@ func NewApp(ctx context.Context, sessions *database.SessionManager) (*App, error
 	if err := wireMissedNotificationStore(sessions); err != nil {
 		return nil, err
 	}
+	wireOwnershipChecker(sessions)
 	return a, nil
 }
 

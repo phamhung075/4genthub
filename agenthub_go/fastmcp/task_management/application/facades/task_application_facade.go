@@ -621,8 +621,9 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 
 	if wasActuallyUpdated && f.deps.Notifier != nil {
 		// The frame is matched to a browser by this stamp: Rule 1 of IsUserAuthorizedForMessage
-		// compares it with the connection's own user, and Rule 2's ownership checker has no
-		// implementation, so a "system" stamp is refused for EVERY connection while the event is
+		// compares it with the connection's own user, and Rule 2 asks the ownership checker, which
+		// answers only when the resource can be shown to belong to that user. A "system" stamp names
+		// no actor, so it is refused wherever ownership cannot be established - while the event is
 		// real. UpdateTaskRequest carries no user id, so the acting user comes from the request
 		// context exactly as create reads it; "system" stays the stamp for an event with no actor.
 		const systemUserID = "system"

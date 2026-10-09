@@ -2,11 +2,11 @@ package facades
 
 // The task 'updated' frame is the frame the frontend uses to refresh a task, and the authorization
 // gate matches it to a browser by the user stamped on it. The port stamped the literal "system",
-// because UpdateTaskRequest carries no user id - and a "system" stamp matches NO real connection:
-// Rule 1 needs connectionUserID == triggeringUserID, and Rule 2's ownership check has no
-// implementation to consult (websocket_routes.go:323). Every browser is therefore denied while
-// create, complete and the seat frames deliver, which is the shape of the operator's report. This
-// file pins the stamp to the user who acted.
+// because UpdateTaskRequest carries no user id - and a "system" stamp names NO real connection:
+// Rule 1 needs connectionUserID == triggeringUserID, and Rule 2 can only ask the ownership checker,
+// which answers for a resource it can show belongs to that connection. Every browser was therefore
+// denied while create, complete and the seat frames delivered, which is the shape of the operator's
+// report. This file pins the stamp to the user who acted.
 
 import (
 	"context"
@@ -121,7 +121,7 @@ func TestTheUpdateBroadcastIsStampedWithTheActingUser(t *testing.T) {
 		t.Fatalf("event type = %q, want updated", got.EventType)
 	}
 	if got.UserID != actor {
-		t.Fatalf("the 'updated' frame is stamped user %q, want the acting user %q: a system stamp matches no connection (Rule 1) and there is no ownership checker to fall back on (Rule 2), so EVERY browser is denied", got.UserID, actor)
+		t.Fatalf("the 'updated' frame is stamped user %q, want the acting user %q: a system stamp names no connection (Rule 1), and Rule 2 answers only for a resource it can show belongs to that connection, so the frame must name who acted", got.UserID, actor)
 	}
 }
 
