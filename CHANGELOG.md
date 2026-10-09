@@ -1,9 +1,23 @@
+## `4genteam up` starts every service the client needs, and the supervisor force-compacts omp seats at the hard limit
+
+### Added
+- `agenthub_client/src/agenthub_client/cli.py`: `up` now runs `ensure_daemon`, then `ensure_rig` (`rig up RIG --existing` when any seat is not running), then `ensure_forcecompact` (builds the binary when absent; prints the one-time `sudo setcap cap_sys_ptrace+ep` command when the capability is missing), then the supervisor, the herdr watch view and the UI.
+- `agenthub_client/rust/forcecompact/` (std-only Rust): finds a seat's `omp --mode rpc` socket through `/proc` and `ss`, duplicates the runner's end with `pidfd_getfd`, and writes an RPC `compact`. `paths.FORCECOMPACT` points at the built binary.
+- `agenthub_client/src/agenthub_client/compact.py`: at `HARD_LIMIT` an omp seat gets that RPC compact whatever it is doing (a typed `/compact` is read as text by a working seat); a send with no witness resets the cooldown so it retries; notices no longer block the loop.
+
+### Verified
+- `agenthub_client/tests/test_cli.py`: new `test_up_initialises_every_service_in_order`; 5 passed. Live: `lead` 499k to 33k by the tool, `reviewer` and `context-dev` witnessed by the supervisor. The supervisor's own hard-limit call has not yet fired (no seat past 300k).
+
 ## The §1 route pointers were re-resolved row by row, and none has drifted
 
 ### Verified
 - `ai_docs/api-integration/surface-inventory.md` §1: **all 143 route rows re-resolved at `257a4ab1` by the document's own method** — read the file's `base` const, match the row's method+path to the registration that carries it, compare with the cited line — and **zero had drifted**.
 - **Two controls, so the negative result is a measurement rather than an impression.** (1) Coverage: the tables hold 143 rows and the appendix's own count commands return `123` (httpapp) + `20` (auth) = `143`. (2) A registration with no row is the class a row-by-row pass cannot see, so each cited file's registration lines were counted against its rows — **all eighteen cited files balance exactly** (`routes_mount.go` 44/44, `seat_admin_mount.go` 26/26, `app.go` 7/7, `auth_endpoints.go` 10/10, `supabase_endpoints.go` 10/10, `team_mount.go` 8/8, and the rest down to `seat_rigspec_mount.go` 1/1).
-- The dated note lands beside the 2026-10-06 re-derivation it repeats, and records what the pass does NOT claim: it establishes that each pointer resolves, not that any route behaves as documented. `aa2c9a0`'s edits to `mcp_routes.go` and `routes_mount.go` moved no cited line.
+- The dated note lands beside the 2026-10-06 re-derivation it repeats, and records what the pass does NOT claim: it establishes that each pointer resolves, not that any route behaves as documented.
+
+### Fixed — minutes later, in this commit's own note
+- The note's first draft attributed the window's code changes to **`aa2c9a0`, a revision that does not exist in this repository** (`git cat-file -t aa2c9a0` -> `fatal: ambiguous argument 'aa2c9a0'`). The hash was carried from reading rather than from a command — the class the reviewer's gate on `aac25c96` had already found one over, in a count.
+- Both homes now carry the measured statement: **the only non-test change under `httpapp/` + `auth/` since the 2026-10-08 pass is `e6829b32`** (the two always-500 task routes removed, already recorded in the counts paragraph), and the window's only other Go edits are test files (`ff6fed10`, `c3f45214`). `git log --oneline 88d27758..HEAD -- 'agenthub_go/fastmcp/server/httpapp' 'agenthub_go/fastmcp/auth' ':(exclude)*_test.go'` -> one line.
 
 ## The operations guide told an operator to run nine deployment scripts the tree no longer has
 
