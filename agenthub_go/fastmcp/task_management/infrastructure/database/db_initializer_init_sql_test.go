@@ -53,10 +53,8 @@ func TestEmbeddedInitSQLCreatesEveryRequiredTable(t *testing.T) {
 
 // TestExecuteInitSQLFileRunsTheEmbeddedStatements replaces the source-path case this file was opened
 // on: what runs must be the bytes the binary carries, in one committed transaction. The scripted fake
-// driver records each statement, so no server is needed. DELIBERATELY NOT ASSERTED HERE: that every
-// required table reaches the driver. The inherited "skip a chunk that starts with -- or /*" rule drops
-// whole DDL chunks, so today it does not, and that is a SEPARATE defect on its own row rather than a
-// property this row may pin either way.
+// driver records each statement, so no server is needed. The set of statements that reaches the driver
+// is asserted against the asset itself in TestExecuteInitSQLFileExecutesEveryCreateTableTheAssetCarries.
 func TestExecuteInitSQLFileRunsTheEmbeddedStatements(t *testing.T) {
 	f := &fakeDB{tables: map[string][]string{}}
 	inst := newFakeInitializer(t, f)
@@ -83,6 +81,32 @@ func TestExecuteInitSQLFileRunsTheEmbeddedStatements(t *testing.T) {
 		t.Fatal("no statement from the embedded schema reached the driver")
 	}
 	t.Logf("the embedded schema sent %d statements to the driver in one transaction", executed)
+}
+
+// TestExecuteInitSQLFileExecutesEveryCreateTableTheAssetCarries is the fail-first case for the chunk
+// rule. The rule the port inherited - split on ";", then SKIP a chunk that starts with "--" or "/*" -
+// discards the statement together with its comment, and every table in this schema is preceded by a
+// `-- Table: X` line, so a run over a fresh database created nothing while reporting success. The
+// expectation is DERIVED from the asset, so a statement the asset carries but the run drops fails
+// here, and a table added to the schema is covered without editing this test.
+func TestExecuteInitSQLFileExecutesEveryCreateTableTheAssetCarries(t *testing.T) {
+	wanted := regexp.MustCompile(`(?i)CREATE TABLE\s+([a-zA-Z_][a-zA-Z0-9_]*)`).
+		FindAllStringSubmatch(string(databaseInitializerInitSQL), -1)
+	if len(wanted) == 0 {
+		t.Fatal("the embedded asset carries no CREATE TABLE statement")
+	}
+	f := &fakeDB{tables: map[string][]string{}}
+	inst := newFakeInitializer(t, f)
+
+	if !inst.ExecuteInitSQLFile() {
+		t.Fatal("ExecuteInitSQLFile returned false for the embedded schema")
+	}
+	executed := strings.Join(f.statements, "\n")
+	for _, match := range wanted {
+		if !createsTable(executed, match[1]) {
+			t.Errorf("the schema never executed the CREATE TABLE for %s", match[1])
+		}
+	}
 }
 
 // TestExecuteInitSQLFileLogsAFailedStatement holds the other half of row b231a84b: a false return is

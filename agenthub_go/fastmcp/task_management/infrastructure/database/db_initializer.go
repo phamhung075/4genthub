@@ -7,7 +7,8 @@ package database
 // The init SQL is EMBEDDED in this package, so the binary carries the schema instead of reading a
 // source path at runtime: that path resolved through runtime.Caller and failed inside the distroless
 // image, whose contents and working directory are not a source tree (row b231a84b). The naive
-// "split on ;" and the "skip statements starting with -- or /*" rule are kept verbatim.
+// "split on ;" stays verbatim; the comment rule does NOT - skipping a chunk that STARTS with a comment
+// discarded the statement underneath it, so all 24 CREATE TABLE statements never ran (row 12444cc2).
 
 import (
 	"context"
@@ -126,12 +127,8 @@ func (d *DatabaseInitializer) ExecuteInitSQLFile() bool {
 	}
 	statements := strings.Split(string(databaseInitializerInitSQL), ";")
 	for _, raw := range statements {
-		statement := strings.TrimSpace(raw)
+		statement := stripLeadingComments(raw)
 		if statement == "" {
-			continue
-		}
-		lower := strings.ToLower(statement)
-		if strings.HasPrefix(lower, "--") || strings.HasPrefix(lower, "/*") {
 			continue
 		}
 		if _, err := tx.ExecContext(d.ctx, statement); err != nil {
@@ -145,6 +142,37 @@ func (d *DatabaseInitializer) ExecuteInitSQLFile() bool {
 		return false
 	}
 	return true
+}
+
+// stripLeadingComments drops whole comment lines from the FRONT of a statement chunk and returns what
+// is left to execute. The port inherited "skip a chunk that starts with -- or /*", which threw the
+// statement away together with its comment, and every table in this schema is preceded by a
+// `-- Table: X` line - so a run over an empty database created nothing and reported success (row
+// 12444cc2). A chunk that is only a comment still yields "", and a comment INSIDE a statement is left
+// for Postgres to read.
+func stripLeadingComments(chunk string) string {
+	rest := chunk
+	for {
+		trimmed := strings.TrimSpace(rest)
+		switch {
+		case trimmed == "":
+			return ""
+		case strings.HasPrefix(trimmed, "--"):
+			newline := strings.IndexByte(trimmed, '\n')
+			if newline < 0 {
+				return ""
+			}
+			rest = trimmed[newline+1:]
+		case strings.HasPrefix(trimmed, "/*"):
+			end := strings.Index(trimmed, "*/")
+			if end < 0 {
+				return ""
+			}
+			rest = trimmed[end+2:]
+		default:
+			return trimmed
+		}
+	}
 }
 
 // VerifyTableStructure checks the required core tables are present.
