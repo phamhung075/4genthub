@@ -29,16 +29,6 @@
 ### Found by
 - A parity audit of the whole ported package against `packages/daemon/src/domain/context-packs/` (source read in full against the Go in full, rule by rule), not by the package's own green tests. The rest of the algebra is parity-exact: the three situations and their selection tags, the closure over `requires` with both failure modes, the order-then-id walk, `refsafety.go`'s two regexes and per-segment ref walk, and `recap.go`'s advisory contract (same case-insensitive marker, same `UNVERIFIED:` canonical check, same 0-based line index). `profile-source-resolver.ts` has no Go counterpart and should not have one: it imports `node:fs`.
 
-## `4genteam up` starts every service the client needs, and the supervisor force-compacts omp seats at the hard limit
-
-### Added
-- `agenthub_client/src/agenthub_client/cli.py`: `up` now runs `ensure_daemon`, then `ensure_rig` (`rig up RIG --existing` when any seat is not running), then `ensure_forcecompact` (builds the binary when absent; prints the one-time `sudo setcap cap_sys_ptrace+ep` command when the capability is missing), then the supervisor, the herdr watch view and the UI.
-- `agenthub_client/rust/forcecompact/` (std-only Rust): finds a seat's `omp --mode rpc` socket through `/proc` and `ss`, duplicates the runner's end with `pidfd_getfd`, and writes an RPC `compact`. `paths.FORCECOMPACT` points at the built binary.
-- `agenthub_client/src/agenthub_client/compact.py`: at `HARD_LIMIT` an omp seat gets that RPC compact whatever it is doing (a typed `/compact` is read as text by a working seat); a send with no witness resets the cooldown so it retries; notices no longer block the loop.
-
-### Verified
-- `agenthub_client/tests/test_cli.py`: new `test_up_initialises_every_service_in_order`; 5 passed. Live: `lead` 499k to 33k by the tool, `reviewer` and `context-dev` witnessed by the supervisor. The supervisor's own hard-limit call has not yet fired (no seat past 300k).
-
 ## The metrics citation in the Monitoring block was off by one line
 
 ### Fixed
