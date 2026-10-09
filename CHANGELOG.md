@@ -1,3 +1,12 @@
+## The seat-sync doc instructed a script the tree no longer has
+
+### Fixed
+- `ai_docs/operations/syncing-seats-with-the-cloud.md`: every command it gave was `python3 scripts/openrig_seat_client.py …`, a path absent from the working tree **and** the index (`git ls-files --error-unmatch scripts/openrig_seat_client.py` -> `did not match any file(s) known to git`). The staged deletion is why the rot survived a reader of git history: `git show HEAD:scripts/openrig_seat_client.py` still resolves, so the file looks alive from the log and dead from the disk. The doc also described the port as future work ("is retiring into `agenthub-client sync`", "`sync` and `watch` stay on this script until ported") and called the check `agenthub-client sync status <room>` — **which was never a verb**: `sync` is `seat_sync` (`pull`, `rig`, `bundle`, `offline-install`, `respawn`, `install-checker`, `switch`), while per-seat `status` lives under `4genteam seat`. It now names the tool as it runs — `4genteam seat status|sync|watch ROOM`, adopting through `4genteam sync rig ROOM --update` — and names the two dead instructions as dead rather than quietly swapping them.
+
+### Verified on the client, not on the source
+- `4genteam seat --help` -> `usage: 4genteam [-h] {status,sync,watch} ...`; `4genteam seat sync --help` -> `room` with `--out`, `--seat`, `--rig`, `--relaunch {none,quiet}`; `4genteam sync rig --help` -> `room` with `--out`, `--update`. The store default is `~/.openrig/agenthub-seats` (`agenthub_client/src/agenthub_client/seat_client.py:263`) and the credentials are `AGENTHUB_URL`/`AGENTHUB_TOKEN` (`:60`), as the doc states.
+- **NOT verified, and left as it stood:** the cloud-state claims (`4genthub-dev` and `smoke` are the only rooms; `status 4genthub-min` answers `room not found`). A status call needs the production token, and a doc seat does not spend it to prove a sentence.
+
 ## The agent-facing MCP list named nine tools while the registry publishes ten
 
 ### Fixed
@@ -7,6 +16,12 @@
 - The generator at this commit: `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref.ts` -> `143 routes, 10 tools`.
 - The registry tests, which drive the real registered `POST /mcp` handler through `httptest`: `GOCACHE=$PWD/.gocache/rig-surface TMPDIR=$PWD/.gotmp go test ./fastmcp/server/httpapp/ -run 'SubmitFeedback' -v` -> `TestMCPToolsListPublishesSubmitFeedback`, `TestMCPSubmitFeedbackAndTheRouteAreOneWriter` and `TestMCPSubmitFeedbackRefusesAnUnknownLayer` **PASS** (`ok agenthub/fastmcp/server/httpapp 0.007s`); `TestMCPToolsListMatchesGolden`, `TestMCPToolsListPublishesManageSeat` and `TestMCPToolsListPublishesCallSeat` **PASS** (`0.014s`).
 - The list this file defers to, `ai_docs/api-integration/mcp-tools-api-complete.md`, already carried all ten: this file was the stale copy, not the reference.
+
+## The regenerated docs index lands without the byte its own gate would have added
+
+### Changed
+- `ai_docs/index.json`, regenerated and landed: **`+34/-148`** against HEAD. HEAD's copy still carried entries for the fourteen architecture docs deleted since, and the file that lands here had been written by the OLD generator, so its last byte was `0x7d` and this repository's own `end-of-file-fixer` would have modified it in the very commit that carried it. The fix is upstream (`4d3247e`, `4genthub-hooks`, recorded in this repository by `5f405350`); the file now ends `0x0a`. That byte is the whole difference between the two measurements of the same content: `git diff HEAD --numstat` printed `35 149` with it missing and `34 148` with it — git counts the last line as changed when one side has no terminal newline.
+- **Why the content that was on disk rather than a fresh `python .claude/hooks/utils/docs_indexer.py` run, which was the instruction.** The re-run describes the tree as it is NOW, and that tree carries three `ai_docs` files another seat has edited and not committed (`agent-system/repo-agent-rules.md`, 55 lines against HEAD; `operations/openrig-seat-limits.md`; `operations/seat-approval-and-the-startup-call.md`), so it returned `+46/-151` — new hashes, sizes and mtimes for content that is not in this commit, which would have left HEAD's index describing blobs HEAD does not have. It also stamps `modified` from filesystem mtimes, and `pre-commit`'s stash/restore cycle rewrites those on every commit in a shared tree (`NEXT_GEN` rule 27's mechanism). The next regeneration, after those seats commit, restores the fuller index.
 
 ## The friction channel's no-MCP door survives the client relocation, and the guard that found it was red
 
