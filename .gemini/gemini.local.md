@@ -13,8 +13,7 @@ This file (`.gemini/gemini.local.md`) contains **local, environment-specific rul
 - Restart after code change: `echo "R" | ./docker-system/docker-menu.sh`
 - Server entry point: `fastmcp.server.mcp_entry_point`
 - Docker menu rebuild: `./docker-system/docker-menu.sh` → option R
-- Run tests: `./scripts/test-menu.sh` or `python scripts/run-tests.py`
-- Database schema verification: `python scripts/verify_init_schema.py`
+- Run tests: `cd agenthub_go && go test ./...`; client: `cd agenthub_client && PYTHONPATH=src python3 -m pytest`
 
 **Critical Principles:**
 - Keycloak is source of truth for user authentication
@@ -27,8 +26,8 @@ This file (`.gemini/gemini.local.md`) contains **local, environment-specific rul
 ## 🚨 AGENTHUB-SPECIFIC: Test Fixing Priority
 
 **ORM Locations:**
-- **ORM Models**: `agenthub_main/src/fastmcp/task_management/domain/entities/*.py`
-- **Tests**: `agenthub_main/src/tests/`
+- **ORM Models**: `agenthub_go/fastmcp/task_management/domain/entities/*.go`
+- **Tests**: `*_test.go` beside the code, under `agenthub_go/`
 - **Rule**: ORM entity definitions = SOURCE OF TRUTH
 
 **Common Test Scenarios:**
@@ -108,8 +107,8 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
 | Path | Purpose | Port |
 |------|---------|------|
 | `agenthub-frontend/` | React/TypeScript frontend | 3800 |
-| `agenthub_main/src/` | Python/FastMCP/DDD backend | 8000 |
-| `agenthub_main/src/tests/` | Test files (unit, integration, e2e, performance) | - |
+| `agenthub_go/` | Go/DDD backend | 8000 |
+| `agenthub_go/**/*_test.go` | Go tests beside the code they test | - |
 | `00_RESOURCES/*` | Reference materials only (IGNORE) | - |
 | `00_RULES/*` | Legacy rules (use CLAUDE.md instead) | - |
 
@@ -195,7 +194,7 @@ ai_docs/
 
 | Rule | Description |
 |------|-------------|
-| **Test files** | Must be in `agenthub_main/src/tests/` only |
+| **Test files** | Go tests: `*_test.go` beside the code; client tests: `agenthub_client/tests/` |
 | **Document files** | Must be in `ai_docs/` (except 5 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
 | **Root .md files** | ONLY 5 allowed: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md |
@@ -241,9 +240,9 @@ ai_docs/
 | File Type | Allowed Location | Notes |
 |-----------|-----------------|-------|
 | **.md files** | `ai_docs/` | Except 5 allowed root files |
-| **Test files** | Directories in `.valid_test_paths` | `agenthub_main/src/tests/` |
+| **Test files** | Directories in `.valid_test_paths` | `agenthub_go/`, `agenthub_client/tests/` |
 | **.sh scripts** | `scripts/` or `docker-system/` | No scripts in root |
-| **.venv** | `agenthub_main/.venv` | Only ONE .venv allowed |
+| **.venv** | `agenthub_client/.venv` | Only ONE .venv allowed |
 | **logs/** | Project root | Only ONE logs folder |
 | **.env* files** | Cannot be read/created | Security protection |
 
@@ -336,26 +335,9 @@ echo "R" | ./docker-system/docker-menu.sh
 
 ## 🗄️ Database Schema Management
 
-**Schema File**: `agenthub_main/src/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql`
+**Schema File**: `agenthub_go/fastmcp/task_management/infrastructure/database/init_schema_postgresql.sql`
 
-| Script | Purpose | When to Use |
-|--------|---------|-------------|
-| `scripts/verify_init_schema.py` | Verify SQL file matches database (tables + columns) | After database changes or ORM updates |
-| `scripts/deep_verify_schema.py` | Deep verification (types, constraints, FKs) | Before production deployment |
-| `scripts/check_fk_cascade.py` | Check foreign key CASCADE behavior | Verify architectural compliance |
-| `scripts/generate_schema_sql.py` | Regenerate SQL from actual database | After ORM model changes |
-
-**Quick Commands**:
-```bash
-# Verify schema matches database
-python scripts/verify_init_schema.py
-
-# Deep verification with types/constraints
-python scripts/deep_verify_schema.py
-
-# Regenerate SQL file from current database
-python scripts/generate_schema_sql.py
-```
+The schema is the Go server's `init_schema_postgresql.sql`; change it together with the ORM entity it mirrors.
 
 **Critical Architecture Note**:
 - Database uses **NO CASCADE** on all foreign keys (intentional DDD design)
