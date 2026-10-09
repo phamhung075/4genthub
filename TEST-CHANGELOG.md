@@ -2,6 +2,16 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the gone-source contract pinned end to end, and exit 2 made reachable from a test
+
+- `agenthub_go/cmd/blockdrift/main.go`: the usage refusal moved out of `main` into `execute(root, stdout, stderr) int`, so every exit status this command can produce is reachable from a test. The refusal prints exactly what `main` printed, and `main` is now only flag parsing and `os.Exit`. The 2026-10-08 entry below recorded that the command's status is only observable through a built binary — exit 2 was not observable at all.
+- `agenthub_go/cmd/blockdrift/main_test.go`, two new tests, and the two existing ones now enter through `execute`, so 1, 2 and 3 are all asserted from the same seam.
+  - `TestGoneSourceIsPrintedAsExpectedAndExitsZero` drives the WHOLE command over a fixture root built from `BlockProvenanceTable()`: every library block file and every interim source copied verbatim, one source (`guide-writer`) withheld. It asserts the guide BY NAME in the `expected:` line, the count line reading `1 source file(s) already gone`, and exit **0** — so it cannot pass by finding no gone sources at all.
+  - `TestUsageRefusalIsExitTwo` asserts a blank, a whitespace-only and a tab/newline root each give exit **2**, with the usage text on stderr and NOTHING on stdout: a refusal that also wrote a report would read as a run.
+  - `TestRootWithoutTheLibraryIsRefused` now also asserts the refusal names the library path it looked for (`table[0].Path`) — the exit-3 half of the same row.
+- **FALSIFICATION, measured rather than asserted**: with `partition`'s `gone` folded back into `failures`, the new test fails with `code = 1, want 0` and the gone source printed as `divergence:` instead of `expected:`, while `TestUsageRefusalIsExitTwo` still passes — so the two new tests detect the break independently. The mutation was reverted before the commit.
+- Commands and results, from `agenthub_go`: `gofmt -l cmd/blockdrift/` -> nothing; `go build ./...` -> ok; `go vet ./cmd/blockdrift/` -> ok; `go test ./cmd/blockdrift/ -count=1 -v` -> `ok agenthub/cmd/blockdrift 0.006s`, six tests, all passed.
+
 ## 2026-10-08 - the test tree gets a type gate it never had, and the mock-typing class is cleared (frontend)
 
 - `tsconfig.tests.json` (**NEW FILE**) + `npx tsc -p tsconfig.tests.json` -> **448 errors before, 367 after**. The base `tsconfig.json` excludes the whole test tree, so `tsc -p .` never saw it. Every fix below is TYPE-ONLY: no assertion, fixture value or component behavior changed, and each touched file was RUN, not merely compiled.

@@ -57,13 +57,20 @@ func main() {
 	root := flag.String("root", "", "repository root holding agenthub_go/ (required)")
 	flag.Usage = func() { _, _ = fmt.Fprintln(os.Stderr, usage) }
 	flag.Parse()
+	os.Exit(execute(*root, os.Stdout, os.Stderr))
+}
 
-	if strings.TrimSpace(*root) == "" {
-		_, _ = fmt.Fprintln(os.Stderr, "blockdrift: -root is required; "+strings.SplitN(usage, "\n", 2)[0])
-		_, _ = fmt.Fprintln(os.Stderr, usage)
-		os.Exit(2)
+// execute is main's decision with its writers passed in, so every exit status this command can
+// produce is reachable from a test. Before it existed the usage refusal sat behind os.Exit inside
+// main and exit 2 could not be tested at all — while the exit status is the entire interface a hook
+// reads. main is now only flag parsing and os.Exit.
+func execute(root string, stdout, stderr io.Writer) int {
+	if strings.TrimSpace(root) == "" {
+		_, _ = fmt.Fprintln(stderr, "blockdrift: -root is required; "+strings.SplitN(usage, "\n", 2)[0])
+		_, _ = fmt.Fprintln(stderr, usage)
+		return 2
 	}
-	os.Exit(run(*root, os.Stdout, os.Stderr))
+	return run(root, stdout, stderr)
 }
 
 // run is the whole command, with its writers passed in so both the report and the refusal are
