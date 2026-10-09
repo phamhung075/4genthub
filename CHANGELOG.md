@@ -14,6 +14,17 @@
 - **NOT RUN, and owed to a host with PostgreSQL**: `TestSchemaMigrationIsIdempotentInProcess` and `TestDeletionPathsIntegration` both skip loudly here (`AGENTHUB_TEST_PG_URL` unset, and this machine has no `postgres`/`psql` binary), so this packet's schema-upgrade proof is the in-process idempotence gate plus the two-binary procedure, and neither ran.
 - **ORDERING, because it prevents an outage**: the status body is decoded with `DisallowUnknownFields`, so a bridge that sends `edges` to a server without this change gets a 400 on EVERY report — which reads as the machine going offline, not as a rejected field. The server half ships first; the bridge half is held until it is gated.
 
+## A citation dressed as a quotation: §5.4 attributed the inventory's own stale number to the report
+
+### Fixed
+- `ai_docs/api-integration/surface-inventory.md` §5.4 (item 4, `PROD_READINESS_REPORT.md`): it said the block's two line numbers were **"the REPORT'S, taken at `c4ff8d42`"**, naming `mcp_routes.go:116` for the `GET /mcp` handler. **Measured: `git grep -n 'mcp_routes\.go:116'` over the tracked tree returns ONLY that sentence; the report holds ZERO occurrences of `116` at `c4ff8d42`, `95ffca45` and `HEAD`; and `git log -S'mcp_routes.go:116' -- agenthub_go/PROD_READINESS_REPORT.md` is EMPTY, so no commit ever put it there — `:116` was OUR stale number for that registration (and `:138`, also ours, was one line short in the same clause).** The claim now reads: the ONE number the report carries is `mcp_routes.go:275`, **its own, written at `c4ff8d42`** and still the live registration for `App.MCPToolsList`, while **the report gives NO number for `GET /mcp`, whose live registration is `mcp_routes.go:139`**. **The block itself is untouched — the defect was the CLAIM ABOUT what is quoted, not the quotation.** Found on the reviewer's gate of `56cabe97`+`e116a5cf` and re-verified by the lead before it was sent.
+- Same file, Appendix A: **the companion rule named that block as its second worked instance while it was misattributed, so the paragraph taught the opposite of the rule it exists to teach.** It now carries the counter-instance by name and the generalisation: **"a number is not a quotation because the sentence around it says 'the report's'; it is one because the SOURCE DOCUMENT CARRIES IT — check the attribution in the source, never in the sentence that claims it."**
+- Same appendix, the census closing sentence: it said the surface **"is clean across 299 pairs checked once"**. **The census measures RESOLUTION, and a number that resolves while being wrong passes it — §5.4's `:116` is the standing counter-example.** It now says the surface **RESOLVES** across 299 pairs and that **resolution is not correctness**, and it records that the same command at `e116a5cf` returns **301**, because the paragraph's own two example citations are pairs the census then counts.
+
+### Verified
+- `git grep -n 'mcp_routes\.go:116'` → one hit, `surface-inventory.md:599` itself (before this commit); `git show <rev>:agenthub_go/PROD_READINESS_REPORT.md | grep -c 116` → **0** at `c4ff8d42`, `95ffca45` and `HEAD`; `git log -S'mcp_routes.go:116' -- agenthub_go/PROD_READINESS_REPORT.md` → **empty**; the report cites `mcp_routes.go:275` for `App.MCPToolsList` and no number for `GET /mcp`; the live registration is `mcp_routes.go:139` (`mux.HandleFunc("GET /mcp", mcpSSEHandler)`).
+- Docs only: no `.go` change, so no Go suite was run.
+
 ## Appendix A gains the citation census, and the quotation rule gains a third instance and its own proof
 
 ### Added
