@@ -604,8 +604,9 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    `mcp_routes.go:139` (`mux.HandleFunc("GET /mcp", mcpSSEHandler)`).** **CORRECTED 2026-10-09,
    on the reviewer's gate of `56cabe97`+`e116a5cf`: this clause read "`mcp_routes.go:116`" for the
    `GET /mcp` handler AND "this clause carried `:138`", and called the numbers the report's own —
-   both were OURS. Measured: `git grep -n 'mcp_routes\.go:116'` over the tracked tree returns only
-   this document's own sentence, the report holds ZERO occurrences of `116` at `c4ff8d42`,
+   both were OURS. Measured at the gate: `git grep -n 'mcp_routes\.go:116'` over the tracked tree returned
+   ONE hit — this document's own sentence (**re-run it now and it returns five, because this correction and
+   its CHANGELOG entry quote the string; at NO revision does it appear in the report itself**), the report holds ZERO occurrences of `116` at `c4ff8d42`,
    `95ffca45` and `HEAD`, and `git log -S'mcp_routes.go:116' --
    agenthub_go/PROD_READINESS_REPORT.md` is EMPTY, so no commit ever put that string in the
    report. `:116` was our stale number for the `GET /mcp` registration, **misattributed to the

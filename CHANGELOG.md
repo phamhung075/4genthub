@@ -23,6 +23,7 @@
 
 ### Verified
 - `git grep -n 'mcp_routes\.go:116'` → one hit, `surface-inventory.md:599` itself (before this commit); `git show <rev>:agenthub_go/PROD_READINESS_REPORT.md | grep -c 116` → **0** at `c4ff8d42`, `95ffca45` and `HEAD`; `git log -S'mcp_routes.go:116' -- agenthub_go/PROD_READINESS_REPORT.md` → **empty**; the report cites `mcp_routes.go:275` for `App.MCPToolsList` and no number for `GET /mcp`; the live registration is `mcp_routes.go:139` (`mux.HandleFunc("GET /mcp", mcpSSEHandler)`).
+- **Follow-up inside the same gate, because the correction moves its own evidence: the grep quoted above is recorded as it was measured — ONE hit — and re-running it after this commit returns FIVE, every added hit a quotation of the string inside this correction and its CHANGELOG entry, while the report still holds zero at every revision.** The clause now says so, so a re-runner does not read their own hits as a fresh defect. **The general shape: a correction that quotes the thing it corrects CHANGES the output of the command that found it; write the measurement with its date and its expected drift, or the next pass re-finds it as new.**
 - Docs only: no `.go` change, so no Go suite was run.
 
 ## Appendix A gains the citation census, and the quotation rule gains a third instance and its own proof
