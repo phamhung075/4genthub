@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - no test changed: the script-test path is verified correct in every live home, and the corrected line names the exit codes a mask would hide
+
+- **No test was added, weakened, deleted or run for this change.** It is one prose line in `ai_docs/core-architecture/agenthub-system-architecture.md:364`, plus these two changelogs, and no test asserts that text.
+- **The path the line documents was measured with the suite itself, raw and unpiped:** `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests -q` from the repository root -> **14 passed, 1 warning in 0.14s, rc=0**. The stale form it replaces was measured too, because the numbers are the point: `sh -c 'cd agenthub_main && python3 -m pytest ... src/tests/scripts -q'` -> **rc=2** (`can't cd to agenthub_main`), the bare path -> **rc=4** (`file or directory not found`), against **rc=5, "no tests ran"** at the moment of the move. Reading any of those through a pipe reports 0, which is the rule the line now states.
+- **No test was written to guard the documented path, and the reason is scope rather than doubt:** this repository's guards over documented text are Go tests reading the embedded seed library (`guide_commit_form_test.go`, `guide_commit_form_test`'s negative control), and the seed library plus the seat-text chain belong to the seat-text delivery, not to a docs seat's commit. A guard that the printed command names `scripts/tests` is therefore reported to the lead as the durable follow-up, which is recorded here so the absence of a test is not later read as an omission.
+
 ## 2026-10-09 - no test changed: the six docs corrections are prose, and their facts were re-derived with commands rather than asserted
 
 - **No test was added, weakened, deleted or re-run for this change.** The six corrections are prose in six files (`CLAUDE.local.md`, `.gemini/gemini.local.md`, `.gemini/commands/init-local.toml`, `agenthub_go/MIGRATION.md`, `agenthub-frontend/CHANGELOG.md`, plus the two changelogs), and no test asserts any of the text they carried.
