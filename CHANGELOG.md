@@ -188,7 +188,7 @@
 
 ### Verified
 - **The honest form of the first reading was "my parse is eight minutes old", not "the store has not caught up"** — the two route to different actions (re-read, versus wait), and the second would have written a **false UNAVAILABLE** into a row whose acceptance forbids estimating, where a false UNAVAILABLE is a defect rather than a gap.
-- **The same failure's second form, measured in this store:** usage lives at `record['message']['usage']`; a parse that reads the record's `data` returns **nothing** for every assistant record, and the top level returns zeros — **so a wrong path and an empty file look identical.**
+- **The same failure's second form, measured in the OMP seat session store** — the per-session JSONL at `$HOME/.openrig/state/omp/<seat-session>/sessions/<session-id>.jsonl`, in this seat's case `/home/daihu/.openrig/state/omp/4genthub-min-writer@4genthub-min/sessions/2026-10-06T16-23-51-755Z_01a11207-50cb-74ff-a7fb-41433e510df1.jsonl`, **10 797 records at the reading that named it (2026-10-09 22:35 local):** usage lives at `record['message']['usage']`; a parse that reads the record's `data` returns **nothing** for every assistant record, and the top level returns zeros — **so a wrong path and an empty file look identical. The path is named absolute on purpose: a relative store path resolves against whatever directory the reader is in, which is the first of rule 70's ambiguous-input instances.**
 - No code touched, no test changed: two documentation paths, and the numbers in the rule are the measured reading rather than a restatement.
 
 ## The project-root paragraph cites its probe correctly and names the fifth resolver — and rule 68 makes a test count carry its tree
