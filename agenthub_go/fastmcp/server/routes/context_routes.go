@@ -16,7 +16,8 @@ import (
 
 // ControllerResult mirrors the pydantic response objects returned by the API
 // controllers: model_dump(by_alias=True) plus the success/error/message
-// attributes the routes branch on. The API controllers have no Go port yet.
+// attributes the routes branch on. The API controllers ARE ported
+// (task_management/interface/api_controllers/context_api_controller.go).
 type ControllerResult struct {
 	Success bool
 	Error   *string

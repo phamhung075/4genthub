@@ -24,8 +24,11 @@ func keysOf(m *entities.OrderedMap[any]) []string {
 	return m.Keys()
 }
 
-// The performance infrastructure modules have no Go port yet; the minimal
-// surfaces the routes use are declared here and injected through variables.
+// The modules this route calls ARE ported: MCPServerHealthService in
+// connection_management/infrastructure/services/mcp_server_health_service.go and the
+// optimizer in task_management/infrastructure/performance/. Their surfaces are
+// declared here as interfaces injected through variables so the route can be driven
+// without either.
 type HealthService interface {
 	GetEnvironmentInfo() *entities.OrderedMap[any]
 	ValidateServerConfiguration() *entities.OrderedMap[any]

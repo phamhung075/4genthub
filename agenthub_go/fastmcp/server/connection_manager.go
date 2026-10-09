@@ -1,6 +1,7 @@
-// Package server ports fastmcp/server. Only the modules that carry behaviour with
-// a Go meaning are ported; context.py, dependencies.py and error_middleware.py are
-// FastMCP/MCP-SDK/Starlette/FastAPI-framework modules with no Go port yet.
+// Package server ports fastmcp/server. Every module that carries behaviour with a
+// Go meaning is ported, each in its own file: context.py in context.go,
+// dependencies.py in dependencies.go and error_middleware.py in error_middleware.go.
+// What has no Go meaning is the FastMCP/MCP-SDK/Starlette/FastAPI framework itself.
 package server
 
 import (

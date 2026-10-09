@@ -1,6 +1,8 @@
 // task_user_routes.go ports server/routes/task_user_routes.py. FastAPI router
 // and Depends plumbing dropped; handler logic, response dict order and status
-// codes kept. The API controllers have no Go port yet.
+// codes kept. The API controllers ARE ported
+// (task_management/interface/api_controllers/task_api_controller.go);
+// UserTaskController below is the narrow surface this package consumes.
 package routes
 
 import (

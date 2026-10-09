@@ -2,7 +2,9 @@
 // Depends, redis_cache decorator and Request plumbing have no Go meaning; the
 // handler logic, validation branches, response dicts (Python insertion order)
 // and HTTP status codes are ported. The TaskAPIController/SubtaskAPIController
-// have no Go port yet, so the minimal surfaces used here are declared below.
+// ARE ported (task_management/interface/api_controllers/, adapted for the routes
+// in httpapp/routes_mount.go); the narrow surfaces used here are declared below so
+// this package depends on what it consumes, not because a port is missing.
 package routes
 
 import (

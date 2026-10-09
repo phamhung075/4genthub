@@ -5,8 +5,14 @@
 // workers, persistence helpers, authorization checks and broadcast construction
 // are ported with their key order and branches preserved.
 //
-// Missing Python dependencies are declared here as minimal interfaces (no Go
-// port exists yet): MissedNotificationStore and OwnershipChecker.
+// MissedNotificationStore and OwnershipChecker are declared here as the minimal
+// surface each consumer needs, NOT as work still to do: both have Go
+// implementations and both are assigned at startup. The store is
+// task_management/infrastructure/repositories/orm/missed_notification_repository.go,
+// assigned by wireMissedNotificationStore; the checker is httpapp/ownership_wiring.go
+// (ownershipChecker), assigned by wireOwnershipChecker from NewApp. The interfaces
+// stay because this package must not import infrastructure, and the globals stay as
+// the seam that wiring assigns and tests replace.
 package routes
 
 import (

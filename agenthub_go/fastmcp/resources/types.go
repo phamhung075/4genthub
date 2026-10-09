@@ -15,8 +15,9 @@ import (
 )
 
 // Resource is the minimal base interface needed by the concrete resources.
-// fastmcp/resources/resource.py has no Go port yet, so only the fields used by
-// the concrete implementations are declared here.
+// fastmcp/resources/resource.py IS ported in this package - Resource, NewResource,
+// FunctionResource and Read are in resource.go - so this struct declares only the
+// fields the concrete implementations here use.
 type Resource struct {
 	URI         string
 	Name        string

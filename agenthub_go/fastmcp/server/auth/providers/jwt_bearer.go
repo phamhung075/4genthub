@@ -15,14 +15,22 @@ type AccessToken struct {
 }
 
 // JWTBackend is the minimal interface needed from
-// fastmcp.auth.mcp_integration.jwt_auth_backend.create_jwt_auth_backend, which
-// has no Go port yet.
+// fastmcp.auth.mcp_integration.jwt_auth_backend.create_jwt_auth_backend. That port
+// EXISTS - NewJWTAuthBackend in fastmcp/auth/mcp_integration/jwt_auth_backend.go -
+// and this provider is constructed whenever JWT auth is configured
+// (mcp_auth_config.go:32 calls NewJWTBearerAuthProvider).
 type JWTBackend interface {
 	VerifyToken(ctx context.Context, token string) (*AccessToken, error)
 }
 
-// NewJWTBackendFunc builds the JWT backend. It is nil until a Go port of
-// create_jwt_auth_backend registers one, mirroring the missing dependency.
+// NewJWTBackendFunc builds the JWT backend. NOTHING IN THE TREE ASSIGNS IT: a search
+// for the name returns this declaration and the read in the constructor, no writer,
+// so p.JWTBackend stays nil and VerifyToken answers (nil, nil) - no token and no
+// error. The reference does the opposite at construction: jwt_bearer.py:65 calls
+// create_jwt_auth_backend(...) unconditionally. This is the injected-global defect
+// class that 67af511f fixed for routes.Ownership - an assignment no production code
+// made - recorded here rather than silently repaired, because wiring it decides how
+// MCP requests authenticate.
 var NewJWTBackendFunc func(requiredScopes []string) JWTBackend
 
 // JWTBearerAuthProvider validates JWT tokens from the token management system.

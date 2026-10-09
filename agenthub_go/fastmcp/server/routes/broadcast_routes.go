@@ -2,8 +2,10 @@
 //
 // The FastAPI APIRouter/pydantic plumbing has no Go meaning; the request model
 // and handler logic are preserved. broadcast_data_change is imported from
-// websocket_routes.py, which is not ported yet, so the minimal function type is
-// declared here (to be replaced by the real websocket_routes port).
+// websocket_routes.py, and that module IS ported - BroadcastDataChange, in this same
+// package. BroadcastFunc is the signature the handler takes so it can be driven
+// without the package's connection state; httpapp/routes_mount.go passes the real
+// function, so this is a seam rather than a placeholder awaiting a port.
 package routes
 
 import (

@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - a refusal is asserted where the checker is installed, and the environment-dependent case is deleted
+
+- `agenthub_go/fastmcp/server/routes/websocket_task_update_test.go` — `TestSystemStampedTaskUpdateIsRefusedForEveryConnection` **DELETED**: it installed no checker, so its refusal came from the ambient `ENVIRONMENT` string — and it delivered the frame under `ENVIRONMENT=development` (measured at the gate on 67af511f) — while its name asserted a property of the `system` stamp. Its unique assertion, that the connection is TOLD rather than silently dropped, moved into the not-owned paths below, so the property is pinned with the checker installed.
+- `agenthub_go/fastmcp/server/routes/websocket_ownership_checker_test.go` — both not-owned paths now assert the send is non-empty as well as free of a delivered `"action":"updated"` frame. The environment case previously passed vacuously on an empty send, which is how a "not delivered" green can be true for the wrong reason.
+- Comment-only corrections in `websocket_routes.go`, `task_routes.go`, `task_user_routes.go`, `context_routes.go`, `token_router.go`, `broadcast_routes.go`, `performance_metrics_routes.go`, `jwt_bearer.go`, `connection_manager.go` and `resources/types.go`: each claimed a Python module had no Go port while the port exists (see `CHANGELOG.md` for the file-by-file evidence). No test asserts comment text, so no case changed with them.
+- Commands: `go test -count=1 ./fastmcp/server/routes/ ./fastmcp/server/ ./fastmcp/server/auth/... ./fastmcp/resources/` → **ok**; `gofmt -l` on the tracked `.go` files prints nothing; `go build ./...` and `go vet` clean.
+- **NOT RUN:** `ENVIRONMENT=development` with no checker is not re-measured here; the deletion rests on the gate's measurement, and no case replays it.
+
 ## 2026-10-09 - the commit's diff is asserted equal to the author's own, from a baseline kept in the repo
 
 - `scripts/tests/test_added_line_check.py` (new) — eight cases, each building its own two-seat sequence on a real repository. `test_a_foreign_line_inside_an_existing_entry_moves_no_heading_so_rule_64_cannot_see_it` is the fail-first case for the class that beat rule 64: it implements the shipped heading count **in-test**, asserts the count is unmoved by the peer's line, then requires **exit 3** with the surplus line named and the author's own line not named. `test_verify_passes_when_the_path_still_holds_exactly_the_snapshotted_diff` is the green control that makes exit 3 mean something; a removed own line is reported **MISSING** rather than passed; a path never snapshotted is refused rather than vouched for; and `test_the_stated_blind_spot_a_snapshot_taken_after_a_peer_edit_calls_their_line_yours` pins the tool's limit as a passing case.

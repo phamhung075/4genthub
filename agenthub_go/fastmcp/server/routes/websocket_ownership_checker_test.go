@@ -78,6 +78,12 @@ func TestTheOwnershipCheckerDecidesASystemStampedFrame(t *testing.T) {
 				t.Fatalf("delivered=%v, want %v with the checker answering owned=%v: %v",
 					delivered, tc.wantDelivered, tc.owned, actor.sent)
 			}
+			// A refusal must not be silent: this is the assertion the deleted
+			// TestSystemStampedTaskUpdateIsRefusedForEveryConnection carried, moved here so it runs
+			// with the checker installed rather than on an ambient environment string.
+			if len(actor.sent) == 0 {
+				t.Fatalf("the connection was told nothing at all with owned=%v", tc.owned)
+			}
 		})
 	}
 }
@@ -120,6 +126,11 @@ func TestTheEnvironmentStringDoesNotDecideWhenTheCheckerAnswers(t *testing.T) {
 					t.Fatalf("ENVIRONMENT=%s decided the frame while the checker said not-owned: %s",
 						environment, frame)
 				}
+			}
+			// A silent drop is not a refusal: without this the loop above passes vacuously on an
+			// empty send, which is how a "not delivered" claim can be true for the wrong reason.
+			if len(actor.sent) == 0 {
+				t.Fatalf("ENVIRONMENT=%s: the connection was told nothing at all", environment)
 			}
 		})
 	}

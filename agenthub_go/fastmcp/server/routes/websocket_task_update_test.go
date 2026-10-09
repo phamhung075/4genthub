@@ -1,10 +1,24 @@
 package routes
 
 // The 'updated' task frame is the one the operator's browser never received: the facade stamped it
-// "system", and this gate refuses that stamp for every connection, because Rule 1 needs the ids to be
-// equal and Rule 2 can only ask an ownership checker. These two cases are the delivery contract the
-// new stamp must satisfy - the acting user receives its own task's frame, and a frame the server
-// stamped "system" is never DELIVERED. The error code is not the contract; delivery is.
+// "system". WHAT REFUSES IT IS OWNERSHIP, NOT THE STAMP. With the checker assigned (httpapp/
+// ownership_wiring.go, via NewApp) a system-stamped frame reaches the connection whose user owns the
+// resource and is refused for one that does not - pinned by TestTheOwnershipCheckerDecidesASystemStampedFrame
+// and, under both environment strings, by TestTheEnvironmentStringDoesNotDecideWhenTheCheckerAnswers
+// in websocket_ownership_checker_test.go. The case below is the other half of the delivery contract:
+// the acting user receives its own task's frame, with the keys the client contract needs intact.
+//
+// THE CASE THIS FILE NO LONGER CARRIES, because a claim like it would be false of the shipped runtime:
+// what a system-stamped frame does when NO checker is assigned and no check can be made. Then the
+// answer is the ENVIRONMENT string - development delivers, production refuses - so a case asserting
+// refusal there is green only because the ambient ENVIRONMENT is not development, and it FAILS under
+// ENVIRONMENT=development with the frame delivered - MEASURED at the gate on 67af511f, which is what
+// made the name false rather than merely optimistic.
+// TestSystemStampedTaskUpdateIsRefusedForEveryConnection
+// was exactly that: its name and header claimed a property of the stamp, and its green came from the
+// environment. It was deleted by the gate on 67af511f rather than renamed around, and its one unique
+// assertion - that the refusing connection is TOLD, rather than silently dropped - moved to the
+// not-owned cases above, where the checker is installed.
 
 import (
 	"context"
@@ -64,41 +78,5 @@ func TestTaskUpdatedFrameReachesTheActingUsersSocket(t *testing.T) {
 	}
 	if len(other.sent) == 0 || !strings.Contains(string(other.sent[0]), "authorization_denied") {
 		t.Fatalf("the second user was not told the event was denied: %v", other.sent)
-	}
-}
-
-// TestSystemStampedTaskUpdateIsRefusedForEveryConnection pins the shortcut that is FORBIDDEN on this
-// row: exempting a "system" stamp would deliver the frame without fixing who acted. The assertion is
-// the MEANING rather than the wording - NO DELIVERED FRAME CARRIES `action updated` - because the
-// error code is an accident of which rule refuses first: a refactor that denies the frame at the
-// gate's default (authorization_denied) instead of at Rule 2 (notification_blocked) refuses just as
-// well, and a test pinned to the code would fail there and invite the very exemption it forbids.
-func TestSystemStampedTaskUpdateIsRefusedForEveryConnection(t *testing.T) {
-	actor := &fakeWS{}
-	connectionsMu.Lock()
-	connections[actor] = &WebSocketConnection{
-		Websocket: actor,
-		User:      &authdomain.User{ID: strPtr("u-actor")},
-		ClientID:  "c1",
-	}
-	connectionsMu.Unlock()
-	defer func() {
-		connectionsMu.Lock()
-		delete(connections, actor)
-		connectionsMu.Unlock()
-	}()
-
-	data := entities.NewOrderedMap[any]()
-	data.Set("id", "task-1")
-	if err := BroadcastDataChange(context.Background(), "updated", "task", "task-1", "system", data, nil); err != nil {
-		t.Fatalf("BroadcastDataChange: %v", err)
-	}
-	if len(actor.sent) == 0 {
-		t.Fatal("the system-stamped frame vanished silently: the connection was not told anything")
-	}
-	for _, frame := range actor.sent {
-		if strings.Contains(string(frame), `"action":"updated"`) {
-			t.Fatalf("a system-stamped task update was DELIVERED instead of refused: %s", frame)
-		}
 	}
 }
