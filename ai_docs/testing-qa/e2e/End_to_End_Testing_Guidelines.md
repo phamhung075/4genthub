@@ -38,7 +38,7 @@ Describe E2E testing strategies, tools, and workflows for agenthub.
 
 ## 7. MCP Tool API Protocol: JSON-RPC 2.0 Envelope Required
 
-All E2E tests that interact with MCP **must** POST a JSON-RPC 2.0 request to the single MCP endpoint, `POST /mcp` (`handleJSONRPC`, `agenthub_go/fastmcp/server/httpapp/mcp_routes.go:55`). There is no `/mcp/tool/<name>` route: the tool is named inside the `tools/call` request. Posting a bare tool payload (e.g., `{ "action": "list" }`) fails because it is not a JSON-RPC request. (`GET /mcp` is the SSE transport, `mcpSSEHandler`, `mcp_routes.go:116`.)
+All E2E tests that interact with MCP **must** POST a JSON-RPC 2.0 request to the single MCP endpoint, `POST /mcp` (`handleJSONRPC`, `agenthub_go/fastmcp/server/httpapp/mcp_routes.go:174`). There is no `/mcp/tool/<name>` route: the tool is named inside the `tools/call` request. Posting a bare tool payload (e.g., `{ "action": "list" }`) fails because it is not a JSON-RPC request. (`GET /mcp` is the SSE transport, `mcpSSEHandler`, registered at `mcp_routes.go:139`.)
 
 **Required JSON-RPC 2.0 Envelope Example:**
 
@@ -79,7 +79,7 @@ All E2E tests that interact with MCP **must** POST a JSON-RPC 2.0 request to the
 
 This applies to every tool call on `POST /mcp`. See E2E test code for working examples.
 
-> **Note:** The Go server does not reject requests based on protocol version. `initialize` reports `"protocolVersion": "2024-11-05"` (`mcp_routes.go:160`); the `MCP-Protocol-Version` header is used only by the dual-auth middleware to classify a request as MCP (`agenthub_go/fastmcp/auth/middleware/dual_auth_middleware.go:69`).
+> **Note:** The Go server does not reject requests based on protocol version. `initialize` reports `"protocolVersion": "2025-03-26"` — the `mcpProtocolVersion` constant (`mcp_routes.go:71`), read into the initialize result at `:183`. **CORRECTED 2026-10-09: this note read `"protocolVersion": "2024-11-05"` at `mcp_routes.go:160`, and both the value and the line were stale — the constant's own comment states why the revision is `2025-03-26`: that is the transport this server actually implements, and the `2024-11-05` revision's HTTP+SSE `endpoint`/`/messages` path is not implemented here at all.** The `MCP-Protocol-Version` header is used only by the dual-auth middleware to classify a request as MCP (`agenthub_go/fastmcp/auth/middleware/dual_auth_middleware.go:69`, verified at this HEAD).
 
 ## 8. Updated Context System (January 2025)
 

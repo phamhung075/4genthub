@@ -596,7 +596,7 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    **SUPERSEDED IN PLACE** (`95ffca45`). A status block above the blocker table marks B4
    and B6 as no longer describing HEAD (`App.MCPToolsList` builds from
    `ToolDefinitions()`, `mcp_routes.go:275`; `GET /mcp` is `mcpSSEHandler`,
-   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables` — **the two line numbers in the report's block are the REPORT'S, taken at `c4ff8d42`; the live ones are `mcp_routes.go:275` (re-derived 2026-10-09, when the method was renamed from `getMCPToolsList`) and `:138` (re-derived 2026-10-06, pass 3), and the report's B4 sentence has since been corrected to the live name and the ten/four count while the rest of the block stays the dated quotation it is**), while the
+   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables` — **the two line numbers in the report's block are the REPORT'S, taken at `c4ff8d42`; the live ones are `mcp_routes.go:275` (re-derived 2026-10-09, when the method was renamed from `getMCPToolsList`) and `:139` (re-derived 2026-10-09 — the `GET /mcp` registration, `mux.HandleFunc("GET /mcp", mcpSSEHandler)`; this clause carried `:138`, one line short, while §1.6's own row had `:139` all along), and the report's B4 sentence has since been corrected to the live name and the ten/four count while the rest of the block stays the dated quotation it is**), while the
    original findings stay visible as the dated record they are.
 5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
    method only. Its three divergences from the code are settled in this document: the

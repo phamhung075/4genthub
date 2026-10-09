@@ -417,7 +417,7 @@ manage_seat(action="set_occupant", room="4genthub-dev", seat="lead",
 
 **Response**: `{"success": true, "seats": [...]}` for list, `{"success": true, "seat": {...}}` for get/set_occupant; failures are `{"success": false, "error": "..."}`.
 
-Go-only tool, appended to `tools/list` by `ManageSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:257`).
+Go-only tool, appended to `tools/list` by `ManageSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/manage_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:301`, the `ManageSeatToolName` entry at `:302`).
 
 ---
 
@@ -439,7 +439,7 @@ call_seat(room="4genthub-dev", seat="lead")
 
 **Response**: `{"success": true, "room": ..., "seat": ..., "hash": ..., "runtime": ..., "policy": ..., "files": [{"path": ..., "content": ...}]}`; failures are `{"success": false, "error": "..."}`.
 
-Go-only tool, appended to `tools/list` by `CallSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:266`).
+Go-only tool, appended to `tools/list` by `CallSeatInputSchema()` (`fastmcp/seat_management/interface/mcp_controllers/call_seat_controller.go`; appended at `fastmcp/server/httpapp/mcp_routes.go:310`, the `CallSeatToolName` entry at `:311`).
 
 ---
 
