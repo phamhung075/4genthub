@@ -620,7 +620,18 @@ func (f *TaskApplicationFacade) UpdateTask(ctx context.Context, request dtostask
 	}
 
 	if wasActuallyUpdated && f.deps.Notifier != nil {
-		const userID = "system" // UpdateTaskRequest has no user_id
+		// The frame is matched to a browser by this stamp: Rule 1 of IsUserAuthorizedForMessage
+		// compares it with the connection's own user, and Rule 2's ownership checker has no
+		// implementation, so a "system" stamp is refused for EVERY connection while the event is
+		// real. UpdateTaskRequest carries no user id, so the acting user comes from the request
+		// context exactly as create reads it; "system" stays the stamp for an event with no actor.
+		const systemUserID = "system"
+		userID := systemUserID
+		if f.deps.CurrentUserID != nil {
+			if u := f.deps.CurrentUserID(ctx); u != nil && *u != "" {
+				userID = *u
+			}
+		}
 		var full *entities.OrderedMap[any]
 		if current != nil {
 			full, err = taskDictOf(current)
