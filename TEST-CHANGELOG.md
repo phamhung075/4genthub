@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the DROP is now guarded by a case rather than only by a comment
+
+- `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_verify_test.go` — `TestInitializeRunsNoDDLOnAPopulatedDatabase`, a GUARD rather than a fail-first case. With a populated catalogue and `AUTO_MIGRATE=true` (the gate wide open) `Initialize` must execute no `DROP TABLE` and no `CREATE TABLE`. It exists because the parser fix turned the schema's `DROP TABLE IF EXISTS ... CASCADE` chunks from SKIPPED into executed, and what keeps that safe is purely the branch order — the DDL is reached only when the catalogue reported no tables. The destructive assertion runs FIRST so it is the one that names a broken order.
+- **Shown to have teeth, not assumed:** with the gate in `db_initializer.go` inverted (`len(d.ExistingTables()) == 0`) the case fails naming `DROP TABLE IF EXISTS users CASCADE` from the recorded statement list; with the gate restored it passes. It passes at the parent as well and does not pretend to be fail-first — it pins the order the parser fix now depends on.
+- Commands: `go test -count=1 ./fastmcp/task_management/infrastructure/database/` → **ok**; `go vet` clean; `gofmt -l` prints nothing.
+
 ## 2026-10-09 - Initialize is asserted to verify the tables it claims to have created
 
 - `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_verify_test.go` — one case, `TestInitializeVerifiesTheTablesAfterRunningTheSchema`. Over the scripted fake with an empty catalogue and `AUTO_MIGRATE=true` the whole path runs — connection, DDL, then the required-table check — and because the catalogue is still empty the run must NOT report success. The case also pins that the init SQL actually ran (otherwise it would prove nothing) and that the failure is not silent by asserting the log line.

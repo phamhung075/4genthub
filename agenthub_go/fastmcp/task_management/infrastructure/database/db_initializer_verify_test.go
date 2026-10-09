@@ -33,3 +33,28 @@ func TestInitializeVerifiesTheTablesAfterRunningTheSchema(t *testing.T) {
 		t.Fatalf("the failure is silent: log=%q", buf.String())
 	}
 }
+
+// TestInitializeRunsNoDDLOnAPopulatedDatabase is a GUARD, not a fail-first case: it passes before and
+// after the change, and it is here because the parser fix turned the schema's `DROP TABLE IF EXISTS
+// ... CASCADE` statements from chunks the splitter SKIPPED into chunks that run. What keeps that safe
+// is the branch order - the DDL is reached only when the catalogue reported no tables - so the order
+// is asserted rather than left to a comment. Nothing in this package should ever drop a live table.
+func TestInitializeRunsNoDDLOnAPopulatedDatabase(t *testing.T) {
+	t.Setenv("AUTO_MIGRATE", "true") // the strongest setting: the gate is open and the DDL still must not run
+	f := &fakeDB{tables: map[string][]string{"tasks": {"id"}, "subtasks": {"id"}}}
+	inst := newFakeInitializer(t, f)
+
+	inst.Initialize()
+
+	// The destructive check comes FIRST. If the branch order ever inverts, the DROP is already
+	// recorded, and this is the assertion that should name it rather than the initialization flag.
+	for _, s := range f.statements {
+		upper := strings.ToUpper(s)
+		if strings.Contains(upper, "DROP TABLE") || strings.Contains(upper, "CREATE TABLE") {
+			t.Fatalf("a populated database reached the schema DDL: %q (all statements: %v)", s, f.statements)
+		}
+	}
+	if !inst.Initialized {
+		t.Fatal("a database with tables was not reported as initialized")
+	}
+}
