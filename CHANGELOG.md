@@ -31,6 +31,19 @@
 - `OPENRIG_SKILLS_ROOT=…/openrig python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **54 passed**; `env -u OPENRIG_SKILLS_ROOT …` → **51 passed, 3 skipped**, `-rs` naming the variable, the value it holds and what to set.
 - **NOT RUN:** `4genteam team drift-check` and any publish — both need the production `AGENTHUB_URL`/`AGENTHUB_TOKEN`, and this change is client-side only.
 
+## The seat context that names the allowed root files stops naming one that was renamed
+
+### Fixed
+- **`scripts/team/4genthub/area-docs.txt:5` listed `CLAUDE.md` among the five allowed root `.md` files, and no tree has that path — it was renamed to `AGENTS.md` in `f7a809dc` (2026-10-05, *chore(docs): rename CLAUDE.md to AGENTS.md*).** The line now names `AGENTS.md`, so the list is exactly the tracked set at the tip, measured rather than recalled: `git ls-tree -r --name-only HEAD | grep -v / | grep '\.md$'` → `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.local.md`, `README.md`, `TEST-CHANGELOG.md`. **The count of five was already right and the two names are the same length, so the change is one word and nothing else in the sentence moves.**
+- **THE FILE IS TEAM CONTEXT, NOT PROSE:** `scripts/team/4genthub/team.json` registers it (`area-docs` → `area-docs.txt`) and `agenthub_client/tests/test_team_setup.py:424-427` asserts its word count (**80-150; it reads 140**), so a stale name here is re-taught at every seat start that consumes the file rather than read once.
+- **ONE MEASUREMENT THAT QUALIFIES THE FINDING, recorded because the row's premise called this file the one that instructed the seat:** the `## area-docs` block that actually reached this seat's prompt is **not** this file's text — it is written in the owner-directive voice and lists three root files, with no `CLAUDE.md`. So the stale name sat in the **source this directory is uploaded from**, not in the copy served to the seat tonight, and the served copy was already clean. The fix is still the right one: this directory is what `4genteam team setup` uploads (`team_setup.py` PUTs one request per slug, asserted at `test_team_setup.py:193`), so a stale name here is what a re-run of that setup would store.
+
+### Verified
+- **One hit in the family before the edit, none after:** `grep -rn 'CLAUDE\.md' scripts/team/` → **empty**; the remaining `CLAUDE` hit in that directory is `CLAUDE.local.md`, a different file that exists.
+- **The suite that reads these files passes, and it is the suite that measures them:** `python3 -m pytest --noconftest -p no:cacheprovider agenthub_client/tests/test_team_setup.py -q` → **51 passed, 3 skipped**, which includes `test_context_files_respect_word_limits[area-docs]` and `[project-4genthub]`.
+- **READ BACK FROM THE COMMITTED BLOB**, because an edit echo is not evidence in this tree — this session's gemini-twin incident produced a commit carrying three of six changed lines — so the report names the hash and the line read at `:5`.
+- **NOT RUN, and nothing to run:** nothing executes a seat context file; the verification is the index read-back, the grep count and the suite above.
+
 ## The clause family closes at five: the reader's shape and this seat's own, and the 441 discrepancy is not open any more
 
 ### Changed
