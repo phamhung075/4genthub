@@ -1,6 +1,8 @@
 # scripts/team/4genthub-min — what this directory is, and the two things it does not settle
 
-The room definition for the minimum team, applied by `scripts/openrig_team_setup.py`. It mirrors the
+The room definition for the minimum team, applied by `4genteam team apply` (the module is
+`agenthub_client/src/agenthub_client/team_setup.py`; this named `scripts/openrig_team_setup.py`
+until the 2026-10-09 client relocation moved the scripts into the installed client). It mirrors the
 SHAPE of `scripts/team/4genthub/team.json` and **inherits nothing from it**: that room is nine seats
 on `claude-code` with an empty model, this one is nine seats on `omp` with
 `deepseek/deepseek-flash` plus an architect on `claude-code`, and `seat_type`, `runtime` and `model`
@@ -10,9 +12,9 @@ that does not exist, and it would do it silently because every field would be fi
 ## The ten modules
 
 `guide-common` is carried by the **company overlay**, because every seat must have it. The nine
-`guide-<seat>` modules are in each seat's own overlay (slug lists — the script builds the ops). The
-texts are a **pure copy** of the seed-library blocks, verified byte-identical to the digests recorded
-in `seedlibrary/guides.lock.json`, 10 of 10.
+`guide-<seat>` modules are in each seat's own overlay (slug lists — `4genteam team apply` builds the
+ops). The texts are a **pure copy** of the seed-library blocks, verified byte-identical to the
+digests recorded in `seedlibrary/guides.lock.json`, 10 of 10.
 
 *Measured 2026-10-06: the sha256 of each text file compared with its entry in that lock — 11 of 11 — at
 the commit that created this directory (`10e5222b`), and again after the note edits. The count is now
