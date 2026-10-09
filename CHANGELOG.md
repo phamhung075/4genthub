@@ -1,3 +1,13 @@
+## The two claude-code historical pages cite the commits that removed what they describe
+
+### Changed
+- **`ai_docs/claude-code/token-optimization-comparison.md` and `ai_docs/claude-code/CLAUDE-optimized-demo.md`** both label themselves a *historical artifact — retired model* for the retired `call_agent` MCP tool and the Python agent library's role-switching model, and neither cited the commit that removed them. Both now do, re-derived rather than recalled: **`call_agent` with its whole trace in `9a657d92`** (2026-10-04, *refactor(python): remove the call_agent tool and its whole trace (mirror T6)*), **the Python agent library and agent management in `60bcdb68`** (2026-10-04, *refactor(agents): remove the Python agent library and agent management (T8 Python half)*), with their backend **`agenthub_main/` removed in `a50929c6`** (2026-10-09) and the served **`manage_agent` description** no longer advertising the library since **`8fa51fd7`** (2026-10-09). This is directive B's rule for retired things: either deleted, or marked as history **with the commit that removed them**.
+
+### Verified
+- **The tool's absence is asserted by a test rather than inferred:** `agenthub_go/fastmcp/server/httpapp/call_seat_mcp_test.go:63-65` fails if `tools/list` publishes it (*"tools/list still publishes the removed call_agent tool"*), and that is what the header points a reader at.
+- **What survives under the name is DATA, and the header says so:** `grep -rn '"call_agent"' agenthub_go --include=*.go` returns **27 matches in 18 files** at tip `158871b0`, all of them the agents registry's payload FIELD (`agent_repository.go:422`, `:591`; `agent_converter.go:29`; `agent_response.go:23`) or a read of it as an argument of `manage_agent` (`mcp_routes.go:461`) — no registration, which is the distinction that keeps the word from reading as a live tool.
+- **Removal commits re-derived, not recalled:** `git log --format='%h %ad %s' --date=short -1 <hash>` for each of the four → **2026-10-04, 2026-10-04, 2026-10-09, 2026-10-09** respectively.
+
 ## F1's inventory had drifted one source commit behind, and the publish path refuses the whole run on a stale digest
 
 ### Fixed
