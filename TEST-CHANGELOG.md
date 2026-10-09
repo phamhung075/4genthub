@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the commit wrapper gets the case that stages the death: the capture is verified, and the only copy is named
+
+- `scripts/tests/test_git_commit_capture.py`, **NEW FILE**, 4 cases: the capture lands inside the repository (not in a `$HOME`-derived store a victim cannot find) with a manifest naming the path, its bytes and its sha1; **the kill case** — a commit command that rewinds the file and exits 137 — is reported `at-risk`, exits 3, names `git apply <patch>`, and that ONE command puts the bytes back; a real commit is verified `landed` and leaves nothing dirty; and the sweep removes an old capture only when its own verification recorded nothing at risk.
+- **THE ORDER OF `landed` AND `restored` IS THE ASSERTION, NOT A DETAIL.** `landed` is decided from HEAD MOVING and then naming the path. Asking the current HEAD alone would call a path landed because an EARLIER commit touched it — and a commit that died inside the window leaves HEAD exactly where it was, which is precisely when the verdict has to be right. The first run of these cases failed on both counts: the AT-RISK block never printed when the commit failed, and the real-commit case was reported `restored` when it was `landed`.
+- **THE HAPPY PATH IS NOT THE CASE THAT MATTERS.** The window is real, so the death is staged for real (a commit command that resets the file and exits 137 is what "the restore never ran" looks like from the worktree's side), and `COMMIT_COMMAND` is a module-level seam, so no process is actually killed to test it. The scratch-repo demonstration in the CHANGELOG entry does kill one, inside the real hook window.
+- Commands: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_git_commit_capture.py -q` → **4 passed**; both hook suites together → **10 passed**.
+
 ## 2026-10-09 - the stash-patch scan gains the case that was missing: store discovery, and the patch-less store
 
 - `scripts/tests/test_stash_patch_scan.py`, **NEW FILE**, 6 cases. Five build each class for real — real `git diff` output applied against a real repository, because the classifier is the whole point and a fixture would only test the fixture: one patch of each class (`applied`/`carried`/`drifted`/`empty`) counted, the prune taking only applied-and-old and leaving a `carried` patch alone, a vacuous scan exiting 2, a missing store exiting 2, and the two classes that need a human being named.
