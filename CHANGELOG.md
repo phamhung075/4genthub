@@ -1,3 +1,16 @@
+## F1's inventory had drifted one source commit behind, and the publish path refuses the whole run on a stale digest
+
+### Fixed
+- **`ai_docs/agent-system/skill-library.json` and `.md`: the digest recorded for `openrig-user` (plugin edge) was one source commit stale.** The stored `6fa8ad6e…` sat against a `SKILL.md` that now hashes to `f3d34e6a…`; the file was changed by OpenRig **`31fe301b`** (2026-10-08, *"docs(skills): yolo mode removes the approval step, not the rendered deny rules"*), one day **after** this inventory was built. The stored digest now equals the committed blob.
+- **`generated_from` said "HEAD at the time of writing", which cannot be recomputed — nothing could tell a current digest from a stale one.** It now pins OpenRig `31fe301b466dcd74183f5004262dcae117719e0b` and the re-verification date, and the `.md` Provenance section records the method, the single drift found, and that the file is hand-maintained (no script writes it, so a source-side change must be re-measured by hand).
+
+### Verified
+- **All 54 row-sides recomputed from the committed blobs** (`sha256` of each `SKILL.md` named by the inventory, resolving `canonical`, `plugin` and both-per-row): **before** 53 match / **1 drift** / 0 missing; **after** 54 match / 0 drift / 0 missing. Structure unchanged: `count: 52`, 52 rows; curation sanity — 9 seat types, 54 refs, 26 distinct, **0** refs naming a skill outside the 52, `unused_by_default` 26 with 0 unknown, curated ∪ unused = 52 with 0 overlap.
+- **The drift is committed, not worktree noise:** `openrig-user/SKILL.md` is clean in the OpenRig worktree (the only two dirty paths there are untracked `AGENTS.md`/`CLAUDE.md`), and `git show HEAD:<path> | sha256sum` equals the worktree digest — `f3d34e6a…` at `31fe301b`. Its last change is `31fe301b`; before that, `b7ec2f80` (2026-10-02).
+- **The digest is load-bearing, which is why this was chased rather than noted.** `publish-skills` verifies every file it reads against the inventory's digest and refuses the whole run. **Before:** `OPENRIG_SKILLS_ROOT=…/openrig 4genteam team publish-skills --dry-run` → `exit 2`, *"error: skill 'openrig-user': … digests f3d34e6a…, but the inventory records 6fa8ad6e…; the inventory is stale - regenerate it before publishing"* — one stale digest blocked **all 52**. **After:** `plan: publish-skills 52 skill block(s) from …skill-library.json`, `exit 0`.
+- Consumers re-run rather than assumed: `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/` → `ok`; `python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **50 passed**.
+- **Not touched, and reported instead:** a second copy of the plugin edge lives at `.claude/plugins/shared:openrig-core/skills/` (50 files, a 2026-09-30 snapshot whose `openrig-user/SKILL.md` hashes to `ed430628…` — matching neither the source nor the inventory). `.claude` is a **submodule** here, so that tree is untracked in this repo and is not a 4genthub artifact. `ai_docs/index.json` still carries the pre-edit `hash`/`size` for `skill-library.md`; it is maintained by the harness's `docs_indexer.py`, and the previous content commit to this inventory (`913d57bd`) did not touch it either.
+
 ## The frontend validation doc names the mechanism, not a hook that never existed
 
 ### Changed
