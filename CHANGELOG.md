@@ -1,3 +1,13 @@
+## The agent-facing MCP list named nine tools while the registry publishes ten
+
+### Fixed
+- `ai_docs/agent-system/seat-model-and-mcp-surface.md`: the published-tools block named **nine** tools (`manage_task`, `manage_subtask`, `manage_context`, `manage_project`, `manage_git_branch`, `manage_agent`, `manage_seat`, `call_seat`, `manage_connection`) under the sentence "The live registry publishes **ten** tools" — so `submit_feedback` was missing from the one file an agent reads to learn the surface, and that is the tool an agent reaches when it cannot route its problem anywhere else. The block now carries all ten, and the sentence names where each arises rather than asking the reader to count: **six** in `ToolDefinitions` (`agenthub_go/fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:223-249`) and **four** appended by `MCPToolsList` (`agenthub_go/fastmcp/server/httpapp/mcp_routes.go:265` — `manage_seat` `:302`, `call_seat` `:311`, `submit_feedback` `:320`, `manage_connection` `:324`).
+
+### Verified on the code, not on the prose
+- The generator at this commit: `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref.ts` -> `143 routes, 10 tools`.
+- The registry tests, which drive the real registered `POST /mcp` handler through `httptest`: `GOCACHE=$PWD/.gocache/rig-surface TMPDIR=$PWD/.gotmp go test ./fastmcp/server/httpapp/ -run 'SubmitFeedback' -v` -> `TestMCPToolsListPublishesSubmitFeedback`, `TestMCPSubmitFeedbackAndTheRouteAreOneWriter` and `TestMCPSubmitFeedbackRefusesAnUnknownLayer` **PASS** (`ok agenthub/fastmcp/server/httpapp 0.007s`); `TestMCPToolsListMatchesGolden`, `TestMCPToolsListPublishesManageSeat` and `TestMCPToolsListPublishesCallSeat` **PASS** (`0.014s`).
+- The list this file defers to, `ai_docs/api-integration/mcp-tools-api-complete.md`, already carried all ten: this file was the stale copy, not the reference.
+
 ## The friction channel's no-MCP door survives the client relocation, and the guard that found it was red
 
 ### Fixed
