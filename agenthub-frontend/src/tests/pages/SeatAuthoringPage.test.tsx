@@ -663,3 +663,29 @@ describe('SeatAuthoringPage mcp blocks', () => {
     expect(screen.getByLabelText('Module kind')).toHaveValue('mcp');
   });
 });
+
+describe('SeatAuthoringPage module prefill', () => {
+  it('prefills the publish form from the module row that was chosen', async () => {
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: {
+        slug: 'rules',
+        kind: 'instruction',
+        version: '1.0.0',
+        content: 'rules body\n',
+        checksum: 'sum',
+      },
+    });
+    renderPage();
+
+    // The row's action is the entry point: without it the prefill could not be reached from the page.
+    fireEvent.click(await screen.findByRole('button', { name: /edit and publish rules/i }));
+
+    await waitFor(() => expect(screen.getByLabelText('Module slug')).toHaveValue('rules'));
+    expect(screen.getByLabelText('Module version')).toHaveValue('1.0.0');
+    await waitFor(() => expect(screen.getByLabelText('Module content')).toHaveValue('rules body\n'));
+    // The block's OWN version was read, and the form is now editing that block, not creating one.
+    expect(mockApi.getModuleVersion).toHaveBeenCalledWith('rules', '1.0.0');
+    expect(screen.getByRole('button', { name: /publish new version/i })).toBeInTheDocument();
+  });
+});

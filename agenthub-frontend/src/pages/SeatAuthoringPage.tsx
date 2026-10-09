@@ -36,7 +36,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocketV2';
 import { useRealtimeSync } from '../hooks/useRealtimeSync';
-import type { SeatOverlayOp, SeatOverlayScope } from '../types/seatTypes';
+import type { ModuleSummary, SeatOverlayOp, SeatOverlayScope } from '../types/seatTypes';
 
 export const SeatAuthoringPage: React.FC = () => {
   const navigate = useNavigate();
@@ -53,6 +53,8 @@ export const SeatAuthoringPage: React.FC = () => {
 
   const [room, setRoom] = useState('');
   const [seat, setSeat] = useState('');
+  /** The block the publish form below is editing: prefills it, and cleared once it is published. */
+  const [editingModule, setEditingModule] = useState<ModuleSummary | null>(null);
   const roomSlug = rooms.some((entry) => entry.slug === room) ? room : rooms[0]?.slug ?? '';
   const { seats } = useSeats(roomSlug);
   const seatKey = seats.some((entry) => entry.seat_key === seat) ? seat : seats[0]?.seat_key ?? '';
@@ -192,12 +194,28 @@ export const SeatAuthoringPage: React.FC = () => {
                   (types/websocket-protocol.ts:473). Without it the missing key threw during render
                   and unmounted the whole page instead of degrading this one cell. */}
               <code className="text-xs text-muted-foreground">{module.sha256?.substring(0, 8) || 'unknown'}</code>
+              {/* The entry point for "edit a block and publish a new version": it hands THIS block to
+                  the form below, which prefills from it. The visible label is the same on every row,
+                  so the accessible name carries the slug and stays one button per module. */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                aria-label={`Edit and publish ${module.slug}`}
+                onClick={() => setEditingModule(module)}
+              >
+                Edit and publish
+              </Button>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <ModulePublishForm />
+      <ModulePublishForm
+        block={editingModule}
+        onPublished={() => setEditingModule(null)}
+        onCancelEdit={() => setEditingModule(null)}
+      />
 
       <McpBlockForm />
 

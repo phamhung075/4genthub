@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the publish form's prefill is pinned, and both refusals assert that NO request was sent
+
+- `agenthub-frontend/src/tests/components/ModulePublishForm.test.tsx`, **NEW FILE**, 6 cases: the form prefills slug, version, kind and content from the block it was handed, reads THAT version rather than the latest, and fixes the kind while editing; an UNCHANGED block sends nothing, so a no-change edit never earns the 409; content changed at the original version also sends nothing and names the version that exists; the new-version path calls `putModuleVersion(slug, '1.4.0', {kind, content})` and is asserted NOT to have been called with the version being edited; create mode is unaffected and reads no block content at all; and the fields are held until the block lands.
+- **THE TWO REFUSAL CASES ASSERT `putModuleVersion` WAS NEVER CALLED, not merely that the button is disabled.** A disabled button that still fired the mutation would satisfy the weaker assertion, and the point of the change is that these two cases never reach the wire.
+- `agenthub-frontend/src/tests/pages/SeatAuthoringPage.test.tsx`: one case added - a module row's `Edit and publish` prefills the form with that row's real slug and version and puts the form in new-version mode. The 35 cases already in the file are unchanged and still pass.
+- **SEEN FAILING FIRST, AND THE RED CHANGED THE COMPONENT RATHER THAN THE TEST:** the first run was `2 failed | 33 passed`, both failures the same race - an edit made before the block's content arrived was overwritten by the seed. The fix was to HOLD the slug, version and content fields until the baseline exists, because typing into a form that is about to be replaced is a real hazard and not only a test artifact.
+- Commands, run with only this change's four paths dirty: `npx tsc --noEmit -p .` -> exit 0, 0 `error TS` lines; `npx vitest run` -> exit 0, **113 files passed (113), 1783 tests passed (1783), 0 failed**, 78.05s; `npx vite build` -> exit 0 in 17.62s.
+
 ## 2026-10-09 - no test changed: the script-test path is verified correct in every live home, and the corrected line names the exit codes a mask would hide
 
 - **No test was added, weakened, deleted or run for this change.** It is one prose line in `ai_docs/core-architecture/agenthub-system-architecture.md:364`, plus these two changelogs, and no test asserts that text.
