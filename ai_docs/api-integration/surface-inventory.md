@@ -357,27 +357,29 @@ PASS
 ok  	agenthub/fastmcp/server/httpapp	0.014s
 ```
 
-The `tools/list` result is built by `App.getMCPToolsList`
-(`fastmcp/server/httpapp/mcp_routes.go:257`), which does exactly two things:
+The `tools/list` result is built by `App.MCPToolsList`
+(`fastmcp/server/httpapp/mcp_routes.go:275`), which does exactly two things:
 
 1. iterates `DDDCompliantMCPTools.ToolDefinitions()`
    (`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:221`), and
-2. appends **four** schemas `ToolDefinitions` does not carry — `manage_seat`, `call_seat`, `submit_feedback` and the connection tool (`mcp_routes.go:278`, `:287`, `:296`, `:305`).
+2. appends **four** schemas `ToolDefinitions` does not carry — `manage_seat`, `call_seat`, `submit_feedback` and the connection tool (`mcp_routes.go:301`, `:310`, `:319`, `:328`).
 
 There is no other filter or source.
 
-**Citations re-derived and one claim corrected (2026-10-06, docs duty pass 3).** Every line above was re-resolved against the tree rather than trusted: `getMCPToolsList` had moved **236 → 257** and `ToolDefinitions` **218 → 221**; and **the appended count read THREE where the code appends FOUR** — `tools := make([]map[string]any, 0, len(defs)+4)` (`mcp_routes.go:262`) with four appends (`:278`, `:287`, `:296`, `:305`) — **which this same document's §2.3 table and §2.5 already called four, so this section was contradicting its own table as well as the code.** The stale range `249-274` is now the four real lines.
+**Citations re-derived and one claim corrected (2026-10-06, docs duty pass 3).** Every line above was re-resolved against the tree rather than trusted: `getMCPToolsList` *(the name in that pass; since renamed `App.MCPToolsList`, `mcp_routes.go:275`, 2026-10-09 — see the re-resolution note below)* had moved **236 → 257** and `ToolDefinitions` **218 → 221**; and **the appended count read THREE where the code appends FOUR** — `tools := make([]map[string]any, 0, len(defs)+4)` (`mcp_routes.go:262`) with four appends (`:278`, `:287`, `:296`, `:305`) — **which this same document's §2.3 table and §2.5 already called four, so this section was contradicting its own table as well as the code.** The stale range `249-274` is now the four real lines.
+
+**RE-RESOLVED 2026-10-09 at HEAD `36716e6e` (§2 pass), and the builder was RENAMED rather than merely moved.** `App.getMCPToolsList` **resolves nowhere**: `git grep getMCPToolsList` returns prose only, never a `.go` declaration, because the one-line alias was deleted (recorded in `CHANGELOG.md`). The method is **`App.MCPToolsList`** (`mcp_routes.go:275`), which is what the citations above now read. The `make([]map[string]any, 0, len(defs)+4)` line is `:285`, and the four appends are `:301`, `:310`, `:319`, `:328`. Also re-resolved in this pass: `handleJSONRPC` `173 → 174`, `authorizeMCPMethod` `145 → 146`, `dispatchMCPTool` `324 → 347`, `get_mcp_status` `357 → 380`, `check_session_health` `363 → 386`, the unknown-tool `default` `469 → 492`, and `tool_config.go` `22 → 21` (where `var toolEnvDefaults` is declared). **The control that separates this from a blanket renumbering:** every line §2.3 attributes to `ToolDefinitions()` is exact at this HEAD (`ddd_compliant_mcp_tools.go:223`, `:227`, `:233`, `:239`, `:244`, `:249`), every `IsWorkflowGuidanceEnabled` call site in §2.5 is exact (`git_branch_mcp_controller.go:176`, `subtask_mcp_controller.go:336`, `agent_mcp_controller.go:249`), and `app.go:71` and `ddd_compliant_mcp_tools.go:65` are exact — so the drift is confined to `mcp_routes.go`, the file that gained the most lines above these pointers. The ten names themselves are unchanged, and the acceptance command above **plus `TestMCPToolsListPublishesSubmitFeedback`** (the command as written omits it) passes at this HEAD: all five `PASS`, `ok agenthub/fastmcp/server/httpapp 0.024s`.
 
 ### 2.2 MCP protocol methods (NOT tools)
 
-`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:173`) implements these JSON-RPC
+`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:174`) implements these JSON-RPC
 methods. They are the protocol layer and MUST NOT be listed as tools:
 
 `initialize`, `notifications/initialized`, `ping`, `tools/list`, `resources/list`,
-`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:173`).
+`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:174`).
 
 `initialize` and `tools/list` additionally require a bearer token when
-`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:145`).
+`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:146`).
 `resources/list` and `prompts/list` return empty lists.
 
 ### 2.3 Published tools (`tools/list`)
@@ -392,16 +394,16 @@ Ten tool names, always present except `manage_context` (see note):
 | `manage_project` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:239` |
 | `manage_git_branch` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:244` |
 | `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:249` |
-| `manage_seat` | appended schema | `mcp_routes.go:279` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
-| `call_seat` | appended schema | `mcp_routes.go:288` (`CallSeatToolName`, `call_seat_controller.go:14`) |
-| `submit_feedback` | appended schema | `mcp_routes.go:297` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
-| `manage_connection` | appended schema | `mcp_routes.go:301` (`connTool, err := connectionToolDefinition()`, appended at `:305`; definition `mcp_connection_tool.go:39`) |
+| `manage_seat` | appended schema | `mcp_routes.go:302` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
+| `call_seat` | appended schema | `mcp_routes.go:311` (`CallSeatToolName`, `call_seat_controller.go:14`) |
+| `submit_feedback` | appended schema | `mcp_routes.go:320` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
+| `manage_connection` | appended schema | `mcp_routes.go:328` (`tools = append(tools, connTool)`; built at `:324` by `connTool, err := connectionToolDefinition()`; definition `mcp_connection_tool.go:39`) |
 
 Note: `manage_context` is emitted only when `ContextController != nil`; the constructor
 sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:110-114`), and
 `app.go:71` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
 **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly
-these ten names.**
+these ten names.** **RE-MEASURED 2026-10-09 at HEAD `36716e6e`: the five registry tests pass (`ok agenthub/fastmcp/server/httpapp 0.024s`), so all ten names stand and the count is unchanged — see §2.1's re-resolution note.**
 
 `tools_golden.json`
 (`fastmcp/task_management/interface/testdata/tools_golden.json`) contains only the six
@@ -411,18 +413,18 @@ rest equals golden.
 
 ### 2.4 Dispatch-only names (callable via `tools/call`, NOT advertised by `tools/list`)
 
-`dispatchMCPTool` (`mcp_routes.go:324`) also handles two legacy names that are **not**
+`dispatchMCPTool` (`mcp_routes.go:347`) also handles two legacy names that are **not**
 published in `tools/list`:
 
-- `get_mcp_status` (`mcp_routes.go:357`)
-- `check_session_health` (`mcp_routes.go:363`)
+- `get_mcp_status` (`mcp_routes.go:380`)
+- `check_session_health` (`mcp_routes.go:386`)
 
-Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:469`, `default`).
+Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:492`, `default`).
 
 ### 2.5 Configuration gating — important negative finding
 
 The Python-derived `ToolConfig` subsystem still exists in Go
-(`fastmcp/task_management/infrastructure/configuration/tool_config.go:22`) with a
+(`fastmcp/task_management/infrastructure/configuration/tool_config.go:21`, where `var toolEnvDefaults` is declared) with a
 `TOOL_*` enablement table (`manage_project`, `manage_task`, `manage_subtask`,
 `manage_agent`, `manage_seat`, `manage_document`, `update_auto_rule`, `validate_rules`,
 `regenerate_auto_rule`, `validate_tasks_json`, `create_context_file`, `manage_context`).
@@ -433,7 +435,7 @@ The Python-derived `ToolConfig` subsystem still exists in Go
 `IsWorkflowGuidanceEnabled()` (`git_branch_mcp_controller.go:176`,
 `subtask_mcp_controller.go:336`, `agent_mcp_controller.go:249` — all three verified present). `GetEnabledTools` has no
 caller outside `fastmcp/config` (its `ToolRegistry`/`ToolConfigLoader` are unused by the
-HTTP path). `ToolDefinitions()` and `getMCPToolsList` read no environment variable.
+HTTP path). `ToolDefinitions()` and `MCPToolsList` read no environment variable.
 Therefore `TOOL_*` and the six phantom names (`manage_document`, `update_auto_rule`,
 `validate_rules`, `regenerate_auto_rule`, `validate_tasks_json`, `create_context_file`)
 have no effect and are never advertised.
@@ -592,9 +594,9 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    mounted `/api/v2/contexts/{level}` routes.
 4. **`agenthub_go/PROD_READINESS_REPORT.md`** (Go module root, not `ai_docs`) —
    **SUPERSEDED IN PLACE** (`95ffca45`). A status block above the blocker table marks B4
-   and B6 as no longer describing HEAD (`getMCPToolsList` builds from
-   `ToolDefinitions()`, `mcp_routes.go:236`; `GET /mcp` is `mcpSSEHandler`,
-   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables` — **the two line numbers are the REPORT'S, taken at `c4ff8d42`; the live ones are `mcp_routes.go:257` and `:138` (re-derived 2026-10-06, pass 3), and the report's block is left as the dated quotation it is**), while the
+   and B6 as no longer describing HEAD (`App.MCPToolsList` builds from
+   `ToolDefinitions()`, `mcp_routes.go:275`; `GET /mcp` is `mcpSSEHandler`,
+   `mcp_routes.go:116`; `models_prod.go` declares six `ProductionTables` — **the two line numbers in the report's block are the REPORT'S, taken at `c4ff8d42`; the live ones are `mcp_routes.go:275` (re-derived 2026-10-09, when the method was renamed from `getMCPToolsList`) and `:138` (re-derived 2026-10-06, pass 3), and the report's B4 sentence has since been corrected to the live name and the ten/four count while the rest of the block stays the dated quotation it is**), while the
    original findings stay visible as the dated record they are.
 5. **Cross-check `/tmp/inv.md`** (reviewer inventory, HEAD `c4ff8d42`) — retained for its
    method only. Its three divergences from the code are settled in this document: the

@@ -661,7 +661,7 @@ agenthub_go/
 
 **Tool Registration**: MCP tools are registered from `DDDCompliantMCPTools`
 (`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go`); the `tools/list` result
-is built by `getMCPToolsList` (`fastmcp/server/httpapp/mcp_routes.go`).
+is built by `App.MCPToolsList` (`fastmcp/server/httpapp/mcp_routes.go:275`). **RENAMED 2026-10-09: this line read `getMCPToolsList`, an identifier that resolves nowhere in `agenthub_go` — the one-line alias was deleted.**
 
 **Authentication**: protected REST routes are wrapped with `authed(...)`; MCP methods are
 authorized in `authorizeMCPMethod` (`mcp_routes.go`), which requires a bearer token for
