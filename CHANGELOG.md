@@ -1,3 +1,18 @@
+## A parked pre-commit patch is now findable and classified from any seat, and a scan that finds nothing no longer looks like a clean box
+
+### Added
+- `scripts/git-hooks/stash_patch_scan.py` — the P2 half of the stash-window hardening (row `c029503a`). It answers ONE question per parked patch, *is this content in the tree right now*, and prints the **count of each class** rather than a pass: `applied` (spent), `carried` (a live parked diff — **never** pruned), `drifted` (applies neither way — named for an eye) and `empty` (0 bytes: the shape an interrupted write leaves, and the incident artifact is one). `--prune` moves only `applied` patches older than `--max-age-hours` into `<store>/pruned/`, writing `<store>/pruned-manifest.log` with bytes, epoch, age and sha1 **before** the move, so nothing leaves the live set unreceipted.
+
+### Fixed
+- **The discovery was silently blind, which is the worst way for this tool to be wrong.** `default_stores()` kept `{home}` inside its two path patterns and called `expanduser` — which substitutes `~` and *nothing else* — so both patterns stayed literal, `is_dir()` was false for both, and the scan reported **"no patch store exists"** on this box, which holds **764** patches across ten stores. The home is now composed from the passwd database (`pwd.getpwuid(os.getuid()).pw_dir`), because inside a seat `$HOME` **is** the seat's own state directory. That lesson was already written in the file's own comment while the code did the opposite.
+- Stores holding no `patch*` are no longer listed: this box carries ~170 empty `<state>/<kind>/<name>.json/.cache/pre-commit` directories, and printing those beside the ten that matter is how a real count gets read as noise. `default_stores(home, environ)` now takes both as seams so the discovery is testable without depending on this machine's passwd entry or environment.
+
+### Verified
+- `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_stash_patch_scan.py -q` → **6 passed** (the new case asserts the legacy default and a seat store are found from a fixture home, and that a store holding no patch is not evidence).
+- Real residue, no `--store`: `python3 scripts/git-hooks/stash_patch_scan.py --json` → **10 stores, 766 patches**, `applied 16, carried 0, drifted 749, empty 1`, rc 0. The 0-byte patch is the interrupted write the row was opened on, named rather than pruned.
+- Selection, on the same residue: `... --prune --max-age-hours 0.01 --json` → **moved 14, every one `class=applied`**, leaving all 749 `drifted` and the 1 `empty` in the live set. With the default 24h retention the same command moves **0** — no `applied` patch on this box is old enough yet — which is the conservative rule doing its job.
+- The manifests made a duplicate visible that the row's design predicted: the **same** patch (sha1 `d148a418…`) sits in **four** seats' stores, because the framework writes the tree-wide diff into the *committing* seat's store. That is exactly why a victim searching only their own cache finds nothing.
+
 ## Hash presence in a transcript is not an attribution method — NEXT_GEN rule 67, from the trial arm's own re-derivation
 
 ### Added

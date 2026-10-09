@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the stash-patch scan gains the case that was missing: store discovery, and the patch-less store
+
+- `scripts/tests/test_stash_patch_scan.py`, **NEW FILE**, 6 cases. Five build each class for real — real `git diff` output applied against a real repository, because the classifier is the whole point and a fixture would only test the fixture: one patch of each class (`applied`/`carried`/`drifted`/`empty`) counted, the prune taking only applied-and-old and leaving a `carried` patch alone, a vacuous scan exiting 2, a missing store exiting 2, and the two classes that need a human being named.
+- **THE SIXTH CASE IS THE ONE THAT WAS MISSING, AND ITS ABSENCE IS WHY A BLIND SCAN LOOKED CLEAN.** Every original case passes `--store` explicitly, so `default_stores()` was never executed by a test; on this box it answered "no patch store exists" while holding 764 patches, because the two patterns kept the literal `{home}` (`expanduser` substitutes `~` and nothing else). `test_the_seat_stores_are_found_and_a_store_with_no_patch_is_not` calls the discovery through a fixture home and asserts the human's legacy default and a seat store are found while a store holding no patch is not.
+- **IT NEEDED A SEAM, NOT A MACHINE.** The passwd home cannot be faked through the CLI, so `default_stores(home, environ)` takes both as defaulted parameters; a case that read this machine's own home would pass or fail by machine, which is the class of test that made the original blindness invisible.
+- Commands, with only this change's four paths dirty: `python3 -m pytest --noconftest -p no:cacheprovider scripts/tests/test_stash_patch_scan.py -q` → **6 passed** in 0.57s. On the real residue, no `--store`: **10 stores, 766 patches** (`applied 16, carried 0, drifted 749, empty 1`), and `--prune --max-age-hours 0.01` moved exactly the **14** `applied` ones, moving nothing else.
+
 ## 2026-10-09 - the project-root search is pinned host-independently, and the parity case now states the invariant its 120 fixtures exercise (`30dfd7e9`)
 
 - `agenthub_go/fastmcp/task_management/infrastructure/utilities/directory_utils_test.go`: `TestFindProjectRootIsHostIndependent` builds its fixture root as `t.TempDir()/agenthub_go/r` BY CONSTRUCTION, so no directory on the machine is named for the search to match.
