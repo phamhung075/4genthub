@@ -1,3 +1,16 @@
+## The rule 70 clause gains its instrument shape: a listing that abbreviates its own paths is a listing whose grep can lose a row
+
+### Changed
+- **`agenthub_go/NEXT_GEN.md:868`, inside the rule 70 clause and beside the two shapes** — a fifth instance, instrumental rather than row-level, and it is what makes the clause's count control a control rather than a verdict: **a listing that abbreviates its own paths is a listing whose grep can lose a row**. The mechanism, measured rather than taken from the report: **`git show --stat --format='' 1c7b6631 | grep -c 'scripts/deployment'` returns THREE**, because the default width prints that commit's fourth such path as **`.../health-checks/comprehensive-health-check.sh`** — truncated with a **leading ellipsis**, so the path grep cannot match a line that *is* in the output; **`--stat=300` prints it in full and the same grep returns FOUR**, and `--name-status --format=''` gives the same four with no width to get wrong.
+- **The pattern is part of the instrument, and it is recorded with the instance:** the shorter **`grep -c 'deployment'` over the same block also returns four, but one of those four is `.github/workflows/production-deployment.yml`, a different file** — so a count can be right and its membership wrong.
+- **And the arithmetic was available and not run:** `git ls-tree -r --name-only 1c7b6631^ -- scripts/deployment` shows **SIX** files while the finding reported **THREE** deletions from that commit, and HEAD holds **TWO** — six against three against two is not consistent, and the inconsistency was the tell.
+- **The practice, which is the reviewer's own rule from the same pass:** when a finding names a path, the command listing that commit's paths must print the path in full — `--name-status`, `--stat=NNN` or a `--name-only` list — **and the listing command comes before the finding about the commit, not after it**. The two instrument instances in this clause are **mirror images** and are stated together: the gofmt count in rule 16's instance (`158871b0`) is blind to what it did not **list**; this one is blind to what it **truncated** on the way to listing.
+
+### Verified
+- **All four readings in the instance were run, not recalled:** `git show --stat --format='' 1c7b6631 | grep -c 'scripts/deployment'` → **3**; the same with `--stat=300` → **4**; `git show --name-status --format='' 1c7b6631 | grep '^D' | grep -c 'scripts/deployment'` → **4**; `git ls-tree -r --name-only 1c7b6631^ -- scripts/deployment | wc -l` → **6**.
+- **Placement keeps the clause's four ruled parts in order:** scope (`:864`), the shapes and the unifying check (`:866`), this instrument shape (`:868`), the per-premise requirement (`:870`), the blanket flag (`:872`), count-as-control (`:874`), with the `## Environment facts useful to the next session` heading at `:876` — so the insert displaced nothing.
+- **Additions only:** `git diff HEAD --numstat -- agenthub_go/NEXT_GEN.md` → **2 insertions, 0 deletions** (one paragraph and its blank line).
+
 ## The two claude-code historical pages cite the commits that removed what they describe
 
 ### Changed
