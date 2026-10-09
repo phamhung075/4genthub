@@ -17,8 +17,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Brain,
-  Check,
-  Copy,
   FileCode,
   Link2,
   Loader2,
@@ -58,6 +56,7 @@ import {
 } from '../hooks/useSeats';
 import { SeatLlmPanel } from '../components/seats/SeatLlmPanel';
 import { SeatPermissionPolicyPanel } from '../components/seats/SeatPermissionPolicyPanel';
+import { SeatPreview } from '../components/seats/SeatPreview';
 import { computeEffectiveModules } from '../lib/seatModules';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocketV2';
@@ -608,108 +607,6 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
 };
 
 // ---------------------------------------------------------------------------
-// Preview
-// ---------------------------------------------------------------------------
-
-const PreviewTab: React.FC = () => {
-  const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
-  const { resolvedSeat, isLoading, error, refetch } = useResolvedSeat(room, seat);
-  const [fileIndex, setFileIndex] = useState(0);
-  const [copied, setCopied] = useState(false);
-
-  const files = resolvedSeat?.files ?? [];
-  const activeFile = files[fileIndex];
-  const command = `4genteam sync pull ${room} ${seat}`;
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(command);
-    setCopied(true);
-  };
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Resolved snapshot</CardTitle>
-          <CardDescription>
-            The snapshot is immutable: the same seat definition always returns the same hash.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3 flex-wrap text-sm">
-            <span className="text-muted-foreground">Hash</span>
-            <code className="rounded bg-muted px-2 py-1 font-mono">{resolvedSeat?.hash ?? '—'}</code>
-            <span className="text-muted-foreground">Runtime</span>
-            <Badge variant="secondary">{resolvedSeat?.runtime ?? '—'}</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="rounded bg-muted px-2 py-1 font-mono text-xs">{command}</code>
-            <Button variant="outline" size="sm" onClick={handleCopy}>
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              Copy pull command
-            </Button>
-          </div>
-          {isLoading && <Loading label="Loading snapshot..." />}
-          {error && <QueryError message={error.message} onRetry={() => refetch()} />}
-          {!isLoading && !error && !resolvedSeat && (
-            <p className="text-sm text-muted-foreground">No resolved snapshot yet.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {resolvedSeat && (
-        <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileCode className="h-4 w-4" /> Files ({files.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              {files.length === 0 && <p className="text-sm text-muted-foreground">No files rendered.</p>}
-              {files.map((file, index) => (
-                <button
-                  key={file.path}
-                  type="button"
-                  onClick={() => setFileIndex(index)}
-                  className={`block w-full truncate rounded px-2 py-1 text-left text-sm ${
-                    index === fileIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                  }`}
-                >
-                  {file.path}
-                </button>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{activeFile?.path ?? 'File'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="max-h-[28rem] overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
-                {activeFile?.content ?? ''}
-              </pre>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Policy</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-xs whitespace-pre-wrap">
-                {JSON.stringify(resolvedSeat.policy, null, 2)}
-              </pre>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -725,7 +622,7 @@ export const SeatDetailPage: React.FC = () => {
   const { seatTypes } = useSeatTypes();
   // The resolve read is what renders the seat. When it refuses, nothing behind the seat can be
   // rendered, so the refusal is reported instead of the ordinary panels - which would otherwise show
-  // a seat that looks healthy while nothing resolves it. The same query key is used by PreviewTab, so
+  // a seat that looks healthy while nothing resolves it. The same query key is used by SeatPreview, so
   // this subscribes to that one request rather than adding a second.
   const {
     isLoading: resolveLoading,
@@ -813,7 +710,7 @@ export const SeatDetailPage: React.FC = () => {
             <LinksTab roomSeats={seats} />
           </TabsContent>
           <TabsContent value="preview">
-            <PreviewTab />
+            <SeatPreview room={room} seat={seat} />
           </TabsContent>
           <TabsContent value="llm">
             <SeatLlmPanel room={room} seat={currentSeat} />

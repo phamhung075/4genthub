@@ -346,7 +346,7 @@ describe('SeatDetailPage', () => {
     ).toBeInTheDocument();
     // Nothing ordinary is rendered over it: no tabs, and none of the module content a rendered page
     // shows in its default tab. (The previous line asserted "Resolved snapshot" was absent, which can
-    // never match - that string lives in PreviewTab, whose Radix content is unmounted unless Preview is
+    // never match - that string lives in SeatPreview, whose Radix content is unmounted unless Preview is
     // the active tab - so it passed for a reason unrelated to the guard.)
     expect(screen.queryByRole('tab', { name: /modules/i })).not.toBeInTheDocument();
     expect(screen.queryByText('rules')).not.toBeInTheDocument();

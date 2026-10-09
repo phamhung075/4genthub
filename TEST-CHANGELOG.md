@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the resolved-seat preview is extracted for its second consumer, and its props are pinned on a route that has none
+
+- `agenthub-frontend/src/tests/components/SeatPreview.test.tsx`, **NEW FILE**, three cases for the extracted `SeatPreview`. The load-bearing one renders it on `/seats/authoring`, a route that carries **no `:room`/`:seat` params**, and asserts both that the snapshot renders and that `getResolvedSeat` was called with the PROPS' room and seat - so a component that read them from the route (which is what the page-local `PreviewTab` did) fails here instead of silently rendering an empty preview on the authoring page. The other two pin the pull command and file switching from the given room and seat, and that a failed resolve is reported rather than shown as an empty snapshot.
+- **SEEN FAILING FIRST:** with `src/components/seats/SeatPreview.tsx` absent the file fails at collection (`Failed to resolve import "../../components/seats/SeatPreview"`); after the extraction one case still failed on `getByText('A content')` because it asserted before the query settled rather than awaiting the render, and it was changed to `findByText` rather than loosening the assertion. Now 3 passed.
+- No existing test was weakened or deleted: `SeatDetailPage.test.tsx`'s `shows the resolved hash and switches files` renders the page, clicks the Preview tab and asserts the same strings, and it passes against the extracted component unchanged. That file's one comment naming `PreviewTab` was updated to `SeatPreview`, since the symbol it named no longer exists.
+- Commands and results: `cd agenthub-frontend && npx vitest run src/tests/components/SeatPreview.test.tsx` -> **1 file, 3 tests passed**; the full suite -> **112 files, 1770 tests passed** (111 files / 1767 tests before, the +1 file and +3 tests being this one); `npx tsc --noEmit -p .` -> exit 0, 0 errors; `npx vite build` -> exit 0.
+
 ## 2026-10-09 - the two frontend pins that named a moved script now name the installed client, and they moved with the strings they assert
 
 - `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx:412` pinned the bridge empty state as `'No bridge connected. Run scripts/openrig_bridge.py on your PC.'` and `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx:457` pinned `/openrig_seat_sync.py switch/`. The relocation moved that tool to the `4genteam` console script, so both assertions named a path that no longer answers. They now pin `'No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.'` and `/4genteam sync switch/`, **in the same commit as the four source strings they assert** - a string and its pin apart is a red suite.
