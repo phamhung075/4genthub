@@ -1,3 +1,17 @@
+## The `app.go` prose citations re-resolved, and the rot model gains its operational step
+
+### Added
+- `ai_docs/api-integration/surface-inventory.md` Appendix A: **the operational step the rot model implies — re-resolve by grepping the CITED FILE'S NAME (`mcp_routes\.go:`), not the symbol.** Drift concentrates in the files that gained lines, so the unit of search is the citation's own `file:name`; a symbol sweep answers a different question (does this name still exist anywhere) and is blind to a pointer that moved inside a file whose symbol kept its name. It is the unit that found six citations in `dcb6bb06` where a symbol sweep had found nothing twice, and the lead asked for it to travel with the claim rather than live in a message.
+
+### Fixed
+- `ai_docs/api-integration/surface-inventory.md` §1.1: the project-creation paragraph cited `app.go:135` for the registration and `:137-144` for its body, and described the field read as `r.PostForm.Get("name")`. At HEAD the registration is `app.go:146`, `_ = r.ParseForm()` is `:151`, and the check is the shared `missingForm(r, "name")` helper (`:152`, which tests `r.PostForm.Has`, `http.go:132`) — **so the sentence described a call this handler does not make, as well as two lines that moved.** The contract it states is unchanged and was re-derived rather than trusted: `writeMissing` answers `http.StatusUnprocessableEntity` (`http.go:124`), which is the `422` the paragraph claims.
+- Same file, same section: `App.Handler`'s line, `app.go:111 → :120`.
+- `ai_docs/setup-guides/complete-setup-guide.md`: the quick-start comment cited `app.go:135-144` for that refusal — a range whose first line was the registration and whose last is now `registerProjectRoutes`' own header. It gives the registration at `:146`, the parse at `:151`, the refusal at `:152-155`, and the `422` at `http.go:124`.
+
+### Verified
+- Every anchor read at HEAD rather than inferred: `func (a *App) Handler()` at `app.go:120`; `func (a *App) registerProjectRoutes` at `:144`; `const base = "/api/v2/projects"` at `:145`; the `POST` registration at `:146`; `_ = r.ParseForm()` at `:151`; `missingForm(r, "name")` at `:152`; `func missingForm` at `http.go:129` with `r.PostForm.Has` at `:132`; `writeMissing`'s `http.StatusUnprocessableEntity` at `http.go:124`.
+- **Why these three survived passes that found everything else exact:** they are in PROSE, and both recorded passes were row-by-row over tables — §1's 143 row citations and §2's pointers are exact at this HEAD, while a paragraph's citations are never re-run by a row pass. The rot model names the file; the table pass only covers the file's rows.
+
 ## The rot model's first catch: six stale `mcp_routes.go` citations, and a wrong protocol revision
 
 ### Fixed

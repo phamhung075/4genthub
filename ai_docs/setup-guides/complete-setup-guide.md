@@ -545,7 +545,8 @@ curl http://localhost:8080
 # manage_project(action="create", name="My Project")
 # POST /api/v2/projects/ reads application/x-www-form-urlencoded ONLY: `name` required,
 # `description` optional. A JSON or multipart body is refused with a 422 naming body.name
-# as missing (app.go:135-144).
+# as missing (the POST is registered at `app.go:146`; `_ = r.ParseForm()` at `:151` and the
+# `missingForm(r, "name")` refusal at `:152-155`, which answers 422 through `writeMissing`, `http.go:124`).
 curl -X POST http://localhost:8000/api/v2/projects/ \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/x-www-form-urlencoded" \
