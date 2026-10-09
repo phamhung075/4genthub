@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the commit's diff is asserted equal to the author's own, from a baseline kept in the repo
+
+- `scripts/tests/test_added_line_check.py` (new) — eight cases, each building its own two-seat sequence on a real repository. `test_a_foreign_line_inside_an_existing_entry_moves_no_heading_so_rule_64_cannot_see_it` is the fail-first case for the class that beat rule 64: it implements the shipped heading count **in-test**, asserts the count is unmoved by the peer's line, then requires **exit 3** with the surplus line named and the author's own line not named. `test_verify_passes_when_the_path_still_holds_exactly_the_snapshotted_diff` is the green control that makes exit 3 mean something; a removed own line is reported **MISSING** rather than passed; a path never snapshotted is refused rather than vouched for; and `test_the_stated_blind_spot_a_snapshot_taken_after_a_peer_edit_calls_their_line_yours` pins the tool's limit as a passing case.
+- Two cases came from the tool's own first use. `test_a_new_file_is_read_against_dev_null_so_a_peer_line_in_it_is_surplus`: the real snapshot read `+0/-0` for the two new files of this very commit, because `git diff HEAD` reports nothing for an untracked path, so an untracked path is now read against `/dev/null` and its whole content is its added set. `test_a_removed_line_whose_own_text_starts_with_a_rule_marker_is_counted`: a removed markdown rule is `----` in the diff, and prefix-skipping had been discarding it as a file header.
+- The baseline's location is asserted, not assumed: it lands under `<git-dir>/hunk-baselines/` inside the repository and carries the seat that took it, so a victim can find who took the copy.
+- **SEEN RED, and labeled by mechanism:** the first run failed on case 1 with `assert 0 == 3`, which was **the case's own sequencing bug** — it snapshotted before writing its own entry, so the peer's line had nothing to replace into — not the tool failing to catch the class. Corrected, the case is green and the blind spot it demonstrates belongs to rule 64's count.
+- Commands: `python3 -m pytest tests/test_added_line_check.py -q` from `scripts/` → **8 passed**; `python3 -m pytest tests -q` over the whole directory → **36 passed**.
+- **NOT RUN:** no case replays the real `f344a64f` commit; the mixed diff is reconstructed on a scratch repository.
+
 ## 2026-10-09 - a failed catalogue read is asserted to be CANNOT TELL, not an empty database
 
 - `agenthub_go/fastmcp/task_management/infrastructure/database/db_initializer_catalogue_test.go` (new) — `TestInitializeRefusesTheDDLWhenTheCatalogueCannotBeRead` is the fail-first case: with `AUTO_MIGRATE=true` (the gate open) and ONLY the catalogue read failing, `Initialize` must return false, leave `Initialized` unset, execute **no** `DROP TABLE`, and say why; `TestVerifyTableStructureRefusesAnUnreadCatalogue` requires the second caller to refuse an unread catalogue and to say so. Both are red on the parent with the messages quoted in `CHANGELOG.md`.
