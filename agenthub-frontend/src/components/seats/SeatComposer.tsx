@@ -370,7 +370,15 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
               id="composer-add-slug"
               aria-label="Add a block"
               value={addSlug}
-              onChange={(event) => setAddSlug(event.target.value)}
+              onChange={(event) => {
+                const slug = event.target.value;
+                setAddSlug(slug);
+                // The version is part of the add op, so it cannot be dropped - but it must not be
+                // TYPED either: the modules list carries each module's latest published version, so
+                // choosing a module fills it and the add becomes a choice and a click. The field
+                // stays editable, because naming an older version is a legitimate thing to do.
+                setAddVersion(modules.find((module) => module.slug === slug)?.version ?? '');
+              }}
             >
               <option value="">Choose a module…</option>
               {modules.map((module) => {

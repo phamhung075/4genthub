@@ -485,6 +485,35 @@ describe('SeatAuthoringPage composer', () => {
     );
   });
 
+  it('fills the version from the module that was chosen, so adding is a choice and a click instead of typing', async () => {
+    overlaysFor({});
+    // The version must be the CHOSEN module's and no other's: 2.3.4 belongs to `style` alone, so a
+    // fill taken from the wrong entry - or a hardcoded default - cannot pass this case.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [
+        { slug: 'rules', kind: 'instruction', version: '1.0.0', sha256: 'abcdef0123456789' },
+        { slug: 'style', kind: 'document', version: '2.3.4', sha256: 'bbbbbbbbbbbbbbbb' },
+      ],
+    });
+    await openComposer();
+
+    // Nothing is typed into the version field at any point in this case.
+    expect(screen.getByLabelText('Block version')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Add a block'), { target: { value: 'style' } });
+    expect(screen.getByLabelText('Block version')).toHaveValue('2.3.4');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add at Seat' }));
+    await waitFor(() =>
+      expect(mockApi.putOverlay).toHaveBeenCalledWith(
+        'seat',
+        { ops: [{ kind: 'add', slug: 'style', version: '2.3.4', content: '' }] },
+        'dev',
+        'alice'
+      )
+    );
+  });
+
   it('refuses to add a block already in effect at this level', async () => {
     overlaysFor({});
     await openComposer();
