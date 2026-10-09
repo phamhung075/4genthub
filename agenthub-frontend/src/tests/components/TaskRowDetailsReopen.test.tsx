@@ -58,7 +58,6 @@ vi.mock('../../api', () => ({
   getTask: vi.fn().mockResolvedValue(TASK),
   getTaskContext: vi.fn().mockResolvedValue(null),
   getAvailableAgents: vi.fn().mockResolvedValue([]),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [] }),
   getCurrentUserId: vi.fn().mockReturnValue('u1'),
   createTask: vi.fn(),
   updateTask: vi.fn(),

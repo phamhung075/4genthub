@@ -56,7 +56,6 @@ vi.mock('../../api', () => ({
   // the result untrustworthy, so it is spelled out rather than assumed unused.
   getTaskContext: vi.fn().mockResolvedValue(null),
   getAvailableAgents: vi.fn().mockResolvedValue([]),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [] }),
   getCurrentUserId: vi.fn().mockReturnValue('u1'),
   createTask: vi.fn(),
   updateTask: vi.fn(),

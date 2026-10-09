@@ -61,7 +61,6 @@ const SUB = vi.hoisted(() => ({
 vi.mock('../../api', () => ({
   listSubtasks: vi.fn().mockResolvedValue([SUB]),
   getSubtask: vi.fn().mockResolvedValue(SUB),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [SUB] }),
   completeSubtask: vi.fn().mockResolvedValue(SUB),
   createSubtask: vi.fn().mockResolvedValue(SUB),
   deleteSubtask: vi.fn().mockResolvedValue(undefined),
@@ -74,7 +73,6 @@ vi.mock('../../api', () => ({
 
 vi.mock('../../api-lazy', () => ({
   getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [SUB] }),
-  getSubtaskSummary: vi.fn().mockResolvedValue(SUB),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({

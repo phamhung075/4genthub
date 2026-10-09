@@ -21,12 +21,6 @@ vi.mock('../../utils/logger', () => ({
     error: vi.fn(),
     info: vi.fn(),
   },
-  logger: {
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-  },
 }));
 
 describe('useRealtimeSync - Task Handler with Type Guards', () => {

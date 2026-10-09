@@ -25,8 +25,6 @@ vi.mock('../../api', () => ({
   getAvailableAgents: vi.fn().mockResolvedValue([]),
   getTask: vi.fn().mockResolvedValue(null),
   getCurrentUserId: vi.fn().mockReturnValue('u1'),
-  getSubtaskSummaries: vi.fn().mockResolvedValue({ subtasks: [] }),
-  fetchTasks: vi.fn().mockResolvedValue([]),
 }));
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'u1' }, tokens: { access_token: 't' } }),
