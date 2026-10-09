@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-09 - the guide text gets a content guard, and the guard's own red is what turned up the missing rule
+
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_script_tests_test.go`, **NEW FILE**, 3 cases over the embedded shelf and the repo-side publish sources: (A) the path is taken OUT OF THE DOCUMENTED COMMAND and asked of `git ls-files`, so a documented path with zero tracked files fails; (C) the source and its byte-identical mirror must not diverge, and both txt sources must carry the command; (B) the no-pipe rule must be stated beside the command.
+- **THE RED WAS TODAY'S, NOT RECONSTRUCTED.** Before the rule existed, (B) failed with `documents the script-test command without stating "WITHOUT a pipe"`; after the sentence landed in the source and its mirror — with the `guides.lock.json` digest re-recorded — it passes, and the pairing checks that re-verify that digest are green too.
+- **CASE (A) FAILED FIRST FOR ITS OWN REASON, AND IT IS WORTH RECORDING:** `git ls-files` was run with the package directory as its cwd, so the repo-relative pathspec resolved against the wrong tree and the case reported a false red. The fix is `cmd.Dir = <repo root>`. A guard that misresolves its own pathspec is the same disease it guards, which is why the case derives the path from the TEXT and never names it in code: the text and the assertion cannot drift apart.
+- **ASSERT CONTENT, NOT A DIGEST.** `guides.lock.json` already pins each block by sha256 and `Load` refuses a mismatch, but a digest agrees with itself while a wrong value stays locked in — it cannot tell a correct command from a confidently wrong one.
+- Commands: `gofmt -l` on the new file prints nothing; `go vet ./fastmcp/seat_management/domain/seedlibrary/...` clean; `go test -count=1 -v ./fastmcp/seat_management/domain/seedlibrary/...` → **ok**, all PASS.
+
 ## 2026-10-09 - the commit wrapper gets the case that stages the death: the capture is verified, and the only copy is named
 
 - `scripts/tests/test_git_commit_capture.py`, **NEW FILE**, 4 cases: the capture lands inside the repository (not in a `$HOME`-derived store a victim cannot find) with a manifest naming the path, its bytes and its sha1; **the kill case** — a commit command that rewinds the file and exits 137 — is reported `at-risk`, exits 3, names `git apply <patch>`, and that ONE command puts the bytes back; a real commit is verified `landed` and leaves nothing dirty; and the sweep removes an old capture only when its own verification recorded nothing at risk.

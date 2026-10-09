@@ -1,3 +1,20 @@
+## The seat guide states how to read the script-test exit code, and a Go guard keeps the documented command honest
+
+### Added
+- `agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_script_tests_test.go` — a content guard over the guide text, three cases, each naming the stale class it covers. **(A)** takes the path OUT OF THE DOCUMENTED COMMAND and asks `git ls-files` for it, so a guide naming a path with zero tracked files fails, and it asserts the retired `src/tests/scripts` form does not come back. **(C)** requires the publish source and its embedded mirror to stay byte-identical — the mirror is DUPLICATIVE today, not an independent second opinion, and that is proved by equality (sha256 equal) — and requires both txt sources under `scripts/team/4genthub` to carry the command. **(B)** requires the no-pipe rule beside the command.
+
+### Fixed, and the finding that produced it
+- **The rule had NO SUBJECT: the no-pipe requirement was absent from all three corpora.** `grep` over `ai_docs/operations/seat-guides`, `scripts/team/4genthub` and the embedded shelf returned only "pipeline", and `git log -p` over the three showed no revision ever piped the pytest command; the canonical wording existed only in `ai_docs/core-architecture/agenthub-system-architecture.md:364`. The sentence is now in the publish source **and** its byte-identical mirror, **QUOTED from :364 rather than paraphrased**, with the `guides.lock.json` entry re-recorded (`sha256` and `source_sha256`) in this same commit, so the load-time pairing check re-verifies the pair instead of trusting it.
+- **THE CLOUD PUBLISH IS NOT DONE AND REMAINS THE OWNER.** This commit corrects the repository-side publish SOURCE and pre-records its digest; serving the sentence to seats is the owner's publish step. The seat-text publish row now has concrete content: this sentence.
+
+### Why the rule is worth a guard
+- Two seats were bitten by the same trap in one evening. A reviewer read the script-test status AFTER A PIPE and got 0, then re-measured unpiped and got 2. And the guide itself told every seat `cd agenthub_main && ... src/tests/scripts` after that tree was first emptied — exit 5, "no tests ran" — and then removed, where the `cd` fails and the command exits 2: a documented command that could not run at all while reading as authoritative.
+
+### Verified
+- `gofmt -l` on the new test prints nothing; `go vet ./fastmcp/seat_management/domain/seedlibrary/...` is clean.
+- `go test -count=1 -v ./fastmcp/seat_management/domain/seedlibrary/...` → **ok**, every case PASS, including the three new guards and the pairing checks (`TestGuidePairingRefusesAStaleRecord`, `TestGuidePairingRefusesTheGuideChangedUnderTheOldLock`, `TestLoadEmbeddedSet`), which re-verify the re-recorded digest.
+- **SEEN RED FIRST, today's red rather than a reconstruction:** before the sentence, (B) failed with `shared-modules/guide-common.md documents the script-test command without stating "WITHOUT a pipe"`; after it, PASS. (A)'s class red is the text at `b059b863`, which named `cd agenthub_main && ... src/tests/scripts -q` — measured, `git ls-files -- agenthub_main/src/tests/scripts` lists nothing at HEAD, and `scripts/tests` lists the suite.
+
 ## A commit that dies inside the pre-commit stash window can no longer take a seat's uncommitted work with it
 
 ### Added
