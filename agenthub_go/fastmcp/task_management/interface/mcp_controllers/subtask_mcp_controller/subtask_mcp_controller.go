@@ -7,8 +7,10 @@ package subtask_mcp_controller
 // ported; the management logic below is.
 //
 // The Python `SubtaskOperationFactory`, workflow-guidance subtask module and
-// `coerce_parameter_types` have no Go port yet, so minimal interfaces/hooks are
-// declared here (reported as dependencies).
+// `coerce_parameter_types` are ported (factories/operation_factory.go,
+// interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_guidance.go
+// and interface/utils/parameter_validation_fix.go), so minimal interfaces/hooks
+// are declared here (reported as dependencies).
 
 import (
 	"context"
@@ -26,7 +28,8 @@ import (
 )
 
 // SubtaskWorkflowGuidance is the subset of SubtaskWorkflowGuidance used by the
-// controller. The workflow_guidance package has no Go port yet.
+// controller. The workflow_guidance package is ported in
+// interface/mcp_controllers/workflow_guidance/subtask/subtask_workflow_guidance.go.
 type SubtaskWorkflowGuidance interface {
 	EnhanceResponse(response *entities.OrderedMap[any], action string, ctx *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }
@@ -41,8 +44,8 @@ var (
 	DefaultOperationFactory        *factories.SubtaskOperationFactory
 )
 
-// CoerceParameterTypes replaces coerce_parameter_types (unported). Defaults to
-// identity; callers may override.
+// CoerceParameterTypes mirrors coerce_parameter_types, ported in
+// interface/utils/parameter_validation_fix.go. Defaults to identity; callers may override.
 var CoerceParameterTypes = func(kwargs *entities.OrderedMap[any]) *entities.OrderedMap[any] { return kwargs }
 
 // ParentTaskFacade is the subset of the task facade used to derive the parent

@@ -28,9 +28,9 @@ type AssignAgentResponse struct {
 }
 
 // AssignAgentUseCase assigns an agent to a task tree. Python's constructor also
-// eagerly resolves RepositoryFactory.get_git_branch_repository(); that
-// infrastructure factory has no Go port and the field is never read by execute,
-// so it is intentionally omitted.
+// eagerly resolves RepositoryFactory.get_git_branch_repository() (ported in
+// infrastructure/repositories/repository_factory.go); the field is never read by
+// execute, so it is intentionally omitted.
 type AssignAgentUseCase struct {
 	agentRepository repositories.AgentRepository
 }

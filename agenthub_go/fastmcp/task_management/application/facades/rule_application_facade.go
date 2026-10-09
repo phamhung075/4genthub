@@ -27,7 +27,8 @@ type RuleApplicationFacade struct {
 }
 
 // NewRuleApplicationFacade mirrors __init__(path_resolver=None). Python falls back to
-// PathResolver(); that class has no Go port, so the caller always supplies a resolver.
+// PathResolver(); the Go port is infrastructure/utilities/path_resolver.go, so the caller
+// always supplies a resolver.
 func NewRuleApplicationFacade(pathResolver RulePathResolver) *RuleApplicationFacade {
 	return &RuleApplicationFacade{pathResolver: pathResolver}
 }

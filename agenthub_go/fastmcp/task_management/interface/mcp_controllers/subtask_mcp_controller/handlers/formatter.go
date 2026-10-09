@@ -2,8 +2,9 @@ package handlers
 
 // formatter.go declares the minimal view of the interface-layer
 // StandardResponseFormatter (task_management/interface/utils/response_formatter.py)
-// used by the subtask handlers. That module has no Go port yet, so the interface
-// and the error-code constants the handlers reference are declared here.
+// used by the subtask handlers. That module is ported as MCPResponseFormatter in
+// interface/utils/response_formatter.go; the interface and the error-code
+// constants the handlers reference are declared here.
 
 import (
 	"context"
@@ -36,9 +37,10 @@ type ContextFacade interface {
 }
 
 // TokenOperationTracker replaces the token-repository tracking that
-// _track_token_operation performs through the request-context middleware and
-// infrastructure database (no Go port yet). When nil the background tracking
-// call is a no-op.
+// _track_token_operation performs through the request-context middleware and the
+// request's database session. THE TRACKING IS WHAT IS NOT PORTED - the session
+// plumbing exists (infrastructure/database), the per-operation token bookkeeping
+// does not - and when nil the background tracking call is a no-op.
 type TokenOperationTracker interface {
 	TrackTokenOperation(ctx context.Context, operation string) error
 }

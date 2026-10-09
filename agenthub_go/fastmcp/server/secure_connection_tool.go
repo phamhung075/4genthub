@@ -9,8 +9,8 @@ import (
 )
 
 // SecureConnectionContext is the minimal stand-in for fastmcp.server.context.Context
-// used by the secure connection tool. context.py is FastMCP/MCP-SDK specific and
-// has no Go port; UserID mirrors getattr(ctx, "user_id", <default>), where a nil
+// used by the secure connection tool. context.py IS ported (server/context.go);
+// UserID mirrors getattr(ctx, "user_id", <default>), where a nil
 // result means the attribute was absent. A nil interface means Python None.
 type SecureConnectionContext interface {
 	UserID() *string

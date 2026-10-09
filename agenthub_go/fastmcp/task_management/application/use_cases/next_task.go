@@ -43,7 +43,8 @@ type NextTaskContextService interface {
 }
 
 // NextTaskContextFactory creates the unified context service. Python's
-// UnifiedContextFacadeFactory has no Go port yet, so it is injected.
+// UnifiedContextFacadeFactory is ported in
+// application/factories/unified_context_facade_factory.go, so it is injected.
 type NextTaskContextFactory interface {
 	CreateUnifiedService() NextTaskContextService
 }

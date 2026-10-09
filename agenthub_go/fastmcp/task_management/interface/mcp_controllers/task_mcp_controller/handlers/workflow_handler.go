@@ -3,9 +3,10 @@ package handlers
 // Workflow Handler for Task MCP Controller
 // (Python handlers/workflow_handler.py).
 //
-// The StandardResponseFormatter has no Go port yet; it is declared as
-// ResponseFormatter in search_handler.go. The context facade/factory are declared
-// here as the minimal interfaces needed.
+// The StandardResponseFormatter is ported as MCPResponseFormatter
+// (interface/utils/response_formatter.go); it is declared as ResponseFormatter in
+// search_handler.go. The context facade/factory are declared here as the minimal
+// interfaces needed.
 
 import (
 	"context"

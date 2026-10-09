@@ -7,7 +7,9 @@
 //     (Task has no metadata field), so the Go port reads an empty metadata map and
 //     keeps every metadata-derived field at its default. This preserves the observable
 //     shape without inventing a field.
-//   - AgentRepository and AgentCoordinationService have no Go ports yet. The minimal
+//   - AgentRepository and AgentCoordinationService are ported in
+//     domain/repositories/agent_repository.go and
+//     application/services/agent_coordination_service.go. The minimal
 //     interfaces needed are declared in this file (WorkDistributionAgentRepository,
 //     WorkDistributionCoordinationService).
 //   - Python asynchronous methods become plain methods with ctx first.

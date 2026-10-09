@@ -128,7 +128,8 @@ func (uc *UpdateSubtaskUseCase) Execute(ctx context.Context, request *subtaskdto
 }
 
 // syncParentTaskContext ports _sync_parent_task_context_after_subtask_update. The
-// Python method lazily imports task_context_sync_service (not ported) and requires
+// Python method lazily imports task_context_sync_service (ported in
+// application/services/task_context_sync_service.go) and requires
 // a project_id, but the Task entity has no project_id attribute, so it always
 // raises and is swallowed by the surrounding try/except. The port is a no-op.
 func (uc *UpdateSubtaskUseCase) syncParentTaskContext(parentTask *entities.Task) {

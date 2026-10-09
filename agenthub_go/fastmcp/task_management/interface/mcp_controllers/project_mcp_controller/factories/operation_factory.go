@@ -11,7 +11,8 @@ import (
 )
 
 // ProjectCRUDHandler is the consumer-side port of
-// project_mcp_controller/handlers/crud_handler.py, which has no Go port yet.
+// project_mcp_controller/handlers/crud_handler.py, ported in
+// project_mcp_controller/handlers/crud_handler.go.
 type ProjectCRUDHandler interface {
 	CreateProject(ctx context.Context, facade *facades.ProjectApplicationFacade, name string, description, userID *string) *entities.OrderedMap[any]
 	GetProject(ctx context.Context, facade *facades.ProjectApplicationFacade, projectID, name *string) *entities.OrderedMap[any]
@@ -21,7 +22,8 @@ type ProjectCRUDHandler interface {
 }
 
 // ProjectMaintenanceHandler is the consumer-side port of
-// project_mcp_controller/handlers/maintenance_handler.py, which has no Go port yet.
+// project_mcp_controller/handlers/maintenance_handler.py, ported in
+// project_mcp_controller/handlers/maintenance_handler.go.
 type ProjectMaintenanceHandler interface {
 	ProjectHealthCheck(ctx context.Context, facade *facades.ProjectApplicationFacade, projectID, userID *string) *entities.OrderedMap[any]
 	CleanupObsolete(ctx context.Context, facade *facades.ProjectApplicationFacade, projectID *string, force bool, userID *string) *entities.OrderedMap[any]

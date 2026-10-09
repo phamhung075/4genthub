@@ -71,8 +71,9 @@ type TaskApplicationService struct {
 }
 
 // NewTaskApplicationService mirrors TaskApplicationService.__init__. The Python
-// constructor builds the use cases from the repository; because those use cases
-// are not ported yet they are supplied through zpTaskAppDeps.
+// constructor builds the use cases from the repository; the Go use cases
+// (application/use_cases/create_task.go, get_task.go, update_task.go, list_tasks.go,
+// search_tasks.go, delete_task.go, complete_task.go) are supplied through zpTaskAppDeps.
 func NewTaskApplicationService(taskRepository repositories.TaskRepository, contextService any, userID *string, hierarchicalContextService zpTaskAppContextService, deps zpTaskAppDeps) *TaskApplicationService {
 	return &TaskApplicationService{
 		taskRepository:             taskRepository,

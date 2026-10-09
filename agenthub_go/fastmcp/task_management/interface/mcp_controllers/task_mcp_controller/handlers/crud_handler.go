@@ -22,8 +22,9 @@ const (
 )
 
 // ResponseFormatter is the minimal view of the interface-layer
-// StandardResponseFormatter used by these handlers. That module has no Go port
-// yet; the interface is declared here and reported as a dependency.
+// StandardResponseFormatter used by these handlers. That module is ported as
+// MCPResponseFormatter in interface/utils/response_formatter.go; the interface is
+// declared here and reported as a dependency.
 type ResponseFormatter interface {
 	CreateSuccessResponse(operation string, data any, workflowGuidance *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
@@ -45,7 +46,8 @@ type TaskFacade interface {
 }
 
 // UnifiedContextFacade is the facade_service.get_unified_context_facade() ->
-// resolve_context surface used by get_task. FacadeService has no Go port yet.
+// resolve_context surface used by get_task. FacadeService is ported in
+// application/services/facade_service.go.
 type UnifiedContextFacade interface {
 	ResolveContext(ctx context.Context, level, contextID string, includeInherited bool) *entities.OrderedMap[any]
 }

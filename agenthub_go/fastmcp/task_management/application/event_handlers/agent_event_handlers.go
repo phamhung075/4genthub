@@ -18,8 +18,9 @@ import (
 // stand in for Python-only attributes.
 
 // AgentCoordinationService is the minimal coordination dependency used by
-// AgentEventHandlers (Python `coordination_service: Any | None`). No Go port
-// existed, so the methods actually called by the Python are declared here.
+// AgentEventHandlers (Python `coordination_service: Any | None`); the port is
+// application/services/agent_coordination_service.go, and only the methods the
+// Python actually calls are declared here.
 type AgentCoordinationService interface {
 	NotifyAgentAssigned(ctx context.Context, agentID, taskID, role string) error
 	NotifyAgentFreed(ctx context.Context, agentID, taskID string) error

@@ -29,7 +29,9 @@ type SubtaskRepositoryFactory interface {
 }
 
 // SubtaskContextResolver covers the DB-backed context derivation helpers in the
-// Python module (get_session + ORM models + auth_helper), which have no Go port.
+// Python module (get_session + ORM models + auth_helper); their Go ports are
+// infrastructure/database/session_manager.go, infrastructure/database/models.go and
+// interface/mcp_controllers/auth_helper/auth_helper.go.
 type SubtaskContextResolver interface {
 	DeriveContextFromTask(ctx context.Context, taskID string) (*entities.OrderedMap[any], error)
 	DeriveContextFromGitBranchID(ctx context.Context, gitBranchID string) (*entities.OrderedMap[any], error)

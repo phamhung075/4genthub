@@ -11,8 +11,9 @@ import (
 
 // ResponseFormatter is the minimal view of the interface-layer
 // StandardResponseFormatter (task_management/interface/utils/response_formatter.py)
-// that these handlers use. That module has no Go port yet; the interface is
-// declared here and reported as a dependency.
+// that these handlers use. That module is ported as MCPResponseFormatter in
+// interface/utils/response_formatter.go; the interface is declared here and
+// reported as a dependency.
 type ResponseFormatter interface {
 	CreateSuccessResponse(operation string, data any, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]

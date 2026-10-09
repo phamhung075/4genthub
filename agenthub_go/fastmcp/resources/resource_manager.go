@@ -9,8 +9,8 @@ import (
 )
 
 // ResourceSource is the server side of a mounted resource source. Prefix
-// rewriting (add_resource_prefix/remove_resource_prefix) lives in the unported
-// server/server.py package; the interface exposes it so this manager stays free
+// rewriting (add_resource_prefix/remove_resource_prefix) is ported in
+// server/server.go; the interface exposes it so this manager stays free
 // of a hard dependency.
 type ResourceSource interface {
 	ListResourcesViaServer() ([]*Resource, error)

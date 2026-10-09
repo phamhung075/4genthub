@@ -46,7 +46,8 @@ type TaskContextSyncService struct {
 }
 
 // NewTaskContextSyncService mirrors __init__; the Python builds the hierarchical
-// context facade internally, Go receives it because FacadeService has no Go port.
+// context facade internally, Go receives it because FacadeService is ported in
+// application/services/facade_service.go and wired from the composition root.
 // It also resolves the git branch repository from RepositoryProviderService with the
 // same fail-fast behaviour as _get_git_branch_repository.
 func NewTaskContextSyncService(taskRepository repositories.TaskRepository,

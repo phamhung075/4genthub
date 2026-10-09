@@ -11,8 +11,8 @@ import (
 )
 
 // HealthCheckSession is the minimal stand-in for fastmcp.server.context.Context
-// used by the connection health tool. context.py is FastMCP/MCP-SDK specific and
-// has no Go port; SessionID mirrors the Context.session_id property (nil = None).
+// used by the connection health tool. context.py IS ported (server/context.go);
+// SessionID mirrors the Context.session_id property (nil = None).
 type HealthCheckSession interface {
 	SessionID() *string
 }

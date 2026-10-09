@@ -11,7 +11,8 @@ import (
 
 // RequestContextUserIDProvider is the minimal surface the Python
 // `fastmcp.auth.middleware.request_context_middleware.get_current_user_id` import
-// provides. It has no Go port yet; callers may wire a real implementation. When
+// provides. It is ported in fastmcp/auth/middleware/request_context_middleware.go;
+// callers may wire a real implementation. When
 // nil, _get_user_id_from_context returns nil, matching the Python ImportError path.
 var RequestContextUserIDProvider func(ctx context.Context) *string
 

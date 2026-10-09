@@ -1,10 +1,10 @@
 // Package tools ports fastmcp/tools. This file ports a dependency-free part of
 // tools/tool_transform.py: ArgTransform validation, the single-argument schema
 // transform, the schema-precedence merge and the forwarding-transform builder.
-// The parts that need the unported tools/tool.py (Tool/ParsedFunction),
-// pydantic's TypeAdapter and Python's inspect.signature (FromTool, the custom
-// transform_fn branch, _convert_to_content, forward()/forward_raw()) are not
-// ported; see the report.
+// The parts that need ParsedFunction (not covered by the tools/tool.go port of
+// tools/tool.py), pydantic's TypeAdapter and Python's inspect.signature (FromTool,
+// the custom transform_fn branch, _convert_to_content, forward()/forward_raw()) are
+// not ported; see the report.
 package tools
 
 import (

@@ -9,7 +9,8 @@ import (
 )
 
 // StandardResponseFormatter is the minimal surface the mixin needs from
-// interface/utils/response_formatter.py (no Go port yet).
+// interface/utils/response_formatter.py, which is ported as MCPResponseFormatter
+// (interface/utils/response_formatter.go).
 type StandardResponseFormatter interface {
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }

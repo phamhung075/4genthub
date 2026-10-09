@@ -22,8 +22,9 @@ import (
 )
 
 // CoerceParameterTypesFunc mirrors interface/utils/parameter_validation_fix.py
-// coerce_parameter_types for the parameters this controller uses. That module
-// has no Go port yet; the boolean coercion applied here reflects its behaviour.
+// coerce_parameter_types for the parameters this controller uses. That module is
+// ported in interface/utils/parameter_validation_fix.go; the boolean coercion
+// applied here reflects its behaviour.
 var CoerceParameterTypesFunc = coerceContextParameterTypes
 
 // UnifiedContextMCPController handles MCP protocol concerns for unified context

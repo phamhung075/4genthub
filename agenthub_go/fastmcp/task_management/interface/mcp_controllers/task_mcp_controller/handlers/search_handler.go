@@ -3,10 +3,10 @@ package handlers
 // Search Handler for Task MCP Controller
 // (Python handlers/search_handler.py).
 //
-// The interface-layer StandardResponseFormatter has no Go port yet, so it is
-// declared here (ResponseFormatter). The facade's list/search methods and the
-// CRUD handler are declared as minimal interfaces/hooks; they are unported and
-// reported as dependencies.
+// The interface-layer StandardResponseFormatter is ported as MCPResponseFormatter
+// (interface/utils/response_formatter.go); it is declared here (ResponseFormatter).
+// The facade's list/search methods and the CRUD handler (handlers/crud_handler.go)
+// are declared as minimal interfaces/hooks and reported as dependencies.
 
 import (
 	"context"
@@ -19,7 +19,8 @@ import (
 
 // SearchResponseFormatter extends the handlers ResponseFormatter (declared in
 // crud_handler.go) with the success/timestamp surface used by the search
-// handler. The interface-layer StandardResponseFormatter has no Go port yet.
+// handler. The interface-layer StandardResponseFormatter is ported as
+// MCPResponseFormatter in interface/utils/response_formatter.go.
 type SearchResponseFormatter interface {
 	ResponseFormatter
 	CreateSuccessResponse(operation string, data any, workflowGuidance *entities.OrderedMap[any]) *entities.OrderedMap[any]

@@ -2,9 +2,9 @@ package tools
 
 // Python tools/tool_manager.py.
 //
-// tool.py is a pydantic model whose from_function/run behaviour is built on
-// Python inspect/typeadapter/pydantic and mcp.types, so it has no Go port here.
-// The minimal Tool surface ToolManager needs is declared in this file; the
+// tool.py IS ported in tools/tool.go (BaseTool/FunctionTool, with FromFunction
+// standing in for the pydantic from_function). The minimal Tool surface ToolManager
+// needs is declared in this file; the
 // MountedServer dataclass is likewise declared minimally because
 // fastmcp/server/server.go explicitly does not port it.
 

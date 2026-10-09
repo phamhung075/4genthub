@@ -19,16 +19,17 @@ func panicMessage(r any) string {
 }
 
 // ResponseFormatter is the minimal view of the interface-layer
-// StandardResponseFormatter used by this factory. That module has no Go port
-// yet; the interface is declared here and reported as a dependency.
+// StandardResponseFormatter used by this factory. That module is ported as
+// MCPResponseFormatter in interface/utils/response_formatter.go; the interface is
+// declared here and reported as a dependency.
 type ResponseFormatter interface {
 	CreateSuccessResponse(operation string, data any, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	CreateErrorResponse(operation, errorMessage, errorCode string, metadata *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }
 
 // SubtaskCRUDHandler is the minimal view of SubtaskCRUDHandler
-// (../handlers/crud_handler.py). That module has no Go port yet; the interface
-// accepts the filtered kwargs ordered map in place of Python's **kwargs.
+// (../handlers/crud_handler.py). That module is ported in ../handlers/crud_handler.go;
+// the interface accepts the filtered kwargs ordered map in place of Python's **kwargs.
 type SubtaskCRUDHandler interface {
 	CreateSubtask(ctx context.Context, facade *facades.SubtaskApplicationFacade, kwargs *entities.OrderedMap[any]) *entities.OrderedMap[any]
 	UpdateSubtask(ctx context.Context, facade *facades.SubtaskApplicationFacade, kwargs *entities.OrderedMap[any]) *entities.OrderedMap[any]
@@ -39,7 +40,7 @@ type SubtaskCRUDHandler interface {
 }
 
 // ProgressHandler is the minimal view of ProgressHandler
-// (../handlers/progress_handler.py), which has no Go port yet.
+// (../handlers/progress_handler.py), ported in ../handlers/progress_handler.go.
 type ProgressHandler interface {
 	GetProgressSummary(taskID string, subtasks any) any
 	CalculateTaskProgress(taskID string, subtasks any) any

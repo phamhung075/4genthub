@@ -5,9 +5,10 @@ package task_mcp_controller
 //
 // FastMCP tool registration (`register_tools`), ContextPropagationMixin and the
 // asyncio/thread event-loop helpers have no Go meaning and are not ported. The
-// Python legacy TaskFacadeFactory interface and the task operation factory have
-// no Go port yet: the operation factory is injected through TaskOperationFactory
-// and reported as a dependency.
+// Python legacy TaskFacadeFactory interface and the task operation factory are
+// ported (application/factories/task_facade_factory.go and
+// factories/operation_factory.go): the operation factory is injected through
+// TaskOperationFactory and reported as a dependency.
 
 import (
 	"context"
@@ -24,14 +25,16 @@ import (
 )
 
 // TaskOperationFactory is the minimal view of
-// task_mcp_controller/factories/operation_factory.py, which has no Go port yet.
+// task_mcp_controller/factories/operation_factory.py, ported in
+// factories/operation_factory.go.
 type TaskOperationFactory interface {
 	HandleOperation(ctx context.Context, operation string, facade *facades.TaskApplicationFacade, userID *string,
 		taskID *string, kwargs *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }
 
 // TaskWorkflowGuidance is the subset of TaskWorkflow guidance used by the
-// controller. The workflow_guidance package has no Go port yet.
+// controller. The workflow_guidance package is ported in
+// interface/mcp_controllers/workflow_guidance/task/task_workflow_guidance.go.
 type TaskWorkflowGuidance interface {
 	EnhanceResponse(response *entities.OrderedMap[any], action string, context *entities.OrderedMap[any]) *entities.OrderedMap[any]
 }

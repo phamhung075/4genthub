@@ -13,8 +13,9 @@ import (
 
 // ContextResponseUnifiedFacade is the minimal UnifiedContextFacade surface used by
 // ContextResponseFactory.apply_to_task_response. The Python method lazily imports
-// FacadeService.get_unified_context_facade(); that service has no Go port yet, so it is
-// injected through ContextResponseUnifiedFacadeProvider.
+// FacadeService.get_unified_context_facade(); that service is ported in
+// application/services/facade_service.go and is injected through
+// ContextResponseUnifiedFacadeProvider.
 type ContextResponseUnifiedFacade interface {
 	GetContext(level, contextID string, includeInherited bool) *entities.OrderedMap[any]
 }

@@ -12,8 +12,8 @@ import (
 )
 
 // TaskSearchHandler is the SearchHandler surface used by the factory. The
-// Python handlers/search_handler.py has no Go port yet; the interface is
-// declared here and reported as a dependency. Method parameters are passed as
+// Python handlers/search_handler.py is ported in handlers/search_handler.go; the
+// interface is declared here and reported as a dependency. Method parameters are passed as
 // the Python **kwargs mapping to keep the filtering semantics.
 type TaskSearchHandler interface {
 	ListTasks(ctx context.Context, facade handlers.TaskFacade, params map[string]any) *entities.OrderedMap[any]
@@ -23,7 +23,7 @@ type TaskSearchHandler interface {
 }
 
 // TaskWorkflowHandler is the WorkflowHandler surface used by the factory.
-// Python handlers/workflow_handler.py has no Go port yet.
+// Python handlers/workflow_handler.py is ported in handlers/workflow_handler.go.
 type TaskWorkflowHandler interface {
 	CreateTaskContext(ctx context.Context, taskID string, taskData *entities.OrderedMap[any],
 		gitBranchID *string) *entities.OrderedMap[any]

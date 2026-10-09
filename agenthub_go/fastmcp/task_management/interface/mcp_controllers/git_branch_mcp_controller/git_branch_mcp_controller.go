@@ -22,7 +22,8 @@ import (
 )
 
 // WorkflowGuidance is the subset of GitBranchWorkflowGuidance used by the
-// controller. The workflow_guidance package has no Go port yet.
+// controller. The workflow_guidance package is ported in
+// interface/mcp_controllers/workflow_guidance/git_branch/git_branch_workflow_guidance.go.
 type WorkflowGuidance interface {
 	GenerateGuidance(action string, context *entities.OrderedMap[any]) any
 }
