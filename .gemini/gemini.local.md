@@ -110,7 +110,7 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
 | `agenthub_go/` | Go/DDD backend | 8000 |
 | `agenthub_go/**/*_test.go` | Go tests beside the code they test | - |
 | `00_RESOURCES/*` | Reference materials only (IGNORE) | - |
-| `00_RULES/*` | Legacy rules (use CLAUDE.md instead) | - |
+| `00_RULES/*` | Legacy rules (use AGENTS.md instead) | - |
 
 ### 4-Tier Context Hierarchy
 ```
@@ -355,8 +355,8 @@ The schema is the Go server's `init_schema_postgresql.sql`; change it together w
 - **Status**: ✅ Validated 2025-11-07 | 100% comprehensive | Token-optimized
 
 **Other Resources**:
-- **Comprehensive Rules**: See CLAUDE.md for complete agent switching, MCP tasks, and delegation models
-- **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
+- **Comprehensive Rules**: See `AGENTS.md` for the complete task, MCP and delegation rules
+- **Vision System**: Refer to `AGENTS.md` for workflow guidance and progress tracking details
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
 ---
 

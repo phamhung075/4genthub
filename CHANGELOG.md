@@ -1,3 +1,15 @@
+## The local-rules twins stop pointing at a root file that no longer exists, and the generator that restores them is corrected
+
+### Changed
+- **`CLAUDE.local.md` and `.gemini/gemini.local.md` — every remaining `CLAUDE.md` reference is now `AGENTS.md`** (nine sites, found by `git grep -n 'CLAUDE\.md'` over both files; **zero remain**): the About sentence at `:5` (*"…and complements the main `CLAUDE.md` file."* → `AGENTS.md`, with the rename named, `f7a809dc`); the version-control table row at `:9` (*"| **CLAUDE.md** | Main AI agent instructions (shared across team) | ✅ Checked in |"*); the allowed-root-file lines at `:230,267` / `:200,237`; the legacy pointer at `:143` / `:113` (*"use CLAUDE.md instead"* → `AGENTS.md`); and the two "Other Resources" pointers at `:388-389` / `:358-359`, where *"See CLAUDE.md for complete agent switching, MCP tasks, and delegation models"* also named the **retired** role-switching model and now reads *"See `AGENTS.md` for the complete task, MCP and delegation rules"*.
+- **`CLAUDE.md` is not tracked at all** (`git ls-files -- CLAUDE.md` → empty), so each of those sentences pointed a reader at a file that does not exist. **The count of five is unchanged and now true:** the tracked root `.md` files are exactly `AGENTS.md`, `CHANGELOG.md`, `CLAUDE.local.md`, `README.md`, `TEST-CHANGELOG.md` (`git ls-files '*.md' | awk -F/ 'NF==1'` → **5**), and the sixth root `.md`, `CULTURE.md`, is **untracked and ignored** (`.gitignore:560`) — measured, not assumed.
+- **`.gemini/commands/init-local.toml` — the generator, corrected because fixing its output is not fixing it:** a fourth requirement joins the three an earlier pass added — **the root rules file is `AGENTS.md`, not `CLAUDE.md`** (`f7a809dc`), the five tracked root `.md` files are named, and the generated file must never present `CLAUDE.md` as live or list it among the allowed root files.
+
+### Verified
+- **The class is closed inside this seat's write set:** `git grep -c 'CLAUDE\.md' -- CLAUDE.local.md .gemini/gemini.local.md` → **0 and 0** after the edit, against nine per-file mentions before.
+- **Sites outside it are reported, not edited:** `agenthub-frontend/src/components/help/sections/ClaudeHooks.tsx:88` and `GettingStartedGuide.tsx:282,395` (frontend UI text), and `scripts/team/4genthub/area-docs.txt:5` — the same stale list, in the seat prompt that instructed this seat.
+- **Also reported, not edited, because it is under `agenthub_go`:** `agenthub_go/fastmcp/utilities/environment.go:103` lists `"CLAUDE.md"` among the project-root indicators it probes for, so that indicator can never match a file that no longer exists.
+
 ## The rule 70 clause gains its instrument shape: a listing that abbreviates its own paths is a listing whose grep can lose a row
 
 ### Changed
@@ -35,6 +47,18 @@
 - **The dirty set is stated with the sweep, not after it:** the repo-root `gofmt` sweep the reviewer ran at the earlier tip listed `entities/subtask.go` solely because of this worktree copy — that was a real alignment deviation inside my own uncommitted edit (the map literal's value column), and `gofmt -w` fixed it; `git show HEAD:<path> | gofmt -l` was already clean.
 - Frontend citations were re-derived here rather than trusted: `api.ts` does not exist at `src/types/` and my first comment named it there; the real source is `src/api.ts:366`, and the validator's `@` warning is at `:148-152`, not `:143`. Both corrected in the comment before commit.
 - **NOT RUN:** the frontend suite — the frontend half of the row belongs to `fe-dev`; no frontend file was touched in this commit.
+
+## The inventory's digests are watched by the suite, so the next silent drift has somewhere to be seen
+
+### Added
+- **`agenthub_client/tests/test_team_setup.py`: a guard for `ai_docs/agent-system/skill-library.json`** (row cfa8c60e). Two cases, both recomputing **through `skill_library_modules()`** — the publish path's own function — so the rule keeps exactly one implementation and the test copies no logic: the shipped inventory is run against the real OpenRig checkout (asserting `count == len(skills)`, and one block per skill, so a short list is a lost skill), and a second, hermetic case perturbs a digest in a `tmp_path` **copy** and requires the failure to name the skill and **both** digests.
+- **The skip is loud, not quiet.** With `OPENRIG_SKILLS_ROOT` unset the guard reports `SKIPPED, NOT PASSED`, naming the variable, the value it holds and how to enable the check. A skip that reads as a pass is the same silence this guard exists to end, one level down — which is why the file reads `50 passed, 2 skipped` rather than a flat `52 passed`.
+
+### Verified
+- **Seen red before green.** Perturbing `agent-browser`'s canonical digest in a scratch copy (a scratch `AGENTHUB_REPO_ROOT`; the shipped file never touched) failed the guard with `exit 1`: `skill 'agent-browser': …/process/agent-browser/SKILL.md digests f2709bae71a8c60f6a4b80a6873560cdea9632000ed4b28d082dfae58801199b, but the inventory records 0000…0000; the inventory is stale - regenerate it before publishing` — both hashes present, which is what lets a reader see which side moved. Restored: green, `54 MATCH / 0 DRIFT` from the row artefact, and the shipped inventory's sha256 unchanged (`a862c7d8…`).
+- **Why a test and not a CLI verb** (the lead's decision, on this seat's evidence): the rule's only enforcer was inside `publish-skills`, a networked action that runs when someone decides to publish. That is exactly how OpenRig `31fe301b` invalidated a stored digest and nothing said so for a day — it was found by re-running the rule by hand while this seat sat idle. A test rides the suite every seat already runs, and adds no command surface while others are editing `team_setup.py`.
+- **Measured gap, reported rather than papered over:** the guard verifies each row's **primary** side only. Perturbing the *mirror* digest of `messaging-the-human` leaves it **green** — `skill_library_modules()` records `mirror_sha256` but never reads the mirror file, so the two overlap mirrors are verified nowhere but the cloud `drift-check`. The fix belongs in that function as its own change; the test must not grow a second copy of the rule. **The row artefact `F1-DIGEST-RERUN-2026-10-09.py` therefore stays** — it is the only check that reads all 54 sides — and it retires when the mirror is verified in the shipped path.
+- Commands: `OPENRIG_SKILLS_ROOT=/home/daihu/__projects__/openrig python3 -m pytest agenthub_client/tests/test_team_setup.py -q` → **52 passed**; the same command with the variable unset → **50 passed, 2 skipped**.
 
 ## F1's inventory had drifted one source commit behind, and the publish path refuses the whole run on a stale digest
 

@@ -2,11 +2,11 @@
 DATABASE agenthub | rolname = 'agenthub_user'
 
 ## About This File
-This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It IS tracked in this repository (`git ls-files` lists it; `git check-ignore` does not ignore it) and complements the main `CLAUDE.md` file.
+This file (`CLAUDE.local.md`) contains **local, environment-specific rules** for AI agents working on this project. It IS tracked in this repository (`git ls-files` lists it; `git check-ignore` does not ignore it) and complements the main `AGENTS.md` file (renamed from `CLAUDE.md` in `f7a809dc`).
 
 | File | Purpose | Version Control |
 |------|---------|----------------|
-| **CLAUDE.md** | Main AI agent instructions (shared across team) | ✅ Checked in |
+| **AGENTS.md** | Main AI agent instructions (shared across team) | ✅ Checked in |
 | **CLAUDE.local.md** | Local environment rules and overrides | ✅ Tracked in this repository |
 
 **Quick Dev Commands:**
@@ -140,7 +140,7 @@ with pytest.raises(ValueError, match="cannot exceed 1000"):
 | `agenthub_go/` | Go/DDD backend | 8000 |
 | `agenthub_go/**/*_test.go` | Go tests beside the code they test | - |
 | `00_RESOURCES/*` | Reference materials only (IGNORE) | - |
-| `00_RULES/*` | Legacy rules (use CLAUDE.md instead) | - |
+| `00_RULES/*` | Legacy rules (use AGENTS.md instead) | - |
 
 ### 4-Tier Context Hierarchy
 ```
@@ -227,7 +227,7 @@ ai_docs/
 | **Test files** | Go tests: `*_test.go` beside the code; client tests: `agenthub_client/tests/` |
 | **Document files** | Must be in `ai_docs/` (except 5 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
-| **Root .md files** | ONLY 5 allowed: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md |
+| **Root .md files** | ONLY 5 allowed: README.md, CHANGELOG.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
 | **Index files** | Auto-generated index.json (not index.md) |
 
 ---
@@ -264,7 +264,7 @@ ai_docs/
 #### Root Directory Restrictions
 - **NO file creation in root** (except files in `.allowed_root_files`)
 - **NO folder creation in root** (all folders should already exist)
-- **Allowed root files**: README.md, CHANGELOG.md, TEST-CHANGELOG.md, CLAUDE.md, CLAUDE.local.md
+- **Allowed root files**: README.md, CHANGELOG.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md
 
 #### File Type Restrictions
 | File Type | Allowed Location | Notes |
@@ -385,8 +385,8 @@ The schema is the Go server's `init_schema_postgresql.sql`; change it together w
 - **Status**: ✅ Validated 2025-11-07 | 100% comprehensive | Token-optimized
 
 **Other Resources**:
-- **Comprehensive Rules**: See CLAUDE.md for complete agent switching, MCP tasks, and delegation models
-- **Vision System**: Refer to CLAUDE.md for workflow guidance and progress tracking details
+- **Comprehensive Rules**: See `AGENTS.md` for the complete task, MCP and delegation rules
+- **Vision System**: Refer to `AGENTS.md` for workflow guidance and progress tracking details
 - **Troubleshooter**: Use Task tool to launch Claude Code troubleshooter agent when needed
 ---
 

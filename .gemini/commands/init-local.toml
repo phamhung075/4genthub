@@ -15,6 +15,7 @@ prompt = """
 - **Provenance is a fact, not a guess**: `CLAUDE.local.md` IS tracked in this repository (`git ls-files CLAUDE.local.md` lists it; `git check-ignore` does not ignore it). Never write that it is untracked or not checked into version control, and keep the "Version Control" table row consistent with that.
 - **No agent counts**: never state a number of specialized agents. The agent library was retired (`b0d441bd`, `e0338f54`, `60bcdb68`) and no live artifact can verify a count. Describe the live MCP tool surface instead — `manage_agent` registers, assigns, updates and unregisters project agents — with no number.
 - **Every claim must be checkable in this repository**: verify file paths, routes, tables and tool names before writing them, and drop anything you cannot point at a file for.
+- **The root rules file is `AGENTS.md`, not `CLAUDE.md`**: it was renamed in `f7a809dc`, and the five tracked root `.md` files are `README.md`, `CHANGELOG.md`, `TEST-CHANGELOG.md`, `AGENTS.md` and `CLAUDE.local.md`. Never present `CLAUDE.md` as a live file to read, and never list it among the allowed root files.
 
 **The generated file is a draft to be corrected, not a finished artifact** — it is tracked and reviewed like any other file.
 
