@@ -126,9 +126,13 @@ database before the server.**
 
 Room `of4room` with seats `alpha` (developer), `beta` (reviewer), `gamma`, and `blankmodel`
 (model `''` — the deliberate empty-model fixture), plus a `4genthub-min rig mirror` room. The
-repository's seeding entry point is `scripts/openrig_team_setup.py apply [--team DIR]`
-(usage at `scripts/openrig_team_setup.py:77-82`, parser at `:925-928`; `--apply --dry-run`
-prints the plan and calls nothing) — **the exact invocation behind this room was not recorded
+repository's seeding entry point is `4genteam team apply [--team DIR]`
+(**corrected 2026-10-09, writer seat: this named `scripts/openrig_team_setup.py`, a path absent
+from the working tree and the index — the module is now
+`agenthub_client/src/agenthub_client/team_setup.py` behind the `4genteam` console script. Measured
+then: `4genteam team apply --help` is `[--dry-run] [--team TEAM]`, and `--dry-run` prints the plan
+and calls nothing. The old citations `:77-82` and `:925-928` are struck with the path.**) — **the
+exact invocation behind this room was not recorded
 in the run account**, so treat that line as the repo's path rather than as the command that
 made this data.
 
@@ -136,9 +140,14 @@ made this data.
 
 ```bash
 AGENTHUB_URL=http://127.0.0.1:8000 AGENTHUB_TOKEN=local-dev \
-  python3 scripts/openrig_seat_sync.py rig of4room --out /home/daihu/.openrig/agenthub-seats
+  4genteam sync rig of4room --out /home/daihu/.openrig/agenthub-seats
 cd /home/daihu/.openrig/agenthub-seats/of4room/rig && rig up ./rig.yaml --yes --json
 ```
+
+**The first command replaces `python3 scripts/openrig_seat_sync.py rig of4room …`, corrected
+2026-10-09 (writer seat): that path is absent from the working tree and the index, while
+`4genteam sync rig` is the same operation — measured then, its help is `room` with `--out` and
+`--update` — and the environment pair it reads is unchanged.**
 
 Then `rig ps --nodes --rig of4room --full --json` for the launched node's runtime, model and
 session state.
