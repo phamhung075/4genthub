@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the client's limits survive a blank `.env`, `sync rig` takes a state root, and the client suite is 294 in its own repository
+
+- `agenthub_client` (submodule, now at `7bcdb15`, two commits: `506f0bf` then `7bcdb15`) - `tests/test_watch_tools.py`: a blank limit resolves to the default and the shipped `.env.sample` loads WHOLE; `tests/test_compact_supervisor.py`: a blank `COMPACT_QUIET_SECONDS` is 15 rather than a crash on startup; `tests/test_seat_sync.py`: the launch state root is read from a fake process table, a running seat under another root is REFUSED before anything is written (exit 2, both roots and `--state-root` named, no `room1/` built), and `--state-root` aims every install.
+- Commands, in the client repository: `PYTHONPATH=src python3 -m pytest tests -q` -> **294 passed** in this checkout, whose own `.env` carries a blank limit and which stopped at collection with four `ValueError` errors before the fix; an export of `7bcdb15` with `.env.sample` copied to `.env` - the README's own first step - -> **294 passed**; an export of `506f0bf` -> **291 passed** (the three state-root cases are not in it). Client `ruff check src tests` -> the three findings that already exist at `a9662e6` (`shutil` in watch.py, two unused imports in test_compact_supervisor.py).
+- Here: `PYTHONPATH=agenthub_client/src python3 -m pytest scripts/tests/test_team_definition.py scripts/tests/test_seatcheck_guard.py -q` -> **35 passed** (32 + 3), unchanged by the pin.
+
 ## 2026-10-10 - the client's tests stop reading this repository: the shipped-data cases move here, the client keeps 292 that need nothing
 
 - `scripts/tests/test_team_definition.py` (new, 27 cases, split out of `agenthub_client/tests/test_team_setup.py`) - the team files' word limits, overlays, links, plan order and the skill inventory guards; `_run` passes `--team scripts/team/4genthub`.
@@ -12,7 +18,7 @@ Track test suite changes, fixes, and improvements for agenthub.
 ## 2026-10-10 - the key link keeps an operator's own `.env`: a refusal case, a no-DeepSeek-seat case, and an isolated OMP state root
 
 - `agenthub_client/tests/test_seat_sync.py` - `test_rig_refuses_to_replace_a_pre_existing_env_file_and_names_it` (a regular `.env` is refused, named, left intact, and no `rig/` is built) and `test_rig_links_no_env_into_a_room_without_a_deepseek_seat`; the three key cases now set `OMP_STATE_ROOT` under `tmp_path`, so they never create agent directories in the live state root.
-- Commands, from the repository root: `PYTHONPATH=agenthub_client/src python3 -m pytest agenthub_client/tests -q` -> 325 passed.
+- Commands: `PYTHONPATH=agenthub_client/src python3 -m pytest agenthub_client/tests -q` AT THAT COMMIT -> **324 passed, 1 failed** (`test_team_setup.py::test_context_files_respect_word_limits[area-docs]`, 158 > 150 words in a file the commit does not touch). This line said 325 passed when it was written, which was true of the TREE and not of the commit: the area-docs trim that clears that failure was still an uncommitted edit at the time. The layout has since moved (`4e82a721`), so the client's own tests now run from the client's own repository as `PYTHONPATH=src python3 -m pytest tests -q`, and the shipped-data cases run from `scripts/tests/` here.
 
 ## 2026-10-10 - `4genteam sync rig` launches a new room by itself: the verbatim-spec and refusal cases give way to the launch-spec cases
 
