@@ -314,9 +314,8 @@ def test_overlays_send_full_op_lists(server, env, capsys):
     }
     company = overlays["/api/v2/openrig/overlay"]
     assert company["ops"] == [
-        # Pinned deliberately: the pending company-overlay apply depends on the ref reading 1.0.1.
-        # Back at 1.0.0, the apply publishes 1.0.1 (nextPatch) while the overlay keeps 1.0.0,
-        # a publish nothing references (row 9651609a).
+        # Pinned deliberately: apply PUTs the declared version, so 1.0.1 is created and named here in one
+        # run; at 1.0.0 the stored, different 1.0.0 answers 409 and apply stops (row 9651609a).
         {"kind": "add", "slug": "project-4genthub", "version": "1.0.1", "content": ""},
         {"kind": "add", "slug": "delegate-deepseek", "version": "1.1.0", "content": ""},
     ]

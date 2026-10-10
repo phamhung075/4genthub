@@ -1,0 +1,12 @@
+## The 1.0.1 arm's stated reason was wrong: apply stops on a 409, it never publishes something unreferenced
+
+### Fixed
+- Corrects `2026-10-10--the-company-overlay-ref-to-project-4genthub-is-armed-at-1-0-1-before-the-apply.md` (commit `f2c5520f`, row `9651609a`). That entry is not edited. THE EDIT IT RECORDS STANDS: `scripts/team/4genthub/team.json:9` stays at `1.0.1`. ITS SECTION "Why it lands before the apply" IS WRONG.
+- THE WRONG MECHANISM: it said `4genteam team apply` publishes changed module content at the next patch and then re-pins the overlay to 1.0.0, so a run with `:9` at 1.0.0 would report success while no seat changed. `team apply` never does that. Next-patch publishing (`resolveModules`/`nextPatch`, `agenthub_client/internal/clientteam/cloud.go:235`) is called only by `team import-project` (`team.go:219`) and `publish` (`publish.go:226`, `:262`).
+- WHAT APPLY DOES: `buildPlan` PUTs every module at the version `team.json` declares (`plan.go:223-224`, `moduleStep` `plan.go:265`). The server returns the existing row for an identical checksum. A different checksum is `ErrModuleVersionConflict` (`agenthub_go/.../orm/module_repository.go:76-77`), answered `409 ... already exists with different content` (`seat_admin_mount.go:962-963`). A module step does not tolerate a 409 (`outcome`, `plan.go:390`), so apply exits 1.
+- TRUE CONSEQUENCE AND TRUE REASON: with `:9` at 1.0.0, apply stops LOUDLY at module `project-4genthub@1.0.0`, before any overlay or seat PUT. The bump is needed because `:9` is the version apply PUTs: one run creates 1.0.1 and the company overlay names it.
+- NEW GATE FOR THE OWNER'S RUN: `GET /api/v2/openrig/modules/project-4genthub/versions` must show 1.0.1 ABSENT or present with IDENTICAL content. An earlier `import-project` or `publish` at nextPatch would make apply 409 at 1.0.1.
+- Carriers corrected with this file: the `scripts/tests/test_team_definition.py:317-318` comment and a new `TEST-CHANGELOG.md` entry. Row `9651609a` progress 8 corrects progress 5-7, and the lead's owner block is corrected. The messages of `f2c5520f` and `a5555729` are immutable and not amended.
+
+### Testing
+- By code reading only: the call sites above were read at the client tip, and the server's conflict path at this tree. No apply was run and no token was used.

@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the :317 comment's reason is corrected: apply stops on a 409 at the stored 1.0.0, it never publishes something unreferenced
+
+- `scripts/tests/test_team_definition.py:317-318` (`test_overlays_send_full_op_lists`): the comment now gives the true reason for the `1.0.1` pin. Apply PUTs the declared version (`plan.go:223-224`, `moduleStep` `:265`), so one run creates 1.0.1 and the overlay names it; at 1.0.0 the stored, different 1.0.0 answers 409 and apply stops. The earlier comment from `a5555729` described next-patch publishing, which only `import-project` and `publish` do (`team.go:219`, `publish.go:226,262`). The assertion is unchanged. Correction record: `CHANGELOG/2026-10-10--the-1-0-1-arm-s-stated-reason-was-wrong-apply-stops-on-a-409-it-never-publishes.md`.
+- The `:400` 409 case already tested the true failure, and its derived version is unchanged.
+- NOT RUN, same reason as the previous entry: collection fails with `ModuleNotFoundError: No module named 'agenthub_client.team_setup'` (`1eca7de`, reviewer row `06e20876`). Only the comment changed; `ast.parse` passes.
+
 ## 2026-10-10 - the team-definition tests follow the armed project-4genthub ref (1.0.1), and the 409 case reads its version from the definition
 
 - Companion to `f2c5520f`, which armed `scripts/team/4genthub/team.json:9` at `1.0.1` (row `9651609a`). The two are one change: the ref and the tests that read it.
