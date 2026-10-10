@@ -74,6 +74,7 @@ type seatAdminSource interface {
 	ListSeats(ctx context.Context, userID, roomID string) ([]repositories.Seat, error)
 	UpdateSeatOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpdateSeatPermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
+	UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error)
 	FindOverlay(ctx context.Context, userID, scope, roomID, seatID string) (*repositories.Overlay, error)
 	UpsertSeatLink(ctx context.Context, userID string, link repositories.SeatLink) (*repositories.SeatLink, error)
@@ -232,6 +233,10 @@ func (s *seatAdminRepos) UpdateSeatPermissionPolicy(ctx context.Context, userID,
 	return s.seats.UpdatePermissionPolicy(ctx, userID, seatID, permissionPolicy)
 }
 
+func (s *seatAdminRepos) UpdateSeatPinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error {
+	return s.seats.UpdatePinnedVersion(ctx, userID, seatID, pinnedVersion)
+}
+
 func (s *seatAdminRepos) UpsertOverlay(ctx context.Context, userID string, overlay repositories.Overlay) (*repositories.Overlay, error) {
 	return s.overlays.Upsert(ctx, userID, overlay)
 }
@@ -353,6 +358,9 @@ func mountSeatAdminRoutes(mux *http.ServeMux, sessions *database.SessionManager)
 	})))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSetSeatPermissionPolicy(w, r, u, sessions)
+	})))
+	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin", authed(seatMutation("seat", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSetSeatPin(w, r, u, sessions)
 	})))
 	mux.HandleFunc("PUT /api/v2/openrig/rooms/{room}/overlay", authed(seatMutation("room", "updated", func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleRoomOverlay(w, r, u, sessions)
@@ -485,6 +493,10 @@ type seatAdminOccupantRequest struct {
 
 type seatAdminPermissionPolicyRequest struct {
 	PermissionPolicy string `json:"permission_policy"`
+}
+
+type seatAdminPinRequest struct {
+	PinnedVersion string `json:"pinned_version"`
 }
 
 type seatAdminSettingsRequest struct {
@@ -1175,6 +1187,31 @@ func handleSetSeatPermissionPolicy(w http.ResponseWriter, r *http.Request, u *au
 		return
 	}
 	log.Printf("[SEAT] user %s set permission policy of %s/%s to %s", userID(u), r.PathValue("room"), r.PathValue("seat"), req.PermissionPolicy)
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleSetSeatPin pins the seat to one version of its seat type. The version is checked against
+// the seat's type before the store is touched, so an unknown version is a 400 and not a silent
+// write: writeSeatAdminServiceError maps ErrInvalidSeatTypeVersion to http.StatusBadRequest, the
+// same refusal handleCreateSeat produces for a pin that names a version that does not exist.
+func handleSetSeatPin(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	source, ok := seatAdminSourceFor(w, sessions)
+	if !ok {
+		return
+	}
+	var req seatAdminPinRequest
+	if !decodeSeatAdminBody(w, r, &req) {
+		return
+	}
+	view, err := seatservices.NewSeatAdminService(source).SetPinnedVersion(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), req.PinnedVersion)
+	if err != nil {
+		writeSeatAdminServiceError(w, err)
+		return
+	}
+	log.Printf("[SEAT] user %s pinned %s/%s to %s", userID(u), r.PathValue("room"), r.PathValue("seat"), req.PinnedVersion)
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
 	body.Set("seat", seatservices.SeatBody(&view.Seat, view.SeatTypeSlug))

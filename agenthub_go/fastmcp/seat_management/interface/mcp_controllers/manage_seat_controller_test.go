@@ -92,6 +92,19 @@ func (f *fakeStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, mo
 	return nil
 }
 
+func (f *fakeStore) GetSeatTypeVersion(context.Context, string, string, string) (*repositories.SeatTypeVersion, error) {
+	return nil, nil
+}
+
+func (f *fakeStore) UpdateSeatPinnedVersion(_ context.Context, _, seatID, pinnedVersion string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PinnedVersion = &pinnedVersion
+		}
+	}
+	return nil
+}
+
 func newController(auth AuthenticationService) (*ManageSeatController, *fakeStore) {
 	store := &fakeStore{seats: []*repositories.Seat{
 		{ID: "s1", RoomID: "r1", SeatKey: "alice", SeatTypeID: "st1", Runtime: "claude-code", Model: "sonnet"},

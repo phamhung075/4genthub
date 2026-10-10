@@ -608,6 +608,16 @@ export const apiReference: ApiReference = {
     },
     {
       "method": "PUT",
+      "path": "/api/v2/openrig/rooms/{room}/seats/{seat}/pin",
+      "pathParams": [
+        "room",
+        "seat"
+      ],
+      "handler": "",
+      "description": ""
+    },
+    {
+      "method": "PUT",
       "path": "/api/v2/openrig/rooms/{room}/team",
       "pathParams": [
         "room"

@@ -77,6 +77,18 @@ func (f *fakeSeatAdminStore) UpdateSeatPermissionPolicy(_ context.Context, _, se
 	return nil
 }
 
+func (f *fakeSeatAdminStore) UpdateSeatPinnedVersion(_ context.Context, _, seatID, pinnedVersion string) error {
+	if f.updateErr != nil {
+		return f.updateErr
+	}
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PinnedVersion = &pinnedVersion
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdminStore) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	if f.updateErr != nil {
 		return f.updateErr
@@ -94,6 +106,15 @@ func (f *fakeSeatAdminStore) GetModuleVersion(_ context.Context, _, slug, versio
 		return nil, nil
 	}
 	return &repositories.ModuleVersion{Slug: slug, Version: version}, nil
+}
+
+func (f *fakeSeatAdminStore) GetSeatTypeVersion(_ context.Context, _, slug, version string) (*repositories.SeatTypeVersion, error) {
+	for _, v := range f.versions {
+		if v.Slug == slug && v.Version == version {
+			return v, nil
+		}
+	}
+	return nil, nil
 }
 
 func (f *fakeSeatAdminStore) LatestSeatTypeVersion(context.Context, string, string) (*repositories.SeatTypeVersion, error) {

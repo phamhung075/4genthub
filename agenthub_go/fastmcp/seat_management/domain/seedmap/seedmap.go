@@ -11,7 +11,7 @@ import (
 
 // seedVersion is bumped whenever a seed's module set changes: a stored seat type version is
 // immutable, so a changed module set needs a new version.
-const seedVersion = "1.4.1"
+const seedVersion = "1.4.2"
 
 type SeedModule struct {
 	Slug    string

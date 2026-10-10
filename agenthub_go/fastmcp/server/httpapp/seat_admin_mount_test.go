@@ -231,6 +231,15 @@ func (f *fakeSeatAdmin) UpdateSeatPermissionPolicy(_ context.Context, _, seatID,
 	return nil
 }
 
+func (f *fakeSeatAdmin) UpdateSeatPinnedVersion(_ context.Context, _, seatID, pinnedVersion string) error {
+	for _, s := range f.seats {
+		if s.ID == seatID {
+			s.PinnedVersion = &pinnedVersion
+		}
+	}
+	return nil
+}
+
 func (f *fakeSeatAdmin) UpdateSeatOccupant(_ context.Context, _, seatID, runtime, model string) error {
 	for _, s := range f.seats {
 		if s.ID == seatID {

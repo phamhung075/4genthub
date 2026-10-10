@@ -105,6 +105,20 @@ func (r *ORMSeatRepository) UpdatePermissionPolicy(ctx context.Context, userID, 
 	})
 }
 
+// UpdatePinnedVersion sets the seat type version the seat is pinned to.
+func (r *ORMSeatRepository) UpdatePinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error {
+	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)
+	if err != nil {
+		return err
+	}
+	return r.GetDBSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		_, err := s.ExecContext(ctx,
+			`UPDATE "seats" SET "pinned_version" = $1, "updated_at" = $2 WHERE "user_id" = $3 AND "id" = $4`,
+			pinnedVersion, time.Now().UTC(), userID, id)
+		return err
+	})
+}
+
 // Delete removes the seat row; the application layer removes its dependents first.
 func (r *ORMSeatRepository) Delete(ctx context.Context, userID, seatID string) error {
 	id, err := database.UnifiedUUIDBindParam(seatID, database.DialectPostgres)

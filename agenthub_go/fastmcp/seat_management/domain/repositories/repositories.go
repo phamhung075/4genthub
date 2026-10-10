@@ -159,6 +159,7 @@ type SeatRepository interface {
 	ListByRoom(ctx context.Context, userID, roomID string) ([]Seat, error)
 	UpdateOccupant(ctx context.Context, userID, seatID, runtime, model string) error
 	UpdatePermissionPolicy(ctx context.Context, userID, seatID, permissionPolicy string) error
+	UpdatePinnedVersion(ctx context.Context, userID, seatID, pinnedVersion string) error
 	Delete(ctx context.Context, userID, seatID string) error
 }
 
