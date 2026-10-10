@@ -37,9 +37,9 @@ func NewORMSeatMessageRepository(sessions *database.SessionManager) (*ORMSeatMes
 // there. created_at is the caller's clock rather than now(), so the answer the route returns and the
 // row it stored carry the same instant.
 //
-// delivered_at and machine_id are written as NULL and '' RATHER THAN TAKEN FROM THE CALLER, because a
-// newly stored message is pending by definition: there is no way to create an already-delivered row,
-// and therefore no way to create one no client will ever be handed.
+// delivered_at and machine_id are written as NULL and the empty string RATHER THAN TAKEN FROM THE
+// CALLER, because a newly stored message is pending by definition: there is no way to create an
+// already-delivered row, and therefore no way to create one no client will ever be handed.
 func (r *ORMSeatMessageRepository) Create(ctx context.Context, message domainrepo.SeatMessage) (*domainrepo.SeatMessage, error) {
 	row := &seatdb.SeatMessageORM{}
 	id := message.ID
