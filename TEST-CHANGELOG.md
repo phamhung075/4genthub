@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the client's tests stop reading this repository: the shipped-data cases move here, the client keeps 292 that need nothing
+
+- `scripts/tests/test_team_definition.py` (new, 27 cases, split out of `agenthub_client/tests/test_team_setup.py`) - the team files' word limits, overlays, links, plan order and the skill inventory guards; `_run` passes `--team scripts/team/4genthub`.
+- `scripts/tests/test_seatcheck_guard.py` (new, moved from the client, 3 cases) - the real `seatcheck` binary built with `--go-dir agenthub_go`.
+- `agenthub_client/tests/test_team_setup.py` - keeps the 21 cases that use temporary data, plus three: `apply` and `publish-skills` have no default (exit 2), and the project root is the current directory. `test_seat_sync.py` passes `--go-dir`; `test_scrub.py` reads a copy of the server's corpus.
+- Commands: `PYTHONPATH=src python3 -m pytest tests -q` in a copy of the client outside any repository -> 292 passed; from here `PYTHONPATH=agenthub_client/src python3 -m pytest scripts/tests/test_team_definition.py scripts/tests/test_seatcheck_guard.py -q` -> 32 passed, 3 passed.
+
 ## 2026-10-10 - the key link keeps an operator's own `.env`: a refusal case, a no-DeepSeek-seat case, and an isolated OMP state root
 
 - `agenthub_client/tests/test_seat_sync.py` - `test_rig_refuses_to_replace_a_pre_existing_env_file_and_names_it` (a regular `.env` is refused, named, left intact, and no `rig/` is built) and `test_rig_links_no_env_into_a_room_without_a_deepseek_seat`; the three key cases now set `OMP_STATE_ROOT` under `tmp_path`, so they never create agent directories in the live state root.
