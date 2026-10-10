@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"agenthub/fastmcp/server/routes"
+	"agenthub/fastmcp/task_management/domain/entities"
 )
 
 // TestNotifyRouteStoresNothingForAnotherUser is the 338fe3a0 acceptance end to end on a real
@@ -115,10 +116,13 @@ func TestNotifyRouteStoresNothingForAnotherUser(t *testing.T) {
 	callerConn.Close()
 }
 
-// TestNotifyRouteStillTargetsSeveralUsersForAnotherEntityType is acceptance item 4 on a real store:
-// routes.BroadcastDataChange is the common fan-out, so an entity type that legitimately addresses
-// several users must still store for each of them through the route.
-func TestNotifyRouteStillTargetsSeveralUsersForAnotherEntityType(t *testing.T) {
+// TestNotifyRouteStoresNothingWhenAnotherUserIsNamedForAnyEntityType is the widened rule on a real
+// store, and it is the request the old rule got wrong: this EXACT body - a task frame naming two
+// other users - used to answer 200 and store one row for each of them, so a caller could plant a task
+// toast, with a title of its own choosing, in two other users' dashboards. The recipients never
+// resolve now: the refusal stores nothing for them and nothing for the caller either, because the
+// route returns before the broadcast is reached - a refusal is not a re-address.
+func TestNotifyRouteStoresNothingWhenAnotherUserIsNamedForAnyEntityType(t *testing.T) {
 	sm := newMissedNotificationAppEnv(t)
 	ctx := context.Background()
 	previous := routes.MissedStore
@@ -138,12 +142,50 @@ func TestNotifyRouteStillTargetsSeveralUsersForAnotherEntityType(t *testing.T) {
 
 	body := `{"event_type":"updated","entity_type":"task","entity_id":"task-9","metadata":{"user_ids":["` + one + `","` + two + `"]}}`
 	status, respBody := postNotify(t, server.URL, token, body)
-	if status != http.StatusOK {
-		t.Fatalf("status = %d, want 200 (body=%s)", status, respBody)
+	if status != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403 (body=%s)", status, respBody)
 	}
-	for _, u := range []string{one, two} {
+	for _, u := range []string{one, two, actor} {
+		if got := missedNotificationCount(t, sm, u); got != 0 {
+			t.Fatalf("rows stored for %s = %d, want 0 (a refusal stores nothing, not even for the caller)", u, got)
+		}
+	}
+}
+
+// TestTheFanOutStillStoresForEveryUserMetadataNames pins the capability the route did NOT take away,
+// and it is driven DIRECTLY because no HTTP client may reach it any more: the internal producers call
+// routes.BroadcastDataChange with no metadata (seatBroadcastFn) or with the camelCase actor stamp
+// metadata.userId (the task/subtask facades), and the ported multi-recipient fan-out is theirs. Delete
+// this case and a later tidy-up of the recipient keys would look safe.
+func TestTheFanOutStillStoresForEveryUserMetadataNames(t *testing.T) {
+	sm := newMissedNotificationAppEnv(t)
+	ctx := context.Background()
+	previous := routes.MissedStore
+	t.Cleanup(func() { routes.MissedStore = previous })
+
+	if _, err := NewApp(ctx, sm); err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	if routes.MissedStore == nil {
+		t.Fatal("NewApp did not assign routes.MissedStore: this case would pass vacuously")
+	}
+
+	const actor = "user-actor-1"
+	const one = "user-one-1"
+	const two = "user-two-2"
+
+	metadata := entities.NewOrderedMap[any]()
+	metadata.Set("user_ids", []any{one, two})
+	if err := routes.BroadcastDataChange(ctx, "updated", "task", "task-9", actor, nil, metadata); err != nil {
+		t.Fatalf("BroadcastDataChange: %v", err)
+	}
+	for _, u := range []string{one, two, actor} {
+		// The actor is here deliberately: the top-level user_id is ALWAYS a target (the offline store
+		// adds it before it reads metadata), which is why a caller addressing only itself needs no
+		// metadata at all - and why the route's refusal is about the extra recipient, not about the
+		// caller's own inbox.
 		if got := missedNotificationCount(t, sm, u); got != 1 {
-			t.Fatalf("rows stored for %s = %d, want 1 (the common fan-out keeps its metadata targets)", u, got)
+			t.Fatalf("rows stored for %s = %d, want 1", u, got)
 		}
 	}
 }
