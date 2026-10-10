@@ -13,3 +13,5 @@
 
 ### Found by
 - The lead's bounded item of 13:16Z, which named every figure above; this seat measured each against the tree before writing it, and left the pin question open as instructed.
+
+**ADDENDUM 2026-10-10 13:18Z — the published side has moved past the hash this entry names, so the deviation COMPOUNDS rather than closes: THE BRANCH IS BEING PUSHED AS COMMITS LAND, not as a batch.** The lead measured live `ls-remote` at `main = 38109880ee519a8d34f96d6ba8b845f58c353ae8` — one commit above the `b537da81` recorded above — and `/health` answered from a **newer process** (uptime **72.37 s**, against **377.21 s at 13:15Z**), so a **second deploy landed inside the hour**. Each push therefore ships a tree further above `7fe3b837` than the last, and the remedy is unchanged rather than weakened: **the next batch's marker lands at its own tip, before the push.** The numbers in this addendum are the lead's readings; production was not called from this seat.
