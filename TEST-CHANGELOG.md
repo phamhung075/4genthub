@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - one key for one idea: the context entity's progress entry is asserted on the surviving name
+
+- CHANGED `agenthub_go/fastmcp/task_management/domain/entities/context_test.go` (`TestTaskContextUnified`): added an assertion that `TaskContextUnified.UpdateProgress` writes exactly one entry into `ImplementationNotes["progress_updates"]` carrying the whole transition (old, new, notes, timestamp), and that `Metadata["progress_history"]` — the retired name — is **not written at all**. It fails on the previous two-key write and passes after: verified by running the new test against HEAD (`d8bc319e`) in a detached worktree with only this test file copied in, where it fails at line 117 with "progress_history is the retired name and must not be written".
+- NOT TESTED: `UpdateProgress` has no non-test caller in the module, so the assertion covers the entity's own contract and not a path a caller exercises. That is recorded in `CHANGELOG/2026-10-10--one-key-for-one-idea-in-the-context-entity.md` rather than papered over by a fake caller.
+
 ## 2026-10-10 - the unwired ledger is refused, and the unit tests that relied on the silent save pass one through
 
 - ADDED `agenthub_go/fastmcp/task_management/application/use_cases/status_ledger_unwired_test.go`: a use case built WITHOUT `.WithLedger(...)` refuses a status write with `ErrLedgerNotWired` instead of saving and reporting success — the acceptance for the optional-ledger defect, asserted with `errors.Is` so a different error cannot pass as the refusal. The file also carries `noopLedger()`, the pass-through seam (a recorder that reports the same status before and after the save) that the update and complete unit cases now use.

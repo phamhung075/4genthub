@@ -450,7 +450,13 @@ func (c *TaskContextUnified) AddInsight(category, content, agent, importance str
 	return nil
 }
 
-// UpdateProgress validates and records a progress change in metadata (and implementation notes).
+// UpdateProgress validates and records a progress change in the context's implementation notes.
+//
+// One home for one idea: the entry goes to `progress_updates`, which is the key the live path
+// (`UnifiedContextService.AddProgress`) writes and reads. `progress_history` is the retired name -
+// it collides with the task column that the ledger cutover removes - and nothing read the
+// metadata key, so the second write is gone rather than kept in step. The entry carries the whole
+// transition (old, new, notes) because the retired key was the only place the old value appeared.
 func (c *TaskContextUnified) UpdateProgress(newProgress int, notes *string, allowDecrease bool) error {
 	if newProgress < 0 || newProgress > 100 {
 		return value_objects.ValueErrorf("Progress must be between 0-100, got %d", newProgress)
@@ -460,16 +466,10 @@ func (c *TaskContextUnified) UpdateProgress(newProgress int, notes *string, allo
 	}
 	old := c.Progress
 	c.Progress = newProgress
-	history, _ := c.Metadata["progress_history"].([]any)
-	c.Metadata["progress_history"] = append(history, map[string]any{
+	updates, _ := c.ImplementationNotes["progress_updates"].([]any)
+	c.ImplementationNotes["progress_updates"] = append(updates, map[string]any{
 		"timestamp": value_objects.IsoFormat(utcNow()), "old_progress": old, "new_progress": newProgress, "notes": strOrNil(notes),
 	})
-	if notes != nil && *notes != "" {
-		updates, _ := c.ImplementationNotes["progress_updates"].([]any)
-		c.ImplementationNotes["progress_updates"] = append(updates, map[string]any{
-			"timestamp": value_objects.IsoFormat(utcNow()), "progress": newProgress, "notes": *notes,
-		})
-	}
 	return nil
 }
 
