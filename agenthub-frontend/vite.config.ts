@@ -270,9 +270,11 @@ export default defineConfig(({ mode }) => {
     // Override per run when the box is free: npx vitest run --maxWorkers=6
     maxWorkers: 2,
     minWorkers: 1,
-    poolOptions: {
-      forks: { execArgv: ['--max-old-space-size=2048'] }
-    },
+    // VITEST 4 REMOVED `poolOptions` and made its keys TOP-LEVEL options, which the run
+    // says out loud ("Deprecated: test.poolOptions was removed in Vitest 4"). The fork's
+    // heap cap therefore lives here now; leaving it nested would be a silently ignored
+    // option, the same shape as the override that used to be ignored in package.json.
+    execArgv: ['--max-old-space-size=2048'],
     // Playwright spec; the repo has no Playwright config, so vitest must not collect it
     exclude: [...configDefaults.exclude, 'src/tests/e2e/live-websocket.test.ts']
   },

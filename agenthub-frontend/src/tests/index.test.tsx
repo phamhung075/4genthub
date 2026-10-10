@@ -112,9 +112,11 @@ describe('index.tsx', () => {
 
   it('initializes logger export module asynchronously', async () => {
     await loadIndex();
-    await Promise.resolve();
 
-    expect(loggerState.imported).toBe(true);
+    // A FIXED NUMBER OF MICROTASKS WAS NEVER THE CONTRACT: the logger module resolves when the
+    // runner's module graph says so, and Vitest 4 hands it over a turn later than 3.x did - so this
+    // waited on a tick rather than on the CONDITION the case is actually about.
+    await vi.waitFor(() => expect(loggerState.imported).toBe(true));
   });
 
   it('renders the app when the logger export default is a rejected promise', async () => {

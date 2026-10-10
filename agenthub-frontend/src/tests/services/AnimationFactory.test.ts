@@ -4,7 +4,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import animationFactory from '../../services/AnimationFactory';
+import type { AnimationType } from '../../types/animationTypes';
 
 // The global test setup (src/setupTests.ts) auto-mocks AnimationFactory so the
 // rest of the suite never runs real animations. This suite exercises the real
@@ -29,8 +31,12 @@ const createMockElement = () => {
 describe('AnimationFactory', () => {
   let mockElement: HTMLElement;
   let mockCallbacks: {
-    onAnimationStart: ReturnType<typeof vi.fn>;
-    onAnimationEnd: ReturnType<typeof vi.fn>;
+    // TYPED MOCKS, NOT ReturnType<typeof vi.fn>: Vitest 4's untyped Mock is
+    // Mock<Procedure | Constructable>, which is NOT assignable to registerElement's
+    // `(type: AnimationType) => void` parameters - so the fixture stops compiling at
+    // every call site. Typing the mock gives it the signature the service declares.
+    onAnimationStart: Mock<(type: AnimationType) => void>;
+    onAnimationEnd: Mock<(type: AnimationType) => void>;
   };
 
   beforeEach(() => {
@@ -38,8 +44,8 @@ describe('AnimationFactory', () => {
     // We can't access private properties directly, so we'll unregister test elements in afterEach
     mockElement = createMockElement();
     mockCallbacks = {
-      onAnimationStart: vi.fn(),
-      onAnimationEnd: vi.fn()
+      onAnimationStart: vi.fn<(type: AnimationType) => void>(),
+      onAnimationEnd: vi.fn<(type: AnimationType) => void>()
     };
 
     // Mock timers

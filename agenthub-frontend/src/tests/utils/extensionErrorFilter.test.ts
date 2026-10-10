@@ -121,7 +121,7 @@ describe('extensionErrorFilter', () => {
     it('should handle Error objects', () => {
       const error = new Error('Extension context invalidated');
       error.stack = 'Error at chrome-extension://abc/script.js:10:5';
-      
+
       const result = handlePotentialExtensionError(error);
       expect(result).toBe(true);
       expect(logger.debug).toHaveBeenCalledWith(
@@ -149,33 +149,42 @@ describe('extensionErrorFilter', () => {
     let preventDefaultSpy: ReturnType<typeof vi.fn>;
     let errorEvent: ErrorEvent;
 
-    beforeEach(() => {
-      preventDefaultSpy = vi.fn();
-      errorEvent = {
-        message: 'Test error',
+    /**
+     * Builds the event a case needs. `ErrorEvent.message` is READ-ONLY, so the cases that vary it
+     * cannot assign to the property - which Vitest 4 surfaced, because its typed cast made the
+     * fixture's previous `as ErrorEvent` actually typecheck where it had been silently wide. ONE cast
+     * lives here, where the DOM type is genuinely wider than the plain object a test can build.
+     */
+    const makeErrorEvent = (message: string): ErrorEvent =>
+      ({
+        message,
         filename: 'test.js',
         lineno: 10,
         colno: 5,
-        error: new Error('Test error'),
-        preventDefault: preventDefaultSpy
-      } as ErrorEvent;
+        error: new Error(message),
+        preventDefault: preventDefaultSpy,
+      } as ErrorEvent);
+
+    beforeEach(() => {
+      preventDefaultSpy = vi.fn();
+      errorEvent = makeErrorEvent('Test error');
     });
 
     it('should filter extension errors and prevent default', () => {
-      errorEvent.message = 'runtime.lastError occurred';
-      
+      errorEvent = makeErrorEvent('runtime.lastError occurred');
+
       filteredErrorHandler(errorEvent);
-      
+
       expect(preventDefaultSpy).toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('should handle non-extension errors normally', () => {
-      errorEvent.message = 'Application error';
-      
+      errorEvent = makeErrorEvent('Application error');
+
       filteredErrorHandler(errorEvent);
-      
+
       expect(preventDefaultSpy).not.toHaveBeenCalled();
       expect(logger.debug).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith('Application error', expect.objectContaining({
@@ -188,10 +197,10 @@ describe('extensionErrorFilter', () => {
 
     it('should use fallback handler for non-extension errors', () => {
       const fallbackHandler = vi.fn();
-      errorEvent.message = 'Application error';
-      
+      errorEvent = makeErrorEvent('Application error');
+
       filteredErrorHandler(errorEvent, fallbackHandler);
-      
+
       expect(fallbackHandler).toHaveBeenCalledWith(errorEvent);
       expect(logger.error).not.toHaveBeenCalled();
     });
@@ -199,9 +208,9 @@ describe('extensionErrorFilter', () => {
     it('should not use fallback handler for extension errors', () => {
       const fallbackHandler = vi.fn();
       errorEvent.message = 'Extension context invalidated';
-      
+
       filteredErrorHandler(errorEvent, fallbackHandler);
-      
+
       expect(fallbackHandler).not.toHaveBeenCalled();
       expect(preventDefaultSpy).toHaveBeenCalled();
     });
@@ -224,9 +233,9 @@ describe('extensionErrorFilter', () => {
 
     it('should filter extension rejection errors', () => {
       rejectionEvent.reason = 'runtime.lastError: Connection failed';
-      
+
       filteredRejectionHandler(rejectionEvent);
-      
+
       expect(preventDefaultSpy).toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalled();
       expect(logger.error).not.toHaveBeenCalled();
@@ -234,9 +243,9 @@ describe('extensionErrorFilter', () => {
 
     it('should handle non-extension rejections normally', () => {
       rejectionEvent.reason = 'Network request failed';
-      
+
       filteredRejectionHandler(rejectionEvent);
-      
+
       expect(preventDefaultSpy).not.toHaveBeenCalled();
       expect(logger.debug).not.toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalledWith('Unhandled promise rejection', {
@@ -248,9 +257,9 @@ describe('extensionErrorFilter', () => {
     it('should use fallback handler for non-extension rejections', () => {
       const fallbackHandler = vi.fn();
       rejectionEvent.reason = 'Application rejection';
-      
+
       filteredRejectionHandler(rejectionEvent, fallbackHandler);
-      
+
       expect(fallbackHandler).toHaveBeenCalledWith(rejectionEvent);
       expect(logger.error).not.toHaveBeenCalled();
     });
@@ -258,9 +267,9 @@ describe('extensionErrorFilter', () => {
     it('should handle Error objects as rejection reasons', () => {
       const extensionError = new Error('Extension context invalidated');
       rejectionEvent.reason = extensionError;
-      
+
       filteredRejectionHandler(rejectionEvent);
-      
+
       expect(preventDefaultSpy).toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalled();
     });
@@ -288,7 +297,7 @@ describe('extensionErrorFilter', () => {
 
     it('should filter extension errors from console.error', () => {
       const cleanup = setupConsoleErrorFilter();
-      
+
       console.error('runtime.lastError:', 'Connection failed');
       expect(errorSpy).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalledWith('Console error filtered (extension):', {
@@ -301,7 +310,7 @@ describe('extensionErrorFilter', () => {
 
     it('should allow non-extension errors through console.error', () => {
       const cleanup = setupConsoleErrorFilter();
-      
+
       console.error('Application error:', 'Something went wrong');
       expect(errorSpy).toHaveBeenCalledWith('Application error:', 'Something went wrong');
       expect(logger.debug).not.toHaveBeenCalled();
@@ -311,7 +320,7 @@ describe('extensionErrorFilter', () => {
 
     it('should filter extension warnings from console.warn', () => {
       const cleanup = setupConsoleErrorFilter();
-      
+
       console.warn('chrome.runtime is not available');
       expect(warnSpy).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalledWith('Console warning filtered (extension):', {
@@ -324,10 +333,10 @@ describe('extensionErrorFilter', () => {
 
     it('should allow non-extension warnings through console.warn', () => {
       const cleanup = setupConsoleErrorFilter();
-      
+
       console.warn('Deprecation warning:', 'Feature will be removed');
       expect(warnSpy).toHaveBeenCalledWith('Deprecation warning:', 'Feature will be removed');
-      
+
       cleanup();
     });
 
@@ -368,54 +377,54 @@ describe('extensionErrorFilter', () => {
 
     it('should set up error and rejection handlers', () => {
       const cleanup = initializeExtensionErrorFilter();
-      
+
       expect(addEventListenerSpy).toHaveBeenCalledWith('error', expect.any(Function));
       expect(addEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
       expect(logger.info).toHaveBeenCalledWith('Extension error filter initialized');
-      
+
       cleanup();
     });
 
     it('should handle error events through the filter', () => {
       const cleanup = initializeExtensionErrorFilter();
-      
+
       // Get the error handler that was registered
       const errorHandler = addEventListenerSpy.mock.calls.find(
         call => call[0] === 'error'
       )?.[1] as EventListener;
-      
+
       // Create and dispatch an extension error event
       const extensionError = new ErrorEvent('error', {
         message: 'runtime.lastError',
         filename: 'chrome-extension://abc/script.js'
       });
-      
+
       errorHandler(extensionError);
-      
+
       expect(logger.debug).toHaveBeenCalled();
-      
+
       cleanup();
     });
 
     it('should clean up all handlers on cleanup', () => {
       const cleanup = initializeExtensionErrorFilter();
-      
+
       // Verify console methods were overridden
       const overriddenError = console.error;
       const overriddenWarn = console.warn;
       expect(overriddenError).not.toBe(originalError);
       expect(overriddenWarn).not.toBe(originalWarn);
-      
+
       cleanup();
-      
+
       // Verify event listeners were removed
       expect(removeEventListenerSpy).toHaveBeenCalledWith('error', expect.any(Function));
       expect(removeEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', expect.any(Function));
-      
+
       // Verify console methods were restored
       expect(console.error).toBe(originalError);
       expect(console.warn).toBe(originalWarn);
-      
+
       expect(logger.info).toHaveBeenCalledWith('Extension error filter cleaned up');
     });
   });
