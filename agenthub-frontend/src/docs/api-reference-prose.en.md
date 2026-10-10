@@ -232,17 +232,36 @@ deployment.
 
 ## Comparing a client against these tables
 
-Two traps for anyone diffing a client's call sites against the generated tables. Both were found on
-2026-10-08, and **both produce a FALSE MISMATCH rather than a missed one** — so a check that reports
-drift here has to explain every unmatched row before it is believed:
+Two traps for anyone diffing a client's call sites against the generated tables, both found on
+2026-10-08. **They are not one species, and the difference is the reason the second one matters: the
+first produces a FALSE MISMATCH, while the second can HIDE A REAL ONE.** So a check that reports
+drift here has to explain every unmatched row before it is believed — *and it has to compare the
+METHOD as well as the path, because a path match is not coverage on its own:*
 
 - **`{$}` is an end-anchor, not a parameter.** Go's mux uses `{$}` to mean "the path ends here", so
   `/api/v2/branches/{$}` serves `/api/v2/branches/`. A normaliser that rewrites `{...}` as a
   placeholder turns that into `/api/v2/branches/:p`, and then reports the collection route as absent
   from these tables — when the tables are the only one of the two that is right.
-- **A path parameter absorbs a literal segment.** `/api/v2/openrig/seats/{room}/{seat}` also serves
-  `/api/v2/openrig/seats/{room}/messages`. A client calling the latter is not calling a route that is
-  missing.
+- **A path parameter absorbs a literal segment — and the METHOD is what decides whether that counts
+  as coverage.** `/api/v2/openrig/seats/{room}/{seat}` also matches `/api/v2/openrig/seats/{room}/messages`
+  by PATTERN, but the registered pattern is `GET` (`agenthub_go/fastmcp/server/httpapp/seat_mount.go:184`),
+  so a `POST` to that path reaches the pattern and is then refused by the method: **`405`, not the `200`
+  a path-only reading predicts.** *(This bullet used to read "A client calling the latter is not calling
+  a route that is missing." That holds only for a client calling it with `GET`; for the call that was
+  actually live it is false, which made the sentence worse than no sentence — it told a diff to ACCEPT
+  the mismatch the diff exists to find.)* **Live instance, measured 2026-10-10:** `src/services/seatApi.ts:159-160`
+  posts to `/api/v2/openrig/seats/{seat}/messages`, from `useSendSeatMessage` (`src/hooks/useSeats.ts:406-410`),
+  and **the generated table carries no `messages` route at all** while the only seats pattern served is
+  that one `GET` — so the route the call site wants is genuinely absent. That server route is its own
+  row and is not fixed here.
+
+**What these tables cover, so that an absence in them means something.** One row per registered
+method-and-path, taken from the mount files' own string literals
+(`agenthub_go/internal/apiref/routes.go:12-15`, `:41`), and **a row whose `method` is EMPTY means the
+pattern was registered for EVERY method** (`routes.go:424-426`) — so the verb is read from the row
+rather than assumed, which is what the type requires (`src/types/apiReference.ts:20`) and what the page
+prints (`src/components/docs/ApiReferenceView.tsx:78`). No row at all therefore means the server does
+not mount that route: a real gap, not an artefact of normalisation.
 
 **And the witness for these tables' currency is not the frontend suite.** The committed artefact is
 checked by `agenthub_go/internal/apiref/committed_artefact_test.go`,
