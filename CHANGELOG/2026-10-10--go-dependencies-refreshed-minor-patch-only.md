@@ -20,7 +20,32 @@ No major-version bump anywhere: every move stays inside its current major, and `
 
 `github.com/creack/pty` v1.1.9→v1.1.24, `github.com/kr/pretty` v0.3.0→v0.3.1, `github.com/rogpeppe/go-internal` v1.13.1→v1.16.0, `github.com/stretchr/objx` v0.1.0→v0.5.3, `github.com/stretchr/testify` v1.11.1→v1.12.1, `golang.org/x/mod` v0.41.0→v0.42.0, `golang.org/x/net` v0.58.0→v0.61.0, `golang.org/x/sys` v0.48.0→v0.49.0, `golang.org/x/tools` v0.49.0→v0.51.0, `golang.org/x/term` v0.46.0→v0.47.0.
 
-`go get -u ./...` upgrades the modules the packages we build and test actually require; these ten are in the module graph without anything we compile needing the newer version, so the toolchain left them at the version the requirer pins. Moving them would mean `go get <module>@latest` on modules no build target compiles — a version change with no reason, which the row's own rule forbids. **No advisory attaches to any of them**: the scan below reports exactly one finding in the whole graph.
+`go get -u ./...` upgrades the modules the packages we build and test actually require; the modules the tree still reports newer sit in the module graph without anything we compile needing the newer version, so the toolchain left them at the version the requirer pins. Moving them would mean `go get <module>@latest` on modules no build target compiles — a version change with no reason, which the row's own rule forbids. **No advisory attaches to any of them**: the scan below reports exactly one finding in the whole graph. **The list above this paragraph is superseded by the correction below: the tree reports seven, not ten.**
+
+## Correction to this entry's own "did not move" list (2026-10-10; forward, never an amend)
+
+The list above named TEN modules as "reported newer and left alone", and named `x/net`'s version as
+v0.58.0. Re-derived at the tree, both halves of that are wrong:
+
+- **Seven** modules are reported newer at the tree, not ten: `creack/pty` v1.1.9→v1.1.24,
+  `kr/pretty` v0.3.0→v0.3.1, `rogpeppe/go-internal` v1.13.1→v1.16.0, `stretchr/objx` v0.1.0→v0.5.3,
+  `stretchr/testify` v1.11.1→v1.12.1, `golang.org/x/mod` v0.41.0→v0.42.0 and `golang.org/x/net`
+  v0.60.0→v0.61.0.
+- `golang.org/x/sys` v0.49.0, `golang.org/x/term` v0.47.0 and `golang.org/x/tools` v0.51.0 are **not
+  reported newer at all**: their resolved versions already ARE the newest, because this upgrade moved
+  them as the sibling set came forward. Listing them as "newer but unmoved" was wrong.
+- `golang.org/x/net` resolves to **v0.60.0** at the tree, not the v0.58.0 named above: that list mixed
+  the PRE-upgrade measurement (`go list -m -u all`, before `go get -u ./...`) with the post-upgrade
+  tree.
+
+What does NOT change: the six that stayed, and `x/net` with them, stayed because nothing this module
+builds or tests requires the newer version — `go get -u ./...` moves exactly what the build needs — and
+no advisory attaches to any of the seven (`govulncheck` reports one finding in the whole graph,
+GO-2026-5932, accepted separately in
+`CHANGELOG/2026-10-10--go-2026-5932-accepted-openpgp-is-unreachable-and-no-version-removes-it.md`).
+
+Re-derived how: `go list -m -u all | grep -c "\["` returns **7**, and the list it prints is those
+seven.
 
 ## The finding no dependency bump can clear: GO-2026-5932
 
