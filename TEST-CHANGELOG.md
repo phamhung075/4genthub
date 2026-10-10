@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the server-side seatcheck copy is removed with its 3 test files; the client module's copy is the guard's canonical source
+
+- DELETED, tracked and staged by explicit path: `agenthub_go/cmd/seatcheck/main.go`, `main_test.go` (695 lines) and `exec_test.go` (246) - 1371 lines. Row `37dd5c78`. The copy that stays is `agenthub_client/cmd/seatcheck`, whose suite (`main_test.go` 714 + `exec_test.go` 246) is now the tree's ONLY seatcheck suite and is strictly larger than the one that left.
+- WHY THAT COPY AND NOT THE OTHER (the rule, with its evidence): the canonical copy is the one the installer builds, on the module the installer names. `agenthub_client/README.md:73` instructs `4genteam sync install-checker --go-dir .`; `install-checker` has no default `--go-dir`, so the named module IS the guard's source, and the client is the module that ships to operators. The kept copy is also the maintained one (`clientenv.ResolveSeatStore`, this tree's one implementation of that store, 2026-10-10) while the removed one still mirrored the deleted `scripts/openrig_seat_sync.py` (`main.go:55,78`).
+- PARITY, MEASURED: `diff` of the two entry points is 32 lines, all in the import block and the pin-store resolution; no other behaviour differed, so only the maintenance question decided it.
+- NOTHING BUILT OR RAN THE DELETED COPY, and the removal is the proof: `agenthub_go`'s `go build ./...` is rc=0 with it gone (a package `main` cannot be imported; no Go file outside the package named it; the script test that built it, `scripts/tests/test_seatcheck_guard.py` with `--go-dir agenthub_go`, was deleted in the Python cutover).
+- THE OTHER PACKAGE'S SUITE STAYS GREEN, and the wording it asserts was not pinned: `go test -count=1 ./cmd/agenthubclient/` -> `ok 0.003s` after the owner sentence at `cmd/agenthubclient/main.go:58` stopped naming the removed path. `TestUnportedCommandRefusesRatherThanStubbing` asserts the exit code (`ExitUnavailable`), that stderr says `not ported`, and that stdout is empty - so the sentence could be corrected without re-pinning a test.
+- GREEN: `agenthub_go` - `gofmt -l cmd/agenthubclient` empty, `go vet ./cmd/agenthubclient/` clean, `go build ./...` rc=0. `agenthub_client` (read-only here) - `go build ./cmd/seatcheck` rc=0, `go test -count=1 ./cmd/seatcheck/` -> `ok 0.101s`, `gofmt -l cmd/seatcheck` empty, `go vet ./cmd/seatcheck/` clean. The client-side half is a board row, not an edit: `655ccf70`.
+
 ## 2026-10-10 - publish-skills refuses an inventory that carries NO pin: the library fixture becomes the generator's output, and the case that drives the refusal
 
 The change is `agenthub_client` commit **3583a49** (`fix(team): publish-skills refuses an inventory that carries no generated_from`), whose CHANGELOG.md carries it; this entry is the superproject's test-suite record of the same change, which cannot share that commit because `agenthub_client` is a gitlink.
