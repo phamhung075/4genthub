@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the unauthenticated notify ingress gets the case that fails on the old route
+
+- `agenthub_go/fastmcp/server/httpapp/broadcast_notify_auth_test.go` (new): `TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser` mounts the real broadcast routes and asserts the three auth outcomes - no `Authorization` header **403**, unknown machine token **401**, valid machine token **200** - and that the broadcast is invoked with the **token's** user while the body names a different one. It fails on the old handler by construction: a bare `mux.HandleFunc` with no wrapper answered the unauthenticated request and passed the body's `user_id` straight through. The token fixture is the existing `fakeMachineTokens` seam, so no new fake was added for it.
+- `agenthub_go/fastmcp/server/httpapp/missed_notification_replay_test.go`: `TestMissedNotificationStoredOfflineAndReplayedOnce` now authenticates with a machine token belonging to the target and forges the body's `user_id` to the other user, so its existing row-count assertions prove the body cannot move the write. **PG-GATED: it SKIPS without `AGENTHUB_TEST_PG_URL`, so this edit is compile-verified only in this tree** - `metadata.user_id` is deliberately left naming the target, because `BroadcastDataChange` treats it as an additional fan-out target and forging it would have added a row for the wrong reason rather than testing the defect.
+
 ## 2026-10-10 - a dead package's test files go with it, and the suite gets smaller rather than quieter
 
 - `agenthub_go/fastmcp/server/`: **9 test files DELETED** with the package that carried them - `connection_manager_test.go`, `connection_status_broadcaster_test.go`, `http_server_test.go`, `mcp_status_tool_test.go`, `openapi_test.go`, `secure_connection_tool_test.go`, `secure_health_check_test.go`, `server_test.go`, `session_store_test.go` - alongside the 17 source files of the same directory. They were the only thing keeping `agenthub/fastmcp/server` compiling; `go list -deps` reports no package importing it.

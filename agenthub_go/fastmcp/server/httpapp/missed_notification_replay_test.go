@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	seatservices "agenthub/fastmcp/seat_management/application/services"
+	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -144,6 +146,21 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 	targetToken := wsTestTokenFor(t, target, nil)
 	otherToken := wsTestTokenFor(t, other, nil)
 
+	// ac2d6106: the notify ingress is machine-authenticated and the target user is the machine
+	// token's user, never the body's. The bridge's token belongs to `target`; the body posted
+	// below names `other` in its user_id field to prove that field cannot move the write.
+	const machineToken = "mt_missed-notification-machine-token"
+	previousTokens := newMachineTokenRepo
+	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) {
+		return &fakeMachineTokens{tokens: []*repositories.MachineToken{{
+			ID:        "tok-missed-target",
+			UserID:    target,
+			MachineID: "machine-missed-target",
+			TokenHash: seatservices.HashMachineToken(machineToken),
+		}}}, nil
+	}
+	t.Cleanup(func() { newMachineTokenRepo = previousTokens })
+
 	server := httptest.NewServer(app.Handler())
 	defer server.Close()
 
@@ -151,14 +168,15 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 	// The producer puts the notification payload in `data`; BroadcastDataChange copies it to
 	// payload.data.primary, which is the frame the frontend consumer reads.
 	body := `{"event_type":"notification","entity_type":"notification","entity_id":"msg-live-1",` +
-		`"user_id":"` + target + `","data":{"id":"msg-live-1","title":"live notification"},` +
+		`"user_id":"` + other + `","data":{"id":"msg-live-1","title":"live notification"},` +
 		`"metadata":{"user_id":"` + target + `"}}`
 	req, err := http.NewRequest(http.MethodPost, server.URL+"/api/v2/broadcast/notify", bytes.NewBufferString(body))
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer anything")
+	// The bridge's machine token names `target`; the body's user_id names `other` and must not move it.
+	req.Header.Set("Authorization", "Bearer "+machineToken)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)

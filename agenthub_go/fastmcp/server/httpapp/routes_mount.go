@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
+	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
@@ -169,13 +170,15 @@ func mountPerformanceRoutes(mux *http.ServeMux) {
 // --- broadcast_routes.py (/api/v2/broadcast) ---
 
 func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
-	mux.HandleFunc("POST /api/v2/broadcast/notify", func(w http.ResponseWriter, r *http.Request) {
+	// The bridge is the only caller and it holds a machine token, so the ingress is
+	// machine-authenticated and the target user is the token's user, never the body's.
+	mux.HandleFunc("POST /api/v2/broadcast/notify", machineAuthed(deps.sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
 		m, ok := jsonBody(w, r)
 		if !ok {
 			return
 		}
 		var missing []string
-		for _, f := range []string{"event_type", "entity_type", "entity_id", "user_id"} {
+		for _, f := range []string{"event_type", "entity_type", "entity_id"} {
 			if _, has := m[f]; !has {
 				missing = append(missing, f)
 			}
@@ -188,7 +191,7 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 			EventType:  getOptString(m, "event_type"),
 			EntityType: getOptString(m, "entity_type"),
 			EntityID:   getOptString(m, "entity_id"),
-			UserID:     getOptString(m, "user_id"),
+			UserID:     token.UserID,
 			Data:       orderedMapOf(m["data"]),
 			Metadata:   orderedMapOf(m["metadata"]),
 		}
@@ -198,7 +201,7 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 		}
 		body, err := routes.TriggerBroadcast(r.Context(), req, deps.broadcast)
 		writeResult(w, body, err)
-	})
+	}))
 }
 
 // --- context_routes.py (/api/v2/contexts) ---
