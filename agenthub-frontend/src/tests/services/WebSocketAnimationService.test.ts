@@ -4,6 +4,32 @@ import { animationFactory } from '../../services/AnimationFactory';
 import type { WSMessage } from '../../types/websocketTypes';
 import logger from '../../utils/logger';
 
+/**
+ * The frame shape these cases actually hand the service - NOT a `WSMessage`.
+ *
+ * Two deliberate differences from `WSMessage`, and both are the SUBJECT of cases below rather than
+ * slack in the fixture:
+ *  - The ID walk is `primary.id` -> `data.id` -> `metadata.entity_id` (the four extract paths in
+ *    `WebSocketAnimationService.ts`, at 92/141/185/228). Proving step two needs a frame with no
+ *    `primary`, step three needs one with neither `primary` nor `data.id`, and "no ID found" needs all
+ *    three absent - so `primary` cannot just be added to satisfy the type.
+ *  - The envelope these cases wrote carries `source`/`priority`/`aiProcessed` at the TOP level and
+ *    omits `version`, `sequence` and `metadata.source`.
+ *
+ * Typing them as what the service is handed keeps that coverage; filling the gaps in would delete it.
+ * Each call re-widens through `unknown`, which is where the incompleteness is declared on purpose.
+ */
+type TestFrame = {
+  id: string;
+  type: WSMessage['type'];
+  source: string;
+  timestamp: string;
+  priority: string;
+  payload: { entity: string; action: string; data: Record<string, unknown> };
+  metadata: Record<string, unknown>;
+  aiProcessed: boolean;
+};
+
 // Mock dependencies
 vi.mock('../../services/AnimationFactory', () => ({
   animationFactory: {
@@ -69,7 +95,7 @@ describe('WebSocketAnimationService', () => {
       webSocketAnimationService.init(mockWebSocketClient);
 
       // Create test message
-      const testMessage: WSMessage = {
+      const testMessage: TestFrame = {
         id: 'test-123',
         type: 'update',
         source: 'backend',
@@ -91,7 +117,7 @@ describe('WebSocketAnimationService', () => {
       };
 
       // Trigger message handling
-      webSocketAnimationService.handleWebSocketMessage(testMessage);
+      webSocketAnimationService.handleWebSocketMessage(testMessage as unknown as WSMessage);
 
       // Fast-forward timers to trigger deferred animation
       vi.advanceTimersByTime(150);
@@ -113,7 +139,7 @@ describe('WebSocketAnimationService', () => {
   describe('handleWebSocketMessage', () => {
     describe('task animations', () => {
       it('should trigger create animation for task created', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-1',
           type: 'update',
           source: 'backend',
@@ -133,14 +159,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-456', 'create', 'websocket');
       });
 
       it('should trigger update animation for task updated', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-2',
           type: 'update',
           source: 'backend',
@@ -159,14 +185,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-789', 'update', 'websocket');
       });
 
       it('should trigger complete animation for task completed', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-3',
           type: 'update',
           source: 'backend',
@@ -183,14 +209,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-101', 'complete', 'websocket');
       });
 
       it('should trigger delete animation for task deleted', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-4',
           type: 'update',
           source: 'backend',
@@ -207,7 +233,7 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-202', 'delete', 'websocket');
@@ -216,7 +242,7 @@ describe('WebSocketAnimationService', () => {
 
     describe('subtask animations', () => {
       it('should skip create animation for subtask created (mount animation handles it)', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-5',
           type: 'update',
           source: 'backend',
@@ -237,7 +263,7 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -246,7 +272,7 @@ describe('WebSocketAnimationService', () => {
 
     describe('branch animations', () => {
       it('should skip create animation for branch created (mount animation handles it)', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-6',
           type: 'update',
           source: 'backend',
@@ -266,7 +292,7 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -275,7 +301,7 @@ describe('WebSocketAnimationService', () => {
 
     describe('entity ID extraction', () => {
       it('should extract ID from primary object', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-7',
           type: 'update',
           source: 'backend',
@@ -294,14 +320,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('primary-id-123', 'create', 'websocket');
       });
 
       it('should extract ID from data directly', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-8',
           type: 'update',
           source: 'backend',
@@ -318,14 +344,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('direct-id-123', 'create', 'websocket');
       });
 
       it('should extract ID from metadata', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-9',
           type: 'update',
           source: 'backend',
@@ -342,14 +368,14 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('metadata-id-123', 'create', 'websocket');
       });
 
       it('should not trigger animation if no ID found', () => {
-        const message: WSMessage = {
+        const message: TestFrame = {
           id: 'msg-10',
           type: 'update',
           source: 'backend',
@@ -364,7 +390,7 @@ describe('WebSocketAnimationService', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -373,7 +399,7 @@ describe('WebSocketAnimationService', () => {
 
     it('should ignore messages for unsupported entities', () => {
       // Use a truly unsupported entity type (projects are NOW supported!)
-      const message: WSMessage = {
+      const message: TestFrame = {
         id: 'msg-11',
         type: 'update',
         source: 'backend',
@@ -390,14 +416,14 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
       vi.advanceTimersByTime(150);
 
       expect(animationFactory.animate).not.toHaveBeenCalled();
     });
 
     it('should ignore messages with unsupported actions', () => {
-      const message: WSMessage = {
+      const message: TestFrame = {
         id: 'msg-12',
         type: 'update',
         source: 'backend',
@@ -414,7 +440,7 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
       vi.advanceTimersByTime(150);
 
       expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -426,7 +452,7 @@ describe('WebSocketAnimationService', () => {
       const listener = vi.fn();
       const unsubscribe = webSocketAnimationService.on('task-created', listener);
 
-      const message: WSMessage = {
+      const message: TestFrame = {
         id: 'msg-13',
         type: 'update',
         source: 'backend',
@@ -443,7 +469,7 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
 
       expect(listener).toHaveBeenCalledWith({
         action: 'created',
@@ -454,7 +480,7 @@ describe('WebSocketAnimationService', () => {
       unsubscribe();
       listener.mockClear();
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
       expect(listener).not.toHaveBeenCalled();
     });
   });
@@ -502,7 +528,7 @@ describe('WebSocketAnimationService', () => {
 
   describe('animation timing', () => {
     it('should defer animation execution by 150ms', () => {
-      const message: WSMessage = {
+      const message: TestFrame = {
         id: 'msg-14',
         type: 'update',
         source: 'backend',
@@ -519,7 +545,7 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
 
       // Animation should not be triggered immediately
       expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -546,7 +572,7 @@ describe('WebSocketAnimationService', () => {
           payload: { entity: 'task', action: 'updated', data: { id: `task-${i}` } },
           metadata: { entity_id: `task-${i}` },
           aiProcessed: false
-        } as WSMessage);
+        } as unknown as WSMessage);
       }
       vi.advanceTimersByTime(200);
 
@@ -556,7 +582,7 @@ describe('WebSocketAnimationService', () => {
 
   describe('edge cases', () => {
     it('should handle primary as array gracefully', () => {
-      const message: WSMessage = {
+      const message: TestFrame = {
         id: 'msg-15',
         type: 'update',
         source: 'backend',
@@ -574,7 +600,7 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
       vi.advanceTimersByTime(150);
 
       // Should use fallback ID
@@ -582,7 +608,7 @@ describe('WebSocketAnimationService', () => {
     });
 
     it('should handle both delete and deleted actions', () => {
-      const deleteMessage: WSMessage = {
+      const deleteMessage: TestFrame = {
         id: 'msg-16',
         type: 'update',
         source: 'backend',
@@ -599,7 +625,7 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      const deletedMessage: WSMessage = {
+      const deletedMessage: TestFrame = {
         id: 'msg-17',
         type: 'update',
         source: 'backend',
@@ -616,8 +642,8 @@ describe('WebSocketAnimationService', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(deleteMessage);
-      webSocketAnimationService.handleWebSocketMessage(deletedMessage);
+      webSocketAnimationService.handleWebSocketMessage(deleteMessage as unknown as WSMessage);
+      webSocketAnimationService.handleWebSocketMessage(deletedMessage as unknown as WSMessage);
       vi.advanceTimersByTime(150);
 
       expect(animationFactory.animate).toHaveBeenCalledWith('task-delete-1', 'delete', 'websocket');
