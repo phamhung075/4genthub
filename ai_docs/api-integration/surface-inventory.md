@@ -519,13 +519,13 @@ table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feed
 | `seat_links` | `SeatLinkORM` | `seat_tables.go:190` | `:225` |
 | `resolved_seats` | `ResolvedSeatORM` | `seat_tables.go:216` | `:245` |
 | `seat_settings` | `SeatSettingsORM` | `seat_tables.go:241` | `:263` |
-| `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:317` | `:278` |
-| `machines` | `MachineORM` | `seat_tables.go:253` | `:296` |
+| `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:321` | `:278` |
+| `machines` | `MachineORM` | `seat_tables.go:253` | `:324` |
 | `seat_messages` | `SeatMessageORM` | `seat_tables.go:357` | `:306` |
-| `seat_status` | `SeatStatusORM` | `seat_tables.go:287` | `:323` |
+| `seat_status` | `SeatStatusORM` | `seat_tables.go:267` | `:335` |
 | `machine_edges` | `MachineEdgeORM` | `seat_tables.go:296` | `:355` |
 
-**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:317`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
+**`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:321`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
 
 ### 3.4 `ProductionTables` — declared but NOT appended to `Tables` (6)
 
