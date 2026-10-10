@@ -58,6 +58,8 @@ names the function that actually performs the work; the registration line is the
 
 **RE-RESOLVED 2026-10-09 at `257a4ab1` (writer seat, docs pass 5) — ALL 143 ROWS of §1.1–§1.21 were re-resolved by the method above, ROW BY ROW, and NOT ONE had drifted: every cited line is still the registration that carries that row's method+path.** No part of §1 is excluded from that count — §1.16's 26 rows are inside the 143, so the whole of §1 stands re-derived at this commit. **Two controls make the pass a measurement rather than an impression.** (1) **Coverage**: the tables hold 143 rows and the counts hold `143 = 123 httpapp + 20 auth`, re-derived with the appendix's own commands (`grep -rn 'mux.HandleFunc(\|mux.Handle(' --include='*.go' fastmcp/server/httpapp | grep -v '_test.go' | wc -l` -> `123`; the auth half -> `20`). (2) **A registration that exists with no row is the class a row-by-row pass cannot see**, so each cited file's registration lines were counted against its rows: **all eighteen cited files balance exactly** — `routes_mount.go` 44/44, `seat_admin_mount.go` 26/26, `auth_endpoints.go` 10/10, `supabase_endpoints.go` 10/10, `team_mount.go` 8/8, `app.go` 7/7, `task_routes.go` 7/7, `subtask_routes.go` 6/6, `branch_routes.go` 5/5, `misc_mount.go` 4/4, `ws_mount.go` 3/3, and `machine_token_mount.go`, `mcp_routes.go`, `seat_feedback_mount.go`, `seat_mount.go`, `seat_status_mount.go`, `session_stream_routes.go` 2/2 each, `seat_rigspec_mount.go` 1/1. **The only non-test change under `httpapp/` or `auth/` since the 2026-10-08 pass is `e6829b32`, the removal of the two always-500 task routes — the change the counts paragraph above records, whose four-line deletion is why the task-route references below were renumbered** (`git log --oneline 88d27758..HEAD -- agenthub_go/fastmcp/server/httpapp agenthub_go/fastmcp/auth -- ':(exclude)*_test.go'` → one line; the window's only other Go edits are test files, `ff6fed10` and `c3f45214`). **That is why a pass run today returns zero where the 2026-10-06 pass found 21: no registration file was edited between the two passes, so no pointer could rot.** **What the pass did NOT establish: the routes' behaviour**, only that each row's pointer still resolves to the registration for its method+path; the §1.14 handler column keeps its documented convention (the mount registers a closure bound to a local, `create` / `list`, and the column names the `routes.*` function that closure calls).
 
+**RE-RESOLVED 2026-10-10 at `1b5c52b3` (writer seat) — the TWELVE `### 1.x` header-line citations, which the preamble above lists as outside both instruments, were resolved one at a time.** **Three were stale and are repaired:** §1.13 `routes_mount.go:211 → :262` and §1.14 `:310 → :361`, both to the `const base = …` line of their own section — the convention §1.9–§1.11 already follow, where the cited line IS that const — and §1.15 `:389 → :440`, the `func mountTaskSummaryRoutes(…)` whose registrations are exactly the rows the section lists (`:442`–`:475`), where `:389` was a `}))` closing a *token* handler and so named the wrong family altogether. **Five were already exact:** §1.9/§1.10/§1.11 (`const base = …`) and §1.18/§1.19 (`RegisterRoutes`). **Four are left as they are, because their intent is not something the document fixes:** §1.2 `branch_routes.go:59`, §1.3 `task_routes.go:48`, §1.4 `subtask_routes.go:12` and §1.5 `session_stream_routes.go:12` each point into handler bodies in the file the header names (`branch_routes.go:59` is `if !result.Success() {`, `task_routes.go:48` is a struct field, `subtask_routes.go:12` is `type SubtaskController interface {` — the most plausible of the four — and `session_stream_routes.go:12` is a bare `)`), and no section states what that line should designate, so a change there would be a guess wearing a repair's clothes. **What this pass did NOT establish: that a header citation is meaningful.** Nine of the twelve name a line no stated convention defines, and no instrument reads any of them — the file name beside them carries the meaning, the line is vestigial in four cases and wrong in three until today.
+
 Path convention for the Registration column: paths are relative to `agenthub_go/`; from
 §1.2 on, the column gives the BASENAME (`branch_routes.go:61`) because the section header
 already names the full file, while §1.1 and §1.6–§1.12 give the path from `agenthub_go/`.
@@ -184,7 +186,7 @@ and the two auth `RegisterRoutes` methods.
 |---|---|---|---|
 | POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:206` |
 
-### 1.13 Contexts — base `/api/v2/contexts` (`routes_mount.go:211`)
+### 1.13 Contexts — base `/api/v2/contexts` (`routes_mount.go:262`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
@@ -199,7 +201,7 @@ and the two auth `RegisterRoutes` methods.
 | GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:344` |
 | GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:348` |
 
-### 1.14 Tokens — base `/api/v2/tokens` (`routes_mount.go:310`)
+### 1.14 Tokens — base `/api/v2/tokens` (`routes_mount.go:361`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
@@ -218,7 +220,7 @@ and the two auth `RegisterRoutes` methods.
 | POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:406` |
 | POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:414` |
 
-### 1.15 Summary / remaining task routes (`routes_mount.go:389`)
+### 1.15 Summary / remaining task routes (`routes_mount.go:440`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
