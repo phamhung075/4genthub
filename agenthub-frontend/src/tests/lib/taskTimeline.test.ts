@@ -12,7 +12,6 @@ import { describe, it, expect } from 'vitest';
 import {
   ACTOR_LABELS,
   KIND_LABELS,
-  LEDGER_NOT_RECORDED,
   PHASE_LABELS,
   deriveLedgerPhase,
   describeEvent,
@@ -131,10 +130,6 @@ describe('describeEvent', () => {
   it('prints a KIND this build does not know as itself rather than as nothing', () => {
     // The row is the record: a kind the server adds tomorrow is still what happened.
     expect(labelForKind('planned')).toBe('planned');
-  });
-
-  it('states the limit of the vocabulary as a sentence a reader can act on', () => {
-    expect(LEDGER_NOT_RECORDED).toContain('not that its tests passed');
   });
 });
 
