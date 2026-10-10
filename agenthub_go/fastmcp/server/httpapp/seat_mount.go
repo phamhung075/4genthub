@@ -29,7 +29,11 @@ package httpapp
 // tenant can pull ANY seat's messages in that tenant. THAT IS A CHOSEN LIMIT, NOT AN OVERSIGHT: the
 // narrower rule — binding the pull to the machine that REPORTED the seat — refuses the pull in exactly
 // the case this store exists for, a seat that is DOWN and therefore unreported, so it would break the
-// feature to catch nothing on the tenant boundary. What would narrow it later is a durable addition
+// feature to catch nothing on the tenant boundary. AND IT IS A POLICY CHOICE, NOT A CONTROL: this
+// comment STATES the scope, it does not ENFORCE it — nothing here stops a machine in the tenant from
+// pulling a seat that is not its own, and the enforcement point is the credential the pull is issued
+// under, so narrowing the rule means changing that credential rather than editing this paragraph.
+// What would narrow it later is a durable addition
 // rather than a tightening here: a PER-SEAT credential, or a seat-to-machine binding the machine
 // reports, neither of which exists today (seat_status carries no session and no pull-side credential
 // is issued per seat). The ack records the machine that actually took each message, so the audit says
