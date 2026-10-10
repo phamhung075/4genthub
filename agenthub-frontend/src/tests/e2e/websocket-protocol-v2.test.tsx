@@ -154,7 +154,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   describe('Project Entity - Complete CRUD Flow', () => {
     it('should handle project create with a backend payload', async () => {
       const { result } = renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       expect(result.current.isActive).toBe(true);
@@ -201,7 +201,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       queryClient.setQueryData(['projects'], existingProjects);
 
       const { result } = renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: ProjectDeletePayload = {
@@ -231,7 +231,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should reject invalid project delete payload', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const invalidPayload = {
@@ -255,7 +255,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should use getDisplayName helper for project toasts', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: ProjectDeletePayload = {
@@ -291,7 +291,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       queryClient.setQueryData(['branches', 'project-123'], existingBranches);
 
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: BranchDeletePayload = {
@@ -322,7 +322,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should use getEntityId helper for branch ID extraction', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: BranchDeletePayload = {
@@ -342,7 +342,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should fallback to metadata when primary ID missing', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const invalidPayload = {
@@ -368,7 +368,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   describe('Task Entity - Complete CRUD Flow', () => {
     it('should handle task create, update, delete, complete flow', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const taskId = 'task-flow-123';
@@ -377,6 +377,9 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       // CREATE
       const createPayload: Task = {
         id: taskId,
+        has_dependencies: false,
+        has_context: false,
+        project_id: 'project-flow-123',
         title: 'New Task',
         description: 'Test task',
         status: 'todo',
@@ -435,7 +438,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should use getDisplayName helper for task toasts', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: TaskDeletePayload = {
@@ -462,6 +465,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       const existingSubtasks: Subtask[] = [
         {
           id: subtaskId,
+          priority: 'medium',
           title: 'Test Subtask',
           description: 'Will be deleted',
           status: 'todo',
@@ -475,7 +479,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
       queryClient.setQueryData(['subtasks', taskId], existingSubtasks);
 
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: SubtaskDeletePayload = {
@@ -506,7 +510,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should reject subtask delete payload missing task_id', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const invalidPayload = {
@@ -530,7 +534,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should handle optional title field in subtask delete', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const deletePayload: SubtaskDeletePayload = {
@@ -559,7 +563,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   describe('Cross-Entity Integration', () => {
     it('should handle cascade deletes (project → branches → tasks → subtasks)', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       // Simulate project delete with cascade data
@@ -601,7 +605,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should handle concurrent updates to different entities', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       // Send multiple entity updates concurrently
@@ -685,7 +689,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
   describe('Error Handling', () => {
     it('should handle malformed WebSocket messages gracefully', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const malformedMessage = {
@@ -700,7 +704,7 @@ describe('E2E: WebSocket Protocol v2.0 Integration', () => {
 
     it('should handle null/undefined payloads', async () => {
       renderHook(() => useRealtimeSync(mockWebSocketClient, true), {
-        wrapper: createWrapper(queryClient),
+        wrapper: createWrapper(),
       });
 
       const message = createWSMessage('task', 'deleted', null as any);
