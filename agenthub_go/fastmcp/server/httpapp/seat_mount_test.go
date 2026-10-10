@@ -43,9 +43,13 @@ type fakeSeatSource struct {
 	resolved *repositories.ResolvedSeat
 	err      error
 	seeded   int
+	// asked records the room/seat pair of every resolution, so a test can prove WHICH pair the
+	// handler resolved rather than only that it resolved something.
+	asked []string
 }
 
-func (f *fakeSeatSource) ResolveSeat(_ context.Context, _, _, _ string) (*repositories.ResolvedSeat, error) {
+func (f *fakeSeatSource) ResolveSeat(_ context.Context, _, room, seat string) (*repositories.ResolvedSeat, error) {
+	f.asked = append(f.asked, room+"/"+seat)
 	return f.resolved, f.err
 }
 
@@ -217,33 +221,36 @@ func TestSeedSeatTypesErrorMapping(t *testing.T) {
 	}
 }
 
-// The chat window's route is the one seat route that carries no room, so its path has the same
-// two-segment shape as the resolution GET. The verb is therefore the only thing that can tell the
-// two apart, and this is a ROUTING test rather than a validation one: the same path answers
-// differently per method, and the answer proves which pattern the mux chose.
+// The chat window's route is room-scoped, like every other seat sub-resource, so it no longer
+// shares a path with the resolution GET. This is a ROUTING test rather than a validation one:
+// each pattern must be reached by the path and method it names, the verb must still decide, and
+// the mount must not have taken the resolution away.
 func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
 		Hash: "abc", Runtime: "claude-code", Policy: map[string]any{"Seat": "coder"},
 	}})
 
-	// POST reaches the message handler. Before this route was mounted the same request was
-	// answered 405 by the GET-only resolution pattern, which is the defect the row reports.
-	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":"hello"}`)
-	if rec.Code == http.StatusMethodNotAllowed {
-		t.Fatalf("POST /seats/coder/messages = 405: the un-mounted defect is back")
-	}
+	// POST on the room-scoped path reaches the message handler.
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"text":"hello"}`)
 	if rec.Code != http.StatusNotImplemented {
-		t.Fatalf("POST /seats/coder/messages = %d, want 501: %s", rec.Code, rec.Body.String())
+		t.Fatalf("POST /rooms/dev/seats/coder/messages = %d, want 501: %s", rec.Code, rec.Body.String())
 	}
-	// The refusal must be a sentence: the window renders error.message verbatim, and the false
+	// The refusal must be a sentence: the window renders the detail verbatim, and the false
 	// success this route deliberately does not send would render as nothing at all.
 	if !strings.Contains(rec.Body.String(), `"detail"`) || !strings.Contains(rec.Body.String(), "not implemented") {
 		t.Fatalf("refusal is not a human-readable detail: %s", rec.Body.String())
 	}
 
-	// The SAME path with GET is still the resolution route, with "messages" as the seat key: the
-	// path alone cannot decide this route, and the mount must not have taken the GET away.
+	// The SAME path with GET is no route: the verb still decides, and it must not fall through
+	// to the resolution.
+	if getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/coder/messages", ""); getRec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("GET /rooms/dev/seats/coder/messages = %d, want 405: %s", getRec.Code, getRec.Body.String())
+	}
+
+	// The resolution keeps its GET and the path it kept it on: the key-only two-segment path the
+	// message route used to share now answers the resolution alone, with "messages" resolving as
+	// the seat key. That is the shape a client resolving a seat still calls.
 	getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/coder/messages", "")
 	if getRec.Code != http.StatusOK {
 		t.Fatalf("GET /seats/coder/messages = %d, want the resolution 200: %s", getRec.Code, getRec.Body.String())
@@ -253,28 +260,42 @@ func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 			t.Errorf("GET /seats/coder/messages body missing %s: %s", want, getRec.Body.String())
 		}
 	}
+
+	// AND THE ROUTE REALLY MOVED: the retired key-only path no longer takes the POST - only the
+	// GET-only resolution pattern matches it now, so the window's own call would be answered the
+	// 405 this row exists to stop being the answer.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":"hello"}`); rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("POST /seats/coder/messages = %d, want 405: the retired key-only shape still takes the message POST", rec.Code)
+	}
 }
 
 // The refusals that come from ROUTING, so that a later change cannot make this route's answer
 // depend on what the caller sent.
 func TestSeatMessageRouteRefusalsComeFromRouting(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
-	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+	fake := &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}
+	mux := seatTestMux(t, fake)
 
 	// A malformed body is refused for being malformed, which is only reachable if routing
-	// already chose this route over the resolution GET.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":`); rec.Code != http.StatusBadRequest {
+	// already chose this route.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"text":`); rec.Code != http.StatusBadRequest {
 		t.Errorf("malformed body: status = %d, want 400: %s", rec.Code, rec.Body.String())
 	}
-	// The body is {text} and nothing else: an unknown field is refused, the room included.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"room":"coder"}`); rec.Code != http.StatusBadRequest {
+	// The body is {text} and nothing else: an unknown field is refused, the room included,
+	// because the room is the path's to carry.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"room":"dev"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("unknown field: status = %d, want 400: %s", rec.Code, rec.Body.String())
+	}
+	// AND THE BODY IS DECODED BEFORE THE SEAT IS RESOLVED: a refused body must not have reached
+	// the resolver, so a malformed request can never be answered for the seat's absence.
+	if len(fake.asked) != 0 {
+		t.Errorf("the resolver was asked %v for a request whose body was refused", fake.asked)
 	}
 	// The resolution route is GET-only, so its own pattern answers the wrong method.
 	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/dev/coder", `{"text":"x"}`); rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("POST on the resolution path: status = %d, want 405", rec.Code)
 	}
-	// Three segments match no pattern at all.
+	// A three-segment path matches no pattern at all.
 	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/a/b/c", `{"text":"x"}`); rec.Code != http.StatusNotFound {
 		t.Errorf("unknown subpath: status = %d, want 404", rec.Code)
 	}
@@ -298,7 +319,7 @@ func TestSeatMessageRouteRequiresAuth(t *testing.T) {
 		{"not a bearer scheme", "Basic abc"},
 		{"bearer with no token", "Bearer "},
 	} {
-		req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seats/coder/messages", strings.NewReader(`{"text":"hello"}`))
+		req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", strings.NewReader(`{"text":"hello"}`))
 		if tc.header != "" {
 			req.Header.Set("Authorization", tc.header)
 		}
@@ -306,6 +327,56 @@ func TestSeatMessageRouteRequiresAuth(t *testing.T) {
 		mux.ServeHTTP(rec, req)
 		if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "Not authenticated") {
 			t.Errorf("%s: POST = %d %s, want 403 with a detail", tc.name, rec.Code, rec.Body.String())
+		}
+	}
+}
+
+// THE ROW'S POINT: the seat is resolved in the room the URL names, so a seat that is not in that
+// room is answered 404 - which the key-only path could not do at all - and the pair the resolver
+// is asked for is the pair the URL carries rather than a guessed room.
+func TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	cases := []struct {
+		name       string
+		fake       *fakeSeatSource
+		want       int
+		wantInBody string
+	}{
+		{
+			"a seat that is not in the room the URL names",
+			&fakeSeatSource{err: errors.New(`seat "ghost" not found in room "dev"`)},
+			http.StatusNotFound,
+			"not found",
+		},
+		{
+			"the resolver failing for another reason",
+			&fakeSeatSource{err: errors.New("database down")},
+			http.StatusInternalServerError,
+			"",
+		},
+		{
+			"a seat that does resolve reaches the delivery refusal",
+			&fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}},
+			http.StatusNotImplemented,
+			"",
+		},
+	}
+	for _, c := range cases {
+		mux := seatTestMux(t, c.fake)
+		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/ghost/messages", `{"text":"hello"}`)
+		if rec.Code != c.want {
+			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
+		}
+		// Every answer above is a sentence the window renders, so a bare status is not enough.
+		if !strings.Contains(rec.Body.String(), `"detail"`) {
+			t.Errorf("%s: the answer carries no detail for the window to render: %s", c.name, rec.Body.String())
+		}
+		if c.wantInBody != "" && !strings.Contains(rec.Body.String(), c.wantInBody) {
+			t.Errorf("%s: body missing %q: %s", c.name, c.wantInBody, rec.Body.String())
+		}
+		// The room and the seat are the URL's, never a guess.
+		if len(c.fake.asked) != 1 || c.fake.asked[0] != "dev/ghost" {
+			t.Errorf("%s: the resolver was asked for %v, want [dev/ghost]", c.name, c.fake.asked)
 		}
 	}
 }

@@ -3,7 +3,7 @@ package httpapp
 // seat_mount.go serves the company-workplace seats to the OpenRig client.
 //
 //	GET  /api/v2/openrig/seats/{room}/{seat}   resolved, rendered and stored snapshot
-//	POST /api/v2/openrig/seats/{seat}/messages one message to a seat's session (refused: delivery is not implemented)
+//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages  one message to a seat's session (refused: delivery is not implemented)
 //	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the embedded library
 //
 // A snapshot is immutable: the same seat definition always returns the same hash, so the
@@ -185,13 +185,15 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("GET /api/v2/openrig/seats/{room}/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleResolveSeat(w, r, u, sessions)
 	}))
-	// The chat window's route, and the reason it needs a pattern of its own: it is the one seat
-	// route that carries no room, so its path has the same two-segment shape as the resolution
-	// GET above. A literal segment outranks a wildcard, so this pattern takes the POST and the
-	// resolution keeps the GET - before it was mounted, the window's POST was answered 405 by
-	// the GET-only pattern and the caller learned nothing.
-	mux.HandleFunc("POST /api/v2/openrig/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
-		handleSendSeatMessage(w, r, u)
+	// The chat window's route carries the room, like every other seat sub-resource (/overlay,
+	// /links, /occupant), because a bare seat key cannot name a seat: a seat is unique per
+	// (room_id, seat_key) - the schema's uq_seats_room_seat_key - so a key-only path could name
+	// one only by guessing its room, and the guess would be silently wrong for every user with
+	// two rooms carrying the same seat key. With the room in the path the handler resolves the
+	// seat the URL names and can answer 404 for one that is not in it, which the key-only shape
+	// could not do at all.
+	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSendSeatMessage(w, r, u, sessions)
 	}))
 	mux.HandleFunc("POST /api/v2/openrig/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeedSeatTypes(w, r, u, sessions)
@@ -215,11 +217,7 @@ func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	room, seat := r.PathValue("room"), r.PathValue("seat")
 	resolved, err := source.ResolveSeat(r.Context(), userID(u), room, seat)
 	if err != nil {
-		status := http.StatusInternalServerError
-		if strings.Contains(err.Error(), "not found") {
-			status = http.StatusNotFound
-		}
-		writeDetail(w, status, err.Error())
+		writeSeatResolutionError(w, err)
 		return
 	}
 	files := make([]any, 0, len(resolved.Files))
@@ -240,6 +238,18 @@ func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	body.Set("success", true)
 	body.Set("resolved_seat", seatBody)
 	writeJSON(w, http.StatusOK, body)
+}
+
+// writeSeatResolutionError answers a seat resolution failure for both seat routes that resolve
+// one. To the caller a seat that does not exist and a seat the caller cannot see are the same
+// "not found" - a resolver that has to say which would leak the other user's seat key - and
+// anything else is this server's own failure.
+func writeSeatResolutionError(w http.ResponseWriter, err error) {
+	status := http.StatusInternalServerError
+	if strings.Contains(err.Error(), "not found") {
+		status = http.StatusNotFound
+	}
+	writeDetail(w, status, err.Error())
 }
 
 func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
@@ -266,21 +276,28 @@ func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.U
 // reads error.message only when there IS an error, so a false success renders as nothing at all.
 const seatMessageDeliveryAbsent = "seat message delivery is not implemented on this server: only the OpenRig client running on a seat's own machine can put text into that seat's session, so the server cannot deliver it. Nothing was sent."
 
-// handleSendSeatMessage answers the seat chat window. It refuses by design (see
-// seatMessageDeliveryAbsent), but only after the body is decoded, so a malformed request is
-// refused for being malformed rather than for the delivery gap.
+// handleSendSeatMessage answers the seat chat window. It resolves the seat the URL names, IN the
+// room the URL names, which is what makes the two refusals distinguishable: a seat that is not in
+// that room is answered 404, while a seat that is there reaches the delivery refusal (see
+// seatMessageDeliveryAbsent), which is the state of the feature rather than a mistake in the
+// request.
 //
-// It does not resolve the seat, and that is deliberate rather than unfinished: the window names a
-// seat by key alone, while a seat is unique per (room_id, seat_key) - the schema's
-// uq_seats_room_seat_key - and every resolver in seat_management is room-scoped
-// (SeatResolutionService.ResolveSeat takes a roomSlug). A bare key therefore names a seat only by
-// guessing its room, and the guess would be silently wrong for every user with two rooms carrying
-// the same seat key. The path's shape is the frontend's contract to settle, not this handler's.
-func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, _ *authdomain.User) {
+// THE BODY IS DECODED FIRST, so a malformed request is refused for being malformed rather than for
+// either of those: the window renders the detail verbatim, and "unknown field" is a sentence about
+// the caller's own bytes rather than about the delivery gap.
+func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	var request struct {
 		Text string `json:"text"`
 	}
 	if !decodeSeatAdminBody(w, r, &request) {
+		return
+	}
+	source, ok := seatSourceFor(w, r, sessions)
+	if !ok {
+		return
+	}
+	if _, err := source.ResolveSeat(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat")); err != nil {
+		writeSeatResolutionError(w, err)
 		return
 	}
 	writeDetail(w, http.StatusNotImplemented, seatMessageDeliveryAbsent)
