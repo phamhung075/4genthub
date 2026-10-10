@@ -37,7 +37,14 @@ WHAT IT DOES NOT COVER, said here rather than left to be assumed clean:
     anchored and its prose is not.
   * any semantic claim about prose. An anchor can resolve perfectly while the sentence beside it is
     wrong; nothing here reads the sentence.
-  * the worktree. It reads commits, so an uncommitted edit to the inventory is invisible to it.
+  * ONE MATCH PER PATH, FIRST-FOUND. `find` takes the first line where the species pattern matches in
+    the first candidate path (preferring an exact line match), so a file carrying SEVERAL
+    `Tables = append(` lines would only ever have its first considered, and a citation to a later one
+    would read as stale. No §3.2 row cites a later one today - all 66 anchors are fresh - and the
+    `def` and `sql` species are table-named, so for those the first match IS the right one.
+  * the worktree, in the other direction too: the two sibling instruments read the WORKTREE document
+    while this reads the commit at `rev`, so an uncommitted edit to the inventory can make their
+    verdicts disagree. The suite's clean-run cases report that as a red run, never a silent pass.
 
 USAGE:  python3 scripts/S3-REDERIVE.py                    # rev=HEAD, base=<BASE_REV below>
         python3 scripts/S3-REDERIVE.py <rev> [base]       # audit another commit / attribution base
@@ -119,8 +126,13 @@ def pat_for(kind, table):
 
 def collect(doc, rev, base=None):
     """The rows of §3.1-§3.4 and, for each anchor, where it is at `rev` and at `base`."""
-    i3 = next(i for i, l in enumerate(doc) if l.startswith("## 3."))
-    i4 = next(i for i, l in enumerate(doc) if l.startswith("## 4."))
+    try:
+        i3 = next(i for i, l in enumerate(doc) if l.startswith("## 3."))
+        i4 = next(i for i, l in enumerate(doc) if l.startswith("## 4."))
+    except StopIteration:
+        # A document without the section headings is NOT a crash and NOT a pass: it is a read that
+        # found nothing, and the caller refuses on an empty anchor list rather than printing clean.
+        return [], []
     sec, rows, anchors, sql_seen = None, [], [], None
     for i in range(i3, i4):
         l = doc[i]
@@ -176,6 +188,13 @@ def audit(doc, rev, base=None, base_missing=False, quiet=False):
     not_fresh = c["batch"] + c["earlier"] + c["unres"]
     if not quiet:
         print(f"rev={rev} base={base}  rows={len(rows)}  anchors={len(anchors)}")
+        if not anchors:
+            # VACUOUS IS NOT CLEAN. A section 3 stripped of its rows, or a document with none, used to
+            # print "every anchor in section 3 is fresh" with exit 0 - a clean line from a read that
+            # found nothing. The suite guards this too, but the instrument must not say it at all.
+            print(f"REFUSED-VACUOUS: no anchors were collected from section 3 of {DOC} at {rev}, so a "
+                  f"clean verdict would mean nothing. This is NOT a pass.")
+            return {"rows": rows, "anchors": anchors, **c, "not_fresh": not_fresh, "vacuous": True}
         if base_missing:
             # NEVER A SILENT PASS: the base is attribution, so an unreadable base leaves the verdict
             # intact and must still be said out loud - a shallow CI checkout is the normal case.
@@ -185,12 +204,18 @@ def audit(doc, rev, base=None, base_missing=False, quiet=False):
                   f"(or git fetch origin {base}), or pass a base this checkout has.")
         print("  doc sec  table                        kind  cited  HEAD  BASE  verdict")
         for rl, s, t, k, cited, p, n, b in anchors:
+            # WITHOUT A BASE THERE IS NO ATTRIBUTION TO ASSERT: the old label said STALE->EARLIER with
+            # BASE=None, which claims the drift predates a base that was never read (the reviewer's
+            # MINOR on this row).
             v = ("UNRESOLVED" if n is None else "FRESH" if n == cited
-                 else "STALE->BATCH" if (b is not None and b != n) else "STALE->EARLIER")
+                 else "STALE->BATCH" if (b is not None and b != n)
+                 else "STALE->EARLIER" if b is not None
+                 else "STALE (unattributed)")
             if v != "FRESH":
                 print(f"  {rl:4d} {s:4s} {t:28s} {k:5s} {cited:5d} {str(n):>5s} {str(b):>5s}  {v}  {p}")
         stale_rows = {(a[1], a[2]) for a in not_fresh}
-        print(f"\nFRESH {len(c['fresh'])}  STALE->BATCH {len(c['batch'])}  STALE->EARLIER {len(c['earlier'])}  "
+        earlier_label = "STALE->EARLIER" if not base_missing else "STALE (unattributed)"
+        print(f"\nFRESH {len(c['fresh'])}  STALE->BATCH {len(c['batch'])}  {earlier_label} {len(c['earlier'])}  "
               f"UNRESOLVED {len(c['unres'])}")
         print(f"rows with >=1 not-fresh anchor: {len(stale_rows)} of {len(rows)}  {sorted(stale_rows)}")
         if not_fresh:
@@ -293,6 +318,8 @@ def main():
 
     base_missing = not has_rev(base)
     r = audit(doc, rev, base=base, base_missing=base_missing)
+    if r.get("vacuous"):
+        return 2
     return 1 if r["not_fresh"] else 0
 
 

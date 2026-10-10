@@ -98,6 +98,37 @@ def test_s3_rederive_refuses_a_rev_this_checkout_does_not_have():
     assert r.returncode == 2, f"expected a refusal, got {r.returncode}:\n{r.stdout}{r.stderr}"
 
 
+def test_s3_rederive_does_not_assert_an_attribution_without_a_base(tmp_path):
+    """STALE, and SAID to be unattributed - never STALE->EARLIER, which claims the drift predates a
+    base that was never read. The reviewer's MINOR on this row, pinned."""
+    lines = INVENTORY.read_text(encoding="utf-8").splitlines(keepends=True)
+    start = next(n for n, l in enumerate(lines) if l.startswith("## 3."))
+    i = next(n for n in range(start, len(lines))
+             if re.match(r"^\|\s*`[^`]+`\s*\|\s*`[^`]+`\s*\|", lines[n]) and re.search(r"\d+`?\s*\|\s*$", lines[n]))
+    lines[i] = re.sub(r"(\d+)(`?\s*\|\s*)$", lambda m: str(int(m.group(1)) + 7) + m.group(2), lines[i], count=1)
+    perturbed = tmp_path / "perturbed-inventory.md"
+    perturbed.write_text("".join(lines), encoding="utf-8")
+
+    r = run(S3, "HEAD", ABSENT_REV, "--doc-file", perturbed)
+    out = r.stdout + r.stderr
+    assert r.returncode == 1, f"a stale anchor did not fail the run:\n{out}"
+    assert "STALE (unattributed)" in out, f"the drift was not named:\n{out}"
+    assert "STALE->EARLIER" not in out, f"an attribution was asserted for a base that is missing:\n{out}"
+
+
+def test_s3_rederive_refuses_a_document_it_can_read_nothing_from(tmp_path):
+    """A section 3 with no rows used to print 'every anchor in section 3 is fresh' and exit 0: a clean
+    verdict from a read that found nothing. A document without the headings is not a crash either."""
+    stripped = tmp_path / "no-section-3.md"
+    stripped.write_text("# a document with no section 3 at all\n\n## 2. Something else\n\nprose\n", encoding="utf-8")
+
+    r = run(S3, "--doc-file", stripped)
+    out = r.stdout + r.stderr
+    assert r.returncode == 2, f"a vacuous read was not refused:\n{out}"
+    assert "REFUSED-VACUOUS" in out, f"the refusal was not said in words:\n{out}"
+    assert "every anchor in section 3 is fresh" not in out, f"a clean line was printed anyway:\n{out}"
+
+
 def test_citation_audit_refuses_to_rewrite_under_a_gate_marker_and_leaves_the_inventory_alone():
     """The one surface that can edit the artefact it measures, pinned shut while a gate is up."""
     import os
