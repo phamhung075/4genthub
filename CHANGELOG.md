@@ -6,6 +6,9 @@
 ### Verified
 - Read, not run: no test asserts `NEXT_GEN.md`'s text. The claims are the code's, checked in `agenthub-frontend/src/hooks/useRealtimeSync.ts`, `agenthub-frontend/src/store/notifications.ts`, `agenthub-frontend/src/components/NotificationBell.tsx`, `agenthub-frontend/src/components/Header.tsx` and `agenthub_go/fastmcp/server/httpapp/missed_notification_wiring.go`.
 
+### Fixed
+- The same page pointed a reader at `ai_docs/reports-status/openrig-side-defects-2026-10-06.md` as the home of an OpenRig-side finding. The retired-tree docs cut deleted that page, so the pointer resolved to nothing; it now names the report the lead holds for the owner instead of a path. `grep -rn reports-status agenthub_go/NEXT_GEN.md` is the check, and the one remaining hit is a dated history bullet whose removal belongs to the docs trim rather than to this pointer fix.
+
 ## The Go bridge named the pinned hash with the Python's old field name, so every report was a 400 that reads as OFFLINE
 
 ### Changed
