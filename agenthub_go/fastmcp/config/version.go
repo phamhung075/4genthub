@@ -15,14 +15,13 @@ package config
 // environment variable that can rename the release is a second identity by construction, so a
 // literal is the honest form of a deploy marker.
 //
-// Bump this with every change that must be confirmable after a deploy. WHETHER the bump has to be
-// the last commit of a set depends on the push regime, so this comment states the dependency rather
-// than asserting one. Under a batched, manually requested deploy it is the last commit in the set,
-// and the string then cannot cover a tree that lacks the content it marks. Under continuous push -
-// origin/main moving with every commit, measured 2026-10-10 - there is no last commit to be, and
-// holding the marker only makes production report a version the tree has long passed; the honest
-// move there is to bump as the content lands and accept that a deploy cannot be confirmed by a
-// version the tree never carried.
+// Bump this with every change that must be confirmable after a deploy. WHERE the marker goes DEPENDS
+// on the push regime, so this comment states that dependency instead of asserting one regime - which
+// regime is intended is the owner's call, and NEXT_GEN rule 80 is the record of what happens when the
+// two are confused. Under a manual, batched push the marker goes LAST, so the string can never cover a
+// tree that lacks the content it names. Under a push-as-commits-land regime it goes as soon as the
+// tree holds content worth identifying, and a deploy that reports an unchanged version is then
+// confirmable only by /health's uptime, not by the string.
 const ReleaseVersion = "0.0.36"
 
 // ServerName is the server's NAME — the brand subtitle after the dash, not a
