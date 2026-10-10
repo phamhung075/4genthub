@@ -137,3 +137,61 @@ func TestFragmentJSONShape(t *testing.T) {
 		t.Fatalf("fragment = %s\nwant      %s", encoded, want)
 	}
 }
+
+// TestSeatValueRoundTripsThroughItsOwnValidator is the invariant the writer and the reader share:
+// whatever SeatValue produces, ValidateSeatValue accepts. The seat key with a separator inside it is
+// the case that decides the split rule - a rule that refuses it would refuse a real identity, which
+// is worse than the junk it was written to catch.
+func TestSeatValueRoundTripsThroughItsOwnValidator(t *testing.T) {
+	for _, tc := range []struct{ room, seat string }{
+		{"alpha", "beta"},
+		{"room-1", "seat.with.dots"},
+		{"room1", "seat/key"},
+		{"alpha", "/beta"},
+		{"a", "b"},
+	} {
+		v := SeatValue(tc.room, tc.seat)
+		if err := ValidateSeatValue(v); err != nil {
+			t.Errorf("SeatValue(%q, %q) = %q, which its own validator refused: %v", tc.room, tc.seat, v, err)
+		}
+	}
+}
+
+// TestValidateSeatValueRefusesWhatCannotBeAnActorID pins the two refusals the MCP boundary needs: a
+// value past VARCHAR(255), which used to roll back the caller's own write, and a value that names no
+// seat. The width cases are the boundary itself - 255 and 256 - rather than "long" and "short",
+// because the column's width is the number the rule is about.
+func TestValidateSeatValueRefusesWhatCannotBeAnActorID(t *testing.T) {
+	const room = "room"
+	longest := SeatValue(room, strings.Repeat("s", SeatValueMaxLen-len(room)-1))
+	if len(longest) != SeatValueMaxLen {
+		t.Fatalf("the longest storable identity is %d bytes, want %d", len(longest), SeatValueMaxLen)
+	}
+	if err := ValidateSeatValue(longest); err != nil {
+		t.Fatalf("the longest storable identity was refused: %v", err)
+	}
+
+	oneTooMany := SeatValue(room, strings.Repeat("s", SeatValueMaxLen-len(room)))
+	if len(oneTooMany) != SeatValueMaxLen+1 {
+		t.Fatalf("the overflow fixture is %d bytes, want %d", len(oneTooMany), SeatValueMaxLen+1)
+	}
+	err := ValidateSeatValue(oneTooMany)
+	if err == nil {
+		t.Fatal("a value past the actor id's width was accepted: it would fail the INSERT and roll back the caller's write")
+	}
+	if !strings.Contains(err.Error(), "256") {
+		t.Errorf("the refusal does not say how long the value was: %v", err)
+	}
+	if len(err.Error()) > 200 {
+		t.Errorf("the refusal is %d bytes: a hostile header must not inflate the message", len(err.Error()))
+	}
+
+	// The values that name no seat. `alpha//beta` is deliberately NOT here: it splits at the FIRST
+	// separator into room `alpha` and seat `/beta`, and a key may contain one, so refusing it would
+	// refuse a real identity - the round-trip case above pins that it is accepted.
+	for _, bad := range []string{"", "alpha", "/beta", "alpha/"} {
+		if err := ValidateSeatValue(bad); err == nil {
+			t.Errorf("ValidateSeatValue(%q) accepted a value that names no seat", bad)
+		}
+	}
+}

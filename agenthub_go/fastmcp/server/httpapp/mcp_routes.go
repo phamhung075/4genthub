@@ -371,7 +371,23 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 	// THE SEAT'S CLAIM ON ITS OWN CALLS, read from the header every rendered MCP block carries
 	// (mcpblock.SeatHeader). ATTRIBUTION ONLY: nothing below decides access from it, and a call
 	// without it is attributed to the user, never to the system.
+	//
+	// A VALUE THAT CANNOT BECOME AN ACTOR ID IS REFUSED HERE, BEFORE ANY WORK IS ATTEMPTED, rather
+	// than left for the database to refuse: actor_id is VARCHAR(255), so an over-long header used to
+	// fail the INSERT and roll back the CALLER'S OWN status write - a header losing a legitimate
+	// write, which is what the reviewer measured. The refusal is the boundary's own error result, so
+	// the caller learns why and nothing was written.
 	if seatID := r.Header.Get(mcpblock.SeatHeader); seatID != "" {
+		if err := mcpblock.ValidateSeatValue(seatID); err != nil {
+			return map[string]any{
+				"success": false,
+				"error": map[string]any{
+					"message":   err.Error(),
+					"code":      "INVALID_SEAT_HEADER",
+					"operation": name,
+				},
+			}, true
+		}
 		ctx = services.WithActor(ctx, services.SeatActor(seatID))
 	}
 

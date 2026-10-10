@@ -40,6 +40,34 @@ func SeatValue(roomSlug, seatKey string) string {
 	return roomSlug + "/" + seatKey
 }
 
+// SeatValueMaxLen bounds a header value by the column the ledger records it in:
+// task_events.actor_id is VARCHAR(255), and a value past that width used to fail the INSERT and roll
+// the CALLER'S OWN status write back with it - a header losing a legitimate write. The bound lives
+// here, with the shape, so the renderer and the route cannot disagree about how long an identity may
+// be.
+const SeatValueMaxLen = 255
+
+// ValidateSeatValue refuses a header value that cannot be recorded as an actor id: it checks what
+// the column holds, and that the value has the `<room>/<seat>` shape SeatValue writes - a value with
+// no separator, or with an empty side, names no seat at all.
+//
+// It does NOT check that the room or the seat exists: this is a shape and a width, not a lookup, and
+// resolving a seat belongs to the resolver. It also splits only at the FIRST separator, so a seat key
+// that itself contains one is still accepted - the rule must refuse junk without ever refusing what
+// the renderer produces. The value is quoted if it is printed, so a hostile header cannot inflate the
+// message.
+func ValidateSeatValue(v string) error {
+	if len(v) > SeatValueMaxLen {
+		return fmt.Errorf("seat header is %d bytes, past the %d an actor id is recorded in: %.60q",
+			len(v), SeatValueMaxLen, v)
+	}
+	room, seat, ok := strings.Cut(v, "/")
+	if !ok || room == "" || seat == "" {
+		return fmt.Errorf("seat header %q is not <room>/<seat>", v)
+	}
+	return nil
+}
+
 // Server is one MCP server as a block's content describes it.
 type Server struct {
 	// Name is the server key in the rendered MCP fragment.

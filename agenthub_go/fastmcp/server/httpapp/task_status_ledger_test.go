@@ -230,6 +230,65 @@ func TestTaskStatusRouteWritesTheLedgerInTheSameTransaction(t *testing.T) {
 	}
 }
 
+// TestMCPStatusCallWithAnUnusableSeatHeaderIsRefusedBeforeTheWrite is the O2 gate's ONE MINOR as a
+// test. The header is read into task_events.actor_id VARCHAR(255), so an over-long value used to
+// fail the INSERT - and the INSERT shares the caller's transaction, so a HEADER could roll back the
+// CALLER'S OWN status write. It must be refused at the boundary instead, with an error the caller can
+// read, and the task must not have moved and nothing may have been recorded.
+//
+// No access consequence is claimed or implied: the header is attribution only, and this is about a
+// write being lost, not about one being allowed.
+func TestMCPStatusCallWithAnUnusableSeatHeaderIsRefusedBeforeTheWrite(t *testing.T) {
+	sm := newMissedNotificationAppEnv(t)
+	t.Setenv("AUTH_ENABLED", "true")
+	wsWireRESTAuth(t)
+
+	ctx := context.Background()
+	app, err := NewApp(ctx, sm)
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+
+	const minted = "user-status-ledger-long-header"
+	token := wsTestTokenFor(t, minted, []string{"tasks:update", "tasks:read"})
+	authCode, user := wsRESTUser(t, "Bearer "+token)
+	if authCode != http.StatusOK || user == "" {
+		t.Fatalf("the bearer dependency resolved no user: status = %d", authCode)
+	}
+	scoped, mapErr := domain.ValidateUserID(&user, "seeding the task this test does not move")
+	if mapErr != nil {
+		t.Fatalf("mapping the user id: %v", mapErr)
+	}
+
+	const taskID = "8f1b1f0e-6f1a-4a3e-9a5f-2f5b3c7d9e50"
+	ledgerSeedTask(t, sm, taskID, scoped, "todo")
+
+	// One byte past what the column holds: the boundary case, not a conveniently large number.
+	overlong := strings.Repeat("a", mcpblock.SeatValueMaxLen+1)
+	code, body := ledgerMCPUpdateStatus(t, app, token, overlong, taskID, "in_progress")
+	t.Logf("OBSERVED POST /mcp with a %d-byte seat header -> %d, body = %.300s", len(overlong), code, body)
+
+	if code != http.StatusOK {
+		t.Fatalf("the JSON-RPC envelope answered %d, want 200 with an error RESULT: %.300s", code, body)
+	}
+	if !strings.Contains(body, "INVALID_SEAT_HEADER") {
+		t.Fatalf("the refusal does not name itself, so a caller cannot tell why: %.300s", body)
+	}
+	if got := ledgerStatus(t, sm, taskID); got != "todo" {
+		t.Fatalf("the task moved to %q on a refused call: the header must be refused BEFORE the write", got)
+	}
+	entries := 0
+	if err := sm.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx,
+			`SELECT count(*) FROM task_events WHERE task_id = $1::uuid`, taskID).Scan(&entries)
+	}); err != nil {
+		t.Fatalf("counting entries: %v", err)
+	}
+	if entries != 0 {
+		t.Fatalf("entries = %d, want 0: a refused call must write nothing at all", entries)
+	}
+}
+
 // ledgerLastStatusActor reads the actor of the newest status_changed entry for a task, as the row
 // records it.
 func ledgerLastStatusActor(t *testing.T, sm *database.SessionManager, taskID string) (string, string) {
@@ -264,14 +323,10 @@ func ledgerMCPUpdateStatus(t *testing.T, app *App, token, seat, taskID, status s
 }
 
 // WHO an MCP status call is attributed to, read from the ROW rather than from the response: the seat
-// the header names is an agent acting on the caller's behalf, and a call that names no seat belongs
-// to the user the caller resolves to. Every status write used to be stamped
-// `system`/`system` no matter who made it, which is the gap this closes.
-//
-// The seat class is written `agent` because that is the LANDED task_events vocabulary. The item's
-// acceptance sentence names `seat` and `human` from architecture section 2.5, which the table's
-// CHECK does not permit yet; P1 lands that spelling, and the deviation is named here, in the
-// changelog and in the commit rather than left for a later reader to rediscover.
+// the header names is that seat acting on the caller's behalf, and a call that names no seat belongs
+// to the user the caller resolves to. Every status write used to be stamped `system`/`system` no
+// matter who made it, which is the gap this closes: an entry names whoever acted, in the two classes
+// architecture 2.5 defines for it.
 func TestMCPStatusCallIsAttributedToTheSeatThatMadeIt(t *testing.T) {
 	sm := newMissedNotificationAppEnv(t)
 	t.Setenv("AUTH_ENABLED", "true")
@@ -297,7 +352,7 @@ func TestMCPStatusCallIsAttributedToTheSeatThatMadeIt(t *testing.T) {
 		t.Fatalf("mapping the user id: %v", mapErr)
 	}
 
-	// A call carrying the header the renderer stamps: an agent, named by the seat identity.
+	// A call carrying the header the renderer stamps: a seat, named by its identity.
 	const withSeat = "8f1b1f0e-6f1a-4a3e-9a5f-2f5b3c7d9e02"
 	ledgerSeedTask(t, sm, withSeat, scoped, "todo")
 	code, body := ledgerMCPUpdateStatus(t, app, token, "alpha/beta", withSeat, "in_progress")
