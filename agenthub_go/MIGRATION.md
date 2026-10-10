@@ -1,5 +1,7 @@
 # MIGRATION.md — Python `fastmcp` → Go
 
+> **CLOSED — DATED POINTER AT THE TOP (added 2026-10-10, writer seat, carrying D2's stage-3 line).** This file is a PARITY RECORD, not current instruction. It was closed by the owner's decision (`ai_docs/architecture-design/decision-remove-python-backend.md`: no Python backend, no ORM, all code in Go) and the tree it records is gone from disk and from the index — `agenthub_main/` was deleted in `a50929c6` (2026-10-09; 1583 paths, none outside `agenthub_main/`), its changelog in the separate commit `ff94cb83`. **Every Python path cited below resolves at the tag `python-backend-final`** (`git checkout python-backend-final -- agenthub_main`, or `git revert a50929c6`). Measured 2026-10-10: that tag exists **locally only** — `git ls-remote --tags origin python-backend-final` prints nothing — so a reader without this clone must use the revert.
+
 Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` (module `agenthub`), same directory layout, one `.go` file per `.py` module.
 `__init__.py` files map to the Go package clause (no file). Files whose stem ends in a Go-reserved suffix get `_py` appended.
 
