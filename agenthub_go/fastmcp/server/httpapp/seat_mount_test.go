@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -95,14 +96,23 @@ func TestResolveSeatStatusMapping(t *testing.T) {
 	cases := []struct {
 		err  error
 		want int
+		body string // the JSON-escaped detail, as a client reads it
 	}{
-		{errors.New(`seat "x" not found in room "dev"`), http.StatusNotFound},
-		{errors.New("database down"), http.StatusInternalServerError},
+		{fmt.Errorf("%w: seat %q", seatservices.ErrSeatNotFound, "x"), http.StatusNotFound, `seat not found: seat \"x\"`},
+		{fmt.Errorf("%w: room %q", seatservices.ErrRoomNotFound, "dev"), http.StatusNotFound, `room not found: room \"dev\"`},
+		// THE TEXT DOES NOT DECIDE: an error that merely SAYS "not found" is this server's own
+		// failure, not a 404 it never earned.
+		{errors.New(`seat "x" not found in room "dev"`), http.StatusInternalServerError, ""},
+		{errors.New("database down"), http.StatusInternalServerError, ""},
 	}
 	for _, c := range cases {
 		mux := seatTestMux(t, &fakeSeatSource{err: c.err})
-		if rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", ""); rec.Code != c.want {
+		rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/dev/x", "")
+		if rec.Code != c.want {
 			t.Errorf("%v: status = %d, want %d", c.err, rec.Code, c.want)
+		}
+		if c.body != "" && !strings.Contains(rec.Body.String(), c.body) {
+			t.Errorf("%v: body = %s, want it to carry %s", c.err, rec.Body.String(), c.body)
 		}
 	}
 }
@@ -421,7 +431,7 @@ func TestSeatMessageSendRefusesACredentialWithTheChannelsOwnBody(t *testing.T) {
 func TestSeatMessageBothDirectionsRefuseAMissingSeatIdentically(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	store := &fakeSeatMessageStore{}
-	source := &fakeSeatSource{err: errors.New(`seat "ghost" not found in room "dev"`)}
+	source := &fakeSeatSource{err: fmt.Errorf("%w: seat %q", seatservices.ErrSeatNotFound, "ghost")}
 	mux := seatMessageTestMux(t, source, store)
 	path := "/api/v2/openrig/rooms/dev/seats/ghost/messages"
 

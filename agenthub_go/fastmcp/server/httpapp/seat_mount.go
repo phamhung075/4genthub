@@ -280,9 +280,17 @@ func handleResolveSeat(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 // one. To the caller a seat that does not exist and a seat the caller cannot see are the same
 // "not found" - a resolver that has to say which would leak the other user's seat key - and
 // anything else is this server's own failure.
+//
+// THE STATUS IS DECIDED BY ERROR IDENTITY, NEVER BY THE TEXT. The resolver's three misses wrap
+// ErrRoomNotFound / ErrSeatNotFound / ErrSeatTypeNotFound - the same sentinels the seat-admin
+// switch reads - so an unrelated error that happens to SAY "not found" is this server's own
+// failure (500) rather than a 404 it never earned.
 func writeSeatResolutionError(w http.ResponseWriter, err error) {
 	status := http.StatusInternalServerError
-	if strings.Contains(err.Error(), "not found") {
+	switch {
+	case errors.Is(err, seatservices.ErrRoomNotFound),
+		errors.Is(err, seatservices.ErrSeatNotFound),
+		errors.Is(err, seatservices.ErrSeatTypeNotFound):
 		status = http.StatusNotFound
 	}
 	writeDetail(w, status, err.Error())
