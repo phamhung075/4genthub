@@ -212,3 +212,123 @@ Phase 1 ships when steps 1–3 pass. Phase 2 (the `sessions:command` scope, `ses
 ## 6. Anything a dev seat finds unruled
 
 Hold the frame name or field and ask the architect. Do not invent it. The lead has said this to go-dev and fe-dev, and this note is the reference.
+
+## 7. Safeguard supervision (ruled 2026-10-11; lead's qitem `qitem-20261010225142-6d506ef31156b50b`, board row `e59f4162`)
+
+The incident: the compaction supervisor and the rig watchdog were not running, and nothing said so. What the code does now (architect read the client at `63fd184`):
+
+- `4genteam up` (`clientlifecycle/lifecycle.go:168`) starts the bridge and the supervisor as detached children (`spawnChild`, `supervisor.go:358`). It **never starts the watchdog**. When the supervisor fails to start, `up` prints "continuing without a running compaction supervisor" and goes on (`:183`).
+- `status` is `pgrep` plus the last five log lines (`SupervisorStatus`, `supervisor.go:452`).
+- The supervisor logs **only when it acts** (`Step`, `supervisor.go:98`). On a quiet rig a healthy supervisor writes nothing, so its log age cannot tell dead from idle. The 12:41 last-log age proved nothing by itself.
+- The watchdog logs a heartbeat line every 15 polls of 60 s (`clientrestore/watchdog.go:282`). The bridge retries with doubling backoff up to 120 s (`clientbridge/bridge.go:338`).
+- No OS supervisor exists on this machine: PID 1 is `init`, and `systemctl --user` reports `offline` (architect ran both, 2026-10-11).
+- There is no rigd verb yet. "The skeleton's bridge reconnect/reuse" therefore names the bridge's backoff and `spawnChild`/`awaitStart`; this section reuses both.
+
+### 7.1 (a) Where supervision lives
+
+| | A: inside rigd, as its child manager | B: a separate `4genteam keeper` process |
+|---|---|---|
+| Who restarts rigd itself | Nobody locally (no systemd). The server notices through the socket (7.3). | Nobody: the keeper is a second always-on process that needs supervising. |
+| Upstream path | rigd's own `/ws/connector` socket | A second connection, or IPC into rigd |
+| Supervision mechanisms | One | Two, the thing the owner ruled out |
+
+**Ruling: A.** rigd is the single restart authority.
+
+- **Reuses:**
+  - `spawnChild` and `awaitStart` start each child. The children are the existing verbs, `compact-run --rig R`, `watchdog R --watch` and `bridge run`, as separate processes.
+  - The bridge's backoff stays inside the bridge. It is I/O retry, not supervision.
+- **New:** a restart loop with backoff from 1 s, doubling to 120 s. A child that dies 3 times inside 10 minutes is `failing`; rigd keeps retrying at 120 s.
+- **Changed:** `up` starts rigd (one detached child, checked with `awaitStart`) instead of the bridge and the supervisor. It records the rig in the local `rigd.json` `rigs` list, and rigd supervises a supervisor and a watchdog per listed rig and one bridge per machine.
+- **Removed:** `compact` and `stop` no longer spawn or kill safeguards directly. Two restart paths would be two mechanisms. `stop` stops rigd, which stops its children.
+
+### 7.2 (b) The health report and the authoritative source
+
+**New:** every child writes a heartbeat file on every pass, `<LogDir>/heartbeat/<safeguard>-<rig>.json` holding `{pid, at}`. The supervisor writes it per `Step`, the watchdog per poll, the bridge per `Cycle`. rigd writes its own, `rigd.json` in the same directory.
+
+**One row per safeguard per rig:**
+
+`{rig, safeguard: compact|watchdog|bridge|rigd, state: running|stopped|silent|failing, pid, started_at, restarts, last_beat_at, age_s}`
+
+**Which source wins:**
+
+1. **Process.** rigd's `Wait` on its child, or `pgrep` when rigd is not running, decides `running` against `stopped`. A dead process is `stopped` whatever its heartbeat says.
+2. **Heartbeat.** A live process whose heartbeat is older than the threshold (7.4), or whose heartbeat `pid` is not the live pid, is `silent`. This is the hung case, the silence the owner named.
+3. **Log timestamps are never authoritative.** They are shown for reading only, because of the supervisor fact above.
+
+`status --json` and `doctor` compute these rows themselves from the heartbeat files and `pgrep`. They do NOT read a report from rigd, because a dead rigd must still be reported.
+
+### 7.3 (c) The alert
+
+| | Upstream | Owner reach |
+|---|---|---|
+| 1. Reuse `session` with `state` | A safeguard is not a seat. It would put safeguards on the Sessions list and break 2.3a's `seat_state` precedence. | — |
+| 2. Reuse the bridge's D3 HTTP notify | A second upstream channel, and the bridge is itself one of the watched safeguards | Yes |
+| 3. A new frame kind on the socket; the server raises the notification | One channel. The server sees the transition. | Yes, through the existing store |
+
+**Ruling: 3.**
+
+- **New client frame:** `safeguard {rig, safeguard, state, pid?, restarts, age_s, at}`.
+  - It is sent on every state change, and every row is sent again after each `ready`.
+  - Latest state wins (an upsert), so there is no `seq`, no `cursor` and no ack.
+- **New server storage:** a table `rig_safeguards`, keyed by (`user_id`, connector, `rig`, `safeguard`).
+- **The server decides the alert.** It raises a notification when the stored state changes from `running` to `stopped`, `silent` or `failing`, or when `restarts` goes up. Re-sent rows produce no duplicate alerts, and a failure that happened while offline is alerted on reconnect.
+- **Reuses:**
+  - the browser push `routes.BroadcastDataChange` with **new** entity `rig_safeguard`, the 2.3a pattern;
+  - the server's notification store behind `/api/v2/broadcast/notify` (the D3 consumer), with **new** `event_type: safeguard_alert`. That store keeps a notification for an offline user and replays it on their next connect (`websocket_routes.go:580-616`, `ws_mount.go:220-240`).
+- **New dead-man alert for rigd itself.** When a connector that advertised `safeguards` stays offline past its heartbeat close (3 × `heartbeat_s`, 2.2), the server raises `safeguard_alert` for `rigd`. This is the only observer of a dead rigd on a machine with no systemd.
+
+**The local surface, stated plainly: NONE exists yet** that reaches the owner without the cloud.
+
+- The surface that reaches the owner is the dashboard notification store above. It is real, it keeps notices for an offline user, and it needs the cloud.
+- When the cloud is unreachable, rigd appends each transition to `<LogDir>/alerts.log`, and `doctor` prints it. That file reaches nobody until someone runs `doctor`. The alert itself still arrives late, through the re-send after the next `ready`.
+- A human-addressed OpenRig row is NOT used, because it is unroutable here.
+- A cloud-independent channel to the owner (desktop, phone or mail) is a new product requirement for the owner. It is not ruled here.
+
+### 7.4 (d) The silence threshold
+
+**Ruling: per safeguard, derived and not configured.** `silent` means heartbeat age > 3 × the child's longest legitimate sleep. That is the same 3× as the socket heartbeat (2.2).
+
+| Safeguard | Longest legitimate sleep | Silent after |
+|---|---|---|
+| compact | `--every`, 10 s | 30 s |
+| watchdog | the watch interval, 60 s | 180 s |
+| bridge | the 120 s backoff cap | 360 s |
+| rigd | the 25 s heartbeat | 75 s |
+
+- **Owner:** rigd computes each threshold from the flags it launched that child with. `doctor`, which has no launch flags, uses the defaults above.
+- **Not the server's job.** The server never judges silence of a child; it stores the state rigd sends. It judges only rigd's own socket.
+- **No environment knob.** A threshold nobody owns is how silence went unnoticed.
+
+### 7.5 (e) `doctor` and `up`
+
+- **`4genteam doctor [rig]` is new and read-only.** It never starts, restarts or signals anything; the lead's lean is ruled. Its output is one line per row of 7.2, then the tail of `alerts.log`.
+  - Exit `ExitOK` (0) only when every row is `running`.
+  - Exit `ExitUnavailable` (3) otherwise. Every safeguard that is not `running` is named on stderr as `<rig> <safeguard>: <state>, age <n>s`.
+  - `--json` prints the rows.
+- **`up` fails loudly.** After rigd's own start grace, it runs the same check as `doctor`. If any row is not `running`, it exits `ExitUnavailable` with the same stderr lines, BEFORE the watch view, the UI and herdr.
+  - The "continuing without" line (`lifecycle.go:183`) is deleted. This is clean code with no fallback.
+  - A bridge refused for a missing `AGENTHUB_URL` or `AGENTHUB_TOKEN` is a failed `up`. The message names the variable and never prints its value.
+- **The repair verb is `up`**, which is idempotent: it starts rigd when absent and leaves a running rigd alone.
+
+### 7.6 (f) Composition with the ruled frames
+
+- **`hello.capabilities`** gains `safeguards`. The client sends `safeguard` frames only after `ready.capabilities` echoes it. A server without it would answer `unknown_type` and keep the socket open (2.3).
+- **`session.state`** is unchanged. Safeguards are not sessions.
+- **`events.cursor`** and stop-and-wait are unchanged. `safeguard` carries no `seq` and no cursor, and never shares a batch with `events`.
+- **`ping`/`pong`** are unchanged. Their timeout is now also the rigd dead-man (7.3).
+- **Commands** stay phase 2 and human-only. A remote "restart safeguard" is NOT a phase-1 frame, and `doctor` never restarts.
+
+**Names a failing test may assert:**
+
+| Kind | Names |
+|---|---|
+| Frame | `safeguard` |
+| Capability | `safeguards` |
+| Entity | `rig_safeguard` |
+| Table | `rig_safeguards` |
+| `event_type` | `safeguard_alert` |
+| States | `running`, `stopped`, `silent`, `failing` |
+| Safeguards | `compact`, `watchdog`, `bridge`, `rigd` |
+| Exit | `doctor` → 3 |
+
+The suggested first test is client-only and needs no server: a live child whose heartbeat is 31 s old reads `silent`, not `running`, for `compact`.
