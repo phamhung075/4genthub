@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
-	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/application/facades"
 	"agenthub/fastmcp/task_management/application/factories"
@@ -170,9 +169,8 @@ func mountPerformanceRoutes(mux *http.ServeMux) {
 // --- broadcast_routes.py (/api/v2/broadcast) ---
 
 func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
-	// The bridge is the only caller and it holds a machine token, so the ingress is
-	// machine-authenticated and the target user is the token's user, never the body's.
-	mux.HandleFunc("POST /api/v2/broadcast/notify", machineAuthed(deps.sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
+	// The bridge is the only caller, so the target user is the caller's, never the body's.
+	mux.HandleFunc("POST /api/v2/broadcast/notify", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		m, ok := jsonBody(w, r)
 		if !ok {
 			return
@@ -191,7 +189,7 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 			EventType:  getOptString(m, "event_type"),
 			EntityType: getOptString(m, "entity_type"),
 			EntityID:   getOptString(m, "entity_id"),
-			UserID:     token.UserID,
+			UserID:     userID(u),
 			Data:       orderedMapOf(m["data"]),
 			Metadata:   orderedMapOf(m["metadata"]),
 		}

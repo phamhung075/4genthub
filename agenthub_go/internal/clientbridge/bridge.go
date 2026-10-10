@@ -16,7 +16,6 @@ import (
 // The wire contract, in the Python bridge's own numbers.
 const (
 	statusPath      = "/api/v2/openrig/seat-status"
-	registerPath    = "/api/v2/openrig/machines"
 	HeartbeatSecs   = 60.0
 	MaxBackoffSecs  = 120.0
 	SendTimeout     = 15 * time.Second
@@ -295,8 +294,7 @@ func (b *Bridge) Cycle(ctx context.Context, rig *clientcmd.Rig) time.Duration {
 		b.note("send", "server rejected text as secret-bearing (422); dropping detail next cycle")
 		return b.Interval
 	case status == 401:
-		return b.fail("machine token rejected (HTTP 401): run `agenthub-client bridge register` to " +
-			"issue this machine's token, and check that --machine-id matches the one it was issued for")
+		return b.fail("AGENTHUB_TOKEN rejected (HTTP 401): check the token and AGENTHUB_URL")
 	default:
 		return b.fail(fmt.Sprintf("server answered HTTP %d", status))
 	}

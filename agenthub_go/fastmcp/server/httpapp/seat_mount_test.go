@@ -253,154 +253,9 @@ func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 		t.Fatalf("stored = %+v, want exactly the text the body carried", store.created)
 	}
 
-	// A GET on that same path is the PULL, and the proof that this request reached it rather than a
-	// writer or a 405 is the refusal only the pull's auth can give: the header doTestRequest sends is
-	// a user token, which is not a machine token.
-	if getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/coder/messages", ""); getRec.Code != http.StatusUnauthorized {
-		t.Fatalf("GET /rooms/dev/seats/coder/messages with a user token = %d, want the machine-auth 401: %s", getRec.Code, getRec.Body.String())
-	}
-
-	// The resolution is not on this path and never was: it answers on its own room-scoped path,
-	// /seats/{room}/{seat}. The key-only two-segment path that once collided with the message
-	// route now resolves alone, with "messages" as the seat key - the shape a client resolving a
-	// seat still calls.
-	getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/coder/messages", "")
-	if getRec.Code != http.StatusOK {
-		t.Fatalf("GET /seats/coder/messages = %d, want the resolution 200: %s", getRec.Code, getRec.Body.String())
-	}
-	for _, want := range []string{`"room":"coder"`, `"seat":"messages"`} {
-		if !strings.Contains(getRec.Body.String(), want) {
-			t.Errorf("GET /seats/coder/messages body missing %s: %s", want, getRec.Body.String())
-		}
-	}
-
-	// AND THE ROUTE REALLY MOVED: the retired key-only path no longer takes the POST - only the
-	// GET-only resolution pattern matches it now, so the window's own call would be answered the
-	// 405 this row exists to stop being the answer.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":"hello"}`); rec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("POST /seats/coder/messages = %d, want 405: the retired key-only shape still takes the message POST", rec.Code)
-	}
-}
-
-// The refusals that come from ROUTING, so that a later change cannot make this route's answer
-// depend on what the caller sent.
-func TestSeatMessageRouteRefusalsComeFromRouting(t *testing.T) {
-	t.Setenv(publicURLEnv, "https://api.example.test")
-	fake := &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}
-	mux := seatTestMux(t, fake)
-
-	// A malformed body is refused for being malformed, which is only reachable if routing
-	// already chose this route.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"text":`); rec.Code != http.StatusBadRequest {
-		t.Errorf("malformed body: status = %d, want 400: %s", rec.Code, rec.Body.String())
-	}
-	// The body is {text} and nothing else: an unknown field is refused, the room included,
-	// because the room is the path's to carry.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"room":"dev"}`); rec.Code != http.StatusBadRequest {
-		t.Errorf("unknown field: status = %d, want 400: %s", rec.Code, rec.Body.String())
-	}
-	// AND THE BODY IS DECODED BEFORE THE SEAT IS RESOLVED: a refused body must not have reached
-	// the resolver, so a malformed request can never be answered for the seat's absence.
-	if len(fake.asked) != 0 {
-		t.Errorf("the resolver was asked %v for a request whose body was refused", fake.asked)
-	}
-	// The resolution route is GET-only, so its own pattern answers the wrong method.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/dev/coder", `{"text":"x"}`); rec.Code != http.StatusMethodNotAllowed {
-		t.Errorf("POST on the resolution path: status = %d, want 405", rec.Code)
-	}
-	// A three-segment path matches no pattern at all.
-	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/a/b/c", `{"text":"x"}`); rec.Code != http.StatusNotFound {
-		t.Errorf("unknown subpath: status = %d, want 404", rec.Code)
-	}
-}
-
-// An unauthenticated window is refused by the auth layer before the handler, with a sentence the
-// UI can render.
-func TestSeatMessageRouteRequiresAuth(t *testing.T) {
-	t.Setenv(publicURLEnv, "https://api.example.test")
-	mux := http.NewServeMux()
-	mountSeatRoutes(mux, nil)
-
-	// The header is what decides: no usable bearer is the 403 the routes layer answers itself,
-	// and it never reaches the handler. A present-but-unusable bearer instead goes through the
-	// auth layer, whose answer is the auth layer's to give.
-	for _, tc := range []struct {
-		name   string
-		header string
-	}{
-		{"no authorization header", ""},
-		{"not a bearer scheme", "Basic abc"},
-		{"bearer with no token", "Bearer "},
-	} {
-		req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", strings.NewReader(`{"text":"hello"}`))
-		if tc.header != "" {
-			req.Header.Set("Authorization", tc.header)
-		}
-		rec := httptest.NewRecorder()
-		mux.ServeHTTP(rec, req)
-		if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "Not authenticated") {
-			t.Errorf("%s: POST = %d %s, want 403 with a detail", tc.name, rec.Code, rec.Body.String())
-		}
-	}
-}
-
-// THE ROW'S POINT: the seat is resolved in the room the URL names, so a seat that is not in that
-// room is answered 404 - which the key-only path could not do at all - and the pair the resolver is
-// asked for is the pair the URL carries rather than a guessed room.
-//
-// THE REFUSALS ONLY. A seat that DOES resolve now reaches the store, and the store's own answers are
-// asserted where they belong: a success and its stored row in TestSeatMessageRouteIsVerbScoped, a
-// refused credential in TestSeatMessageSendRefusesACredentialWithTheChannelsOwnBody, and the pull's
-// two directions in TestSeatMessagePullNeedsAMachineToken and TestSeatMessageDeliveredOnceAndNotAgain.
-// Keeping a 200 case here would mean asserting, in a table whose every other row carries a "detail",
-// a body that has none.
-func TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames(t *testing.T) {
-	t.Setenv(publicURLEnv, "https://api.example.test")
-	cases := []struct {
-		name       string
-		fake       *fakeSeatSource
-		want       int
-		wantInBody string
-	}{
-		{
-			"a seat that is not in the room the URL names",
-			&fakeSeatSource{err: errors.New(`seat "ghost" not found in room "dev"`)},
-			http.StatusNotFound,
-			"not found",
-		},
-		{
-			"the resolver failing for another reason",
-			&fakeSeatSource{err: errors.New("database down")},
-			http.StatusInternalServerError,
-			"",
-		},
-	}
-	for _, c := range cases {
-		mux := seatTestMux(t, c.fake)
-		rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/ghost/messages", `{"text":"hello"}`)
-		if rec.Code != c.want {
-			t.Errorf("%s: status = %d, want %d: %s", c.name, rec.Code, c.want, rec.Body.String())
-		}
-		// Every answer above is a sentence the window renders, so a bare status is not enough.
-		if !strings.Contains(rec.Body.String(), `"detail"`) {
-			t.Errorf("%s: the answer carries no detail for the window to render: %s", c.name, rec.Body.String())
-		}
-		if c.wantInBody != "" && !strings.Contains(rec.Body.String(), c.wantInBody) {
-			t.Errorf("%s: body missing %q: %s", c.name, c.wantInBody, rec.Body.String())
-		}
-		// The room and the seat are the URL's, never a guess.
-		if len(c.fake.asked) != 1 || c.fake.asked[0] != "dev/ghost" {
-			t.Errorf("%s: the resolver was asked for %v, want [dev/ghost]", c.name, c.fake.asked)
-		}
-	}
 }
 
 // ---- the message store's own fixtures and tests -----------------------------------------------
-
-// seatMessageTestToken is the machine token of machine pc-home of the test user. The pull and the ack
-// take a MACHINE token, because the component that can reach a seat's terminal is the client on the
-// machine that holds it; the writer takes the window's user token.
-const seatMessageTestToken = "mt_seat-message-test-token"
 
 var seatMessageTestNow = time.Date(2026, 10, 10, 9, 0, 0, 0, time.UTC)
 
@@ -450,7 +305,7 @@ func (f *fakeSeatMessageStore) Ack(_ context.Context, _, room, seat, id, _ strin
 }
 
 // seatMessageTestMux mounts the seat routes with the seat source, the message service and the server
-// clock substituted, and a machine token registered for the test user's machine pc-home.
+// clock substituted.
 func seatMessageTestMux(t *testing.T, source seatSource, store *fakeSeatMessageStore) *http.ServeMux {
 	t.Helper()
 	authenticateTestUser(t)
@@ -462,38 +317,18 @@ func seatMessageTestMux(t *testing.T, source seatSource, store *fakeSeatMessageS
 	}
 	previousNow := seatMessageNow
 	seatMessageNow = func() time.Time { return seatMessageTestNow }
-	previousTokens := newMachineTokenRepo
-	tokens := &fakeMachineTokens{tokens: []*repositories.MachineToken{{
-		ID: "tok", UserID: "11111111-1111-4111-8111-111111111111", MachineID: "pc-home",
-		TokenHash: seatservices.HashMachineToken(seatMessageTestToken),
-	}}}
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return tokens, nil }
 	t.Cleanup(func() {
 		newSeatSource = previousSource
 		newSeatMessageService = previousService
 		seatMessageNow = previousNow
-		newMachineTokenRepo = previousTokens
 	})
 	mux := http.NewServeMux()
 	mountSeatRoutes(mux, nil)
 	return mux
 }
 
-// machineSeatMessage is a message request bearing the machine token the pull and the ack need.
-func machineSeatMessage(mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(method, path, strings.NewReader(body))
-	if body != "" {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	req.Header.Set("Authorization", "Bearer "+seatMessageTestToken)
-	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, req)
-	return rec
-}
-
-// THE TWO CREDENTIALS ARE NOT INTERCHANGEABLE: the window's user token writes, and only the machine
-// token pulls, because the puller is the component that can put text into a terminal.
-func TestSeatMessagePullNeedsAMachineToken(t *testing.T) {
+// THE PULL TAKES THE USER TOKEN, like the write: the client holds the same credential as the window.
+func TestSeatMessagePullReturnsThePendingMessages(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	store := &fakeSeatMessageStore{pending: []repositories.SeatMessage{{
 		ID: "m1", UserID: "11111111-1111-4111-8111-111111111111", Room: "dev", Seat: "coder",
@@ -502,13 +337,9 @@ func TestSeatMessagePullNeedsAMachineToken(t *testing.T) {
 	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
 	path := "/api/v2/openrig/rooms/dev/seats/coder/messages"
 
-	if rec := doTestRequest(t, mux, http.MethodGet, path, ""); rec.Code != http.StatusUnauthorized {
-		t.Fatalf("user token = %d, want 401: %s", rec.Code, rec.Body.String())
-	}
-
-	rec := machineSeatMessage(mux, http.MethodGet, path, "")
+	rec := doTestRequest(t, mux, http.MethodGet, path, "")
 	if rec.Code != http.StatusOK {
-		t.Fatalf("machine token = %d, want 200: %s", rec.Code, rec.Body.String())
+		t.Fatalf("pull = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
 	for _, want := range []string{`"success":true`, `"id":"m1"`, `"text":"hello"`, `"cursor":"2026-10-10T09:00:00Z|m1"`} {
 		if !strings.Contains(rec.Body.String(), want) {
@@ -532,7 +363,7 @@ func TestSeatMessageDeliveredOnceAndNotAgain(t *testing.T) {
 	}
 
 	// Unacked, it is handed out: this pull is the delivery the client has not confirmed yet.
-	first := machineSeatMessage(mux, http.MethodGet, path, "")
+	first := doTestRequest(t, mux, http.MethodGet, path, "")
 	var body struct {
 		Messages []struct {
 			ID string `json:"id"`
@@ -547,15 +378,15 @@ func TestSeatMessageDeliveredOnceAndNotAgain(t *testing.T) {
 	}
 
 	ackPath := path + "/" + body.Messages[0].ID + "/ack"
-	if ack := machineSeatMessage(mux, http.MethodPost, ackPath, ""); ack.Code != http.StatusOK {
+	if ack := doTestRequest(t, mux, http.MethodPost, ackPath, `{"machine_id":"pc-home"}`); ack.Code != http.StatusOK {
 		t.Fatalf("ack = %d %s", ack.Code, ack.Body.String())
 	}
 
-	again := machineSeatMessage(mux, http.MethodGet, path, "")
+	again := doTestRequest(t, mux, http.MethodGet, path, "")
 	if again.Code != http.StatusOK || strings.Contains(again.Body.String(), `"text":"hello"`) {
 		t.Fatalf("pull after ack = %d %s, want nothing redelivered", again.Code, again.Body.String())
 	}
-	if second := machineSeatMessage(mux, http.MethodPost, ackPath, ""); second.Code != http.StatusConflict {
+	if second := doTestRequest(t, mux, http.MethodPost, ackPath, `{"machine_id":"pc-home"}`); second.Code != http.StatusConflict {
 		t.Fatalf("second ack = %d %s, want 409: the state, not a typo", second.Code, second.Body.String())
 	}
 }
@@ -595,7 +426,7 @@ func TestSeatMessageBothDirectionsRefuseAMissingSeatIdentically(t *testing.T) {
 	path := "/api/v2/openrig/rooms/dev/seats/ghost/messages"
 
 	write := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
-	pull := machineSeatMessage(mux, http.MethodGet, path, "")
+	pull := doTestRequest(t, mux, http.MethodGet, path, "")
 	if write.Code != http.StatusNotFound || pull.Code != http.StatusNotFound {
 		t.Fatalf("write = %d, pull = %d, want 404 for both", write.Code, pull.Code)
 	}

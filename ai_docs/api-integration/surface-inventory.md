@@ -264,9 +264,7 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 | POST | `/api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack` | `handleAckSeatMessage` (`machineAuthed`) | `seat_mount.go:238` |
 | POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:241` |
 | GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:105` |
-| POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:41` |
-| DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:44` |
-| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:113` |
+| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`authed`) | `seat_status_mount.go:113` |
 | GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:116` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 (same pass as §1.3).** *Both rows in this section cited a line no longer in the file (`seat-status` 91->95, `machines` 94->98).* **The control: both moved by EXACTLY +4 — four lines were added above them in one change, so the drift is one insertion rather than two coincidences.**
@@ -326,7 +324,7 @@ within the caller's memberships.
 | POST | `/api/v2/openrig/feedback` | `handleSubmitSeatFeedback` (inline closure behind `seatFeedbackAuthed`) | `seat_feedback_mount.go:73` |
 | GET | `/api/v2/openrig/feedback` | `handleListSeatFeedback` (inline closure behind `authed`) | `seat_feedback_mount.go:76` |
 
-**Auth — read from the mount rather than assumed.** The **POST accepts a machine token OR a user token** (`seat_feedback_mount.go:7` states the pair, `:18-21` states why: the row is written under the token's own user id, so a machine token cannot write outside its tenant), and the order is load-bearing: `seatFeedbackAuthed` (`:91`) tries the machine-token store first (`:100`), because a machine token is an exact hash match while the user path can resolve a token that is not a user token when the auth layer's development fallback is running (`:83-89`); an invalid machine token **falls through to the user path** (`:110`, "Not a machine token: the user path gets it"), while a machine-token **lookup failure is an error** (`:112`) rather than a fall-through. The **GET takes a user token** only (`authed`).
+**Auth — read from the mount rather than assumed.** Both the POST and the GET take the user token (`authed`); the POST writes the row under that token's user id, so it cannot write outside its tenant. There is no machine token.
 
 **Request shape — defined at `seat_feedback_mount.go:64-70`** (`seatFeedbackSubmission`: `room`, `seat`, `layer`, `text` required; `session` optional). The `layer` vocabulary is the DDL's closed set (`runtime`, `openrig`, `cloud`, `seat-context`, `workspace`, `other`) rather than a list in this document; the credential scan and the page that groups by layer are described once in `README.md`'s *Rig and OpenRig workflow* section. **The third door onto the same writer is the MCP tool `submit_feedback` (§2.3) and the fourth is the shell client, invoked as `4genteam feedback ...` — the script it runs is `agenthub_client/src/agenthub_client/seat_feedback.sh`, carried in the client package by `[tool.setuptools.package-data]` (2026-10-09); it was `scripts/seat_feedback.sh` until the client relocation, and a path is not a door if the file is not there.**
 
@@ -518,7 +516,6 @@ table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feed
 | `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:317` | `:278` |
 | `machines` | `MachineORM` | `seat_tables.go:253` | `:296` |
 | `seat_messages` | `SeatMessageORM` | `seat_tables.go:377` | `:306` |
-| `machine_tokens` | `MachineTokenORM` | `seat_tables.go:267` | `:308` |
 | `seat_status` | `SeatStatusORM` | `seat_tables.go:287` | `:323` |
 | `machine_edges` | `MachineEdgeORM` | `seat_tables.go:316` | `:371` |
 

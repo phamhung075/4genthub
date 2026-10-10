@@ -55,7 +55,7 @@ import urllib.error
 import urllib.request
 
 # The replacements, per src/components/seats/SeatPreview.tsx:37 (sync pull), SeatLlmPanel.tsx:99
-# (sync switch) and MachinesPanel.tsx:179 (bridge register / bridge run).
+# (sync switch) and MachinesPanel.tsx:179 (bridge run).
 VERB_PATTERNS = {
     "sync pull": re.compile(r"4genteam sync pull"),
     "sync switch": re.compile(r"4genteam sync switch"),

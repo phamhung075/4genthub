@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/task_management/infrastructure/database"
@@ -61,8 +60,10 @@ func (f *fakeSeatStatus) List(_ context.Context, userID string) ([]repositories.
 
 var seatStatusTestNow = time.Date(2026, 10, 3, 12, 0, 0, 0, time.UTC)
 
-// seatStatusTestToken is the machine token of machine pc-home of the test user.
-const seatStatusTestToken = "mt_seat-status-test-token"
+const (
+	tokenTestUserA = "11111111-1111-4111-8111-111111111111"
+	tokenTestUserB = "22222222-2222-4222-8222-222222222222"
+)
 
 func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 	t.Helper()
@@ -70,16 +71,9 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 	newSeatStatusSource = func(*database.SessionManager) (seatStatusSource, error) { return source, nil }
 	previousNow := seatStatusNow
 	seatStatusNow = func() time.Time { return seatStatusTestNow }
-	previousTokens := newMachineTokenRepo
-	tokens := &fakeMachineTokens{tokens: []*repositories.MachineToken{{
-		ID: "tok", UserID: "11111111-1111-4111-8111-111111111111", MachineID: "pc-home",
-		TokenHash: seatservices.HashMachineToken(seatStatusTestToken),
-	}}}
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return tokens, nil }
 	t.Cleanup(func() {
 		newSeatStatusSource = previous
 		seatStatusNow = previousNow
-		newMachineTokenRepo = previousTokens
 	})
 	authenticateTestUser(t)
 	mux := http.NewServeMux()
@@ -89,7 +83,7 @@ func seatStatusTestMux(t *testing.T, source seatStatusSource) *http.ServeMux {
 
 func postSeatStatus(mux *http.ServeMux, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seat-status", strings.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+seatStatusTestToken)
+	req.Header.Set("Authorization", "Bearer test-token")
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 	return rec

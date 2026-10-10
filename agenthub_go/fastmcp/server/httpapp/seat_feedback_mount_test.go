@@ -7,7 +7,6 @@ package httpapp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -61,7 +60,6 @@ type feedbackFixture struct {
 	t      *testing.T
 	mux    *http.ServeMux
 	source *fakeSeatFeedback
-	tokens *fakeMachineTokens
 	user   string
 }
 
@@ -74,29 +72,23 @@ func newFeedbackFixture(t *testing.T) *feedbackFixture {
 // the HTTP path and the MCP path into the SAME store and compare what each wrote.
 func newFeedbackFixtureWithStore(t *testing.T, store *fakeSeatFeedback) *feedbackFixture {
 	t.Helper()
-	f := &feedbackFixture{t: t, source: store, tokens: &fakeMachineTokens{}, user: tokenTestUserA}
+	f := &feedbackFixture{t: t, source: store, user: tokenTestUserA}
 	previousUsers := authinterface.GetCurrentUserUniversal
 	authinterface.GetCurrentUserUniversal = func(_ context.Context, token string) (*authdomain.User, error) {
-		// Like the real validator: a machine token is not a user token.
-		if strings.HasPrefix(token, "mt_") {
-			return nil, errors.New("not a user token")
-		}
 		id := f.user
 		return &authdomain.User{ID: &id, Email: "dev@example.com", Username: "dev"}, nil
 	}
-	previousSource, previousTokens, previousNow := newSeatFeedbackService, newMachineTokenRepo, seatFeedbackNow
+	previousSource, previousNow := newSeatFeedbackService, seatFeedbackNow
 	newSeatFeedbackService = func(*database.SessionManager) (*services.SeatFeedbackService, error) {
 		return services.NewSeatFeedbackService(f.source), nil
 	}
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return f.tokens, nil }
 	seatFeedbackNow = func() time.Time { return seatFeedbackTestNow }
 	t.Cleanup(func() {
 		authinterface.GetCurrentUserUniversal = previousUsers
-		newSeatFeedbackService, newMachineTokenRepo, seatFeedbackNow = previousSource, previousTokens, previousNow
+		newSeatFeedbackService, seatFeedbackNow = previousSource, previousNow
 	})
 	f.mux = http.NewServeMux()
 	mountSeatFeedbackRoutes(f.mux, nil)
-	mountMachineTokenRoutes(f.mux, nil)
 	return f
 }
 
@@ -114,23 +106,6 @@ func (f *feedbackFixture) do(method, path, bearer, body string) *httptest.Respon
 func (f *feedbackFixture) submit(bearer, body string) *httptest.ResponseRecorder {
 	f.t.Helper()
 	return f.do(http.MethodPost, "/api/v2/openrig/feedback", bearer, body)
-}
-
-// register issues a machine token through the real route, so the token the tests present is
-// produced the way a bridge obtains one.
-func (f *feedbackFixture) register(machineID string) string {
-	f.t.Helper()
-	rec := f.do(http.MethodPost, "/api/v2/openrig/machines", "user-jwt", `{"machine_id":"`+machineID+`"}`)
-	if rec.Code != http.StatusOK {
-		f.t.Fatalf("register %s: %d %s", machineID, rec.Code, rec.Body.String())
-	}
-	var body struct {
-		Token string `json:"token"`
-	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil || body.Token == "" {
-		f.t.Fatalf("register %s body: %s (%v)", machineID, rec.Body.String(), err)
-	}
-	return body.Token
 }
 
 type feedbackReadBody struct {
@@ -278,36 +253,6 @@ func TestSeatFeedbackRefusesASecretWithoutEchoingIt(t *testing.T) {
 	}
 }
 
-// TestSeatFeedbackMachineTokenAttributesTheMachine: the bridge path. The same rows are written
-// under the token's user, with the machine recorded, and the user validator is never consulted
-// for a machine token.
-func TestSeatFeedbackMachineTokenAttributesTheMachine(t *testing.T) {
-	f := newFeedbackFixture(t)
-	token := f.register("pc-home")
-
-	rec := f.submit(token, `{"room":"4genthub-min","seat":"go-dev","layer":"openrig","text":"the daemon did not record the stop"}`)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("machine-token submit: %d %s", rec.Code, rec.Body.String())
-	}
-	if len(f.source.reports) != 1 {
-		t.Fatalf("stored %d reports, want 1", len(f.source.reports))
-	}
-	stored := f.source.reports[0]
-	if stored.MachineID != "pc-home" || stored.UserID != tokenTestUserA || stored.Layer != "openrig" {
-		t.Fatalf("stored = %+v, want machine pc-home under user A in layer openrig", stored)
-	}
-	row := readFeedback(t, f.do(http.MethodGet, "/api/v2/openrig/feedback", "user-jwt", "")).Layers[0].Reports[0]
-	if row["machine_id"] != "pc-home" {
-		t.Fatalf("read row machine_id = %v, want pc-home", row["machine_id"])
-	}
-
-	// A machine token is not a user token: the read side refuses it with the user-auth layer's
-	// own answer — 401 and that layer's detail, not this route's 403 for a missing header.
-	if rec := f.do(http.MethodGet, "/api/v2/openrig/feedback", token, ""); rec.Code != http.StatusUnauthorized {
-		t.Fatalf("machine token on the read side = %d, want 401: %s", rec.Code, rec.Body.String())
-	}
-}
-
 // TestSeatFeedbackReadIsTenantScopedAndEmptyIsAnEmptyEnvelope: another user's rows are invisible,
 // and an empty channel answers 200 with total 0 rather than 404.
 func TestSeatFeedbackReadIsTenantScopedAndEmptyIsAnEmptyEnvelope(t *testing.T) {
@@ -360,16 +305,5 @@ func TestSeatFeedbackUnauthenticatedIsForbidden(t *testing.T) {
 				}
 			}
 		})
-	}
-
-	// A present-but-unusable bearer goes through the auth layer, whose answer this route does not
-	// choose. It must still refuse rather than reach the store.
-	f.tokens.err = errors.New("token store unavailable")
-	rec := f.submit("mt_unknown_token_of_at_least_40_characters_0001", `{"room":"r","seat":"s","layer":"cloud","text":"t"}`)
-	if rec.Code == http.StatusOK {
-		t.Fatalf("a submission succeeded without a usable credential: %s", rec.Body.String())
-	}
-	if len(f.source.reports) != 0 {
-		t.Fatalf("a submission without a usable credential was stored")
 	}
 }

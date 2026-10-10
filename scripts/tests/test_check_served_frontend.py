@@ -109,7 +109,7 @@ def fresh_shape(entry: str = "index-riIYPcmm.js") -> dict[str, str]:
         ),
         "assets/SeatDetailPage-FRESH0001.js": 'const c="4genteam sync pull ops bob";\n'
                                               'const d="4genteam sync switch <room> <seat> --model <id>";\n',
-        "assets/SeatsPage-FRESH0002.js": 'const e="No bridge connected. Run 4genteam bridge register then 4genteam bridge run on your PC.";\n',
+        "assets/SeatsPage-FRESH0002.js": 'const e="No bridge connected. Run 4genteam bridge run on your PC.";\n',
         "assets/MachinesPanel-FRESH0003.js": 'const f="4genteam bridge run";\n',
         "assets/index-DslPL43O.css": "body{}\n",
     }

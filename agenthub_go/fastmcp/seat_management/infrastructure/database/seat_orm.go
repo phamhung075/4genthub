@@ -132,17 +132,6 @@ type MachineORM struct {
 	Agents    json.RawMessage `db:"agents"`
 }
 
-// MachineTokenORM is a row of machine_tokens. token_hash is the SHA-256 hex of the bearer
-// token, which is never stored; RevokedAt nil means the token is active.
-type MachineTokenORM struct {
-	ID        string     `db:"id"`
-	UserID    string     `db:"user_id"`
-	MachineID string     `db:"machine_id"`
-	TokenHash string     `db:"token_hash"`
-	CreatedAt time.Time  `db:"created_at"`
-	RevokedAt *time.Time `db:"revoked_at"`
-}
-
 // SeatStatusORM is a row of seat_status. (user_id, machine_id, room, seat) is the primary key.
 type SeatStatusORM struct {
 	UserID      string    `db:"user_id"`

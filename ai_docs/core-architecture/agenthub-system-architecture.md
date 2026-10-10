@@ -166,7 +166,7 @@ One append-only table, `task_events`, is the history of every task and subtask. 
 |---|---|
 | `id`, `user_id`, `task_id`, `subtask_id` (nullable), `seq` (per task, gapless) | identity and order |
 | `kind` | closed vocabulary with a CHECK: `planned`, `assigned`, `claimed`, `delivered`, `context_loaded`, `progress`, `status_changed`, `evidence_submitted`, `gate_verdict`, `escalated`, `human_decision`, `handover` |
-| `actor_kind`, `actor` | `seat` (seat key from the MCP header), `client` (machine id from the machine token), `gate`, or `human` (user id) |
+| `actor_kind`, `actor` | `seat` (seat key from the MCP header), `client` (machine id from the request), `gate`, or `human` (user id) |
 | `payload` JSONB | kind-specific; evidence and verdicts live here, so no second table holds them |
 | `created_at` | server time |
 
@@ -176,7 +176,7 @@ Existing streams stay as they are: `agent_session_events` (session transcripts),
 
 ### 2.6 Evidence: git and tests (NEW)
 
-The server cannot see the repository, and an agent's account of its work is a claim. So evidence is **produced by the client binary, not reported by the agent**: `agenthub-client evidence --task <id> --base <sha> --test "<command>"` runs `git diff --numstat <base>..HEAD` and the test command itself, then posts the result authenticated by the machine token (T4, built):
+The server cannot see the repository, and an agent's account of its work is a claim. So evidence is **produced by the client binary, not reported by the agent**: `agenthub-client evidence --task <id> --base <sha> --test "<command>"` runs `git diff --numstat <base>..HEAD` and the test command itself, then posts the result authenticated by the user token `AGENTHUB_TOKEN`:
 
 ```json
 {"base_sha": "...", "head_sha": "...", "branch": "...",
@@ -326,7 +326,7 @@ The 2025-11-07 fix established the behaviour above: an error-handling wrapper so
 
 ### 3.7 Authentication and isolation
 
-Keycloak is the source of truth for identity. Login yields a JWT (`sub`, `email`, `preferred_username`, `realm_access.roles`, `exp`, `iat`); the frontend sends it as `Authorization: Bearer`; the server validates it through JWKS on every request (`fastmcp/auth/keycloak_dependencies.go`; environment `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`). The `sub` is the user id on every row and every query. Machines authenticate with machine tokens (T4); the client uses them for evidence and status. Credentials are in `.env` only and are never read or created by agents.
+Keycloak is the source of truth for identity. Login yields a JWT (`sub`, `email`, `preferred_username`, `realm_access.roles`, `exp`, `iat`); the frontend sends it as `Authorization: Bearer`; the server validates it through JWKS on every request (`fastmcp/auth/keycloak_dependencies.go`; environment `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`). The `sub` is the user id on every row and every query. Clients and bridges authenticate with the same user token (`AGENTHUB_TOKEN`); there is no per-machine token. Credentials are in `.env` only and are never read or created by agents.
 
 ### 3.8 Database
 
@@ -339,7 +339,7 @@ The Go server describes tables with generated `TableDef` metadata (`database.Tab
 | Contexts | `global_contexts`, `project_contexts`, `branch_contexts`, `task_contexts` |
 | Agents | `agents`, `agent_sessions`, `agent_session_events` |
 | Auth | `users`, `user_token_balances`, `email_tokens` |
-| Seats (14) | `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `seat_feedback`, `machines`, `machine_tokens`, `seat_status` |
+| Seats (13) | `modules`, `module_versions`, `seat_types`, `seat_type_versions`, `rooms`, `seats`, `overlays`, `seat_links`, `resolved_seats`, `seat_settings`, `seat_feedback`, `machines`, `seat_status` |
 | Teams (2) | `teams`, `team_members` |
 
 Every runtime table carries `user_id` except the `applied_migrations` ledger. Foreign keys use no `CASCADE`; this is intentional DDD design, with the application layer performing cascades.
@@ -391,7 +391,7 @@ Every decision below was made or recommended on 2026-10-08 unless a different da
 4. No `manage_rule` tool; rules are seat modules.
 5. Wake is a pull by the client; the cloud does not push.
 
-**Interfaces.** `task_events` (2.5); `GET /api/v2/tasks/{id}/events?after_seq=` (404 on a foreign task); `POST /api/v2/tasks/{id}/evidence` with a machine token (401 without one, 409 when `head_sha` is not new); the gate as an in-process service (2.7); `manage_task` actions `claim` and `resume`, and `complete` moving to `review` rather than `done` when the gate enforces; `X-Agenthub-Seat` header (2.3); `GET /api/v2/openrig/machines/{machine}/work` (2.8).
+**Interfaces.** `task_events` (2.5); `GET /api/v2/tasks/{id}/events?after_seq=` (404 on a foreign task); `POST /api/v2/tasks/{id}/evidence` with the user token (401 without one, 409 when `head_sha` is not new); the gate as an in-process service (2.7); `manage_task` actions `claim` and `resume`, and `complete` moving to `review` rather than `done` when the gate enforces; `X-Agenthub-Seat` header (2.3); `GET /api/v2/openrig/machines/{machine}/work` (2.8).
 
 **Risks and detection.**
 

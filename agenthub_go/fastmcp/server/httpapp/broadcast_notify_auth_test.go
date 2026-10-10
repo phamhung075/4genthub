@@ -7,30 +7,16 @@ import (
 	"strings"
 	"testing"
 
-	seatservices "agenthub/fastmcp/seat_management/application/services"
-	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/entities"
-	"agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-// TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser is the regression proof for the
-// unauthenticated write path: POST /api/v2/broadcast/notify had no auth wrapper and took the
-// target user from the request body, so anyone could forge a notification for any user. The
-// bridge (the only caller) holds a machine token, so the ingress is machine-authenticated and
-// the target user is that token's user; a user_id in the body cannot move the write.
-func TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser(t *testing.T) {
-	const machineToken = "mt_broadcast-notify-machine-token"
+// TestBroadcastNotifyIsAuthedAndIgnoresBodyUser is the regression proof for the unauthenticated
+// write path: POST /api/v2/broadcast/notify had no auth wrapper and took the target user from the
+// request body, so anyone could forge a notification for any user. The ingress takes the user
+// token and the target user is that token's user; a user_id in the body cannot move the write.
+func TestBroadcastNotifyIsAuthedAndIgnoresBodyUser(t *testing.T) {
 	const owner = "11111111-1111-4111-8111-111111111111"
-	previousTokens := newMachineTokenRepo
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) {
-		return &fakeMachineTokens{tokens: []*repositories.MachineToken{{
-			ID:        "tok-notify-owner",
-			UserID:    owner,
-			MachineID: "machine-notify-owner",
-			TokenHash: seatservices.HashMachineToken(machineToken),
-		}}}, nil
-	}
-	t.Cleanup(func() { newMachineTokenRepo = previousTokens })
+	authenticateTestUser(t)
 
 	var gotUser string
 	broadcasts := 0
@@ -52,8 +38,7 @@ func TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser(t *testing.T) {
 		want int
 	}{
 		{"no Authorization header", "", http.StatusForbidden},
-		{"unknown machine token", "Bearer not-a-machine-token", http.StatusUnauthorized},
-		{"valid machine token", "Bearer " + machineToken, http.StatusOK},
+		{"valid user token", "Bearer test-token", http.StatusOK},
 	}
 	for _, tc := range cases {
 		req := httptest.NewRequest(http.MethodPost, "/api/v2/broadcast/notify", strings.NewReader(body))
@@ -72,6 +57,6 @@ func TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser(t *testing.T) {
 		t.Fatalf("broadcast invocations = %d, want 1 (only the authenticated request)", broadcasts)
 	}
 	if gotUser != owner {
-		t.Fatalf("broadcast user = %q, want the machine token's user %q (the body said the other user)", gotUser, owner)
+		t.Fatalf("broadcast user = %q, want the token's user %q (the body said the other user)", gotUser, owner)
 	}
 }

@@ -16,8 +16,6 @@ import (
 	"testing"
 	"time"
 
-	seatservices "agenthub/fastmcp/seat_management/application/services"
-	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/server/routes"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -146,20 +144,9 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 	targetToken := wsTestTokenFor(t, target, nil)
 	otherToken := wsTestTokenFor(t, other, nil)
 
-	// ac2d6106: the notify ingress is machine-authenticated and the target user is the machine
-	// token's user, never the body's. The bridge's token belongs to `target`; the body posted
-	// below names `other` in its user_id field to prove that field cannot move the write.
-	const machineToken = "mt_missed-notification-machine-token"
-	previousTokens := newMachineTokenRepo
-	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) {
-		return &fakeMachineTokens{tokens: []*repositories.MachineToken{{
-			ID:        "tok-missed-target",
-			UserID:    target,
-			MachineID: "machine-missed-target",
-			TokenHash: seatservices.HashMachineToken(machineToken),
-		}}}, nil
-	}
-	t.Cleanup(func() { newMachineTokenRepo = previousTokens })
+	// ac2d6106: the notify ingress takes the user token and the target user is that token's user,
+	// never the body's. The token below belongs to `target`; the body posted below names `other`
+	// in its user_id field to prove that field cannot move the write.
 
 	server := httptest.NewServer(app.Handler())
 	defer server.Close()
@@ -175,8 +162,8 @@ func TestMissedNotificationStoredOfflineAndReplayedOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	// The bridge's machine token names `target`; the body's user_id names `other` and must not move it.
-	req.Header.Set("Authorization", "Bearer "+machineToken)
+	// The token names `target`; the body's user_id names `other` and must not move it.
+	req.Header.Set("Authorization", "Bearer "+targetToken)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)

@@ -18,8 +18,8 @@ import (
 
 // Commands is what the dispatcher appends: one verb, `bridge`.
 //
-// The Python bridge was four top-level commands (run, once, register, install-service); the Go client
-// has one verb per package, so the four are sub-verbs here. Registering is an append in main.go by the
+// The Python bridge was three top-level commands (run, once, install-service); the Go client
+// has one verb per package, so the three are sub-verbs here. Registering is an append in main.go by the
 // dispatcher's owner, never an edit of this package's own file into theirs.
 func Commands() []clientcmd.Command {
 	return []clientcmd.Command{bridgeCommand{}}
@@ -30,8 +30,8 @@ type bridgeCommand struct{}
 func (bridgeCommand) Name() string    { return "bridge" }
 func (bridgeCommand) Summary() string { return "report this machine and its rigs to the cloud" }
 
-// NeedsRig is true because run and once read `rig ps`; register and install-service ignore the tool
-// they are handed, which is cheaper than a second verb.
+// NeedsRig is true because run and once read `rig ps`; install-service ignores the tool
+// it is handed, which is cheaper than a second verb.
 func (bridgeCommand) NeedsRig() bool { return true }
 
 func (c bridgeCommand) Run(ctx context.Context, rig *clientcmd.Rig, args []string, stdout, stderr io.Writer) int {
@@ -44,8 +44,6 @@ func (c bridgeCommand) Run(ctx context.Context, rig *clientcmd.Rig, args []strin
 		return bridgeRun(ctx, rig, args[1:], stdout, stderr, false)
 	case "once":
 		return bridgeOnce(ctx, rig, args[1:], stdout, stderr)
-	case "register":
-		return bridgeRegister(args[1:], stdout, stderr)
 	case "install-service":
 		return bridgeInstallService(stdout, stderr)
 	case "help", "-h", "--help":
@@ -62,7 +60,6 @@ func bridgeUsage(w io.Writer) {
 	_, _ = io.WriteString(w, "agenthub-client bridge <subcommand>\n\n"+
 		"  run [--interval SECONDS] [--machine-id ID] [--once]   report on a loop (default 20s)\n"+
 		"  once [--print] [--machine-id ID]                      report once; --print dumps the payload\n"+
-		"  register [--machine-id ID] [--env-file PATH]          issue this machine's token\n"+
 		"  install-service                                       print the systemd unit\n")
 }
 
@@ -100,11 +97,16 @@ func machineIDFrom(values map[string]string) (string, error) {
 		}
 		return id, nil
 	}
+	return HostMachineID(), nil
+}
+
+// HostMachineID is this machine's id when none is named: its hostname, made acceptable to the server.
+func HostMachineID() string {
 	host, err := os.Hostname()
 	if err != nil {
 		host = ""
 	}
-	return SanitizeMachineID(host), nil
+	return SanitizeMachineID(host)
 }
 
 func bridgeRun(ctx context.Context, rig *clientcmd.Rig, args []string, stdout, stderr io.Writer, onceOnly bool) int {
@@ -175,44 +177,6 @@ func bridgeOnce(ctx context.Context, rig *clientcmd.Rig, args []string, stdout, 
 	return bridge.Run(ctx, rig, true)
 }
 
-// bridgeRegister issues this machine's token with the USER credential and stores it where the service
-// unit reads it, at mode 0600. The token is never printed: the line names the file instead.
-func bridgeRegister(args []string, stdout, stderr io.Writer) int {
-	values, _, err := bridgeFlags(args, map[string]bool{"machine-id": true, "env-file": true}, nil)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge register: %v\n", err)
-		return clientcmd.ExitUsage
-	}
-	baseURL, userToken := os.Getenv("AGENTHUB_URL"), os.Getenv("AGENTHUB_TOKEN")
-	if baseURL == "" || userToken == "" {
-		_, _ = io.WriteString(stderr,
-			"agenthub-client bridge register: AGENTHUB_URL and AGENTHUB_TOKEN (the user token) must be set "+
-				"to register a machine\n")
-		return clientcmd.ExitUsage
-	}
-	id, err := machineIDFrom(values)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge register: %v\n", err)
-		return clientcmd.ExitUsage
-	}
-	token, err := registerMachine(baseURL, userToken, id)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge: %v\n", err)
-		return clientcmd.ExitRemote
-	}
-	envFile := values["env-file"]
-	if envFile == "" {
-		envFile = DefaultEnvFile()
-	}
-	if err := writeEnvFile(envFile, baseURL, token); err != nil {
-		_, _ = fmt.Fprintf(stderr, "agenthub-client bridge: %v\n", err)
-		return clientcmd.ExitRemote
-	}
-	_, _ = fmt.Fprintf(stdout, "registered machine %q; its token is in %s (mode 0600, not printed). "+
-		"Run the bridge with --machine-id %q so the token and the report agree.\n", id, envFile, id)
-	return clientcmd.ExitOK
-}
-
 // bridgeInstallService prints the systemd unit. The Python unit named a Python interpreter and a
 // script; this one names THE BINARY ITSELF and the sub-verb, which is the whole point of the
 // consolidation: one artefact on the machine, no interpreter to be present.
@@ -246,14 +210,12 @@ func noteTo(stderr io.Writer) func(string) {
 	}
 }
 
-// senderFromEnv builds the sender from the machine credential. A missing one is a usage error naming
-// the register verb, because a bridge without a token cannot report and must not start quietly.
+// senderFromEnv builds the sender from the user credential. A missing one is a usage error, because a
+// bridge without a token cannot report and must not start quietly.
 func senderFromEnv() (Sender, error) {
-	baseURL, token := os.Getenv("AGENTHUB_URL"), os.Getenv("AGENTHUB_MACHINE_TOKEN")
+	baseURL, token := os.Getenv("AGENTHUB_URL"), os.Getenv("AGENTHUB_TOKEN")
 	if baseURL == "" || token == "" {
-		return nil, fmt.Errorf("AGENTHUB_URL and AGENTHUB_MACHINE_TOKEN must be set; run " +
-			"`agenthub-client bridge register` once (it needs AGENTHUB_TOKEN, the user token) to issue " +
-			"this machine's token")
+		return nil, fmt.Errorf("AGENTHUB_URL and AGENTHUB_TOKEN must be set")
 	}
 	client := &http.Client{Timeout: SendTimeout}
 	endpoint := strings.TrimRight(baseURL, "/") + statusPath
@@ -276,69 +238,6 @@ func senderFromEnv() (Sender, error) {
 	}, nil
 }
 
-// registerMachine posts the machine id with the USER credential and returns the issued token. The
-// token is never logged: a non-2xx answer or a body without a token is a loud failure.
-func registerMachine(baseURL, userToken, machineID string) (string, error) {
-	body, err := json.Marshal(map[string]string{"machine_id": machineID})
-	if err != nil {
-		return "", fmt.Errorf("cannot encode the registration: %w", err)
-	}
-	request, err := http.NewRequest(http.MethodPost, strings.TrimRight(baseURL, "/")+registerPath, bytes.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("machine registration failed: %w", err)
-	}
-	request.Header.Set("Authorization", "Bearer "+userToken)
-	request.Header.Set("Content-Type", "application/json")
-	response, err := (&http.Client{Timeout: SendTimeout}).Do(request)
-	if err != nil {
-		return "", fmt.Errorf("machine registration failed: %w", err)
-	}
-	defer func() { _ = response.Body.Close() }()
-	answer, _ := io.ReadAll(io.LimitReader(response.Body, MaxResponseSize))
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return "", fmt.Errorf("machine registration refused: HTTP %d", response.StatusCode)
-	}
-	var issued struct {
-		Token string `json:"token"`
-	}
-	if err := json.Unmarshal(answer, &issued); err != nil {
-		return "", fmt.Errorf("machine registration returned no JSON token")
-	}
-	if issued.Token == "" {
-		return "", fmt.Errorf("machine registration returned no token")
-	}
-	return issued.Token, nil
-}
-
-// writeEnvFile writes AGENTHUB_URL and AGENTHUB_MACHINE_TOKEN into path at mode 0600, preserving every
-// other line, so an existing file keeps whatever else it held. The mode is set explicitly after the
-// write because O_CREAT's mode is masked by the umask.
-func writeEnvFile(path, baseURL, machineToken string) error {
-	kept := []string{}
-	if existing, err := os.ReadFile(path); err == nil {
-		for _, line := range strings.Split(string(existing), "\n") {
-			name, _, _ := strings.Cut(line, "=")
-			if strings.TrimSpace(name) == "AGENTHUB_URL" || strings.TrimSpace(name) == "AGENTHUB_MACHINE_TOKEN" {
-				continue
-			}
-			if line != "" {
-				kept = append(kept, line)
-			}
-		}
-	}
-	kept = append(kept, "AGENTHUB_URL="+baseURL, "AGENTHUB_MACHINE_TOKEN="+machineToken)
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return fmt.Errorf("cannot write %s: %w", path, err)
-	}
-	if err := os.WriteFile(path, []byte(strings.Join(kept, "\n")+"\n"), 0o600); err != nil {
-		return fmt.Errorf("cannot write %s: %w", path, err)
-	}
-	if err := os.Chmod(path, 0o600); err != nil {
-		return fmt.Errorf("cannot set the mode of %s: %w", path, err)
-	}
-	return nil
-}
-
 // The three locations the Python client used, named here so a test can point them at a scratch tree.
 func defaultPinsDir() string {
 	home, err := os.UserHomeDir()
@@ -357,8 +256,8 @@ func DefaultStatePath() string {
 	return filepath.Join(home, ".openrig", "bridge-sync.json")
 }
 
-// DefaultEnvFile is where register stores the machine credential, and where the service unit reads
-// it (EnvironmentFile=%h/.config/agenthub-bridge.env).
+// DefaultEnvFile is where the service unit reads AGENTHUB_URL and AGENTHUB_TOKEN
+// (EnvironmentFile=%h/.config/agenthub-bridge.env).
 func DefaultEnvFile() string {
 	home, err := os.UserHomeDir()
 	if err != nil {

@@ -77,7 +77,7 @@ func messagesFixture(t *testing.T, cloud *messageCloud, sendErr error) (*message
 	server := httptest.NewServer(cloud.handler())
 	t.Cleanup(server.Close)
 	t.Setenv("AGENTHUB_URL", server.URL)
-	t.Setenv("AGENTHUB_MACHINE_TOKEN", "mt_test")
+	t.Setenv("AGENTHUB_TOKEN", "test-token")
 	out := t.TempDir()
 
 	var sent []string
@@ -226,18 +226,18 @@ func TestMessagesVerbDryRunSendsNothing(t *testing.T) {
 	}
 }
 
-// The verb refuses before it pulls when it cannot deliver at all: without the machine credential there
+// The verb refuses before it pulls when it cannot deliver at all: without the credential there
 // is nothing to pull WITH, and an EMPTY cloud is reported as empty rather than as a silent success.
 func TestMessagesVerbRefusalsAndTheEmptyCase(t *testing.T) {
-	t.Run("no machine credential", func(t *testing.T) {
+	t.Run("no credential", func(t *testing.T) {
 		t.Setenv("AGENTHUB_URL", "https://api.example.test")
-		t.Setenv("AGENTHUB_MACHINE_TOKEN", "")
+		t.Setenv("AGENTHUB_TOKEN", "")
 		var stdout, stderr strings.Builder
 		code := RunMessagesVerb(context.Background(), []string{"dev", "coder", "--dry-run", "--out", t.TempDir()}, &stdout, &stderr)
 		if code != clientcmd.ExitUsage {
 			t.Fatalf("exit = %d, want ExitUsage: %s", code, stderr.String())
 		}
-		if !strings.Contains(stderr.String(), "AGENTHUB_MACHINE_TOKEN") {
+		if !strings.Contains(stderr.String(), "AGENTHUB_TOKEN") {
 			t.Errorf("stderr = %q, want the missing credential named", stderr.String())
 		}
 	})

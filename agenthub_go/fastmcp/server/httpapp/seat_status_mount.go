@@ -6,9 +6,8 @@ package httpapp
 //	GET  /api/v2/openrig/machines
 //
 // A report replaces its machine's seat set, agent snapshot and edge set. Every string field of a
-// report is scanned for credentials before anything is stored. POST takes a machine token
-// (see machine_token_mount.go) and stores under the token's user and machine; GET takes a
-// user token and is tenant-scoped by the caller's user id.
+// report is scanned for credentials before anything is stored. Both routes take the
+// user token and are tenant-scoped by the caller's user id; the POST names its machine in the body.
 
 import (
 	"bytes"
@@ -110,8 +109,8 @@ type seatStatusAgent struct {
 }
 
 func mountSeatStatusRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
-	mux.HandleFunc("POST /api/v2/openrig/seat-status", machineAuthed(sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
-		handlePostSeatStatus(w, r, token, sessions)
+	mux.HandleFunc("POST /api/v2/openrig/seat-status", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handlePostSeatStatus(w, r, u, sessions)
 	}))
 	mux.HandleFunc("GET /api/v2/openrig/machines", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleListMachines(w, r, u, sessions)
@@ -127,7 +126,7 @@ func seatStatusSourceFor(w http.ResponseWriter, sessions *database.SessionManage
 	return source, true
 }
 
-func handlePostSeatStatus(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken, sessions *database.SessionManager) {
+func handlePostSeatStatus(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	raw, ok := readSeatStatusBody(w, r)
 	if !ok {
 		return
@@ -153,24 +152,18 @@ func handlePostSeatStatus(w http.ResponseWriter, r *http.Request, token *reposit
 		writeDetail(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if machine.MachineID != token.MachineID {
-		writeDetail(w, http.StatusForbidden, "token is bound to machine \""+token.MachineID+"\"")
-		return
-	}
 	source, ok := seatStatusSourceFor(w, sessions)
 	if !ok {
 		return
 	}
-	if err := source.ReplaceSnapshot(r.Context(), token.UserID, *machine); err != nil {
+	if err := source.ReplaceSnapshot(r.Context(), userID(u), *machine); err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	// The machine is told what the cloud expects for what it just reported: the same expected
 	// hash and verdict GET /machines derives, read back through the same join so the two views
-	// cannot disagree. This is the only way a bridge can learn it - the machines list takes a
-	// user token and a bridge deliberately holds only its machine token - and without it a
-	// client can never record the hash it was last in sync with.
-	machines, err := source.List(r.Context(), token.UserID)
+	// cannot disagree. A client records the hash it was last in sync with from this answer.
+	machines, err := source.List(r.Context(), userID(u))
 	if err != nil {
 		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return

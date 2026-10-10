@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 
+	"agenthub/internal/clientbridge"
 	"agenthub/internal/clientcmd"
 )
 
@@ -43,9 +44,8 @@ Pulls the text addressed to one seat and puts it into that seat's own session, o
 acknowledging each ONLY after the text landed. An unacknowledged message is handed out again on the next
 run, so nothing is lost; a message this client already typed is re-acknowledged rather than typed twice.
 
-Requires AGENTHUB_URL and AGENTHUB_MACHINE_TOKEN: the pull and the ack take a MACHINE token, because the
-component that can reach a seat's terminal is the client on the machine that holds it. The chat window's
-user token cannot pull.
+Requires AGENTHUB_URL and AGENTHUB_TOKEN. The ack names this machine (its hostname) so the audit says
+which client typed the message.
 
 The session is --session <name>, or the single session ` + "`rig ps --json`" + ` reports; the verb refuses rather
 than guessing which prompt to type into.
@@ -95,7 +95,7 @@ func RunMessagesVerb(ctx context.Context, args []string, stdout, stderr io.Write
 		fmt.Fprintln(stderr, err)
 		return clientcmd.ExitUsage
 	}
-	token, err := RequireEnv("AGENTHUB_MACHINE_TOKEN")
+	token, err := RequireEnv("AGENTHUB_TOKEN")
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return clientcmd.ExitUsage
@@ -285,7 +285,7 @@ func pullMessages(ctx context.Context, baseURL, token, room, seat string, limit 
 // ledger already holds the id, and the next run re-acks instead of typing the text twice.
 func ackMessage(ctx context.Context, baseURL, token, room, seat, id string) error {
 	path := messagesURL(room, seat) + "/" + url.PathEscape(id) + "/ack"
-	body, err := RequestJSON(ctx, "POST", baseURL, token, path, nil)
+	body, err := RequestJSON(ctx, "POST", baseURL, token, path, map[string]string{"machine_id": clientbridge.HostMachineID()})
 	if err != nil {
 		return err
 	}

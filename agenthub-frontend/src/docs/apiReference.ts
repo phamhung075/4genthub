@@ -385,22 +385,6 @@ export const apiReference: ApiReference = {
       "description": ""
     },
     {
-      "method": "POST",
-      "path": "/api/v2/openrig/machines",
-      "pathParams": [],
-      "handler": "",
-      "description": ""
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v2/openrig/machines/{machine}/token",
-      "pathParams": [
-        "machine"
-      ],
-      "handler": "",
-      "description": ""
-    },
-    {
       "method": "GET",
       "path": "/api/v2/openrig/modules",
       "pathParams": [],

@@ -3939,3 +3939,7 @@ Code and the backend payload are the truth; no expectation was loosened. Counts 
 - Top blockers: ProjectList (37 failures), LazyTaskList (37), WebSocketAnimation (49)
 - Strategy: Systematic assertion updates for CSS classes and animation expectations
 - Estimated: 2-3 additional focused sessions needed
+
+## 2026-10-10 — one credential
+- Deleted the machine-token tests (`machine_token_mount_test.go`, `machine_token_service_test.go`, `machine_token_repository_test.go`); the five former machine-token routes are tested with the user token in `seat_status_mount_test.go`, `seat_feedback_mount_test.go`, `broadcast_notify_auth_test.go`, `missed_notification_replay_test.go`, `seat_mount_test.go` (ack now requires `machine_id`).
+- `agenthub_client/tests/test_bridge.py`: register tests replaced by three user-token tests. `SeatsPage.test.tsx` and `scripts/tests/test_check_served_frontend.py`: hint string updated.

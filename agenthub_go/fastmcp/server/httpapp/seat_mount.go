@@ -24,23 +24,15 @@ package httpapp
 // explicit policy rather than a sweep (missed_notifications is the precedent).
 //
 // THE RESIDUAL LIMIT OF THE PULL, STATED RATHER THAN LEFT TO BE DISCOVERED: the pull is
-// machine-authenticated and TENANT-SCOPED. A machine token is bound to a machine and NOT to seats
-// (the same looseness machine_token_mount.go documents for the status report), so ANY machine in the
-// tenant can pull ANY seat's messages in that tenant. THAT IS A CHOSEN LIMIT, NOT AN OVERSIGHT: the
-// narrower rule — binding the pull to the machine that REPORTED the seat — refuses the pull in exactly
-// the case this store exists for, a seat that is DOWN and therefore unreported, so it would break the
-// feature to catch nothing on the tenant boundary. AND IT IS A POLICY CHOICE, NOT A CONTROL: this
-// comment STATES the scope, it does not ENFORCE it — nothing here stops a machine in the tenant from
-// pulling a seat that is not its own, and the enforcement point is the credential the pull is issued
-// under, so narrowing the rule means changing that credential rather than editing this paragraph.
-// What would narrow it later is a durable addition
-// rather than a tightening here: a PER-SEAT credential, or a seat-to-machine binding the machine
-// reports, neither of which exists today (seat_status carries no session and no pull-side credential
-// is issued per seat). The ack records the machine that actually took each message, so the audit says
-// which one did even though the rule allows any of them.
+// TENANT-SCOPED by the user token and nothing narrower. Any client holding the tenant's token can pull
+// ANY seat's messages in that tenant. THAT IS A CHOSEN LIMIT: binding the pull to the machine that
+// REPORTED the seat refuses the pull in exactly the case this store exists for, a seat that is DOWN
+// and therefore unreported. The ack records the machine that actually took each message (the
+// machine_id in its body), so the audit says which one did.
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -232,11 +224,11 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	// can reach a seat's terminal is the client on the machine that holds it — see the residual limit
 	// at the top of this file. The ack is a POST on the message rather than a second GET: it RECORDS
 	// that one message reached the terminal, and a GET must not have that effect.
-	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages", machineAuthed(sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
-		handlePullSeatMessages(w, r, token, sessions)
+	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handlePullSeatMessages(w, r, u, sessions)
 	}))
-	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack", machineAuthed(sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
-		handleAckSeatMessage(w, r, token, sessions)
+	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleAckSeatMessage(w, r, u, sessions)
 	}))
 	mux.HandleFunc("POST /api/v2/openrig/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeedSeatTypes(w, r, u, sessions)
@@ -419,8 +411,8 @@ func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, u *authdomain
 //
 // THE PAGE BOUNDS COME FROM THE SERVICE (ClampSeatMessageLimit) rather than from this route, so the
 // numbers a client pages by have one home; the route only reads the two query parameters.
-func handlePullSeatMessages(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken, sessions *database.SessionManager) {
-	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, token.UserID) {
+func handlePullSeatMessages(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, userID(u)) {
 		return
 	}
 	svc, ok := seatMessageServiceFor(w, sessions)
@@ -433,7 +425,7 @@ func handlePullSeatMessages(w http.ResponseWriter, r *http.Request, token *repos
 			limit = n
 		}
 	}
-	messages, cursor, err := svc.Pull(r.Context(), token.UserID, r.PathValue("room"), r.PathValue("seat"), r.URL.Query().Get("after"), limit)
+	messages, cursor, err := svc.Pull(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), r.URL.Query().Get("after"), limit)
 	if err != nil {
 		if writeSeatMessageRejection(w, err) {
 			return
@@ -448,20 +440,36 @@ func handlePullSeatMessages(w http.ResponseWriter, r *http.Request, token *repos
 	writeJSON(w, http.StatusOK, body)
 }
 
+// seatMessageAckRequest names the machine that typed the message, which the audit records.
+type seatMessageAckRequest struct {
+	MachineID string `json:"machine_id"`
+}
+
 // handleAckSeatMessage records that a client put one message into the seat's session, which is what
 // stops the next pull returning it. THE STATE, NOT THE ID, IS WHAT A CALLER CAN GET WRONG: an id that
 // is unknown and an id already delivered answer the same 409 with one sentence, because neither
 // redelivers and a client retrying a dropped ack should hear that rather than a 404 that reads like a
 // mistyped id.
-func handleAckSeatMessage(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken, sessions *database.SessionManager) {
-	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, token.UserID) {
+func handleAckSeatMessage(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
+	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, userID(u)) {
 		return
 	}
 	svc, ok := seatMessageServiceFor(w, sessions)
 	if !ok {
 		return
 	}
-	err := svc.Ack(r.Context(), token.UserID, r.PathValue("room"), r.PathValue("seat"), r.PathValue("id"), token.MachineID, seatMessageNow().UTC())
+	var req seatMessageAckRequest
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := repositories.ValidateName("machine id", req.MachineID); err != nil {
+		writeDetail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	err := svc.Ack(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat"), r.PathValue("id"), req.MachineID, seatMessageNow().UTC())
 	switch {
 	case err == nil:
 	case errors.Is(err, seatservices.ErrSeatMessageNotPending):
