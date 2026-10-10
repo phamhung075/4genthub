@@ -26,9 +26,9 @@
     {
       "slug": "guide-fe-dev",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md",
-      "sha256": "3fab6144f51475bf581708c4d8a1ab187cd3027c67d28d0ad773e532e983a258",
+      "sha256": "734bc48b379e4c9a7b956785d045f67c5026bde21e7f135ae5d262db1c4a0e36",
       "source_path": "ai_docs/operations/seat-guides/fe-dev.md",
-      "source_sha256": "3fab6144f51475bf581708c4d8a1ab187cd3027c67d28d0ad773e532e983a258"
+      "source_sha256": "734bc48b379e4c9a7b956785d045f67c5026bde21e7f135ae5d262db1c4a0e36"
     },
     {
       "slug": "guide-feedback-dev",
@@ -54,9 +54,9 @@
     {
       "slug": "guide-reviewer",
       "path": "agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md",
-      "sha256": "2ec5c7b8876fa6ebeced89a613feb1691c4aa4aab02cf78236e4d09c00654a96",
+      "sha256": "5baa65bbe30bd207ea5d055e884a1982037f35303e79dd45df09c933a6c5f342",
       "source_path": "ai_docs/operations/seat-guides/reviewer.md",
-      "source_sha256": "2ec5c7b8876fa6ebeced89a613feb1691c4aa4aab02cf78236e4d09c00654a96"
+      "source_sha256": "5baa65bbe30bd207ea5d055e884a1982037f35303e79dd45df09c933a6c5f342"
     },
     {
       "slug": "guide-skills-dev",
