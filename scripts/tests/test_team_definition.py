@@ -1,49 +1,34 @@
-"""The shipped team definition (`scripts/team/4genthub`) and skill inventory, applied through the client.
+"""What THIS repository ships, checked without the retired Python client.
 
-The client is a separate repository with no knowledge of this one, so what is checked HERE is this
-repository's data: the team files, their word limits and the skill inventory. The client's own
-logic is tested in its repository. A local HTTP server records every request, so no real server is
-needed.
+The apply-and-plan cases this file used to hold drove `agenthub_client.team_setup`, the client's
+Python planner, which the client repository deleted in `1eca7de`. Their live home is that
+repository's Go `internal/clientteam` (`plan.go`, `publish.go`, `team.go`, `drift.go`, with
+`apply_test.go`, `publish_test.go` and `drift_test.go`), and the pin-archive loader that briefly
+kept them collectable went with them: a test whose only way to run is an archive of deleted code
+covers nothing in this repository.
+
+What is left is this repository's own data - the rooms under `scripts/team`, the word bands their
+instruction files are held to, and the skill inventory's curation - checked against files that live
+HERE. The eight data cases the split keeps are the whole file: seven about the rooms, one about the
+curation, and none of them reads the client or any other tree.
+
+WHAT LEFT THIS FILE, so it is not quietly missing: the case that digested each recorded `sha256`
+against the OpenRig revision the inventory's `generated_from` names. The rule it checked is
+implemented by the live Go `team publish-skills` verb, so the case belongs where that verb is,
+driven through it, rather than as a second copy of the rule in Python. It is port row 25 in
+DISPOSITION-retired-python-client-tests-2026-10-10.md, and until that port lands this repository has
+no check that the committed inventory describes the revision it names.
 """
 
 
-
-
-import hashlib
-
-
-import importlib.util
-
-
-import io
-
-
 import json
-
-
-import os
-import re
 import subprocess
-
-
-import tarfile
-
-
-
-
-import threading
-
-
-from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 from pathlib import Path
 
 
 import pytest
-
-
-import _client_tree
 
 
 # These tests are self-contained and must not spin up the test database.
@@ -56,9 +41,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TEAM_ROOT = REPO_ROOT / "scripts" / "team"
 
 
-# The dev room: the one the apply cases below drive through the client, with the topology they
-# assert. The invariants that hold for ANY room live further down and run for every room under
-# TEAM_ROOT, this one included.
+# The dev room: whose module text the wording cases at the bottom of this file read directly.
 TEAM_DIR = TEAM_ROOT / "4genthub"
 
 
@@ -84,12 +67,6 @@ def _tracked_rooms():
 # 4genthub-client arrived - was gated by nothing at all.
 ROOMS = _tracked_rooms()
 INVENTORY = REPO_ROOT / "ai_docs" / "agent-system" / "skill-library.json"
-
-
-TOKEN = "tok-secret-1234567890"
-
-
-SEAT_TYPES_PATH = "/api/v2/openrig/seat-types"
 
 
 SEAT_TYPES = {
@@ -151,401 +128,22 @@ ROOM_RUNTIMES = {
 }
 
 
-def _load_module():
-    """The client's `team_setup`, read out of the pinned revision rather than the pod's checkout.
-
-    Imported at import time, so a missing path was a COLLECTION error that yielded no verdict. The
-    pin is materialised read-only from the gitlink, and a machine that cannot supply it skips loudly.
-    """
-    try:
-        _client_tree.ensure_on_path(REPO_ROOT)
-    except _client_tree.ClientTreeUnavailable as unavailable:
-        pytest.skip(f"SKIPPED, NOT PASSED: {unavailable}", allow_module_level=True)
-    return importlib.import_module("agenthub_client.team_setup")
-
-
-team_setup = _load_module()
-
-
-class _Handler(BaseHTTPRequestHandler):
-    def _handle(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        body = json.loads(self.rfile.read(length) or b"null")
-        server = self.server
-        # apply's read of the stored seat types is counted apart, so the write-sequence
-        # assertions below stay about writes
-        record = (
-            server.seat_type_reads
-            if (self.command, self.path) == ("GET", SEAT_TYPES_PATH)
-            else server.requests
-        )
-        record.append(
-            {
-                "method": self.command,
-                "path": self.path,
-                "body": body,
-                "auth": self.headers.get("Authorization"),
-            }
-        )
-        status, text = server.respond(self.command, self.path, body)
-        payload = text.encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
-
-    do_PUT = _handle
-    do_POST = _handle
-    do_GET = _handle
-
-    def log_message(self, *args):
-        pass
-
-
-class TeamServer:
-    def __init__(self):
-        self.requests = []
-        self.seat_type_reads = []
-        self.overrides = {}  # (method, path) -> (status, text)
-        self.httpd = HTTPServer(("127.0.0.1", 0), _Handler)
-        self.httpd.requests = self.requests
-        self.httpd.seat_type_reads = self.seat_type_reads
-        self.httpd.respond = self.respond
-        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
-        self.thread.start()
-
-    @property
-    def url(self):
-        return f"http://127.0.0.1:{self.httpd.server_port}"
-
-    def respond(self, method, path, body):
-        if (method, path) in self.overrides:
-            return self.overrides[(method, path)]
-        if (method, path) == ("GET", SEAT_TYPES_PATH):
-            return 200, '{"seat_types": []}'  # nothing stored: the seed runs
-        if method == "GET":
-            return 404, '{"detail": "not found"}'
-        return (201 if method == "POST" else 200), '{"success": true}'
-
-    def close(self):
-        self.httpd.shutdown()
-        self.httpd.server_close()
-        self.thread.join(timeout=5)
-
-
-@pytest.fixture
-def server():
-    team_server = TeamServer()
-    yield team_server
-    team_server.close()
-
-
-@pytest.fixture
-def env(server, monkeypatch):
-    monkeypatch.setenv("AGENTHUB_URL", server.url)
-    monkeypatch.setenv("AGENTHUB_TOKEN", TOKEN)
-
-
-def _run(capsys, *extra):
-    return _run_in(capsys, "4genthub", *extra)
-
-
-def _run_in(capsys, room, *extra):
-    code = team_setup.main(["apply", "--team", str(TEAM_ROOT / room), *extra])
-    out = capsys.readouterr()
-    return code, out.out, out.err
-
-
 def _definition(room):
-    """A room's team.json as written.
+    """A room's team.json as written, with nothing read on its behalf.
 
-    Deliberately NOT `load_team`: that reads every module's file and raises on the first one that
-    is missing, so the case that HAS to fail could only report "cannot load team definition". The
-    guard wants to name the module and its path.
+    Read as JSON rather than through any loader, and the difference matters to the case that HAS to
+    fail: the guard wants to name the module and its path rather than report that a room could not
+    be loaded at all.
     """
     return json.loads((TEAM_ROOT / room / "team.json").read_text(encoding="utf-8"))
 
 
-def _load_team(room):
-    return team_setup.load_team(TEAM_ROOT / room)
-
-
 def _team():
-    return _load_team("4genthub")
-
-
-def _context_file(slug):
-    """The dev room's file for a module slug, read from the module rather than a second table."""
-    module = next(m for m in _team()["modules"] if m["slug"] == slug)
-    return TEAM_DIR / module["file"]
-
-
-def test_calls_follow_the_documented_order(server, env, capsys):
-    code, out, _ = _run(capsys)
-    assert code == 0
-    kinds = []
-    for req in server.requests:
-        path = req["path"]
-        if path.endswith("/seat-types/seed"):
-            kind = "seed"
-        elif "/modules/" in path:
-            kind = "module"
-        elif path.endswith("/rooms"):
-            kind = "room"
-        elif path.endswith("/links"):
-            kind = "link"
-        elif path.endswith("/overlay") and "/seats/" not in path:
-            kind = "company-overlay"
-        elif path.endswith("/overlay"):
-            kind = "seat-overlay"
-        else:
-            kind = "seat"
-        if not kinds or kinds[-1] != kind:
-            kinds.append(kind)
-    assert kinds == [
-        "seed",
-        "module",
-        "room",
-        "seat",
-        "link",
-        "company-overlay",
-        "seat-overlay",
-    ]
-    assert len(out.strip().splitlines()) == len(server.requests)
-    assert all(r["auth"] == f"Bearer {TOKEN}" for r in server.requests)
-
-
-def test_module_content_comes_from_the_files(server, env, capsys):
-    assert _run(capsys)[0] == 0
-    puts = {
-        r["path"].split("/")[5]: r["body"]
-        for r in server.requests
-        if "/modules/" in r["path"]
-    }
-    assert set(puts) == {m["slug"] for m in _definition("4genthub")["modules"]}
-    for slug, body in puts.items():
-        assert body["kind"] == "instruction"
-        assert body["content"] == _context_file(slug).read_text(encoding="utf-8")
-
-
-def test_overlays_send_full_op_lists(server, env, capsys):
-    assert _run(capsys)[0] == 0
-    overlays = {
-        r["path"]: r["body"] for r in server.requests if r["path"].endswith("/overlay")
-    }
-    company = overlays["/api/v2/openrig/overlay"]
-    assert company["ops"] == [
-        # Pinned deliberately: apply PUTs the declared version, so 1.0.1 is created and named here in one
-        # run; at 1.0.0 the stored, different 1.0.0 answers 409 and apply stops (row 9651609a).
-        {"kind": "add", "slug": "project-4genthub", "version": "1.0.1", "content": ""},
-        {"kind": "add", "slug": "delegate-deepseek", "version": "1.1.0", "content": ""},
-    ]
-    room = "/api/v2/openrig/rooms/4genthub-dev/seats"
-
-    def slugs(seat):
-        return [o["slug"] for o in overlays[f"{room}/{seat}/overlay"]["ops"]]
-
-    assert slugs("go-dev") == ["area-go-backend"]
-    assert slugs("web-dev") == ["area-web-frontend"]
-    assert slugs("planner") == [
-        "area-go-backend",
-        "area-web-frontend",
-        "mission-4genthub",
-    ]
-    assert slugs("architect") == ["area-go-backend", "area-web-frontend"]
-    for seat in ("tester", "reviewer", "debugger"):
-        assert slugs(seat) == ["area-quality"]
-    assert slugs("writer") == ["area-docs"]
-    assert slugs("lead") == ["mission-4genthub"]
-    mission_seats = {
-        seat
-        for seat in team_setup.load_team(TEAM_DIR)["seat_overlays"]
-        if "mission-4genthub" in slugs(seat)
-    }
-    assert mission_seats == {"lead", "planner"}
-
-
-def test_links_match_the_team_topology(server, env, capsys):
-    assert _run(capsys)[0] == 0
-    prefix = "/api/v2/openrig/rooms/4genthub-dev/seats/"
-    links = {
-        (
-            r["path"][len(prefix) :].split("/")[0],
-            r["body"]["kind"],
-            r["body"]["to_seat"],
-        )
-        for r in server.requests
-        if r["path"].endswith("/links")
-    }
-    others = {
-        "planner",
-        "architect",
-        "go-dev",
-        "web-dev",
-        "reviewer",
-        "tester",
-        "debugger",
-        "writer",
-    }
-    expected = {("lead", "delegates_to", s) for s in others}
-    expected |= {(s, "escalates_to", "lead") for s in others}
-    expected |= {
-        (d, "collaborates_with", t)
-        for d in ("go-dev", "web-dev")
-        for t in ("reviewer", "tester")
-    }
-    expected.add(("reviewer", "collaborates_with", "tester"))
-    assert links == expected
-    assert all(
-        r["body"]["allow"] is True
-        for r in server.requests
-        if r["path"].endswith("/links")
-    )
-
-
-def test_rerun_tolerates_existing_room_and_seats(server, env, capsys):
-    server.overrides[("POST", "/api/v2/openrig/rooms")] = (
-        409,
-        '{"detail":"room already exists"}',
-    )
-    for seat in _team()["seats"]:
-        path = "/api/v2/openrig/rooms/4genthub-dev/seats"
-        server.overrides[("POST", path)] = (409, '{"detail":"seat already exists"}')
-    code, out, _ = _run(capsys)
-    assert code == 0
-    assert "room 4genthub-dev: exists" in out
-    assert "seat lead: exists" in out
-    assert "link lead delegates_to planner: applied" in out
-    assert len(server.requests) == len(team_setup.build_plan(_team()))
-
-
-def test_409_on_a_module_is_an_error(server, env, capsys):
-    # Read from the definition: this case is about the 409, and a literal stops matching when the ref moves.
-    version = next(
-        m["version"] for m in _definition("4genthub")["modules"] if m["slug"] == "project-4genthub"
-    )
-    path = f"/api/v2/openrig/modules/project-4genthub/versions/{version}"
-    server.overrides[("PUT", path)] = (
-        409,
-        '{"detail":"already exists with different content"}',
-    )
-    code, _, err = _run(capsys)
-    assert code == 1
-    assert "project-4genthub" in err
-    assert len(server.requests) == 2  # the seed, then the failing module
-
-
-def test_seed_failure_stops_before_any_other_call(server, env, capsys):
-    server.overrides[("POST", "/api/v2/openrig/seat-types/seed")] = (
-        500,
-        '{"detail":"AGENTHUB_PUBLIC_URL is not set"}',
-    )
-    code, _, err = _run(capsys)
-    assert code == 1
-    assert "seat types (seed)" in err and "AGENTHUB_PUBLIC_URL" in err
-    assert len(server.requests) == 1
-
-
-def test_the_seed_is_skipped_when_every_needed_seat_type_is_stored(server, env, capsys):
-    stored = [{"slug": slug} for slug in SEAT_TYPES]
-    server.overrides[("GET", SEAT_TYPES_PATH)] = (
-        200,
-        json.dumps({"seat_types": stored}),
-    )
-    code, out, _ = _run(capsys)
-    assert code == 0
-    assert not any(r["path"].endswith("/seat-types/seed") for r in server.requests)
-    assert "seat types (seed)" not in out
-    assert len(server.requests) == len(team_setup.build_plan(_team(), SEAT_TYPES))
-
-
-def test_the_seed_runs_when_a_needed_seat_type_is_missing(server, env, capsys):
-    stored = [{"slug": slug} for slug in SEAT_TYPES - {"writer"}]
-    server.overrides[("GET", SEAT_TYPES_PATH)] = (
-        200,
-        json.dumps({"seat_types": stored}),
-    )
-    code, out, _ = _run(capsys)
-    assert code == 0
-    assert server.requests[0]["path"] == "/api/v2/openrig/seat-types/seed"
-
-
-def test_an_empty_company_overlay_sends_no_company_overlay(server, env, capsys):
-    team = _team()
-    team[
-        "company_overlay"
-    ] = []  # the company overlay is account-wide: a PUT would replace it
-    labels = [step[0] for step in team_setup.build_plan(team, SEAT_TYPES)]
-    assert "overlay company" not in labels
-    assert any(label.startswith("overlay seat ") for label in labels)
-
-
-def test_an_unreadable_seat_type_list_stops_before_any_write(server, env, capsys):
-    server.overrides[("GET", SEAT_TYPES_PATH)] = (500, '{"detail":"boom"}')
-    code, _, err = _run(capsys)
-    assert code == 1
-    assert "GET /api/v2/openrig/seat-types failed: HTTP 500" in err
-    assert server.requests == []
-
-
-def test_409_without_already_exists_is_an_error(server, env, capsys):
-    server.overrides[("POST", "/api/v2/openrig/rooms")] = (409, '{"detail":"conflict"}')
-    code, _, _ = _run(capsys)
-    assert code == 1
-
-
-def test_other_4xx_stops_the_run(server, env, capsys):
-    server.overrides[("POST", "/api/v2/openrig/rooms")] = (422, '{"detail":"bad slug"}')
-    code, _, err = _run(capsys)
-    assert code == 1
-    assert "422" in err
-    assert server.requests[-1]["path"] == "/api/v2/openrig/rooms"
-
-
-@pytest.mark.parametrize("room", ROOMS)
-def test_dry_run_makes_no_requests_and_needs_no_env(room, server, monkeypatch, capsys):
-    monkeypatch.delenv("AGENTHUB_URL", raising=False)
-    monkeypatch.delenv("AGENTHUB_TOKEN", raising=False)
-    code, out, _ = _run_in(capsys, room, "--dry-run")
-    assert code == 0
-    assert server.requests == []
-    assert len(out.strip().splitlines()) == len(team_setup.build_plan(_load_team(room)))
-
-
-def test_token_is_never_printed(server, env, capsys):
-    server.overrides[("POST", "/api/v2/openrig/rooms")] = (500, "boom")
-    _, fail_out, fail_err = _run(capsys)
-    assert TOKEN not in fail_out + fail_err
-    server.overrides.clear()
-    ok_code, ok_out, ok_err = _run(capsys)
-    assert ok_code == 0
-    assert TOKEN not in ok_out + ok_err
-    _, dry_out, dry_err = _run(capsys, "--dry-run")
-    assert TOKEN not in dry_out + dry_err
-
-
-def test_missing_config_is_a_usage_error(monkeypatch, capsys):
-    monkeypatch.delenv("AGENTHUB_URL", raising=False)
-    monkeypatch.setenv("AGENTHUB_TOKEN", TOKEN)
-    code, _, err = _run(capsys)
-    assert code == 2
-    assert "AGENTHUB_URL" in err
-
-
-def test_unreachable_server_is_exit_1(monkeypatch, capsys):
-    monkeypatch.setenv("AGENTHUB_URL", "http://127.0.0.1:1")
-    monkeypatch.setenv("AGENTHUB_TOKEN", TOKEN)
-    code, _, err = _run(capsys)
-    assert code == 1
-    assert TOKEN not in err
+    """The dev room's own definition, as written."""
+    return _definition("4genthub")
 
 
 # --- the definition guard: every room under scripts/team, not just the one above ---------------
-#
-# These run for EVERY room. They are also why a room cannot arrive ungated: the expectation
-# tables are keyed by room, so a room with no entry fails here instead of passing in silence.
-
 def test_the_per_room_tables_cover_every_shipped_room():
     # One direction only: a room that EXISTS must have an expectation, so it cannot arrive ungated.
     # The reverse would tie this file to how many rooms a given checkout happens to have (a room
@@ -650,231 +248,14 @@ def test_project_brief_starts_with_the_safety_rule():
     assert "Never git push" in text.split("\n")[0]
 
 
-# WHAT IS DIGESTED IS THE REVISION THE INVENTORY NAMES, NOT THE CHECKOUT ON THIS MACHINE.
+# --- the skill inventory's curation, checked where it can always run ----------------------------
 #
-# The inventory records, in `generated_from`, the OpenRig commit its digests describe. These cases
-# used to digest whatever checkout happened to be present, which made the verdict a property of the
-# machine rather than of the record: on 2026-10-10 this pod held `4b48ca21`, 439 commits past the
-# named `31fe301b`, 23 of the 54 recorded sides had drifted, and the failure read as "the inventory
-# is stale" when the truth was "the input moved under it" - re-measuring the inventory would have
-# re-based its truth on whichever tree was present. The named revision is materialised read-only and
-# THAT tree is digested, so a refusal now means the record and the revision genuinely disagree,
-# which is the act that needs a human: move the pin, or regenerate.
-OPENRIG_CHECKOUT_DEFAULT = REPO_ROOT.parent / "openrig"
-
-
-# The two committed skill edges the inventory's recorded paths live under: all 35 canonical rows
-# under the first, all 19 plugin rows under the second. Both are asked for BY NAME when the named
-# revision is read out of git, so a half-cloned checkout is never digested as if it were a whole one.
-OPENRIG_SKILL_EDGES = (
-    Path("skills") / "_canonical",
-    Path("packages") / "daemon" / "assets" / "plugins" / "openrig-core" / "skills",
-)
-
-
-# `generated_from` reads "/path/to/openrig @ HEAD <40 hex>, re-verified <date> (<the two edges>)".
-GENERATED_FROM_REVISION = re.compile(r"@\s*HEAD\s+([0-9a-f]{40})")
-
-
-def _inventory_names() -> tuple:
-    """The OpenRig checkout and the revision the inventory says its digests describe."""
-    generated_from = json.loads(INVENTORY.read_text(encoding="utf-8"))["generated_from"]
-    named = GENERATED_FROM_REVISION.search(generated_from)
-    if named is None:
-        pytest.fail(
-            f"{INVENTORY.name}: generated_from names no commit, so nothing in it can be verified "
-            f"against the revision it describes: {generated_from!r}. Name the revision, the way "
-            "`423c7a00` did, rather than a date that cannot be recomputed."
-        )
-    return Path(generated_from.split("@", 1)[0].strip()), named.group(1)
-
-
-def _materialised(candidate: Path, revision: str, into: Path):
-    """The named revision's two edges, read out of git into `into`; a reason when it cannot be.
-
-    `git archive` reads committed objects, so an edit sitting uncommitted in the checkout cannot
-    leak into the digest and the checkout's own HEAD is irrelevant. tarfile rather than a pipe to
-    `tar`, so a missing external binary cannot be read as a passing check.
-    """
-    archive = subprocess.run(
-        ["git", "-C", str(candidate), "archive", revision, "--"]
-        + [str(edge) for edge in OPENRIG_SKILL_EDGES],
-        capture_output=True,
-    )
-    if archive.returncode != 0:
-        detail = archive.stderr.decode("utf-8", "replace").strip().splitlines()
-        return detail[-1] if detail else f"git archive exited {archive.returncode}"
-    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
-        tar.extractall(into)
-    return None
-
-
-def _named_revision_or_skip(tmp_path) -> Path:
-    """The revision the inventory names, materialised read-only, or a skip that says so LOUDLY.
-
-    A skip that reads as a pass is the same silence this guard exists to end, so the reason names
-    every checkout that was tried and why it could not supply the named revision.
-    """
-    checkout, revision = _inventory_names()
-    configured = os.environ.get(team_setup.LIBRARY_ROOT_ENV)
-    tried, unusable = [], []
-    for candidate in (checkout, Path(configured) if configured else None, OPENRIG_CHECKOUT_DEFAULT):
-        if candidate is None or candidate in tried:
-            continue
-        tried.append(candidate)
-        if not (candidate / ".git").exists():
-            unusable.append(f"{candidate} is not a git checkout")
-            continue
-        into = Path(tmp_path) / "named-revision"
-        into.mkdir(parents=True, exist_ok=True)
-        refused = _materialised(candidate, revision, into)
-        if refused is None:
-            return into
-        unusable.append(f"{candidate}: {refused}")
-    state = (
-        f"{team_setup.LIBRARY_ROOT_ENV}={configured!r}"
-        if configured
-        else f"{team_setup.LIBRARY_ROOT_ENV} is not set"
-    )
-    pytest.skip(
-        f"SKIPPED, NOT PASSED ({state}): the inventory names {revision} in {checkout}, and no git "
-        f"checkout here can read it - {'; '.join(unusable)}. Set "
-        f"{team_setup.LIBRARY_ROOT_ENV}=/path/to/openrig - the variable publish-skills "
-        "--source-root and drift-check --library-root already read - to run it."
-    )
-
-
-def _inventory_guard(inventory_path: Path, source_root: Path) -> list:
-    """The check itself: the publish path's own verifier, fed the inventory it publishes from."""
-    return team_setup.skill_library_modules(
-        team_setup.load_skill_inventory(inventory_path), source_root
-    )
-
-
-def test_the_shipped_inventory_digests_match_the_revision_the_inventory_names(tmp_path):
-    """Every recorded digest describes the file at the revision the inventory itself names."""
-    source_root = _named_revision_or_skip(tmp_path)
-    inventory_path = INVENTORY
-
-    modules = _inventory_guard(inventory_path, source_root)
-
-    inventory = team_setup.load_skill_inventory(inventory_path)
-    assert inventory["count"] == len(inventory["skills"]), "the count disagrees with the rows"
-    assert len(modules) == inventory["count"], "one block per skill, so a short list is a lost skill"
-    sides = sum(1 for entry in inventory["skills"] for edge in ("canonical", "plugin") if edge in entry)
-    assert sides == 54, (
-        f"{sides} recorded sides: 52 skills with 2 mirrored pairs is what this inventory documents. "
-        "Every recorded side must be read, so confirm the new count deliberately before changing it."
-    )
-
-
-def test_the_inventory_guard_names_the_skill_and_both_digests(tmp_path):
-    """A perturbed digest must fail, naming WHICH side moved - the case that must not be vacuous.
-
-    Hermetic: it perturbs a COPY of the inventory under tmp_path and leaves the shipped file alone,
-    so the guard is seen to fail without the shared tree being touched.
-    """
-    source_root = _named_revision_or_skip(tmp_path)
-    inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
-    row = next(entry for entry in inventory["skills"] if "canonical" in entry)
-    recomputed = row["canonical"]["sha256"]
-    row["canonical"]["sha256"] = "0" * 64
-    perturbed = tmp_path / "skill-library.json"
-    perturbed.write_text(json.dumps(inventory), encoding="utf-8")
-
-    with pytest.raises(team_setup.SetupError) as refused:
-        _inventory_guard(perturbed, source_root)
-
-    message = str(refused.value)
-    assert row["name"] in message, "the failing skill must be named"
-    assert "0" * 64 in message, "the RECORDED digest must be named"
-    assert recomputed in message, (
-        "the RECOMPUTED digest must be named too, or the reader cannot tell which side moved"
-    )
-
-
-def test_the_inventory_guard_reads_the_mirror_too(tmp_path):
-    """The same red, one side further out: the MIRROR's file is read and digested as well.
-
-    A mirrored skill records two digests. Verifying only the source leaves the mirror free to rot:
-    its digest was recorded, never checked, so a stale mirror stayed green. This case is the one
-    that goes red the moment the module stops reading the mirror's file.
-    """
-    source_root = _named_revision_or_skip(tmp_path)
-    inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
-    row = next(
-        entry for entry in inventory["skills"] if "canonical" in entry and "plugin" in entry
-    )
-    recomputed = row["plugin"]["sha256"]
-    row["plugin"]["sha256"] = "0" * 64
-    perturbed = tmp_path / "skill-library.json"
-    perturbed.write_text(json.dumps(inventory), encoding="utf-8")
-
-    with pytest.raises(team_setup.SetupError) as refused:
-        _inventory_guard(perturbed, source_root)
-
-    message = str(refused.value)
-    assert row["name"] in message, "the failing skill must be named"
-    assert "0" * 64 in message, "the RECORDED mirror digest must be named"
-    assert recomputed in message, "the RECOMPUTED mirror digest must be named too"
-
-
-def test_a_pin_that_moved_without_regenerating_is_refused(tmp_path):
-    """The record and the revision must agree in BOTH directions, so the PIN is perturbed here.
-
-    Handing the guard the revision the inventory names is worth nothing if a named revision whose
-    bytes no longer match goes unseen. That is the real editing mistake: a skill is committed under
-    the pinned library and the inventory is not regenerated, so the pin moves and the record does
-    not. The perturbation is applied to the materialised pin, and the shipped inventory is only read.
-    """
-    source_root = _named_revision_or_skip(tmp_path)
-    row = next(
-        entry
-        for entry in json.loads(INVENTORY.read_text(encoding="utf-8"))["skills"]
-        if "canonical" in entry
-    )
-    recorded = row["canonical"]["sha256"]
-    victim = source_root / row["canonical"]["path"] / "SKILL.md"
-    victim.write_bytes(victim.read_bytes() + b"\n")
-
-    with pytest.raises(team_setup.SetupError) as refused:
-        _inventory_guard(INVENTORY, source_root)
-
-    message = str(refused.value)
-    recomputed = hashlib.sha256(victim.read_bytes()).hexdigest()
-    assert row["name"] in message, "the skill whose file moved must be named"
-    assert recorded in message, "the RECORDED digest must be named"
-    assert recomputed in message, "the RECOMPUTED digest must be named too"
-
-
-def test_publish_skills_reads_the_revision_the_inventory_names(tmp_path, capsys):
-    """The publish reads the named revision, and refuses a pin that moved without a regeneration.
-
-    The library that ships must be the library the record describes, so this is the same read the
-    guard digests and not whatever checkout happens to be on the machine. A dry run prints the plan
-    and calls nothing, so this exercises the publish path itself without a server or a token.
-    """
-    source_root = _named_revision_or_skip(tmp_path)
-    inventory = team_setup.load_skill_inventory(INVENTORY)
-    argv = [
-        "publish-skills",
-        "--dry-run",
-        "--inventory",
-        str(INVENTORY),
-        "--source-root",
-        str(source_root),
-    ]
-
-    assert team_setup.main(argv) == 0
-    assert f"publish-skills {inventory['count']} skill block(s)" in capsys.readouterr().out
-
-    row = next(entry for entry in inventory["skills"] if "canonical" in entry)
-    victim = source_root / row["canonical"]["path"] / "SKILL.md"
-    victim.write_bytes(victim.read_bytes() + b"\n")
-
-    assert team_setup.main(argv) != 0, "a pin that moved without regenerating must refuse"
-    printed = capsys.readouterr()
-    assert row["name"] in printed.out + printed.err, "the refusal must name the skill"
+# WHAT IS NOT HERE, so it is not quietly missing: the case that materialised the revision
+# `generated_from` names and digested each recorded `sha256` against it. That rule is the live Go
+# `team publish-skills` verb's, so the case is port row 25 in
+# DISPOSITION-retired-python-client-tests-2026-10-10.md and belongs on that verb, driven through it,
+# rather than re-implemented here. The curation case below is a different invariant, and it needs no
+# checkout at all: it reads only the inventory.
 
 
 def _curation_gaps(inventory: dict) -> list:
@@ -906,7 +287,7 @@ def test_the_inventory_curation_accounts_for_every_skill():
     No checkout is needed - the inventory documents its own curation - so this case runs wherever
     the suite runs, including on a machine that has never cloned OpenRig.
     """
-    inventory = team_setup.load_skill_inventory(INVENTORY)
+    inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
 
     gaps = _curation_gaps(inventory)
 
