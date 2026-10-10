@@ -71,6 +71,12 @@ var declaredStreamSchemaDivergences = []declaredDivergence{
 	{"agent_sessions", "con", "ck_agent_sessions_seat_pair",
 		"con ck_agent_sessions_seat_pair | CHECK (((room_slug IS NULL) = (seat_key IS NULL)))",
 		"14210172", "the pair rule, stated to the database"},
+	{"agent_sessions", "col", "client_cursor",
+		"col client_cursor | character varying | 512 | YES | None | 13",
+		"0e03b3f7", "the cursor commits with the batch it acknowledges, so a lost ack re-sends without a duplicate"},
+	{"agent_sessions", "col", "seat_state",
+		"col seat_state | character varying | 20 | YES | None | 14",
+		"0e03b3f7", "the session row carries the state the client last reported, and keeps it when a frame reports none"},
 }
 
 // commitExists reports whether this repository has the commit a declaration names, by git cat-file -e.
