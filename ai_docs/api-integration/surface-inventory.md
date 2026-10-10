@@ -545,12 +545,12 @@ auth `users` table and would mis-order DDL). They are therefore **not** created 
 
 | Table | Model | Declaration |
 |---|---|---|
-| `agent_import_history` | `AgentImportHistory` | `models_prod.go:97` |
-| `applied_migrations` | `AppliedMigration` | `models_prod.go:118` |
-| `token_transactions` | `TokenTransaction` | `models_prod.go:135` |
-| `user_agent_configurations_md` | `UserAgentConfigurationMd` | `models_prod.go:162` |
-| `user_api_tokens` | `UserAPIToken` | `models_prod.go:182` |
-| `user_sessions` | `UserSession` | `models_prod.go:217` |
+| `agent_import_history` | `AgentImportHistory` | `models_prod.go:105` |
+| `applied_migrations` | `AppliedMigration` | `models_prod.go:126` |
+| `token_transactions` | `TokenTransaction` | `models_prod.go:143` |
+| `user_agent_configurations_md` | `UserAgentConfigurationMd` | `models_prod.go:170` |
+| `user_api_tokens` | `UserAPIToken` | `models_prod.go:190` |
+| `user_sessions` | `UserSession` | `models_prod.go:225` |
 
 ### 3.5 Totals
 
