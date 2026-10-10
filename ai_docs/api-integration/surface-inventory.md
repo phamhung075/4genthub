@@ -23,7 +23,7 @@ so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/proje
 **Resolve them with the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen` follows each `RegisterRoutes` call into the package that owns it and prints `<n> routes, <n> tools`; pass `-out /tmp/apiref.ts` to read the resolved list without writing the frontend artefact. At `db9d2bc3` it emitted **143 routes, 10 tools**, independently matching this section's count and resolving the function-scoped bases above (e.g. `/api/v2/tasks/{id}/events`). Writing a regex for this is how a reader reinvents the bug this paragraph describes — three such attempts on 2026-10-08 produced junk path keys while reporting plausible counts.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **143** (httpapp 123, auth 20), re-run at `db9d2bc3`; the same command returned **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than the figure's 123; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **146** (httpapp 126, auth 20), re-run at `6cfd56ab`; the same command returned **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 ---
 
@@ -34,6 +34,10 @@ The commands used and the full registration dump are in the acceptance appendix.
 **The figures in this paragraph, and every headline count in this document, are re-derived by `scripts/COUNTS-AUDIT.py` — read-only, non-zero on any difference, safe to run in a gate. This is the pointer §3.5 refers to; it did not exist there until 2026-10-09, so that cross-reference was false when it was written.**
 
 **RE-MEASURED 2026-10-09 at `5f405350`, by the writer seat, with both instruments RE-RUN rather than quoted.** The route total is **143** and the MCP tool count is **10**, emitted by the generator itself: `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref-final.ts` -> `wrote /tmp/apiref-final.ts: 143 routes, 10 tools` (the `-out` flag is what keeps the frontend artefact untouched while reading the resolved list). Independently, `python3 scripts/COUNTS-AUDIT.py` exits **0** with all eleven headline rows matching the tree and the document: `httpapp` route registrations **123**, `auth` registrations **20**, published MCP tools **10**, dispatch-only MCP names **2** (the document states no figure for that one), core tables **20** + auth **3** + seat **14** + team **2** = **39** registered tables, `ProductionTables` **6**, and **16** `CREATE TABLE` statements. **Two independent instruments agree, and every figure is UNCHANGED from the 2026-10-08 reading above: no count moved, only the date did** — which is what this re-run establishes and what a reader could not assume, since a count nobody has re-run is not a fact. The command and the commit are half of the count, so both are stated here rather than the number alone.
+
+**RE-MEASURED 2026-10-10 at `6cfd56ab` (writer seat, docs duty pass 6), BOTH INSTRUMENTS RE-RUN RATHER THAN QUOTED — and the reason they were re-run is that they had gone red.** `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref-check.ts` -> `wrote /tmp/apiref-check.ts: **146 routes, 10 tools**`; `python3 scripts/COUNTS-AUDIT.py` -> **exit 1**, on four rows: `httpapp` registrations **126**, seat tables **16**, registered tables **41**, SQL `CREATE TABLE` statements **18** — the figures this pass lands, where the paragraph above stood at 143 / 123 / 14 / 39 / 16. **The tool count is unchanged at 10**, and `auth` at 20. **WHAT MOVED, NAMED RATHER THAN COUNTED: three routes and two tables, from one feature that landed after the 2026-10-09 reading.** The routes are the seat-message family — `POST|GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages` and `POST .../messages/{id}/ack` (`seat_mount.go:228`, `:235`, `:238`, now §1.17) — and the tables are `seat_messages` (`seat_tables.go:377`, DDL `:306`) and `machine_edges` (`seat_tables.go:316`, DDL `:371`), now §3.3. **NOTHING WAS REMOVED: zero documented routes are unmounted at this commit, so the direction of this drift is UNDER-COUNTING rather than a false claim** — a reader who consults this inventory and does not find the seat-message family concludes the family does not exist, which is why an under-count is worth a pass rather than a note. **And a count is only evidence with its instrument attached:** the same two commands here, the commit above, and the three named routes are the whole basis of the numbers in the paragraph.
+
+**RE-RESOLVED 2026-10-10 at `6cfd56ab` (writer seat, docs duty pass 6) — and this pass found what the previous one did not, because a feature landed in files §1.6 and §1.17 cite.** `python3 ~/.openrig/agenthub-seats/4genthub-min/CITATION-AUDIT.py` (checking mode) reported **`rows 143  stale 81  unresolved 0`**: no row pointed at a file that had stopped carrying its method+route — so no row is a false claim about the tree — and **81 line numbers had drifted**, which is exactly the pointer-rot the method above predicts, and the reason the check is a command rather than a habit. **The rewrite was then run OUTSIDE any gate, as that tool's own header requires:** a check that repairs what it measures reports clean BY CONSTRUCTION and can never fail, so a gate runs the checking mode and the rewrite is a deliberate act, run here after reading the report. **Re-read in checking mode afterwards: `rows 146  stale 0  unresolved 0`** — 146 rather than 143 because this pass's three seat-message rows (§1.17) are inside that count. **Those three rows were written with their registration lines taken from the source rather than from the rewriter**, so the check that follows is a measurement of the rewrite and not its echo.
 
 Where a handler is an inline closure wrapping a `routes.*` function, the handler column
 names the function that actually performs the work; the registration line is the mount.
@@ -51,13 +55,13 @@ Both forms point at the same kind of thing — the line that registers the route
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:122` |
-| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:146` |
-| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:159` |
-| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:167` |
-| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:175` |
-| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:196` |
-| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:204` |
+| GET | `/health` | `handleHealth` | `fastmcp/server/httpapp/app.go:123` |
+| POST | `/api/v2/projects/` | `routes.CreateProject` | `fastmcp/server/httpapp/app.go:147` |
+| GET | `/api/v2/projects/` | `routes.ListProjects` | `fastmcp/server/httpapp/app.go:160` |
+| GET | `/api/v2/projects/{id}` | `routes.GetProject` | `fastmcp/server/httpapp/app.go:168` |
+| PUT | `/api/v2/projects/{id}` | `routes.UpdateProject` | `fastmcp/server/httpapp/app.go:176` |
+| DELETE | `/api/v2/projects/{id}` | `routes.DeleteProject` | `fastmcp/server/httpapp/app.go:197` |
+| POST | `/api/v2/projects/{id}/health-check` | `routes.ProjectHealthCheck` | `fastmcp/server/httpapp/app.go:205` |
 
 **The project-creation contract, STATED rather than implied — `POST /api/v2/projects/` (the trailing slash is part of the route) accepts `application/x-www-form-urlencoded` ONLY.** `app.go:146` registers it and `:151` parses the body with `_ = r.ParseForm()`, then refuses a body with no `name` through the shared `missingForm(r, "name")` helper (`:152`; it validates presence via `r.PostForm.Has`, `http.go:132`, and the `422` is `writeMissing`, `http.go:124`), and only then reads the VALUE with `r.PostForm.Get("name")` / `Get("description")` at `:156`: **CITATIONS RE-RESOLVED 2026-10-09 — this clause read `:135`/`:137-144`, the same region eleven lines above; and the mechanism it named (the value read) is one half of the handler while the check that produces the `422` is the other, so the clause now states both.** **`name` is required and `description` is optional**, and neither a JSON body nor a multipart body is read at all. **A JSON or multipart request is therefore refused with the SAME `422` that reports `body.name` missing**, because `ParseForm` reads neither encoding — so the refusal names a **MISSING FIELD** rather than the **ENCODING**, which is why two independent callers concluded they had a payload problem when they had a content-type problem. The application itself sends exactly this shape (`agenthub-frontend/src/services/apiV2.ts:475` posts `name`/`description` with `Content-Type: application/x-www-form-urlencoded`, and its flow measures **200** end to end), so **the route is not wrong — it was merely unstated.** **THE REUSABLE HALF: A REFUSAL THAT NAMES THE WRONG CAUSE COSTS A CALLER THE SAME TIME AS A SILENT FAILURE** — the same family as the reason text that never reached the chip, the preview read that looked truncated, and the grep that looked absent from the wrong field; and this is that family's **cheapest instance to fix, because the fix is a documented contract rather than a change to the refusal.**
 
@@ -137,111 +141,111 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v2/connections/health` | `routes.HealthCheck` | `routes_mount.go:85` |
-| GET | `/api/v2/connections/status` | `routes.ConnectionStatus` | `routes_mount.go:88` |
+| GET | `/api/v2/connections/health` | `routes.HealthCheck` | `routes_mount.go:86` |
+| GET | `/api/v2/connections/status` | `routes.ConnectionStatus` | `routes_mount.go:89` |
 
 ### 1.10 Alerts — base `/api/v1/alerts` (`routes_mount.go:97`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v1/alerts/rules` | `routes.ListAlertRules` | `routes_mount.go:99` |
-| POST | `/api/v1/alerts/rules` | `routes.CreateAlertRule` | `routes_mount.go:102` |
-| PUT | `/api/v1/alerts/rules/{rule_id}` | `routes.UpdateAlertRule` | `routes_mount.go:110` |
-| DELETE | `/api/v1/alerts/rules/{rule_id}` | `routes.DeleteAlertRule` | `routes_mount.go:118` |
-| GET | `/api/v1/alerts/events` | `routes.ListAlertEvents` | `routes_mount.go:122` |
-| POST | `/api/v1/alerts/events/{event_index}/acknowledge` | `routes.AcknowledgeAlert` | `routes_mount.go:125` |
-| POST | `/api/v1/alerts/check-rules` | `routes.CheckAlertRules` | `routes_mount.go:134` |
-| POST | `/api/v1/alerts/test-webhook` | `routes.TestWebhook` | `routes_mount.go:137` |
+| GET | `/api/v1/alerts/rules` | `routes.ListAlertRules` | `routes_mount.go:100` |
+| POST | `/api/v1/alerts/rules` | `routes.CreateAlertRule` | `routes_mount.go:103` |
+| PUT | `/api/v1/alerts/rules/{rule_id}` | `routes.UpdateAlertRule` | `routes_mount.go:111` |
+| DELETE | `/api/v1/alerts/rules/{rule_id}` | `routes.DeleteAlertRule` | `routes_mount.go:119` |
+| GET | `/api/v1/alerts/events` | `routes.ListAlertEvents` | `routes_mount.go:123` |
+| POST | `/api/v1/alerts/events/{event_index}/acknowledge` | `routes.AcknowledgeAlert` | `routes_mount.go:126` |
+| POST | `/api/v1/alerts/check-rules` | `routes.CheckAlertRules` | `routes_mount.go:135` |
+| POST | `/api/v1/alerts/test-webhook` | `routes.TestWebhook` | `routes_mount.go:138` |
 
 ### 1.11 Performance — base `/api/v1/performance` (`routes_mount.go:150`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v1/performance/metrics/overview` | `routes.GetPerformanceOverview` | `routes_mount.go:151` |
-| GET | `/api/v1/performance/metrics/timeseries` | `routes.GetPerformanceTimeseries` | `routes_mount.go:155` |
-| GET | `/api/v1/performance/metrics/alerts` | `routes.GetPerformanceAlerts` | `routes_mount.go:159` |
-| POST | `/api/v1/performance/metrics/clear-cache` | `routes.ClearPerformanceCache` | `routes_mount.go:163` |
+| GET | `/api/v1/performance/metrics/overview` | `routes.GetPerformanceOverview` | `routes_mount.go:152` |
+| GET | `/api/v1/performance/metrics/timeseries` | `routes.GetPerformanceTimeseries` | `routes_mount.go:156` |
+| GET | `/api/v1/performance/metrics/alerts` | `routes.GetPerformanceAlerts` | `routes_mount.go:160` |
+| POST | `/api/v1/performance/metrics/clear-cache` | `routes.ClearPerformanceCache` | `routes_mount.go:164` |
 
 ### 1.12 Broadcast
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:172` |
+| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:175` |
 
 ### 1.13 Contexts — base `/api/v2/contexts` (`routes_mount.go:211`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:213` |
-| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:231` |
-| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:236` |
-| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:249` |
-| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:253` |
-| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:257` |
-| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:270` |
-| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:284` |
-| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:293` |
-| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:297` |
+| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:216` |
+| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:234` |
+| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:239` |
+| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:252` |
+| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:256` |
+| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:260` |
+| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:273` |
+| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:287` |
+| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:296` |
+| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:300` |
 
 ### 1.14 Tokens — base `/api/v2/tokens` (`routes_mount.go:310`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:320` |
-| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:321` |
-| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:322` |
-| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:328` |
-| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:329` |
-| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:330` |
-| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:331` |
-| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:335` |
-| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:339` |
-| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:343` |
-| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:347` |
-| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:351` |
-| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:355` |
-| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:363` |
+| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:323` |
+| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:324` |
+| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:325` |
+| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:331` |
+| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:332` |
+| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:333` |
+| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:334` |
+| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:338` |
+| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:342` |
+| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:346` |
+| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:350` |
+| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:354` |
+| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:358` |
+| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:366` |
 
 ### 1.15 Summary / remaining task routes (`routes_mount.go:389`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:391` |
-| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:406` |
-| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:412` |
-| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:421` |
-| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:424` |
+| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:394` |
+| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:409` |
+| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:415` |
+| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:424` |
+| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:427` |
 
 ### 1.16 OpenRig seat management — admin (`seat_admin_mount.go`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:292` |
-| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:295` |
-| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:298` |
-| PUT | `/api/v2/openrig/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:301` |
-| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:304` |
-| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:307` |
-| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:310` |
-| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:313` |
-| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:316` |
-| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:319` |
-| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:322` |
-| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:325` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:328` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:331` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:334` |
-| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:337` |
-| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:340` |
-| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:343` |
-| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:346` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:349` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:352` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:355` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:358` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:361` |
-| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:364` |
-| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:367` |
+| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:312` |
+| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:315` |
+| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:318` |
+| PUT | `/api/v2/openrig/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:321` |
+| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:324` |
+| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:327` |
+| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:330` |
+| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:333` |
+| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:336` |
+| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:339` |
+| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:342` |
+| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:345` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:348` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:351` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:354` |
+| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:357` |
+| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:360` |
+| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:363` |
+| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:366` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:369` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:372` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:375` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:378` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:381` |
+| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:384` |
+| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:387` |
 
 **Update 2026-10-06 (D5 sharing).** `PUT /api/v2/openrig/rooms/{room}/team` (`handleSetRoomTeam`) is new — it is the route that shares one room, read-only, with one team's members, or makes it private again — and **every Registration line in this section was refreshed from the source in the same pass**, because that insertion shifted them all; all 26 rows were then re-checked one by one against the registrations they cite.
 
@@ -254,13 +258,16 @@ audit wrapper), except `handleCreateRoom`/`handleListRooms` and the GETs.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:184` |
-| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:187` |
+| GET | `/api/v2/openrig/seats/{room}/{seat}` | `handleResolveSeat` | `seat_mount.go:218` |
+| POST | `/api/v2/openrig/rooms/{room}/seats/{seat}/messages` | `handleSendSeatMessage` | `seat_mount.go:228` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/messages` | `handlePullSeatMessages` (`machineAuthed`) | `seat_mount.go:235` |
+| POST | `/api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack` | `handleAckSeatMessage` (`machineAuthed`) | `seat_mount.go:238` |
+| POST | `/api/v2/openrig/seat-types/seed` | `handleSeedSeatTypes` | `seat_mount.go:241` |
 | GET | `/api/v2/openrig/rooms/{room}/rigspec` | `handleRoomRigSpec` | `seat_rigspec_mount.go:105` |
 | POST | `/api/v2/openrig/machines` | `handleRegisterMachine` | `machine_token_mount.go:41` |
 | DELETE | `/api/v2/openrig/machines/{machine}/token` | `handleRevokeMachineToken` | `machine_token_mount.go:44` |
-| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:95` |
-| GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:98` |
+| POST | `/api/v2/openrig/seat-status` | `handlePostSeatStatus` (`machineAuthed`) | `seat_status_mount.go:113` |
+| GET | `/api/v2/openrig/machines` | `handleListMachines` | `seat_status_mount.go:116` |
 
 **DRIFT FOUND AND REPAIRED 2026-10-08 (same pass as §1.3).** *Both rows in this section cited a line no longer in the file (`seat-status` 91->95, `machines` 94->98).* **The control: both moved by EXACTLY +4 — four lines were added above them in one change, so the drift is one insertion rather than two coincidences.**
 
@@ -487,12 +494,12 @@ it in `init()`; `ProductionTables` is deliberately separate.
 
 ### 3.3 Seat-management and team tables — appended to `Tables` via `init()`
 
-Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **14 entries**, `seat_tables.go:16`) and
-`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:357`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:362`). **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **16** tables are declared as DDL in
-`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 14 seat tables plus the 2 team tables** (note for a reader counting
-statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **17** because the file's header
-COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **16**, one per table, and no
-table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list.
+Declared in `fastmcp/seat_management/infrastructure/database/seat_tables.go` (`seatDatabaseTables`, **16 entries**, `seat_tables.go:16`) and
+`team_tables.go` (`teamManagementDatabaseTables`, **2 entries**, `team_tables.go:24`). **The two are composed and registered in ONE place** — `seatManagementDatabaseTables` (`seat_tables.go:357`, `append([]taskdb.TableDef{}, teamManagementDatabaseTables...)` then `seatDatabaseTables...`) and the package's `init()` (`seat_tables.go:362`). **`team_tables.go` contains no `init()` and does not append; an earlier version of this section cited an append at `team_tables.go:56`, which does not exist.** The same **18** tables are declared as DDL in
+`fastmcp/seat_management/infrastructure/schema/seat_management_postgresql.sql`: **the 16 seat tables plus the 2 team tables** (note for a reader counting
+statements: `grep -c 'CREATE TABLE IF NOT EXISTS'` returns **19** because the file's header
+COMMENT at line 6 contains that phrase; `grep -cE '^CREATE TABLE IF NOT EXISTS'` -> **18**, one per table, and no
+table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feedback` LANDED** — the 15/16 pair that stood here was the 15-table state, and the one-table difference is precisely the table this section did not list. **THEY MOVED AGAIN AT PASS 6 (2026-10-10), by TWO AND NOT BY ONE: `seat_messages` (`seat_tables.go:377`, DDL `:306`) and `machine_edges` (`seat_tables.go:316`, DDL `:371`) are what the two entries and the two statements are** — the pair counts 16/18/19, and the note above is why the unanchored `grep -c` reads one higher than the anchored form rather than equal to it.
 
 | Table | Model | Declaration (Go) | SQL |
 |---|---|---|---|
@@ -510,8 +517,10 @@ table is declared twice). **BOTH FIGURES IN THIS PARAGRAPH MOVED WHEN `seat_feed
 | `seat_settings` | `SeatSettingsORM` | `seat_tables.go:241` | `:263` |
 | `seat_feedback` | `SeatFeedbackORM` | `seat_tables.go:317` | `:278` |
 | `machines` | `MachineORM` | `seat_tables.go:253` | `:296` |
+| `seat_messages` | `SeatMessageORM` | `seat_tables.go:377` | `:306` |
 | `machine_tokens` | `MachineTokenORM` | `seat_tables.go:267` | `:308` |
 | `seat_status` | `SeatStatusORM` | `seat_tables.go:287` | `:323` |
+| `machine_edges` | `MachineEdgeORM` | `seat_tables.go:316` | `:371` |
 
 **`seat_feedback` IS THE ROW THIS DOCUMENT WAS MISSING (added 2026-10-06, pass 3).** It is registered (`seat_tables.go:317`), declared in the DDL (`:278`), and read by `NewORMSeatFeedbackRepository` over `seat_feedback` (`seat_management/infrastructure/repositories/orm/seat_feedback_repository.go:25`, `:47`); **`app.go:61-63` records that the boot needs the table registered, which is why it is in the composition rather than beside the routes.** **Its absence is what made §3.5's total one short and §3.3's SQL count one under the file's own `grep -cE`.**
 
@@ -533,7 +542,7 @@ auth `users` table and would mis-order DDL). They are therefore **not** created 
 
 ### 3.5 Totals
 
-- `database.Tables` at runtime: 20 (core) + 3 (auth) + **14** (seat) + 2 (team) = **39 tables** — **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).**
+- `database.Tables` at runtime: 20 (core) + 3 (auth) + **16** (seat) + 2 (team) = **41 tables** — **corrected from 38 on 2026-10-06 (pass 3): the inventory had never listed `seat_feedback`, which is the fourteenth seat table (§3.3).** **CORRECTED FROM 39 AT PASS 6 (2026-10-10): the seat block gained `seat_messages` and `machine_edges` (§3.3), so it is 16 and the total is 41 — two tables, not one.**
 - Plus `ProductionTables`: **6** tables declared but not registered for creation.
 - **Both totals, and every count in this document, are re-derived by `scripts/COUNTS-AUDIT.py` in this repository — read-only, non-zero on any difference, safe to run in a gate (§1 carries the same pointer). It was TRACKED on 2026-10-09; before that it lived outside the worktree, so the pointer here named a path a reader could not follow.**
 - Every table in §3.1–3.4 carries a `user_id` column except `applied_migrations`
