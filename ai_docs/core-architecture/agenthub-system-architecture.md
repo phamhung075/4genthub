@@ -476,7 +476,7 @@ Removed once the test is green: `createAll` as the creation path, the four patch
 
 ### D3. Remove the two task routes that can only fail; the statistic comes from the ledger
 
-**Context.** `GET /api/v2/tasks/stats/summary` and `GET /api/tasks/{task_id}` always returned 500: their adapter methods (`GetTaskStatistics`, `GetTaskWithRelations`) panicked with Python's AttributeError text, ported deliberately for parity (`MIGRATION.md:951`, `PROD_READINESS_REPORT.md:179`, which cover the stats route only). Neither route had a caller: the frontend mentioned them only in its API reference, and the task view loads through `GET /api/v2/tasks/{id}`. The parity reason expired with the archive of the Python backend, and the statistic the product needs is already planned as the O8 KPI panel over the ledger.
+**Context.** `GET /api/v2/tasks/stats/summary` and `GET /api/tasks/{task_id}` always returned 500: their adapter methods (`GetTaskStatistics`, `GetTaskWithRelations`) panicked with Python's AttributeError text, ported deliberately for parity (`agenthub_go/MIGRATION.md:951`, `agenthub_go/PROD_READINESS_REPORT.md:182`, which cover the stats route only). Neither route had a caller: the frontend mentioned them only in its API reference, and the task view loads through `GET /api/v2/tasks/{id}`. The parity reason expired with the archive of the Python backend, and the statistic the product needs is already planned as the O8 KPI panel over the ledger.
 
 **Options.** A. Keep parity, with the 500s documented: two advertised routes that can never answer, legacy code for a server that no longer runs. B. Build a per-status count statistic now: a response shape nobody specified, no caller, and a second source of task numbers before O8 builds the first. C. Remove both routes and both panicking methods.
 
@@ -484,7 +484,7 @@ Removed once the test is green: `createAll` as the creation path, the four patch
 
 **Shape.** Behaviour-changing for two routes (500 becomes 404), no data model change. Removed in one commit: the two `HandleFunc` registrations, `routes.GetUserTaskStats` and `routes.GetFullTask` with their interface methods, the adapters behind them, `TaskSearchHandler.GetTaskStatistics` and `.GetFullTask`, both methods on `TaskHandlerFacade` and its implementation, and the test fakes; leftovers found by the compiler. Inventory rows updated; the frontend API reference loses its two entries (separate frontend commit). One test caveat measured at implementation: the stats path sits under the prefix route `GET /api/v2/tasks/`, which answers 403 before auth in Go's `ServeMux`, so a 404 can never be observed there and the evidence for that half is the build plus a grep, with the reason written in the test. Must not touch: `GET /api/v2/tasks/{id}`, `GET /api/tasks/{task_id}/context/summary`, `/api/tasks/summaries`.
 
-**Status: executed** in `e6829b32`. At `db9d2bc3` `grep -rq "stats/summary"` over the Go server sources exits 1. Open follow-up: the frontend `apiReference.ts` entries (fe-dev).
+**Status: executed** in `e6829b32`. At `db9d2bc3` `grep -rq "stats/summary"` over the Go server sources exits 1. The follow-up that stood open here — the frontend `apiReference.ts` entries — was closed in `d624780f` ("fix(apiref): the reference no longer carries the two removed always-500 task routes"): at HEAD `grep -Fc '"/api/tasks/{task_id}"' agenthub-frontend/src/docs/apiReference.ts` -> **0** and `grep -Fc 'stats/summary'` -> **0**.
 
 ### D4. `openrig_seat_client.py` retires into `agenthub-client sync`, verb by verb; no fold
 

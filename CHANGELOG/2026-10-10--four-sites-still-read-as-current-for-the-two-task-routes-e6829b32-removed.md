@@ -1,0 +1,16 @@
+## Four sites stop reading as current for the two task routes `e6829b32` removed
+
+### Changed
+- `ai_docs/core-architecture/agenthub-system-architecture.md:487` (D3): the clause "Open follow-up: the frontend `apiReference.ts` entries (fe-dev)" is CLOSED, not open — `d624780f` ("fix(apiref): the reference no longer carries the two removed always-500 task routes") removed them, and the document's own instrument agrees at HEAD: `grep -Fc '"/api/tasks/{task_id}"' agenthub-frontend/src/docs/apiReference.ts` -> **0**, `grep -Fc 'stats/summary'` -> **0**.
+- `ai_docs/core-architecture/agenthub-system-architecture.md:479`: the citation resolved to the wrong line and to an ambiguous filename. `PROD_READINESS_REPORT.md:179` is the **B5 Dockerfile** row; the sentence that supports :479 is `agenthub_go/PROD_READINESS_REPORT.md:182`. Both citations in that parenthetical now carry their directory, because a sibling `agenthub_go/PROD_READINESS_BRIEF.md` sits beside the report (`ls agenthub_go/*.md` -> FIX_PLAN_BRIEF, MIGRATION, NEXT_GEN, PROD_READINESS_BRIEF, PROD_READINESS_REPORT, TEAM_SPLIT).
+- `agenthub_go/PROD_READINESS_REPORT.md:182`: one dated clause in this file's own `CORRECTED` style, naming `e6829b32`: the stats route no longer exists in Go, so "Go matches both" now covers the `PUT {id}` requires-`task_id` half alone, and the `Open parity questions` bullet in section 1 that this line resolves is moot. The clause names both readings because the question (:36) and the resolution (:182) are read separately.
+- `agenthub_go/MIGRATION.md:951`: the slice-3 DONE row's route list now marks `GET stats/summary` as **removed (e6829b32 removed the two task routes that could only answer 500)** — the map's own marker shape (59 existing `removed` markers, first used in `6dcf170e` for the twenty-nine Go files the map still called done).
+
+### Verified
+- **The removal witness, read from the commits rather than from the sentence handed to me:** `git show --stat e6829b32` -> "refactor(tasks): remove the two task routes that could only answer 500", 16 files, 69 insertions, 210 deletions; `git show --stat d624780f` -> 16 lines out of `agenthub-frontend/src/docs/apiReference.ts` plus 5 in `agenthub-frontend/CHANGELOG.md`.
+- **The citation fault, verified by content and not by line number:** `sed -n '177,184p' agenthub_go/PROD_READINESS_REPORT.md` prints the B3 CORS row, B4 MCP surface, **B5 Dockerfile**, B6 schema safety, then the stats sentence — so 179 is the Dockerfile row and 182 is the line :479 needs.
+- **`python3 scripts/COUNTS-AUDIT.py` exits 0 with all eleven rows matching** after the edits (httpapp 126, auth 20, MCP tools 10, dispatch-only 2, core 20, auth tables 3, seat 16, team 2, registered total 41, ProductionTables 6, SQL CREATE TABLE 18).
+- **No test asserts the text of these three documents:** a grep over `*.go`, `*.py`, `*.ts`, `*.yml` finds only two Go COMMENTS that cite the architecture doc, and none that read `MIGRATION.md` or the readiness report.
+
+### Found by
+- Lead-filed post-push queue row `qitem-20261010085904-d0acc01cac14c529`, parked HELD on `external:the-owner-push-to-origin` and unparked when that gate fired: `origin/main` became `7c7edf48`, "chore(release): the deploy marker moves to 0.0.31, as the last commit of the gated batch".
