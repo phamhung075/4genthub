@@ -6,7 +6,7 @@ Suites:
 - Frontend: from agenthub-frontend, npx vitest run, npx tsc --noEmit -p ., npx vite build.
 
 Known pre-existing failures (do not report them as regressions):
-- npx tsc --noEmit reports **0** errors on the untouched tree (**23-error baseline removed 2026-10-03**), so **ANY `error TS` line is a regression, not a pre-existing failure.**
+- npx tsc --noEmit prints no `error TS` line on the untouched tree, so **ANY `error TS` line is a regression, not a pre-existing failure.**
 - The GitHub pipeline test job fails at dependency install and has not been fixed.
 
 When a test disagrees with the domain entities or ORM, change the test, not the code.
