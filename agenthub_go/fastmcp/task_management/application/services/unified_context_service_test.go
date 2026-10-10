@@ -94,6 +94,49 @@ func TestZucsCreateGlobalContextNormalizesID(t *testing.T) {
 	}
 }
 
+// A note written through AddProgress must be FOUND BY THE ENTITY'S OWN LOAD PATH. The verb used to write
+// progress_updates at the top level of the context dict, and nothing in createContextEntity /
+// updateContextEntity reads that key - the entity reads its notes from implementation_notes - so the write
+// and the read never met. The same top-level list was also append-merged (it is not in replaceListFields),
+// which duplicated the entry on every call; inside implementation_notes the map merge replaces it wholesale.
+func TestZucsAddProgressLandsWhereTheEntityLoadsItsNotes(t *testing.T) {
+	ctx := context.Background()
+	global, project, branch, task := newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo(), newZucsFakeRepo()
+	user := "user-1"
+	s := NewUnifiedContextService(global, project, branch, task, nil, nil, nil, nil, &user)
+
+	data := zucsOM("branch_id", "branch-1")
+	created, _ := s.CreateContext(ctx, "task", "task-1", data, nil, nil, true)
+	if v, _ := created.Get("success"); v != true {
+		t.Fatalf("create failed: keys=%v", created.Keys())
+	}
+
+	for _, content := range []string{"first note", "second note"} {
+		res, _ := s.AddProgress(ctx, "task", "task-1", content, nil)
+		if v, _ := res.Get("success"); v != true {
+			t.Fatalf("AddProgress(%q) failed: keys=%v", content, res.Keys())
+		}
+	}
+
+	// Read back the entity the service itself built from the saved dict, not the response shape.
+	stored, _ := task.store["task-1"]
+	tc, ok := stored.(*entities.TaskContextUnified)
+	if !ok {
+		t.Fatalf("stored entity type %T", stored)
+	}
+	updates, _ := tc.ImplementationNotes["progress_updates"].([]any)
+	if len(updates) != 2 {
+		t.Fatalf("ImplementationNotes[progress_updates]=%#v, want exactly the two notes with no duplicates",
+			tc.ImplementationNotes["progress_updates"])
+	}
+	for i, want := range []string{"first note", "second note"} {
+		entry := zpUCSMap(updates[i])
+		if entry["content"] != want {
+			t.Fatalf("entry %d content=%v want %q", i, entry["content"], want)
+		}
+	}
+}
+
 func TestZucsGetContextAndNotFound(t *testing.T) {
 	s, global, _ := newZucsService(t)
 	ctx := context.Background()

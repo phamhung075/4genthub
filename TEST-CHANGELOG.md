@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the progress note is read back through the entity's own load
+
+- ADDED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_test.go`: `TestZucsAddProgressLandsWhereTheEntityLoadsItsNotes` writes two notes through `UnifiedContextService.AddProgress` and asserts them in `TaskContextUnified.ImplementationNotes["progress_updates"]` on the entity the service built from the saved dict — the read-back the location change is about.
+- RED BEFORE, by construction: with the service edit stashed and the test left in place, the same test fails at `ImplementationNotes[progress_updates]=<nil>` — the top-level key the verb used to write is read by nothing.
+- VERIFIED: `gofmt` clean; `go vet ./fastmcp/task_management/application/services/` clean; the package ok; module-wide `go test ./... -count=1` green.
+
 ## 2026-10-10 - the no-op `add_progress` and its preserved-bug tests are deleted
 
 - REMOVED `agenthub_go/fastmcp/task_management/application/use_cases/small_use_cases_draft_test.go`: the two cases `TestSmallUCAddContextProgressMissingContext` and `TestSmallUCAddContextProgressKeepsAttributeBug`, with their section comment. They pinned a deliberate no-op's reproduced Python bug — the kind of test the mission says to delete rather than preserve, since it asserts a quirk and not a behaviour the product wants.

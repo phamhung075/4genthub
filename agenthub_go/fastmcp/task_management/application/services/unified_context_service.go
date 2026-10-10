@@ -563,7 +563,12 @@ func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextI
 	}
 	contextVal, _ := contextResult.Get("context")
 	contextOM := zpUCSAsOrdered(contextVal)
-	progressUpdates := zpUCSList(contextOM, "progress_updates")
+	// The entity's load (createContextEntity / updateContextEntity) reads its notes from the top-level
+	// implementation_notes key, so a note written anywhere else is a write no reader can find. Inside that
+	// map the merge replaces progress_updates wholesale; at the top level it would append-merge and
+	// duplicate the entry on every call.
+	implementationNotes := zpUCSAsOrdered(zpUCSGetOr(contextOM, "implementation_notes", nil))
+	progressUpdates := zpUCSList(implementationNotes, "progress_updates")
 	progress := entities.NewOrderedMap[any]()
 	progress.Set("content", content)
 	if agent != nil {
@@ -573,8 +578,9 @@ func (s *UnifiedContextService) AddProgress(ctx context.Context, level, contextI
 	}
 	progress.Set("timestamp", value_objects.IsoFormat(time.Now().UTC()))
 	progressUpdates = append(progressUpdates, progress)
+	implementationNotes.Set("progress_updates", progressUpdates)
 	update := entities.NewOrderedMap[any]()
-	update.Set("progress_updates", progressUpdates)
+	update.Set("implementation_notes", implementationNotes)
 	return s.UpdateContext(ctx, level, contextID, update, true, nil)
 }
 
