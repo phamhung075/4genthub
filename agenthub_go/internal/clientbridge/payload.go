@@ -43,7 +43,7 @@ type SeatStatus struct {
 	Seat     string `json:"seat"`
 	State    string `json:"state"`
 	Runtime  string `json:"runtime"`
-	Hash     string `json:"hash"`
+	Hash     string `json:"pinned_hash"`
 	Detail   string `json:"detail"`
 	Redacted bool   `json:"redacted"`
 }

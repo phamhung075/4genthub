@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the parity fixture that could not fail now can
+
+- `agenthub_go/internal/clientbridge/testdata/python_dump.json`: the **36** seat keys renamed `hash` -> `pinned_hash`, matching the Python report the fixture was captured from (`agenthub_client/.../bridge.py:269`). The fixture's own comment warns it is captured rather than hand-written; this is a **RE-KEY of a stale name, not a new capture**, and it is the change that makes the parity case discriminating.
+- `agenthub_go/internal/clientbridge/payload.go`: the `SeatStatus` wire tag follows in the same change, so the Go payload sends `pinned_hash`. The local `pinned.json` read keeps `"hash"`, because Python reads `"hash"` from that file too.
+- **SEEN RED FIRST, AND THE RED WAS THE REAL DEFECT RATHER THAN A SYNTHETIC PERTURBATION:** with the fixture re-keyed and the tag still stale, `TestPayloadParityWithThePythonBridge` failed on the one pinned seat - `go Hash:a1a1a1…` against `python Hash:`; with the tag renamed it is ok. Before this change the fixture and the tag agreed on the WRONG name, which is why 36 occurrences sat there green.
+- **Both directions against the real seat-status mount, as a throwaway case that is not in the tree:** a body carrying `pinned_hash` -> **200**, the same body with the old name -> **400 `{"detail":"json: unknown field \"hash\""}`**. The production POST is deliberately not run: it changes production seat state, so it is proposed to the owner instead.
+
 ## 2026-10-10 - the unauthenticated notify ingress gets the case that fails on the old route
 
 - `agenthub_go/fastmcp/server/httpapp/broadcast_notify_auth_test.go` (new): `TestBroadcastNotifyIsMachineAuthedAndIgnoresBodyUser` mounts the real broadcast routes and asserts the three auth outcomes - no `Authorization` header **403**, unknown machine token **401**, valid machine token **200** - and that the broadcast is invoked with the **token's** user while the body names a different one. It fails on the old handler by construction: a bare `mux.HandleFunc` with no wrapper answered the unauthenticated request and passed the body's `user_id` straight through. The token fixture is the existing `fakeMachineTokens` seam, so no new fake was added for it.

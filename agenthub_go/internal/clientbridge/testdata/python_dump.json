@@ -7,7 +7,7 @@
       "seat": "supervisor",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -16,7 +16,7 @@
       "seat": "owner",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -25,7 +25,7 @@
       "seat": "check",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -34,7 +34,7 @@
       "seat": "lead",
       "state": "running",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -43,7 +43,7 @@
       "seat": "go-dev",
       "state": "unknown",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -52,7 +52,7 @@
       "seat": "reviewer",
       "state": "unknown",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -61,7 +61,7 @@
       "seat": "fe-dev",
       "state": "running",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -70,7 +70,7 @@
       "seat": "web-dev",
       "state": "running",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -79,7 +79,7 @@
       "seat": "writer",
       "state": "running",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -88,7 +88,7 @@
       "seat": "go-dev2",
       "state": "running",
       "runtime": "omp",
-      "hash": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+      "pinned_hash": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
       "detail": "",
       "redacted": false
     },
@@ -97,7 +97,7 @@
       "seat": "skills-dev",
       "state": "unknown",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -106,7 +106,7 @@
       "seat": "context-dev",
       "state": "unknown",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -115,7 +115,7 @@
       "seat": "feedback-dev",
       "state": "unknown",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -124,7 +124,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -133,7 +133,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "no_runtime_hook",
       "redacted": false
     },
@@ -142,7 +142,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -151,7 +151,7 @@
       "seat": "beta",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -160,7 +160,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "no_runtime_hook",
       "redacted": false
     },
@@ -169,7 +169,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "no_runtime_hook",
       "redacted": false
     },
@@ -178,7 +178,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -187,7 +187,7 @@
       "seat": "beta",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -196,7 +196,7 @@
       "seat": "owner",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -205,7 +205,7 @@
       "seat": "check",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -214,7 +214,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -223,7 +223,7 @@
       "seat": "lead",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -232,7 +232,7 @@
       "seat": "agent",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -241,7 +241,7 @@
       "seat": "human",
       "state": "stopped",
       "runtime": "terminal",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -250,7 +250,7 @@
       "seat": "worker",
       "state": "stopped",
       "runtime": "claude-code",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -259,7 +259,7 @@
       "seat": "lead",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -268,7 +268,7 @@
       "seat": "agent",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -277,7 +277,7 @@
       "seat": "human",
       "state": "stopped",
       "runtime": "terminal",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -286,7 +286,7 @@
       "seat": "worker",
       "state": "stopped",
       "runtime": "agy",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -295,7 +295,7 @@
       "seat": "alpha",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -304,7 +304,7 @@
       "seat": "beta",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -313,7 +313,7 @@
       "seat": "blankmodel",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     },
@@ -322,7 +322,7 @@
       "seat": "gamma",
       "state": "stopped",
       "runtime": "omp",
-      "hash": "",
+      "pinned_hash": "",
       "detail": "",
       "redacted": false
     }
