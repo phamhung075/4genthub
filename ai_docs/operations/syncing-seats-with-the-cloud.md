@@ -69,7 +69,7 @@ failed, 4 `status` found a seat behind or not pulled.
   pathspec commit with no pre-stage). `4genthub-min/lead` resolved to the same snapshot hash on
   2026-10-08 21:23Z and on 2026-10-10, which rules out a stale cache but not a publish that landed
   **unreferenced**, because an unreferenced version changes nothing a seat sees; the one command that
-  separates the two is `GET /api/v2/openrig/modules/{slug}/versions`. **No corrected body had reached a
+  separates the two is `GET /api/v2/openrig/modules` (latest per module, with `sha256`) or `GET /api/v2/openrig/modules/{slug}/versions/{version}`. **No corrected body had reached a
   seat in the two days before 2026-10-10.** The corrections are committed in the repo (`0ea06c77`,
   `1f0b177a`, `d1114170`) and publishing them is the principal's token, not a seat's; a corrected body
   must also go out as a NEW version and the refs must name it, because a module version is immutable
