@@ -368,6 +368,42 @@ var seatDatabaseTables = []taskdb.TableDef{
 			")",
 		"CREATE INDEX ix_seat_feedback_user_id ON seat_feedback (user_id)",
 	}},
+	// Messages a window addressed to a seat, held until the client that holds that seat's terminal
+	// pulls them. IT IS THE FIRST SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis: every other
+	// store here is client-authored. Keyed by the reported names rather than by a seat reference,
+	// because no seat table carries a session column and a seat that is DOWN is exactly when a message
+	// waits. delivered_at is the ack (at-least-once: an unacked row comes back on the next pull) and
+	// there is no TTL — a bound would be explicit policy, never a sweep.
+	{Name: "seat_messages", Model: "SeatMessageORM", Columns: []taskdb.ColumnDef{
+		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: taskdb.DefaultUUIDv4},
+		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "TEXT", Nullable: false},
+		{Name: "room", Attr: "room", GoField: "Room", SQLType: "TEXT", Nullable: false},
+		{Name: "seat", Attr: "seat", GoField: "Seat", SQLType: "TEXT", Nullable: false},
+		{Name: "text", Attr: "text", GoField: "Text", SQLType: "TEXT", Nullable: false},
+		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: false, Default: taskdb.DefaultNowUTC},
+		// Nullable, and that is the state rather than a gap: NULL is what makes a row PENDING, and it
+		// is the column the pull filters on.
+		{Name: "delivered_at", Attr: "delivered_at", GoField: "DeliveredAt", SQLType: "TIMESTAMP WITH TIME ZONE", Nullable: true},
+		{Name: "machine_id", Attr: "machine_id", GoField: "MachineID", SQLType: "TEXT", Nullable: false, Default: taskdb.DefaultString, DefaultValue: "\"\""},
+	}, DDL: []string{
+		// No DEFAULT on id, like every other table's RUNTIME DDL: the INSERT supplies the UUID from Go
+		// (taskdb.DefaultUUIDv4), because createAll runs on databases where uuid-ossp has not been
+		// created and uuid_generate_v4() does not exist. The schema file's copy keeps it for direct SQL.
+		"CREATE TABLE seat_messages (\n" +
+			"\tid UUID NOT NULL,\n" +
+			"\tuser_id TEXT NOT NULL,\n" +
+			"\troom TEXT NOT NULL,\n" +
+			"\tseat TEXT NOT NULL,\n" +
+			"\ttext TEXT NOT NULL,\n" +
+			"\tcreated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),\n" +
+			"\tdelivered_at TIMESTAMP WITH TIME ZONE,\n" +
+			"\tmachine_id TEXT NOT NULL DEFAULT '',\n" +
+			"\tPRIMARY KEY (id)\n" +
+			")",
+		// ONE index serves both jobs, as the schema file's copy explains: the pull's keyset
+		// (user_id, room, seat) + (created_at, id), and the seat- and room-level deletes' prefix.
+		"CREATE INDEX ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id)",
+	}},
 }
 
 // seatManagementDatabaseTables is the ordered creation list this package registers.

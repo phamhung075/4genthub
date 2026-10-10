@@ -3,14 +3,18 @@ package httpapp
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	authinterface "agenthub/fastmcp/auth/interface"
+	seatservices "agenthub/fastmcp/seat_management/application/services"
 	"agenthub/fastmcp/seat_management/domain/repositories"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -221,33 +225,39 @@ func TestSeedSeatTypesErrorMapping(t *testing.T) {
 	}
 }
 
-// THE PROPERTY THIS PROTECTS IS THE VERB ON THE MESSAGE PATH, stated in the shape the tree
-// actually has: a POST on the message path reaches the message handler, a GET on that same path is
-// answered 405 by that route's own pattern and falls through to nothing, and the resolution
-// answers on its OWN room-scoped path, where it already lived and where nothing here touches it.
-// This is a ROUTING test rather than a validation one: each pattern must be reached by the path
-// and the method it names.
+// THE PROPERTY THIS PROTECTS IS THE VERB ON THE MESSAGE PATH, in the shape the tree now has: the
+// same path carries the two DIRECTIONS of one store, so a POST reaches the WRITER and stores the
+// text while a GET reaches the PULLER — and the puller is machine-authenticated, which is the refusal
+// a user token gets. The resolution answers on its OWN room-scoped path, where it already lived and
+// where nothing here touches it. This is a ROUTING test rather than a validation one: each pattern
+// must be reached by the path and the method it names.
 func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
-	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
+	store := &fakeSeatMessageStore{}
+	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
 		Hash: "abc", Runtime: "claude-code", Policy: map[string]any{"Seat": "coder"},
-	}})
+	}}, store)
 
-	// POST on the room-scoped path reaches the message handler.
+	// POST on the room-scoped path reaches the writer, and the answer is a success carrying the stored
+	// id: the message IS held, so a refusal here would be a lie about the store.
 	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages", `{"text":"hello"}`)
-	if rec.Code != http.StatusNotImplemented {
-		t.Fatalf("POST /rooms/dev/seats/coder/messages = %d, want 501: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST /rooms/dev/seats/coder/messages = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
-	// The refusal must be a sentence: the window renders the detail verbatim, and the false
-	// success this route deliberately does not send would render as nothing at all.
-	if !strings.Contains(rec.Body.String(), `"detail"`) || !strings.Contains(rec.Body.String(), "not implemented") {
-		t.Fatalf("refusal is not a human-readable detail: %s", rec.Body.String())
+	for _, want := range []string{`"success":true`, `"id":"m1"`, `"room":"dev"`, `"seat":"coder"`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("POST body missing %s: %s", want, rec.Body.String())
+		}
+	}
+	if len(store.created) != 1 || store.created[0].Text != "hello" {
+		t.Fatalf("stored = %+v, want exactly the text the body carried", store.created)
 	}
 
-	// A GET on that same path is 405: the message pattern is POST-only, and nothing falls
-	// through to another route on this path.
-	if getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/coder/messages", ""); getRec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("GET /rooms/dev/seats/coder/messages = %d, want 405: %s", getRec.Code, getRec.Body.String())
+	// A GET on that same path is the PULL, and the proof that this request reached it rather than a
+	// writer or a 405 is the refusal only the pull's auth can give: the header doTestRequest sends is
+	// a user token, which is not a machine token.
+	if getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms/dev/seats/coder/messages", ""); getRec.Code != http.StatusUnauthorized {
+		t.Fatalf("GET /rooms/dev/seats/coder/messages with a user token = %d, want the machine-auth 401: %s", getRec.Code, getRec.Body.String())
 	}
 
 	// The resolution is not on this path and never was: it answers on its own room-scoped path,
@@ -335,8 +345,15 @@ func TestSeatMessageRouteRequiresAuth(t *testing.T) {
 }
 
 // THE ROW'S POINT: the seat is resolved in the room the URL names, so a seat that is not in that
-// room is answered 404 - which the key-only path could not do at all - and the pair the resolver
-// is asked for is the pair the URL carries rather than a guessed room.
+// room is answered 404 - which the key-only path could not do at all - and the pair the resolver is
+// asked for is the pair the URL carries rather than a guessed room.
+//
+// THE REFUSALS ONLY. A seat that DOES resolve now reaches the store, and the store's own answers are
+// asserted where they belong: a success and its stored row in TestSeatMessageRouteIsVerbScoped, a
+// refused credential in TestSeatMessageSendRefusesACredentialWithTheChannelsOwnBody, and the pull's
+// two directions in TestSeatMessagePullNeedsAMachineToken and TestSeatMessageDeliveredOnceAndNotAgain.
+// Keeping a 200 case here would mean asserting, in a table whose every other row carries a "detail",
+// a body that has none.
 func TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames(t *testing.T) {
 	t.Setenv(publicURLEnv, "https://api.example.test")
 	cases := []struct {
@@ -357,12 +374,6 @@ func TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames(t *testing.T) {
 			http.StatusInternalServerError,
 			"",
 		},
-		{
-			"a seat that does resolve reaches the delivery refusal",
-			&fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}},
-			http.StatusNotImplemented,
-			"",
-		},
 	}
 	for _, c := range cases {
 		mux := seatTestMux(t, c.fake)
@@ -381,5 +392,221 @@ func TestSeatMessageRouteResolvesTheSeatInTheRoomTheURLNames(t *testing.T) {
 		if len(c.fake.asked) != 1 || c.fake.asked[0] != "dev/ghost" {
 			t.Errorf("%s: the resolver was asked for %v, want [dev/ghost]", c.name, c.fake.asked)
 		}
+	}
+}
+
+// ---- the message store's own fixtures and tests -----------------------------------------------
+
+// seatMessageTestToken is the machine token of machine pc-home of the test user. The pull and the ack
+// take a MACHINE token, because the component that can reach a seat's terminal is the client on the
+// machine that holds it; the writer takes the window's user token.
+const seatMessageTestToken = "mt_seat-message-test-token"
+
+var seatMessageTestNow = time.Date(2026, 10, 10, 9, 0, 0, 0, time.UTC)
+
+// fakeSeatMessageStore is the message store in memory, holding the contract's two behaviours: a stored
+// message is PENDING, and an acked one never comes back. The SQL behind them — the keyset page, the
+// `delivered_at IS NULL` update — is the real repository's and is exercised where a database is
+// available; what these route tests prove is that the routes reach the store, hand it the cursor and
+// the page, and map its answers to the statuses the client acts on.
+type fakeSeatMessageStore struct {
+	pending []repositories.SeatMessage
+	created []repositories.SeatMessage
+}
+
+func (f *fakeSeatMessageStore) Create(_ context.Context, message repositories.SeatMessage) (*repositories.SeatMessage, error) {
+	message.ID = "m" + strconv.Itoa(len(f.created)+1)
+	f.created = append(f.created, message)
+	f.pending = append(f.pending, message)
+	stored := message
+	return &stored, nil
+}
+
+func (f *fakeSeatMessageStore) ListPending(_ context.Context, _, room, seat string, afterCreatedAt time.Time, _ string, limit int) ([]repositories.SeatMessage, error) {
+	out := []repositories.SeatMessage{}
+	for _, m := range f.pending {
+		if m.Room != room || m.Seat != seat {
+			continue
+		}
+		if !afterCreatedAt.IsZero() && !m.CreatedAt.After(afterCreatedAt) {
+			continue
+		}
+		out = append(out, m)
+	}
+	if len(out) > limit {
+		out = out[:limit]
+	}
+	return out, nil
+}
+
+func (f *fakeSeatMessageStore) Ack(_ context.Context, _, room, seat, id, _ string, _ time.Time) (bool, error) {
+	for i, m := range f.pending {
+		if m.ID == id && m.Room == room && m.Seat == seat {
+			f.pending = append(f.pending[:i], f.pending[i+1:]...)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// seatMessageTestMux mounts the seat routes with the seat source, the message service and the server
+// clock substituted, and a machine token registered for the test user's machine pc-home.
+func seatMessageTestMux(t *testing.T, source seatSource, store *fakeSeatMessageStore) *http.ServeMux {
+	t.Helper()
+	authenticateTestUser(t)
+	previousSource := newSeatSource
+	newSeatSource = func(*database.SessionManager, string) (seatSource, error) { return source, nil }
+	previousService := newSeatMessageService
+	newSeatMessageService = func(*database.SessionManager) (*seatservices.SeatMessageService, error) {
+		return seatservices.NewSeatMessageService(store), nil
+	}
+	previousNow := seatMessageNow
+	seatMessageNow = func() time.Time { return seatMessageTestNow }
+	previousTokens := newMachineTokenRepo
+	tokens := &fakeMachineTokens{tokens: []*repositories.MachineToken{{
+		ID: "tok", UserID: "11111111-1111-4111-8111-111111111111", MachineID: "pc-home",
+		TokenHash: seatservices.HashMachineToken(seatMessageTestToken),
+	}}}
+	newMachineTokenRepo = func(*database.SessionManager) (repositories.MachineTokenRepository, error) { return tokens, nil }
+	t.Cleanup(func() {
+		newSeatSource = previousSource
+		newSeatMessageService = previousService
+		seatMessageNow = previousNow
+		newMachineTokenRepo = previousTokens
+	})
+	mux := http.NewServeMux()
+	mountSeatRoutes(mux, nil)
+	return mux
+}
+
+// machineSeatMessage is a message request bearing the machine token the pull and the ack need.
+func machineSeatMessage(mux *http.ServeMux, method, path, body string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, strings.NewReader(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Authorization", "Bearer "+seatMessageTestToken)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	return rec
+}
+
+// THE TWO CREDENTIALS ARE NOT INTERCHANGEABLE: the window's user token writes, and only the machine
+// token pulls, because the puller is the component that can put text into a terminal.
+func TestSeatMessagePullNeedsAMachineToken(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	store := &fakeSeatMessageStore{pending: []repositories.SeatMessage{{
+		ID: "m1", UserID: "11111111-1111-4111-8111-111111111111", Room: "dev", Seat: "coder",
+		Text: "hello", CreatedAt: seatMessageTestNow,
+	}}}
+	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
+	path := "/api/v2/openrig/rooms/dev/seats/coder/messages"
+
+	if rec := doTestRequest(t, mux, http.MethodGet, path, ""); rec.Code != http.StatusUnauthorized {
+		t.Fatalf("user token = %d, want 401: %s", rec.Code, rec.Body.String())
+	}
+
+	rec := machineSeatMessage(mux, http.MethodGet, path, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("machine token = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`"success":true`, `"id":"m1"`, `"text":"hello"`, `"cursor":"2026-10-10T09:00:00Z|m1"`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("pull body missing %s: %s", want, rec.Body.String())
+		}
+	}
+}
+
+// THE DELIVERY CONTRACT AT THE ROUTE, and the ruling it implements: at-least-once with the ack AFTER
+// the delivery. A message is handed out until the client acks it, so an interruption redelivers
+// rather than loses; once acked it never comes back; and a second ack of the same id is refused
+// rather than counted as a second delivery.
+func TestSeatMessageDeliveredOnceAndNotAgain(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	store := &fakeSeatMessageStore{}
+	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
+	path := "/api/v2/openrig/rooms/dev/seats/coder/messages"
+
+	if rec := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`); rec.Code != http.StatusOK {
+		t.Fatalf("send = %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Unacked, it is handed out: this pull is the delivery the client has not confirmed yet.
+	first := machineSeatMessage(mux, http.MethodGet, path, "")
+	var body struct {
+		Messages []struct {
+			ID string `json:"id"`
+		} `json:"messages"`
+		Cursor string `json:"cursor"`
+	}
+	if err := json.Unmarshal(first.Body.Bytes(), &body); err != nil || len(body.Messages) != 1 {
+		t.Fatalf("first pull = %d %s (%v), want one message", first.Code, first.Body.String(), err)
+	}
+	if body.Messages[0].ID != "m1" || body.Cursor == "" {
+		t.Fatalf("first pull = %s, want the stored id and the cursor that continues after it", first.Body.String())
+	}
+
+	ackPath := path + "/" + body.Messages[0].ID + "/ack"
+	if ack := machineSeatMessage(mux, http.MethodPost, ackPath, ""); ack.Code != http.StatusOK {
+		t.Fatalf("ack = %d %s", ack.Code, ack.Body.String())
+	}
+
+	again := machineSeatMessage(mux, http.MethodGet, path, "")
+	if again.Code != http.StatusOK || strings.Contains(again.Body.String(), `"text":"hello"`) {
+		t.Fatalf("pull after ack = %d %s, want nothing redelivered", again.Code, again.Body.String())
+	}
+	if second := machineSeatMessage(mux, http.MethodPost, ackPath, ""); second.Code != http.StatusConflict {
+		t.Fatalf("second ack = %d %s, want 409: the state, not a typo", second.Code, second.Body.String())
+	}
+}
+
+// THE CREDENTIAL SCAN AT THE ROUTE, in the friction channel's own body: a 422 whose error names the
+// field, an answer that never repeats the credential, and nothing stored.
+func TestSeatMessageSendRefusesACredentialWithTheChannelsOwnBody(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	const secret = "ghp_0123456789012345678901234567890123"
+	store := &fakeSeatMessageStore{}
+	mux := seatMessageTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}}, store)
+
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms/dev/seats/coder/messages",
+		`{"text":"the call failed with `+secret+` in the header"}`)
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "secret detected in field text") {
+		t.Errorf("body = %s, want the field named", rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), secret) {
+		t.Errorf("the answer repeats the credential: %s", rec.Body.String())
+	}
+	if len(store.created) != 0 {
+		t.Errorf("a refused message was stored: %+v", store.created)
+	}
+}
+
+// THE SAME 404 ON BOTH DIRECTIONS, byte for byte: a seat that is not in the room the URL names is
+// refused identically whether the writer or the puller asks, so neither can be used to learn which
+// seat keys exist.
+func TestSeatMessageBothDirectionsRefuseAMissingSeatIdentically(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	store := &fakeSeatMessageStore{}
+	source := &fakeSeatSource{err: errors.New(`seat "ghost" not found in room "dev"`)}
+	mux := seatMessageTestMux(t, source, store)
+	path := "/api/v2/openrig/rooms/dev/seats/ghost/messages"
+
+	write := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
+	pull := machineSeatMessage(mux, http.MethodGet, path, "")
+	if write.Code != http.StatusNotFound || pull.Code != http.StatusNotFound {
+		t.Fatalf("write = %d, pull = %d, want 404 for both", write.Code, pull.Code)
+	}
+	if write.Body.String() != pull.Body.String() {
+		t.Errorf("the two directions answered differently:\n write %s\n pull  %s", write.Body.String(), pull.Body.String())
+	}
+	if len(store.created) != 0 {
+		t.Errorf("a message was stored for a seat that did not resolve: %+v", store.created)
+	}
+	// And the pair the resolver was asked for is the URL's, on both directions.
+	if len(source.asked) != 2 || source.asked[0] != "dev/ghost" || source.asked[1] != "dev/ghost" {
+		t.Errorf("the resolver was asked for %v, want dev/ghost twice", source.asked)
 	}
 }

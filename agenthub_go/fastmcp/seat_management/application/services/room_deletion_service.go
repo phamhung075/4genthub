@@ -21,6 +21,12 @@ type RoomDeletionStore interface {
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
 	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
+	// The message store's two, and they are the reason this service exists rather than a CASCADE:
+	// undelivered text addressed to a seat that is going away can never be delivered, so it goes with
+	// the seat (and with an emptied room) EXPLICITLY. Silence here would leave rows no client can ever
+	// reach.
+	DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
 	// InTransaction runs fn so that all its store calls commit or roll back together.
 	InTransaction(ctx context.Context, fn func(ctx context.Context) error) error
@@ -63,6 +69,11 @@ func (s *RoomDeletionService) DeleteRoom(ctx context.Context, userID, roomSlug s
 		if err := s.store.DeleteSeatStatusForRoom(ctx, userID, room.Slug); err != nil {
 			return err
 		}
+		// The room's undelivered messages go with it: they are addressed to seats this room no longer
+		// has, so no client could ever deliver them, and leaving them would be rows no one can reach.
+		if err := s.store.DeleteSeatMessagesForRoom(ctx, userID, room.Slug); err != nil {
+			return err
+		}
 		// The reported topology edges of the room go with it: machine_edges carries the room
 		// slug, not a foreign key, so nothing else would remove them.
 		if err := s.store.DeleteMachineEdgesForRoom(ctx, userID, room.Slug); err != nil {
@@ -94,7 +105,14 @@ func (s *RoomDeletionService) RemoveSeat(ctx context.Context, userID, roomSlug, 
 		if err := s.deleteSeatRows(ctx, userID, seat.ID); err != nil {
 			return err
 		}
-		return s.store.DeleteSeatStatusForSeat(ctx, userID, room.Slug, seat.SeatKey)
+		if err := s.store.DeleteSeatStatusForSeat(ctx, userID, room.Slug, seat.SeatKey); err != nil {
+			return err
+		}
+		// And the seat's messages, delivered or not: they are addressed to a seat key that is about to
+		// not exist, so nothing could ever deliver what is left — and this service's own promise is that
+		// the seat key can be added again FROM SCRATCH, which means without inheriting the previous
+		// seat's inbox.
+		return s.store.DeleteSeatMessagesForSeat(ctx, userID, room.Slug, seat.SeatKey)
 	})
 }
 

@@ -3,17 +3,46 @@ package httpapp
 // seat_mount.go serves the company-workplace seats to the OpenRig client.
 //
 //	GET  /api/v2/openrig/seats/{room}/{seat}   resolved, rendered and stored snapshot
-//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages  one message to a seat's session (refused: delivery is not implemented)
+//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages           one message to a seat's session
+//	GET  /api/v2/openrig/rooms/{room}/seats/{seat}/messages           the seat's PENDING messages
+//	POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack  a client delivered one message
 //	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the embedded library
 //
 // A snapshot is immutable: the same seat definition always returns the same hash, so the
 // client can pin it and OpenRig materializes exactly those files.
+//
+// WHY THE MESSAGE STORE EXISTS, AND WHAT DELIVERY CANNOT BE. Delivery in this product is CLIENT-side:
+// only the OpenRig client running on the machine that holds a seat's terminal can put text into that
+// seat's session, and this server cannot reach that terminal. So the sender's route STORES the text,
+// and the client PULLS it and delivers it locally. The store is the server's only row on this axis
+// that a client consumes rather than authors.
+//
+// THE DELIVERY CONTRACT IS AT-LEAST-ONCE. The pull hands out PENDING messages and the client acks
+// each one AFTER the text reached the terminal, so an interruption redelivers instead of losing text,
+// and the client dedupes — the same contract the session stream's connector already imposes on it.
+// THERE IS NO TTL: a message for a seat that never comes back stays readable, and any bound would be
+// explicit policy rather than a sweep (missed_notifications is the precedent).
+//
+// THE RESIDUAL LIMIT OF THE PULL, STATED RATHER THAN LEFT TO BE DISCOVERED: the pull is
+// machine-authenticated and TENANT-SCOPED. A machine token is bound to a machine and NOT to seats
+// (the same looseness machine_token_mount.go documents for the status report), so ANY machine in the
+// tenant can pull ANY seat's messages in that tenant. THAT IS A CHOSEN LIMIT, NOT AN OVERSIGHT: the
+// narrower rule — binding the pull to the machine that REPORTED the seat — refuses the pull in exactly
+// the case this store exists for, a seat that is DOWN and therefore unreported, so it would break the
+// feature to catch nothing on the tenant boundary. What would narrow it later is a durable addition
+// rather than a tightening here: a PER-SEAT credential, or a seat-to-machine binding the machine
+// reports, neither of which exists today (seat_status carries no session and no pull-side credential
+// is issued per seat). The ack records the machine that actually took each message, so the audit says
+// which one did even though the rule allows any of them.
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	authdomain "agenthub/fastmcp/auth/domain/entities"
 	seatservices "agenthub/fastmcp/seat_management/application/services"
@@ -195,6 +224,16 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSendSeatMessage(w, r, u, sessions)
 	}))
+	// The client's half of the same path, and it is MACHINE-authenticated because the component that
+	// can reach a seat's terminal is the client on the machine that holds it — see the residual limit
+	// at the top of this file. The ack is a POST on the message rather than a second GET: it RECORDS
+	// that one message reached the terminal, and a GET must not have that effect.
+	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages", machineAuthed(sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
+		handlePullSeatMessages(w, r, token, sessions)
+	}))
+	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages/{id}/ack", machineAuthed(sessions, func(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken) {
+		handleAckSeatMessage(w, r, token, sessions)
+	}))
 	mux.HandleFunc("POST /api/v2/openrig/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeedSeatTypes(w, r, u, sessions)
 	}))
@@ -268,23 +307,72 @@ func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.U
 	writeJSON(w, http.StatusOK, body)
 }
 
-// seatMessageDeliveryAbsent is what the seat chat window is told, and the reason it is a refusal
-// rather than a success. Delivery in this product is CLIENT-side: only the OpenRig client running
-// on the machine that holds a seat's terminal can put text into that seat's session (`rig send`),
-// and this server cannot reach that terminal. The route is mounted anyway, because the unmounted
-// path answered 405 and said nothing; and it must NOT answer {"success": true}, because the window
-// reads error.message only when there IS an error, so a false success renders as nothing at all.
-const seatMessageDeliveryAbsent = "seat message delivery is not implemented on this server: only the OpenRig client running on a seat's own machine can put text into that seat's session, so the server cannot deliver it. Nothing was sent."
+// newSeatMessageService is a package variable so tests can substitute a service without a database.
+var newSeatMessageService = func(sessions *database.SessionManager) (*seatservices.SeatMessageService, error) {
+	repo, err := seatorm.NewORMSeatMessageRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return seatservices.NewSeatMessageService(repo), nil
+}
 
-// handleSendSeatMessage answers the seat chat window. It resolves the seat the URL names, IN the
-// room the URL names, which is what makes the two refusals distinguishable: a seat that is not in
-// that room is answered 404, while a seat that is there reaches the delivery refusal (see
-// seatMessageDeliveryAbsent), which is the state of the feature rather than a mistake in the
-// request.
+// seatMessageNow is the server clock; tests substitute a fixed one, so the instant the store holds is
+// the instant the route answered with.
+var seatMessageNow = time.Now
+
+// seatMessageServiceFor builds the message service, or answers the caller and returns false.
+func seatMessageServiceFor(w http.ResponseWriter, sessions *database.SessionManager) (*seatservices.SeatMessageService, bool) {
+	svc, err := newSeatMessageService(sessions)
+	if err != nil {
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return nil, false
+	}
+	return svc, true
+}
+
+// writeSeatMessageRejection answers a request the message contract refuses, and reports whether it was
+// one. A CREDENTIAL is the 422 body the seat-status report and the friction channel already answer
+// with, so the window and the client read one shape for it; every other refusal is a sentence about
+// the caller's own request, which is a 400.
+func writeSeatMessageRejection(w http.ResponseWriter, err error) bool {
+	var rejection *seatservices.SeatMessageRejection
+	if !errors.As(err, &rejection) {
+		return false
+	}
+	if rejection.SecretField != "" {
+		writeSeatStatusError(w, http.StatusUnprocessableEntity, rejection.Message)
+		return true
+	}
+	writeDetail(w, http.StatusBadRequest, rejection.Message)
+	return true
+}
+
+// resolveSeatInTheRoomTheURLNames resolves the seat a message route acts on, IN the room the URL
+// names, and reports whether it resolved. A seat that is not in that room and a seat that is not the
+// caller's are the SAME 404, so the pair cannot be probed seat by seat, and the pair the resolver is
+// asked for is the pair the URL carries rather than a guessed room.
+func resolveSeatInTheRoomTheURLNames(w http.ResponseWriter, r *http.Request, sessions *database.SessionManager, callerUserID string) bool {
+	source, ok := seatSourceFor(w, r, sessions)
+	if !ok {
+		return false
+	}
+	if _, err := source.ResolveSeat(r.Context(), callerUserID, r.PathValue("room"), r.PathValue("seat")); err != nil {
+		writeSeatResolutionError(w, err)
+		return false
+	}
+	return true
+}
+
+// handleSendSeatMessage answers the seat chat window by STORING the text. The server cannot reach a
+// seat's terminal, so holding the message until the client on that terminal's machine pulls it is the
+// whole delivery this side can do — and the answer is a success with the id, because the message IS
+// stored rather than lost. It resolves the seat first, so a seat that is not in the room the URL names
+// is the same 404 it always was, and THE ROOM AND SEAT STORED ARE THE URL'S, never anything the body
+// says.
 //
-// THE BODY IS DECODED FIRST, so a malformed request is refused for being malformed rather than for
-// either of those: the window renders the detail verbatim, and "unknown field" is a sentence about
-// the caller's own bytes rather than about the delivery gap.
+// THE BODY IS DECODED FIRST, so a malformed request is refused for being malformed rather than for the
+// seat it names: the window renders the detail verbatim, and "unknown field" is a sentence about the
+// caller's own bytes.
 func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, u *authdomain.User, sessions *database.SessionManager) {
 	var request struct {
 		Text string `json:"text"`
@@ -292,13 +380,115 @@ func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, u *authdomain
 	if !decodeSeatAdminBody(w, r, &request) {
 		return
 	}
-	source, ok := seatSourceFor(w, r, sessions)
+	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, userID(u)) {
+		return
+	}
+	svc, ok := seatMessageServiceFor(w, sessions)
 	if !ok {
 		return
 	}
-	if _, err := source.ResolveSeat(r.Context(), userID(u), r.PathValue("room"), r.PathValue("seat")); err != nil {
-		writeSeatResolutionError(w, err)
+	stored, err := svc.Send(r.Context(), userID(u), seatservices.SeatMessageInput{
+		Room: r.PathValue("room"),
+		Seat: r.PathValue("seat"),
+		Text: request.Text,
+	}, seatMessageNow().UTC())
+	if err != nil {
+		if writeSeatMessageRejection(w, err) {
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeDetail(w, http.StatusNotImplemented, seatMessageDeliveryAbsent)
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("id", stored.ID)
+	body.Set("room", stored.Room)
+	body.Set("seat", stored.Seat)
+	body.Set("created_at", stored.CreatedAt.UTC().Format(time.RFC3339))
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handlePullSeatMessages is the client's half: the seat's PENDING messages plus the opaque cursor to
+// continue after them. It resolves the seat in the room the URL names FIRST, for the same reason the
+// write route does, so a seat that is not there is the same 404 rather than an empty page — an empty
+// page would read as "nothing is waiting" and silently drop a backlog the caller cannot see.
+//
+// THE PAGE BOUNDS COME FROM THE SERVICE (ClampSeatMessageLimit) rather than from this route, so the
+// numbers a client pages by have one home; the route only reads the two query parameters.
+func handlePullSeatMessages(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken, sessions *database.SessionManager) {
+	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, token.UserID) {
+		return
+	}
+	svc, ok := seatMessageServiceFor(w, sessions)
+	if !ok {
+		return
+	}
+	limit := 0
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		if n, convErr := strconv.Atoi(raw); convErr == nil {
+			limit = n
+		}
+	}
+	messages, cursor, err := svc.Pull(r.Context(), token.UserID, r.PathValue("room"), r.PathValue("seat"), r.URL.Query().Get("after"), limit)
+	if err != nil {
+		if writeSeatMessageRejection(w, err) {
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("messages", seatMessageRows(messages))
+	body.Set("cursor", cursor)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// handleAckSeatMessage records that a client put one message into the seat's session, which is what
+// stops the next pull returning it. THE STATE, NOT THE ID, IS WHAT A CALLER CAN GET WRONG: an id that
+// is unknown and an id already delivered answer the same 409 with one sentence, because neither
+// redelivers and a client retrying a dropped ack should hear that rather than a 404 that reads like a
+// mistyped id.
+func handleAckSeatMessage(w http.ResponseWriter, r *http.Request, token *repositories.MachineToken, sessions *database.SessionManager) {
+	if !resolveSeatInTheRoomTheURLNames(w, r, sessions, token.UserID) {
+		return
+	}
+	svc, ok := seatMessageServiceFor(w, sessions)
+	if !ok {
+		return
+	}
+	err := svc.Ack(r.Context(), token.UserID, r.PathValue("room"), r.PathValue("seat"), r.PathValue("id"), token.MachineID, seatMessageNow().UTC())
+	switch {
+	case err == nil:
+	case errors.Is(err, seatservices.ErrSeatMessageNotPending):
+		writeDetail(w, http.StatusConflict, err.Error())
+		return
+	default:
+		if writeSeatMessageRejection(w, err) {
+			return
+		}
+		writeDetail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	body := entities.NewOrderedMap[any]()
+	body.Set("success", true)
+	body.Set("delivered", true)
+	writeJSON(w, http.StatusOK, body)
+}
+
+// seatMessageRows is the pulled page as the client reads it: every key always present, and created_at
+// RFC3339 in UTC so a client never has to interpret a zone. The delivery state is deliberately NOT
+// here — a pulled row is pending by definition, and the ack is what changes that.
+func seatMessageRows(messages []repositories.SeatMessage) []any {
+	rows := make([]any, 0, len(messages))
+	for _, m := range messages {
+		row := entities.NewOrderedMap[any]()
+		row.Set("id", m.ID)
+		row.Set("room", m.Room)
+		row.Set("seat", m.Seat)
+		row.Set("text", m.Text)
+		row.Set("created_at", m.CreatedAt.UTC().Format(time.RFC3339))
+		rows = append(rows, row)
+	}
+	return rows
 }

@@ -85,6 +85,8 @@ type seatAdminSource interface {
 	DeleteSeatStatusForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
 	DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error
+	DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error
+	DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error
 	DeleteResolvedSeats(ctx context.Context, userID, seatID string) error
 	DeleteSeat(ctx context.Context, userID, seatID string) error
 	DeleteRoom(ctx context.Context, userID, roomID string) error
@@ -131,13 +133,18 @@ var newSeatAdminSource = func(sessions *database.SessionManager) (seatAdminSourc
 	if err != nil {
 		return nil, err
 	}
-	return &seatAdminRepos{sessions: sessions, resolved: resolved, machines: machines, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
+	messages, err := seatorm.NewORMSeatMessageRepository(sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &seatAdminRepos{sessions: sessions, resolved: resolved, machines: machines, messages: messages, rooms: rooms, seatTypes: seatTypes, modules: modules, seats: seats, overlays: overlays, links: links, settings: settings}, nil
 }
 
 type seatAdminRepos struct {
 	sessions  *database.SessionManager
 	resolved  repositories.ResolvedSeatRepository
 	machines  repositories.MachineStatusRepository
+	messages  repositories.SeatMessageRepository
 	rooms     repositories.RoomRepository
 	seatTypes repositories.SeatTypeRepository
 	modules   repositories.ModuleRepository
@@ -267,6 +274,14 @@ func (s *seatAdminRepos) DeleteSeatStatusForRoom(ctx context.Context, userID, ro
 
 func (s *seatAdminRepos) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
 	return s.machines.DeleteMachineEdgesForRoom(ctx, userID, roomSlug)
+}
+
+func (s *seatAdminRepos) DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return s.messages.DeleteForSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (s *seatAdminRepos) DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.messages.DeleteForRoom(ctx, userID, roomSlug)
 }
 
 func (s *seatAdminRepos) DeleteResolvedSeats(ctx context.Context, userID, seatID string) error {

@@ -74,6 +74,14 @@ func (f *fakeRoomDeletionStore) DeleteMachineEdgesForRoom(_ context.Context, _, 
 	return f.record("edges:" + roomSlug)
 }
 
+func (f *fakeRoomDeletionStore) DeleteSeatMessagesForSeat(_ context.Context, _, roomSlug, seatKey string) error {
+	return f.record("messages:" + roomSlug + "/" + seatKey)
+}
+
+func (f *fakeRoomDeletionStore) DeleteSeatMessagesForRoom(_ context.Context, _, roomSlug string) error {
+	return f.record("messages:" + roomSlug)
+}
+
 func (f *fakeRoomDeletionStore) DeleteRoom(_ context.Context, _, roomID string) error {
 	return f.record("room:" + roomID)
 }
@@ -106,14 +114,18 @@ func TestDeleteRoomRefusesARoomThatHoldsSeats(t *testing.T) {
 	}
 }
 
-// An empty room deletes its room overlay, its reported statuses, its reported topology edges and
-// itself, in one transaction, and nothing else.
+// An empty room deletes its room overlay, its reported statuses, its undelivered seat messages, its
+// reported topology edges and itself, in one transaction, and nothing else.
+//
+// THE MESSAGE DELETE IS THE RULED OBLIGATION, and it is on this path rather than left to a CASCADE
+// because this schema has none: text addressed to a seat the room no longer has can never be
+// delivered, so it goes with the room rather than waiting forever.
 func TestDeleteRoomDeletesAnEmptyRoom(t *testing.T) {
 	store := &fakeRoomDeletionStore{room: &repositories.Room{ID: "r1", Slug: "dev"}}
 	if err := NewRoomDeletionService(store).DeleteRoom(context.Background(), "u", "dev"); err != nil {
 		t.Fatalf("DeleteRoom: %v", err)
 	}
-	want := "tx-begin,room-overlay:r1,status:dev,edges:dev,room:r1,tx-end"
+	want := "tx-begin,room-overlay:r1,status:dev,messages:dev,edges:dev,room:r1,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}
@@ -131,7 +143,7 @@ func TestDeleteRoomAbsentRoom(t *testing.T) {
 // InTransaction rolls back whatever came before and the room row is never removed.
 func TestDeleteRoomStopsAtFirstFailure(t *testing.T) {
 	boom := errors.New("boom")
-	for _, failOn := range []string{"room-overlay:r1", "status:dev"} {
+	for _, failOn := range []string{"room-overlay:r1", "status:dev", "messages:dev"} {
 		store := &fakeRoomDeletionStore{
 			room:   &repositories.Room{ID: "r1", Slug: "dev"},
 			failOn: failOn, failErr: boom,
@@ -155,7 +167,7 @@ func TestRemoveSeatDeletesOnlyThatSeatsRows(t *testing.T) {
 	if err := NewRoomDeletionService(store).RemoveSeat(context.Background(), "u", "dev", "bob"); err != nil {
 		t.Fatalf("RemoveSeat: %v", err)
 	}
-	want := "tx-begin,links:s2,overlay:s2,resolved:s2,seat:s2,status:dev/bob,tx-end"
+	want := "tx-begin,links:s2,overlay:s2,resolved:s2,seat:s2,status:dev/bob,messages:dev/bob,tx-end"
 	if got := strings.Join(store.calls, ","); got != want {
 		t.Errorf("calls = %s\nwant    %s", got, want)
 	}
@@ -176,7 +188,7 @@ func TestRemoveSeatAbsentRoomOrSeat(t *testing.T) {
 // error, which is what makes InTransaction roll every earlier delete back.
 func TestRemoveSeatFailureInTheTransactionStopsAndPropagates(t *testing.T) {
 	boom := errors.New("boom")
-	for _, failOn := range []string{"links:s2", "overlay:s2", "resolved:s2", "seat:s2", "status:dev/bob"} {
+	for _, failOn := range []string{"links:s2", "overlay:s2", "resolved:s2", "seat:s2", "status:dev/bob", "messages:dev/bob"} {
 		store := &fakeRoomDeletionStore{
 			room:   &repositories.Room{ID: "r1", Slug: "dev"},
 			seats:  []repositories.Seat{{ID: "s2", SeatKey: "bob"}},

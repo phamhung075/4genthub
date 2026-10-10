@@ -290,6 +290,34 @@ CREATE TABLE IF NOT EXISTS seat_feedback (
 
 CREATE INDEX IF NOT EXISTS ix_seat_feedback_user_id ON seat_feedback (user_id);
 
+-- Table: seat_messages
+-- Text a window addressed to a seat, held until the client that holds that seat's terminal pulls it.
+-- SEAT-OWNED AND KEYED BY THE REPORTED NAMES, like seat_feedback, and for a stronger reason: no seat
+-- table carries a session column, so the server cannot address a session from a seat at all, and the
+-- point of this store is to hold a message while the seat is DOWN. It is also the FIRST
+-- SERVER-AUTHORED ROW A CLIENT CONSUMES on this axis — every other store here (seat_status,
+-- seat_feedback, the session stream) is client-authored.
+-- delivered_at and machine_id ARE the ack: delivery is at-least-once, so a row with delivered_at NULL
+-- is pending and comes back on the next pull, while an acked one never does, and machine_id records
+-- which machine actually took it. There is NO TTL: a message for a seat that never comes back stays
+-- readable, and any bound would be explicit policy rather than a sweep (missed_notifications is the
+-- precedent). Room and seat are names rather than references, so the deletion path removes these rows
+-- itself — this schema has no CASCADE by design.
+CREATE TABLE IF NOT EXISTS seat_messages (
+    id UUID PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    room TEXT NOT NULL,
+    seat TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    machine_id TEXT NOT NULL DEFAULT ''
+);
+
+-- ONE index serves both jobs: the pull walks (user_id, room, seat) for pending rows in (created_at,
+-- id) order, and the seat- and room-level deletes take a prefix of the same key.
+CREATE INDEX IF NOT EXISTS ix_seat_messages_seat ON seat_messages (user_id, room, seat, created_at, id);
+
 -- Table: machines
 -- One row per (user, bridge machine). agents is the latest herdr agent snapshot, a JSON
 -- array of {agent, status, pane_id}; last_seen is server time of the last status report.

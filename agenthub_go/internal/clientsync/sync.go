@@ -24,9 +24,9 @@ func Commands() []clientcmd.Command {
 }
 
 // syncVerbs are the verbs this package answers under `sync`. Each is ported test-for-test; until one
-// is, it REFUSES BY NAME rather than answering something plausible, which is the same rule the platform
-// matrix follows.
-var syncVerbs = []string{"status", "pull", "rig", "bundle", "switch", "watch", "connector"}
+// is, it REFUSES BY NAME rather than answering something plausible, which is the same rule the
+// platform matrix follows.
+var syncVerbs = []string{"status", "pull", "messages", "rig", "bundle", "switch", "watch", "connector"}
 
 type syncCommand struct{}
 
@@ -39,13 +39,17 @@ func (syncCommand) Run(ctx context.Context, _ *clientcmd.Rig, args []string, std
 		fmt.Fprintf(stderr, "agenthub-client sync: pick a verb: %s\n", verbList())
 		return clientcmd.ExitUsage
 	}
-	// status and pull are ported: status compares each seat's local pin with the cloud's hash, and pull
-	// writes the snapshot and moves the pin.
+	// status, pull and connector are ported: status compares each seat's local pin with the cloud's
+	// hash, pull writes the snapshot and moves the pin, and connector reports one local session.
+	// messages is the other direction of the same path pull uses: it takes the text a window addressed
+	// to a seat and types it into that seat's session here, where the terminal actually is.
 	switch args[0] {
 	case "status":
 		return RunStatusVerb(ctx, args[1:], stdout, stderr)
 	case "pull":
 		return RunPullVerb(ctx, args[1:], stdout, stderr)
+	case "messages":
+		return RunMessagesVerb(ctx, args[1:], stdout, stderr)
 	case "connector":
 		return RunConnectorVerb(ctx, args[1:], stdout, stderr)
 	}

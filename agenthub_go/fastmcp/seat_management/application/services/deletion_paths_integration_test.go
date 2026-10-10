@@ -47,6 +47,7 @@ type deletionStore struct {
 	overlays repositories.OverlayRepository
 	resolved repositories.ResolvedSeatRepository
 	machines repositories.MachineStatusRepository
+	messages repositories.SeatMessageRepository
 }
 
 func (s *deletionStore) GetRoomBySlug(ctx context.Context, userID, slug string) (*repositories.Room, error) {
@@ -87,6 +88,14 @@ func (s *deletionStore) DeleteSeatStatusForRoom(ctx context.Context, userID, roo
 
 func (s *deletionStore) DeleteSeatStatusForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
 	return s.machines.DeleteSeatStatusForSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (s *deletionStore) DeleteSeatMessagesForSeat(ctx context.Context, userID, roomSlug, seatKey string) error {
+	return s.messages.DeleteForSeat(ctx, userID, roomSlug, seatKey)
+}
+
+func (s *deletionStore) DeleteSeatMessagesForRoom(ctx context.Context, userID, roomSlug string) error {
+	return s.messages.DeleteForRoom(ctx, userID, roomSlug)
 }
 
 func (s *deletionStore) DeleteMachineEdgesForRoom(ctx context.Context, userID, roomSlug string) error {
@@ -168,8 +177,10 @@ func TestDeletionPathsIntegration(t *testing.T) {
 	must(t, err)
 	machines, err := seatorm.NewORMMachineStatusRepository(sessions)
 	must(t, err)
+	messages, err := seatorm.NewORMSeatMessageRepository(sessions)
+	must(t, err)
 
-	store := &deletionStore{sessions: sessions, rooms: rooms, seats: seats, links: links, overlays: overlays, resolved: resolved, machines: machines}
+	store := &deletionStore{sessions: sessions, rooms: rooms, seats: seats, links: links, overlays: overlays, resolved: resolved, machines: machines, messages: messages}
 	svc := services.NewRoomDeletionService(store)
 
 	seatType, err := seatTypes.Save(ctx, user, repositories.SeatType{Slug: "del-type", Name: "Deletion type"})
