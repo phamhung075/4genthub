@@ -47,6 +47,7 @@ import {
   useDeleteSeatLink,
   useModuleVersion,
   useResolvedSeat,
+  useRooms,
   useSeatLinks,
   useSeatOverlays,
   useSeatTypes,
@@ -163,7 +164,7 @@ const ModuleRow: React.FC<{ module: EffectiveSeatModule }> = ({ module }) => {
   );
 };
 
-const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
+const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType, canWrite }) => {
   const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
   const { overlays, isLoading, error, refetch } = useSeatOverlays(room, seat);
   const updateOverlay = useUpdateOverlay(room, seat);
@@ -187,7 +188,9 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
 
   const handleAddOp = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canAdd) {
+    // The submit control is ABSENT for a viewer, and the handler refuses too: neither a stray Enter in
+    // a field nor a dispatched submit can reach a mutation the server would refuse with a 404.
+    if (!canWrite || !canAdd) {
       return;
     }
     const op: SeatOverlayOp = {
@@ -209,6 +212,9 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
   };
 
   const handleDeleteOp = (index: number) => {
+    if (!canWrite) {
+      return;
+    }
     updateOverlay.mutate({ scope, ops: scopeOps.filter((_, i) => i !== index) });
   };
 
@@ -283,15 +289,17 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
                     <span className="text-muted-foreground truncate max-w-xs">{op.content}</span>
                   )}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`Delete op ${index + 1}`}
-                  disabled={updateOverlay.isPending}
-                  onClick={() => handleDeleteOp(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {canWrite && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Delete op ${index + 1}`}
+                    disabled={updateOverlay.isPending}
+                    onClick={() => handleDeleteOp(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -364,10 +372,12 @@ const ModulesTab: React.FC<SeatModulesTabProps> = ({ seatType }) => {
                 <AlertDescription>{updateOverlay.error.message}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" disabled={!canAdd || updateOverlay.isPending}>
-              {updateOverlay.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Add op
-            </Button>
+            {canWrite && (
+              <Button type="submit" disabled={!canAdd || updateOverlay.isPending}>
+                {updateOverlay.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add op
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -385,7 +395,7 @@ const emptyOverlays = (): SeatOverlays => ({
 // Links
 // ---------------------------------------------------------------------------
 
-const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
+const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats, canWrite }) => {
   const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
   const { links, isLoading, error, refetch } = useSeatLinks(room, seat);
   const upsertLink = useUpsertSeatLink(room, seat);
@@ -408,6 +418,11 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
   const handleAddLink = (event: React.FormEvent) => {
     event.preventDefault();
     if (!target) {
+      return;
+    }
+    // The submit control is ABSENT for a viewer and the handler refuses too, so a dispatched submit
+    // cannot reach a mutation the server would refuse with a 404.
+    if (!canWrite) {
       return;
     }
     upsertLink.mutate(
@@ -456,23 +471,28 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
                       <Checkbox
                         aria-label={`Allow ${targetKey} (${link.kind})`}
                         checked={link.allow}
-                        disabled={upsertLink.isPending}
-                        onCheckedChange={checked =>
-                          upsertLink.mutate({ to_seat: targetKey, kind: link.kind, allow: checked })
-                        }
+                        disabled={!canWrite || upsertLink.isPending}
+                        onCheckedChange={checked => {
+                          if (!canWrite) {
+                            return;
+                          }
+                          upsertLink.mutate({ to_seat: targetKey, kind: link.kind, allow: checked });
+                        }}
                       />
                       <span className="text-muted-foreground">Allow</span>
                     </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`Delete ${targetKey} (${link.kind})`}
-                      disabled={deleteLink.isPending}
-                      onClick={() => setPendingDelete({ to: targetKey, kind: link.kind, allow: link.allow })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canWrite && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Delete ${targetKey} (${link.kind})`}
+                        disabled={deleteLink.isPending}
+                        onClick={() => setPendingDelete({ to: targetKey, kind: link.kind, allow: link.allow })}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </span>
                 </div>
               );
@@ -589,10 +609,12 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
               />
               Allow
             </label>
-            <Button type="submit" disabled={!target || upsertLink.isPending}>
-              {upsertLink.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Add link
-            </Button>
+            {canWrite && (
+              <Button type="submit" disabled={!target || upsertLink.isPending}>
+                {upsertLink.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add link
+              </Button>
+            )}
           </form>
           {upsertLink.isError && (
             <Alert variant="destructive" className="mt-3">
@@ -613,6 +635,12 @@ const LinksTab: React.FC<SeatLinksTabProps> = ({ roomSeats }) => {
 export const SeatDetailPage: React.FC = () => {
   const { room = '', seat = '' } = useParams<{ room: string; seat: string }>();
   const navigate = useNavigate();
+  // The room's standing, from the wire. `GET /rooms` returns the caller's own rooms AND the rooms
+  // shared with their teams, so `role` (`seatAdminRoomRole`) is the only field separating them; every
+  // write on this page is gated on it, because the mutation routes resolve the room owner-only and a
+  // viewer's write comes back as a 404 saying "room not found" about a seat they are reading.
+  const { rooms } = useRooms();
+  const isRoomOwner = rooms.find(candidate => candidate.slug === room)?.role === 'owner';
 
   // Live seat sync: a seat event invalidates this page's seat keys.
   const { user, tokens } = useAuth();
@@ -683,6 +711,16 @@ export const SeatDetailPage: React.FC = () => {
         </Alert>
       )}
 
+      {/* ONE sentence for a viewer, mirroring the room row's. The server refuses a viewer's write with
+          a 404 on a seat they are legitimately reading, so there is no per-action reason to quote
+          beside a dead control - the affordances are absent instead, and this is why. */}
+      {currentSeat && !isRoomOwner && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          This seat is in a room its owner shared with a team you belong to, so you can read it and its seat
+          type. Writing is the owner's: the runtime and model, the permission policy, the overlay and the links.
+        </p>
+      )}
+
       {currentSeat && !resolveLoading && !resolveError && (
         <Tabs defaultValue="modules">
           <TabsList>
@@ -704,19 +742,19 @@ export const SeatDetailPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="modules">
-            <ModulesTab seatType={seatType} />
+            <ModulesTab seatType={seatType} canWrite={isRoomOwner} />
           </TabsContent>
           <TabsContent value="links">
-            <LinksTab roomSeats={seats} />
+            <LinksTab roomSeats={seats} canWrite={isRoomOwner} />
           </TabsContent>
           <TabsContent value="preview">
             <SeatPreview room={room} seat={seat} />
           </TabsContent>
           <TabsContent value="llm">
-            <SeatLlmPanel room={room} seat={currentSeat} />
+            <SeatLlmPanel room={room} seat={currentSeat} canWrite={isRoomOwner} />
           </TabsContent>
           <TabsContent value="permissions">
-            <SeatPermissionPolicyPanel room={room} seat={currentSeat} />
+            <SeatPermissionPolicyPanel room={room} seat={currentSeat} canWrite={isRoomOwner} />
           </TabsContent>
         </Tabs>
       )}

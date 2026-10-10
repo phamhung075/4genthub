@@ -397,20 +397,32 @@ export type SeatPinChoice = 'pin-latest' | 'follow-latest' | 'company-default';
 
 export interface SeatModulesTabProps {
   seatType: SeatType | undefined;
+  /**
+   * False for a viewer of a shared room. The write affordances are then ABSENT rather than disabled:
+   * the server refuses a viewer's write with a 404 that says "room not found" about a room they are
+   * legitimately reading, so there is no truthful per-action reason to show beside a dead control.
+   */
+  canWrite: boolean;
 }
 
 export interface SeatLlmPanelProps {
   room: string;
   seat: Seat;
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 export interface SeatPermissionPolicyPanelProps {
   room: string;
   seat: Seat;
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 export interface SeatLinksTabProps {
   roomSeats: Seat[];
+  /** See `SeatModulesTabProps.canWrite`. */
+  canWrite: boolean;
 }
 
 // =============================================================================

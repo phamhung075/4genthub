@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the seat detail page's four write surfaces: a viewer case each, a dispatched submit, and the fixtures that must model the wire
+
+- MODIFIED `agenthub-frontend/src/tests/pages/SeatDetailPage.test.tsx` (+5 cases, 21 -> 26, in a new `a room shared with the viewer` describe): one case per surface - LLM, permissions, overlay, links - each with a POSITIVE control (the current policy value, the overlay scope selector and its value, the link row) so that "no button" cannot pass against a tab that rendered nothing at all. Two cases go past rendering: `hides the overlay editor and refuses a submit that is dispatched anyway` calls `fireEvent.submit` on the real form and asserts `putOverlay` was never called, so the guarantee does not rest on a button being absent; and `keeps every write affordance for the room owner` asserts the same four affordances and the allow toggle the other way round.
+- FIXTURES NOW MODEL THE WIRE: `ownerRoom`/`sharedRoom` carry `team_id` and `role`, and the harness resolves `listRooms` in `beforeEach`. This is not cosmetic - without `role` the page reads `undefined !== 'owner'`, so EVERY owner case in the file would have silently asserted the viewer path. The file's existing 21 cases are the owner's path and stay green, so they are the regression net for the other direction.
+- RED WITHOUT THE CHANGE, measured rather than assumed: with the predicate forced open (`const isRoomOwner = true`), the file is **4 failed | 22 passed**, the failures being exactly the four viewer cases, one per surface, while the owner case stays green.
+- VERIFIED, from `agenthub-frontend`: `npx vitest run` -> exit 0, **120 files / 1876 tests passed, 0 failed**; the three touched test files -> **64 tests passed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **195**, unchanged from the **195** measured before the change, with none of the file's remaining errors inside the added block.
+- NO CASE WAS DELETED OR RE-PINNED, and no existing case's wording was touched.
+
 ## 2026-10-11 - the evidence route's cases, and the two tests that pinned the retired role texts
 
 - ADDED, the evidence route (O3's server half): `agenthub_go/fastmcp/server/routes/task_evidence_routes_test.go`, six DB-free cases - an invisible task is refused WITHOUT recording, a blank `base_sha`/`head_sha` is 422, the numstat cap refuses at the boundary and only over it, the duplicate maps to 409, the created event carries the request's own fields, and an absent `failed` list is emitted as an empty array.

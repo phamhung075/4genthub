@@ -97,6 +97,12 @@ const seats = [
 
 const existingOp = { kind: 'add' as const, slug: 'base', version: '1.0.0', content: '' };
 
+// The room the page reads for its standing. `role` is what gates every write surface here, so a
+// fixture without it (or with a viewer's) turns every owner case in this file into a viewer case -
+// the silent flip this suite must not have.
+const ownerRoom = { id: 'room-1', slug: 'dev', name: 'Development', team_id: '', role: 'owner' as const };
+const sharedRoom = { ...ownerRoom, team_id: 'team-eng', role: 'viewer' as const };
+
 const overlayFor = (scope: SeatOverlayScope, ops: SeatOverlay['ops'] = []): SeatOverlay => ({
   scope,
   ops,
@@ -106,6 +112,7 @@ describe('SeatDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApi.listSeats.mockResolvedValue({ success: true, seats });
+    mockApi.listRooms.mockResolvedValue({ success: true, rooms: [ownerRoom] });
     mockApi.listSeatTypes.mockResolvedValue({ success: true, seat_types: seatTypes });
     mockApi.getModuleVersion.mockImplementation(async (slug: string, version: string) => ({
       success: true,
@@ -388,6 +395,81 @@ describe('SeatDetailPage', () => {
     expect(screen.getByText('Escalates to')).toBeInTheDocument();
 
     expect(screen.getByText(/never allow sending/i)).toBeInTheDocument();
+  });
+
+  // One case per write surface, because they are four separate rendered affordances and a regression in
+  // any one is invisible to the others. Each case carries a POSITIVE control - the tab's readable
+  // content must be present - so "no button" cannot pass against a page that rendered nothing at all.
+  describe('a room shared with the viewer', () => {
+    const openSharedTab = async (tab: RegExp) => {
+      mockApi.listRooms.mockResolvedValue({ success: true, rooms: [sharedRoom] });
+      renderDetail();
+      await screen.findByText('rules');
+      fireEvent.mouseDown(screen.getByRole('tab', { name: tab }), { button: 0 });
+    };
+
+    it('leaves the LLM panel readable, with no Save and inert fields', async () => {
+      await openSharedTab(/llm/i);
+
+      expect(await screen.findByLabelText('LLM model')).toBeDisabled();
+      expect(screen.getByLabelText('LLM runtime')).toBeDisabled();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+      expect(screen.getByText(/Writing is the owner/)).toBeInTheDocument();
+    });
+
+    it('leaves the permissions panel readable, with no Save', async () => {
+      await openSharedTab(/permissions/i);
+
+      const select = (await screen.findByLabelText('Permission policy')) as HTMLSelectElement;
+      expect(select).toBeDisabled();
+      expect(select.value).toBe('standard'); // the current policy is still shown
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+
+    it('hides the overlay editor and refuses a submit that is dispatched anyway', async () => {
+      await openSharedTab(/modules/i);
+
+      // The viewer keeps the READ half: the scope selector and its current value.
+      const scope = (await screen.findByLabelText('Overlay scope')) as HTMLSelectElement;
+      expect(scope.value).toBe('seat');
+
+      // The WRITE half is gone at both levels: no affordance in the DOM, and the handler refuses a
+      // submit dispatched by any route into the component.
+      expect(screen.queryByRole('button', { name: /Add op/ })).toBeNull();
+      expect(screen.queryByLabelText(/Delete op/)).toBeNull();
+
+      fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+      expect(mockApi.putOverlay).not.toHaveBeenCalled();
+    });
+
+    it('hides the link editor and the unlink, and makes the allow toggle inert', async () => {
+      await openSharedTab(/links/i);
+
+      const allow = await screen.findByLabelText('Allow bob (delegates_to)');
+      expect(allow).toBeDisabled();
+      expect(screen.getByText('delegates_to')).toBeInTheDocument(); // the link is still readable
+      expect(screen.queryByLabelText('Delete bob (delegates_to)')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Add link/ })).toBeNull();
+    });
+
+    it('keeps every write affordance for the room owner', async () => {
+      renderDetail();
+      await screen.findByText('rules');
+
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /llm/i }), { button: 0 });
+      expect(await screen.findByRole('button', { name: 'Save' })).toBeInTheDocument();
+      expect(screen.getByLabelText('LLM model')).not.toBeDisabled();
+
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /links/i }), { button: 0 });
+      expect(await screen.findByRole('button', { name: /Add link/ })).toBeInTheDocument();
+      expect(await screen.findByLabelText('Allow bob (delegates_to)')).not.toBeDisabled();
+
+      fireEvent.mouseDown(screen.getByRole('tab', { name: /modules/i }), { button: 0 });
+      expect(await screen.findByRole('button', { name: /Add op/ })).toBeInTheDocument();
+      expect(await screen.findByLabelText('Delete op 1')).toBeInTheDocument();
+
+      expect(screen.queryByText(/Writing is the owner/)).toBeNull();
+    });
   });
 
   describe('Permissions panel', () => {

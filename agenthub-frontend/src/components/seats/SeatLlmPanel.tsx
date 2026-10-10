@@ -16,7 +16,7 @@ import { isValidSeatModel, SEAT_MODEL_MESSAGE } from '../../lib/seatNames';
 import { SEAT_RUNTIMES } from '../../types/seatTypes';
 import type { SeatLlmPanelProps, SeatRuntime } from '../../types/seatTypes';
 
-export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
+export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat, canWrite }) => {
   const update = useUpdateSeatOccupant(room, seat.seat_key);
   const [runtime, setRuntime] = useState(seat.runtime);
   const [model, setModel] = useState(seat.model);
@@ -56,6 +56,7 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
                 aria-label="LLM runtime"
                 value={runtime}
                 onChange={e => setRuntime(e.target.value)}
+                disabled={!canWrite}
               >
                 {SEAT_RUNTIMES.map(value => (
                   <option key={value} value={value}>
@@ -74,6 +75,7 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
                 value={model}
                 onChange={e => setModel(e.target.value)}
                 placeholder="default"
+                disabled={!canWrite}
               />
               <p className="text-xs text-muted-foreground">
                 Model id for this runtime, for example claude-opus-4-6. An empty box changes nothing:
@@ -88,10 +90,12 @@ export const SeatLlmPanel: React.FC<SeatLlmPanelProps> = ({ room, seat }) => {
               <AlertDescription>{update.error.message}</AlertDescription>
             </Alert>
           )}
-          <Button type="submit" disabled={!valid || unchanged || update.isPending}>
-            {update.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Save
-          </Button>
+          {canWrite && (
+            <Button type="submit" disabled={!valid || unchanged || update.isPending}>
+              {update.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          )}
         </form>
         <p className="mt-4 text-xs text-muted-foreground">
           Saved in 4genthub. A model change is applied to the running seat with{' '}
