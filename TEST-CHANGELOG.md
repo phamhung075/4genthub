@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - what the PG half caught: the validator case counted a model item 3 had retired
+
+- THE MISS, found only with the DSN: `fastmcp/task_management/infrastructure/database/schema_validator_test.go::TestSchemaValidatorRealPostgres` asserted 16 validated models; `76b800b9` retired the `agents` model with the tool that owned it, so the validator - which walks the ORM's own list - reports 15. `go test ./... -count=1` at that commit was rc 0 with 136 packages ok precisely because this package's database-backed cases SKIP loudly without `AGENTHUB_TEST_PG_URL`. A skip is not a pass.
+- THE FAILURE, quoted: on a clean export at `76b800b9` with `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres`, `--- FAIL: TestSchemaValidatorRealPostgres (2.87s)`, `schema_validator_test.go:36: validated_models = [Project ProjectGitBranch Task TaskDependency Subtask TaskAssignee Label TaskLabel Template GlobalContext ProjectContext BranchContext TaskContext ContextDelegation ContextInheritanceCache]` - fifteen names, all present, the sixteenth gone by design.
+- THE FIX, one number with its reason beside it: the count is an invariant here (it is how the case notices a model added or dropped without the schema following), so it moves with the ORM rather than the case being deleted or the number re-pinned blindly.
+- GREEN: `go test -count=1 -run TestSchemaValidatorRealPostgres ./fastmcp/task_management/infrastructure/database/` -> `ok 1.434s`; the whole package -> `ok 27.565s`; `gofmt -l` on the package prints nothing.
+- WHAT ELSE THE PG-GATED SET COVERED BEFORE THIS, so the shape of the evidence is visible: five packages `ok` on the same clean export - `agenthub/fastmcp` 14.4s, `agenthub/fastmcp/auth/infrastructure/repositories` 40.5s, `agenthub/fastmcp/server/httpapp` 113.2s (the delete-cascade and status-ledger database cases among them), `agenthub/fastmcp/session_stream` 22.1s, `agenthub/fastmcp/task_management/application/services` 14.3s - and this package failing as the sixth.
+
 ## 2026-10-10 - room sharing: the owner/viewer gate pinned at the component, and the two new API entries pinned at the table
 
 - ADDED `agenthub-frontend/src/tests/components/RoomSharingDialog.test.tsx` (4 cases). The owner's picker lists the caller's teams beside `Private - only you` and sends the chosen SLUG; the CLEAR case starts from an already-shared room so the assertion is that the mutation receives the **EMPTY STRING** - a value the route acts on, not an absence a form might drop; a viewer case asserts NO control is rendered (`queryByLabelText('Shared with')` is null, no Save button) with the reason on screen; the refusal case asserts the server's own sentence is rendered and that `onClose` was NOT called, so a refusal cannot silently close the dialog.

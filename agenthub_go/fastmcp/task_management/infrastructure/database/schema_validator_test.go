@@ -32,7 +32,12 @@ func TestSchemaValidatorRealPostgres(t *testing.T) {
 	}
 	validated, _ := results.Get("validated_models")
 	names, ok := validated.([]any)
-	if !ok || len(names) != 16 {
+	// 15, not 16: the agents model was retired with the manage_agent tool (commit 76b800b9), so the
+	// ORM declares one model fewer and the validator, which walks the ORM's own list, validates one
+	// fewer. A count is an invariant here rather than an incidental number - it is how this case
+	// notices a model that was added or dropped without the schema following - which is why the
+	// number moves with the ORM instead of the case being deleted.
+	if !ok || len(names) != 15 {
 		t.Fatalf("validated_models = %v", validated)
 	}
 	if !database.ValidateSchemaOnStartup(ctx, engine) {
