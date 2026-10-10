@@ -174,51 +174,51 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:173` |
+| POST | `/api/v2/broadcast/notify` | `routes.TriggerBroadcast` | `routes_mount.go:211` |
 
 ### 1.13 Contexts — base `/api/v2/contexts` (`routes_mount.go:211`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:214` |
-| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:232` |
-| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:237` |
-| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:250` |
-| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:254` |
-| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:258` |
-| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:271` |
-| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:285` |
-| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:294` |
-| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:298` |
+| POST | `/api/v2/contexts/{level}` | `routes.CreateContext` | `routes_mount.go:266` |
+| GET | `/api/v2/contexts/{level}/{context_id}` | `routes.GetContext` | `routes_mount.go:284` |
+| PUT | `/api/v2/contexts/{level}/{context_id}` | `routes.UpdateContext` | `routes_mount.go:289` |
+| DELETE | `/api/v2/contexts/{level}/{context_id}` | `routes.DeleteContext` | `routes_mount.go:302` |
+| GET | `/api/v2/contexts/{level}/{context_id}/resolve` | `routes.ResolveContext` | `routes_mount.go:306` |
+| POST | `/api/v2/contexts/{level}/{context_id}/delegate` | `routes.DelegateContext` | `routes_mount.go:310` |
+| POST | `/api/v2/contexts/{level}/{context_id}/insights` | `routes.AddInsight` | `routes_mount.go:323` |
+| POST | `/api/v2/contexts/{level}/{context_id}/progress` | `routes.AddProgress` | `routes_mount.go:337` |
+| GET | `/api/v2/contexts/{level}/list` | `routes.ListContexts` | `routes_mount.go:346` |
+| GET | `/api/v2/contexts/{level}/{context_id}/summary` | `routes.GetContextSummary` | `routes_mount.go:350` |
 
 ### 1.14 Tokens — base `/api/v2/tokens` (`routes_mount.go:310`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:321` |
-| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:322` |
-| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:323` |
-| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:329` |
-| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:330` |
-| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:331` |
-| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:332` |
-| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:336` |
-| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:340` |
-| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:344` |
-| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:348` |
-| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:352` |
-| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:356` |
-| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:364` |
+| POST | `/api/v2/tokens` | `routes.GenerateTokenHandler` | `routes_mount.go:373` |
+| POST | `/api/v2/tokens/` | `routes.GenerateTokenHandler` | `routes_mount.go:374` |
+| POST | `/api/v2/tokens/generate` | `routes.GenerateTokenHandler` | `routes_mount.go:375` |
+| GET | `/api/v2/tokens` | `routes.ListTokens` | `routes_mount.go:381` |
+| GET | `/api/v2/tokens/` | `routes.ListTokens` | `routes_mount.go:382` |
+| GET | `/api/v2/tokens/legacy/tokens` | `routes.ListTokens` | `routes_mount.go:383` |
+| GET | `/api/v2/tokens/health` | `routes.TokenServiceHealth` | `routes_mount.go:384` |
+| GET | `/api/v2/tokens/{token_id}` | `routes.GetTokenDetails` | `routes_mount.go:388` |
+| DELETE | `/api/v2/tokens/{token_id}` | `routes.DeleteToken` | `routes_mount.go:392` |
+| PATCH | `/api/v2/tokens/{token_id}/revoke` | `routes.RevokeToken` | `routes_mount.go:396` |
+| PATCH | `/api/v2/tokens/{token_id}/reactivate` | `routes.ReactivateToken` | `routes_mount.go:400` |
+| POST | `/api/v2/tokens/{token_id}/rotate` | `routes.RotateToken` | `routes_mount.go:404` |
+| POST | `/api/v2/tokens/validate` | `routes.ValidateTokenEndpoint` | `routes_mount.go:408` |
+| POST | `/api/v2/tokens/cleanup` | `routes.CleanupExpiredTokens` | `routes_mount.go:416` |
 
 ### 1.15 Summary / remaining task routes (`routes_mount.go:389`)
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:392` |
-| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:407` |
-| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:413` |
-| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:422` |
-| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:425` |
+| POST | `/api/tasks/summaries` | `routes.GetTaskSummaries` | `routes_mount.go:444` |
+| GET | `/api/tasks/{task_id}/context/summary` | `routes.GetTaskContextSummary` | `routes_mount.go:459` |
+| POST | `/api/subtasks/summaries` | `routes.GetTaskRouteSubtaskSummaries` | `routes_mount.go:465` |
+| GET | `/api/performance/metrics` | `routes.GetPerformanceMetrics` | `routes_mount.go:474` |
+| POST | `/api/v2/tasks/{task_id}/subtasks/summaries` | `routes.GetUserSubtaskSummaries` | `routes_mount.go:477` |
 
 ### 1.16 OpenRig seat management — admin (`seat_admin_mount.go`)
 
