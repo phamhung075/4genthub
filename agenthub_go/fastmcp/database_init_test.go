@@ -20,9 +20,3 @@ func TestDatabaseInitializerURL(t *testing.T) {
 		t.Fatalf("explicit DatabaseURL = %q", got)
 	}
 }
-
-func TestDatabaseMigratorURL(t *testing.T) {
-	if got := fastmcp.NewDatabaseMigrator("postgresql://a:b@c:2/d").DatabaseURL; got != "postgresql://a:b@c:2/d" {
-		t.Fatalf("DatabaseURL = %q", got)
-	}
-}

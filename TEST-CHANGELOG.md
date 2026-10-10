@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the legacy details migration's tests leave with it, and the URL property is re-pointed at the live path
+
+- DELETED `agenthub_go/fastmcp/database_migrations_test.go` (whole file, one case: `TestIsPostgresURL`). Its subject, the DSN scheme check, existed only to guard `RunMigrations`; nothing on the live path branches on the scheme, so there was no property left to keep.
+- DELETED `TestDatabaseMigratorRunMigrations` from `agenthub_go/fastmcp/database_init_integration_test.go` and `TestDatabaseMigratorURL` from `agenthub_go/fastmcp/database_init_test.go`. Both files were CHECKED first: each keeps its other case (`TestDatabaseInitializerCreateDefaultProject` with its `newFastmcpTestDatabase` helper; `TestDatabaseInitializerURL`), so nothing else went with them.
+- KEPT AND RE-POINTED, not dropped: `TestDatabaseInitializerURL` already asserts the property `TestDatabaseMigratorURL` covered — an explicit URL wins over the one built from the environment — on the live path, for the explicit and the environment-built URL both.
+- VERIFIED: `gofmt -l fastmcp/` printed nothing; `go build ./...` ok; `go vet ./fastmcp/` clean; a word-boundary sweep for the four deleted names over every tracked `.go` prints nothing; `go test -count=1 ./fastmcp/` ok with the PostgreSQL URL set, so the remaining integration case ran rather than skipped.
+
 ## 2026-10-10 - the two dead startup migration entry points leave, and the proof is a sweep plus three named cases
 
 - DELETED `agenthub_go/fastmcp/task_management/infrastructure/database/auto_migration_test.go`: the whole file, because `TestAutoMigrationRealPostgres` was its only content and it existed to call the entry point deleted with it.
