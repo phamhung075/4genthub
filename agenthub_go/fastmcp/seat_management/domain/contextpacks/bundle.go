@@ -40,6 +40,14 @@ type PlainFileEntry struct {
 	EstimatedTokens int
 }
 
+// PlainFileRef names a file that was skipped because it is missing. The source reports these as
+// `{path}` entries, not bare strings — `context-pack-compose.test.ts` pins it with
+// `toEqual([{ path: "absent.md" }])` — so the path travels as a field here exactly as it does in the
+// bundle half, where the missing entry also carries its role.
+type PlainFileRef struct {
+	Path string
+}
+
 // PlainFileAssembly is the exact content a delivery verb can resolve without coupling the
 // context noun to the transport.
 type PlainFileAssembly struct {
@@ -47,7 +55,7 @@ type PlainFileAssembly struct {
 	Bytes           int
 	EstimatedTokens int
 	Files           []PlainFileEntry
-	MissingFiles    []string
+	MissingFiles    []PlainFileRef
 }
 
 // AssemblePlainFiles concatenates present file contents in declared order. The durable store
@@ -67,10 +75,10 @@ func AssemblePlainFiles(files []PlainFileInput) PlainFileAssembly {
 		entries = append(entries, PlainFileEntry{Path: f.Path, Bytes: fileBytes, EstimatedTokens: EstimateTokensFromBytes(fileBytes)})
 	}
 	text := strings.Join(texts, PlainComposeSeparator)
-	missing := []string{}
+	missing := []PlainFileRef{}
 	for _, f := range files {
 		if f.Content == nil {
-			missing = append(missing, f.Path)
+			missing = append(missing, PlainFileRef{Path: f.Path})
 		}
 	}
 	return PlainFileAssembly{

@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the contextpacks port's two uncompared layers, against the source's CASES
+
+- ADDED to `agenthub_go/fastmcp/seat_management/domain/contextpacks/`: the source's own cases, mirrored from openrig `1a05af1b` `packages/daemon/test/context-pack-compose.test.ts` and `context-pack-bundle-assembler.test.ts` — the EOF-newline byte matrix (4 combinations), the missing-entry path case, the estimate-from-assembled-bytes case, the trimmed-purpose-keeps-line-breaks case, the empty-pack case, and the source's literal ref/version accepts and rejects. These are the two layers the 2026-10-10 parity audit had declared uncompared; the cases are what closes them, because a pass that re-reads the port re-derives the same misunderstanding.
+- RED WITHOUT THE CHANGE, measured rather than assumed: the source's `toEqual([{ path: "absent.md" }])` assertion **does not compile** against the port as it stood (`bundle.go` `f28c216d`) — `got.MissingFiles[0].Path undefined (type string has no field or method Path)`. The port returned bare strings from `AssemblePlainFiles` while `assembleBundle` already carried `{path, role}`.
+- FALSIFICATION PAIR, in throwaway copies: the eight parity tests against the UNEDITED package all PASS (`ok 0.003s` — so ref-safety and the bundle frame were parity-exact, and the shape was the only divergence), and the same nine tests against the fixed package all PASS (`ok 0.005s`).
+- EXTENDED `TestAssembleBundleFramesAndSkipsMissing`: a summary-less header, `bytes == len(text)`, the missing entry's role, and the trim asserted at the JOIN (untrimmed content would leave four newlines there) rather than by a trailing-suffix check.
+- VERIFIED: `gofmt -l` on the package prints nothing; `go vet ./fastmcp/seat_management/domain/contextpacks/` rc=0; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok 0.004s`, 46 passing cases. No importer exists, so nothing downstream moves.
+
 ## 2026-10-10 - the room body's `role`, green and red
 
 - ADDED `TestSeatAdminRoomRole` to `agenthub_go/fastmcp/server/httpapp/seat_admin_team_sharing_test.go`: the SAME shared room reads `role: "viewer"` to the member who reached it through `team_members` and `role: "owner"` to the caller who owns it, with `team_id` non-empty for both - the two rows a client could not tell apart. It covers all three call sites that build a room body: the list, the share echo (`PUT /rooms/{room}/team`) and the create echo (`POST /rooms`).
