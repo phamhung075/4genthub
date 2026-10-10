@@ -16,6 +16,7 @@ import json
 
 
 import os
+import subprocess
 
 
 
@@ -48,10 +49,27 @@ TEAM_ROOT = REPO_ROOT / "scripts" / "team"
 TEAM_DIR = TEAM_ROOT / "4genthub"
 
 
-# Every room shipped under scripts/team, DISCOVERED rather than listed. This file used to
-# hard-code the directory above as the only room, so a room added beside it - which is how
+def _tracked_rooms():
+    """The rooms THIS REPOSITORY ships: the ones whose `team.json` is in the index.
+
+    Read with git rather than by walking the directory, and the difference is the point:
+    `scripts/team` is where a room definition is written before it is committed, so an untracked
+    directory there is somebody's work in progress rather than part of the release. A stray
+    directory must be able to make this suite neither red nor green - which is why `4genthub-ab`,
+    untracked in this tree and a live rig besides, is an owner row (`f465d5df`) instead of a red
+    guard here.
+    """
+    listed = subprocess.run(
+        ["git", "ls-files", "--", "scripts/team/*/team.json"],
+        cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+    ).stdout.split()
+    return sorted(Path(p).parts[2] for p in listed)
+
+
+# Every room shipped under scripts/team, discovered rather than listed. This file used to hard-code
+# the single directory above as the only room, so a room added beside it - which is how
 # 4genthub-client arrived - was gated by nothing at all.
-ROOMS = sorted(p.name for p in TEAM_ROOT.iterdir() if (p / "team.json").is_file())
+ROOMS = _tracked_rooms()
 INVENTORY = REPO_ROOT / "ai_docs" / "agent-system" / "skill-library.json"
 
 
@@ -502,6 +520,7 @@ def test_the_per_room_tables_cover_every_shipped_room():
 
 @pytest.mark.parametrize("room", ROOMS)
 def test_every_room_names_files_that_resolve(room):
+    room_dir = (TEAM_ROOT / room).resolve()
     for module in _definition(room)["modules"]:
         path = TEAM_ROOT / room / module["file"]
         assert path.is_file(), f"{room}/{module['slug']}: {module['file']} does not resolve"
@@ -510,6 +529,15 @@ def test_every_room_names_files_that_resolve(room):
         if module["kind"] == "policy":
             assert isinstance(json.loads(text), dict), (
                 f"{room}/{module['slug']}: a policy module is one JSON object"
+            )
+            # A POLICY IS THE ROOM'S OWN RULES, so it lives in the room that declares it. A `..`
+            # out of the directory makes the room depend on a sibling's file and break silently
+            # the moment that sibling renames or edits one - the defect b4ca5c68 fixed for
+            # 4genthub-client. Instruction modules may point at the Go seed library's blocks, which
+            # is why the bound is on the policy kind rather than on every module.
+            assert room_dir in path.resolve().parents, (
+                f"{room}/{module['slug']}: its policy resolves to {path.resolve()}, outside "
+                f"{room_dir} - a room's policies live in the room that declares them"
             )
 
 
