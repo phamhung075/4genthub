@@ -131,7 +131,7 @@ repository's seeding entry point is `4genteam team apply [--team DIR]`
 from the working tree and the index — the module is now
 `agenthub_client/src/agenthub_client/team_setup.py` behind the `4genteam` console script. Measured
 then: `4genteam team apply --help` is `[--dry-run] [--team TEAM]`, and `--dry-run` prints the plan
-and calls nothing. The old citations `:77-82` and `:925-928` are struck with the path.**) — **the
+and calls nothing. The old citations `:77-82` and `:925-928` are struck with the path.**) **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the module that correction names is itself retired — the client's Go port left no Python in the client at all. The live home is `agenthub_client/internal/clientteam/`, behind the same `4genteam team apply` verb.** — **the
 exact invocation behind this room was not recorded
 in the run account**, so treat that line as the repo's path rather than as the command that
 made this data.
