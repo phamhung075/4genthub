@@ -9,6 +9,14 @@ Track test suite changes, fixes, and improvements for agenthub.
 - THE VALIDATOR'S SKIP IS PINNED TOO, MEASURED SEPARATELY: with only the blank-scope skip disabled in the current rules (`/tmp/pkgfalsify3`), the two blank-heading cases fail on their findings assertions (`unaddressable-header` for the blank heading and for its child) and the empty-slug control still passes — so the skip is load-bearing and not blind.
 - VERIFIED: `gofmt -l` on the package prints nothing; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok`; `go vet` rc=0; `go build ./...` rc=0.
 
+## 2026-10-10 - the column-path guard, in the recorded-migration form
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/column_paths_test.go`: `TestEveryTableDefColumnHasAPath` builds a throwaway database through the WHOLE production path (`newMigrationRunnerEnv`, which calls `CreateTables`: createAll, `EnsureAIColumnsExist`, the ensurers, then the recorded migrations) and then requires that every registered table exists (`MissingTables`) and holds every registered column (`ColumnDrift`).
+- WHY THIS SHAPE: the lead's ruling took the recorded-migration form, not a declared coverage list per ensurer, because `ColumnEnsurers` is `[]ColumnEnsurer` - opaque function values - so no test can ask an ensurer which columns it covers. Comparing the schema the whole path produces against the registry needs no new seam.
+- THE INSTRUMENT NAMES WHAT IT SEARCHED on every run, green or red: `searched: 21 registered table(s), 290 registered column(s), 1 registered ensurer(s), 0 recorded migration step(s)`. Its doc comment states the limit it cannot cross - a column added to a TableDef after a LIVE database was created is invisible to it, because its fixture is a fresh database and `createAll` builds that column from the DDL; catching that shape needs a recorded baseline (a folded 0001), and `migrations/` holds only its README today.
+- MEASURED, 2026-10-10: `0 registered column(s) without a path` - so item 1 of the row registers no ensurer, which the ruling allows ("register only if the count is not empty").
+- VERIFIED: `go test ./fastmcp/task_management/infrastructure/database/ -run TestEveryTableDefColumnHasAPath -count=1 -v` with `AGENTHUB_TEST_PG_URL` set -> PASS 3.30s, the two log lines above; `gofmt` empty.
+
 ## 2026-10-10 - the ensurer's fixture is derived from the TableDef, one case per column
 
 - REPLACED the hand-written `oldShapeColumnsDDL` in `task_event_ensurer_test.go` with `oldShapeDDL(t, drop)`: it renders the table from the `task_events` TableDef's own ColumnDefs, minus the two P1 columns and minus `drop`, and drops any constraint that names a dropped column. The old fixture modelled the shape the ensurer HANDLES (it already carried `subtask_id`), so a case built from it could not see a column the ensurer never adds.
