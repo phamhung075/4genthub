@@ -5,7 +5,7 @@ compaction when a seat does not compact on its own. The harness itself only comp
 what a seat can work with.
 
 Code: `agenthub_client/src/agenthub_client/compact.py` (the loop), `watch.py` (the limits), and
-`agenthub_client/rust/forcecompact/` (the RPC tool). Run it with `4genteam compact [RIG]` (detached, log
+`agenthub_client/rust/forcecompact/` (the RPC tool). **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the first two names are the retired Python's, and the third half of this sentence still stands.** The loop is `agenthub_client/internal/clientlifecycle/supervisor.go`, whose own header reads *"the compaction supervisor: the loop, one pass of it, and the start/stop/status of a supervisor process, ported from `compact.py` and `cli.py`"*; the limits are read by `agenthub_client/internal/seatlog/seatlog.go:35` (`ApplyLimits` reads `COMPACT_LIMIT_TOKENS`, `COMPACT_WARN_TOKENS` and `COMPACT_HARD_TOKENS`) and the token bars read them at `agenthub_client/internal/clientwatch/grid.go:31`; and `agenthub_client/rust/forcecompact/` **is still in the client at the pin** (four files, including `src/main.rs`), so that citation was never stale. Run it with `4genteam compact [RIG]` (detached, log
 `logs/compact-supervisor-<rig>.log`); `4genteam up` starts it as part of the full lifecycle, and
 `4genteam compact-run` is the foreground loop. Run it from the host, never inside a seat pane: a loop in a
 seat dies with the seats it watches.
