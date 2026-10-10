@@ -1,13 +1,15 @@
 package fastmcp
 
 // Database migration runner (Python fastmcp/database_migrations.py): applies the
-// progress_history/progress_count migration and the uuid-ossp extension on startup. Only the
-// PostgreSQL branch is ported; the non-PostgreSQL URL check is kept as a fast return.
+// progress_history/progress_count migration to an existing database. Only the PostgreSQL branch
+// is ported; the non-PostgreSQL URL check is kept as a fast return. The startup path is not here:
+// it is InitDatabase (task_management/infrastructure/database/init_database.go) ->
+// DatabaseConfig.CreateTables, which runs the embedded schema under AUTO_MIGRATE=true, and that
+// schema creates the uuid-ossp extension it needs itself (init_schema_postgresql.sql:10).
 
 import (
 	"context"
 	"strings"
-	"sync"
 
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -137,59 +139,4 @@ func (m *DatabaseMigrator) RunMigrations() bool {
 		return false
 	}
 	return true
-}
-
-// InitializeDatabase creates the uuid-ossp extension.
-func (m *DatabaseMigrator) InitializeDatabase() bool {
-	if !isPostgresURL(m.DatabaseURL) {
-		return true
-	}
-	db, err := database.PgxOpener(m.DatabaseURL, database.EngineOptions{})
-	if err != nil {
-		return false
-	}
-	defer db.Close()
-	if _, err := db.ExecContext(context.Background(), `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`); err != nil {
-		return false
-	}
-	return true
-}
-
-// EnsureDatabaseReady initializes then migrates; always true like Python.
-func (m *DatabaseMigrator) EnsureDatabaseReady() bool {
-	m.InitializeDatabase()
-	m.RunMigrations()
-	return true
-}
-
-var (
-	migratorMu       sync.Mutex
-	migratorInstance *DatabaseMigrator
-)
-
-// GetMigrator returns the singleton migrator.
-func GetMigrator(databaseURL string) *DatabaseMigrator {
-	migratorMu.Lock()
-	defer migratorMu.Unlock()
-	if migratorInstance == nil {
-		migratorInstance = NewDatabaseMigrator(databaseURL)
-	}
-	return migratorInstance
-}
-
-// RunStartupMigrations runs migrations, automatic migrations and the current-user
-// initialization. Migration failures are reported only through the returned success flag.
-func RunStartupMigrations(databaseURL string) bool {
-	migrator := GetMigrator(databaseURL)
-	success := migrator.EnsureDatabaseReady()
-	if success {
-		deps := database.OSDeps()
-		ctx := context.Background()
-		if db, err := deps.Open(migrator.DatabaseURL, database.EngineOptions{}); err == nil {
-			database.RunAutoMigrations(ctx, db)
-			_ = db.Close()
-		}
-		InitializeDatabaseForCurrentUser()
-	}
-	return success
 }

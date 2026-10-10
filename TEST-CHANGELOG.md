@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the two dead startup migration entry points leave, and the proof is a sweep plus three named cases
+
+- DELETED `agenthub_go/fastmcp/task_management/infrastructure/database/auto_migration_test.go`: the whole file, because `TestAutoMigrationRealPostgres` was its only content and it existed to call the entry point deleted with it.
+- DELETED the case `TestRunAutoMigrationsRespectsAutoMigrateGate` from `agenthub_go/fastmcp/task_management/infrastructure/database/auto_migrate_gate_test.go`. The file was CHECKED before cutting, not assumed: it keeps its three other cases (`TestInitDatabaseNoDDLWithoutAutoMigrate`, `TestEnsureAIColumnsRespectsAutoMigrateGate`, `TestDBInitializerSkipsInitSQLWithoutAutoMigrate`) and all three helpers (`fakeAutoMigrateDeps`, `clearAutoMigrate`, `firstDDL`), each still used by a survivor — so all three still pass by name after the cut.
+- KEPT deliberately, and reported on the row instead of deleted here: `TestDatabaseMigratorRunMigrations` and `TestDatabaseMigratorURL` (`fastmcp/database_init_integration_test.go`, `fastmcp/database_init_test.go`) cover `DatabaseMigrator.RunMigrations`, which now has no production caller — but it MOVES DATA (the legacy `details` → `progress_history` migration), which is the applied-migrations question the item put out of scope.
+- VERIFIED: `gofmt -l` on both touched files printed nothing; `go build ./...` ok; `go vet` clean on both packages; a word-boundary sweep for the deleted names over every tracked `.go` prints nothing; `go test -count=1 ./fastmcp/ ./fastmcp/task_management/infrastructure/database/` both ok with the PostgreSQL URL set, so the schema cases ran rather than skipped.
+
 ## 2026-10-10 - an unusable seat header is refused at the MCP boundary, and the refusal is proved by its absence
 
 - NEW file, staged by explicit path: `agenthub_go/fastmcp/seat_management/domain/mcpblock/mcpblock_test.go`, two cases over the REAL validator, no database. The round trip pins the invariant the writer and the reader share: every value `SeatValue` produces is accepted, including a key that itself contains a separator. The refusals pin the widths as the boundary itself — 255 accepted, 256 refused — plus `""`, `alpha`, `/beta` and `alpha/`; the message must name the length and stay under 200 bytes, so a hostile header cannot inflate it.
