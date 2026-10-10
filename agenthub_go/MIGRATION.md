@@ -57,18 +57,18 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 0-shared/config | `utilities/openapi.py` | `fastmcp/utilities/openapi.go` | 974 | done (tested) |
 | 0-shared/config | `utilities/tests.py` | `fastmcp/utilities/tests.go` | 131 | n/a (Python multiprocessing uvicorn test helper; Go uses httptest) |
 | 0-shared/config | `utilities/types.py` | `fastmcp/utilities/types.go` | 296 | done |
-| 1-domain | `agent_management/domain/entities/agent_template.py` | `fastmcp/agent_management/domain/entities/agent_template.go` | 260 | done |
-| 1-domain | `agent_management/domain/entities/user_agent_instance.py` | `fastmcp/agent_management/domain/entities/user_agent_instance.go` | 384 | done |
-| 1-domain | `agent_management/domain/enums/ordering.py` | `fastmcp/agent_management/domain/enums/ordering.go` | 18 | done |
-| 1-domain | `agent_management/domain/repositories/agent_template_repository.py` | `fastmcp/agent_management/domain/repositories/agent_template_repository.go` | 92 | done |
-| 1-domain | `agent_management/domain/repositories/user_agent_instance_repository.py` | `fastmcp/agent_management/domain/repositories/user_agent_instance_repository.go` | 154 | done |
-| 1-domain | `agent_management/domain/services/agent_customization_service.py` | `fastmcp/agent_management/domain/services/agent_customization_service.go` | 327 | done |
-| 1-domain | `agent_management/domain/services/agent_instantiation_service.py` | `fastmcp/agent_management/domain/services/agent_instantiation_service.go` | 167 | done |
-| 1-domain | `agent_management/domain/services/agent_sharing_service.py` | `fastmcp/agent_management/domain/services/agent_sharing_service.go` | 334 | done |
-| 1-domain | `agent_management/domain/value_objects/agent_configuration.py` | `fastmcp/agent_management/domain/value_objects/agent_configuration.go` | 142 | done |
-| 1-domain | `agent_management/domain/value_objects/agent_template_id.py` | `fastmcp/agent_management/domain/value_objects/agent_template_id.go` | 27 | done |
-| 1-domain | `agent_management/domain/value_objects/user_agent_instance_id.py` | `fastmcp/agent_management/domain/value_objects/user_agent_instance_id.go` | 33 | done |
-| 1-domain | `agent_management/domain/value_objects/user_id.py` | `fastmcp/agent_management/domain/value_objects/user_id.go` | 31 | done |
+| 1-domain | `agent_management/domain/entities/agent_template.py` | `fastmcp/agent_management/domain/entities/agent_template.go` | 260 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/entities/user_agent_instance.py` | `fastmcp/agent_management/domain/entities/user_agent_instance.go` | 384 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/enums/ordering.py` | `fastmcp/agent_management/domain/enums/ordering.go` | 18 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/repositories/agent_template_repository.py` | `fastmcp/agent_management/domain/repositories/agent_template_repository.go` | 92 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/repositories/user_agent_instance_repository.py` | `fastmcp/agent_management/domain/repositories/user_agent_instance_repository.go` | 154 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/services/agent_customization_service.py` | `fastmcp/agent_management/domain/services/agent_customization_service.go` | 327 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/services/agent_instantiation_service.py` | `fastmcp/agent_management/domain/services/agent_instantiation_service.go` | 167 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/services/agent_sharing_service.py` | `fastmcp/agent_management/domain/services/agent_sharing_service.go` | 334 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/value_objects/agent_configuration.py` | `fastmcp/agent_management/domain/value_objects/agent_configuration.go` | 142 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/value_objects/agent_template_id.py` | `fastmcp/agent_management/domain/value_objects/agent_template_id.go` | 27 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/value_objects/user_agent_instance_id.py` | `fastmcp/agent_management/domain/value_objects/user_agent_instance_id.go` | 33 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 1-domain | `agent_management/domain/value_objects/user_id.py` | `fastmcp/agent_management/domain/value_objects/user_id.go` | 31 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
 | 1-domain | `ai_task_planning/domain/entities/planning_request.py` | `fastmcp/ai_task_planning/domain/entities/planning_request.go` | 227 | done |
 | 1-domain | `ai_task_planning/domain/entities/task_plan.py` | `fastmcp/ai_task_planning/domain/entities/task_plan.go` | 488 | done |
 | 1-domain | `ai_task_planning/domain/services/requirement_analyzer.py` | `fastmcp/ai_task_planning/domain/services/requirement_analyzer.go` | 632 | done |
@@ -206,8 +206,8 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 1-domain | `task_management/domain/value_objects/vision_objects.py` | `fastmcp/task_management/domain/value_objects/vision_objects.go` | 291 | done (tested) |
 | 1-domain | `task_management/domain/websocket_protocol.py` | `fastmcp/task_management/domain/websocket_protocol.go` | 586 | done |
 | 2-infrastructure | `agent_management/infrastructure/database/models.py` | `fastmcp/agent_management/infrastructure/database/models.go` | 386 | done (tested; see models_agent_management.go) |
-| 2-infrastructure | `agent_management/infrastructure/repositories/orm/agent_template_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/agent_template_repository.go` | 377 | done (tested; flat under repositories/) |
-| 2-infrastructure | `agent_management/infrastructure/repositories/orm/user_agent_instance_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/user_agent_instance_repository.go` | 696 | done (tested; flat under repositories/) |
+| 2-infrastructure | `agent_management/infrastructure/repositories/orm/agent_template_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/agent_template_repository.go` | 377 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 2-infrastructure | `agent_management/infrastructure/repositories/orm/user_agent_instance_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/user_agent_instance_repository.go` | 696 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
 | 2-infrastructure | `auth/infrastructure/database/models.py` | `fastmcp/auth/infrastructure/database/models.go` | 287 | done (tested; see models_auth.go) |
 | 2-infrastructure | `auth/infrastructure/email_service.py` | `fastmcp/auth/infrastructure/email_service.go` | 722 | done (tested) |
 | 2-infrastructure | `auth/infrastructure/enhanced_auth_service.py` | `fastmcp/auth/infrastructure/enhanced_auth_service.go` | 496 | done (tested) |
@@ -255,7 +255,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 2-infrastructure | `task_management/infrastructure/di_container.py` | `fastmcp/task_management/infrastructure/di_container.go` | 303 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/event_bus.py` | `fastmcp/task_management/infrastructure/event_bus.go` | 363 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/event_store.py` | `fastmcp/task_management/infrastructure/event_store.go` | 480 | done (tested) |
-| 2-infrastructure | `task_management/infrastructure/events/event_handler_initializer.py` | `fastmcp/task_management/infrastructure/events/event_handler_initializer.go` | 259 | done (tested) |
+| 2-infrastructure | `task_management/infrastructure/events/event_handler_initializer.py` | `fastmcp/task_management/infrastructure/events/event_handler_initializer.go` | 259 | removed (e1970dc5 deleted the dormant event-bus registration and its notification family) |
 | 2-infrastructure | `task_management/infrastructure/events/event_queue.py` | `fastmcp/task_management/infrastructure/events/event_queue.go` | 366 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/events/event_worker.py` | `fastmcp/task_management/infrastructure/events/event_worker.go` | 501 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/factories/project_service_factory.py` | `fastmcp/task_management/infrastructure/factories/project_service_factory.go` | 133 | done (tested) |
@@ -307,7 +307,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 2-infrastructure | `task_management/infrastructure/repositories/utils.py` | `fastmcp/task_management/infrastructure/repositories/utils.go` | 411 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/security/access_controller.py` | `fastmcp/task_management/infrastructure/security/access_controller.go` | 110 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/services/agent_converter.py` | `fastmcp/task_management/infrastructure/services/agent_converter.go` | 189 | done (tested) |
-| 2-infrastructure | `task_management/infrastructure/services/agent_doc_generator.py` | `fastmcp/task_management/infrastructure/services/agent_doc_generator.go` | 263 | done (tested) |
+| 2-infrastructure | `task_management/infrastructure/services/agent_doc_generator.py` | `fastmcp/task_management/infrastructure/services/agent_doc_generator.go` | 263 | removed (ea623114 removed the Go agent-doc generator and its wiring, T8 Go half) |
 | 2-infrastructure | `task_management/infrastructure/services/context_schema.py` | `fastmcp/task_management/infrastructure/services/context_schema.go` | 572 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/services/performance_cache_manager.py` | `fastmcp/task_management/infrastructure/services/performance_cache_manager.go` | 876 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/services/performance_monitor.py` | `fastmcp/task_management/infrastructure/services/performance_monitor.go` | 409 | done (tested) |
@@ -322,8 +322,8 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 2-infrastructure | `task_management/infrastructure/websocket/agent_communication_hub.py` | `fastmcp/task_management/infrastructure/websocket/agent_communication_hub.go` | 669 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/websocket/context_notifications.py` | `fastmcp/task_management/infrastructure/websocket/context_notifications.go` | 488 | done (tested) |
 | 2-infrastructure | `task_management/infrastructure/workers/metrics_reporter.py` | `fastmcp/task_management/infrastructure/workers/metrics_reporter.go` | 919 | done (tested) |
-| 3-application | `agent_management/application/facades/agent_management_facade.py` | `fastmcp/agent_management/application/facades/agent_management_facade.go` | 778 | done |
-| 3-application | `agent_management/application/services/yaml_agent_template_loader.py` | `fastmcp/agent_management/application/services/yaml_agent_template_loader.go` | 235 | done |
+| 3-application | `agent_management/application/facades/agent_management_facade.py` | `fastmcp/agent_management/application/facades/agent_management_facade.go` | 778 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 3-application | `agent_management/application/services/yaml_agent_template_loader.py` | `fastmcp/agent_management/application/services/yaml_agent_template_loader.go` | 235 | removed (19373d03 removed the agent-library loader, seeder and -seed-agents) |
 | 3-application | `ai_task_planning/application/services/ai_planning_service.py` | `fastmcp/ai_task_planning/application/services/ai_planning_service.go` | 706 | done |
 | 3-application | `ai_task_planning/interface/controllers/ai_planning_mcp_controller.py` | `fastmcp/ai_task_planning/interface/controllers/ai_planning_mcp_controller.go` | 509 | done |
 | 3-application | `auth/application/auth_factory.py` | `fastmcp/auth/application/auth_factory.go` | 615 | done |
@@ -375,7 +375,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 3-application | `task_management/application/event_handlers/hint_event_handlers.py` | `fastmcp/task_management/application/event_handlers/hint_event_handlers.go` | 384 | done |
 | 3-application | `task_management/application/event_handlers/progress_event_handlers.py` | `fastmcp/task_management/application/event_handlers/progress_event_handlers.go` | 350 | done |
 | 3-application | `task_management/application/event_handlers/project_event_handlers.py` | `fastmcp/task_management/application/event_handlers/project_event_handlers.go` | 570 | done |
-| 3-application | `task_management/application/event_handlers/task_event_handlers.py` | `fastmcp/task_management/application/event_handlers/task_event_handlers.go` | 386 | done |
+| 3-application | `task_management/application/event_handlers/task_event_handlers.py` | `fastmcp/task_management/application/event_handlers/task_event_handlers.go` | 386 | removed (e1970dc5 deleted the dormant event-bus registration and its notification family) |
 | 3-application | `task_management/application/exceptions.py` | `fastmcp/task_management/application/exceptions.go` | 133 | done |
 | 3-application | `task_management/application/facades/agent_application_facade.py` | `fastmcp/task_management/application/facades/agent_application_facade.go` | 505 | done |
 | 3-application | `task_management/application/facades/auth_application_facade.py` | `fastmcp/task_management/application/facades/auth_application_facade.go` | 164 | done |
@@ -452,11 +452,11 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 3-application | `task_management/application/use_cases/add_context_progress.py` | `fastmcp/task_management/application/use_cases/add_context_progress.go` | 47 | done |
 | 3-application | `task_management/application/use_cases/add_dependency.py` | `fastmcp/task_management/application/use_cases/add_dependency.go` | 126 | done |
 | 3-application | `task_management/application/use_cases/add_subtask.py` | `fastmcp/task_management/application/use_cases/add_subtask.go` | 295 | done |
-| 3-application | `task_management/application/use_cases/agent_mappings.py` | `fastmcp/task_management/application/use_cases/agent_mappings.go` | 153 | done |
+| 3-application | `task_management/application/use_cases/agent_mappings.py` | `fastmcp/task_management/application/use_cases/agent_mappings.go` | 153 | removed-unreachable (`73f7b253` removed its only reader, `entities.AgentNameResolver`; `b7ed419e` deleted the module and its test) |
 | 3-application | `task_management/application/use_cases/ai_task_creation_use_case.py` | `fastmcp/task_management/application/use_cases/ai_task_creation_use_case.go` | 259 | done |
 | 3-application | `task_management/application/use_cases/assign_agent.py` | `fastmcp/task_management/application/use_cases/assign_agent.go` | 66 | done |
 | 3-application | `task_management/application/use_cases/batch_context_operations.py` | `fastmcp/task_management/application/use_cases/batch_context_operations.go` | 439 | done |
-| 3-application | `task_management/application/use_cases/call_agent.py` | `fastmcp/task_management/application/use_cases/call_agent.go` | 45 | done |
+| 3-application | `task_management/application/use_cases/call_agent.py` | `fastmcp/task_management/application/use_cases/call_agent.go` | 45 | removed (b0d441bd removed the Go call_agent tool, its routes and wiring) |
 | 3-application | `task_management/application/use_cases/cleanup_obsolete_use_case.py` | `fastmcp/task_management/application/use_cases/cleanup_obsolete_use_case.go` | 86 | done |
 | 3-application | `task_management/application/use_cases/clear_dependencies.py` | `fastmcp/task_management/application/use_cases/clear_dependencies.go` | 32 | done |
 | 3-application | `task_management/application/use_cases/complete_subtask.py` | `fastmcp/task_management/application/use_cases/complete_subtask.go` | 296 | done |
@@ -509,10 +509,10 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 3-application | `task_management/application/use_cases/validate_dependencies.py` | `fastmcp/task_management/application/use_cases/validate_dependencies.go` | 334 | done |
 | 3-application | `task_management/application/use_cases/validate_integrity_use_case.py` | `fastmcp/task_management/application/use_cases/validate_integrity_use_case.go` | 87 | done |
 | 3-application | `task_management/application/use_cases/validate_rule.py` | `fastmcp/task_management/application/use_cases/validate_rule.go` | 113 | done |
-| 4-server-routes | `agent_management/interface/mcp_controllers/call_agent.py` | `fastmcp/agent_management/interface/mcp_controllers/call_agent.go` | 103 | done |
-| 4-server-routes | `agent_management/interface/mcp_controllers/call_agent_controller.py` | `fastmcp/agent_management/interface/mcp_controllers/call_agent_controller.go` | 62 | done |
-| 4-server-routes | `agent_management/interface/rest/agent_management_routes.py` | `fastmcp/agent_management/interface/rest/agent_management_routes.go` | 1344 | done |
-| 4-server-routes | `agent_management/interface/rest/models.py` | `fastmcp/agent_management/interface/rest/models.go` | 297 | done |
+| 4-server-routes | `agent_management/interface/mcp_controllers/call_agent.py` | `fastmcp/agent_management/interface/mcp_controllers/call_agent.go` | 103 | removed (b0d441bd removed the Go call_agent tool, its routes and wiring) |
+| 4-server-routes | `agent_management/interface/mcp_controllers/call_agent_controller.py` | `fastmcp/agent_management/interface/mcp_controllers/call_agent_controller.go` | 62 | removed (b0d441bd removed the Go call_agent tool, its routes and wiring) |
+| 4-server-routes | `agent_management/interface/rest/agent_management_routes.py` | `fastmcp/agent_management/interface/rest/agent_management_routes.go` | 1344 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
+| 4-server-routes | `agent_management/interface/rest/models.py` | `fastmcp/agent_management/interface/rest/models.go` | 297 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
 | 4-server-routes | `connection_management/interface/controllers/connection_mcp_controller.py` | `fastmcp/connection_management/interface/controllers/connection_mcp_controller.go` | 161 | done |
 | 4-server-routes | `connection_management/interface/controllers/desc/connection/manage_connection_description.py` | `fastmcp/connection_management/interface/controllers/desc/connection/manage_connection_description.go` | 113 | done |
 | 4-server-routes | `connection_management/interface/controllers/desc/description_loader.py` | `fastmcp/connection_management/interface/controllers/desc/description_loader.go` | 91 | done |
@@ -531,8 +531,8 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 4-server-routes | `server/auth/providers/bearer.py` | `fastmcp/server/auth/providers/bearer.go` | 401 | removed-unreachable (nothing constructed `BearerAuthProvider`; its `LoadAccessToken` was an adapter branch no call site reached) |
 | 4-server-routes | `server/auth/providers/in_memory.py` | `fastmcp/server/auth/providers/in_memory.go` | 327 | removed-unreachable (nothing constructed `InMemoryOAuthProvider`) |
 | 4-server-routes | `server/auth/providers/jwt_bearer.py` | `fastmcp/server/auth/providers/jwt_bearer.go` | 223 | removed-unreachable (its only constructor call was in the deleted `mcp_auth_config.go`; `NewJWTBackendFunc` was never assigned) |
-| 4-server-routes | `server/cache/cache_invalidation_hooks.py` | `fastmcp/server/cache/cache_invalidation_hooks.go` | 297 | done |
-| 4-server-routes | `server/cache/redis_cache_decorator.py` | `fastmcp/server/cache/redis_cache_decorator.go` | 380 | done |
+| 4-server-routes | `server/cache/cache_invalidation_hooks.py` | `fastmcp/server/cache/cache_invalidation_hooks.go` | 297 | removed (9489b24e deleted fastmcp/server/cache) |
+| 4-server-routes | `server/cache/redis_cache_decorator.py` | `fastmcp/server/cache/redis_cache_decorator.go` | 380 | removed (9489b24e deleted fastmcp/server/cache) |
 | 4-server-routes | `server/connection_health_tool.py` | `fastmcp/server/connection_health_tool.go` | 258 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
 | 4-server-routes | `server/connection_manager.py` | `fastmcp/server/connection_manager.go` | 255 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
 | 4-server-routes | `server/connection_status_broadcaster.py` | `fastmcp/server/connection_status_broadcaster.go` | 273 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
@@ -545,7 +545,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 4-server-routes | `server/middleware.py` | `fastmcp/server/middleware.go` | 236 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
 | 4-server-routes | `server/openapi.py` | `fastmcp/server/openapi.go` | 1019 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
 | 4-server-routes | `server/proxy.py` | `fastmcp/server/proxy.go` | 401 | removed-unreachable (fastmcp/server has no importer: the live server is fastmcp/server/httpapp) |
-| 4-server-routes | `server/routes/agent_routes.py` | `fastmcp/server/routes/agent_routes.go` | 433 | done |
+| 4-server-routes | `server/routes/agent_routes.py` | `fastmcp/server/routes/agent_routes.go` | 433 | removed (b601b876 deleted the unused Go port of agent_routes.py) |
 | 4-server-routes | `server/routes/alert_system_routes.py` | `fastmcp/server/routes/alert_system_routes.go` | 535 | done |
 | 4-server-routes | `server/routes/analytics_routes.py` | `fastmcp/server/routes/analytics_routes.go` | 667 | done |
 | 4-server-routes | `server/routes/branch_routes.py` | `fastmcp/server/routes/branch_routes.go` | 453 | done |
@@ -584,12 +584,12 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/agent_mcp_controller.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/agent_mcp_controller.go` | 442 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/factories/operation_factory.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/factories/operation_factory.go` | 178 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/factories/response_factory.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/factories/response_factory.go` | 75 | done |
-| 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/handlers/agent_invocation_handler.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/agent_invocation_handler.go` | 55 | done |
+| 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/handlers/agent_invocation_handler.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/agent_invocation_handler.go` | 55 | removed (b0d441bd removed the Go call_agent tool, its routes and wiring) |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/handlers/assignment_handler.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/assignment_handler.go` | 95 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/handlers/crud_handler.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/crud_handler.go` | 188 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/handlers/rebalance_handler.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/handlers/rebalance_handler.go` | 55 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/manage_agent_description.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/manage_agent_description.go` | 94 | done |
-| 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/services/agent_discovery_service.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/services/agent_discovery_service.go` | 38 | done |
+| 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/services/agent_discovery_service.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/services/agent_discovery_service.go` | 38 | removed (0c9a16a7 removed two dead filesystem reads of the retired agent-library) |
 | 4-server-routes | `task_management/interface/mcp_controllers/agent_mcp_controller/unified_agent_description.py` | `fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller/unified_agent_description.go` | 149 | n/a (Go port deleted in 8fa51fd7 - nothing referenced it) |
 | 4-server-routes | `task_management/interface/mcp_controllers/auth_helper/auth_helper.py` | `fastmcp/task_management/interface/mcp_controllers/auth_helper/auth_helper.go` | 65 | done |
 | 4-server-routes | `task_management/interface/mcp_controllers/auth_helper/extractors/context_object_extractor.py` | `fastmcp/task_management/interface/mcp_controllers/auth_helper/extractors/context_object_extractor.go` | 57 | done |
@@ -720,7 +720,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 
 - Go ParseISO rejects datetime.fromisoformat forms Python 3.11+ accepts: space separator, basic format 20260102T030405, truncated times (T03:04, T03), ISO week dates, +0530/-0800 offsets, T24:00:00 (accepted, low risk; Python's specific out-of-range messages also differ from the generic `Invalid isoformat string`).
 - JSON-decoded dicts carry float64 numbers; TemplateFromDict accepts integral float64 for `version`. Repository/infrastructure decoding must do the same or use typed structs.
-- `Task.to_dict` lazily imports application `agent_mappings`; Go registers it via `entities.AgentNameResolver` (set by use_cases init).
+- `Task.to_dict` no longer resolves agent names: `agent_mappings` and `entities.AgentNameResolver` were deleted as residue (`73f7b253` removed the only reader, `b7ed419e` the module and its test).
 - ProgressTimeline keeps `MilestoneOrder` (Python dict insertion order decides milestone event order).
 - Python defect preserved: `context.TaskContext.from_dict` known_fields is missing a comma (`"task_id" "user_id"` → `task_iduser_id`), so `task_id`/`user_id` and progress_* keys are re-imported as a root_level_custom_fields section.
 - Python behavior preserved: `TaskContext.to_dict` walks dataclass `__dict__`, so `metadata._domain_events` (timestamp events, random ids) leaks into the output; Go reproduces it via `RawDict()` on the base timestamp events.
@@ -892,7 +892,7 @@ Behavior the Go port MUST reproduce exactly (the map rows above already list the
 ## Environment facts useful to the next session
 
 - Repositories/interfaces convention: repository methods take `ctx context.Context` and return `(value, error)`; dict returns are `map[string]any`; optional args are pointers. Interface Python properties become accessor methods; `**kwargs` become `map[string]any`; `@contextmanager` becomes `(value, closeFn, err)`.
-- Import-cycle hooks: `domain.UserIDNormalizer` (constants.go) must be registered by infrastructure `uuid_column_type`; `entities.AgentNameResolver` by application `use_cases/agent_mappings`. `entities.GitBranchCreator` is a consumer-side interface because Python duck-types methods missing from the ABC.
+- Import-cycle hooks: `domain.UserIDNormalizer` (constants.go) must be registered by infrastructure `uuid_column_type`. The second hook this line used to name is GONE: `entities.AgentNameResolver`, which application `use_cases/agent_mappings` registered, was DELETED — `73f7b253` removed its only reader and `b7ed419e` deleted the module and its test — so only the `UserIDNormalizer` hook is left to register. `entities.GitBranchCreator` is a consumer-side interface because Python duck-types methods missing from the ABC.
 - `ProjectNameValidator`/`GitBranchNameValidator`: Python compares `entity.id == exclude_*_id` (value object vs str), which is always False, so the "exclude for updates" branch never triggers; the Go port keeps that behavior (parameter accepted, unused). `GitBranchNameValidator` calls `find_all_by_project`, absent from the GitBranchRepository ABC, so Go declares the consumer-side `services.BranchLister`. `value_objects.PyStrip` mirrors `str.strip()` (includes \x1c-\x1f); older code using `strings.TrimSpace` differs only for those characters.
 - `EventDispatcher`: handlers are identified by `EventHandler.Name` (Go funcs are not comparable); handler panics are swallowed like Python's `except Exception`.
 - `protocols/cascade_data_provider` owns `EntityType` in Go (Python imports it from `cascade_calculator`, which only imports the protocol for typing; Go cannot cycle packages). `services.EntityType` is a type alias with re-exported consts. `BranchStatisticsService` keeps Python's duck typing via `StatusedTask`/`IdentifiedBranch`: `task.status == "done"` is False for a `TaskStatus` value object, so only plain-string statuses are counted.
@@ -908,7 +908,7 @@ Behavior the Go port MUST reproduce exactly (the map rows above already list the
 - 1c-iii-c-4 (task_validation_service, hint_rules, content_analyzer, PySum): PASS with findings, all addressed: (1) `PyLower` now implements Final_Sigma and the full lowercase mapping, checked for every code point against Python (27 code points differ, all Unicode 16.0 additions, pinned in `pylower_test.go`); (2) `agent_session.CalculateHealthScore` now uses `PySum`; (3) regexp2 is ~13x slower than Python on pathological inputs (`'A'*20000+'1'`, `'uses '+'x'*30000`; both quadratic, seconds in Python): content analysis must not be exposed to unbounded input, so the application layer must cap the analysed text length (note for slice 3); (4) `go mod tidy` run (regexp2 is a direct dependency).
 - 1c-iii-c-3 (PyRepr fix, PyLower move, FindGitBranch, task_priority_service, orchestrator, task_state_transition_service): PASS. Low finding fixed: `TransitionSubtaskRepository.FindByParentTaskID` now takes `*TaskId` (nil id passed through like Python `None`); test added.
 - Slice 1c-iii-b-2 (task, subtask, git_branch, project entities): PASS. Differentials vs real Python: 22-step Task scenario, 4,400 `Project.check_deadline_risk` cases, 6 `GitBranch.remove_task` cases. Finding A (Task events carried `task_id` as a plain string; Python's `asdict` nests the TaskId as `{"value": id}`) FIXED: `TaskCreatedEvent.TaskID`/`TaskUpdatedEvent.TaskID` are `any`, `Task.idRef()` passes the TaskId, `events.asdictValue` serializes it (test `TestTaskEventsSerializeTaskIDLikeAsdict`). No other entity emits events in Python; later application-layer events must use the same pattern for TaskId-typed fields. Finding B (error text echoing caller-supplied numbers: Python `got 150`, Go `got 150.0`) ACCEPTED (typed-input deviation).
-  - Not checked by dev-check: `get_assignees_info` YAML metadata, `subtask.go`/`git_branch.go` beyond `remove_task`, project scenarios other than deadline risk, ordered_map beyond those scenarios, `Task.to_dict` with a real agent_mappings resolver.
+  - Not checked by dev-check: `get_assignees_info` YAML metadata, `subtask.go`/`git_branch.go` beyond `remove_task`, project scenarios other than deadline risk, ordered_map beyond those scenarios, `Task.to_dict` with a real `agent_mappings` resolver (moot since that resolver and its module were DELETED — `73f7b253` removed the only reader, `b7ed419e` the module and its test).
 - Slice 1c-iii-b-3 (repositories, interfaces, constants): PASS on signature parity (51 classes / 273 methods: 0 missing, 0 extra; 167 methods differ only by the leading ctx), 13/13 enums identical, constants messages identical. Follow-ups DONE: `constants.go` uses `PyStrip`; `AssertUserIDNormalizerRegistered()` added; `NewTemplateListFilter()` carries the Python defaults (limit 50, offset 0).
   - TODO (server slice): `server main` must call `domain.AssertUserIDNormalizerRegistered()` at startup and a test must import the real infrastructure `uuid_column_type` package.
   - Not checked by dev-check: behavior of `context.go`, `agent_session.go`, `global_context_schema.go` (+ testdata), `Project.CreateGitBranchAsync`, `BaseRepository[T]` semantics, parameter and return TYPE parity of interface methods (names and parameter counts only).
