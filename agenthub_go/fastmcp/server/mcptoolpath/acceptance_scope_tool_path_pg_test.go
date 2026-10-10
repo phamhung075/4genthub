@@ -22,8 +22,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -35,30 +37,49 @@ import (
 	infrarepos "agenthub/fastmcp/task_management/infrastructure/repositories"
 )
 
-// findMapWith returns the first object in the response that carries key. The field under test
-// appears only inside the task/subtask payload the tool returns, so its presence identifies that
-// payload without hard-coding the formatter's nesting.
+// findMapWith returns the object in the response that carries key. The field under test appears
+// only inside the task/subtask payload the tool returns, so its presence identifies that payload
+// without hard-coding the formatter's nesting.
+//
+// Two rules keep the answer stable across runs of one revision. A plain map range is randomized,
+// and a create or update response carries the field TWICE: under data.task (the entity, which has
+// an id) and under meta.operation_context (the echo of the request, which does not). So keys are
+// visited in sorted order, and a match that carries an id wins over one that does not. When no
+// match carries an id the first one in that order is returned, which is the old answer made stable.
 func findMapWith(v any, key string) (map[string]any, bool) {
-	switch t := v.(type) {
-	case *entities.OrderedMap[any]:
-		return findMapWith(orderedToMap(t), key)
-	case map[string]any:
-		if item, ok := t[key]; ok && item != nil {
-			return t, true
-		}
-		for _, item := range t {
-			if m, ok := findMapWith(item, key); ok {
-				return m, true
+	var firstMatch map[string]any
+	var walk func(any) (map[string]any, bool)
+	walk = func(v any) (map[string]any, bool) {
+		switch t := v.(type) {
+		case *entities.OrderedMap[any]:
+			return walk(orderedToMap(t))
+		case map[string]any:
+			if item, ok := t[key]; ok && item != nil {
+				if id, hasID := t["id"]; hasID && id != nil {
+					return t, true
+				}
+				if firstMatch == nil {
+					firstMatch = t
+				}
+			}
+			for _, k := range slices.Sorted(maps.Keys(t)) {
+				if m, ok := walk(t[k]); ok {
+					return m, true
+				}
+			}
+		case []any:
+			for _, item := range t {
+				if m, ok := walk(item); ok {
+					return m, true
+				}
 			}
 		}
-	case []any:
-		for _, item := range t {
-			if m, ok := findMapWith(item, key); ok {
-				return m, true
-			}
-		}
+		return nil, false
 	}
-	return nil, false
+	if m, ok := walk(v); ok {
+		return m, true
+	}
+	return firstMatch, firstMatch != nil
 }
 
 func orderedToMap(o *entities.OrderedMap[any]) map[string]any {
