@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - a dead package's test files go with it, and the suite gets smaller rather than quieter
+
+- `agenthub_go/fastmcp/server/`: **9 test files DELETED** with the package that carried them - `connection_manager_test.go`, `connection_status_broadcaster_test.go`, `http_server_test.go`, `mcp_status_tool_test.go`, `openapi_test.go`, `secure_connection_tool_test.go`, `secure_health_check_test.go`, `server_test.go`, `session_store_test.go` - alongside the 17 source files of the same directory. They were the only thing keeping `agenthub/fastmcp/server` compiling; `go list -deps` reports no package importing it.
+- **The suite was re-run rather than assumed, and nothing was skipped to get there:** `go test ./...` after the deletion -> **141 packages ok, 0 FAIL**; `go vet ./...` -> rc 0; `gofmt -l` over the tracked Go files -> nothing.
+
 ## 2026-10-10 - the facade factories' unwired-builder guard gets the case that discriminates
 
 - `agenthub_go/fastmcp/task_management/application/factories/facade_builder_guard_test.go` (new): `TestFacadeBuilderGuardNamesTheMissingWiring` pins the message each of the three facade factories answers when its builder seam was never wired - project, git branch and task, one subtest each - asserting the exact string (`... is not wired: set it at server composition`) rather than "an error was returned". The stub repository backend answers every constructor, so a factory whose builder is unset reaches its builder guard instead of failing earlier on a missing repository; without that the case would pass for the wrong reason.
