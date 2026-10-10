@@ -22,11 +22,22 @@ import (
 
 // newMissedNotificationAppEnv creates a throwaway database (AGENTHUB_TEST_PG_URL, see
 // tools/testpg) with all tables and returns a session manager over it.
+//
+// THE SKIP IS LOUD ON PURPOSE, because three cases in this package depend on this bring-up - the
+// offline notification store and its replay, the in-process boot, and schema-migration idempotence -
+// and the suite's CI job runs `go vet ./... && go test ./...` with no database service and no
+// AGENTHUB_TEST_PG_URL (.github/workflows/ci.yml). None of the three runs there, so a skip that says
+// only "not set" reads as coverage. To run them:
+//
+//	bash tools/testpg/start.sh
+//	AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres go test -count=1 ./fastmcp/server/httpapp/
 func newMissedNotificationAppEnv(t *testing.T) *database.SessionManager {
 	t.Helper()
 	admin := os.Getenv("AGENTHUB_TEST_PG_URL")
 	if admin == "" {
-		t.Skip("AGENTHUB_TEST_PG_URL not set")
+		t.Skip("SKIPPED, NOT PASSED: AGENTHUB_TEST_PG_URL is unset, so this case did NOT run - " +
+			"and .github/workflows/ci.yml provides no database either; the comment above names the " +
+			"two commands that run it")
 	}
 	adm, err := sql.Open("pgx", admin)
 	if err != nil {
