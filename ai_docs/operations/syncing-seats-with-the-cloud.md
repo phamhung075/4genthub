@@ -76,5 +76,32 @@ failed, 4 `status` found a seat behind or not pulled.
   (`modulecontent.go:4`) and the manifests name literal versions, so an unreferenced publish renders the
   old row and looks exactly like a publish that never happened. Until it lands, a seat that needs the
   current text reads the repo source, not the served render.
+
+  **RE-MEASURED 2026-10-10 20:35Z (writer seat) — the repo half moved, the served half
+  did not, and the divergence is now two hunks in source against three in what a seat
+  reads.** The TypeScript-baseline hunk above is **fixed in the repo**: the four
+  `scripts/team/4genthub` sites were rewritten to name the command and carry no count
+  (`8edb60a1` `mission.md`, `d0a18574` `area-web-frontend.txt`, `b60cc986`
+  `project-4genthub.txt`, `e1720a0b` `area-quality.txt`), and the ref at
+  `scripts/team/4genthub/team.json:9` now names **1.0.2**, not 1.0.1 (`88424aa4`) — so
+  the next publish of this module cannot reuse 1.0.1, and no `pinned_version` of any
+  other room was touched. **A seat still reads the old text:** production answers
+  `0.0.34` from the same process that was serving before the push, the rooms still
+  serve their 1.0.0 body, and `main` is at `c510c065`. So the **source** now diverges
+  from the served body in **two** hunks (the `PROJECT.` line and the LAYOUT bullet)
+  while **what a seat reads** still carries all **three**. The remaining chain is two
+  applies, as the disposition ruled: the armed 1.0.1 run, then a second publish of
+  1.0.2 plus a re-resolve and `4genteam sync rig --update`. The publish and the
+  re-resolve need the principal's production token; a seat does not start them.
+
+  **A method note for the next reader of the three census instruments, because getting
+  it wrong looks exactly like a defect in them.** `scripts/S3-REDERIVE.py`,
+  `scripts/CITATION-AUDIT.py` and `scripts/COUNTS-AUDIT.py` read the cited file **at a
+  rev and the document at that rev too** (`git show`, never the worktree), so they can
+  only judge a **commit**. An uncommitted correction is invisible to them and they will
+  report the pre-edit state as stale. Commit, then run the audit — do not pre-check.
+  Verified by rerunning all three after their commits: `S3-REDERIVE.py` `FRESH 66` exit
+  0 (it takes no argument; with none it defaults to `rev=HEAD base=a7990665`),
+  `COUNTS-AUDIT.py` exit 0, `CITATION-AUDIT.py` `rows 145  stale 0  unresolved 0`.
 - **Not yet built:** the frontend "Apply" button. When the cloud records apply requests, `watch`
   will act on them; today `watch` compares hashes by polling.
