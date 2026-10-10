@@ -326,13 +326,14 @@ export interface SeatLinkRequest {
 }
 
 /**
- * Body of POST /api/v2/openrig/seats/{seat}/messages - one message handed to a seat's session.
+ * Body of POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages - one message to a seat's session.
  *
  * THIS SHAPE IS THE INTERFACE THE CHAT INPUT IS BUILT AGAINST, pinned in one place
  * (`seatApi.sendSeatMessage`) so the route's author aligns it in a single edit. `text` is the
- * whole body; the route carries no room, unlike every other seat route, because the seat key in
- * the path is the seat's own identity. (If the route lands with a different field name, it is
- * this type and that one method that change - the component reads neither.)
+ * whole body; the route is room-scoped like every other seat route - a seat is unique per
+ * (room_id, seat_key), so the key alone names a seat only by guessing its room. (If the route
+ * lands with a different field name, it is this type and that one method that change - the
+ * component reads neither.)
  */
 export interface SeatMessageRequest {
   text: string;

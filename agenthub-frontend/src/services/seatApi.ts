@@ -155,9 +155,13 @@ export const seatApi = {
       { method: 'DELETE' }
     ),
 
-  // Messages. The seat key is the whole path: this route is not room-scoped, unlike the rest.
-  sendSeatMessage: (seat: string, data: SeatMessageRequest) =>
-    apiRequest<SeatMessageResponse>(`${OPENRIG}/seats/${segment(seat)}/messages`, jsonBody(data)),
+  // Messages. Room-scoped like every other seat route: a seat is unique per (room_id, seat_key),
+  // so the key alone names a seat only by guessing its room.
+  sendSeatMessage: (room: string, seat: string, data: SeatMessageRequest) =>
+    apiRequest<SeatMessageResponse>(
+      `${OPENRIG}/rooms/${segment(room)}/seats/${segment(seat)}/messages`,
+      jsonBody(data)
+    ),
 
   // Bridge machines
   fetchMachines: () => apiRequest<MachinesResponse>(`${OPENRIG}/machines`),

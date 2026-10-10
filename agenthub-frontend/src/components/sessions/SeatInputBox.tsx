@@ -3,8 +3,8 @@
  * input as a drawer at the window's foot.
  *
  * CLOSED ON EVERY MOUNT, BY CONSTRUCTION. `open` is component state and nothing else - no app
- * state, no URL, no storage - so a reload returns the window to watch-only. The seat key is a
- * prop, and it is the only fact this component carries about the seat it addresses.
+ * state, no URL, no storage - so a reload returns the window to watch-only. The seat key and its
+ * room are props, and they are the only facts this component carries about the seat it addresses.
  *
  * WHY THE DRAWER IS PORTALLED. The toggle belongs in the chrome and the drawer at the foot, and
  * the drawer must PUSH the transcript rather than cover it: a window that streams what it is
@@ -31,7 +31,12 @@ import { useSendSeatMessage } from '../../hooks/useSeats';
 import { cn } from '../../lib/utils';
 
 export interface SeatInputBoxProps {
-  /** The seat this box addresses: the only seat fact the component carries. */
+  /**
+   * The room the seat lives in. A seat is unique per (room_id, seat_key), so the route that
+   * addresses one needs both.
+   */
+  room: string;
+  /** The seat this box addresses. */
   seatKey: string;
   /** The window's foot node. The drawer renders into it; without one the drawer renders in place. */
   drawerTarget?: HTMLElement | null;
@@ -39,13 +44,14 @@ export interface SeatInputBoxProps {
 }
 
 export const SeatInputBox: React.FC<SeatInputBoxProps> = ({
+  room,
   seatKey,
   drawerTarget = null,
   className,
 }) => {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
-  const send = useSendSeatMessage(seatKey);
+  const send = useSendSeatMessage(room, seatKey);
 
   const refusal = send.error instanceof Error ? send.error.message : null;
   const trimmed = text.trim();

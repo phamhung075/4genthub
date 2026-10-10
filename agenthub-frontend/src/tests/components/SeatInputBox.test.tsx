@@ -31,7 +31,7 @@ describe('SeatInputBox', () => {
   });
 
   it('renders no input on the first mount: a fresh window is watch-only', () => {
-    render(<SeatInputBox seatKey="web-dev" />);
+    render(<SeatInputBox room="dev" seatKey="web-dev" />);
 
     // queryBy, not getBy: the assertion IS the absence, and a getBy-shaped assertion for absence
     // is the wrong instrument - it throws rather than reporting, so it cannot express this.
@@ -45,13 +45,15 @@ describe('SeatInputBox', () => {
   });
 
   it("sends the typed text to the seat's messages endpoint and clears the box", async () => {
-    render(<SeatInputBox seatKey="web-dev" />);
+    render(<SeatInputBox room="dev" seatKey="web-dev" />);
     openAndType('  hello from the window  ');
 
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
 
     await waitFor(() =>
-      expect(mockApi.sendSeatMessage).toHaveBeenCalledWith('web-dev', { text: 'hello from the window' })
+      expect(mockApi.sendSeatMessage).toHaveBeenCalledWith('dev', 'web-dev', {
+        text: 'hello from the window',
+      })
     );
     await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
   });
@@ -60,7 +62,7 @@ describe('SeatInputBox', () => {
     mockApi.sendSeatMessage.mockRejectedValue(
       Object.assign(new Error('seat "web-dev" cannot be messaged: refused by scope'), { status: 403 })
     );
-    render(<SeatInputBox seatKey="web-dev" />);
+    render(<SeatInputBox room="dev" seatKey="web-dev" />);
     openAndType('hello');
 
     fireEvent.click(screen.getByRole('button', { name: /send/i }));
@@ -77,7 +79,7 @@ describe('SeatInputBox', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
     first.unmount();
 
-    render(<SeatInputBox seatKey="web-dev" />);
+    render(<SeatInputBox room="dev" seatKey="web-dev" />);
 
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
@@ -88,6 +90,7 @@ describe('SessionLiveView chat input', () => {
     render(
       <SessionLiveView
         sessionName="4genthub-min-web-dev@4genthub-min"
+        room="4genthub-min"
         seatKey="4genthub-min-web-dev@4genthub-min"
         status="live"
         error={null}
@@ -115,6 +118,22 @@ describe('SessionLiveView chat input', () => {
       <SessionLiveView sessionName={null} status="live" error={null} events={[]} />
     );
 
+    expect(screen.queryByRole('button', { name: 'Show message input' })).not.toBeInTheDocument();
+  });
+
+  it('renders no chat input when the window has a seat but no room to address it in', () => {
+    render(
+      <SessionLiveView
+        sessionName="4genthub-min-web-dev@4genthub-min"
+        seatKey="4genthub-min-web-dev@4genthub-min"
+        status="live"
+        error={null}
+        events={[]}
+      />
+    );
+
+    // The route is room-scoped, so a seat with no room cannot be addressed at all. The window
+    // stays watch-only rather than posting to a room it would have to guess.
     expect(screen.queryByRole('button', { name: 'Show message input' })).not.toBeInTheDocument();
   });
 });

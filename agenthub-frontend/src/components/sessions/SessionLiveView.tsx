@@ -22,6 +22,11 @@ interface SessionLiveViewProps {
   status: SessionStreamStatus;
   error: string | null;
   /**
+   * The room the seat below lives in; with the key it addresses
+   * /rooms/{room}/seats/{seat}/messages, because a seat is unique per (room_id, seat_key).
+   */
+  room?: string | null;
+  /**
    * The seat this window belongs to; the chat input addresses it. Null while no session is
    * selected, which is exactly when there is no window to put an input in.
    */
@@ -60,6 +65,7 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
   events,
   status,
   error,
+  room = null,
   seatKey = null,
 }) => {
   // The window's foot, where the chat drawer lands. Held in state rather than a ref object because
@@ -88,7 +94,9 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
         <Badge variant={statusBadgeVariant(status)} className="ml-auto shrink-0">
           {STATUS_LABEL[status]}
         </Badge>
-        {seatKey && <SeatInputBox seatKey={seatKey} drawerTarget={chatFoot} />}
+        {seatKey && room && (
+          <SeatInputBox room={room} seatKey={seatKey} drawerTarget={chatFoot} />
+        )}
       </div>
 
       {(status === 'connecting' || status === 'reconnecting') && events.length === 0 && (

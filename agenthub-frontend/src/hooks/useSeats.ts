@@ -403,9 +403,9 @@ export function useDeleteSeatLink(room: string, seat: string) {
  * and a refusal is NOT toasted, because the sentence the server sends is the thing the caller has
  * to read, so it is rendered where the message was typed.
  */
-export function useSendSeatMessage(seat: string) {
+export function useSendSeatMessage(room: string, seat: string) {
   return useMutation({
-    mutationFn: (data: SeatMessageRequest) => seatApi.sendSeatMessage(seat, data),
+    mutationFn: (data: SeatMessageRequest) => seatApi.sendSeatMessage(room, seat, data),
   });
 }
 
