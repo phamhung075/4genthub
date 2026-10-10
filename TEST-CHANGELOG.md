@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the migration runner's tests: order, idempotence, atomicity, and the baseline mark
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/migration_runner_test.go` (no database): the loader's filename ordering with the suffix stripped and non-SQL files ignored; `validateSet` refusing a duplicate, an out-of-order, a nameless and a SQL-less step, each by name; and that the embedded set a boot actually applies is well-formed.
+- ADDED `migration_runner_integration_test.go` (needs `AGENTHUB_TEST_PG_URL` from `bash tools/testpg/start.sh`; skips loudly without it, in the house wording): both steps apply in order and are recorded; a SECOND run applies nothing and does not repeat the effect; the ledger table is created on first use, because the throwaway database comes from the registry alone; a step that creates a table and then raises leaves NO ledger row and NO table while the earlier step stays applied and recorded; and `MarkBaseline` records a step WITHOUT executing its SQL, after which a run applies nothing, while a name outside the set is refused. The package's existing `newTestDatabase` helper is reused rather than re-derived.
+- The two database-backed cases assert the FAILURE MODE as well as the happy path: the idempotence case checks the ledger table did not exist before the first run and does after it, so a runner that silently skipped its ledger cannot pass.
+- VERIFIED: `gofmt -l cmd fastmcp internal` printed nothing; `go build ./...` clean; `go vet ./...` clean; `go test ./...` with the database present - zero failures (`grep -cE '^(FAIL|--- FAIL)'` = 0).
+
 ## 2026-10-10 - the absent-hash guard that fixed a production crash is pinned by the case whose red IS that crash
 
 - NEW file, staged by explicit path: `agenthub-frontend/src/tests/components/MachinesPanel.test.tsx` (one case). It renders `MachinesPanel` against a stubbed `useMachines` whose machine reports TWO seats — a healthy one, and one whose `pinned_hash` **KEY IS ABSENT**. The healthy row is the POSITIVE CONTROL: without it, an assertion that the absent row shows nothing would also pass against a panel that rendered no rows at all.
