@@ -4,14 +4,19 @@
  * Renders the events replayed and streamed by useSessionStream; each frame the
  * server sent is already a {seq, type, payload, ts} object.
  *
+ * NO CHAT INPUT HERE, DELIBERATELY: phase 1 of the rigd slice ships none, and the ruled boundaries
+ * (`ai_docs/core-architecture/rigd-boundaries.md`, section 3) make commands a phase-2 surface with
+ * their own scope, a human-only issuer and a local opt-in - a browser session with `sessions:write`
+ * does NOT authorize one. `SeatInputBox` stays in the tree for that phase; this view simply does not
+ * mount it.
+ *
  * @module components/sessions/SessionLiveView
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
-import { AlertCircle, Loader2, Radio } from 'lucide-react';
+import React from 'react';
+import { AlertCircle, Loader2, Radio, ShieldAlert } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { SeatInputBox } from './SeatInputBox';
 import { cn } from '../../lib/utils';
 import type { SessionEvent } from '../../types/sessionTypes';
 import type { SessionStreamStatus } from '../../hooks/useSessions';
@@ -21,16 +26,6 @@ interface SessionLiveViewProps {
   events: SessionEvent[];
   status: SessionStreamStatus;
   error: string | null;
-  /**
-   * The room the seat below lives in; with the key it addresses
-   * /rooms/{room}/seats/{seat}/messages, because a seat is unique per (room_id, seat_key).
-   */
-  room?: string | null;
-  /**
-   * The seat this window belongs to; the chat input addresses it. Null while no session is
-   * selected, which is exactly when there is no window to put an input in.
-   */
-  seatKey?: string | null;
 }
 
 const STATUS_LABEL: Record<SessionStreamStatus, string> = {
@@ -65,13 +60,7 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
   events,
   status,
   error,
-  room = null,
-  seatKey = null,
 }) => {
-  // The window's foot, where the chat drawer lands. Held in state rather than a ref object because
-  // the drawer is a PORTAL: it needs the node as a value to render into, and a ref object would
-  // give it null on the render that matters.
-  const [chatFoot, setChatFoot] = useState<HTMLDivElement | null>(null);
 
   if (status === 'idle') {
     return (
@@ -94,9 +83,6 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
         <Badge variant={statusBadgeVariant(status)} className="ml-auto shrink-0">
           {STATUS_LABEL[status]}
         </Badge>
-        {seatKey && room && (
-          <SeatInputBox room={room} seatKey={seatKey} drawerTarget={chatFoot} />
-        )}
       </div>
 
       {(status === 'connecting' || status === 'reconnecting') && events.length === 0 && (
@@ -118,25 +104,41 @@ export const SessionLiveView: React.FC<SessionLiveViewProps> = ({
           <p className="p-4 text-sm text-base-secondary">No events stored for this session yet.</p>
         ) : (
           <ul role="list">
-            {events.map((event) => (
-              <li key={event.seq} className="border-b border-surface-border-hover px-4 py-2">
-                <div className="flex items-center gap-2 text-xs text-base-secondary">
-                  <span className="font-mono">#{event.seq}</span>
-                  <Badge variant="outline">{event.type}</Badge>
-                  {event.ts && <span className="ml-auto truncate">{event.ts}</span>}
-                </div>
-                <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-base-primary">
-                  {formatPayload(event.payload)}
-                </pre>
-              </li>
-            ))}
+            {events.map((event) => {
+              // A withheld event arrives as {type: "redaction_withheld", payload: {reason, bytes}} and
+              // carries no content and no hash of it (rigd-boundaries.md 4.4). It is rendered as the
+              // GAP it is rather than as an event whose payload merely looks empty.
+              const reason =
+                event.type === 'redaction_withheld' &&
+                event.payload !== null &&
+                typeof event.payload === 'object' &&
+                'reason' in event.payload &&
+                typeof event.payload.reason === 'string'
+                  ? event.payload.reason
+                  : null;
+              return (
+                <li key={event.seq} className="border-b border-surface-border-hover px-4 py-2">
+                  <div className="flex items-center gap-2 text-xs text-base-secondary">
+                    <span className="font-mono">#{event.seq}</span>
+                    <Badge variant="outline">{event.type}</Badge>
+                    {event.ts && <span className="ml-auto truncate">{event.ts}</span>}
+                  </div>
+                  {reason === null ? (
+                    <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-base-primary">
+                      {formatPayload(event.payload)}
+                    </pre>
+                  ) : (
+                    <p className="mt-1 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-500">
+                      <ShieldAlert className="h-4 w-4 shrink-0" />
+                      withheld locally: {reason}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
-
-      {/* The window's foot. The chat input's drawer renders into this node, so opening it takes its
-          own height here and the transcript above keeps the rest of the window, scroll included. */}
-      <div ref={setChatFoot} className="shrink-0" />
     </div>
   );
 };

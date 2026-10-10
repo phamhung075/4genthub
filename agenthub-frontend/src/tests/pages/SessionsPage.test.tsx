@@ -4,12 +4,10 @@
  */
 
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { SessionsPage } from '../../pages/SessionsPage';
 import { useSessionStream, useSessions } from '../../hooks/useSessions';
-import { seatApi } from '../../services/seatApi';
 import type { SessionSummary } from '../../types/sessionTypes';
 
 vi.mock('../../hooks/useSessions', () => ({
@@ -21,15 +19,8 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ tokens: { access_token: 'tok' } }),
 }));
 
-// The send is the only observable of what the page hands the window: the chat input addresses
-// whatever pair it is given, so the route it posts to is the page's decision, not the input's.
-vi.mock('../../services/seatApi', () => ({
-  seatApi: { sendSeatMessage: vi.fn() },
-}));
-
 const useSessionsMock = vi.mocked(useSessions);
 const useSessionStreamMock = vi.mocked(useSessionStream);
-const mockSeatApi = vi.mocked(seatApi);
 
 const session = (
   id: string,
@@ -51,24 +42,15 @@ const session = (
   seat_key: seat.seat_key,
 });
 
-// A provider, because the window now holds a real mutation: the chat input's send. This file mocks
-// the two query hooks, so before the input existed no QueryClient was needed here at all - the
-// component that needs one now is the one under test's own child.
-const renderPage = (path = '/sessions') => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/sessions" element={<SessionsPage />} />
-          <Route path="/sessions/:sessionId" element={<SessionsPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>
+const renderPage = (path = '/sessions') =>
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/sessions" element={<SessionsPage />} />
+        <Route path="/sessions/:sessionId" element={<SessionsPage />} />
+      </Routes>
+    </MemoryRouter>
   );
-};
 
 describe('SessionsPage', () => {
   beforeEach(() => {
@@ -79,7 +61,6 @@ describe('SessionsPage', () => {
       refetch: vi.fn(),
     });
     useSessionStreamMock.mockReturnValue({ events: [], status: 'idle', error: null });
-    mockSeatApi.sendSeatMessage.mockResolvedValue({ success: true });
   });
 
   it('lists the sessions and follows the session named by the route', () => {
@@ -123,10 +104,11 @@ describe('SessionsPage', () => {
     expect(screen.getByText('Session not found')).toBeInTheDocument();
   });
 
-  it("sends to the room and seat the session's own row carries, not to what its name says", async () => {
-    // The name reads `@other-rig` while the session's own row says `4genthub-min` / `web-dev`. A page
-    // that parsed the name would post into another room and would do it silently, which is the
-    // failure the (room, seat_key) pair - and this case - exist to make impossible.
+  it('renders no chat input at all: phase 1 ships none, and the live window is the control', () => {
+    // The ruled boundary (rigd-boundaries.md section 3): a browser session holding `sessions:write`
+    // does NOT authorize a command - that needs `sessions:command`, a human-only issuer and a local
+    // opt-in, which is phase 2. So this page mounts no input, and the POSITIVE CONTROL is the window
+    // itself: an absence assertion against a page that rendered nothing would pass vacuously.
     useSessionsMock.mockReturnValue({
       sessions: [
         session('s1', 'web-dev@other-rig', { room_slug: '4genthub-min', seat_key: 'web-dev' }),
@@ -135,39 +117,46 @@ describe('SessionsPage', () => {
       error: null,
       refetch: vi.fn(),
     });
-    // A live stream, because the window renders no chat input while no session is followed - and a
-    // case that observed the absence under `idle` would pass whether or not the pair was used.
     useSessionStreamMock.mockReturnValue({ events: [], status: 'live', error: null });
 
     renderPage('/sessions/s1');
-    fireEvent.click(screen.getByRole('button', { name: 'Show message input' }));
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: '  hello  ' } });
-    fireEvent.click(screen.getByRole('button', { name: /send/i }));
 
-    await waitFor(() =>
-      expect(mockSeatApi.sendSeatMessage).toHaveBeenCalledWith('4genthub-min', 'web-dev', {
-        text: 'hello',
-      })
-    );
+    // The control: the window rendered, and this sentence is unique to it (it shows only while a
+    // session is followed with no stored events).
+    expect(screen.getByText('No events stored for this session yet.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show message input' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  it('renders no chat input when the session carries no seat, though its name has an @rig suffix', () => {
-    // The derivation that stood here read the room `4genthub-min` out of this very name and passed
-    // the name itself as the seat key, so an input WOULD have rendered. The pair is null, so the
-    // window stays watch-only instead of posting into a room it would have to guess.
-    useSessionsMock.mockReturnValue({
-      sessions: [session('s1', 'web-dev@4genthub-min')],
-      isLoading: false,
-      error: null,
-      refetch: vi.fn(),
-    });
-    // Live for the same reason as the case above: under `idle` the window is replaced wholesale, so
-    // the absence of the input would prove nothing about the pair.
-    useSessionStreamMock.mockReturnValue({ events: [], status: 'live', error: null });
+  it('renders a withheld event as the gap it is, with a delivered event beside it as the control', () => {
+    // rigd fails CLOSED per event (rigd-boundaries.md 4.4): a withheld event is uploaded ONLY as
+    // {type: "redaction_withheld", payload: {reason, bytes}} and carries no content and no hash of it.
+    // The reason is rendered, because a reader has to be able to tell a gap from an empty event.
+    useSessionStreamMock.mockImplementation((id) =>
+      id === 's1'
+        ? {
+            events: [
+              { seq: 1, type: 'message', payload: 'hello from alpha', ts: null },
+              {
+                seq: 2,
+                type: 'redaction_withheld',
+                payload: { reason: 'env_file', bytes: 412 },
+                ts: null,
+              },
+            ],
+            status: 'live',
+            error: null,
+          }
+        : { events: [], status: 'idle', error: null }
+    );
 
     renderPage('/sessions/s1');
 
-    expect(screen.queryByRole('button', { name: 'Show message input' })).not.toBeInTheDocument();
+    expect(screen.getByText('withheld locally: env_file')).toBeInTheDocument();
+    // The control: the ordinary event in the same render is still shown as its content.
+    expect(screen.getByText('hello from alpha')).toBeInTheDocument();
+    // The placeholder is a GAP, not a payload dump: the generic renderer would print the JSON.
+    expect(screen.queryByText(/\{"reason"/)).not.toBeInTheDocument();
   });
 
   it("shows each session's own seat, and invents none for a row the connector named none on", () => {

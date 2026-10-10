@@ -31,16 +31,13 @@ export const SessionsPage: React.FC = () => {
 
   const selected = sessions.find((session) => session.id === sessionId) ?? null;
 
-  // THE SEAT'S IDENTITY IS THE SESSION'S OWN DATA, and this is where the `@rig` derivation stood:
-  // its own revisit condition - "the moment the session carries its room as real data" - is MET, so
-  // the line is DELETED rather than kept as a fallback, and one concept keeps one source of truth.
-  // Both facts arrive on the session row from the columns the connector wrote at ingest, serialized
-  // by GET /api/v2/sessions (`sessionRow` in agenthub_go/fastmcp/session_stream/repository.go; the
-  // wire case over the decoded body is fastmcp/server/httpapp/ws_connector_test.go). NO FALLBACK: a
-  // session whose connector named no seat carries null here and gets no chat input, because a room
-  // guessed from the name posts to the wrong room silently - which is what the (room, seat_key)
-  // pair rules out.
-  const room = selected?.room_slug ?? null;
+  // THE SEAT'S IDENTITY IS THE SESSION'S OWN DATA - the (room_slug, seat_key) pair the connector
+  // wrote at ingest, serialized by GET /api/v2/sessions (`sessionRow` in
+  // agenthub_go/fastmcp/session_stream/repository.go). The list renders it, which is what phase 1
+  // needs. NOTHING HERE DERIVES A ROOM FROM THE NAME: the `@rig` suffix is a naming convention, and
+  // a room guessed from it posts to the wrong room silently. The chat input that consumed the pair
+  // is PHASE 2 (rigd-boundaries.md section 3: commands carry their own scope, a human-only issuer
+  // and a local opt-in), so `SeatInputBox` is not mounted on this page.
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
@@ -87,10 +84,6 @@ export const SessionsPage: React.FC = () => {
               events={stream.events}
               status={stream.status}
               error={stream.error}
-              room={room}
-              // The seat key is the session's own field, passed straight through. The name is not
-              // an identifier for the route, and parsing it would be the guessing this replaces.
-              seatKey={selected?.seat_key ?? null}
             />
           </CardContent>
         </Card>
