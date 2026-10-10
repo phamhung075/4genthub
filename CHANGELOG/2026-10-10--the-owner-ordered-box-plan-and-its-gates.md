@@ -17,7 +17,8 @@
   accepted (the box's own head); **O7** → O9(b) (`:436`: "(b) blocks O7"; the box's own tail: "Owner confirmation
   needed first"); **G3's codex clause** → accept the weaker level or restrict links to `claude-code` (`:413`(b)
   records that restriction as already implemented in `handleUpsertSeatLink`, and `:405`'s tail keeps the box open
-  on `cmd/seatcheck`'s send gap and "the codex decision").
+  on the install that "nothing builds or links (`<pins dir>/bin/seatcheck`, so a guarded seat cannot yet send)"
+  and "the codex decision").
 - **Stays out:** D1 (`:367`), F5 (`:394`), F7 (`:396`) — each quoted with its own line's reason (D1's ask answered
   2026-10-05 but its build missing; F5 "optional, last" and unbuilt; F7 out of scope by its own wording). The
   block also notes that the doc's own OPEN list at `:355` carries D3 and D5 while the ordering names neither, so
