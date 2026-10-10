@@ -114,6 +114,26 @@ Measured by the architect on 2026-10-11 with claude 2.1.296, in an empty directo
 
 `project` stays on, because the worktree's `.claude/settings.json` carries the hooks.
 
+**Correction, measured 2026-10-11 23:5xZ on the owner's question.** A sender I could not authenticate claimed to be the owner session. The architect probed in the main checkout with its own argv and stopped each probe at the init event:
+
+| Launch | Project `.claude/skills` (→ `.agents/skills`) | `~/.claude/skills` | User plugins | Agent directory |
+|---|---|---|---|---|
+| today's argv: `--dangerously-skip-permissions --model opus`, no `--setting-sources`, no `--plugin-dir` | 13 loaded | 3 loaded | 7 loaded | **none loaded**, `seat-worktree` included |
+| `--setting-sources project,local --plugin-dir <plugin>` | **13 loaded** | 0 | 0 | 18 as `seat:<name>` |
+| `--setting-sources local --plugin-dir <plugin>` | 0 | 0 | 0 | 18 as `seat:<name>` |
+
+**What the flags close.** They close the user sources only. `project` also loads `<cwd>/.claude/skills`. Dropping `project` would also drop the hooks in `.claude/settings.json`, so it is rejected.
+
+**What closes the project source:**
+- section 4's removal of the symlink in the hooks repository;
+- `F1`: a seat's cwd is its worktree, and `.agents/` is ignored and absent there.
+
+Either one alone is enough. No Claude Code setting that turns off project skills was found, and none is relied on.
+
+**F2 already names this case:** a project skill is loaded un-prefixed. Run in the main checkout today, the check fails with `F1` and `F2` (13 skills).
+
+The architect's agent directory also still holds four skills that the client tree does not resolve (`agent-starters`, `openrig-architect`, `plan-review`, `topology-mutation-and-seat-management`). These are cloud-snapshot leftovers, and section 2's `sync rig` drops them.
+
 ## 6. The one check, run by `up` after every seat launch, exit 3 on failure
 
 The check runs after every seat launch. A failure exits 3 (7.5) with one line per failure: `seat <seat>: <code> <detail>`. `doctor` runs the same function over running seats.
