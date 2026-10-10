@@ -14,7 +14,9 @@ import (
 	authperm "agenthub/fastmcp/auth/domain"
 	"agenthub/fastmcp/auth/middleware"
 	"agenthub/fastmcp/config"
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	seatcontrollers "agenthub/fastmcp/seat_management/interface/mcp_controllers"
+	"agenthub/fastmcp/task_management/application/services"
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	interfacelayer "agenthub/fastmcp/task_management/interface"
@@ -364,6 +366,13 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 		if envUID := os.Getenv("DEFAULT_USER_ID"); envUID != "" {
 			userID = &envUID
 		}
+	}
+
+	// THE SEAT'S CLAIM ON ITS OWN CALLS, read from the header every rendered MCP block carries
+	// (mcpblock.SeatHeader). ATTRIBUTION ONLY: nothing below decides access from it, and a call
+	// without it is attributed to the user, never to the system.
+	if seatID := r.Header.Get(mcpblock.SeatHeader); seatID != "" {
+		ctx = services.WithActor(ctx, services.SeatActor(seatID))
 	}
 
 	orderedArgs := entities.NewOrderedMap[any]()

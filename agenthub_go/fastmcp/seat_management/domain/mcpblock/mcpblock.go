@@ -29,6 +29,17 @@ const (
 // the client runtime to expand from the seat's environment.
 const PlatformURLPlaceholder = "${AGENTHUB_MCP_URL}"
 
+// SeatHeader is the header every rendered http MCP block carries and the MCP route reads back: the
+// seat's identity, `<room>/<seat>`. It is an ATTRIBUTION claim, never an authorization one - the
+// route reads it to say who made a call, and decides nothing else from it.
+const SeatHeader = "X-Agenthub-Seat"
+
+// SeatValue is that header's value, in one place so the renderer that writes it and the route that
+// reads it cannot drift into two shapes.
+func SeatValue(roomSlug, seatKey string) string {
+	return roomSlug + "/" + seatKey
+}
+
 // Server is one MCP server as a block's content describes it.
 type Server struct {
 	// Name is the server key in the rendered MCP fragment.

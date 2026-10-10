@@ -82,6 +82,9 @@ func (s *SeatResolutionService) ResolveSeat(ctx context.Context, userID, roomSlu
 	if err != nil {
 		return nil, err
 	}
+	// Where the seat lives travels with it into the render: the MCP block names the seat so a call
+	// can be attributed to it, and the renderer refuses to emit an http block without it.
+	resolved.RoomSlug, resolved.SeatKey = roomSlug, seatKey
 	spec, err := seatrenderer.RenderSeat(resolved, s.MCPURL)
 	if err != nil {
 		return nil, err

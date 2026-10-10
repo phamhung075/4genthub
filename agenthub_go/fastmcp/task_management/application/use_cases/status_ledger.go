@@ -18,7 +18,7 @@ type TransactionRunner interface {
 // and the recorder is the one writer of the ledger.
 type LedgerRecorder interface {
 	StatusOf(ctx context.Context, taskID string) (string, error)
-	RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus, actorID string) (*entities.TaskEvent, error)
+	RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error)
 }
 
 // StatusLedger is what a status-writing use case needs to make the status and its ledger entry one
@@ -31,10 +31,6 @@ type StatusLedger struct {
 	Ledger LedgerRecorder
 }
 
-// statusActorSystem is the domain's stamp for an entry with no acting user, named here so the use
-// cases do not each import the entity package for one string.
-const statusActorSystem = entities.TaskEventActorSystemID
-
 // Enabled reports whether both halves are wired.
 func (l StatusLedger) Enabled() bool { return l.Tx != nil && l.Ledger != nil }
 
@@ -45,9 +41,10 @@ func (l StatusLedger) Enabled() bool { return l.Tx != nil && l.Ledger != nil }
 // The task's status is read from the row inside that transaction, before and after save, so an
 // entry reports the transition the ROW made rather than one this process believed it was making,
 // and no entry is written when the status did not move: the ledger records changes, not saves.
-// actorID is the acting user, or entities.TaskEventActorSystemID when this path cannot name one.
+// WHO the write is attributed to is the recorder's to decide, from the request itself, so a use
+// case has no name to invent and passes none.
 func (l StatusLedger) SaveStatus(ctx context.Context, save func(context.Context) error,
-	taskID, actorID string) error {
+	taskID string) error {
 	if !l.Enabled() {
 		return save(ctx)
 	}
@@ -66,7 +63,7 @@ func (l StatusLedger) SaveStatus(ctx context.Context, save func(context.Context)
 		if from == to {
 			return nil
 		}
-		_, err = l.Ledger.RecordStatusChange(ctx, taskID, from, to, actorID)
+		_, err = l.Ledger.RecordStatusChange(ctx, taskID, from, to)
 		return err
 	})
 }

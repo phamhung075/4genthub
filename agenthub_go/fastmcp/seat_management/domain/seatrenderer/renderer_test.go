@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/seat_management/domain/resolver"
 	"agenthub/fastmcp/seat_management/domain/seedlibrary"
 
@@ -39,6 +40,8 @@ func seatFixture(runtime string) resolver.ResolvedSeat {
 		SeatType:        "seat.standard",
 		SeatTypeVersion: "1.2.0",
 		Runtime:         runtime,
+		RoomSlug:        "alpha",
+		SeatKey:         "beta",
 		Modules: []resolver.ResolvedModule{
 			{Slug: "instr.base", Version: "1.0.0", Kind: resolver.KindInstruction, Content: "Base instruction."},
 			{Slug: "doc.guide", Version: "2.0.0", Kind: resolver.KindDocument, Content: "Guide document."},
@@ -710,6 +713,61 @@ func TestRenderSeatOmpMCPFileIsTheMeasuredRuntimeShape(t *testing.T) {
 	if first, second := fileContent(t, spec, ompMCPPath), fileContent(t, again, ompMCPPath); first != second {
 		t.Fatalf("the omp MCP file is not deterministic:\nfirst:\n%s\nsecond:\n%s", first, second)
 	}
+}
+
+// The seat's identity travels with every http MCP block the renderer emits, and with the same value
+// at both destinations - a call that cannot be attributed to the seat that made it is the gap this
+// closes. It is stamped HERE rather than left to a block's content for the same reason a seat-scoped
+// overlay may not grant itself a block: attribution must not be claimable by the thing attributed.
+func TestRenderSeatMCPBlocksCarryTheSeatIdentity(t *testing.T) {
+	const want = "alpha/beta"
+
+	claude := mcpServers(t, mustRender(t, withMCP(seatFixture("claude-code"), mcpPlatformModule(), sequentialThinkingModule())))
+	if got := claude["agenthub_http"].Headers[mcpblock.SeatHeader]; got != want {
+		t.Fatalf("claude-code %s = %q, want %q", mcpblock.SeatHeader, got, want)
+	}
+	// The block's own headers are not disturbed by the stamp.
+	if got := claude["agenthub_http"].Headers["Authorization"]; got != "Bearer ${"+OpenRigTokenEnvVar+"}" {
+		t.Fatalf("stamping the identity changed Authorization: %q", got)
+	}
+	// A stdio server has no header channel at all: a header belongs to an HTTP call, so the renderer
+	// leaves that entry alone rather than inventing a field the runtime would not read.
+	if h := claude["sequential-thinking"].Headers; len(h) != 0 {
+		t.Fatalf("stdio server headers = %v, want none", h)
+	}
+
+	// One document, two destinations: the omp file carries the same identity as the claude fragment.
+	omp := mcpServersAt(t, mustRender(t, withMCP(seatFixture("omp"), mcpPlatformModule())), ompMCPPath)
+	if got := omp["agenthub_http"].Headers[mcpblock.SeatHeader]; got != want {
+		t.Fatalf("omp %s = %q, want %q", mcpblock.SeatHeader, got, want)
+	}
+
+	// A block cannot name a seat of its own; the seat's identity wins.
+	forged := withMCP(seatFixture("claude-code"), resolver.ResolvedModule{
+		Slug: "forged", Version: "1.0.0", Kind: resolver.KindMCP,
+		Content: `{"name":"agenthub_http","type":"http","url":"${AGENTHUB_MCP_URL}","headers":{"X-Agenthub-Seat":"other/seat"}}`,
+	})
+	forgedServers := mcpServers(t, mustRender(t, forged))
+	if got := forgedServers["agenthub_http"].Headers[mcpblock.SeatHeader]; got != want {
+		t.Fatalf("a block naming its own seat won: %s = %q, want the seat's %q", mcpblock.SeatHeader, got, want)
+	}
+
+	// And an identity-less seat cannot emit an http block at all, rather than emitting one that
+	// claims to be nobody and would be attributed to nobody.
+	anonymous := seatFixture("claude-code")
+	anonymous.RoomSlug, anonymous.SeatKey = "", ""
+	if _, err := RenderSeat(withMCP(anonymous, mcpPlatformModule()), testMCPURL); err == nil || !strings.Contains(err.Error(), "identity") {
+		t.Fatalf("error = %v, want a missing-identity error", err)
+	}
+}
+
+func mustRender(t *testing.T, seat resolver.ResolvedSeat) *OpenRigSpec {
+	t.Helper()
+	spec, err := RenderSeat(seat, testMCPURL)
+	if err != nil {
+		t.Fatalf("RenderSeat: %v", err)
+	}
+	return spec
 }
 
 // TestRenderSeatOmpWithoutMCPBlocksRendersNoMCPFile is the acceptance's other half: a seat with no mcp

@@ -138,7 +138,7 @@ func (uc *CompleteTaskUseCase) Execute(
 	if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
 		_, err := uc.taskRepository.Save(ctx, task)
 		return err
-	}, taskIDStr, statusActorSystem); err != nil {
+	}, taskIDStr); err != nil {
 		return nil, err
 	}
 
@@ -389,7 +389,7 @@ func (uc *CompleteTaskUseCase) executeCore(
 		if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
 			_, err := uc.taskRepository.Save(ctx, task)
 			return err
-		}, taskIDStr, statusActorSystem); err != nil {
+		}, taskIDStr); err != nil {
 			return nil, false, err
 		}
 	}
@@ -642,7 +642,7 @@ func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, de
 			_ = uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
 				_, err := uc.taskRepository.Save(ctx, dependentTask)
 				return err
-			}, ledgerTaskID(dependentTask), statusActorSystem)
+			}, ledgerTaskID(dependentTask))
 		case "todo":
 			// Ready to start: all dependencies completed.
 		default:

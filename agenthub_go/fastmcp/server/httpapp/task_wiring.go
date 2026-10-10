@@ -134,7 +134,7 @@ func (p taskFacadeProvider) TaskFacade(ctx context.Context, userID, projectID, g
 	}
 	ledger := use_cases.StatusLedger{
 		Tx:     p.sessions,
-		Ledger: services.NewTaskEventRecorder(infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID)),
+		Ledger: services.NewTaskEventRecorder(infrarepos.NewTaskEventRepository(p.sessions, ledgerUserID, ledgerBranchID), ledgerUserID),
 	}
 
 	deps := facades.TaskFacadeDeps{

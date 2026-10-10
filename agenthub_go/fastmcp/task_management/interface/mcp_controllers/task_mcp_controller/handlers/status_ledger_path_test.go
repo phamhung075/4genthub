@@ -62,15 +62,14 @@ type ledgerPathEntry struct {
 	taskID string
 	old    string
 	new    string
-	actor  string
 }
 
 func (f *ledgerPathRecorder) StatusOf(_ context.Context, taskID string) (string, error) {
 	return f.repo.rows[taskID], nil
 }
 
-func (f *ledgerPathRecorder) RecordStatusChange(_ context.Context, taskID, oldStatus, newStatus, actorID string) (*entities.TaskEvent, error) {
-	f.entries = append(f.entries, ledgerPathEntry{taskID: taskID, old: oldStatus, new: newStatus, actor: actorID})
+func (f *ledgerPathRecorder) RecordStatusChange(_ context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error) {
+	f.entries = append(f.entries, ledgerPathEntry{taskID: taskID, old: oldStatus, new: newStatus})
 	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindStatusChanged}, nil
 }
 
@@ -167,7 +166,7 @@ func TestUpdateTaskHandlerReachesStatusLedger(t *testing.T) {
 		t.Fatalf("ledger entries = %d (%+v), want exactly 1", len(rec.entries), rec.entries)
 	}
 	entry := rec.entries[0]
-	t.Logf("OBSERVED ledger entry: task=%s old=%q new=%q actor=%q", entry.taskID, entry.old, entry.new, entry.actor)
+	t.Logf("OBSERVED ledger entry: task=%s old=%q new=%q", entry.taskID, entry.old, entry.new)
 	if entry.taskID != idValue || entry.old != "todo" || entry.new != "in_progress" {
 		t.Fatalf("entry = %+v, want task %s old=todo new=in_progress", entry, idValue)
 	}

@@ -59,15 +59,14 @@ type ledgerEntry struct {
 	taskID string
 	old    string
 	new    string
-	actor  string
 }
 
 func (f *ledgerFakeRecorder) StatusOf(_ context.Context, taskID string) (string, error) {
 	return f.repo.rows[taskID], nil
 }
 
-func (f *ledgerFakeRecorder) RecordStatusChange(_ context.Context, taskID, oldStatus, newStatus, actorID string) (*entities.TaskEvent, error) {
-	f.entries = append(f.entries, ledgerEntry{taskID: taskID, old: oldStatus, new: newStatus, actor: actorID})
+func (f *ledgerFakeRecorder) RecordStatusChange(_ context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error) {
+	f.entries = append(f.entries, ledgerEntry{taskID: taskID, old: oldStatus, new: newStatus})
 	return &entities.TaskEvent{TaskID: taskID, Kind: entities.TaskEventKindStatusChanged}, nil
 }
 
@@ -213,9 +212,6 @@ func TestCompleteTaskWritesStatusChangedForEveryMove(t *testing.T) {
 		got := rec.entries[i]
 		if got.taskID != w.taskID || got.old != w.old || got.new != w.new {
 			t.Fatalf("entry %d = %+v, want %+v", i, got, w)
-		}
-		if got.actor != entities.TaskEventActorSystemID {
-			t.Fatalf("entry %d actor = %q, want %q", i, got.actor, entities.TaskEventActorSystemID)
 		}
 	}
 }

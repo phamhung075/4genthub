@@ -26,11 +26,17 @@ type TaskEventLedger interface {
 // status write and this call inside it, and a failure in either rolls both back.
 type TaskEventRecorder struct {
 	ledger TaskEventLedger
+	// userID is whom this recorder's writes belong to when the request named no one else: the
+	// composition root builds one recorder per user, so this is the only place that knows whose
+	// tree these entries land in. A request carrying a seat header is attributed to that seat
+	// instead - see actorFor.
+	userID string
 }
 
-// NewTaskEventRecorder builds the recorder over whatever writes, and reads, the ledger.
-func NewTaskEventRecorder(ledger TaskEventLedger) *TaskEventRecorder {
-	return &TaskEventRecorder{ledger: ledger}
+// NewTaskEventRecorder builds the recorder over whatever writes, and reads, the ledger, with the
+// user whose writes these are as the attribution of last resort.
+func NewTaskEventRecorder(ledger TaskEventLedger, userID string) *TaskEventRecorder {
+	return &TaskEventRecorder{ledger: ledger, userID: userID}
 }
 
 // StatusOf reads the task's stored status inside the caller's transaction, which is what lets an
@@ -54,13 +60,55 @@ func (r *TaskEventRecorder) Record(ctx context.Context, taskID string, kind enti
 
 // RecordStatusChange writes the entry for one status transition, carrying the old and the new
 // status. `new` is the key the parity check reads against tasks.status, so it is the status the
-// task row holds after the write this entry shares a transaction with. actorID is the acting user,
-// or StatusActorSystem when the path cannot name one.
-func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus, actorID string) (*entities.TaskEvent, error) {
-	actorKind := entities.TaskEventActorUser
-	if actorID == entities.TaskEventActorSystemID || actorID == "" {
-		actorID, actorKind = entities.TaskEventActorSystemID, entities.TaskEventActorSystem
-	}
-	return r.Record(ctx, taskID, entities.TaskEventKindStatusChanged, actorKind, actorID,
+// task row holds after the write this entry shares a transaction with.
+//
+// WHO the write is attributed to is settled HERE, once, rather than by every caller passing a name
+// it had to invent: a request that named a seat through the MCP header is an agent acting on the
+// caller's behalf, and a request that named no seat belongs to the user this recorder was built
+// for. Only a recorder built with no user at all - which no production wiring does - falls back to
+// the system.
+func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error) {
+	actor := r.actorFor(ctx)
+	return r.Record(ctx, taskID, entities.TaskEventKindStatusChanged, actor.Kind, actor.ID,
 		map[string]any{"old": oldStatus, "new": newStatus})
+}
+
+func (r *TaskEventRecorder) actorFor(ctx context.Context) Actor {
+	if actor, ok := ActorFromContext(ctx); ok {
+		return actor
+	}
+	if r.userID != "" {
+		return Actor{Kind: entities.TaskEventActorUser, ID: r.userID}
+	}
+	return Actor{Kind: entities.TaskEventActorSystem, ID: entities.TaskEventActorSystemID}
+}
+
+// Actor is WHO a write is attributed to, in the two shapes a request can name: a seat, which is an
+// agent acting on the caller's behalf, or the user themselves. It is ATTRIBUTION and never
+// authorization - nothing may decide access from it, which is why a header can carry it at all.
+type Actor struct {
+	Kind entities.TaskEventActorKind
+	ID   string
+}
+
+type actorContextKey struct{}
+
+// WithActor stamps the actor a request named onto its context. The interface layer sets it where it
+// reads the request, exactly as the authenticated user and the public origin already travel, so an
+// application service can attribute a write without every caller threading a name through.
+func WithActor(ctx context.Context, actor Actor) context.Context {
+	return context.WithValue(ctx, actorContextKey{}, actor)
+}
+
+// ActorFromContext reads the actor the request named, if it named one.
+func ActorFromContext(ctx context.Context) (Actor, bool) {
+	actor, ok := ctx.Value(actorContextKey{}).(Actor)
+	return actor, ok
+}
+
+// SeatActor is an agent acting on the user's behalf, named by the seat identity `<room>/<seat>` the
+// rendered MCP header carries. The architecture names this identity `seat`; the landed task_events
+// vocabulary spells the class `agent`, and P1 lands the architecture's spelling.
+func SeatActor(seatID string) Actor {
+	return Actor{Kind: entities.TaskEventActorAgent, ID: seatID}
 }

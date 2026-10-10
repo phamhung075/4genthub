@@ -152,7 +152,7 @@ func (u *UpdateTaskUseCase) Execute(ctx context.Context, request task.UpdateTask
 	if err := u.ledger.SaveStatus(ctx, func(ctx context.Context) error {
 		_, err := u.taskRepository.Save(ctx, taskEntity)
 		return err
-	}, taskIDStr, statusActorSystem); err != nil {
+	}, taskIDStr); err != nil {
 		return nil, err
 	}
 

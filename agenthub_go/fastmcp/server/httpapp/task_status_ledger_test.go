@@ -28,6 +28,7 @@ import (
 	"strings"
 	"testing"
 
+	"agenthub/fastmcp/seat_management/domain/mcpblock"
 	"agenthub/fastmcp/task_management/domain"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
@@ -41,9 +42,9 @@ func ledgerSeedTask(t *testing.T, sm *database.SessionManager, taskID, userID, s
 	const projectID = "11111111-1111-4111-8111-111111111111"
 	const branchID = "22222222-2222-4222-8222-222222222222"
 	ledgerExec(t, sm, `INSERT INTO projects (id,name,description,created_at,updated_at,user_id,status,metadata)
-		VALUES ($1,'ledger project','',now(),now(),$2,'active','{}')`, projectID, userID)
+		VALUES ($1,'ledger project','',now(),now(),$2,'active','{}') ON CONFLICT (id) DO NOTHING`, projectID, userID)
 	ledgerExec(t, sm, `INSERT INTO project_git_branchs (id, project_id, name, description, created_at, updated_at, priority, status, metadata, task_count, completed_task_count, user_id)
-		VALUES ($1,$2,'ledger branch','',now(),now(),'medium','todo','{}',0,0,$3)`, branchID, projectID, userID)
+		VALUES ($1,$2,'ledger branch','',now(),now(),'medium','todo','{}',0,0,$3) ON CONFLICT (id) DO NOTHING`, branchID, projectID, userID)
 	ledgerExec(t, sm, `
 		INSERT INTO tasks (id, title, description, git_branch_id, status, priority, progress_history,
 			progress_count, estimated_effort, created_at, updated_at, completion_summary, testing_notes,
@@ -226,5 +227,110 @@ func TestTaskStatusRouteWritesTheLedgerInTheSameTransaction(t *testing.T) {
 	}
 	if got := ledgerParityMismatches(t, sm); got != 0 {
 		t.Fatalf("parity after the refusal: %d mismatch(es), want 0", got)
+	}
+}
+
+// ledgerLastStatusActor reads the actor of the newest status_changed entry for a task, as the row
+// records it.
+func ledgerLastStatusActor(t *testing.T, sm *database.SessionManager, taskID string) (string, string) {
+	t.Helper()
+	kind, actorID := "", ""
+	if err := sm.WithSession(context.Background(), func(ctx context.Context, s database.DBTX) error {
+		return s.QueryRowContext(ctx, `
+			SELECT actor_kind, actor_id FROM task_events
+			WHERE task_id = $1::uuid AND kind = 'status_changed'
+			ORDER BY seq DESC LIMIT 1`, taskID).Scan(&kind, &actorID)
+	}); err != nil {
+		t.Fatalf("reading the entry's actor: %v", err)
+	}
+	return kind, actorID
+}
+
+// ledgerMCPUpdateStatus drives the MCP tools/call the seat's rendered client actually makes -
+// manage_task update - with the header the renderer stamps, or with none.
+func ledgerMCPUpdateStatus(t *testing.T, app *App, token, seat, taskID, status string) (int, string) {
+	t.Helper()
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"manage_task","arguments":{"action":"update","task_id":"` +
+		taskID + `","status":"` + status + `","details":"moved by the seat's MCP call"}}}`
+	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	if seat != "" {
+		req.Header.Set(mcpblock.SeatHeader, seat)
+	}
+	rec := httptest.NewRecorder()
+	app.Handler().ServeHTTP(rec, req)
+	return rec.Code, rec.Body.String()
+}
+
+// WHO an MCP status call is attributed to, read from the ROW rather than from the response: the seat
+// the header names is an agent acting on the caller's behalf, and a call that names no seat belongs
+// to the user the caller resolves to. Every status write used to be stamped
+// `system`/`system` no matter who made it, which is the gap this closes.
+//
+// The seat class is written `agent` because that is the LANDED task_events vocabulary. The item's
+// acceptance sentence names `seat` and `human` from architecture section 2.5, which the table's
+// CHECK does not permit yet; P1 lands that spelling, and the deviation is named here, in the
+// changelog and in the commit rather than left for a later reader to rediscover.
+func TestMCPStatusCallIsAttributedToTheSeatThatMadeIt(t *testing.T) {
+	sm := newMissedNotificationAppEnv(t)
+	t.Setenv("AUTH_ENABLED", "true")
+	wsWireRESTAuth(t)
+
+	ctx := context.Background()
+	app, err := NewApp(ctx, sm)
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+
+	const minted = "user-status-ledger-mcp"
+	// The MCP tool path authorizes the operation, so this token needs the scope the REST route did
+	// not ask for; without it the call answers 200 with a PERMISSION_DENIED payload and not a single
+	// row moves, which is exactly what the first run of this case showed.
+	token := wsTestTokenFor(t, minted, []string{"tasks:update", "tasks:read"})
+	authCode, user := wsRESTUser(t, "Bearer "+token)
+	if authCode != http.StatusOK || user == "" {
+		t.Fatalf("the bearer dependency resolved no user: status = %d", authCode)
+	}
+	scoped, mapErr := domain.ValidateUserID(&user, "seeding the tasks this test moves")
+	if mapErr != nil {
+		t.Fatalf("mapping the user id: %v", mapErr)
+	}
+
+	// A call carrying the header the renderer stamps: an agent, named by the seat identity.
+	const withSeat = "8f1b1f0e-6f1a-4a3e-9a5f-2f5b3c7d9e02"
+	ledgerSeedTask(t, sm, withSeat, scoped, "todo")
+	code, body := ledgerMCPUpdateStatus(t, app, token, "alpha/beta", withSeat, "in_progress")
+	t.Logf("OBSERVED MCP call with the seat header: POST /mcp -> %d, status = %q, body = %.400s",
+		code, ledgerStatus(t, sm, withSeat), body)
+	if code != http.StatusOK {
+		t.Fatalf("MCP tools/call = %d, want 200: %s", code, body)
+	}
+	kind, actorID := ledgerLastStatusActor(t, sm, withSeat)
+	t.Logf("OBSERVED with the seat header: entry actor = %s/%q, want agent/%q", kind, actorID, "alpha/beta")
+	if kind != "agent" || actorID != "alpha/beta" {
+		t.Fatalf("entry actor = %s/%q, want agent/%q", kind, actorID, "alpha/beta")
+	}
+	if got := ledgerStatus(t, sm, withSeat); got != "in_progress" {
+		t.Fatalf("status = %q, want in_progress", got)
+	}
+
+	// A call with no header: the user, named by the id the composition scoped the row to.
+	const noSeat = "8f1b1f0e-6f1a-4a3e-9a5f-2f5b3c7d9e03"
+	ledgerSeedTask(t, sm, noSeat, scoped, "todo")
+	code, body = ledgerMCPUpdateStatus(t, app, token, "", noSeat, "in_progress")
+	t.Logf("OBSERVED MCP call without the header: POST /mcp -> %d, status = %q, body = %.400s",
+		code, ledgerStatus(t, sm, noSeat), body)
+	if code != http.StatusOK {
+		t.Fatalf("MCP tools/call without the header = %d, want 200: %s", code, body)
+	}
+	kind, actorID = ledgerLastStatusActor(t, sm, noSeat)
+	t.Logf("OBSERVED without the header: entry actor = %s/%q, want user/%q", kind, actorID, scoped)
+	if kind != "user" || actorID != scoped {
+		t.Fatalf("entry actor = %s/%q, want user/%q", kind, actorID, scoped)
+	}
+
+	if got := ledgerParityMismatches(t, sm); got != 0 {
+		t.Fatalf("parity after the attributed calls: %d mismatch(es), want 0", got)
 	}
 }

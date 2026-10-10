@@ -132,7 +132,7 @@ func RenderSeat(seat resolver.ResolvedSeat, mcpURL string) (*OpenRigSpec, error)
 	// where the client installs this file so each seat carries its own server set without a per-seat
 	// cwd and without touching the operator's rig-root file.
 	if len(mcpModules) > 0 && (receivesClaudeFragments(seat.Runtime) || seat.Runtime == resolver.RuntimeOmp) {
-		fragment, err := renderMCPFragment(mcpModules, mcpURL)
+		fragment, err := renderMCPFragment(seat, mcpURL)
 		if err != nil {
 			return nil, err
 		}
@@ -542,7 +542,8 @@ func stringList(value any) ([]string, error) {
 // one MCP fragment: one block is one whole server, keyed by the server name its payload names.
 // The platform placeholder in a block's url is resolved from mcpURL; every other ${VAR} is
 // left for the client runtime to expand. No block renders no server.
-func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string, error) {
+func renderMCPFragment(seat resolver.ResolvedSeat, mcpURL string) (string, error) {
+	modules := modulesOfKind(seat.Modules, resolver.KindMCP)
 	servers := make(map[string]any, len(modules))
 	for _, m := range modules {
 		server, err := mcpblock.Parse(m.Content)
@@ -554,6 +555,17 @@ func renderMCPFragment(modules []resolver.ResolvedModule, mcpURL string) (string
 		}
 		server = server.WithPlatformURL(mcpURL)
 		if server.Type == mcpblock.TypeHTTP {
+			// THE SEAT'S OWN IDENTITY, stamped OVER whatever the block carried: attribution must not
+			// be claimable by the thing being attributed, the same reason a seat-scoped overlay may
+			// not grant itself a block. A seat without an identity gets no header and no server,
+			// rather than one that claims to be nobody.
+			if seat.RoomSlug == "" || seat.SeatKey == "" {
+				return "", fmt.Errorf("mcp module %q: the seat has no room/seat identity, so a call through this block could not say who made it", m.Slug)
+			}
+			if server.Headers == nil {
+				server.Headers = make(map[string]string, 1)
+			}
+			server.Headers[mcpblock.SeatHeader] = mcpblock.SeatValue(seat.RoomSlug, seat.SeatKey)
 			if err := mcpblock.CheckURL(server.URL); err != nil {
 				return "", fmt.Errorf("mcp module %q: %w", m.Slug, err)
 			}
