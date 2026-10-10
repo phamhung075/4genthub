@@ -68,9 +68,21 @@ EXPECTED = {
                                             #     Re-derived, not adjusted: the same pattern returns 126 at 6cfd56ab and
                                             #     124 at a7990665. This is the first time this row moves DOWN.
     "auth route registrations": 20,         # same pattern, fastmcp/auth/{interface,api}
-    "published MCP tools": 10,              # six from ToolDefinitions() + four appended in mcp_routes.go
+    "published MCP tools": 9,               # five from ToolDefinitions() + four appended in mcp_routes.go
+                                            #   10 -> 9 (2026-10-10, item 3): 76b800b9 "refactor(agents): retire the
+                                            #     manage_agent tool, the agents table and the role registry" removed
+                                            #     the manage_agent ToolDefinition, which was the sixth defs entry.
+                                            #     THE MOVEMENT IS THE COMMIT AND NOT A COUNTING CHANGE, so nothing is
+                                            #     repinned silently here: the document's §2.3 table (nine names),
+                                            #     §2.5's TOOL_* list and §3.5's totals moved in the same pass as
+                                            #     this retune. Re-derived, not adjusted: the defs count is six
+                                            #     before 76b800b9 and five after, and the generator's own route
+                                            #     prints "145 routes, 9 tools" at cd5d1187.
     "dispatch-only MCP names": 2,           # get_mcp_status, check_session_health
-    "core tables": 20,                      # depth-1 entries of database.Tables in models.go
+    "core tables": 19,                      # depth-1 entries of database.Tables in models.go
+                                            #   20 -> 19: the same 76b800b9 - it removed the depth-1 `agents` entry
+                                            #     from the registry literal. The document's §3.1 row was struck
+                                            #     rather than re-pointed: there is no line left to cite.
     "auth tables": 3,                       # two in models_auth.go, one in email_token_repository.go
     "seat tables": 15,                      # depth-1 entries of seatDatabaseTables
                                             #   14 -> 16: 7c81981b registered seat_messages and 02bfd416 registered
@@ -82,8 +94,8 @@ EXPECTED = {
                                             #     went with the credential change. Re-derived, not adjusted: 16 at
                                             #     6cfd56ab, 15 at a7990665.
     "team tables": 2,                       # depth-1 entries of teamManagementDatabaseTables
-    "registered tables total": 40,          # 20 + 3 + 15 + 2 - follows "seat tables" above, not a count of its own
-                                            #   41 -> 40: the same e5ecff63 removal, counted once and not twice.
+    "registered tables total": 39,          # 19 + 3 + 15 + 2 - follows "core tables"/"seat tables" above, not a count of its own
+                                            #   40 -> 39: the same 76b800b9 removal, counted once and not twice.
     "ProductionTables": 6,                  # declared, never appended
     "SQL CREATE TABLE statements": 17,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
                                             #   16 -> 18: the same two commits added one statement each - seat_messages
@@ -106,8 +118,12 @@ DOC_ANCHORS = {
     # "-> **143** (httpapp 123, auth 20)" - S1's Reproduce line
     "httpapp route registrations":    (r"\(httpapp (\d+), auth \d+\)", 1),
     "auth route registrations":       (r"\(httpapp \d+, auth (\d+)\)", 1),
-    # "emitted **143 routes, 10 tools**" - S1's generator line
-    "published MCP tools":            (r"emitted \*\*\d+ routes, (\d+) tools\*\*", 1),
+    # "RE-MEASURED 2026-10-10 (writer seat, docs duty pass 9) at `cd5d1187`: **9** tools" - §2.3's live
+    # re-measurement. This key CANNOT anchor on S1's generator line ("At `db9d2bc3` it emitted **143
+    # routes, 10 tools**") any more, and not because that line is wrong: it is a DATED RECORD of a run
+    # at db9d2bc3, so it will keep 10 forever, and anchoring there would compare the tree against
+    # 2026-10-05. The figure that moves is the reusable one; the record stays where it is.
+    "published MCP tools":            (r"docs duty pass 9\) at `cd5d1187`: \*\*(\d+)\*\* tools", 1),
     # "20 (core) + 3 (auth) + **14** (seat) + 2 (team) = **39 tables**" - S3.5
     "seat tables":                    (r"\+ \*\*(\d+)\*\* \(seat\)", 1),
     "registered tables total":        (r"\(team\) = \*\*(\d+) tables\*\*", 1),
