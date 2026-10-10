@@ -133,7 +133,32 @@ func (b *Bridge) BuildPayload(rig *clientcmd.Rig) Payload {
 		ReportedAt: UTCNow(),
 		Seats:      seats,
 		Agents:     BuildAgents(agents),
+		Edges:      BuildEdges(RigRooms(nodes), func(rigID string) []rigEdge { return b.readEdges(rig, rigID) }),
 	}
+}
+
+// readEdges reads `rig export <rigId> -o /dev/stdout` the same two ways readRig reads the nodes,
+// and reads a rig it cannot export as having no edges.
+func (b *Bridge) readEdges(rig *clientcmd.Rig, rigID string) []rigEdge {
+	key := "edges " + rigID
+	argv := []string{"rig", "export", rigID, "-o", "/dev/stdout"}
+	var output string
+	var err error
+	if rig != nil {
+		output, err = rig.Run(context.Background(), argv[1:]...)
+	} else {
+		output, err = b.Runner(context.Background(), argv...)
+	}
+	var edges []rigEdge
+	if err == nil {
+		edges, err = ParseRigEdges(output)
+	}
+	if err != nil {
+		b.note(key, fmt.Sprintf("rig unavailable: %v", err))
+		return nil
+	}
+	b.note(key, "rig ok")
+	return edges
 }
 
 // readRig reads `rig ps --json --nodes -A` through the contract when the dispatcher resolved the rig

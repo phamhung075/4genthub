@@ -62,6 +62,7 @@ type Payload struct {
 	ReportedAt  string              `json:"reported_at"`
 	Seats       []SeatStatus        `json:"seats"`
 	Agents      []AgentStatus       `json:"agents"`
+	Edges       []EdgeStatus        `json:"edges"`
 	LocalRecord map[string]SeatNote `json:"local_record,omitempty"`
 }
 
