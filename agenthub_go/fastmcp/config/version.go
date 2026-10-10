@@ -15,9 +15,14 @@ package config
 // environment variable that can rename the release is a second identity by construction, so a
 // literal is the honest form of a deploy marker.
 //
-// Bump this with every change that must be confirmable after a deploy. It is the LAST commit in
-// the set before a deploy is requested, so the string can never cover a tree that lacks the
-// content it marks; if a commit lands after the bump, the bump moves to it or the deploy waits.
+// Bump this with every change that must be confirmable after a deploy. WHETHER the bump has to be
+// the last commit of a set depends on the push regime, so this comment states the dependency rather
+// than asserting one. Under a batched, manually requested deploy it is the last commit in the set,
+// and the string then cannot cover a tree that lacks the content it marks. Under continuous push -
+// origin/main moving with every commit, measured 2026-10-10 - there is no last commit to be, and
+// holding the marker only makes production report a version the tree has long passed; the honest
+// move there is to bump as the content lands and accept that a deploy cannot be confirmed by a
+// version the tree never carried.
 const ReleaseVersion = "0.0.36"
 
 // ServerName is the server's NAME — the brand subtitle after the dash, not a
