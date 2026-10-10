@@ -220,10 +220,11 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("POST /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSendSeatMessage(w, r, u, sessions)
 	}))
-	// The client's half of the same path, and it is MACHINE-authenticated because the component that
-	// can reach a seat's terminal is the client on the machine that holds it — see the residual limit
-	// at the top of this file. The ack is a POST on the message rather than a second GET: it RECORDS
-	// that one message reached the terminal, and a GET must not have that effect.
+	// The client's half of the same path. Both routes take the USER token (`authed`), like every other
+	// route here: the client that can reach a seat's terminal holds AGENTHUB_TOKEN, and the seat's
+	// machine is DATA in the request (the ack body's machine_id) rather than a credential — see the
+	// residual limit at the top of this file. The ack is a POST on the message rather than a second
+	// GET: it RECORDS that one message reached the terminal, and a GET must not have that effect.
 	mux.HandleFunc("GET /api/v2/openrig/rooms/{room}/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handlePullSeatMessages(w, r, u, sessions)
 	}))
