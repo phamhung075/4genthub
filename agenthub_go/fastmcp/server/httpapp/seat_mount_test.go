@@ -451,3 +451,99 @@ func TestSeatMessageBothDirectionsRefuseAMissingSeatIdentically(t *testing.T) {
 		t.Errorf("the resolver was asked for %v, want dev/ghost twice", source.asked)
 	}
 }
+
+// authenticateAs makes the authed wrapper resolve to a SPECIFIC user for the requests that follow, so
+// one mux can be asked the same request by an owner, a member and a stranger. authenticateTestUser
+// fixes one id, and one fixed id cannot express a caller who is NOT the room's owner.
+func authenticateAs(t *testing.T, id string) {
+	t.Helper()
+	previous := authinterface.GetCurrentUserUniversal
+	authinterface.GetCurrentUserUniversal = func(context.Context, string) (*authdomain.User, error) {
+		caller := id
+		return &authdomain.User{ID: &caller, Email: "caller@example.com", Username: "caller"}, nil
+	}
+	t.Cleanup(func() { authinterface.GetCurrentUserUniversal = previous })
+}
+
+// sharingAwareSeatSource models the resolver's TWO predicates the way the production path composes
+// them: the write resolves the room through Rooms.GetBySlug, which returns the CALLER'S OWN room only
+// (seat_resolution_service.go:40-41, repositories.go:118-123), while the read routes reach a shared
+// room through GetVisibleBySlug (seat_admin_mount.go:1360, :1377, :1594). A member of the room's
+// sharing team therefore reads the room and cannot write it, which is what this case is about.
+type sharingAwareSeatSource struct {
+	ownerID string
+	asked   []string
+}
+
+func (f *sharingAwareSeatSource) ResolveSeat(_ context.Context, callerUserID, room, seat string) (*repositories.ResolvedSeat, error) {
+	f.asked = append(f.asked, callerUserID+"|"+room+"/"+seat)
+	if callerUserID != f.ownerID {
+		return nil, fmt.Errorf("%w: room %q", seatservices.ErrRoomNotFound, room)
+	}
+	return &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}, nil
+}
+
+func (f *sharingAwareSeatSource) SeedSeatTypes(_ context.Context, _ string) (int, error) {
+	return 0, nil
+}
+
+// THE FIFTH SURFACE, and the reason this case exists: the seat chat write is owner-only in the same
+// class as the four seat-detail write surfaces, and NO case named a viewer or a non-member before it.
+//
+// THE REFUSAL IS THE SAME 404, NOT A PER-ACTION REASON. The handler's only resolver is
+// SeatResolutionService.ResolveSeat, whose room lookup is Rooms.GetBySlug - the caller's OWN room - so a
+// member of the room's sharing team lands in the same ErrRoomNotFound branch as a stranger, and the
+// sentence they get is about the ROOM rather than about permission. That is the whole point of the
+// class: the same caller may read the room and may not write it.
+//
+// THE OWNER IS THE POSITIVE CONTROL: a case asserting only the two refusals would pass just as well
+// against a route that refused everybody, so the first request is the owner's and it must STORE.
+func TestSeatMessageSendRefusesAViewerAndAStrangerWithTheSame404(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	const ownerID = "11111111-1111-4111-8111-111111111111"
+	const viewerID = "22222222-2222-4222-8222-222222222222"
+	const strangerID = "33333333-3333-4333-8333-333333333333"
+
+	store := &fakeSeatMessageStore{}
+	source := &sharingAwareSeatSource{ownerID: ownerID}
+	mux := seatMessageTestMux(t, source, store)
+	path := "/api/v2/openrig/rooms/dev/seats/alice/messages"
+
+	authenticateAs(t, ownerID)
+	owner := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
+	if owner.Code != http.StatusOK {
+		t.Fatalf("owner send = %d %s, want 200 (the room is the owner's)", owner.Code, owner.Body.String())
+	}
+	if len(store.created) != 1 {
+		t.Fatalf("owner send stored %d messages, want 1", len(store.created))
+	}
+
+	authenticateAs(t, viewerID)
+	viewer := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
+	if viewer.Code != http.StatusNotFound {
+		t.Fatalf("viewer send = %d %s, want 404", viewer.Code, viewer.Body.String())
+	}
+
+	authenticateAs(t, strangerID)
+	stranger := doTestRequest(t, mux, http.MethodPost, path, `{"text":"hello"}`)
+	if stranger.Code != http.StatusNotFound {
+		t.Fatalf("stranger send = %d %s, want 404", stranger.Code, stranger.Body.String())
+	}
+
+	// The member and the stranger are answered IDENTICALLY, so the refusal cannot be used to learn
+	// whether a room exists, let alone whether it is shared with anyone.
+	if viewer.Body.String() != stranger.Body.String() {
+		t.Errorf("a viewer and a stranger were answered differently:\n viewer %s\n stranger %s", viewer.Body.String(), stranger.Body.String())
+	}
+	// Neither refusal stored anything: the resolution precedes the write in the handler.
+	if len(store.created) != 1 {
+		t.Errorf("a refused send stored a message: %+v", store.created)
+	}
+	// Every resolution was asked for the URL's room and seat, AND for the caller that made it.
+	if len(source.asked) != 3 {
+		t.Fatalf("the resolver was asked %d times, want 3: %v", len(source.asked), source.asked)
+	}
+	if source.asked[1] != viewerID+"|dev/alice" || source.asked[2] != strangerID+"|dev/alice" {
+		t.Errorf("the resolver was asked for %v, want each caller's own pair", source.asked)
+	}
+}
