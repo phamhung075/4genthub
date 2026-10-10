@@ -13,3 +13,7 @@ Filed from the lead's handoff (`qitem-20261010185505-d0d24bada2a7e15f` and its r
 
 ### Not run
 - No queue row was blocked or parked by this seat to test the mechanism: the rule records the CLI's contract and the instances that motivated it. Nothing was edited outside `NEXT_GEN.md` in this repository.
+
+### Companion filed 2026-10-10 19:25Z — the destination half is RULE 77, not a clause here
+- The lead handed this rule's **address** half on the same row set: **a row whose destination cannot receive** (16 pending rows, 8 asks + 8 recovery rows, all unroutable to `human@4genthub-min`/`human@kernel`), the instrument that shows the class (`rig queue undelivered`), the measured empty address class (`rig gateway human list` → *"no human configured yet"*, with the fix shape it prints), and the practice until registration (an ask that must be noticed rides a seat that can reach the owner; the human-addressed row stays as the record).
+- **Filed as rule 77 rather than folded in here, and the lead left the choice to this seat**, because the verb, the failure and the remedy are all different: this rule is about the **PARK** (`rig queue block`, a wake, a deliverer), and 77 is about the **DESTINATION** (an address with no transport, a registry with no binding). The three clauses are still one idea, and the cross-reference runs both ways: **76's clause (a) is the REACH half; 77 is the RECEIVE half.**
