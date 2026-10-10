@@ -20,33 +20,38 @@ export default defineConfig(({ mode }) => {
   // This file runs in Node.js during build, not in browser where logger is available
   // Logger cannot be imported here as it depends on browser APIs and Vite environment
 
-  // Log which file will be used - Priority: .env.dev > .env
+  // PROMISE: .env.dev > .env, BY DESIGN - DECLARED here, and NEVER applied by copying one file
+  // over the other. The copy this replaces rewrote the parent's .env (which holds DATABASE_*,
+  // SUPABASE_*, JWT_SECRET_KEY) on EVERY config load - vite build, the dev server and every
+  // vitest run - so one seat's run could rewrite the file another seat's run reads, and the
+  // tree was not byte-stable across a build.
+  //
+  // Vite only reads .env, .env.local, .env.<mode> and .env.<mode>.local from envDir, so the
+  // priority is taken from Vite's OWN loader at mode 'dev': loadEnv('dev', parentDir) reads
+  // .env, .env.local, .env.dev and .env.dev.local in Vite's documented order, which places
+  // .env.dev above .env. Seeding that into process.env is what makes it win: Vite's loadEnv
+  // copies process.env over the file values once the files are read (the second loop in
+  // vite/dist/node .../env.ts), so a value from the .env.dev chain outranks the parent's .env.
+  // Only NODE_ENV and VITE_* are seeded: NODE_ENV because it decides the build mode, VITE_*
+  // because they reach the client - the rest of the file's secrets are not promoted into the
+  // build process's environment. A value already set in the real environment is left alone,
+  // so `VITE_API_URL=... npx vite build` still wins.
   if (hasEnvDev) {
-    if (hasEnv) {
-      console.log('📁 Both .env and .env.dev exist, using .env.dev priority')
-    } else {
-      console.log('📁 Using .env.dev (no .env file found)')
-    }
-    // Only copy if contents are different to avoid infinite restart loop
-    if (hasEnv) {
-      const envContent = fs.readFileSync(envPath, 'utf8')
-      const envDevContent = fs.readFileSync(envDevPath, 'utf8')
-      if (envContent !== envDevContent) {
-        console.log('📁 Copying .env.dev to .env (contents differ)')
-        fs.copyFileSync(envDevPath, envPath)
+    console.log(
+      hasEnv
+        ? `📁 mode "${mode}": .env.dev wins over .env (declared, not copied)`
+        : `📁 mode "${mode}": using .env.dev (no .env file found)`
+    )
+    for (const [key, value] of Object.entries(loadEnv('dev', parentDir, ''))) {
+      if ((key.startsWith('VITE_') || key === 'NODE_ENV') && process.env[key] === undefined) {
+        process.env[key] = value
       }
-    } else {
-      console.log('📁 Copying .env.dev to .env (no .env exists)')
-      fs.copyFileSync(envDevPath, envPath)
     }
   } else if (hasEnv) {
     console.log('📁 Using existing .env file (no .env.dev found)')
   } else {
     console.log('⚠️  No .env or .env.dev file found in parent directory')
   }
-
-  // Load env file from parent directory (Vite will look for .env)
-  loadEnv(mode, parentDir, '')
 
   // HMR Debug Plugin
   const hmrDebugPlugin = {
