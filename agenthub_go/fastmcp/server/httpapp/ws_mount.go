@@ -342,9 +342,9 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				if name == "" {
 					name = key
 				}
-				// The seat's identity as the connector observed it. Both-or-neither and the name rule
-				// are enforced by the writer, so a frame naming half a pair is refused rather than
-				// stored as a fact the rest of the system would have to guess about.
+				// The seat's identity as the connector observed it. The writer refuses half a pair -
+				// it is ambiguous - and drops a whole pair it cannot address, keeping the session and
+				// warning: an annotation never costs the connector its event stream.
 				row, err := session_stream.UpsertSession(ctx, sessions, userID, connectorID, key, name,
 					wsOptString(wsGet(msg, "project")), wsOptString(wsGet(msg, "room")), wsOptString(wsGet(msg, "seat")))
 				if err != nil {

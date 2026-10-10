@@ -3,6 +3,7 @@ package session_stream
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 	"testing"
 	"time"
@@ -72,12 +73,13 @@ func event(typ string, payload any) *entities.OrderedMap[any] {
 	return m
 }
 
-// The pair a connector reports is refused unless it is whole and each half could name a seat:
-// half a pair, or a value the room/seat tables would reject, never reaches the row. No database is
-// needed - the rule is checked before any statement is built.
-func TestSeatIdentityRefusesHalfAPairAndBadNames(t *testing.T) {
-	if room, seat, err := seatIdentity(nil, nil); room != nil || seat != nil || err != nil {
-		t.Errorf("neither reported: got %v, %v, %v - want all nil", room, seat, err)
+// The pair a connector reports: HALF of one is refused, because it is ambiguous and the table's own
+// CHECK could not store it - but a WHOLE pair that cannot be addressed loses the annotation and
+// keeps the session, so an unaddressable rig name never costs a connector its event stream. No
+// database is needed - the rule is checked before any statement is built.
+func TestSeatIdentityRefusesHalfAPairAndDropsAnUnaddressableOne(t *testing.T) {
+	if room, seat, dropped, err := seatIdentity(nil, nil); room != nil || seat != nil || dropped || err != nil {
+		t.Errorf("neither reported: got %v, %v, dropped=%v, err=%v - want all empty", room, seat, dropped, err)
 	}
 	for _, c := range []struct {
 		name       string
@@ -85,20 +87,77 @@ func TestSeatIdentityRefusesHalfAPairAndBadNames(t *testing.T) {
 	}{
 		{"room without seat", new("dev"), nil},
 		{"seat without room", nil, new("alice")},
-		{"room that cannot name a pod", new("not a room"), new("alice")},
-		{"seat that cannot name a member", new("dev"), new("-lead")},
+		{"an empty room beside a seat", new(""), new("alice")},
 	} {
-		if room, seat, err := seatIdentity(c.room, c.seat); err == nil {
-			t.Errorf("%s: got %v, %v with no error, want a refusal", c.name, room, seat)
+		if room, seat, dropped, err := seatIdentity(c.room, c.seat); err == nil {
+			t.Errorf("%s: got %v, %v, dropped=%v with no error, want a refusal", c.name, room, seat, dropped)
 		} else if !strings.Contains(err.Error(), "room") && !strings.Contains(err.Error(), "seat") {
 			t.Errorf("%s: error = %v, want it to name the rule", c.name, err)
 		}
 	}
-	room, key, err := seatIdentity(new("dev"), new("alice"))
-	if err != nil || room == nil || key == nil || *room != "dev" || *key != "alice" {
-		t.Errorf("a whole pair must pass through: %v, %v, %v", room, key, err)
+	room, key, dropped, err := seatIdentity(new("dev"), new("alice"))
+	if err != nil || dropped || room == nil || key == nil || *room != "dev" || *key != "alice" {
+		t.Errorf("a whole pair must pass through: %v, %v, dropped=%v, %v", room, key, dropped, err)
+	}
+	// namePattern is OpenRig's POD OR MEMBER ID rule, and room_slug carries a RIG name - a rig the
+	// server did not render may be named anything, so the annotation goes and nothing else does.
+	for _, c := range []struct {
+		name       string
+		room, seat *string
+	}{
+		{"a rig name that carries a dot", new("4genthub.dev"), new("go-dev")},
+		{"a rig name that carries a space", new("not a room"), new("alice")},
+		{"a member that cannot name one", new("dev"), new("-lead")},
+	} {
+		room, seat, dropped, err := seatIdentity(c.room, c.seat)
+		if err != nil || !dropped || room != nil || seat != nil {
+			t.Errorf("%s: got %v, %v, dropped=%v, err=%v - want the pair dropped with no error", c.name, room, seat, dropped, err)
+		}
 	}
 }
+
+// A dropped pair is not a shrug: the warning is the only trace of what was discarded, so it names
+// both halves exactly as the frame sent them - that is what tells an operator which rig could not
+// be addressed. A two-value swap here would leave the log silent about the values it is about.
+func TestDroppedSeatPairWarnsWithBothValues(t *testing.T) {
+	rec := &recordingHandler{}
+	prev := slog.Default()
+	slog.SetDefault(slog.New(rec))
+	defer slog.SetDefault(prev)
+
+	warnUnaddressableSeatPair("key1", "conn1", "4genthub.dev", "go-dev")
+
+	if len(rec.records) != 1 {
+		t.Fatalf("records = %d, want exactly 1", len(rec.records))
+	}
+	got := rec.records[0]
+	if got.Level != slog.LevelWarn {
+		t.Errorf("level = %v, want warn", got.Level)
+	}
+	fields := map[string]string{}
+	got.Attrs(func(a slog.Attr) bool { fields[a.Key] = a.Value.String(); return true })
+	for k, want := range map[string]string{
+		"session_key": "key1", "connector_id": "conn1", "room_slug": "4genthub.dev", "seat_key": "go-dev",
+	} {
+		if fields[k] != want {
+			t.Errorf("%s = %q, want %q", k, fields[k], want)
+		}
+	}
+}
+
+// recordingHandler keeps the records a logger emitted, so a test can read a warning as a fact.
+type recordingHandler struct{ records []slog.Record }
+
+func (h *recordingHandler) Enabled(context.Context, slog.Level) bool { return true }
+
+func (h *recordingHandler) Handle(_ context.Context, r slog.Record) error {
+	h.records = append(h.records, r)
+	return nil
+}
+
+func (h *recordingHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
+
+func (h *recordingHandler) WithGroup(string) slog.Handler { return h }
 
 func TestRepositoryPostgres(t *testing.T) {
 	sessions := testdb.NewSessions(t)
@@ -160,6 +219,32 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 	if v, _ := row2.Get("seat_key"); v != "alice" {
 		t.Errorf("seat_key = %v, want alice (kept: the frame carried no pair)", v)
+	}
+
+	// A frame that names BOTH halves but cannot address them KEEPS THE SESSION and drops the pair:
+	// the session still exists, and the identity the connector carried is gone rather than stored
+	// raw. This is what a rig the server never rendered reaches - namePattern is the pod-or-member
+	// rule, while room_slug holds a rig name.
+	badRoom, badSeat := "4genthub.dev", "go-dev"
+	droppedRow, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", nil, &badRoom, &badSeat)
+	if err != nil {
+		t.Fatalf("an unaddressable pair must not refuse the frame: %v", err)
+	}
+	if v, _ := droppedRow.Get("room_slug"); v != nil {
+		t.Errorf("room_slug = %v, want nil (the pair was not addressable)", v)
+	}
+	if v, _ := droppedRow.Get("seat_key"); v != nil {
+		t.Errorf("seat_key = %v, want nil", v)
+	}
+	storedRow, err := GetSessionForUser(ctx, sessions, user, sid)
+	if err != nil || storedRow == nil {
+		t.Fatalf("the session must still exist after an unaddressable pair: %v, %v", storedRow, err)
+	}
+	if v, _ := storedRow.Get("room_slug"); v != nil {
+		t.Errorf("stored room_slug = %v, want nil", v)
+	}
+	if v, _ := storedRow.Get("seat_key"); v != nil {
+		t.Errorf("stored seat_key = %v, want nil", v)
 	}
 
 	// Append assigns seq server-side.

@@ -10,6 +10,7 @@ import (
 
 	"agenthub/fastmcp/task_management/domain/entities"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
+	"agenthub/fastmcp/task_management/infrastructure"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 
 	seatnames "agenthub/fastmcp/seat_management/domain/repositories"
@@ -157,28 +158,43 @@ func truncatedPayload() *entities.OrderedMap[any] {
 	return m
 }
 
-// seatIdentity checks the pair a connector reports: both or neither, and each must name a pod or a
-// member the way OpenRig names them - the rule the room and seat tables already use, imported
-// rather than copied so there is one statement of it. A frame carrying half a pair, or a value
-// that could never name a seat, is refused here instead of being stored as a fact the rest of the
-// system would have to guess about. The dependency is a pure domain package: no query, no foreign
-// key, so the hot socket path stays free of seat_management's storage.
-func seatIdentity(roomSlug, seatKey *string) (*string, *string, error) {
-	room, seat := clip(roomSlug), clip(seatKey)
+// seatIdentity checks the pair a connector reports: both or neither. HALF A PAIR IS REFUSED - it is
+// ambiguous, and ck_agent_sessions_seat_pair could not store it - but a WHOLE PAIR THAT CANNOT BE
+// ADDRESSED LOSES THE ANNOTATION AND KEEPS THE SESSION, which the dropped result reports to the
+// caller. The two failures are not comparable: the pair is an annotation on the session, while
+// namePattern is OpenRig's POD OR MEMBER ID rule and room_slug holds a RIG name the server may
+// never have rendered - so an unaddressable annotation must never cost the connector its whole
+// event stream. A dropped pair is not stored raw either: every non-null pair in the table stays a
+// name a reader can use without re-validating it, rather than a stale carrier that looks
+// addressable. The rule itself is the one the room and seat tables already use, imported rather
+// than copied so there is one statement of it. The dependency is a pure domain package: no query, no
+// foreign key, so the hot socket path stays free of seat_management's storage.
+func seatIdentity(roomSlug, seatKey *string) (room, seat *string, dropped bool, err error) {
+	room, seat = clip(roomSlug), clip(seatKey)
 	if (room == nil) != (seat == nil) {
-		return nil, nil, &tmvo.ValueError{Msg: "room and seat must be reported together"}
+		return nil, nil, false, &tmvo.ValueError{Msg: "room and seat must be reported together"}
 	}
 	if room == nil {
-		return nil, nil, nil
+		return nil, nil, false, nil
 	}
 	for _, named := range []struct {
 		kind, value string
 	}{{"room", *room}, {"seat", *seat}} {
 		if err := seatnames.ValidateName(named.kind, named.value); err != nil {
-			return nil, nil, &tmvo.ValueError{Msg: err.Error()}
+			return nil, nil, true, nil
 		}
 	}
-	return room, seat, nil
+	return room, seat, false, nil
+}
+
+// warnUnaddressableSeatPair reports a pair the frame named that cannot be addressed. The session is
+// kept and the pair is dropped, so this warning is the only trace of what was discarded: it names
+// both halves exactly as the connector sent them, which is what tells an operator which rig could
+// not be addressed.
+func warnUnaddressableSeatPair(sessionKey, connectorID, room, seat string) {
+	infrastructure.GetLogger("session_stream").Warn(
+		"session frame named a seat pair that cannot be addressed; keeping the session and dropping the pair",
+		"session_key", sessionKey, "connector_id", connectorID, "room_slug", room, "seat_key", seat)
 }
 
 // UpsertSession is upsert_session.
@@ -187,9 +203,15 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 	if err != nil {
 		return nil, err
 	}
-	roomSlug, seatKey, err = seatIdentity(roomSlug, seatKey)
+	// The values as the frame sent them, for the warning below: in the dropped case both are
+	// non-nil after clip, so they are safe to name.
+	frameRoom, frameSeat := roomSlug, seatKey
+	roomSlug, seatKey, dropped, err := seatIdentity(roomSlug, seatKey)
 	if err != nil {
 		return nil, err
+	}
+	if dropped {
+		warnUnaddressableSeatPair(sessionKey, connectorID, *frameRoom, *frameSeat)
 	}
 	sid := SessionIDFor(userID, connectorID, sessionKey)
 	var out *entities.OrderedMap[any]
@@ -230,14 +252,19 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 		}
 
 		// Existing row: update name, keep the project when the new value is empty, and move the seat
-		// identity only when the frame carried one - the pair travels together or not at all, which
-		// seatIdentity has already enforced.
+		// identity when the frame carried one - the pair travels together or not at all, which
+		// seatIdentity has already enforced. A frame that named a pair which could not be addressed
+		// carries no usable identity, so the stored pair is cleared rather than kept: the session then
+		// says what the connector said - no seat it can name.
 		newProject := existing.Project
 		if p := clip(project); p != nil {
 			newProject = p
 		}
 		newRoom, newSeat := existing.RoomSlug, existing.SeatKey
-		if roomSlug != nil {
+		switch {
+		case dropped:
+			newRoom, newSeat = nil, nil
+		case roomSlug != nil:
 			newRoom, newSeat = roomSlug, seatKey
 		}
 		ts := tNow()
