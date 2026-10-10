@@ -25,6 +25,10 @@ and out of the tree before that - is the other half: its default mode re-resolve
 
 USAGE:  python3 scripts/COUNTS-AUDIT.py              # exits non-zero if any number differs
         python3 scripts/COUNTS-AUDIT.py --self-test  # perturb an expectation; require it to notice
+
+It prints the revision it measured and how many paths were uncommitted when it read, because a count
+is a claim about a revision: this file follows its own location, so a copy inside a worktree reads that
+worktree, while a dirty checkout answers a different question than its HEAD (rule 82, 2026-10-10).
 """
 import os, re, subprocess, sys
 
@@ -308,7 +312,14 @@ def main_report(quiet=False):
     width = max(len(k) for k in EXPECTED)
     bad = 0
     doc_known = 0
+    rev = sh("git rev-parse --short HEAD", cwd=ROOT) or "?"
+    dirty = len([l for l in sh("git status --porcelain", cwd=ROOT).splitlines() if l.strip()])
     if not quiet:
+        print(f"MEASURED AT {rev} in {ROOT} - {dirty} uncommitted path(s)")
+        if dirty:
+            print("  WARNING: a count read in a dirty tree answers a different question than at HEAD (rule 82,")
+            print("  2026-10-10). This script follows its own location, so copy it into a clean worktree and")
+            print("  run it there to read that worktree - or settle the paths above before trusting this.")
         print(f"{'number':<{width}}  {'doc':>4}  {'expected':>8}  {'tree':>6}  verdict")
     for k, expected in EXPECTED.items():
         got = measured.get(k)
