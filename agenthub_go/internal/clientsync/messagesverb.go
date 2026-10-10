@@ -101,13 +101,26 @@ func RunMessagesVerb(ctx context.Context, args []string, stdout, stderr io.Write
 		return clientcmd.ExitUsage
 	}
 	// Whichever session to type into is resolved ONCE, before anything is pulled: a run that cannot
-	// deliver must not spend its ACKs.
+	// deliver must not spend its ACKs. And it is resolved from the WHOLE candidate set rather than from
+	// the first entry: `rig ps --json` reports every session this machine runs (fourteen here), so
+	// taking the first would type an operator's message into somebody else's prompt — the one outcome
+	// worse than not delivering it.
 	if !dryRun && session == "" {
-		session, err = firstRigSession(ctx)
+		candidates, err := rigSessionCandidates(ctx)
 		if err != nil {
 			fmt.Fprintf(stderr, "agenthub-client sync messages: %v\n", err)
 			return clientcmd.ExitUnavailable
 		}
+		if len(candidates) == 0 {
+			fmt.Fprintf(stderr, "agenthub-client sync messages: `rig ps --json` named no session to type into; pass --session <name>\n")
+			return clientcmd.ExitUnavailable
+		}
+		if len(candidates) > 1 {
+			fmt.Fprintf(stderr, "agenthub-client sync messages: %d sessions are running (%s), so this verb will not guess which prompt to type into — the wrong prompt is somebody else's. Name this seat's own with --session <name>\n",
+				len(candidates), strings.Join(candidates, ", "))
+			return clientcmd.ExitUnavailable
+		}
+		session = candidates[0]
 	}
 
 	ledgerPath := messagesLedgerPath(out, room, seat)

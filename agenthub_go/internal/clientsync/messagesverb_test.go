@@ -284,3 +284,64 @@ func TestMessagesVerbAsksForThePageItWasGiven(t *testing.T) {
 		t.Errorf("the ledger directory was not created: %v", err)
 	}
 }
+
+// fakeRig puts a `rig` on PATH that answers `ps --json` with the given payload, so the verb's REAL
+// resolution path runs instead of a substituted function. The only other place this verb shells out to
+// rig is the local send, which the fixture replaces.
+func fakeRig(t *testing.T, psJSON string) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "rig"), []byte("#!/bin/sh\necho '"+psJSON+"'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+// THE VERB MUST NOT GUESS WHICH PROMPT TO TYPE INTO, and this is the case that made the difference
+// matter: `rig ps --json` in this environment reports many sessions, and firstRigSession returns the
+// FIRST of them. A verb that typed into that answer would put an operator's message into somebody
+// else's prompt — which this verb's own documentation calls worse than not delivering it. So no
+// --session and more than one candidate means REFUSE, and the refusal must name the candidates rather
+// than call the situation ambiguous.
+func TestMessagesVerbRefusesToGuessWhichSessionToTypeInto(t *testing.T) {
+	cloud := &messageCloud{pending: []map[string]any{message("m1", "hello")}}
+	_, sent, out := messagesFixture(t, cloud, nil)
+	fakeRig(t, `[{"sessionName":"alpha"},{"sessionName":"beta"}]`)
+
+	var stdout, stderr strings.Builder
+	code := RunMessagesVerb(context.Background(), []string{"dev", "coder", "--out", out}, &stdout, &stderr)
+	if code != clientcmd.ExitUnavailable {
+		t.Fatalf("exit = %d, want ExitUnavailable: %s", code, stderr.String())
+	}
+	if len(*sent) != 0 {
+		t.Fatalf("typed %v, want NOTHING typed while the session is ambiguous", *sent)
+	}
+	if calls := cloud.seen(); len(calls) != 0 {
+		t.Fatalf("calls = %v, want the cloud untouched: the refusal happens before the pull", calls)
+	}
+	for _, want := range []string{"alpha", "beta", "--session"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Errorf("stderr = %q, want it to name %q", stderr.String(), want)
+		}
+	}
+}
+
+// AND WITH EXACTLY ONE SESSION THE MESSAGE STILL FLOWS. The refusal is about ambiguity, not about
+// requiring a flag: the resolution the connector verb uses stays usable when it is unambiguous.
+func TestMessagesVerbUsesTheOnlySessionTheRigReports(t *testing.T) {
+	cloud := &messageCloud{pending: []map[string]any{message("m1", "hello")}}
+	_, sent, out := messagesFixture(t, cloud, nil)
+	fakeRig(t, `[{"sessionName":"only-one"}]`)
+
+	var stdout, stderr strings.Builder
+	if code := RunMessagesVerb(context.Background(), []string{"dev", "coder", "--out", out}, &stdout, &stderr); code != 0 {
+		t.Fatalf("exit = %d, want 0: %s", code, stderr.String())
+	}
+	if got := strings.Join(*sent, ","); got != "only-one hello" {
+		t.Fatalf("typed %q, want the one session the rig reported", got)
+	}
+	want := []string{"GET", "SEND only-one hello", "ACK m1"}
+	if got := strings.Join(cloud.seen(), " | "); got != strings.Join(want, " | ") {
+		t.Fatalf("calls = %s\nwant    %s", got, strings.Join(want, " | "))
+	}
+}
