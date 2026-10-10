@@ -60,7 +60,7 @@ func TestAppendEventsBatchLimit(t *testing.T) {
 
 func TestMarkOfflineWithoutSessions(t *testing.T) {
 	DefaultSessions = nil
-	err := MarkOffline(context.Background(), nil, "u", "c")
+	_, err := MarkOffline(context.Background(), nil, "u", "c")
 	if err == nil || err.Error() != "database configuration not available" {
 		t.Fatalf("err = %v", err)
 	}
@@ -336,7 +336,7 @@ func TestRepositoryPostgres(t *testing.T) {
 		t.Fatalf("user2 must not see user1 session: %v", g)
 	}
 
-	if err := MarkOffline(ctx, sessions, user, connector); err != nil {
+	if _, err := MarkOffline(ctx, sessions, user, connector); err != nil {
 		t.Fatal(err)
 	}
 	off, _ := GetSessionForUser(ctx, sessions, user, sid)
@@ -386,5 +386,142 @@ func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
 		if _, err := time.Parse("2006-01-02T15:04:05", strings.SplitN(s, ".", 2)[0]); err != nil {
 			t.Errorf("%s = %q is not an ISO timestamp: %v", key, s, err)
 		}
+	}
+}
+
+// UpsertSession must tell the socket path what to push (2.3a): an inserted row is a `created`, a
+// changed seat_state or status is an `updated`, and a frame that changed neither pushes nothing.
+// The flags are the whole answer the caller gets, so each one is asserted on its own.
+func TestUpsertSessionReportsCreatedAndStateChanges(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+	user, connector, key := "user1", "conn1", "key1"
+	sid := SessionIDFor(user, connector, key)
+	running, stopped := "running", "stopped"
+
+	up, err := UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &running)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !up.Created {
+		t.Errorf("first frame: Created = false, want true (the row was inserted)")
+	}
+	if up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("first frame: seat_state_changed=%v status_changed=%v, want both false (created covers it)",
+			up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// The same state again is no change and no status change (it was already active).
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &running)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("unchanged frame: Created=%v seat_state_changed=%v status_changed=%v, want all false",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// A new state is a seat_state change.
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &stopped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || !up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("state change: Created=%v seat_state_changed=%v status_changed=%v, want false/true/false",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+
+	// A frame with no state keeps the stored one and reports no change.
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.SeatStateChanged || up.StatusChanged {
+		t.Errorf("no-state frame: seat_state_changed=%v status_changed=%v, want both false",
+			up.SeatStateChanged, up.StatusChanged)
+	}
+	if v, _ := up.Row.Get("seat_state"); v != "stopped" {
+		t.Errorf("seat_state = %v, want the kept stopped", v)
+	}
+
+	// MarkOffline sets status offline; the next session frame moves it back to active, which is a
+	// status change and not a seat_state change.
+	marked, err := MarkOffline(ctx, sessions, user, connector)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(marked) != 1 || marked[0].ID != sid || marked[0].SessionKey != key {
+		t.Fatalf("MarkOffline marked %v, want the one session %s/%s", marked, sid, key)
+	}
+	up, err = UpsertSession(ctx, sessions, user, connector, key, "n", nil, nil, nil, &stopped)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if up.Created || up.SeatStateChanged || !up.StatusChanged {
+		t.Errorf("reconnect: Created=%v seat_state_changed=%v status_changed=%v, want false/false/true",
+			up.Created, up.SeatStateChanged, up.StatusChanged)
+	}
+	if v, _ := up.Row.Get("status"); v != "active" {
+		t.Errorf("status = %v, want active", v)
+	}
+}
+
+// MarkOffline reports exactly the sessions it marked, so the socket emits one frame each (2.3a).
+// A row it did not move - another connector's, or one already offline - is not marked again.
+func TestMarkOfflineReturnsEachMarkedSessionOnce(t *testing.T) {
+	sessions := testdb.NewSessions(t)
+	ctx := context.Background()
+	user := "user1"
+	running := "running"
+
+	for _, key := range []string{"k1", "k2"} {
+		if _, err := UpsertSession(ctx, sessions, user, "conn1", key, "n", nil, nil, nil, &running); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Another connector's session shares the user but not the connector, so it is not marked.
+	if _, err := UpsertSession(ctx, sessions, user, "conn2", "k3", "n", nil, nil, nil, &running); err != nil {
+		t.Fatal(err)
+	}
+
+	marked, err := MarkOffline(ctx, sessions, user, "conn1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(marked) != 2 {
+		t.Fatalf("marked %d session(s), want 2: %v", len(marked), marked)
+	}
+	want := map[string]bool{SessionIDFor(user, "conn1", "k1"): true, SessionIDFor(user, "conn1", "k2"): true}
+	for _, m := range marked {
+		if !want[m.ID] {
+			t.Errorf("marked unexpected session %q", m.ID)
+		}
+		if m.SessionKey != "k1" && m.SessionKey != "k2" {
+			t.Errorf("marked session %q has key %q", m.ID, m.SessionKey)
+		}
+		if m.SeatState == nil || *m.SeatState != "running" {
+			t.Errorf("marked session %q seat_state = %v, want the last reported running", m.ID, m.SeatState)
+		}
+		delete(want, m.ID)
+	}
+	if len(want) != 0 {
+		t.Errorf("MarkOffline did not mark %v", want)
+	}
+
+	// Nothing is offline twice: a second call changes nothing and marks nothing.
+	again, err := MarkOffline(ctx, sessions, user, "conn1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(again) != 0 {
+		t.Fatalf("second MarkOffline marked %v, want nothing (already offline)", again)
+	}
+	// The other connector's session is still active.
+	other, err := GetSessionForUser(ctx, sessions, user, SessionIDFor(user, "conn2", "k3"))
+	if err != nil || other == nil {
+		t.Fatalf("other session = %v, %v", other, err)
+	}
+	if v, _ := other.Get("status"); v != "active" {
+		t.Errorf("conn2 session status = %v, want active (not this connector)", v)
 	}
 }

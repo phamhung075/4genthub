@@ -215,6 +215,15 @@ func warnUnaddressableSeatPair(sessionKey, connectorID, room, seat string) {
 type SessionUpsert struct {
 	Row    *entities.OrderedMap[any]
 	Cursor *string
+	// Created reports that this frame inserted a new row: the first `session` frame for a new
+	// (user_id, connector_id, session_key). 2.3a emits `created` for it and nothing else.
+	Created bool
+	// SeatStateChanged reports that the stored seat_state differs from the one the row held. A
+	// frame that carries no state, or one equal to the stored value, leaves it false.
+	SeatStateChanged bool
+	// StatusChanged reports that the write moved status. Only a row that was offline and is being
+	// re-registered by a live connector can change: the update always writes "active".
+	StatusChanged bool
 }
 
 // reportedState is session.state, checked against the two ruled values (2.3a) and clipped to the
@@ -288,7 +297,7 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen, row.RoomSlug, row.SeatKey, row.SeatState); err != nil {
 				return err
 			}
-			out = &SessionUpsert{Row: sessionRow(&row), Cursor: row.ClientCursor}
+			out = &SessionUpsert{Row: sessionRow(&row), Cursor: row.ClientCursor, Created: true}
 			return nil
 		}
 
@@ -312,6 +321,12 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 		if seatState != nil {
 			newState = seatState
 		}
+		// What the socket path must push (2.3a): a state the frame named that differs from the one
+		// the row now holds, and a status this write moves from offline back to active. A frame that
+		// carries no state keeps the stored one, so it reports no state change. Both are read before
+		// `existing` is overwritten with the new values below.
+		seatStateChanged := seatState != nil && (existing.SeatState == nil || *existing.SeatState != *seatState)
+		statusChanged := existing.Status != "active"
 		ts := tNow()
 		if _, err := s.ExecContext(ctx,
 			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4, room_slug = $5, seat_key = $6, seat_state = $7 WHERE id = $8",
@@ -325,7 +340,12 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 		existing.SeatState = newState
 		existing.Status = "active"
 		existing.LastSeen = ts
-		out = &SessionUpsert{Row: sessionRow(&existing), Cursor: existing.ClientCursor}
+		out = &SessionUpsert{
+			Row:              sessionRow(&existing),
+			Cursor:           existing.ClientCursor,
+			SeatStateChanged: seatStateChanged,
+			StatusChanged:    statusChanged,
+		}
 		return nil
 	})
 	if err != nil {
@@ -517,16 +537,59 @@ func ListEvents(ctx context.Context, sessions *database.SessionManager, userID, 
 	return out, nil
 }
 
+// OfflineSession is one session MarkOffline moved offline: its id and session key are what the
+// socket names in the one `updated` frame it emits for the row (2.3a), and SeatState is the last
+// reported state the frame carries alongside the new offline status.
+type OfflineSession struct {
+	ID         string
+	SessionKey string
+	SeatState  *string
+}
+
 // MarkOffline is mark_offline: all of a connector's sessions become offline.
-func MarkOffline(ctx context.Context, sessions *database.SessionManager, userID, connectorID string) error {
+func MarkOffline(ctx context.Context, sessions *database.SessionManager, userID, connectorID string) ([]OfflineSession, error) {
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
-		_, err := s.ExecContext(ctx,
+	marked := []OfflineSession{}
+	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
+		// Read the connector's rows before the write, because the write sets every row offline and
+		// the RETURNING form would only ever hand back the new value. The UPDATE still touches every
+		// row (last_seen keeps moving, as before), but only the rows whose status actually changed
+		// are reported: a push for an unchanged row would be a frame for nothing (2.3a).
+		rows, err := s.QueryContext(ctx,
+			"SELECT id, session_key, status, seat_state FROM agent_sessions WHERE user_id = $1 AND connector_id = $2",
+			userID, connectorID)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id, sessionKey, status string
+			var seatState *string
+			if err := rows.Scan(&id, &sessionKey, &status, &seatState); err != nil {
+				rows.Close()
+				return err
+			}
+			if status != "offline" {
+				marked = append(marked, OfflineSession{ID: id, SessionKey: sessionKey, SeatState: seatState})
+			}
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		// The rows must be closed before the UPDATE runs on the same connection.
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		_, err = s.ExecContext(ctx,
 			"UPDATE agent_sessions SET status = $1, last_seen = $2 WHERE user_id = $3 AND connector_id = $4",
 			"offline", tNow(), userID, connectorID)
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return marked, nil
 }

@@ -239,6 +239,39 @@ func wsReplayMissedNotifications(ctx context.Context, conn *wsConn, userID strin
 	}
 }
 
+// agentSessionEntity is the realtime frame's entity for a session row (2.3a). It is not "session",
+// which reads as an auth session; the browser handles `agent_session` by invalidating its sessions
+// list, the same placing as `seat`.
+const agentSessionEntity = "agent_session"
+
+// agentSessionBroadcastFn emits one agent_session change frame on the existing WS v2 envelope (the
+// same routes.BroadcastDataChange the seat frames use, so delivery keeps its per-user scoping). It
+// is a package-level seam so tests can observe the frames without a live socket, mirroring
+// seatBroadcastFn in seat_admin_mount.go.
+var agentSessionBroadcastFn = func(ctx context.Context, action, entity, id, userID string, data *entities.OrderedMap[any]) error {
+	return routes.BroadcastDataChange(ctx, action, entity, id, userID, data, nil)
+}
+
+// wsAgentSessionData is the 2.3a push payload: the row's id, its seat_state and its status, and
+// nothing else. The browser does not parse the row out of the frame - it invalidates its sessions
+// list - so the payload is the minimum that names what changed.
+func wsAgentSessionData(id string, seatState any, status string) *entities.OrderedMap[any] {
+	data := entities.NewOrderedMap[any]()
+	data.Set("id", id)
+	data.Set("seat_state", seatState)
+	data.Set("status", status)
+	return data
+}
+
+// wsAgentSessionRowData reads a session row's seat_state and status out of the row an UpsertSession
+// returned, which is the row the browser will read back from GET /api/v2/sessions.
+func wsAgentSessionRowData(id string, row *entities.OrderedMap[any]) *entities.OrderedMap[any] {
+	seatState, _ := row.Get("seat_state")
+	status, _ := row.Get("status")
+	statusStr, _ := status.(string)
+	return wsAgentSessionData(id, seatState, statusStr)
+}
+
 // handleConnector ports connector_ingest: authenticate from ?token= or the bearer
 // header, require the sessions:write scope, accept, then serve hello/session/events.
 // Both refusals COMPLETE the handshake and close with 1008 plus a reason (wsRejectUpgrade):
@@ -283,7 +316,19 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 			}
 			if wsReleaseConnector(userID, connectorID) {
 				if sessions != nil {
-					_ = session_stream.MarkOffline(ctx, sessions, userID, connectorID)
+					// 2.3a: MarkOffline emits ONE `updated` frame per session it marks - the rows
+					// whose status actually moved to offline - each naming the row's id, its last
+					// reported seat_state and the new offline status.
+					if marked, err := session_stream.MarkOffline(ctx, sessions, userID, connectorID); err == nil {
+						for _, m := range marked {
+							var seatState any
+							if m.SeatState != nil {
+								seatState = *m.SeatState
+							}
+							_ = agentSessionBroadcastFn(ctx, "updated", agentSessionEntity, m.ID, userID,
+								wsAgentSessionData(m.ID, seatState, "offline"))
+						}
+					}
 				}
 				// The connector's last socket is gone, which is the moment 7.3's dead-man is armed
 				// and the only place it is: a reconnect inside the heartbeat close cancels it in
@@ -396,6 +441,16 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				id, _ := upsert.Row.Get("id")
 				if idStr, ok := id.(string); ok {
 					known[key] = idStr
+					// 2.3a: the first frame for a new session is `created`; a frame that changed the
+					// seat_state or the status is `updated`; a frame that changed neither emits
+					// nothing. The push is emitted before the ack, so a connector that has its ack has
+					// the push too.
+					switch {
+					case upsert.Created:
+						_ = agentSessionBroadcastFn(ctx, "created", agentSessionEntity, idStr, userID, wsAgentSessionRowData(idStr, upsert.Row))
+					case upsert.SeatStateChanged || upsert.StatusChanged:
+						_ = agentSessionBroadcastFn(ctx, "updated", agentSessionEntity, idStr, userID, wsAgentSessionRowData(idStr, upsert.Row))
+					}
 				}
 				lastSeq, _ := upsert.Row.Get("last_seq")
 				ack := entities.NewOrderedMap[any]()
