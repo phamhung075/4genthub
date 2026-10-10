@@ -48,7 +48,8 @@ These are pointers; never copy their content into this file.
    brand-new file is the one exception, marked with `git add -N -- <new>` (intent-to-add, nothing enters
    the index) before the same commit. Never `git add .`, `-A` or `--amend`. **A removal is attributed by
    the COMMIT that carries it, never by the staging area** (`git show --numstat --format= <sha> -- <path>`);
-   **a shared changelog takes the WHOLE file**, so check it is clear of other seats' entries, or sequence
+   **a changelog entry is ONE new file `CHANGELOG/<date>--<title>.md`**, so no changelog commit can carry another seat's
+   entry; any other shared file takes the WHOLE file, so check it is clear of other seats' lines, or sequence
    with that seat, or name what you carry. **If the pre-commit framework refuses a pathspec commit because
    the config is unstaged:** if the config is yours, commit it by itself by pathspec and the guard clears
    itself; if it is not, ask its owner; `--no-verify` only as a last resort, with the hooks run over your

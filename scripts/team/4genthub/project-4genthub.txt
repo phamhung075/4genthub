@@ -17,7 +17,7 @@ WORKING RULES.
 - Clean code only. No backward-compatibility code, fallbacks, legacy paths or migration helpers: this is a development phase with no production users.
 - ORM and domain entities are the source of truth. When a test disagrees with them, fix the code to match the entity, then update the test.
 - Make the smallest safe change and preserve unrelated behavior. Inspect the diff after editing.
-- Update CHANGELOG.md (root) for project changes, agenthub-frontend/CHANGELOG.md for frontend-only changes, and TEST-CHANGELOG.md when test files change.
+- Add one new file `CHANGELOG/<date>--<title>.md` (root) for each project change (do not read the whole directory), agenthub-frontend/CHANGELOG.md for frontend-only changes, and TEST-CHANGELOG.md when test files change.
 - Put tests only in the existing test locations. Create no new root files.
 - Never read or create .env files; configuration comes from environment variables.
 - Commit messages follow Conventional Commits, for example feat(seats): add room overlay.

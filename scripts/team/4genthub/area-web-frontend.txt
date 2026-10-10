@@ -13,6 +13,6 @@ Commands, from agenthub-frontend:
 
 Rules:
 - Match the existing component and hook patterns; reuse libraries already in package.json.
-- Update agenthub-frontend/CHANGELOG.md for every frontend change (Keep a Changelog format, include file paths). Use the root CHANGELOG.md only for project-wide changes.
+- Update agenthub-frontend/CHANGELOG.md for every frontend change (Keep a Changelog format, include file paths). Use a new root file CHANGELOG/<date>--<title>.md only for project-wide changes.
 - Update TEST-CHANGELOG.md when you change tests.
 - Data shown in the UI must come from one source so counts agree everywhere.

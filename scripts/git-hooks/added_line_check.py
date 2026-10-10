@@ -2,11 +2,13 @@
 """Prove the diff you COMMIT is the diff you made - the strong form of rule 64's shared-file duty.
 
 WHY THIS EXISTS. Rule 64 protects a commit from the tree every seat shares, and its instrument on
-`CHANGELOG.md` is a count of added lines beginning `## `. That count cannot see the failing case
+a shared multi-entry file (the changelog was one before it became one file per change under
+`CHANGELOG/`) is a count of added lines beginning `## `. That count cannot see the failing case
 (`f344a64f`): a FOREIGN edit made INSIDE an existing entry adds lines under a heading that already
 exists, so the count does not move and the commit carries a peer's uncommitted sentence as its own.
-Nothing protects the victim of that either - the correction is post-hoc, in someone else's CHANGELOG
-entry, after the fact. The heading count is a smoke alarm; this is the strong form the lead recorded
+Nothing protects the victim of that either - the correction is post-hoc, in someone else's changelog
+entry, after the fact. A changelog entry is now a NEW file, whose whole content is its added set (see
+the /dev/null note below), so the same duty covers it with no shared entry to land inside. The heading count is a smoke alarm; this is the strong form the lead recorded
 for whoever generalized it: ADDED-LINE SET EQUALITY.
 
 WHAT THE COMMITTER DOES. Immediately AFTER your own edit, take a snapshot:

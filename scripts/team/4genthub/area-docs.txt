@@ -2,13 +2,13 @@ DOCS. Documentation lives in ai_docs/. Check ai_docs/index.json for an existing 
 
 Rules:
 - ai_docs subfolders use kebab-case (api-integration, setup-guides). _absolute_docs and _obsolete_docs are the only exceptions.
-- Only five .md files are allowed in the repository root: README.md, CHANGELOG.md, TEST-CHANGELOG.md, AGENTS.md and CLAUDE.local.md. Every other document goes under ai_docs.
+- Only four .md files are allowed in the repository root: README.md, TEST-CHANGELOG.md, AGENTS.md and CLAUDE.local.md. Every other document goes under ai_docs.
 - Write documentation only when asked, and test any code example before documenting it.
 
 Changelogs (Keep a Changelog format, include file paths, impact and testing):
-- CHANGELOG.md in the root for project-wide changes.
+- One new file CHANGELOG/<date>--<title>.md in the root for each project-wide change; do not read the whole directory (`ls CHANGELOG | tail` lists the newest).
 - agenthub-frontend/CHANGELOG.md for frontend-only changes.
 - TEST-CHANGELOG.md when test files change.
-Never create a CHANGELOG.md in other directories.
+Never create a CHANGELOG.md or CHANGELOG/ in other directories.
 
 agenthub_go/NEXT_GEN.md is the running backlog and decision record for new features after the Go port: tick a box only when its check is met, and record owner decisions with the date.

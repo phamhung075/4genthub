@@ -67,7 +67,7 @@ the model → yes: fix the test to match the model.
 
 ## Changelog duties
 
-- `CHANGELOG.md` — every change that ships (Keep a Changelog format, `[Unreleased]` section).
+- `CHANGELOG/<date>--<title>.md` — one new file per change that ships (Keep a Changelog subsections; see `CHANGELOG/README.md`).
 - `TEST-CHANGELOG.md` — test-suite changes.
 - A documentation change that ships gets a changelog entry too.
 
@@ -113,18 +113,14 @@ the model → yes: fix the test to match the model.
   author never made (measured on `da07c9db`, whose output read `Stashing unstaged files` … `Restored changes`;
   it restored cleanly, and this tree has already lost a fleet to a tmux death once). The hazard is the window,
   not the mechanism: prefer `--files <your paths>` when the tree is crowded.
-- **A shared changelog takes the WHOLE file.** `git commit -- CHANGELOG.md` carries **every** uncommitted
-  entry in it, under your message: measured 2026-10-08, `0ea06c77` carried go-dev's deploy entry
-  (`CHANGELOG.md:20`), and fe-dev's entry had to ride another seat's commit because its own change had
-  already landed without it. So before naming a changelog, check it is clear of other seats' entries; where
-  it is not, sequence with that seat, or **name what you carry** in the message. An entry under a message
-  that does not mention it is the same confusion as a heading written over. **Three checks, in order, when
-  you name a changelog:** the removals your commit carries are yours or named —
-  `git show <sha> -- CHANGELOG.md | grep '^-[^-]'` is empty for an entry that only adds; the entries you
-  carry are named; and the added headings are **counted** —
-  `git show <sha> -- CHANGELOG.md | grep '^+## '` must show the number you expect, one and not two. The
-  count is the third refinement of this guard in one night: `0ea06c77`'s guards checked removals and
-  verified a named entry, and still carried a foreign entry heading in.
+- **A changelog entry is one new file, so it cannot carry a peer's entry.** The changelog is the `CHANGELOG/`
+  directory: one file `CHANGELOG/<date>--<title>.md` per change, added with `git add -N` and committed by
+  pathspec with the change it describes. Do not read the whole directory; `ls CHANGELOG | tail` lists the newest.
+  The old single `CHANGELOG.md` took the WHOLE file under `git commit -- CHANGELOG.md` and carried every peer's
+  uncommitted entry (measured 2026-10-08, `0ea06c77`); that hazard now applies only to the other shared files
+  (the backlog, the guides): before naming one, check it is clear of other seats' lines, sequence with that
+  seat, or **name what you carry** in the message, and check the commit with `git show <sha> -- <path>`
+  for removals, the entries you carry and the headings added.
 - **The earlier rule here — "stage by explicit path; never `git add -A`" — is RETIRED rather than restated:**
   the pre-stage form is the one that puts a line into the shared index, which is the window the fleet's
   commit form was changed to close. See `ai_docs/core-architecture/agenthub-system-architecture.md D8`

@@ -7,7 +7,7 @@ prompt = """
 **Delegate**: Specialized agent
 
 **Actions**:
-- Review CHANGELOG
+- Review the newest `CHANGELOG/` entries (`ls CHANGELOG | tail`), not the whole directory
 - Remove obsolete/duplicate/similar documents
 - Keep only one version per topic
 

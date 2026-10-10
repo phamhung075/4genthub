@@ -225,9 +225,9 @@ ai_docs/
 | Rule | Description |
 |------|-------------|
 | **Test files** | Go tests: `*_test.go` beside the code; client tests: `agenthub_client/tests/` |
-| **Document files** | Must be in `ai_docs/` (except 5 allowed root files) |
+| **Document files** | Must be in `ai_docs/` (except 4 allowed root files) |
 | **Kebab-case folders** | All ai_docs subfolders use lowercase-with-dashes |
-| **Root .md files** | ONLY 5 allowed: README.md, CHANGELOG.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
+| **Root .md files** | ONLY 4 allowed: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md |
 | **Index files** | Auto-generated index.json (not index.md) |
 
 ---
@@ -235,7 +235,7 @@ ai_docs/
 ## 🔒 Essential Rules & File System Protection
 
 ### Changelog Updates (CRITICAL)
-**MANDATORY**: AI agents MUST update CHANGELOG.md when making ANY project changes
+**MANDATORY**: AI agents MUST record ANY project change by adding ONE new file `CHANGELOG/<YYYY-MM-DD>--<kebab-title>.md` (format and newest entries: `CHANGELOG/README.md`). Never edit an existing entry to add a new change, and do not read the whole directory: `ls CHANGELOG | tail` lists the newest.
 - Add new features → `### Added`
 - Document fixes → `### Fixed`
 - Breaking changes → `### Changed`
@@ -244,9 +244,9 @@ ai_docs/
 - Describe impact and testing performed
 
 **CHANGELOG LOCATION RULES**:
-- **Root CHANGELOG.md**: Project-wide changes (`/home/daihu/__projects__/4genthub/CHANGELOG.md`)
+- **Root `CHANGELOG/`**: Project-wide changes, one file per change (`/home/daihu/__projects__/4genthub/CHANGELOG/`)
 - **Frontend CHANGELOG.md**: Frontend-only changes (`agenthub-frontend/CHANGELOG.md`)
-- **NEVER** create CHANGELOG.md in other subdirectories
+- **NEVER** create CHANGELOG.md or a CHANGELOG/ directory in other subdirectories
 - **NEVER** add changelog entries to CLAUDE.local.md
 
 ### Context Management
@@ -264,12 +264,12 @@ ai_docs/
 #### Root Directory Restrictions
 - **NO file creation in root** (except files in `.allowed_root_files`)
 - **NO folder creation in root** (all folders should already exist)
-- **Allowed root files**: README.md, CHANGELOG.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md
+- **Allowed root files**: README.md, TEST-CHANGELOG.md, AGENTS.md, CLAUDE.local.md
 
 #### File Type Restrictions
 | File Type | Allowed Location | Notes |
 |-----------|-----------------|-------|
-| **.md files** | `ai_docs/` | Except 5 allowed root files |
+| **.md files** | `ai_docs/` | Except 4 allowed root files |
 | **Test files** | Directories in `.valid_test_paths` | `agenthub_go/`, `agenthub_client/tests/` |
 | **.sh scripts** | `scripts/` or `docker-system/` | No scripts in root |
 | **.venv** | `agenthub_client/.venv` | Only ONE .venv allowed |
@@ -317,7 +317,7 @@ Follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/):
 ## 🎯 AI Workflow Best Practices
 
 ### MANDATORY Behaviors
-1. ✅ **UPDATE CHANGELOG.md** for ALL project changes (NOT CLAUDE.local.md)
+1. ✅ **ADD ONE `CHANGELOG/<date>--<title>.md` FILE** for ALL project changes (NOT CLAUDE.local.md)
 2. ✅ **CHECK ai_docs/index.json** for existing documentation before creating
 3. ✅ **FOLLOW DDD patterns** in codebase
 4. ✅ **TEST code examples** before documenting

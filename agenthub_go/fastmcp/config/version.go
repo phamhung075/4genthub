@@ -8,7 +8,7 @@ package config
 // register_mcp_client response, the access-level health checker and the connection-management
 // server records carried either the ported module's default (0.0.2c) or the Python framework's
 // version (2.1.0). Three answers to "which release is this?" is how a deploy gets called
-// complete when it is not, so the field is now one value (measured 2026-10-06; see CHANGELOG).
+// complete when it is not, so the field is now one value (measured 2026-10-06; see CHANGELOG/).
 //
 // The Python port also kept the version overridable with SERVER_VERSION and its metadata in
 // VersionInfo; both went with that tree. SERVER_VERSION is set nowhere in this repo and an

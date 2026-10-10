@@ -1,0 +1,10 @@
+## A false claim in `a2635977`, corrected: `r.PostForm.Get("name")` IS called, at `app.go:156`
+
+### Fixed
+- **The `a2635977` commit message carries a clause that is FALSE and cannot be amended in this rig:** it said the project-creation paragraph named "`r.PostForm.Get("name")`, a call this handler does not make". **`r.PostForm.Get` IS CALLED** — `git grep -n 'PostForm\.Get' -- agenthub_go/fastmcp/server/httpapp/app.go` → `:156`, `:186`, `:190`, and `:156` is `routes.CreateProject(r.Context(), r.PostForm.Get("name"), r.PostForm.Get("description"), u, a.projects)` inside the POST closure (`146-158`). **A reader who finds that message should read this entry as its correction.**
+- **The true statement, which both mutable homes now carry:** `:151` PARSES the body (`_ = r.ParseForm()`), `:152` VALIDATES presence (`missingForm(r, "name")`, via `r.PostForm.Has`, `http.go:132`, answering `422` through `writeMissing`, `http.go:124`), and the **VALUE** is READ at `:156` (`r.PostForm.Get`). The old sentence named the value read and omitted the check — **a mechanism HALF, not a nonexistent call.**
+- `ai_docs/api-integration/surface-inventory.md` §1.1 and the `a2635977` CHANGELOG bullets 1 and 3 carry dated corrections; bullet 3's range reasoning is fixed too — `app.go:135-144` was **two stale line numbers for one region that shifted uniformly by +11** (`:135` the registration, `135-144` registration through refusal block), **not** a range "ending on `registerProjectRoutes`' own header": old `:144` is new `:155`.
+
+### Verified
+- The refuting command and its output are above; the region was then read in full (`app.go:146-162`) rather than to the line where the claim was to stop.
+- **THE ERROR CLASS, NAMED SO IT IS NOT REPEATED: AN ABSENCE CLAIM IS EVIDENCE ABOUT THE PATTERN, NOT ABOUT THE WORLD.** A grep that returns nothing bounds the search, not the thing searched for; `does not exist` is falsified by one line and reads MORE precise than the sentence it replaces. The guard already covered counts and hashes; it now covers assertions of non-existence, which need the command that would have FOUND the thing, run in the same turn.

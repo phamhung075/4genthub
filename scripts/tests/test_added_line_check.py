@@ -1,6 +1,7 @@
 """The strong form of rule 64's shared-file duty: is the diff you COMMIT the diff you made?
 
-Rule 64's instrument on `CHANGELOG.md` is a count of added lines beginning `## `. The case that beat it
+Rule 64's instrument on a shared multi-entry file (the changelog was one until it became one file per
+change under `CHANGELOG/`; `NEXT_GEN.md` is one now) is a count of added lines beginning `## `. The case that beat it
 is `f344a64f`: a foreign edit made INSIDE an existing entry adds no heading, so the count does not move
 and the commit carries a peer's uncommitted sentence as its own. These cases build that exact case on a
 real repository, show rule 64's instrument reading it as no change, and show the baseline check naming
@@ -24,6 +25,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHECK = REPO_ROOT / "scripts" / "git-hooks" / "added_line_check.py"
 
+# A shared file that holds many entries, so a peer's edit can land inside an existing one.
+SHARED = "NEXT_GEN.md"
 SEAT = "go-dev@test"
 FOREIGN = "- a peer's uncommitted sentence, taken by someone else's commit"
 MINE = "## 2026-10-09 - a proof about the shared tree"
@@ -49,10 +52,10 @@ def _repo(tmp_path: Path) -> Path:
     _git(repo, "init", "-q", ".")
     _git(repo, "config", "user.email", "check@test.invalid")
     _git(repo, "config", "user.name", "added-line test")
-    (repo / "CHANGELOG.md").write_text(
+    (repo / SHARED).write_text(
         "# Changelog\n\n## 2026-10-08 - an older entry\n\n- an older line\n", encoding="utf-8"
     )
-    _git(repo, "add", "--", "CHANGELOG.md")
+    _git(repo, "add", "--", SHARED)
     _git(repo, "commit", "-q", "-m", "base")
     return repo
 
@@ -74,15 +77,15 @@ def _baseline(repo: Path) -> Path:
 
 
 def _rule_64_instrument(repo: Path) -> int:
-    """The shipped heading count: added lines of `git diff HEAD -- CHANGELOG.md` that begin `## `."""
-    diff = _git(repo, "diff", "HEAD", "--", "CHANGELOG.md")
+    """The shipped heading count: added lines of `git diff HEAD -- <shared file>` that begin `## `."""
+    diff = _git(repo, "diff", "HEAD", "--", SHARED)
     return sum(1 for line in diff.splitlines() if line.startswith("+## "))
 
 
 def _write_my_entry(repo: Path) -> None:
     """The owner's own entry, appended under the existing older entry."""
-    (repo / "CHANGELOG.md").write_text(
-        (repo / "CHANGELOG.md").read_text(encoding="utf-8") + MINE + "\n\n",
+    (repo / SHARED).write_text(
+        (repo / SHARED).read_text(encoding="utf-8") + MINE + "\n\n",
         encoding="utf-8",
     )
 
@@ -91,19 +94,19 @@ def test_a_foreign_line_inside_an_existing_entry_moves_no_heading_so_rule_64_can
     """f344a64f's class: the count reads the mixed diff as YOURS, and the baseline does not."""
     repo = _repo(tmp_path)
     _write_my_entry(repo)
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
     before = _rule_64_instrument(repo)
     assert before == 1, "the owner's own heading is the one line rule 64 counts"
 
     # The peer's line arrives after the snapshot, inside the entry the owner already wrote.
-    text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
-    (repo / "CHANGELOG.md").write_text(
+    text = (repo / SHARED).read_text(encoding="utf-8")
+    (repo / SHARED).write_text(
         text.replace(MINE + "\n\n", MINE + "\n\n" + FOREIGN + "\n"), encoding="utf-8"
     )
 
     assert _rule_64_instrument(repo) == before, "the heading count cannot see a line inside an entry"
 
-    code, out, err = _run(repo, "--verify", str(_baseline(repo)), "--", "CHANGELOG.md")
+    code, out, err = _run(repo, "--verify", str(_baseline(repo)), "--", SHARED)
     assert code == 3, "the mixing class must stop the commit"
     assert "SURPLUS" in err and FOREIGN in err, f"the surplus line must be named, got: {err!r}"
     assert MINE not in err, "the owner's own line is not surplus"
@@ -113,23 +116,23 @@ def test_verify_passes_when_the_path_still_holds_exactly_the_snapshotted_diff(tm
     """The green side, so exit 3 means something: snapshot, no intervening write, verify."""
     repo = _repo(tmp_path)
     _write_my_entry(repo)
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
 
-    code, out, err = _run(repo, "--verify", str(_baseline(repo)), "--", "CHANGELOG.md")
+    code, out, err = _run(repo, "--verify", str(_baseline(repo)), "--", SHARED)
     assert (code, err) == (0, ""), (code, err)
-    assert "equal" in out and "CHANGELOG.md" in out
+    assert "equal" in out and SHARED in out
 
 
 def test_a_removed_line_is_reported_as_missing_not_as_equal(tmp_path: Path) -> None:
     """Losing your own line is a difference too: the baseline is equality, not a lower bound."""
     repo = _repo(tmp_path)
     _write_my_entry(repo)
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
 
-    text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
-    (repo / "CHANGELOG.md").write_text(text.replace(MINE + "\n", ""), encoding="utf-8")
+    text = (repo / SHARED).read_text(encoding="utf-8")
+    (repo / SHARED).write_text(text.replace(MINE + "\n", ""), encoding="utf-8")
 
-    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", "CHANGELOG.md")
+    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", SHARED)
     assert code == 3
     assert "MISSING" in err and MINE in err, err
 
@@ -138,7 +141,7 @@ def test_the_baseline_lands_in_the_shared_git_dir_and_carries_the_seat(tmp_path:
     """A victim can find it: same store the parked-diff captures use, and it names who took it."""
     repo = _repo(tmp_path)
     _write_my_entry(repo)
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
 
     payload = json.loads(_baseline(repo).read_text(encoding="utf-8"))
     assert payload["seat"] == SEAT
@@ -151,15 +154,19 @@ def test_the_baseline_lands_in_the_shared_git_dir_and_carries_the_seat(tmp_path:
 
 def test_a_new_file_is_read_against_dev_null_so_a_peer_line_in_it_is_surplus(tmp_path: Path) -> None:
     """Found by dogfooding: `git diff HEAD` says NOTHING about an untracked path, so `+0/-0` vouched
-    for a file the baseline had never read. A new path must be read against /dev/null instead."""
+    for a file the baseline had never read. A new path must be read against /dev/null instead.
+
+    A changelog entry is exactly such a path: one new file per change, so its whole content is its added set."""
     repo = _repo(tmp_path)
-    (repo / "NEW.md").write_text("my new line\n", encoding="utf-8")
-    assert _run(repo, "--snapshot", "--", "NEW.md")[0] == 0
+    entry = "CHANGELOG/2026-10-10--my-change.md"
+    (repo / "CHANGELOG").mkdir()
+    (repo / entry).write_text("my new line\n", encoding="utf-8")
+    assert _run(repo, "--snapshot", "--", entry)[0] == 0
     staged = json.loads(_baseline(repo).read_text(encoding="utf-8"))
     assert staged["patches"][0]["added"] == ["my new line"], "a new file's content IS its added set"
 
-    (repo / "NEW.md").write_text("my new line\na peer's line\n", encoding="utf-8")
-    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", "NEW.md")
+    (repo / entry).write_text("my new line\na peer's line\n", encoding="utf-8")
+    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", entry)
     assert code == 3
     assert "SURPLUS" in err and "a peer's line" in err, err
 
@@ -167,15 +174,15 @@ def test_a_new_file_is_read_against_dev_null_so_a_peer_line_in_it_is_surplus(tmp
 def test_a_removed_line_whose_own_text_starts_with_a_rule_marker_is_counted(tmp_path: Path) -> None:
     """A removed markdown rule is written `----` in the diff; skipping by prefix called it a header."""
     repo = _repo(tmp_path)
-    text = (repo / "CHANGELOG.md").read_text(encoding="utf-8").replace(
+    text = (repo / SHARED).read_text(encoding="utf-8").replace(
         "## 2026-10-08 - an older entry", "---\n\n## 2026-10-08 - an older entry"
     )
-    (repo / "CHANGELOG.md").write_text(text, encoding="utf-8")
-    _git(repo, "add", "--", "CHANGELOG.md")
+    (repo / SHARED).write_text(text, encoding="utf-8")
+    _git(repo, "add", "--", SHARED)
     _git(repo, "commit", "-q", "-m", "a rule marker at HEAD")
 
-    (repo / "CHANGELOG.md").write_text(text.replace("---\n\n", ""), encoding="utf-8")
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    (repo / SHARED).write_text(text.replace("---\n\n", ""), encoding="utf-8")
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
     removed = json.loads(_baseline(repo).read_text(encoding="utf-8"))["patches"][0]["removed"]
     assert removed == ["", "---"], removed
 
@@ -184,7 +191,7 @@ def test_a_path_that_was_never_snapshotted_is_refused_rather_than_passed(tmp_pat
     """Verifying an unlisted path must not read as covered: no baseline, no vouch."""
     repo = _repo(tmp_path)
     (repo / "OTHER.md").write_text("new\n", encoding="utf-8")
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
 
     code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", "OTHER.md")
     assert code == 3
@@ -199,12 +206,12 @@ def test_the_stated_blind_spot_a_snapshot_taken_after_a_peer_edit_calls_their_li
     """
     repo = _repo(tmp_path)
     _write_my_entry(repo)
-    text = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
-    (repo / "CHANGELOG.md").write_text(
+    text = (repo / SHARED).read_text(encoding="utf-8")
+    (repo / SHARED).write_text(
         text.replace(MINE + "\n\n", MINE + "\n\n" + FOREIGN + "\n"), encoding="utf-8"
     )
-    assert _run(repo, "--snapshot", "--", "CHANGELOG.md")[0] == 0
+    assert _run(repo, "--snapshot", "--", SHARED)[0] == 0
 
-    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", "CHANGELOG.md")
+    code, _, err = _run(repo, "--verify", str(_baseline(repo)), "--", SHARED)
     assert code == 0, "the snapshot is swearing to the mixed diff as it stood - the stated blind spot"
     assert err == ""
