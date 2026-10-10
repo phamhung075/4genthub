@@ -33,7 +33,9 @@ package apiref_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -59,6 +61,15 @@ func readCommittedArtefact(t *testing.T, path string) apiref.Reference {
 	t.Helper()
 	raw, err := os.ReadFile(path)
 	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			// ABSENT IS NOT DRIFTED, and a reader who cannot tell them apart spends a seat on a
+			// defect that does not exist: this is what a checkout WITHOUT agenthub-frontend, or a
+			// deleted artefact, looks like, and it is not a statement about any route. The drift
+			// failures below name routes and entries; none of them can produce this message.
+			t.Fatalf("THE COMMITTED ARTEFACT IS ABSENT, NOT DRIFTED: %s does not exist, so no "+
+				"comparison was made and no route is missing. A checkout that omits "+
+				"agenthub-frontend, or an artefact deleted from one, looks exactly like this.", path)
+		}
 		t.Fatalf("cannot read the committed artefact at %s: %v - this gate is about the file the "+
 			"frontend imports, so a path that no longer resolves is a failure of the judgement rather "+
 			"than an empty surface", path, err)
