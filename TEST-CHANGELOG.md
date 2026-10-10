@@ -2,12 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
-## 2026-10-10 - the seat pin route's case, and the three fakes that had to move with it
+## 2026-10-10 - item B's tool-path read-back case, with the gate's own RED/GREEN
 
-- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_test.go`, one case (`TestSeatAdminPinSeatVersion`) covering R1's acceptance: pin to a version the seat's type does not have -> 400; to `1.4.2` -> 200 carrying `"pinned_version":"1.4.2"`; a following `GET /api/v2/openrig/rooms/dev/seats` reads the pin back out of the store, so the case cannot pass on an echo; an omitted version -> 400; an absent seat -> 404. It drives the real mux built by `mountSeatAdminRoutes`, so the request crosses the handler, the service and its version check.
-- EXTENDED three fakes, because the two new methods landed on the interfaces they implement: `fakeSeatAdminStore` (services tests - `GetSeatTypeVersion` searches its own `versions`, `UpdateSeatPinnedVersion` honors `updateErr`), the controller's `fakeStore`, and httpapp's `fakeSeatAdmin`. The compiler named all three; no search did.
-- VERIFIED: `go test ./fastmcp/server/httpapp/ -run TestSeatAdminPinSeatVersion -count=1 -v` -> PASS (0.00s); `go test ./fastmcp/seat_management/... -count=1` -> every package `ok`; `go vet` rc 0 over both trees.
-- NOT RUN from here: the clean-export `go test ./... -count=1` is the architect's gate on this commit, and this worktree holds another seat's in-flight edits.
+- ADDED `agenthub_go/fastmcp/server/httpapp/add_progress_tool_path_pg_test.go` (`TestAddProgressThroughTheToolPathLandsWhereTheEntityReads`): a note written through `manage_context add_progress` must be read back where the entity reads its notes. It drives `App.dispatchMCPTool` - what the wire reaches for `tools/call` (`mcp_routes.go:233`) - over a database built by the production schema, and reads back with `infrarepos.NewTaskContextRepository(sm, &user).Get` -> `ImplementationNotes["progress_updates"]`: not the service, not the HTTP route. Both shapes are measured in the same case against the same context, so the parameter is the only difference: the advertised shape (`level` + `context_id`) landed=true; the `task_id`-only shape landed=false, its payload `success:false "Context ID is required"` returned as a NON-error MCP result (`dispatch reported error=false`).
+- RED AND GREEN, MEASURED INDEPENDENTLY BY THE GATE in a worktree at `204f83b1`: GREEN PASS 7.34s; with only `task_context_repository.go` reverted (`git restore --source=f99d10eb^ fastmcp/task_management/infrastructure/repositories/task_context_repository.go`) -> RED FAIL 6.99s, the tool answering `{success: true, data: {}}` while the note column read `[]`. That pair is what pins the repository line as the fix for the "reports success, loses the note" observable.
+- RUNS ONLY WITH A DATABASE: it skips loudly when `AGENTHUB_TEST_PG_URL` is unset. Command: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres go test ./fastmcp/server/httpapp/ -run TestAddProgressThroughTheToolPathLandsWhereTheEntityReads -count=1 -v` -> PASS (5.09s).
 
 ## 2026-10-10 - the tests-config ratchet: 76 error TS off it, from one file
 
