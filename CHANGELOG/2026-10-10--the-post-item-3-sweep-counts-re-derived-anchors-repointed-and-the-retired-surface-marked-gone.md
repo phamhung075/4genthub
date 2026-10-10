@@ -40,6 +40,12 @@
     reading 10 forever while the tree moved; it now reads §2.3's pass-9 re-measurement. This is the same class
     the pass is about, found in the instrument rather than in the document.
 
+- `ai_docs/api-integration/mcp-tools-api-complete.md` — **the same retirement, in the other file that documents
+  the tool surface.** Its Quick Reference row for `manage_agent` and its `### manage_agent` section now read
+  **RETIRED 2026-10-10 (`76b800b9`)** and keep the old material as a record of what was served rather than as
+  documentation of a live surface. That page had been documenting a retired tool as live since item 3 landed:
+  the same contradiction class §5 of the inventory exists for, found by this pass rather than reported to it.
+
 ### Verified — at the revision this entry lands on (`585d18b3`), in a clean worktree
 
 - `scripts/COUNTS-AUDIT.py` → **all eleven rows matching**, exit 0, with `MEASURED AT 585d18b3 … 0 uncommitted

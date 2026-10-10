@@ -9,7 +9,7 @@
 | **manage_project** | create, list, project_health_check | name | Project coordination |
 | **manage_git_branch** | create, assign_agent, get_statistics | project_id, git_branch_name | Branch operations |
 | **manage_context** | create, get, resolve, delegate | level, context_id | Context records at four levels (global \| project \| branch \| task) |
-| **manage_agent** | register, assign, get, list, update, unassign, unregister, rebalance | project_id, name, call_agent (field) | Agent registry orchestration |
+| ~~**`manage_agent`**~~ **RETIRED 2026-10-10** | *removed by `76b800b9` with the `agents` table and the role registry* | — | *was: agent registration and assignment* |
 | **manage_seat** | list, get, set_occupant | room, seat, runtime, model | Seat management (switch a seat's occupant) |
 | **call_seat** | N/A (single action) | room, seat | Resolve one exact seat and its rendered context files |
 | **submit_feedback** | N/A (single action) | room, seat, session, layer, text | Report friction from a seat: the layer it is in, the room and seat, and what happened |
@@ -345,6 +345,8 @@ manage_context(
 ## Agent Orchestration
 
 ### manage_agent
+
+**RETIRED 2026-10-10 (`76b800b9 refactor(agents): retire the manage_agent tool, the agents table and the role registry`).** The tool, the `agents` table and the 32-role registry are gone at HEAD, and `@<seat_key>` is the only assignee identity — `register` became a seat creation, `assign` a task assignee, `list`/`get` `manage_seat list`, and `rebalance` the lead's queue. **The material below is kept as a record of the tool as it was served, not as documentation of a live surface**; `surface-inventory.md` §4 carries the commands that confirm the absence, and `manage_agent_absent_test.go` fails the build if the tool is published again.
 
 **Purpose**: Agent registration and assignment
 
