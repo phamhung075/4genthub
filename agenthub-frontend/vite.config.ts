@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { describeArtefact, MINIFIED_BYTES_PER_LINE_FLOOR } from './src/config/artefactReport'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -55,19 +56,35 @@ export default defineConfig(({ mode }) => {
 
   // WHAT THE BUILD RESOLVED AND WHAT IT PRODUCED, printed by the build itself (row 2dd4448e).
   //
-  // The entry chunk's NAME cannot answer this, measured three ways: the name survived a comment-only
-  // edit where no parent .env existed, it moved on a +0.7% byte change, and it moved at an IDENTICAL
-  // byte size in this shared tree. Size and newline count separate the two families, and the family is
-  // what decides whether these bytes are the artefact the frontend image deploys (PRODUCTION, minified:
-  // 299,046 B / 39 newlines / marker present) or a build of this checkout (DEVELOPMENT, unminified:
-  // 561,199 B / 245 newlines / marker absent).
+  // TWO INDEPENDENT AXES, EACH WITH A CONFIGURED CAUSE AND AN OBSERVED EFFECT. The mistake this block
+  // exists to stop is printing one as though it described the other:
   //
-  // The line above says `mode "..."`, which is Vite's MODE - always "production" for `vite build` - and
-  // is NOT the family. NODE_ENV is what decides minification, and here it comes from the parent .env,
-  // which is exactly how a shared-tree build is unminified while the log reads mode "production".
+  //   REACT RESOLUTION  cause: NODE_ENV, which decides which React the bundle carries. Observed from
+  //                     the `Minified React error` marker, which only the production React build
+  //                     contains - present in the deployed entry (301,330 B / 39 newlines) and in the
+  //                     production-React build that is unminified (758,581 B / 18,313), absent here.
+  //   MINIFICATION      cause: `build.minify`, NOT NODE_ENV - Vite defaults it to 'esbuild' and
+  //                     nothing in this config sets it, so BOTH families are minified. Observed as
+  //                     MEAN bytes per line against MINIFIED_BYTES_PER_LINE_FLOOR. The retired
+  //                     100-newline threshold was the wrong instrument for this axis: 245 newlines IS
+  //                     the minified reading for development React, so it confirmed the false
+  //                     `unminified` label instead of catching it.
+  //
+  // The entry chunk's NAME cannot answer either axis: it survived a comment-only edit where no parent
+  // .env existed, it moved on a +0.7% byte change, and it moved at an IDENTICAL byte size in this
+  // tree. The line above logs Vite's MODE, always "production" for `vite build`, which is neither axis.
+  //
+  // describeArtefact (src/config/artefactReport.ts) is the pure form of both axes, so every cell and
+  // both mismatch directions are pinned by tests instead of by a build.
+  let configuredMinify: boolean | 'terser' | 'esbuild' | undefined
   const artefactReportPlugin: Plugin = {
     name: 'artefact-report',
     apply: 'build',
+    configResolved(config) {
+      // THE DECISION, read from the resolved config rather than inferred from NODE_ENV. Vite's own
+      // @default is 'esbuild', so this reads the resolved lever (measured 'esbuild') and needs no fallback.
+      configuredMinify = config.build.minify
+    },
     closeBundle() {
       const outDir = path.resolve(__dirname, 'build')
       const entry = fs
@@ -77,22 +94,32 @@ export default defineConfig(({ mode }) => {
         console.log('\n📦 No entry chunk found in build/index.html - the artefact cannot be reported.')
         return
       }
-      const text = fs.readFileSync(path.join(outDir, entry), 'utf8')
-      const bytes = fs.statSync(path.join(outDir, entry)).size
-      const newlines = text.split('\n').length - 1
-      const minifiedMarker = text.includes('Minified React error')
-      const isProduction = process.env.NODE_ENV === 'production'
+      const entryPath = path.join(outDir, entry)
+      const text = fs.readFileSync(entryPath, 'utf8')
+      const report = describeArtefact({
+        bytes: fs.statSync(entryPath).size,
+        newlines: text.split('\n').length - 1,
+        markerPresent: text.includes('Minified React error'),
+        nodeEnv: process.env.NODE_ENV,
+        configuredMinify
+      })
       console.log('\n📦 THE ARTEFACT THIS BUILD PRODUCED')
-      console.log(`   NODE_ENV   ${process.env.NODE_ENV}  (this, not "mode" above, decides the family)`)
       console.log(`   entry      ${entry}`)
       console.log(
-        `   size       ${bytes} B   newlines ${newlines}   'Minified React error' ${minifiedMarker ? 'present' : 'absent'}`
+        `   size       ${report.bytes} B   newlines ${report.newlines}   bytes/line ${report.bytesPerLine.toFixed(1)}`
       )
-      console.log(`   family     ${isProduction ? 'PRODUCTION (minified)' : 'DEVELOPMENT (unminified)'}`)
-      if (isProduction && newlines > 100) {
-        console.log('   ⚠  SIGNATURE MISMATCH: NODE_ENV says production but the entry looks unminified - do not quote these bytes.')
-      } else if (!isProduction) {
-        console.log('   ⚠  NOT the deploy artefact: the frontend image builds PRODUCTION (about 299 kB / 39 newlines,')
+      console.log(
+        `   react      ${report.reactObserved} (observed: 'Minified React error' ${report.markerPresent ? 'present' : 'absent'})   cause: NODE_ENV ${process.env.NODE_ENV}`
+      )
+      console.log(
+        `   minified   ${report.observedMinified ? 'yes' : 'no'} (observed: ${report.bytesPerLine.toFixed(1)} bytes/line vs floor ${MINIFIED_BYTES_PER_LINE_FLOOR})   cause: build.minify ${String(configuredMinify)}`
+      )
+      console.log(`   family     ${report.familyLabel}`)
+      for (const mismatch of report.mismatches) {
+        console.log(`   ⚠  SIGNATURE MISMATCH: ${mismatch}`)
+      }
+      if (!report.isDeployShape) {
+        console.log('   ⚠  NOT the deploy artefact: the frontend image builds PRODUCTION React, minified (about 299 kB / 39 newlines,')
         console.log('      and no parent .env exists inside it). NODE_ENV=production in the process environment builds it here.')
       }
     }
