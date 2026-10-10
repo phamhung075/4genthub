@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the seat chat window's route gets the test that pins what the verb decides
+
+- `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go`: three tests for the newly mounted `POST /api/v2/openrig/seats/{seat}/messages` - `TestSeatMessageRouteIsVerbScoped`, `TestSeatMessageRouteRefusalsComeFromRouting`, `TestSeatMessageRouteRequiresAuth`. They mount the real routes through the file's existing `seatTestMux`/`doTestRequest`/`fakeSeatSource` seam, so no new fake was added for them.
+- **The case that matters is the path collision, because the path alone cannot decide this route.** `/seats/{seat}/messages` and the resolution `GET /seats/{room}/{seat}` have the same shape, so `TestSeatMessageRouteIsVerbScoped` POSTs to `/seats/coder/messages` and then GETs the identical path: the POST must be the message route (**501**, the delivery refusal, carrying a `detail`) and the GET must still be the resolution, answering 200 with `"room":"coder"` and `"seat":"messages"`. `TestSeatMessageRouteRefusalsComeFromRouting` keeps the refusals attributable to routing rather than to the caller's content: malformed body **400**, unknown field **400** (the body is `{text}` and nothing else), POST on the GET-only resolution pattern **405**, a three-segment path **404**.
+- **SEEN RED FIRST, BY REMOVING THE MOUNT RATHER THAN BY TRUSTING THE TEST:** with the route registration disabled, all six requests are answered **405** `Method Not Allowed` - the live call site's defect, reproduced - and with it restored all three tests pass. Two of my own expectations were wrong on the first run and are recorded rather than quietly corrected: `POST /seats/coder` is **404** (a one-segment path matches no pattern at all, so the 405 needs the two-segment GET-only path `/seats/dev/coder`), and a missing bearer is **403** only when the request carries no usable `Authorization` header - `doTestRequest` always sets one, so the auth case builds its own request.
+
 ## 2026-10-10 - the parity fixture that could not fail now can
 
 - `agenthub_go/internal/clientbridge/testdata/python_dump.json`: the **36** seat keys renamed `hash` -> `pinned_hash`, matching the Python report the fixture was captured from (`agenthub_client/.../bridge.py:269`). The fixture's own comment warns it is captured rather than hand-written; this is a **RE-KEY of a stale name, not a new capture**, and it is the change that makes the parity case discriminating.

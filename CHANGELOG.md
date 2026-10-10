@@ -1,3 +1,19 @@
+## The seat chat window's POST was answered 405, so the route is mounted and refuses in words
+
+### Changed
+- `agenthub_go/fastmcp/server/httpapp/seat_mount.go`: `POST /api/v2/openrig/seats/{seat}/messages` is mounted. It is the one seat route that carries no room, so its path has the same two-segment shape as the resolution `GET /api/v2/openrig/seats/{room}/{seat}` - and that GET-only pattern was answering the window's POST **405**, which is the defect the row reports. A literal segment outranks a wildcard, so the POST is taken and the GET keeps the resolution.
+- **The route refuses; it does not answer `{"success": true}`.** There is no server-side path that can put text into a seat's session, and the refusal is what keeps that honest: the window renders `error.message` only when there IS an error, so a false success for a message nobody receives would render as nothing at all. The handler decodes `{text}` - so a malformed body is refused for being malformed - and answers **501** with a human-readable `detail`.
+- The handler does not resolve the seat, deliberately rather than unfinished: the window names a seat by key alone, while a seat is unique per `(room_id, seat_key)` (`uq_seats_room_seat_key`) and every resolver in `seat_management` is room-scoped, so a bare key names a seat only by guessing its room. The path's shape is the frontend contract to settle, and this change does not settle it unilaterally.
+- `agenthub_go/fastmcp/server/httpapp/seat_mount_test.go`: three route-layer tests, mounted at the same seam the file already uses.
+
+### Verified
+- **Why a refusal, measured rather than assumed - delivery in this product is client-side.** `session_stream.AppendEvents` (`fastmcp/session_stream/repository.go:212`) is called from exactly one place, the connector websocket (`ws_mount.go:368`), so this server STORES what a client reports to it; the push side is user-scoped (`handleRealtime` and `wsReplayMissedNotifications`, `ws_mount.go:138,220`, and `routes.StoreMissedNotification`, `server/routes/websocket_routes.go:205`, called with an `offlineUserID` at `:605`); no seat table is message-shaped and `grep -rn "SeatMessage\|seat_message" --include=*.go` outside the build caches returns nothing. Only the OpenRig client on the machine that holds a seat's terminal can put text into its session (`cmd/seatcheck`'s `rig send`).
+- **Regression proof, run both ways.** With the mount disabled, all six requests are answered **405** - the defect, reproduced. Mounted: `TestSeatMessageRouteIsVerbScoped` (the verb is what decides - the same path with GET is still the resolution, with `messages` as the seat key), `TestSeatMessageRouteRefusalsComeFromRouting` (the 400/404/405 answers come from routing, not from what the caller sent) and `TestSeatMessageRouteRequiresAuth` (no usable bearer is 403 `Not authenticated`) all pass.
+- `gofmt` clean; `go vet ./fastmcp/server/httpapp/...` rc 0; `go test ./fastmcp/server/httpapp/...` **ok**.
+
+### Found by
+- Row `89a03b6c`. The delivery store this route cannot reach is filed as its own row, because it is a design change to the pull model the port committed to - and owner demand D1 cannot work without it.
+
 ## The readiness report still listed an environment variable Go stopped reading
 
 ### Changed

@@ -3,6 +3,7 @@ package httpapp
 // seat_mount.go serves the company-workplace seats to the OpenRig client.
 //
 //	GET  /api/v2/openrig/seats/{room}/{seat}   resolved, rendered and stored snapshot
+//	POST /api/v2/openrig/seats/{seat}/messages one message to a seat's session (refused: delivery is not implemented)
 //	POST /api/v2/openrig/seat-types/seed       seed the caller's seat types from the embedded library
 //
 // A snapshot is immutable: the same seat definition always returns the same hash, so the
@@ -184,6 +185,14 @@ func mountSeatRoutes(mux *http.ServeMux, sessions *database.SessionManager) {
 	mux.HandleFunc("GET /api/v2/openrig/seats/{room}/{seat}", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleResolveSeat(w, r, u, sessions)
 	}))
+	// The chat window's route, and the reason it needs a pattern of its own: it is the one seat
+	// route that carries no room, so its path has the same two-segment shape as the resolution
+	// GET above. A literal segment outranks a wildcard, so this pattern takes the POST and the
+	// resolution keeps the GET - before it was mounted, the window's POST was answered 405 by
+	// the GET-only pattern and the caller learned nothing.
+	mux.HandleFunc("POST /api/v2/openrig/seats/{seat}/messages", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
+		handleSendSeatMessage(w, r, u)
+	}))
 	mux.HandleFunc("POST /api/v2/openrig/seat-types/seed", authed(func(w http.ResponseWriter, r *http.Request, u *authdomain.User) {
 		handleSeedSeatTypes(w, r, u, sessions)
 	}))
@@ -247,4 +256,32 @@ func handleSeedSeatTypes(w http.ResponseWriter, r *http.Request, u *authdomain.U
 	body.Set("success", true)
 	body.Set("seat_types", count)
 	writeJSON(w, http.StatusOK, body)
+}
+
+// seatMessageDeliveryAbsent is what the seat chat window is told, and the reason it is a refusal
+// rather than a success. Delivery in this product is CLIENT-side: only the OpenRig client running
+// on the machine that holds a seat's terminal can put text into that seat's session (`rig send`),
+// and this server cannot reach that terminal. The route is mounted anyway, because the unmounted
+// path answered 405 and said nothing; and it must NOT answer {"success": true}, because the window
+// reads error.message only when there IS an error, so a false success renders as nothing at all.
+const seatMessageDeliveryAbsent = "seat message delivery is not implemented on this server: only the OpenRig client running on a seat's own machine can put text into that seat's session, so the server cannot deliver it. Nothing was sent."
+
+// handleSendSeatMessage answers the seat chat window. It refuses by design (see
+// seatMessageDeliveryAbsent), but only after the body is decoded, so a malformed request is
+// refused for being malformed rather than for the delivery gap.
+//
+// It does not resolve the seat, and that is deliberate rather than unfinished: the window names a
+// seat by key alone, while a seat is unique per (room_id, seat_key) - the schema's
+// uq_seats_room_seat_key - and every resolver in seat_management is room-scoped
+// (SeatResolutionService.ResolveSeat takes a roomSlug). A bare key therefore names a seat only by
+// guessing its room, and the guess would be silently wrong for every user with two rooms carrying
+// the same seat key. The path's shape is the frontend's contract to settle, not this handler's.
+func handleSendSeatMessage(w http.ResponseWriter, r *http.Request, _ *authdomain.User) {
+	var request struct {
+		Text string `json:"text"`
+	}
+	if !decodeSeatAdminBody(w, r, &request) {
+		return
+	}
+	writeDetail(w, http.StatusNotImplemented, seatMessageDeliveryAbsent)
 }

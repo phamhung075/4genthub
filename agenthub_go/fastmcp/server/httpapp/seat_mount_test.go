@@ -216,3 +216,96 @@ func TestSeedSeatTypesErrorMapping(t *testing.T) {
 		t.Errorf("seed error: status = %d, want 500", rec.Code)
 	}
 }
+
+// The chat window's route is the one seat route that carries no room, so its path has the same
+// two-segment shape as the resolution GET. The verb is therefore the only thing that can tell the
+// two apart, and this is a ROUTING test rather than a validation one: the same path answers
+// differently per method, and the answer proves which pattern the mux chose.
+func TestSeatMessageRouteIsVerbScoped(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{
+		Hash: "abc", Runtime: "claude-code", Policy: map[string]any{"Seat": "coder"},
+	}})
+
+	// POST reaches the message handler. Before this route was mounted the same request was
+	// answered 405 by the GET-only resolution pattern, which is the defect the row reports.
+	rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":"hello"}`)
+	if rec.Code == http.StatusMethodNotAllowed {
+		t.Fatalf("POST /seats/coder/messages = 405: the un-mounted defect is back")
+	}
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("POST /seats/coder/messages = %d, want 501: %s", rec.Code, rec.Body.String())
+	}
+	// The refusal must be a sentence: the window renders error.message verbatim, and the false
+	// success this route deliberately does not send would render as nothing at all.
+	if !strings.Contains(rec.Body.String(), `"detail"`) || !strings.Contains(rec.Body.String(), "not implemented") {
+		t.Fatalf("refusal is not a human-readable detail: %s", rec.Body.String())
+	}
+
+	// The SAME path with GET is still the resolution route, with "messages" as the seat key: the
+	// path alone cannot decide this route, and the mount must not have taken the GET away.
+	getRec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/seats/coder/messages", "")
+	if getRec.Code != http.StatusOK {
+		t.Fatalf("GET /seats/coder/messages = %d, want the resolution 200: %s", getRec.Code, getRec.Body.String())
+	}
+	for _, want := range []string{`"room":"coder"`, `"seat":"messages"`} {
+		if !strings.Contains(getRec.Body.String(), want) {
+			t.Errorf("GET /seats/coder/messages body missing %s: %s", want, getRec.Body.String())
+		}
+	}
+}
+
+// The refusals that come from ROUTING, so that a later change cannot make this route's answer
+// depend on what the caller sent.
+func TestSeatMessageRouteRefusalsComeFromRouting(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	mux := seatTestMux(t, &fakeSeatSource{resolved: &repositories.ResolvedSeat{Hash: "abc", Runtime: "claude-code"}})
+
+	// A malformed body is refused for being malformed, which is only reachable if routing
+	// already chose this route over the resolution GET.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"text":`); rec.Code != http.StatusBadRequest {
+		t.Errorf("malformed body: status = %d, want 400: %s", rec.Code, rec.Body.String())
+	}
+	// The body is {text} and nothing else: an unknown field is refused, the room included.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/coder/messages", `{"room":"coder"}`); rec.Code != http.StatusBadRequest {
+		t.Errorf("unknown field: status = %d, want 400: %s", rec.Code, rec.Body.String())
+	}
+	// The resolution route is GET-only, so its own pattern answers the wrong method.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/dev/coder", `{"text":"x"}`); rec.Code != http.StatusMethodNotAllowed {
+		t.Errorf("POST on the resolution path: status = %d, want 405", rec.Code)
+	}
+	// Three segments match no pattern at all.
+	if rec := doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/seats/a/b/c", `{"text":"x"}`); rec.Code != http.StatusNotFound {
+		t.Errorf("unknown subpath: status = %d, want 404", rec.Code)
+	}
+}
+
+// An unauthenticated window is refused by the auth layer before the handler, with a sentence the
+// UI can render.
+func TestSeatMessageRouteRequiresAuth(t *testing.T) {
+	t.Setenv(publicURLEnv, "https://api.example.test")
+	mux := http.NewServeMux()
+	mountSeatRoutes(mux, nil)
+
+	// The header is what decides: no usable bearer is the 403 the routes layer answers itself,
+	// and it never reaches the handler. A present-but-unusable bearer instead goes through the
+	// auth layer, whose answer is the auth layer's to give.
+	for _, tc := range []struct {
+		name   string
+		header string
+	}{
+		{"no authorization header", ""},
+		{"not a bearer scheme", "Basic abc"},
+		{"bearer with no token", "Bearer "},
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/api/v2/openrig/seats/coder/messages", strings.NewReader(`{"text":"hello"}`))
+		if tc.header != "" {
+			req.Header.Set("Authorization", tc.header)
+		}
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "Not authenticated") {
+			t.Errorf("%s: POST = %d %s, want 403 with a detail", tc.name, rec.Code, rec.Body.String())
+		}
+	}
+}
