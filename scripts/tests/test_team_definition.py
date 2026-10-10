@@ -9,14 +9,24 @@ needed.
 
 
 
+import hashlib
+
+
 import importlib.util
+
+
+import io
 
 
 import json
 
 
 import os
+import re
 import subprocess
+
+
+import tarfile
 
 
 
@@ -628,49 +638,95 @@ def test_project_brief_starts_with_the_safety_rule():
     assert "Never git push" in text.split("\n")[0]
 
 
-# OPENRIG_SKILLS_ROOT is set nowhere committed, so the root is DERIVED when it is absent: the
-# checkout beside this repository. A guard whose default state is skip reports on its own baseline -
-# it would have stayed quiet on the stale digest this file was written for - so the derived root is
-# used whenever it can satisfy the inventory, and the skip is kept for a path that is not there.
+# WHAT IS DIGESTED IS THE REVISION THE INVENTORY NAMES, NOT THE CHECKOUT ON THIS MACHINE.
+#
+# The inventory records, in `generated_from`, the OpenRig commit its digests describe. These cases
+# used to digest whatever checkout happened to be present, which made the verdict a property of the
+# machine rather than of the record: on 2026-10-10 this pod held `4b48ca21`, 439 commits past the
+# named `31fe301b`, 23 of the 54 recorded sides had drifted, and the failure read as "the inventory
+# is stale" when the truth was "the input moved under it" - re-measuring the inventory would have
+# re-based its truth on whichever tree was present. The named revision is materialised read-only and
+# THAT tree is digested, so a refusal now means the record and the revision genuinely disagree,
+# which is the act that needs a human: move the pin, or regenerate.
 OPENRIG_CHECKOUT_DEFAULT = REPO_ROOT.parent / "openrig"
 
 
 # The two committed skill edges the inventory's recorded paths live under: all 35 canonical rows
-# under the first, all 19 plugin rows under the second. Both must be present, or a half-cloned tree
-# would be digested as if it were a checkout and fail on a path rather than report itself absent.
+# under the first, all 19 plugin rows under the second. Both are asked for BY NAME when the named
+# revision is read out of git, so a half-cloned checkout is never digested as if it were a whole one.
 OPENRIG_SKILL_EDGES = (
     Path("skills") / "_canonical",
     Path("packages") / "daemon" / "assets" / "plugins" / "openrig-core" / "skills",
 )
 
 
-def _openrig_root_or_skip() -> Path:
-    """The real OpenRig checkout, or a skip that says so LOUDLY.
+# `generated_from` reads "/path/to/openrig @ HEAD <40 hex>, re-verified <date> (<the two edges>)".
+GENERATED_FROM_REVISION = re.compile(r"@\s*HEAD\s+([0-9a-f]{40})")
 
-    A skip that reads as a pass is the same silence this guard exists to end, one level down, so
-    the reason names the variable, the value it holds and what to set instead.
 
-    The configured root wins when it is a usable checkout; otherwise the derived root is tried, so
-    an ordinary checkout runs these cases with no environment set at all. Every candidate that was
-    unusable is named in the skip, so the reason a reader sees is the path that was actually tried.
+def _inventory_names() -> tuple:
+    """The OpenRig checkout and the revision the inventory says its digests describe."""
+    generated_from = json.loads(INVENTORY.read_text(encoding="utf-8"))["generated_from"]
+    named = GENERATED_FROM_REVISION.search(generated_from)
+    if named is None:
+        pytest.fail(
+            f"{INVENTORY.name}: generated_from names no commit, so nothing in it can be verified "
+            f"against the revision it describes: {generated_from!r}. Name the revision, the way "
+            "`423c7a00` did, rather than a date that cannot be recomputed."
+        )
+    return Path(generated_from.split("@", 1)[0].strip()), named.group(1)
+
+
+def _materialised(candidate: Path, revision: str, into: Path):
+    """The named revision's two edges, read out of git into `into`; a reason when it cannot be.
+
+    `git archive` reads committed objects, so an edit sitting uncommitted in the checkout cannot
+    leak into the digest and the checkout's own HEAD is irrelevant. tarfile rather than a pipe to
+    `tar`, so a missing external binary cannot be read as a passing check.
     """
+    archive = subprocess.run(
+        ["git", "-C", str(candidate), "archive", revision, "--"]
+        + [str(edge) for edge in OPENRIG_SKILL_EDGES],
+        capture_output=True,
+    )
+    if archive.returncode != 0:
+        detail = archive.stderr.decode("utf-8", "replace").strip().splitlines()
+        return detail[-1] if detail else f"git archive exited {archive.returncode}"
+    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+        tar.extractall(into)
+    return None
+
+
+def _named_revision_or_skip(tmp_path) -> Path:
+    """The revision the inventory names, materialised read-only, or a skip that says so LOUDLY.
+
+    A skip that reads as a pass is the same silence this guard exists to end, so the reason names
+    every checkout that was tried and why it could not supply the named revision.
+    """
+    checkout, revision = _inventory_names()
     configured = os.environ.get(team_setup.LIBRARY_ROOT_ENV)
-    candidates = [Path(configured)] if configured else []
-    candidates.append(OPENRIG_CHECKOUT_DEFAULT)
-    unusable = []
-    for candidate in candidates:
-        absent = [edge for edge in OPENRIG_SKILL_EDGES if not (candidate / edge).is_dir()]
-        if not absent:
-            return candidate
-        unusable.append(f"{candidate} has no {', '.join(str(edge) for edge in absent)}")
+    tried, unusable = [], []
+    for candidate in (checkout, Path(configured) if configured else None, OPENRIG_CHECKOUT_DEFAULT):
+        if candidate is None or candidate in tried:
+            continue
+        tried.append(candidate)
+        if not (candidate / ".git").exists():
+            unusable.append(f"{candidate} is not a git checkout")
+            continue
+        into = Path(tmp_path) / "named-revision"
+        into.mkdir(parents=True, exist_ok=True)
+        refused = _materialised(candidate, revision, into)
+        if refused is None:
+            return into
+        unusable.append(f"{candidate}: {refused}")
     state = (
         f"{team_setup.LIBRARY_ROOT_ENV}={configured!r}"
         if configured
         else f"{team_setup.LIBRARY_ROOT_ENV} is not set"
     )
     pytest.skip(
-        f"SKIPPED, NOT PASSED ({state}): the inventory's digests can only be verified against a real "
-        f"OpenRig checkout, and none of these is one - {'; '.join(unusable)}. Set "
+        f"SKIPPED, NOT PASSED ({state}): the inventory names {revision} in {checkout}, and no git "
+        f"checkout here can read it - {'; '.join(unusable)}. Set "
         f"{team_setup.LIBRARY_ROOT_ENV}=/path/to/openrig - the variable publish-skills "
         "--source-root and drift-check --library-root already read - to run it."
     )
@@ -683,9 +739,9 @@ def _inventory_guard(inventory_path: Path, source_root: Path) -> list:
     )
 
 
-def test_the_shipped_inventory_digests_match_the_committed_openrig_checkout():
-    """Every recorded digest still describes the file at its committed path."""
-    source_root = _openrig_root_or_skip()
+def test_the_shipped_inventory_digests_match_the_revision_the_inventory_names(tmp_path):
+    """Every recorded digest describes the file at the revision the inventory itself names."""
+    source_root = _named_revision_or_skip(tmp_path)
     inventory_path = INVENTORY
 
     modules = _inventory_guard(inventory_path, source_root)
@@ -706,7 +762,7 @@ def test_the_inventory_guard_names_the_skill_and_both_digests(tmp_path):
     Hermetic: it perturbs a COPY of the inventory under tmp_path and leaves the shipped file alone,
     so the guard is seen to fail without the shared tree being touched.
     """
-    source_root = _openrig_root_or_skip()
+    source_root = _named_revision_or_skip(tmp_path)
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
     row = next(entry for entry in inventory["skills"] if "canonical" in entry)
     recomputed = row["canonical"]["sha256"]
@@ -732,7 +788,7 @@ def test_the_inventory_guard_reads_the_mirror_too(tmp_path):
     its digest was recorded, never checked, so a stale mirror stayed green. This case is the one
     that goes red the moment the module stops reading the mirror's file.
     """
-    source_root = _openrig_root_or_skip()
+    source_root = _named_revision_or_skip(tmp_path)
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
     row = next(
         entry for entry in inventory["skills"] if "canonical" in entry and "plugin" in entry
@@ -749,6 +805,64 @@ def test_the_inventory_guard_reads_the_mirror_too(tmp_path):
     assert row["name"] in message, "the failing skill must be named"
     assert "0" * 64 in message, "the RECORDED mirror digest must be named"
     assert recomputed in message, "the RECOMPUTED mirror digest must be named too"
+
+
+def test_a_pin_that_moved_without_regenerating_is_refused(tmp_path):
+    """The record and the revision must agree in BOTH directions, so the PIN is perturbed here.
+
+    Handing the guard the revision the inventory names is worth nothing if a named revision whose
+    bytes no longer match goes unseen. That is the real editing mistake: a skill is committed under
+    the pinned library and the inventory is not regenerated, so the pin moves and the record does
+    not. The perturbation is applied to the materialised pin, and the shipped inventory is only read.
+    """
+    source_root = _named_revision_or_skip(tmp_path)
+    row = next(
+        entry
+        for entry in json.loads(INVENTORY.read_text(encoding="utf-8"))["skills"]
+        if "canonical" in entry
+    )
+    recorded = row["canonical"]["sha256"]
+    victim = source_root / row["canonical"]["path"] / "SKILL.md"
+    victim.write_bytes(victim.read_bytes() + b"\n")
+
+    with pytest.raises(team_setup.SetupError) as refused:
+        _inventory_guard(INVENTORY, source_root)
+
+    message = str(refused.value)
+    recomputed = hashlib.sha256(victim.read_bytes()).hexdigest()
+    assert row["name"] in message, "the skill whose file moved must be named"
+    assert recorded in message, "the RECORDED digest must be named"
+    assert recomputed in message, "the RECOMPUTED digest must be named too"
+
+
+def test_publish_skills_reads_the_revision_the_inventory_names(tmp_path, capsys):
+    """The publish reads the named revision, and refuses a pin that moved without a regeneration.
+
+    The library that ships must be the library the record describes, so this is the same read the
+    guard digests and not whatever checkout happens to be on the machine. A dry run prints the plan
+    and calls nothing, so this exercises the publish path itself without a server or a token.
+    """
+    source_root = _named_revision_or_skip(tmp_path)
+    inventory = team_setup.load_skill_inventory(INVENTORY)
+    argv = [
+        "publish-skills",
+        "--dry-run",
+        "--inventory",
+        str(INVENTORY),
+        "--source-root",
+        str(source_root),
+    ]
+
+    assert team_setup.main(argv) == 0
+    assert f"publish-skills {inventory['count']} skill block(s)" in capsys.readouterr().out
+
+    row = next(entry for entry in inventory["skills"] if "canonical" in entry)
+    victim = source_root / row["canonical"]["path"] / "SKILL.md"
+    victim.write_bytes(victim.read_bytes() + b"\n")
+
+    assert team_setup.main(argv) != 0, "a pin that moved without regenerating must refuse"
+    printed = capsys.readouterr()
+    assert row["name"] in printed.out + printed.err, "the refusal must name the skill"
 
 
 def _curation_gaps(inventory: dict) -> list:
