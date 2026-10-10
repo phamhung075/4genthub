@@ -166,6 +166,44 @@ func mountPerformanceRoutes(mux *http.ServeMux) {
 	}))
 }
 
+// notificationEntityType is the one entity type whose recipients are the caller alone. It is the
+// frame the dashboard renders as a toast under the sender the body names, so a target taken from the
+// body is a message from an arbitrary seat rather than from the caller.
+const notificationEntityType = "notification"
+
+// metadataUsersOtherThan returns the users metadata addresses as recipients that are not caller, in
+// the order they appear. It reads user_ids and user_id, the two keys routes.BroadcastDataChange
+// resolves its recipients from, so the route can tell whether a frame would land in another user's
+// dashboard.
+func metadataUsersOtherThan(metadata *entities.OrderedMap[any], caller string) []string {
+	if metadata == nil {
+		return nil
+	}
+	var named []string
+	if v, ok := metadata.Get("user_ids"); ok {
+		switch list := v.(type) {
+		case []any:
+			for _, id := range list {
+				if s, ok := id.(string); ok && s != "" && s != caller {
+					named = append(named, s)
+				}
+			}
+		case []string:
+			for _, s := range list {
+				if s != "" && s != caller {
+					named = append(named, s)
+				}
+			}
+		}
+	}
+	if v, ok := metadata.Get("user_id"); ok {
+		if s, ok := v.(string); ok && s != "" && s != caller {
+			named = append(named, s)
+		}
+	}
+	return named
+}
+
 // --- broadcast_routes.py (/api/v2/broadcast) ---
 
 func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
@@ -185,13 +223,27 @@ func mountBroadcastRoutes(mux *http.ServeMux, deps routeDeps) {
 			writeMissing(w, "body", missing...)
 			return
 		}
+		metadata := orderedMapOf(m["metadata"])
+		// 338fe3a0: for a notification the caller is the only user addressed. BroadcastDataChange reads
+		// metadata.user_ids and metadata.user_id to resolve the recipients it stores for while they are
+		// offline, so a client naming another user there would put a notification into that user's
+		// dashboard with a sender of its choosing. No client presents a scope or a service identity that
+		// authorizes targeting another user, so such a frame is refused here rather than silently
+		// re-addressed. Other entity types keep the metadata targeting.
+		if getOptString(m, "entity_type") == notificationEntityType {
+			if named := metadataUsersOtherThan(metadata, userID(u)); len(named) > 0 {
+				writeDetail(w, http.StatusForbidden,
+					"a notification is addressed to its sender: metadata names "+strings.Join(named, ", "))
+				return
+			}
+		}
 		req := routes.BroadcastRequest{
 			EventType:  getOptString(m, "event_type"),
 			EntityType: getOptString(m, "entity_type"),
 			EntityID:   getOptString(m, "entity_id"),
 			UserID:     userID(u),
 			Data:       orderedMapOf(m["data"]),
-			Metadata:   orderedMapOf(m["metadata"]),
+			Metadata:   metadata,
 		}
 		if deps.broadcast == nil {
 			writeDetail(w, http.StatusInternalServerError, "Broadcast is not configured")
