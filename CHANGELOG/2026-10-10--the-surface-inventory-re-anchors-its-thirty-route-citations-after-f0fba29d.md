@@ -6,8 +6,8 @@
   tables re-resolved against HEAD. **30 insertions / 30 deletions**, every pair differing in nothing
   but the line number: `f0fba29d` is the only commit between `d6c345e5` and HEAD that touches
   `agenthub_go/fastmcp/server/httpapp/routes_mount.go` (`+15/-17`, net −2 lines), so every citation
-  below the change shifted by 2 to 6 — `tokens/{token_id}/rotate` `404 -> 402`, `broadcast/notify`
-  `211 -> 206`, and the other twenty-eight in the same table.
+  below the change shifted by 2 to 5 — twenty-nine rows by exactly 2, and `broadcast/notify` by 5
+  (`211 -> 206`); `tokens/{token_id}/rotate` `404 -> 402` is one of the twenty-nine.
 - **No code change.** The code is the source of truth and the document is the pointer that follows
   it; no Go file, and nothing under `scripts/`, was touched.
 - Re-anchored with the audit's own writer rather than by hand:
