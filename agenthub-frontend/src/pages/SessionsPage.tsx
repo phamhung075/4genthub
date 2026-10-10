@@ -31,14 +31,16 @@ export const SessionsPage: React.FC = () => {
 
   const selected = sessions.find((session) => session.id === sessionId) ?? null;
 
-  // DERIVATION, NOT DATA: the room is read from the session name's `@rig` suffix. The suffix IS the
-  // OpenRig rig name - a seat's address is `<rig>-<seat>@<rig>`
-  // (ai_docs/operations/openrig-seat-limits.md:6, ai_docs/operations/watching-openrig-seats.md:123) -
-  // and this deployment creates the agenthub room with the rig's own slug, so room-slug == rig-name and
-  // the suffix names the room. Read it AS a derivation, not as a fact.
-  // REVISIT CONDITION: the moment the session carries its room as real data, THIS LINE IS DELETED -
-  // never kept as a fallback, so one concept never has two sources of truth.
-  const room = selected?.name.split('@')[1] ?? null;
+  // THE SEAT'S IDENTITY IS THE SESSION'S OWN DATA, and this is where the `@rig` derivation stood:
+  // its own revisit condition - "the moment the session carries its room as real data" - is MET, so
+  // the line is DELETED rather than kept as a fallback, and one concept keeps one source of truth.
+  // Both facts arrive on the session row from the columns the connector wrote at ingest, serialized
+  // by GET /api/v2/sessions (`sessionRow` in agenthub_go/fastmcp/session_stream/repository.go; the
+  // wire case over the decoded body is fastmcp/server/httpapp/ws_connector_test.go). NO FALLBACK: a
+  // session whose connector named no seat carries null here and gets no chat input, because a room
+  // guessed from the name posts to the wrong room silently - which is what the (room, seat_key)
+  // pair rules out.
+  const room = selected?.room_slug ?? null;
 
   return (
     <div className="mx-auto w-full max-w-6xl p-4 md:p-6">
@@ -86,10 +88,9 @@ export const SessionsPage: React.FC = () => {
               status={stream.status}
               error={stream.error}
               room={room}
-              // The identifier this page holds is the session's name - the row's own seat fact.
-              // Turning it into the route's `{seat_key}` is the route's decision, and it is this
-              // one line if the answer differs from the name.
-              seatKey={selected?.name ?? null}
+              // The seat key is the session's own field, passed straight through. The name is not
+              // an identifier for the route, and parsing it would be the guessing this replaces.
+              seatKey={selected?.seat_key ?? null}
             />
           </CardContent>
         </Card>

@@ -91,7 +91,7 @@ describe('SessionLiveView chat input', () => {
       <SessionLiveView
         sessionName="4genthub-min-web-dev@4genthub-min"
         room="4genthub-min"
-        seatKey="4genthub-min-web-dev@4genthub-min"
+        seatKey="web-dev"
         status="live"
         error={null}
         events={[
@@ -125,7 +125,7 @@ describe('SessionLiveView chat input', () => {
     render(
       <SessionLiveView
         sessionName="4genthub-min-web-dev@4genthub-min"
-        seatKey="4genthub-min-web-dev@4genthub-min"
+        seatKey="web-dev"
         status="live"
         error={null}
         events={[]}
