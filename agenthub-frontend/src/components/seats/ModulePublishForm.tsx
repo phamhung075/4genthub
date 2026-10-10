@@ -93,10 +93,13 @@ export const ModulePublishForm: React.FC<ModulePublishFormProps> = ({
   const versionValid = MODULE_VERSION_PATTERN.test(form.version);
   const contentBytes = new TextEncoder().encode(form.content).length;
   const contentValid = contentBytes > 0 && contentBytes <= MODULE_CONTENT_MAX_BYTES;
-  // An mcp module's content is ONE server block that the renderer parses, and the publish route only
-  // checks the kind, not the block - measured: `{"kind":"mcp","content":"not a block"}` is accepted
-  // (200). So a plain-text publish here would be refused later, by some seat's resolve. The same mirror
-  // the MCP block form uses decides it before the request.
+  // An mcp module's content is ONE server block that the renderer parses. THE PUBLISH ROUTE REFUSES AN
+  // UNRENDERABLE CONTENT ITSELF (`ValidateModuleContent`, seat_admin_mount.go:926 - a 400, or a 422 when it
+  // carries a credential shape), so this mirror is a PREVIEW of that gate rather than the only check: it
+  // decides before the request what the server would decide with a 400, from the same rule set. That was
+  // not always so - when this guard was written the route checked only the KIND (measured then: 200 for
+  // `{"kind":"mcp","content":"not a block"}`), so the mirror WAS the whole gate, and that history is why
+  // its parity with mcpblock.Parse is pinned by tests rather than assumed.
   const mcpBlock = form.kind === 'mcp' ? parseMcpBlock(form.content) : null;
   const blockValid = mcpBlock === null || mcpBlock.ok;
 

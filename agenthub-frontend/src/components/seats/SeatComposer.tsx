@@ -387,19 +387,30 @@ export const SeatComposer: React.FC<SeatComposerProps> = ({
                   scope
                 );
                 const entry = mcpServers[module.slug];
-                const mcpInvalid = module.kind === 'mcp' && entry !== undefined && !entry.parse.ok;
+                // UNKNOWN IS NOT VALID. `useMcpServers` returns {} until its per-module reads land - and stays
+                // {} if they fail - so an mcp module can have NO entry here. Offering the option enabled in
+                // that window adds a block whose content nothing has checked, which is the same hole as
+                // presenting an invalid server as valid: the entry has to exist AND parse to be addable.
+                const mcpUnavailable = module.kind === 'mcp' && (entry === undefined || !entry.parse.ok);
                 const label =
                   module.kind === 'mcp' && entry && entry.parse.ok
                     ? `${module.slug} — ${mcpServerLabel(entry.parse.server)}`
                     : module.slug;
+                const suffix = mcpUnavailable
+                  ? entry === undefined
+                    ? ' (server not checked)'
+                    : ' (invalid server)'
+                  : outcome.allowed
+                    ? ''
+                    : ' (already in effect)';
                 return (
                   <option
                     key={module.slug}
                     value={module.slug}
-                    disabled={!outcome.allowed || mcpInvalid}
+                    disabled={!outcome.allowed || mcpUnavailable}
                   >
                     {label}
-                    {mcpInvalid ? ' (invalid server)' : outcome.allowed ? '' : ' (already in effect)'}
+                    {suffix}
                   </option>
                 );
               })}

@@ -149,10 +149,11 @@ describe('SeatAuthoringPage', () => {
     expect(within(card).getByText('rules@1.0.0')).toBeInTheDocument();
   });
 
-  // An mcp module's content is ONE server block the renderer parses, and the publish route checks the
-  // KIND rather than the block - measured on the running backend: `{"kind":"mcp","content":"not a
-  // block"}` is accepted with 200. So the form refuses the plain-text shape here, instead of letting
-  // some seat's resolve refuse it later and look like a broken seat.
+  // An mcp module's content is ONE server block the renderer parses. The publish route REFUSES an
+  // unrenderable content itself (`ValidateModuleContent`, seat_admin_mount.go:926 - a 400, or a 422 for a
+  // credential shape), so the form's refusal here is that same rule decided earlier and with a better
+  // message, not the only check. It still earns its place: it keeps the user out of a round trip, and it is
+  // what stops some seat's resolve refusing the block later and looking like a broken seat.
   it('refuses mcp content that is not one server block, and accepts a block', async () => {
     renderPage();
     fireEvent.change(await screen.findByLabelText('Module kind'), { target: { value: 'mcp' } });
@@ -520,6 +521,36 @@ describe('SeatAuthoringPage composer', () => {
 
     expect(screen.getByRole('option', { name: 'rules (already in effect)' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Add at Seat' })).toBeDisabled();
+  });
+
+  it('keeps an mcp option disabled while its server entry has not been read yet', async () => {
+    // `useMcpServers` returns {} until its per-module reads land, so in that window the content is
+    // UNCHECKED rather than known-good. Offering the option enabled there is the same hole as offering an
+    // invalid server: the entry has to exist AND parse before the block is addable.
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [{ slug: 'pending-mcp', kind: 'mcp', version: '1.0.0', sha256: 'abcdef0123456789' }],
+    });
+    mockApi.getModuleVersion.mockImplementation(() => new Promise<never>(() => {})); // never lands
+    overlaysFor({});
+    await openComposer();
+
+    expect(screen.getByRole('option', { name: 'pending-mcp (server not checked)' })).toBeDisabled();
+  });
+
+  it('keeps an mcp option disabled when its content is not one server block', async () => {
+    mockApi.listModules.mockResolvedValue({
+      success: true,
+      modules: [{ slug: 'broken-mcp', kind: 'mcp', version: '1.0.0', sha256: 'abcdef0123456789' }],
+    });
+    mockApi.getModuleVersion.mockResolvedValue({
+      success: true,
+      module: { slug: 'broken-mcp', kind: 'mcp', version: '1.0.0', checksum: 'sum', content: 'not a block' },
+    });
+    overlaysFor({});
+    await openComposer();
+
+    expect(screen.getByRole('option', { name: 'broken-mcp (invalid server)' })).toBeDisabled();
   });
 
   it('shows why a block cannot be removed at this level rather than doing nothing', async () => {

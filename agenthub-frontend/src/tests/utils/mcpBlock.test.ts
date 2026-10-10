@@ -60,6 +60,14 @@ describe('parseMcpBlock', () => {
     ['a stdio server without a command', JSON.stringify({ name: 'a', type: 'stdio' }), 'field command is required for a "stdio" server'],
     ['a stdio server with a url', JSON.stringify({ name: 'a', type: 'stdio', command: 'npx', url: 'https://x.test' }), 'takes command, args and env'],
     ['a url that is neither http(s) nor a reference', JSON.stringify({ name: 'a', type: 'http', url: 'ftp://x.test' }), 'url must be http(s)'],
+    // THE WRONGLY-TYPED FIELD, on the transport that does not use it. Go's typed decode refuses the WHOLE
+    // block for these, so reading the field as "" and judging only the fields the mirror could read is how
+    // it accepted content the server refuses - see the dedicated case below for the two measured strings.
+    ['an http block whose command is a number', JSON.stringify({ name: 'n', type: 'http', url: 'https://x/mcp', command: 123 }), 'field command must be a string'],
+    ['a stdio block whose url is a number', JSON.stringify({ name: 'n', type: 'stdio', command: 'npx', url: 123 }), 'field url must be a string'],
+    ['a name that is not a string', JSON.stringify({ name: 123, type: 'stdio', command: 'x' }), 'field name must be a string'],
+    ['a type that is not a string', JSON.stringify({ name: 'a', type: 123, command: 'x' }), 'field type must be a string'],
+    ['args carrying a non-string entry', JSON.stringify({ name: 'a', type: 'stdio', command: 'x', args: [1] }), 'field args must be an array of strings'],
   ];
 
   it.each(rejected)('refuses %s with the reason', (_case, content, expected) => {
@@ -85,6 +93,60 @@ describe('parseMcpBlock', () => {
     expect(result.server.command).toBe('npx');
     expect(result.server.args).toBeUndefined();
     expect(result.server.env).toBeUndefined();
+  });
+
+  // THE PARITY PIN, with the two strings the gate measured: the delivered mirror returned ok:true for both
+  // while mcpblock.Parse refused them ("json: cannot unmarshal number into Go struct field Server.command
+  // of type string"), because the null-normalisation above swept in every non-string value. THE MESSAGE IS
+  // ASSERTED, not just the refusal, so this cannot pass by refusing for some other field's rule.
+  it('refuses the gate two wrongly-typed blocks for the TYPE reason, as Go refuses them at decode', () => {
+    const httpNumericCommand = parseMcpBlock(
+      '{"name":"n","type":"http","url":"https://x/mcp","command":123}'
+    );
+    expect(httpNumericCommand.ok).toBe(false);
+    if (httpNumericCommand.ok) return;
+    expect(httpNumericCommand.error).toBe('field command must be a string');
+
+    const stdioNumericUrl = parseMcpBlock('{"name":"n","type":"stdio","command":"npx","url":123}');
+    expect(stdioNumericUrl.ok).toBe(false);
+    if (stdioNumericUrl.ok) return;
+    expect(stdioNumericUrl.error).toBe('field url must be a string');
+
+    // The control the gate ran beside them: the same blocks with STRINGS are refused for the CONTRADICTION,
+    // which is what shows the pair above is refused by the TYPE rather than by the field being non-empty.
+    const httpStringCommand = parseMcpBlock(
+      '{"name":"n","type":"http","url":"https://x/mcp","command":"npx"}'
+    );
+    expect(httpStringCommand.ok).toBe(false);
+    if (httpStringCommand.ok) return;
+    expect(httpStringCommand.error).toContain('takes url and headers');
+  });
+
+  // THE OTHER HALF OF THAT RULE: an explicit null stays ABSENT, because Go leaves the field at its zero
+  // value rather than failing. Fixing the pair above must not turn the null normalisation back into the
+  // false refusal it was added to end.
+  it('keeps an explicit null on a string field absent, on the used and the unused transport alike', () => {
+    const stdioNullUrl = parseMcpBlock('{"name":"a","type":"stdio","command":"npx","url":null}');
+    expect(stdioNullUrl.ok).toBe(true);
+    if (!stdioNullUrl.ok) return;
+    expect(stdioNullUrl.server.url).toBeUndefined();
+
+    const httpNullCommand = parseMcpBlock(
+      '{"name":"a","type":"http","url":"https://x.test","command":null}'
+    );
+    expect(httpNullCommand.ok).toBe(true);
+    if (!httpNullCommand.ok) return;
+    expect(httpNullCommand.server.command).toBeUndefined();
+  });
+
+  it('keeps the name verbatim, because Go stores it as written', () => {
+    // Go checks `strings.TrimSpace(server.Name) == ""` and then keeps the value, so padding is legal and
+    // the palette's label must not read as a different server than the fragment's own key.
+    const padded = parseMcpBlock(JSON.stringify({ name: '  x  ', type: 'stdio', command: 'npx' }));
+
+    expect(padded.ok).toBe(true);
+    if (!padded.ok) return;
+    expect(padded.server.name).toBe('  x  ');
   });
 
   // Complements the rejection table's lowercase entry: matching without case must not turn an UNKNOWN field
