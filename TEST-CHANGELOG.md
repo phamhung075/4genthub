@@ -2,6 +2,21 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the seat pin route's case, and the three fakes that had to move with it
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_test.go`, one case (`TestSeatAdminPinSeatVersion`) covering R1's acceptance: pin to a version the seat's type does not have -> 400; to `1.4.2` -> 200 carrying `"pinned_version":"1.4.2"`; a following `GET /api/v2/openrig/rooms/dev/seats` reads the pin back out of the store, so the case cannot pass on an echo; an omitted version -> 400; an absent seat -> 404. It drives the real mux built by `mountSeatAdminRoutes`, so the request crosses the handler, the service and its version check.
+- EXTENDED three fakes, because the two new methods landed on the interfaces they implement: `fakeSeatAdminStore` (services tests - `GetSeatTypeVersion` searches its own `versions`, `UpdateSeatPinnedVersion` honors `updateErr`), the controller's `fakeStore`, and httpapp's `fakeSeatAdmin`. The compiler named all three; no search did.
+- VERIFIED: `go test ./fastmcp/server/httpapp/ -run TestSeatAdminPinSeatVersion -count=1 -v` -> PASS (0.00s); `go test ./fastmcp/seat_management/... -count=1` -> every package `ok`; `go vet` rc 0 over both trees.
+- NOT RUN from here: the clean-export `go test ./... -count=1` is the architect's gate on this commit, and this worktree holds another seat's in-flight edits.
+
+## 2026-10-10 - the tests-config ratchet: 76 error TS off it, from one file
+
+- BEFORE **363**, AFTER **287** (`npx tsc --noEmit -p tsconfig.tests.json`), both measured around this change; the error-CODE sets are compared, not just the totals, and NO new code appears.
+- THE SLICE IS ONE FILE, which held 76 of the 363 by itself: `agenthub-frontend/src/tests/theme/muiTheme.test.ts` (`TS18048` 46, `TS18049` 13, `TS2339` 9, `TS7053` 6, `TS2769` 2).
+- TYPE-ONLY: every edit is a non-null assertion or a record cast on a READ. No assertion, expected value, call, or test name changed, and no `src/` file was touched - a slice needing a type change in `src/` is a different decision and is not taken here.
+- WHY THE ASSERTIONS STATE THE TRUTH RATHER THAN SILENCE A BUG: the file mocks `@mui/material/styles`, so the theme it asserts against is the recorded `createTheme` options object, whose `components` and `styleOverrides` slots are always present; the tests assert exact values through those paths (`'none'`, `themeConfig.dark.*`), so a missing path fails loudly instead of passing quietly.
+- VERIFIED BY BEHAVIOUR, NOT BY READING: `npx vitest run` -> 118 files / 1861 tests / 0 failed, the same counts as before the change, and the file's own 21 tests pass.
+
 ## 2026-10-10 - the address layer's four boundaries, pinned as mirror cases
 
 - ADDED five cases to `agenthub_go/fastmcp/seat_management/domain/contextpacks/address_test.go`, mirrored out of the SOURCE's own suite (`packages/daemon/test/markdown-address.test.ts` and `markdown-address-indentation.test.ts`) rather than invented: the backtick-in-info-string opener, the empty ATX heading, the empty H1/H4 scope and its named-H1 release, the empty-slug contrast, and the 1-3-space / 4-space boundary including a fence opened at three spaces. Test functions 7 -> 12, `=== RUN` lines 37.

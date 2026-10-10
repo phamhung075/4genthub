@@ -141,17 +141,17 @@ describe('muiTheme', () => {
     });
 
     it('configures MuiButton component correctly', () => {
-      expect(lightTheme.components.MuiButton.styleOverrides.root).toEqual({
+      expect(lightTheme.components!.MuiButton!.styleOverrides!.root).toEqual({
         textTransform: 'none',
       });
-      expect(lightTheme.components.MuiButton.styleOverrides.contained).toMatchObject({
+      expect(lightTheme.components!.MuiButton!.styleOverrides!.contained).toMatchObject({
         backgroundColor: themeConfig.light.buttonPrimaryBg,
         color: themeConfig.light.buttonPrimaryText,
       });
     });
 
     it('configures MuiTextField component correctly', () => {
-      const textFieldOverrides = lightTheme.components.MuiTextField.styleOverrides.root;
+      const textFieldOverrides = lightTheme.components!.MuiTextField!.styleOverrides!.root as Record<string, any>;
       expect(textFieldOverrides['& .MuiOutlinedInput-root']).toMatchObject({
         backgroundColor: themeConfig.light.inputBackground,
       });
@@ -209,36 +209,38 @@ describe('muiTheme', () => {
     });
 
     it('removes background images in dark mode', () => {
-      expect(darkTheme.components.MuiPaper.styleOverrides.root.backgroundImage).toBe('none');
-      expect(darkTheme.components.MuiCard.styleOverrides.root.backgroundImage).toBe('none');
-      expect(darkTheme.components.MuiAppBar.styleOverrides.root.backgroundImage).toBe('none');
-      expect(darkTheme.components.MuiDrawer.styleOverrides.paper.backgroundImage).toBe('none');
+      // MUI types a component's slots as a loose union and marks them optional; the mock
+      // always supplies concrete objects, so each slot is read through a record here.
+      expect((darkTheme.components!.MuiPaper!.styleOverrides!.root as Record<string, any>).backgroundImage).toBe('none');
+      expect((darkTheme.components!.MuiCard!.styleOverrides!.root as Record<string, any>).backgroundImage).toBe('none');
+      expect((darkTheme.components!.MuiAppBar!.styleOverrides!.root as Record<string, any>).backgroundImage).toBe('none');
+      expect((darkTheme.components!.MuiDrawer!.styleOverrides!.paper as Record<string, any>).backgroundImage).toBe('none');
     });
 
     it('configures additional dark mode components', () => {
       // IconButton
-      expect(darkTheme.components.MuiIconButton).toBeDefined();
-      expect(darkTheme.components.MuiIconButton.styleOverrides.root.color).toBe(themeConfig.dark.text);
+      expect(darkTheme.components!.MuiIconButton).toBeDefined();
+      expect((darkTheme.components!.MuiIconButton!.styleOverrides!.root as Record<string, any>).color).toBe(themeConfig.dark.text);
 
       // Checkbox
-      expect(darkTheme.components.MuiCheckbox).toBeDefined();
-      expect(darkTheme.components.MuiCheckbox.styleOverrides.root.color).toBe(themeConfig.dark.textSecondary);
+      expect(darkTheme.components!.MuiCheckbox).toBeDefined();
+      expect((darkTheme.components!.MuiCheckbox!.styleOverrides!.root as Record<string, any>).color).toBe(themeConfig.dark.textSecondary);
 
       // Radio
-      expect(darkTheme.components.MuiRadio).toBeDefined();
-      expect(darkTheme.components.MuiRadio.styleOverrides.root.color).toBe(themeConfig.dark.textSecondary);
+      expect(darkTheme.components!.MuiRadio).toBeDefined();
+      expect((darkTheme.components!.MuiRadio!.styleOverrides!.root as Record<string, any>).color).toBe(themeConfig.dark.textSecondary);
 
       // Switch
-      expect(darkTheme.components.MuiSwitch).toBeDefined();
-      expect(darkTheme.components.MuiSwitch.styleOverrides.root['& .MuiSwitch-track'].backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
+      expect(darkTheme.components!.MuiSwitch).toBeDefined();
+      expect((darkTheme.components!.MuiSwitch!.styleOverrides!.root as Record<string, any>)['& .MuiSwitch-track'].backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
 
       // Progress indicators
-      expect(darkTheme.components.MuiLinearProgress.styleOverrides.root.backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
-      expect(darkTheme.components.MuiCircularProgress.styleOverrides.root.color).toBe(themeConfig.dark.primary);
+      expect((darkTheme.components!.MuiLinearProgress!.styleOverrides!.root as Record<string, any>).backgroundColor).toBe(themeConfig.dark.backgroundTertiary);
+      expect((darkTheme.components!.MuiCircularProgress!.styleOverrides!.root as Record<string, any>).color).toBe(themeConfig.dark.primary);
     });
 
     it('configures TextField with dark theme specific styles', () => {
-      const textFieldOverrides = darkTheme.components.MuiTextField.styleOverrides.root;
+      const textFieldOverrides = darkTheme.components!.MuiTextField!.styleOverrides!.root as Record<string, any>;
       expect(textFieldOverrides['& .MuiInputLabel-root']).toMatchObject({
         color: themeConfig.dark.textSecondary,
       });
@@ -283,8 +285,8 @@ describe('muiTheme', () => {
 
   describe('component consistency', () => {
     it('has consistent component overrides between themes', () => {
-      const lightComponents = Object.keys(lightTheme.components);
-      const darkComponents = Object.keys(darkTheme.components);
+      const lightComponents = Object.keys(lightTheme.components!);
+      const darkComponents = Object.keys(darkTheme.components!);
 
       // Common components should exist in both themes
       const commonComponents = [
@@ -307,7 +309,7 @@ describe('muiTheme', () => {
     });
 
     it('has consistent typography configuration', () => {
-      const typographyKeys = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
+      const typographyKeys: Array<keyof typeof lightTheme.typography> = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'body1', 'body2'];
 
       typographyKeys.forEach(key => {
         expect(lightTheme.typography[key]).toBeDefined();
