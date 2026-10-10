@@ -29,6 +29,12 @@ USAGE:  python3 scripts/COUNTS-AUDIT.py              # exits non-zero if any num
 It prints the revision it measured and how many paths were uncommitted when it read, because a count
 is a claim about a revision: this file follows its own location, so a copy inside a worktree reads that
 worktree, while a dirty checkout answers a different question than its HEAD (rule 82, 2026-10-10).
+
+AND, BY RULE 84 (2026-10-10), AN ANCHOR THAT CANNOT MATCH IS A FAILURE THAT NAMES ITSELF. It used to
+print `-` and compare nothing, which made this audit QUIETER as the document drifted instead of redder:
+an anchored row silently left the check while the run still ended "all numbers re-derived and matching".
+Only a key that declares no anchor (DOC_ANCHORS[key] is None) may state no figure; a declared anchor
+that finds nothing fails the run. `--self-test` proves that leg like the other two.
 """
 import os, re, subprocess, sys
 
@@ -115,7 +121,7 @@ EXPECTED = {
 # a key with no unambiguous anchor prints "-" and is NOT compared, which is the honest half.
 DOC = f"{ROOT}/ai_docs/api-integration/surface-inventory.md"
 DOC_ANCHORS = {
-    # "-> **143** (httpapp 123, auth 20)" - S1's Reproduce line
+    # "(httpapp 125, auth 20)" - S1's Reproduce line
     "httpapp route registrations":    (r"\(httpapp (\d+), auth \d+\)", 1),
     "auth route registrations":       (r"\(httpapp \d+, auth (\d+)\)", 1),
     # "RE-MEASURED 2026-10-10 (writer seat, docs duty pass 9) at `cd5d1187`: **9** tools" - §2.3's live
@@ -124,7 +130,7 @@ DOC_ANCHORS = {
     # at db9d2bc3, so it will keep 10 forever, and anchoring there would compare the tree against
     # 2026-10-05. The figure that moves is the reusable one; the record stays where it is.
     "published MCP tools":            (r"docs duty pass 9\) at `cd5d1187`: \*\*(\d+)\*\* tools", 1),
-    # "20 (core) + 3 (auth) + **14** (seat) + 2 (team) = **39 tables**" - S3.5
+    # "19 (core) + 3 (auth) + **15** (seat) + 2 (team) = **39 tables**" - §3.5
     "seat tables":                    (r"\+ \*\*(\d+)\*\* \(seat\)", 1),
     "registered tables total":        (r"\(team\) = \*\*(\d+) tables\*\*", 1),
     # "Plus `ProductionTables`: **6** tables declared but not registered"
@@ -143,20 +149,37 @@ DOC_ANCHORS = {
 
 
 def read_document():
-    """The figures surface-inventory.md itself states, by anchor. Returns {key: int} for the
-    anchored ones only - absence is reported, never guessed."""
+    """The figures surface-inventory.md states, AND the anchors that could not be read.
+
+    Returns (figures, failures). `figures` is {key: int} for the keys whose anchor matched. A key with
+    no anchor at all (DOC_ANCHORS[key] is None) is absent from it and may be - the document genuinely
+    states no figure for it. `failures` is [(key, pattern, why)] and it is the half RULE 84 added:
+
+        AN ANCHOR THAT CANNOT MATCH IS A FAILURE, NOT A SILENCE.
+
+    It used to print `-` and compare nothing, so the audit got QUIETER as the document drifted instead
+    of redder: a reworded sentence (bolding `runtime: **19** (core)`, which happened for real on
+    2026-10-10) removed a count from the check while the run still ended "all numbers re-derived and
+    matching". A guard that cannot be shown to fire is not a guard, so each failure is named with its
+    key and its pattern and the run exits non-zero."""
     try:
         text = open(DOC, encoding="utf-8").read()
     except OSError as e:
-        return {"__error__": str(e)}
-    out = {}
+        return {}, [("<document>", DOC, f"unreadable: {e}")]
+    out, failures = {}, []
     for key, anchor in DOC_ANCHORS.items():
         if not anchor:
             continue
-        found = re.search(anchor[0], text)
-        if found:
-            out[key] = int(found.group(anchor[1]))
-    return out
+        pattern, group = anchor
+        found = re.search(pattern, text)
+        if not found:
+            failures.append((key, pattern, "no match in the document"))
+            continue
+        try:
+            out[key] = int(found.group(group))
+        except (IndexError, ValueError) as e:
+            failures.append((key, pattern, f"matched, but group {group} is not an integer: {e}"))
+    return out, failures
 
 
 def fenced_count_lines():
@@ -308,14 +331,25 @@ def main():
         # shared and this audit still edits nothing.
         global read_document
         real_reader = read_document
-        read_document = lambda: {k: (v + 1 if k == key else v) for k, v in real_reader().items()}
+        read_document = lambda: ({k: (v + 1 if k == key else v) for k, v in real_reader()[0].items()}, [])
         try:
             rc_doc = main_report(quiet=True)
         finally:
             read_document = real_reader
-        ok = rc_tree != 0 and rc_doc != 0
-        print(f"self-test: perturbed '{key}' by +1 -> tree exit {rc_tree}, document exit {rc_doc} "
-              f"({'PASS' if ok else 'FAIL: a check did not notice'})")
+        # AND THE RULE 84 LEG, because that is the failure this file was handed the same evening it
+        # found one: make a DECLARED anchor match nothing and require the audit to fail and name it.
+        # A guard that cannot be shown to fire is not a guard, so it is proved here rather than argued
+        # in a comment.
+        real_anchors = dict(DOC_ANCHORS)
+        DOC_ANCHORS[key] = (r"a phrase that is in no document \d+", 1)
+        try:
+            rc_anchor = main_report(quiet=True)
+        finally:
+            DOC_ANCHORS.clear()
+            DOC_ANCHORS.update(real_anchors)
+        ok = rc_tree != 0 and rc_doc != 0 and rc_anchor != 0
+        print(f"self-test: perturbed '{key}' by +1 -> tree exit {rc_tree}, document exit {rc_doc}, "
+              f"unmatchable anchor exit {rc_anchor} ({'PASS' if ok else 'FAIL: a check did not notice'})")
         return 0 if ok else 1
 
     return main_report()
@@ -323,7 +357,7 @@ def main():
 
 def main_report(quiet=False):
     measured = counts()
-    stated = read_document()
+    stated, doc_failures = read_document()
     fenced = fenced_count_lines()
     width = max(len(k) for k in EXPECTED)
     bad = 0
@@ -337,6 +371,7 @@ def main_report(quiet=False):
             print("  2026-10-10). This script follows its own location, so copy it into a clean worktree and")
             print("  run it there to read that worktree - or settle the paths above before trusting this.")
         print(f"{'number':<{width}}  {'doc':>4}  {'expected':>8}  {'tree':>6}  verdict")
+    failed_keys = {key for key, _pattern, _why in doc_failures}
     for k, expected in EXPECTED.items():
         got = measured.get(k)
         doc = stated.get(k)
@@ -354,17 +389,28 @@ def main_report(quiet=False):
             why.append(f"DOCUMENT says {doc}, this file expects {expected}")
         if not why:
             why = ["matches" if doc is not None else "tree matches; document states no figure"]
-        print(f"{k:<{width}}  {doc if doc is not None else '-':>4}  {expected:>8}  "
+        shown = "??" if k in failed_keys and doc is None else (doc if doc is not None else "-")
+        print(f"{k:<{width}}  {shown:>4}  {expected:>8}  "
               f"{got if got is not None else '?':>6}  {'; '.join(why)}")
+    # RULE 84: an anchor that could not be read is a FAILURE and is counted HERE, before the quiet
+    # return, so that --self-test cannot report a pass over an instrument that has gone quiet.
+    bad += len(doc_failures)
     if quiet:
         return 1 if bad else 0
 
+    if doc_failures:
+        for key, pattern, why in doc_failures:
+            print(f"  ANCHOR    {key}: {why}")
+            print(f"            pattern {pattern!r} against {DOC}")
     print()
     print("COVERAGE - what this audit reads, and what it does not")
     print(f"  READS     the tree, for all {len(EXPECTED)} quantities above, by the command named beside")
     print("            each in EXPECTED.")
     print(f"  READS     the DOCUMENT figure for {doc_known} of {len(EXPECTED)}, by anchored pattern over")
-    print("            surface-inventory.md; '-' means the document states no figure for that key.")
+    print("            surface-inventory.md; '-' means the key declares NO anchor and may state no")
+    print("            figure at all. A DECLARED anchor that matches nothing is an ANCHOR failure above")
+    print("            and fails this run (rule 84, 2026-10-10): a check that goes quiet is worse than")
+    print("            one that goes red, because it still ends 'all numbers re-derived and matching'.")
     print("            This column used to print EXPECTED, i.e. this file's memory, which is how")
     print("            'all matching' came to be read as 'every count in the document is right'.")
     print("  DOES NOT  read any file other than surface-inventory.md.")
@@ -391,6 +437,10 @@ def main_report(quiet=False):
     if bad:
         print(f"{bad} row(s) differ. Decide which side moved - the tree, the document, or this file -")
         print("before editing any of them. This audit edits nothing.")
+        if doc_failures:
+            print(f"{len(doc_failures)} of those row(s) are ANCHOR failures (rule 84): this instrument")
+            print("could not read the document for that key at all, and no re-pinning fixes that - repair")
+            print("the anchor or the sentence it reads, then re-run.")
     else:
         print("all numbers re-derived and matching: the tree agrees with this file, and this file agrees")
         print("with every document figure it anchors, including the fenced lines it does not re-run.")

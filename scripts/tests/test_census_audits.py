@@ -73,6 +73,37 @@ def test_the_census_instrument_is_clean_at_head_and_says_how_much_it_read(script
         assert len(found) >= 10, f"{script.name} reported {len(found)} rows; the audit covers more:\n{out}"
 
 
+def test_counts_audit_refuses_an_anchor_that_matches_nothing(tmp_path):
+    """RULE 84, red-first: a DECLARED anchor that stops matching must fail the run and name itself.
+
+    This reproduces the real failure it was written for. Bolding the figure inside the phrase the
+    core-tables anchor reads - `runtime: 19 (core)` -> `runtime: **19** (core)`, a style the document
+    uses everywhere else, so a reword is entirely plausible - leaves that anchor matching NOTHING. Before
+    rule 84 the audit printed `-` for the row, compared nothing for it, and still ended "all numbers
+    re-derived and matching": QUIETER as the document drifted, never redder.
+
+    The unbroken copy is asserted to produce no ANCHOR failure rather than a zero exit, because a
+    run also reads the working tree and a busy checkout can fail the tree half for reasons that have
+    nothing to do with this test.
+    """
+    unbroken = tmp_path / "unbroken.md"
+    unbroken.write_text(INVENTORY.read_text())
+    ok = run(COUNTS, "--doc", str(unbroken))
+    # The marker, not the word: the COVERAGE block legitimately explains the rule and names it.
+    assert "\n  ANCHOR    " not in "\n" + ok.stdout, f"an anchor failed on the document as written:\n{ok.stdout}"
+
+    text = INVENTORY.read_text()
+    reworded = re.sub(r"runtime: (\d+) \(core\)", r"runtime: **\1** (core)", text, count=1)
+    assert reworded != text, "the anchored phrase moved; this test needs the sentence's new shape"
+    broken = tmp_path / "broken.md"
+    broken.write_text(reworded)
+
+    r = run(COUNTS, "--doc", str(broken))
+    assert r.returncode != 0, f"an unmatchable anchor passed:\n{r.stdout}"
+    assert "ANCHOR" in r.stdout and "core tables" in r.stdout, f"the failure is not named:\n{r.stdout}"
+    assert "??" in r.stdout, f"the row does not show its document figure could not be read:\n{r.stdout}"
+
+
 @pytest.mark.parametrize("script", [CITATION, COUNTS, S3])
 def test_the_census_instrument_can_fail(script):
     """Its own --self-test perturbs one item in a COPY and requires that exact item named."""
