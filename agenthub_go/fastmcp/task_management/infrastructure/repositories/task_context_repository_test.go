@@ -4,12 +4,54 @@ package repositories
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"agenthub/fastmcp/task_management/domain/entities"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
 )
+
+// The read-back the gate demanded, through the REAL repository rather than a fake. The first version of the
+// service-level test was green only because the in-memory fake stores the entity itself, so it proved the
+// service's shape and nothing about persistence - while a real write and a real read were losing both notes.
+// This asserts the column's one home in both directions: create with notes, read them back from the entity's
+// own field, and confirm the Metadata route is gone.
+func TestTaskContextRepositoryImplementationNotesRoundTrip(t *testing.T) {
+	sessions := newTestRepoEnv(t)
+	user := "11111111-1111-1111-1111-111111111111"
+	taskID, branchID := taskCtxRepoTestSetup(t, sessions, user)
+	repo := taskCtxRepoTestNew(t, sessions, &user)
+	ctx := context.Background()
+
+	notes := map[string]any{"progress_updates": []any{map[string]any{"content": "first note"}}}
+	if _, err := repo.Create(ctx, &entities.TaskContextUnified{
+		ID: taskID, BranchID: branchID, ImplementationNotes: notes,
+	}); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	got, err := repo.Get(ctx, taskID)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if got == nil {
+		t.Fatal("Get returned nil for a row it just created")
+	}
+	updates, _ := got.ImplementationNotes["progress_updates"].([]any)
+	if len(updates) != 1 {
+		t.Fatalf("ImplementationNotes[progress_updates]=%#v after a round trip; the column is not the entity field's home",
+			got.ImplementationNotes)
+	}
+	entry := fmt.Sprint(updates[0])
+	if !strings.Contains(entry, "first note") {
+		t.Fatalf("round-tripped note=%v; the text did not survive the column", updates[0])
+	}
+	if _, ok := got.Metadata["implementation_notes"]; ok {
+		t.Fatal("implementation_notes is still travelling through Metadata: that second route is how a write and a read passed each other")
+	}
+}
 
 func taskCtxRepoTestNew(t *testing.T, sessions *database.SessionManager, userID *string) *TaskContextRepository {
 	t.Helper()

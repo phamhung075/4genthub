@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - implementation_notes round-trips through the real repository
+
+- ADDED `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_context_repository_test.go`: `TestTaskContextRepositoryImplementationNotesRoundTrip` creates a task context with a note and reads it back through the real `TaskContextRepository` on a throwaway testpg database, asserting the note survives in `ImplementationNotes` and that `implementation_notes` no longer travels through `Metadata`.
+- RED BEFORE, on the same database: with the repository stashed and the test left in place, `ImplementationNotes[progress_updates]` comes back nil — reproducing the gate's measurement (`AddProgress` succeeded, `repo.Get` lost both notes).
+- WHY A PG TEST AND NOT THE EXISTING ONE: the service-level test's fake stores the entity object, so it never crosses the repository's column mapping — the exact place the notes were being lost. Passing there was necessary and not sufficient.
+- VERIFIED: `gofmt` clean; the repositories package green with `AGENTHUB_TEST_PG_URL` set, so the PG-gated cases ran rather than skipped.
+
 ## 2026-10-10 - the dependent scan's failure stopped reading as success
 
 - ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_test.go`: `TestCompleteTaskReportsAFailedDependentLookup` drives `Execute` with a failing `FindAll` and asserts the caller sees an error instead of an unblock pass that never ran.
