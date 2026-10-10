@@ -378,11 +378,11 @@ ok  	agenthub/fastmcp/server/httpapp	0.014s
 ```
 
 The `tools/list` result is built by `App.MCPToolsList`
-(`fastmcp/server/httpapp/mcp_routes.go:275`), which does exactly two things:
+(`fastmcp/server/httpapp/mcp_routes.go:277`), which does exactly two things:
 
 1. iterates `DDDCompliantMCPTools.ToolDefinitions()`
    (`fastmcp/task_management/interface/ddd_compliant_mcp_tools.go:221`), and
-2. appends **four** schemas `ToolDefinitions` does not carry — `manage_seat`, `call_seat`, `submit_feedback` and the connection tool (`mcp_routes.go:301`, `:310`, `:319`, `:328`).
+2. appends **four** schemas `ToolDefinitions` does not carry — `manage_seat`, `call_seat`, `submit_feedback` and the connection tool (`mcp_routes.go:303`, `:312`, `:321`, `:330`).
 
 There is no other filter or source.
 
@@ -392,14 +392,14 @@ There is no other filter or source.
 
 ### 2.2 MCP protocol methods (NOT tools)
 
-`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:174`) implements these JSON-RPC
+`handleJSONRPC` (`fastmcp/server/httpapp/mcp_routes.go:176`) implements these JSON-RPC
 methods. They are the protocol layer and MUST NOT be listed as tools:
 
 `initialize`, `notifications/initialized`, `ping`, `tools/list`, `resources/list`,
-`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:174`).
+`prompts/list`, `tools/call` (all in `handleJSONRPC`, `mcp_routes.go:176`).
 
 `initialize` and `tools/list` additionally require a bearer token when
-`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:146`).
+`AUTH_ENABLED=true` (default), enforced in `authorizeMCPMethod` (`mcp_routes.go:148`).
 `resources/list` and `prompts/list` return empty lists.
 
 ### 2.3 Published tools (`tools/list`)
@@ -414,16 +414,18 @@ Ten tool names, always present except `manage_context` (see note):
 | `manage_project` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:239` |
 | `manage_git_branch` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:244` |
 | `manage_agent` | `ToolDefinitions` | `ddd_compliant_mcp_tools.go:249` |
-| `manage_seat` | appended schema | `mcp_routes.go:302` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
-| `call_seat` | appended schema | `mcp_routes.go:311` (`CallSeatToolName`, `call_seat_controller.go:14`) |
-| `submit_feedback` | appended schema | `mcp_routes.go:320` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
-| `manage_connection` | appended schema | `mcp_routes.go:328` (`tools = append(tools, connTool)`; built at `:324` by `connTool, err := connectionToolDefinition()`; definition `mcp_connection_tool.go:39`) |
+| `manage_seat` | appended schema | `mcp_routes.go:304` (`ManageSeatToolName`, `manage_seat_controller.go:12`) |
+| `call_seat` | appended schema | `mcp_routes.go:313` (`CallSeatToolName`, `call_seat_controller.go:14`) |
+| `submit_feedback` | appended schema | `mcp_routes.go:322` (`SubmitFeedbackToolName`, `submit_feedback_controller.go:18`; args `room, seat, session, layer, text`) |
+| `manage_connection` | appended schema | `mcp_routes.go:330` (`tools = append(tools, connTool)`; built at `:326` by `connTool, err := connectionToolDefinition()`; definition `mcp_connection_tool.go:39`) |
 
 Note: `manage_context` is emitted only when `ContextController != nil`; the constructor
 sets it when `DatabaseAvailable` is true (`ddd_compliant_mcp_tools.go:110-114`), and
 `app.go:71` passes `DatabaseAvailable: true`. So on a wired server all ten are present.
 **Measured at HEAD `763b8196` (2026-10-06): a booted server answers `tools/list` with exactly
 these ten names.** **RE-MEASURED 2026-10-09 at HEAD `36716e6e`: the five registry tests pass (`ok agenthub/fastmcp/server/httpapp 0.024s`), so all ten names stand and the count is unchanged — see §2.1's re-resolution note.**
+
+**RE-RESOLVED 2026-10-10 at HEAD `f81a2d2f` (writer seat) — this table's ten rows are the ones NO instrument reads, and five of their anchors had drifted.** `scripts/S3-REDERIVE.py` declares the gap in its own coverage block: these 10 rows carry 15 anchors, and `scripts/CITATION-AUDIT.py` skips them because its row shape needs a METHOD in the first cell where this table puts a tool NAME. All 15 were audited by hand against the tree: **ten resolve exactly** (`ddd_compliant_mcp_tools.go:223`, `:227`, `:233`, `:239`, `:244`, `:249`; `manage_seat_controller.go:12`; `call_seat_controller.go:14`; `submit_feedback_controller.go:18`; `mcp_connection_tool.go:39`) and **five were stale, every one of them in `mcp_routes.go`**: `302 → 304`, `311 → 313`, `320 → 322`, `328 → 330`, and the bare `:324 → :326`. The table above now reads the current lines. **The same sweep re-resolved the rest of this file's pointers in §2.1–§2.4, because drift is a function of the lines inserted above a citation and of nothing else:** `App.MCPToolsList` `275 → 277`, the `make([]map[string]any, 0, len(defs)+4)` line `285 → 287`, the four appends `301/310/319/328 → 303/312/321/330`, `handleJSONRPC` `174 → 176`, `authorizeMCPMethod` `146 → 148`, `dispatchMCPTool` `347 → 349`, `get_mcp_status` `380 → 405`, `check_session_health` `386 → 411`, and the unknown-tool `default` `492 → 518`. **The two dated passes above keep their own numbers as the record of what was measured then; these are the live pointers — the note that the four appends were `:301`, `:310`, `:319`, `:328` remains true of `36716e6e` and false of this HEAD.** **The control against a blanket renumbering:** §1.6's two rows (`mcp_routes.go:76` and `:141`) did not move and `CITATION-AUDIT.py` still reads them fresh, so the +2 insertion sits between `:141` and `:146`, while `get_mcp_status`, `check_session_health` and the `default` drifted by +25/+25/+26 — a second and larger insertion sits below `:349`. **What the pass did NOT establish: the tool surface itself.** No tool name was added, removed or renamed since the 2026-10-09 re-measurement, and no booted server was asked for `tools/list` this time; only pointers moved.
 
 `tools_golden.json`
 (`fastmcp/task_management/interface/testdata/tools_golden.json`) contains only the six
@@ -433,13 +435,13 @@ rest equals golden.
 
 ### 2.4 Dispatch-only names (callable via `tools/call`, NOT advertised by `tools/list`)
 
-`dispatchMCPTool` (`mcp_routes.go:347`) also handles two legacy names that are **not**
+`dispatchMCPTool` (`mcp_routes.go:349`) also handles two legacy names that are **not**
 published in `tools/list`:
 
-- `get_mcp_status` (`mcp_routes.go:380`)
-- `check_session_health` (`mcp_routes.go:386`)
+- `get_mcp_status` (`mcp_routes.go:405`)
+- `check_session_health` (`mcp_routes.go:411`)
 
-Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:492`, `default`).
+Anything else returns `{"error":"Unknown tool: <name>"}` (`mcp_routes.go:518`, `default`).
 
 ### 2.5 Configuration gating — important negative finding
 
