@@ -390,6 +390,25 @@ Every decision below was made or recommended on 2026-10-08 unless a different da
 1. The task is the cloud's work item; claims live on the task; NEXT_GEN directive (F) F3 (porting OpenRig `queue_items` to the cloud) is not needed for task work. Two ledgers of the same work would diverge. **Needs the owner's confirmation**, because it changes the owner's F2, F4, F3 sequence.
 2. Phases are derived from events and never stored as a second status.
 3. `progress_history` and `progress_count` stop being written; `add_progress` writes a `progress` event.
+   - **3a. Ruled 2026-10-11 (architect; board rows `f9bbdd0f` and `0cf37f6f`; lead qitems `ffc3ea27`, `d47a217e`). The column is REMOVED WITH CARRY, never dropped empty.**
+     - **Why not keep it.** `go-dev`'s `2c4582de` showed that `progress_history` holds live notes, so dropping it as if it were empty destroys user content. Keeping the column instead would mean two stores for one concept, the break 2.5 forbids. `details` is not a second home: it is RENDERED from the column (`task_response.go:103`), and nothing writes kind `progress` today. The only target is `task_events` kind `progress`.
+     - **The carry is one runner step, after `0001`.** The owner's baseline mark stays the gate. In ONE transaction it inserts one `progress` event per entry of `tasks.progress_history` and `subtasks.progress_history`:
+       - A subtask entry gets `task_id` = its parent task and `subtask_id` = the subtask.
+       - `payload` = `{content, progress_number, carried_from: "progress_history"}`, with `content` byte-for-byte as stored.
+       - `created_at` = the entry's own timestamp.
+       - The actor is `human` with `actor_id` = the row's `user_id`. That is the account that authorised the write; which seat wrote it cannot be known, and `carried_from` says so.
+       - `seq` and `user_seq` are MAX+1 in timestamp order, taken under P1's single lock, `pg_advisory_xact_lock(hashtext(user_id))`.
+     - **The checks come before the drop, in the same transaction.** The event count must equal the entry count, and each `payload.content` must equal its source. An entry without content or timestamp raises. Any failure rolls back the whole step: no drop and no `applied_migrations` row. Only then does the step drop `progress_history` and `progress_count` on both tables.
+     - **The same commit:**
+       - `details` on update records a `progress` event through the recorder, with the real actor.
+       - `get` renders `details` from the `progress` events.
+       - The entity fields and `2c4582de`'s decode path are deleted.
+       - Its wire test is KEPT and re-pointed (write a note, `get` returns it), because it is the data-loss guard.
+     - **The tests run on testpg:**
+       - 2 task entries and 1 subtask entry become 3 events with equal content, the columns are gone and the ledger row is present.
+       - A malformed entry fails the step, leaves the column intact and writes no row.
+     - **The operator's step.** Back up the live database before the step is applied there.
+     - **The view.** The O8 ledger timeline REPLACES `ProgressHistoryTimeline` outright: one timeline, with `progress` events as its entries. `ProgressHistoryTimeline.tsx` and `progressHistoryUtils.ts` are deleted in the commit that mounts O8 in both dialogs, so the two never coexist. Until that commit the old timeline stays mounted: it is the only view of the live notes, and it survives the drop because `details` is still served. Until the subtask's own `details` are served, the subtask dialog shows no progress section: no placeholder, and never the parent task's text. That waits on `06410692`, which is on no branch, so go-dev re-lands it.
 4. No `manage_rule` tool; rules are seat modules.
 5. Wake is a pull by the client; the cloud does not push.
 
