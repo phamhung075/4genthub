@@ -184,8 +184,8 @@ const Troubleshooting = ({ expandedSections, toggleSection, deploymentMode = 'cl
 
             <CommandBox
               command="python3.14 --version"
-              title="Verify Python Version"
-              description="Should show Python 3.14.x (upgraded from 3.12)"
+              title="Verify Python Version (hooks client only)"
+              description="Only the 4genthub-hooks client needs Python; the backend is Go and needs none"
             />
 
             <CommandBox

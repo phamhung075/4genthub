@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+- **The help page has a "Connect your machine" section, so a user can get a local session onto the Sessions page** - 2026-10-11
+  - NEW `src/components/help/sections/ConnectMachine.tsx`, exported from `src/components/help/index.ts` and listed in `src/pages/HelpSetup.tsx` after the Docker section. Three steps: a token with the `sessions:write` scope (ticked by hand on `/tokens`; it is left out of Full Access), the token in `~/.config/4genthub/.env`, and `4genteam sync connector --session <name>`. Command and flags read from `4genteam sync connector --help` on the installed client.
+  - The section says what is not there yet: the command sends one session once and exits, and there is no background client or browser-to-seat message.
+  - `src/components/help/sections/Troubleshooting.tsx`: the "Verify Python Version" box said Python 3.14 (upgraded from 3.12) as if the backend needed it; it now says only the hooks client needs Python.
+  - Not stale, left alone: the Python steps in `GettingStartedGuide.tsx` and `ClaudeHooks.tsx`, because the `.claude` hooks submodule is Python.
+  - Verified: `npx tsc --noEmit` exit 0; NEW `src/tests/pages/HelpSetup.test.tsx` passes. Not loaded in a browser, not deployed.
+
 ### Fixed
 - **The seat detail page is read-only for a viewer of a shared room: all four write surfaces are gated on the same `Room.role`, the affordances are ABSENT and the handlers refuse** - 2026-10-11
   - `src/pages/SeatDetailPage.tsx` derives one predicate (`rooms.find(candidate => candidate.slug === room)?.role === 'owner'`, the field the room row uses) from `useRooms()` and threads it as `canWrite` into the four surfaces: the LLM panel, the permission policy panel, the overlay editor (`ModulesTab`) and the link editor (`LinksTab`). The four prop types carry it (`src/types/seatTypes.ts`), so a mount cannot forget it. One sentence in the seat header states the standing for a viewer.
