@@ -41,7 +41,8 @@ end. Rewrite, do not translate line by line: port each behavior, keep its tests.
   message naming it. No shell strings: `exec.Command` with an argument list.
 - Behavior change needs a test. Tests need no network, rig or seat.
 - Commit with an explicit pathspec, noreply identity `phamhung075 <40054920+phamhung075@users.noreply.github.com>`.
-  Push to the client repo `main` after the lead has seen the phase green. The server repo is not
+  NO SEAT PUSHES - the PRINCIPAL pushes the hashes to the client repo `main` once the lead has seen
+  the phase green. The server repo is not
   touched by this room; the lead tells the owner what to delete there once phase 6 lands.
 - Do not touch the `4genthub-min` room or its seats.
 - Respect `rm` being blocked by the hook: use the editor or a Python one-liner for deletions.

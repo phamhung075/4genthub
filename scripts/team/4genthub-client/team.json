@@ -32,25 +32,25 @@
       "slug": "client-policy-lead",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-lead.json"
+      "file": "policy-lead.json"
     },
     {
       "slug": "client-policy-go-dev",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-go-dev.json"
+      "file": "policy-go-dev.json"
     },
     {
       "slug": "client-policy-reviewer",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-reviewer.json"
+      "file": "policy-reviewer.json"
     },
     {
       "slug": "client-policy-writer",
       "version": "1.1.0",
       "kind": "policy",
-      "file": "../4genthub-min/policy-writer.json"
+      "file": "policy-writer.json"
     },
     {
       "slug": "client-go-mission",

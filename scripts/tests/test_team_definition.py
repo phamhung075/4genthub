@@ -39,7 +39,19 @@ pytestmark = pytest.mark.unit
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-TEAM_DIR = REPO_ROOT / "scripts" / "team" / "4genthub"
+TEAM_ROOT = REPO_ROOT / "scripts" / "team"
+
+
+# The dev room: the one the apply cases below drive through the client, with the topology they
+# assert. The invariants that hold for ANY room live further down and run for every room under
+# TEAM_ROOT, this one included.
+TEAM_DIR = TEAM_ROOT / "4genthub"
+
+
+# Every room shipped under scripts/team, DISCOVERED rather than listed. This file used to
+# hard-code the directory above as the only room, so a room added beside it - which is how
+# 4genthub-client arrived - was gated by nothing at all.
+ROOMS = sorted(p.name for p in TEAM_ROOT.iterdir() if (p / "team.json").is_file())
 INVENTORY = REPO_ROOT / "ai_docs" / "agent-system" / "skill-library.json"
 
 
@@ -62,18 +74,37 @@ SEAT_TYPES = {
 }
 
 
-WORD_LIMITS = {
-    "project-4genthub": (350, 500),
-    "delegate-deepseek": (100, 230),
-    "area-go-backend": (120, 250),
-    "area-web-frontend": (100, 200),
-    "area-quality": (100, 200),
-    "area-docs": (80, 150),
-    "mission-4genthub": (350, 520),
+# Every instruction file a room keeps in its OWN directory gets a word band: the file is pasted
+# into a seat's context, so the band is how "this stays short" is written down and how a truncated
+# file is caught. A room-local instruction file with no band FAILS the guard rather than passing
+# unnoticed, and a band no file uses is stale. A file a room points at outside its own directory
+# (the Go seed library's blocks) only has to resolve here; its content is the Go seed's to check.
+ROOM_WORD_LIMITS = {
+    "4genthub": {
+        "project-4genthub": (350, 500),
+        "delegate-deepseek": (100, 230),
+        "area-go-backend": (120, 250),
+        "area-web-frontend": (100, 200),
+        "area-quality": (100, 200),
+        "area-docs": (80, 150),
+        "mission-4genthub": (350, 520),
+    },
+    "4genthub-ab": {"ab-terse": (25, 60), "ab-verify": (30, 70)},
+    "4genthub-client": {"client-go-mission": (350, 520)},
+    "4genthub-min": {},  # every instruction module it names lives in the Go seed library
 }
 
 
-MODULE_FILES = {"mission-4genthub": "mission.md"}
+# Which runtimes a room's seats are launched on. Written down per room rather than recomputed:
+# moving a room onto another runtime is a decision somebody makes, and this is the value the room
+# ships. An omp seat must name the model it runs and the seat-type version it pinned (the
+# min-room convention the newer rooms follow); a claude-code seat names neither.
+ROOM_RUNTIMES = {
+    "4genthub": {"claude-code"},
+    "4genthub-ab": {"omp"},
+    "4genthub-client": {"omp"},
+    "4genthub-min": {"claude-code", "omp"},
+}
 
 
 def _load_module():
@@ -164,17 +195,37 @@ def env(server, monkeypatch):
 
 
 def _run(capsys, *extra):
-    code = team_setup.main(["apply", "--team", str(TEAM_DIR), *extra])
+    return _run_in(capsys, "4genthub", *extra)
+
+
+def _run_in(capsys, room, *extra):
+    code = team_setup.main(["apply", "--team", str(TEAM_ROOT / room), *extra])
     out = capsys.readouterr()
     return code, out.out, out.err
 
 
-def _context_file(slug):
-    return TEAM_DIR / MODULE_FILES.get(slug, f"{slug}.txt")
+def _definition(room):
+    """A room's team.json as written.
+
+    Deliberately NOT `load_team`: that reads every module's file and raises on the first one that
+    is missing, so the case that HAS to fail could only report "cannot load team definition". The
+    guard wants to name the module and its path.
+    """
+    return json.loads((TEAM_ROOT / room / "team.json").read_text(encoding="utf-8"))
+
+
+def _load_team(room):
+    return team_setup.load_team(TEAM_ROOT / room)
 
 
 def _team():
-    return team_setup.load_team(TEAM_DIR)
+    return _load_team("4genthub")
+
+
+def _context_file(slug):
+    """The dev room's file for a module slug, read from the module rather than a second table."""
+    module = next(m for m in _team()["modules"] if m["slug"] == slug)
+    return TEAM_DIR / module["file"]
 
 
 def test_calls_follow_the_documented_order(server, env, capsys):
@@ -219,7 +270,7 @@ def test_module_content_comes_from_the_files(server, env, capsys):
         for r in server.requests
         if "/modules/" in r["path"]
     }
-    assert set(puts) == set(WORD_LIMITS)
+    assert set(puts) == {m["slug"] for m in _definition("4genthub")["modules"]}
     for slug, body in puts.items():
         assert body["kind"] == "instruction"
         assert body["content"] == _context_file(slug).read_text(encoding="utf-8")
@@ -393,13 +444,14 @@ def test_other_4xx_stops_the_run(server, env, capsys):
     assert server.requests[-1]["path"] == "/api/v2/openrig/rooms"
 
 
-def test_dry_run_makes_no_requests_and_needs_no_env(server, monkeypatch, capsys):
+@pytest.mark.parametrize("room", ROOMS)
+def test_dry_run_makes_no_requests_and_needs_no_env(room, server, monkeypatch, capsys):
     monkeypatch.delenv("AGENTHUB_URL", raising=False)
     monkeypatch.delenv("AGENTHUB_TOKEN", raising=False)
-    code, out, _ = _run(capsys, "--dry-run")
+    code, out, _ = _run_in(capsys, room, "--dry-run")
     assert code == 0
     assert server.requests == []
-    assert len(out.strip().splitlines()) == len(team_setup.build_plan(_team()))
+    assert len(out.strip().splitlines()) == len(team_setup.build_plan(_load_team(room)))
 
 
 def test_token_is_never_printed(server, env, capsys):
@@ -430,31 +482,88 @@ def test_unreachable_server_is_exit_1(monkeypatch, capsys):
     assert TOKEN not in err
 
 
-def test_every_overlay_module_is_created_by_the_script():
-    team = _team()
+# --- the definition guard: every room under scripts/team, not just the one above ---------------
+#
+# These run for EVERY room. They are also why a room cannot arrive ungated: the expectation
+# tables are keyed by room, so a room with no entry fails here instead of passing in silence.
+
+def test_the_per_room_tables_cover_every_shipped_room():
+    # One direction only: a room that EXISTS must have an expectation, so it cannot arrive ungated.
+    # The reverse would tie this file to how many rooms a given checkout happens to have (a room
+    # can sit in a working tree before it is committed), and an entry for an absent room costs
+    # nothing. Both directions are still enforced by the cases below, per room.
+    assert set(ROOMS) <= set(ROOM_RUNTIMES), (
+        f"a room with no runtime expectation would be ungated: {sorted(set(ROOMS) - set(ROOM_RUNTIMES))}"
+    )
+    assert set(ROOMS) <= set(ROOM_WORD_LIMITS), (
+        f"a room with no band table would be ungated: {sorted(set(ROOMS) - set(ROOM_WORD_LIMITS))}"
+    )
+
+
+@pytest.mark.parametrize("room", ROOMS)
+def test_every_room_names_files_that_resolve(room):
+    for module in _definition(room)["modules"]:
+        path = TEAM_ROOT / room / module["file"]
+        assert path.is_file(), f"{room}/{module['slug']}: {module['file']} does not resolve"
+        text = path.read_text(encoding="utf-8")
+        assert text.strip(), f"{room}/{module['slug']}: {module['file']} is empty"
+        if module["kind"] == "policy":
+            assert isinstance(json.loads(text), dict), (
+                f"{room}/{module['slug']}: a policy module is one JSON object"
+            )
+
+
+@pytest.mark.parametrize("room", ROOMS)
+def test_every_room_defines_what_its_overlays_use_and_covers_its_seats(room):
+    team = _definition(room)
     created = {m["slug"] for m in team["modules"]}
     referenced = set(team["company_overlay"])
     for slugs in team["seat_overlays"].values():
         referenced.update(slugs)
-    assert referenced <= created
+    assert referenced <= created, "an overlay references a module the room does not define"
     assert created <= referenced, "a module no overlay uses is dead weight"
     seat_keys = {s["seat_key"] for s in team["seats"]}
-    assert set(team["seat_overlays"]) <= seat_keys
+    assert set(team["seat_overlays"]) == seat_keys, (
+        "a seat with no overlay would start with no context at all"
+    )
     for link in team["links"]:
         assert {link["from"], link["to"]} <= seat_keys
 
 
-def test_seat_types_are_among_the_nine():
-    for seat in _team()["seats"]:
+@pytest.mark.parametrize("room", ROOMS)
+def test_every_room_seat_is_a_known_type_on_the_declared_runtimes(room):
+    runtimes = set()
+    for seat in _definition(room)["seats"]:
         assert seat["seat_type"] in SEAT_TYPES
-        assert seat["runtime"] == "claude-code"
+        runtimes.add(seat["runtime"])
+        if seat["runtime"] == "omp":
+            assert seat["model"], f"{room}/{seat['seat_key']}: an omp seat names its model"
+            assert seat.get("pinned_version"), (
+                f"{room}/{seat['seat_key']}: an omp seat pins the seat-type version it runs"
+            )
+    expected = ROOM_RUNTIMES.get(room, set())
+    assert runtimes == expected, (
+        f"{room} ships {sorted(runtimes)}, the expectation says {sorted(expected)}"
+    )
 
 
-@pytest.mark.parametrize("slug", sorted(WORD_LIMITS))
-def test_context_files_respect_word_limits(slug):
-    low, high = WORD_LIMITS[slug]
-    words = len(_context_file(slug).read_text(encoding="utf-8").split())
-    assert low <= words <= high, f"{slug}: {words} words, expected {low}-{high}"
+@pytest.mark.parametrize("room", ROOMS)
+def test_every_room_local_context_file_has_a_band_it_respects(room):
+    room_dir = (TEAM_ROOT / room).resolve()
+    local = {}
+    for module in _definition(room)["modules"]:
+        path = (room_dir / module["file"]).resolve()
+        if module["kind"] == "instruction" and room_dir in path.parents:
+            local[module["slug"]] = path
+    bands = ROOM_WORD_LIMITS.get(room, {})
+    assert set(local) == set(bands), (
+        f"{room}: the bands and the room's own instruction files disagree - a file with no band "
+        f"would pass unnoticed, and a band with no file is stale"
+    )
+    for slug, path in sorted(local.items()):
+        low, high = bands[slug]
+        words = len(path.read_text(encoding="utf-8").split())
+        assert low <= words <= high, f"{room}/{slug}: {words} words, expected {low}-{high}"
 
 
 def test_delegate_module_carries_the_chef_and_worker_wording():
