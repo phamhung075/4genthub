@@ -33,23 +33,36 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 123,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 126,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
                                             #   124 -> 125: O1a's GET /{id}/events route landed and THIS expectation
                                             #     never moved, so the audit was already red before the change below.
                                             #   125 -> 123: e6829b32 removed the two always-500 task routes, and the
                                             #     inventory paragraph records the same 125 -> 123. Re-derived, not
                                             #     adjusted: git grep -c 'mux.HandleFunc(' over that directory gives
                                             #     125 at 1a1ae32c and 88d27758, and 123 at HEAD.
+                                            #   123 -> 126: a56e58a7 added ONE registration (the room-scoped seat
+                                            #     message POST, which is why the path carries the room) and 7c81981b
+                                            #     added TWO (the machine-authenticated GET pull and the POST ack). The
+                                            #     audit was RED from a56e58a7 until this retune, exactly as it was red
+                                            #     from the O1a addition above. Re-derived, not adjusted: the same
+                                            #     pattern returns 126 at 6cfd56ab and 123 at e6829b32.
     "auth route registrations": 20,         # same pattern, fastmcp/auth/{interface,api}
     "published MCP tools": 10,              # six from ToolDefinitions() + four appended in mcp_routes.go
     "dispatch-only MCP names": 2,           # get_mcp_status, check_session_health
     "core tables": 20,                      # depth-1 entries of database.Tables in models.go
     "auth tables": 3,                       # two in models_auth.go, one in email_token_repository.go
-    "seat tables": 14,                      # depth-1 entries of seatDatabaseTables
+    "seat tables": 16,                      # depth-1 entries of seatDatabaseTables
+                                            #   14 -> 16: 7c81981b registered seat_messages and 02bfd416 registered
+                                            #     machine_edges; the audit was red from 02bfd416 until this retune.
+                                            #     Re-derived, not adjusted: the depth-1 {Name: ...} count is 14 at
+                                            #     e6829b32 and 16 at 6cfd56ab.
     "team tables": 2,                       # depth-1 entries of teamManagementDatabaseTables
-    "registered tables total": 39,          # 20 + 3 + 14 + 2
+    "registered tables total": 41,          # 20 + 3 + 16 + 2 - follows "seat tables" above, not a count of its own
     "ProductionTables": 6,                  # declared, never appended
-    "SQL CREATE TABLE statements": 16,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+    "SQL CREATE TABLE statements": 18,      # ^CREATE TABLE IF NOT EXISTS in seat_management_postgresql.sql
+                                            #   16 -> 18: the same two commits added one statement each - seat_messages
+                                            #     in 7c81981b and machine_edges in 02bfd416 - which is why this row and
+                                            #     "seat tables" move together and neither can be retuned alone.
 }
 
 
