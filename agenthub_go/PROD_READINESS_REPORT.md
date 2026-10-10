@@ -1,5 +1,7 @@
 # agenthub_go Production Readiness Report
 
+> **CLOSED — DATED POINTER AT THE TOP (added 2026-10-10, writer seat, carrying D2's stage-3 line).** This file is a DATED REPORT, not current instruction. It was closed by the owner's decision (`ai_docs/architecture-design/decision-remove-python-backend.md`: no Python backend, no ORM, all code in Go) and the tree it measures is gone from disk and from the index — `agenthub_main/` was deleted in `a50929c6` (2026-10-09; 1583 paths, none outside `agenthub_main/`), its changelog in the separate commit `ff94cb83`. **Every Python path cited below resolves at the tag `python-backend-final`** (`git checkout python-backend-final -- agenthub_main`, or `git revert a50929c6`). Measured 2026-10-10: that tag exists **locally only** — `git ls-remote --tags origin python-backend-final` prints nothing — so a reader without this clone must use the revert.
+
 Author: dev-owner@4genthub-go (sections 1, 2, 3, 4, 6); dev-check@4genthub-go (sections 5, 7, 8, review, final verdict).
 Production was touched read-only only (owner: schema metadata; dev-check: container/nginx/catalog reads, see section 5). No deploy, no push, no secrets printed.
 
