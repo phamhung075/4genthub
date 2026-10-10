@@ -56,5 +56,25 @@ failed, 4 `status` found a seat behind or not pulled.
   It becomes syncable once the cloud has a room for it, which is part of
   `SEAT-CONTEXT-AS-BLOCKS.md`.
 - **A running seat never changes live.** Adopting changes the files; the seat reads them at launch.
+- **The cloud's copy of a room's module text can lag the repo, and a resolved hash does not say
+  otherwise** (measured 2026-10-10, `4genthub-min`). The room serves a copy of `project-4genthub`
+  (version 1.0.0) that differs from its source `scripts/team/4genthub/project-4genthub.txt` in three
+  hunks - the `PROJECT.` line still reads "being ported from the Python backend in `agenthub_main`"
+  although the tree retired that backend (`python-backend-final`); the LAYOUT bullet
+  "`agenthub_main`: legacy Python backend; its script tests live in `agenthub_main/src/tests/scripts`."
+  still exists although the repo deleted it; and TESTS still carries that pre-move pytest command plus
+  a TypeScript-error baseline the tree removed on 2026-10-03 - and the guide block itself differs the
+  same way (`guide-reviewer` still names the pre-move pytest command, `shared-modules/guide-common.md`
+  still says to `git add -- <path>` and stage first where the settled form at `guide-common.md:22` is a
+  pathspec commit with no pre-stage). `4genthub-min/lead` resolved to the same snapshot hash on
+  2026-10-08 21:23Z and on 2026-10-10, which rules out a stale cache but not a publish that landed
+  **unreferenced**, because an unreferenced version changes nothing a seat sees; the one command that
+  separates the two is `GET /api/v2/openrig/modules/{slug}/versions`. **No corrected body had reached a
+  seat in the two days before 2026-10-10.** The corrections are committed in the repo (`0ea06c77`,
+  `1f0b177a`, `d1114170`) and publishing them is the principal's token, not a seat's; a corrected body
+  must also go out as a NEW version and the refs must name it, because a module version is immutable
+  (`modulecontent.go:4`) and the manifests name literal versions, so an unreferenced publish renders the
+  old row and looks exactly like a publish that never happened. Until it lands, a seat that needs the
+  current text reads the repo source, not the served render.
 - **Not yet built:** the frontend "Apply" button. When the cloud records apply requests, `watch`
   will act on them; today `watch` compares hashes by polling.
