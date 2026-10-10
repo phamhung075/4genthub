@@ -51,12 +51,24 @@ func (r *TaskEventRepository) Append(ctx context.Context, in entities.AppendTask
 // database assigned. This is what makes "the status and its entry commit together or not at all" a
 // property: the entry joins the caller's transaction, so a failure on either side rolls both back.
 //
-// THE SEQUENCE IS THE WHOLE POINT, so it is assigned inside that transaction, which first takes a
-// per-task advisory lock. Two concurrent appends on the same task therefore serialize: the second
-// reads the first's committed MAX(seq) and takes the next number, so the sequence is gapless and
-// cannot repeat. The unique constraint on (task_id, seq) is the belt to that brace - if the lock
-// were ever bypassed the insert would fail loudly rather than overwrite an event. The vocabularies
-// are CHECK constraints in the table's DDL, so a value outside them is refused where the bytes land.
+// THE SEQUENCES ARE THE WHOLE POINT, so they are assigned inside that transaction, which first
+// takes a per-USER advisory lock. Two concurrent appends for one user therefore serialize: the
+// second reads the first's committed MAX and takes the next number, so both sequences are gapless
+// and cannot repeat. The lock is keyed on the user rather than the task because the ledger now
+// carries TWO cursors - the task's `seq` and the user's `user_seq` - and a per-task lock would let
+// two appends for one user on DIFFERENT tasks take the same `user_seq`, which is the one thing the
+// cross-task cursor cannot survive. Appends for different users still never contend.
+//
+// The unique constraints on (task_id, seq), (user_id, user_seq) and (user_id, client_event_id) are
+// the belt to that brace - if the lock were ever bypassed, a duplicate fails loudly rather than
+// overwriting an event. The vocabularies are CHECK constraints in the table's DDL, so a value
+// outside them is refused where the bytes land.
+//
+// WHY ONE LOCK AND NOT TWO: both sequences are read under the SAME key on purpose. A per-user lock
+// for user_seq beside a per-task lock for seq would hand every append two locks to take in an
+// order someone will eventually get wrong, and that failure mode is a deadlock rather than a
+// duplicate - much worse to find and much worse to run. One lock, keyed on the user, both
+// sequences: do not "improve" this into two.
 func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.AppendTaskEvent) (*entities.TaskEvent, error) {
 	if !r.sessions.InTransaction(ctx) {
 		return nil, ErrNotInTransaction
@@ -71,15 +83,34 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 		}
 		payload = string(encoded)
 	}
+	// An absent outbox key must reach PostgreSQL as NULL, and PostgreSQL's unique index treats
+	// NULLs as distinct, which is what keeps every keyless entry legal. subtask_id is nullable
+	// for the ordinary case: an entry about the task itself names no subtask.
+	var clientEventID any
+	if in.ClientEventID != "" {
+		clientEventID = in.ClientEventID
+	}
+	var subtaskID any
+	if in.SubtaskID != "" {
+		subtaskID = in.SubtaskID
+	}
 	err := r.sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		args := []any{r.userID, in.TaskID}
 		conds := `"user_id" = $1 AND "task_id" = $2`
-		// The advisory lock is transaction-scoped and keyed on the task, so appends for
-		// different tasks never contend and appends for one task never interleave.
-		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, in.TaskID); err != nil {
+		if _, err := s.ExecContext(ctx, `SELECT pg_advisory_xact_lock(hashtext($1))`, r.userID); err != nil {
 			return err
 		}
-		args = append(args, eventID, in.Kind, in.ActorKind, in.ActorID, payload)
+		// user_seq is read in its own statement, still under the lock: the LOCK is what makes MAX+1
+		// gapless, not the statement's shape. Commit-ordered visibility is exactly why a bigserial
+		// cursor is rejected (architecture 2.6) - a reader that has passed N must never miss a
+		// transaction that took a lower number and committed later.
+		var userSeq int64
+		if err := s.QueryRowContext(ctx,
+			`SELECT COALESCE(MAX("user_seq"), 0) + 1 FROM task_events WHERE "user_id" = $1`,
+			r.userID).Scan(&userSeq); err != nil {
+			return err
+		}
+		args = append(args, eventID, in.Kind, in.ActorKind, in.ActorID, payload, userSeq, clientEventID, subtaskID)
 		// $1 is used twice - inserted into user_id and compared against it - and PostgreSQL deduces
 		// a parameter's type once for all of its uses. Left alone the comparison resolves $1 as text
 		// (the string category's preferred type, preferred over the column's varchar) while the insert
@@ -92,25 +123,29 @@ func (r *TaskEventRepository) AppendInTx(ctx context.Context, in entities.Append
 		// width to the column that owns it and gets SQLSTATE 22001 (value too long) instead. Silent
 		// truncation of an identity is worse than a refusal, so the length stays off the cast.
 		row := s.QueryRowContext(ctx, `
-			INSERT INTO task_events (id, user_id, task_id, seq, kind, actor_kind, actor_id, payload)
-			SELECT $3, $1::varchar, $2, COALESCE(MAX("seq"), 0) + 1, $4, $5, $6, $7
+			INSERT INTO task_events (id, user_id, task_id, subtask_id, seq, user_seq, kind, actor_kind, actor_id, payload, client_event_id)
+			SELECT $3, $1::varchar, $2, $10, COALESCE(MAX("seq"), 0) + 1, $8, $4, $5, $6, $7, $9
 			FROM task_events WHERE `+conds+`
-			RETURNING "seq", "created_at"`, args...)
+			RETURNING "seq", "user_seq", "created_at"`, args...)
 		var seq int
+		var assignedUserSeq int64
 		var createdAt time.Time
-		if err := row.Scan(&seq, &createdAt); err != nil {
+		if err := row.Scan(&seq, &assignedUserSeq, &createdAt); err != nil {
 			return err
 		}
 		out = &entities.TaskEvent{
-			ID:        eventID,
-			TaskID:    in.TaskID,
-			UserID:    r.userID,
-			Seq:       seq,
-			Kind:      in.Kind,
-			ActorKind: in.ActorKind,
-			ActorID:   in.ActorID,
-			Payload:   in.Payload,
-			CreatedAt: createdAt.UTC(),
+			ID:            eventID,
+			TaskID:        in.TaskID,
+			SubtaskID:     in.SubtaskID,
+			UserID:        r.userID,
+			Seq:           seq,
+			UserSeq:       assignedUserSeq,
+			Kind:          in.Kind,
+			ActorKind:     in.ActorKind,
+			ActorID:       in.ActorID,
+			ClientEventID: in.ClientEventID,
+			Payload:       in.Payload,
+			CreatedAt:     createdAt.UTC(),
 		}
 		return nil
 	})

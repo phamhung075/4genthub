@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 
 	"agenthub/fastmcp/task_management/domain/entities"
 )
@@ -63,24 +64,34 @@ func (r *TaskEventRecorder) Record(ctx context.Context, taskID string, kind enti
 // task row holds after the write this entry shares a transaction with.
 //
 // WHO the write is attributed to is settled HERE, once, rather than by every caller passing a name
-// it had to invent: a request that named a seat through the MCP header is an agent acting on the
+// it had to invent: a request that named a seat through the MCP header is that seat acting on the
 // caller's behalf, and a request that named no seat belongs to the user this recorder was built
-// for. Only a recorder built with no user at all - which no production wiring does - falls back to
-// the system.
+// for. A recorder built with NEITHER is refused rather than attributed to something anonymous - an
+// unattributable write is the one thing this ledger exists to prevent - and no production wiring
+// builds the recorder without a user (task_wiring.go), so the refusal costs nothing and turns a
+// silent lie into a loud failure. A write the platform performs on a caller's behalf - completing
+// a task unblocks a dependent one - carries the CALLER, because the caller is who acted.
 func (r *TaskEventRecorder) RecordStatusChange(ctx context.Context, taskID, oldStatus, newStatus string) (*entities.TaskEvent, error) {
-	actor := r.actorFor(ctx)
+	actor, err := r.actorFor(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return r.Record(ctx, taskID, entities.TaskEventKindStatusChanged, actor.Kind, actor.ID,
 		map[string]any{"old": oldStatus, "new": newStatus})
 }
 
-func (r *TaskEventRecorder) actorFor(ctx context.Context) Actor {
+// ErrNoActor is returned when a status write reaches the recorder with no actor anywhere: no seat
+// on the request and no user the recorder was built for.
+var ErrNoActor = errors.New("task_events: no actor to attribute this write to")
+
+func (r *TaskEventRecorder) actorFor(ctx context.Context) (Actor, error) {
 	if actor, ok := ActorFromContext(ctx); ok {
-		return actor
+		return actor, nil
 	}
 	if r.userID != "" {
-		return Actor{Kind: entities.TaskEventActorUser, ID: r.userID}
+		return Actor{Kind: entities.TaskEventActorHuman, ID: r.userID}, nil
 	}
-	return Actor{Kind: entities.TaskEventActorSystem, ID: entities.TaskEventActorSystemID}
+	return Actor{}, ErrNoActor
 }
 
 // Actor is WHO a write is attributed to, in the two shapes a request can name: a seat, which is an
@@ -106,9 +117,9 @@ func ActorFromContext(ctx context.Context) (Actor, bool) {
 	return actor, ok
 }
 
-// SeatActor is an agent acting on the user's behalf, named by the seat identity `<room>/<seat>` the
-// rendered MCP header carries. The architecture names this identity `seat`; the landed task_events
-// vocabulary spells the class `agent`, and P1 lands the architecture's spelling.
+// SeatActor is a seat acting on the user's behalf, named by the seat identity `<room>/<seat>` the
+// rendered MCP header carries: the architecture's own spelling of the class, which the table's
+// actor CHECK carries.
 func SeatActor(seatID string) Actor {
-	return Actor{Kind: entities.TaskEventActorAgent, ID: seatID}
+	return Actor{Kind: entities.TaskEventActorSeat, ID: seatID}
 }

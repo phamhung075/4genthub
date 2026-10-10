@@ -34,10 +34,12 @@ func TestTaskEventTableRegisteredAfterTasks(t *testing.T) {
 	}
 }
 
-// TestTaskEventTableDeclaresItsConstraints checks the DDL carries the three constraints the ledger's
-// correctness rests on, read from the DDL string rather than from a live database. The vocabularies
-// are CHECKs, not PostgreSQL types: extending a CHECK is one DDL string and the registry has no
-// lifecycle for CREATE TYPE.
+// TestTaskEventTableDeclaresItsConstraints checks the DDL carries the constraints the ledger's
+// correctness rests on, read from the DDL string rather than from a live database - this is the DDL
+// the embedded runner executes through createAll, which is why the columns and their uniques are
+// asserted HERE rather than left to whoever runs the SQL by hand. The vocabularies are CHECKs, not
+// PostgreSQL types: extending a CHECK is one DDL string and the registry has no lifecycle for
+// CREATE TYPE.
 func TestTaskEventTableDeclaresItsConstraints(t *testing.T) {
 	var ddl string
 	for _, td := range Tables {
@@ -49,9 +51,14 @@ func TestTaskEventTableDeclaresItsConstraints(t *testing.T) {
 		t.Fatal("no DDL for task_events")
 	}
 	for _, want := range []string{
-		"ck_task_event_kind",       // the closed kind vocabulary
-		"ck_task_event_actor_kind", // the closed actor-kind vocabulary
-		"uq_task_event_seq",        // the belt to the advisory lock's brace
+		"ck_task_event_kind",         // the closed kind vocabulary
+		"ck_task_event_actor_kind",   // the closed actor-kind vocabulary
+		"uq_task_event_seq",          // the belt to the advisory lock's brace
+		"uq_task_event_user_seq",     // the cursor: one user never repeats a user_seq
+		"uq_task_event_client_event", // the outbox: a resent client_event_id lands once
+		"user_seq BIGINT NOT NULL",   // the cursor column itself
+		"client_event_id UUID",       // the outbox key, nullable
+		"subtask_id UUID",            // the nullable subtask an entry can be about
 	} {
 		if !strings.Contains(ddl, want) {
 			t.Errorf("task_events DDL does not declare %s", want)

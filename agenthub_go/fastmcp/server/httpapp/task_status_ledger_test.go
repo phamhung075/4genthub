@@ -307,9 +307,9 @@ func TestMCPStatusCallIsAttributedToTheSeatThatMadeIt(t *testing.T) {
 		t.Fatalf("MCP tools/call = %d, want 200: %s", code, body)
 	}
 	kind, actorID := ledgerLastStatusActor(t, sm, withSeat)
-	t.Logf("OBSERVED with the seat header: entry actor = %s/%q, want agent/%q", kind, actorID, "alpha/beta")
-	if kind != "agent" || actorID != "alpha/beta" {
-		t.Fatalf("entry actor = %s/%q, want agent/%q", kind, actorID, "alpha/beta")
+	t.Logf("OBSERVED with the seat header: entry actor = %s/%q, want seat/%q", kind, actorID, "alpha/beta")
+	if kind != "seat" || actorID != "alpha/beta" {
+		t.Fatalf("entry actor = %s/%q, want seat/%q", kind, actorID, "alpha/beta")
 	}
 	if got := ledgerStatus(t, sm, withSeat); got != "in_progress" {
 		t.Fatalf("status = %q, want in_progress", got)
@@ -325,9 +325,9 @@ func TestMCPStatusCallIsAttributedToTheSeatThatMadeIt(t *testing.T) {
 		t.Fatalf("MCP tools/call without the header = %d, want 200: %s", code, body)
 	}
 	kind, actorID = ledgerLastStatusActor(t, sm, noSeat)
-	t.Logf("OBSERVED without the header: entry actor = %s/%q, want user/%q", kind, actorID, scoped)
-	if kind != "user" || actorID != scoped {
-		t.Fatalf("entry actor = %s/%q, want user/%q", kind, actorID, scoped)
+	t.Logf("OBSERVED without the header: entry actor = %s/%q, want human/%q", kind, actorID, scoped)
+	if kind != "human" || actorID != scoped {
+		t.Fatalf("entry actor = %s/%q, want human/%q", kind, actorID, scoped)
 	}
 
 	if got := ledgerParityMismatches(t, sm); got != 0 {
