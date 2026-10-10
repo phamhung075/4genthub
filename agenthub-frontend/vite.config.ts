@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -51,6 +51,51 @@ export default defineConfig(({ mode }) => {
     console.log('📁 Using existing .env file (no .env.dev found)')
   } else {
     console.log('⚠️  No .env or .env.dev file found in parent directory')
+  }
+
+  // WHAT THE BUILD RESOLVED AND WHAT IT PRODUCED, printed by the build itself (row 2dd4448e).
+  //
+  // The entry chunk's NAME cannot answer this, measured three ways: the name survived a comment-only
+  // edit where no parent .env existed, it moved on a +0.7% byte change, and it moved at an IDENTICAL
+  // byte size in this shared tree. Size and newline count separate the two families, and the family is
+  // what decides whether these bytes are the artefact the frontend image deploys (PRODUCTION, minified:
+  // 299,046 B / 39 newlines / marker present) or a build of this checkout (DEVELOPMENT, unminified:
+  // 561,199 B / 245 newlines / marker absent).
+  //
+  // The line above says `mode "..."`, which is Vite's MODE - always "production" for `vite build` - and
+  // is NOT the family. NODE_ENV is what decides minification, and here it comes from the parent .env,
+  // which is exactly how a shared-tree build is unminified while the log reads mode "production".
+  const artefactReportPlugin: Plugin = {
+    name: 'artefact-report',
+    apply: 'build',
+    closeBundle() {
+      const outDir = path.resolve(__dirname, 'build')
+      const entry = fs
+        .readFileSync(path.join(outDir, 'index.html'), 'utf8')
+        .match(/assets\/index-[\w-]+\.js/)?.[0]
+      if (!entry) {
+        console.log('\n📦 No entry chunk found in build/index.html - the artefact cannot be reported.')
+        return
+      }
+      const text = fs.readFileSync(path.join(outDir, entry), 'utf8')
+      const bytes = fs.statSync(path.join(outDir, entry)).size
+      const newlines = text.split('\n').length - 1
+      const minifiedMarker = text.includes('Minified React error')
+      const isProduction = process.env.NODE_ENV === 'production'
+      console.log('\n📦 THE ARTEFACT THIS BUILD PRODUCED')
+      console.log(`   NODE_ENV   ${process.env.NODE_ENV}  (this, not "mode" above, decides the family)`)
+      console.log(`   entry      ${entry}`)
+      console.log(
+        `   size       ${bytes} B   newlines ${newlines}   'Minified React error' ${minifiedMarker ? 'present' : 'absent'}`
+      )
+      console.log(`   family     ${isProduction ? 'PRODUCTION (minified)' : 'DEVELOPMENT (unminified)'}`)
+      if (isProduction && newlines > 100) {
+        console.log('   ⚠  SIGNATURE MISMATCH: NODE_ENV says production but the entry looks unminified - do not quote these bytes.')
+      } else if (!isProduction) {
+        console.log('   ⚠  NOT the deploy artefact: the frontend image builds PRODUCTION (about 299 kB / 39 newlines,')
+        console.log('      and no parent .env exists inside it). NODE_ENV=production in the process environment builds it here.')
+      }
+    }
   }
 
   // HMR Debug Plugin
@@ -110,6 +155,7 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     hmrDebugPlugin,
+    artefactReportPlugin,
     // Bundle analyzer - generates stats.html after build
     visualizer({
       filename: './build/stats.html',
