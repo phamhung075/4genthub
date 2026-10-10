@@ -3,13 +3,14 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { useTaskEvents } from '../hooks/useTasks';
 import {
+  ACTOR_LABELS,
   LEDGER_NOT_RECORDED,
   PHASE_LABELS,
   deriveLedgerPhase,
   describeEvent,
 } from '../lib/taskTimeline';
 import { getStatusEmoji } from '../utils/statusEmojis';
-import type { TaskEvent, TaskEventActorKind } from '../types/taskTypes';
+import type { TaskEvent } from '../types/taskTypes';
 
 export interface TaskEventTimelineProps {
   /**
@@ -22,17 +23,14 @@ export interface TaskEventTimelineProps {
   className?: string;
 }
 
-/** The three ledger-only phases; every other phase is a task status and uses its own emoji map. */
+/**
+ * The one phase that is NOT a task status, so it has no entry in the status emoji map. The badge reads
+ * `LEDGER_PHASE_EMOJI[phase] ?? getStatusEmoji(phase)`, so every other phase is a status and takes its
+ * emoji from there. The actor labels live with the rest of the ledger vocabulary in `lib/taskTimeline`,
+ * where a missing one is a compile error rather than a raw class string on screen.
+ */
 const LEDGER_PHASE_EMOJI: Record<string, string> = {
   unopened: '⚪',
-  created: '🆕',
-  deleted: '🗑️',
-};
-
-const ACTOR_LABELS: Record<TaskEventActorKind, string> = {
-  user: 'a person',
-  system: 'the system',
-  agent: 'an agent',
 };
 
 const formatWhen = (iso: string): string => {

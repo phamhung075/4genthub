@@ -3,18 +3,20 @@
  * the ledger writes.
  *
  * WHAT THE FOUR-STEP CASE IS, AND WHAT IT CANNOT BE: NEXT_GEN O8's timeline acceptance names a
- * TEST-fail -> FIX -> TEST-pass -> ACCEPT sequence. The ledger's CHECK constraint carries only
- * `created | updated | status_changed | completed | deleted`, and `status_changed` is the ONLY kind
- * any writer emits today, with the only defined payload `{ old, new }`. So each step is expressed as
- * the nearest real shape and the MAPPING IS REPORTED IN THE CHANGELOG, not dressed up here:
+ * TEST-fail -> FIX -> TEST-pass -> ACCEPT sequence. The ledger's CHECK constraint carries the TWELVE
+ * kinds (`ck_task_event_kind`, task_event_tables.go:40), `status_changed` is the only kind any writer
+ * emits today, and it is the only kind with a defined payload, `{ old, new }`. So each step is
+ * expressed as the nearest real shape and the MAPPING IS REPORTED IN THE CHANGELOG, not dressed up
+ * here:
  *
  *   TEST-fail -> status_changed {in_progress -> testing}
  *   FIX       -> status_changed {testing -> in_progress}   (FIX has NO dedicated kind at all)
  *   TEST-pass -> status_changed {in_progress -> review}
- *   ACCEPT    -> status_changed {review -> done}           (O5's gate_verdict is not built)
+ *   ACCEPT    -> status_changed {review -> done}           (`gate_verdict` IS in the vocabulary now
+ *                                                           and no writer emits it yet)
  *
- * The distinction the vocabulary CANNOT make is that a test failed or passed: `evidence_submitted`
- * is O3's and is not in the vocabulary. The component therefore says so on screen
+ * The distinction the vocabulary CANNOT make YET is that a test failed or passed: `evidence_submitted`
+ * is in the vocabulary and has no writer. The component therefore says so on screen
  * (`LEDGER_NOT_RECORDED`) and this file asserts that sentence is present - the forward-looking half
  * is marked NOT IMPLEMENTED rather than claimed by a green case.
  */
@@ -45,14 +47,14 @@ const row = (
   seq: number,
   kind: TaskEventKind,
   payload: Record<string, unknown> | null,
-  actor_kind: TaskEventActorKind = 'agent',
+  actor_kind: TaskEventActorKind = 'seat',
 ): TaskEvent => ({
   id: `event-${seq}`,
   task_id: 'task-1',
   seq,
   kind,
   actor_kind,
-  actor_id: actor_kind === 'agent' ? 'fe-dev' : 'system',
+  actor_id: actor_kind === 'seat' ? 'dev/fe-dev' : 'user-1',
   payload,
   created_at: `2026-10-10T12:0${seq}:00Z`,
 });
@@ -91,8 +93,8 @@ describe('TaskEventTimeline', () => {
     expect(screen.getByText('Status: In progress to Review')).toBeInTheDocument();
     expect(screen.getByText('Status: Review to Done')).toBeInTheDocument();
 
-    // Actor kind is rendered from the row rather than assumed.
-    expect(screen.getAllByText(/· an agent/)).toHaveLength(4);
+    // Actor class is rendered from the row rather than assumed, as a LABEL and not as the raw value.
+    expect(screen.getAllByText(/· a seat/)).toHaveLength(4);
   });
 
   it('derives the phase from the SEQUENCE, and it tracks the events rather than any stored field', async () => {
@@ -122,19 +124,35 @@ describe('TaskEventTimeline', () => {
     await waitFor(() => expect(screen.getByText(LEDGER_NOT_RECORDED)).toBeInTheDocument());
   });
 
-  it('renders every kind in the vocabulary, including the ones nothing writes yet', async () => {
+  it('labels every kind in the vocabulary, and never shows the raw class string', async () => {
+    // The kinds here are the ones nothing writes YET plus the one that does, and every actor class the
+    // CHECK constraint allows except `seat`, which the case above covers.
     renderTimeline([
-      row(1, 'created', null, 'system'),
-      row(2, 'updated', null),
+      row(1, 'assigned', null, 'gate'),
+      row(2, 'progress', { note: 'two cases written' }),
       row(3, 'status_changed', { old: 'todo', new: 'in_progress' }),
-      row(4, 'completed', null),
+      row(4, 'gate_verdict', { verdict: 'ACCEPT' }, 'human'),
+      row(5, 'handover', null, 'client'),
     ]);
 
-    await waitFor(() => expect(screen.getByText('Created')).toBeInTheDocument());
-    expect(screen.getByText('Updated')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Assigned')).toBeInTheDocument());
+    expect(screen.getByText('Progress reported')).toBeInTheDocument();
     expect(screen.getByText('Status: Todo to In progress')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
-    expect(screen.getByLabelText('Ledger phase: Completed')).toBeInTheDocument();
+    expect(screen.getByText('Gate verdict')).toBeInTheDocument();
+    expect(screen.getByText('Handover')).toBeInTheDocument();
+
+    // THE PHASE DOES NOT MOVE ON ANY OF THEM: only `status_changed` carries a status, so the badge is the
+    // one the status change named rather than the last row's kind.
+    expect(screen.getByLabelText('Ledger phase: In progress')).toBeInTheDocument();
+
+    // ACTOR CLASS AND KIND ARE BOTH LABELS, never the wire's own value - a raw identifier on screen is
+    // exactly what the label maps exist to prevent.
+    expect(screen.getByText(/· a gate/)).toBeInTheDocument();
+    expect(screen.getByText(/· a person/)).toBeInTheDocument();
+    expect(screen.getByText(/· a client/)).toBeInTheDocument();
+    expect(screen.queryByText(/· gate /)).not.toBeInTheDocument();
+    expect(screen.queryByText('gate_verdict')).not.toBeInTheDocument();
+    expect(screen.queryByText('handover')).not.toBeInTheDocument();
   });
 
   it('reports an empty ledger as silence rather than as todo', async () => {

@@ -16,21 +16,49 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent' | 'critical';
 // ============================================
 
 /**
- * The kinds the ledger's CHECK constraint enforces
- * (`ck_task_event_kind`, agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go).
+ * The kinds the ledger's CHECK constraint enforces: `ck_task_event_kind` in
+ * `agenthub_go/fastmcp/task_management/infrastructure/database/task_event_tables.go:40` (the table's
+ * single DDL string), whose list `TaskEventKindValues` mirrors in
+ * `agenthub_go/fastmcp/task_management/domain/entities/task_event.go:56-68`.
  *
- * READ THIS BEFORE TREATING A KIND AS LIVE: `status_changed` is the ONLY kind a writer
- * emits today (`RecordStatusChange`, task_event_recorder.go:61), and it is the only kind
- * whose payload shape is defined - `{ old, new }`. The other four kinds are in the
- * vocabulary and the reader returns them, but nothing writes them yet, so a payload for
- * them must be treated as unknown rather than assumed. The richer steps the architecture
- * describes (`evidence_submitted`, `gate_verdict`) are NOT in this vocabulary and are
- * NOT BUILT - see the timeline's rendering, which says so rather than inventing them.
+ * READ THIS BEFORE TREATING A KIND AS LIVE: the twelve ARE the closed vocabulary, but `status_changed`
+ * is the only kind any writer emits today (`RecordStatusChange`,
+ * `application/services/task_event_recorder.go:74`), and it is the only kind whose payload shape is
+ * defined - `{ old, new }`. The other eleven carry no payload shape yet, so a payload for them must be
+ * treated as unknown rather than assumed - the timeline says so on screen (`LEDGER_NOT_RECORDED`)
+ * instead of inventing a reason for the row.
+ *
+ * THE TYPE IS DERIVED FROM THE ARRAY BELOW so this file holds ONE source for the vocabulary: adding a
+ * member here makes every `Record<TaskEventKind, string>` label map fail to compile until it covers the
+ * new kind, which is the coverage invariant `src/tests/lib/taskTimeline.test.ts` also asserts at run
+ * time.
  */
-export type TaskEventKind = 'created' | 'updated' | 'status_changed' | 'completed' | 'deleted';
+export const TASK_EVENT_KINDS = [
+  'assigned',
+  'claimed',
+  'delivered',
+  'context_loaded',
+  'progress',
+  'status_changed',
+  'evidence_submitted',
+  'gate_verdict',
+  'escalated',
+  'human_decision',
+  'handover',
+  'context_updated',
+] as const;
 
-/** Who acted. The ledger's CHECK constraint `ck_task_event_actor_kind`. */
-export type TaskEventActorKind = 'user' | 'system' | 'agent';
+export type TaskEventKind = (typeof TASK_EVENT_KINDS)[number];
+
+/**
+ * Who acted: the ledger's other CHECK constraint, `ck_task_event_actor_kind`, in the same DDL string
+ * (`task_event_tables.go:40`) and the same constants (`domain/entities/task_event.go:82-86`). There is
+ * deliberately NO `system` - every entry is attributed to whoever acted, and an unattributable write is
+ * refused rather than stamped - so a class nothing acted as cannot appear here either.
+ */
+export const TASK_EVENT_ACTOR_KINDS = ['seat', 'client', 'gate', 'human'] as const;
+
+export type TaskEventActorKind = (typeof TASK_EVENT_ACTOR_KINDS)[number];
 
 /** One row of the execution ledger, as `GET /api/v2/tasks/{id}/events` serializes it. */
 export interface TaskEvent {
