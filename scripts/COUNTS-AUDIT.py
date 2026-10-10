@@ -18,9 +18,10 @@ the script refuses to guess which of the two is authoritative.
 
 A GATE MAY RUN THIS AS-IS. It has no write mode at all, by design: a check that repairs what
 it measures reports clean by construction and can never fail (the lead's rule, 2026-10-06).
-The seat-local `CITATION-AUDIT.py` - it lives in the seat area
-(`~/.openrig/agenthub-seats/<seat>/CITATION-AUDIT.py`), NOT beside this file and NOT in `scripts/` -
-carries the rewriting mode and MUST NOT be run inside a gate.
+Its sibling `scripts/CITATION-AUDIT.py` - TRACKED beside this file since 2026-10-10, seat-local
+and out of the tree before that - is the other half: its default mode re-resolves the inventory's
+`file:line` citations and writes nothing, and its rewriting mode is an explicit, guarded flag
+(`--write`) that refuses to run while any gate marker is set.
 
 USAGE:  python3 scripts/COUNTS-AUDIT.py              # exits non-zero if any number differs
         python3 scripts/COUNTS-AUDIT.py --self-test  # perturb an expectation; require it to notice
@@ -334,7 +335,7 @@ def main_report(quiet=False):
     print("            This column used to print EXPECTED, i.e. this file's memory, which is how")
     print("            'all matching' came to be read as 'every count in the document is right'.")
     print("  DOES NOT  read any file other than surface-inventory.md.")
-    print("  DOES NOT  check file:line citations - the seat-local CITATION-AUDIT.py owns those")
+    print("  DOES NOT  check file:line citations - scripts/CITATION-AUDIT.py owns those")
     if fenced:
         print(f"  READS     {len(fenced)} count line(s) INSIDE fenced blocks and cross-checks them against")
         print("            the anchored figures above. It does not re-run their commands, so a fenced")
