@@ -7,29 +7,58 @@ export interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
+// Escape must reach ONLY the topmost open dialog. The listener used to sit on `document` once per
+// open dialog, so one keypress reached every mounted dialog and a nested pair closed together, the
+// parent silently discarding what it held. The registry is read at event time rather than trusted in
+// registration order, because React runs effects CHILD-FIRST: a nested dialog registers BEFORE its
+// parent, so mount order cannot answer which one is on top. Depth is read from the DOM instead, and
+// this primitive renders in place (no portal), so a nested overlay IS a descendant of its parent's.
+const openDialogs: HTMLElement[] = [];
+
+function topmostOpenDialog(): HTMLElement | undefined {
+  return openDialogs.reduce<HTMLElement | undefined>((best, overlay) => {
+    if (!best) return overlay;
+    if (best.contains(overlay)) return overlay; // the candidate sits inside the incumbent: it is above
+    if (overlay.contains(best)) return best;    // the incumbent sits inside the candidate: it stays above
+    return overlay;                             // siblings: the more recently opened one is on top
+  }, undefined);
+}
+
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+
   React.useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!open || !overlay) return;
+    openDialogs.push(overlay);
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onOpenChange(false);
+      // Only the dialog the user is on answers; otherwise every open dialog answers and all close.
+      if (e.key === "Escape" && topmostOpenDialog() === overlay) onOpenChange(false);
     }
-    if (open) document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      const i = openDialogs.indexOf(overlay);
+      if (i !== -1) openDialogs.splice(i, 1);
+    };
   }, [open, onOpenChange]);
 
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
-    } else {
+    } else if (openDialogs.length === 0) {
       document.body.style.overflow = 'unset';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      // Only the last dialog to close may unlock the page: a nested dialog closing used to unlock
+      // it while its parent was still open.
+      if (openDialogs.length === 0) document.body.style.overflow = 'unset';
     };
   }, [open]);
 
   if (!open) return null;
   return (
-    <div className="theme-modal-overlay flex items-center justify-center" onClick={() => onOpenChange(false)}>
+    <div ref={overlayRef} className="theme-modal-overlay flex items-center justify-center" onClick={() => onOpenChange(false)}>
       <div className="w-full max-h-[90vh] overflow-y-auto p-4">
         {children}
       </div>

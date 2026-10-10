@@ -2,6 +2,17 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - Escape inside a nested dialog closes only the topmost dialog, and the page lock stops being released by the first dialog to close
+
+- NEW, in the existing file and staged by explicit path: `agenthub-frontend/src/tests/components/ui/dialog.test.tsx` gains three cases over the REAL primitive (imported from `components/ui/dialog`, not mocked): `closes only the topmost dialog when Escape is pressed inside a nested one`, `closes only the topmost dialog when the nested backdrop is clicked`, and `keeps the body locked when a nested dialog closes and its parent stays open`. Row `8a0ecaea`.
+- THE NESTED SHAPE IS THE APP'S, not a contrived one: the inner `Dialog` is rendered inside the outer one's `DialogContent`, which is what `TaskDetailsDialog` -> `LazySubtaskListRefactored` -> `SubtaskDialogs` -> `SubtaskDetailsDialog` produces, so the inner overlay really is a DOM descendant of the parent's overlay and the fix's depth test is exercised as the app exercises it.
+- RED FIRST, MEASURED, against the committed primitive (`npx vitest run src/tests/components/ui/dialog.test.tsx`) -> **1 failed | 40 passed**: `expect(onOuterChange).not.toHaveBeenCalled()` failed with `Number of calls: 1` / `Array [ false ]` - the PARENT closed with the inner dialog, which is the reported defect rather than a harness symptom.
+- GREEN AFTER: the same file **42 passed (42)**.
+- A SECOND RED ON PERTURBATION, so each case binds its own mechanism rather than riding one fix: with ONLY the `overflow` guard reverted to the pre-fix unconditional `unset`, the same file is **1 failed | 41 passed** - `keeps the body locked when a nested dialog closes and its parent stays open` failing `expected 'unset' to be 'hidden'` - while BOTH dismissal cases stayed green.
+- ONE CASE IS A PIN AND NOT A FIX, AND IS LABELLED SO: the nested-backdrop case PASSED before the fix, because `DialogContent` calls `stopPropagation`; it exists so that removing that call cannot silently re-open the reported defect for the mouse path.
+- GREEN: `npx tsc --noEmit -p .` -> rc=0, **0** `error TS` lines; `npx vitest run` -> **115 files passed (115), 1818 tests passed (1818), 0 failed** in 69.53s (**115/1815 before: +3 cases, no new file**).
+- NOT COVERED, named rather than implied: no browser session drove the real task/subtask dialog pair this session. What the row asked for - the REAL primitive rather than a mock - is what these cases render.
+
 ## 2026-10-10 - the sessions dashboard's send is pinned to the session row's own seat pair, and the fixtures that encoded the name-as-key shape move with it
 
 - NEW, in the existing file and staged by explicit path: `agenthub-frontend/src/tests/pages/SessionsPage.test.tsx` gains two cases and a new observable - `seatApi` is mocked, so what the page hands the window is read from the request the real chain makes (page -> live view -> chat input -> hook -> api). Row `64a95f59`.
