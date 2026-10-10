@@ -707,7 +707,7 @@ func subtaskRepoDecodeHistory(raw json.RawMessage) (map[string]any, error) {
 	out := map[string]any{}
 	for _, key := range ordered.Keys() {
 		value, _ := ordered.Get(key)
-		out[key] = value
+		out[key] = repoPlainValue(value)
 	}
 	return out, nil
 }

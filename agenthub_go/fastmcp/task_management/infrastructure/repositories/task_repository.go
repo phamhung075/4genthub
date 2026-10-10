@@ -164,7 +164,6 @@ func taskRepoEnsureEstimatedEffort(value any) string {
 	return s
 }
 
-// taskRepoDecodeHistory decodes a JSON progress_history column to map[string]any.
 // repoDecodeStringList decodes a JSONB string-array column (acceptance_criteria, scope) into
 // []string. The fresh default is '[]'; NULL/empty and a non-array value decode to an empty list,
 // the same tolerance subtaskRepoDecodeAssignees applies to a row written under an older shape.
@@ -194,6 +193,41 @@ func repoDecodeStringList(raw []byte) ([]string, error) {
 	return out, nil
 }
 
+// repoPlainValue replaces the *entities.OrderedMap[any] objects DecodeJSON yields for JSON objects
+// with the map[string]any shape the entity fields, and their own writers, use - recursively, so a
+// decoded value is the same container type a freshly written one is.
+//
+// The depth matters. A JSON column decoded into a map[string]any FIELD must not carry an OrderedMap
+// one level down, because every reader of that field type-asserts map[string]any: an entry that
+// stayed an OrderedMap was silently skipped (GetProgressHistoryText read `m["content"].(string)` off
+// a nil map, so a task's details came back as the join of empty strings - "\n\n" for two notes -
+// while the write had stored both, row 87c58552).
+func repoPlainValue(v any) any {
+	switch x := v.(type) {
+	case *entities.OrderedMap[any]:
+		out := map[string]any{}
+		for _, key := range x.Keys() {
+			value, _ := x.Get(key)
+			out[key] = repoPlainValue(value)
+		}
+		return out
+	case map[string]any:
+		out := map[string]any{}
+		for key, value := range x {
+			out[key] = repoPlainValue(value)
+		}
+		return out
+	case []any:
+		out := make([]any, len(x))
+		for i, item := range x {
+			out[i] = repoPlainValue(item)
+		}
+		return out
+	}
+	return v
+}
+
+// taskRepoDecodeHistory decodes a JSON progress_history column to map[string]any.
 func taskRepoDecodeHistory(raw []byte) map[string]any {
 	if len(raw) == 0 {
 		return map[string]any{}
@@ -209,7 +243,7 @@ func taskRepoDecodeHistory(raw []byte) map[string]any {
 	out := map[string]any{}
 	for _, key := range ordered.Keys() {
 		value, _ := ordered.Get(key)
-		out[key] = value
+		out[key] = repoPlainValue(value)
 	}
 	return out
 }
