@@ -44,10 +44,19 @@ func (c pendingCommand) Name() string    { return c.name }
 func (c pendingCommand) Summary() string { return c.summary }
 func (c pendingCommand) NeedsRig() bool  { return c.needsRig }
 
+// Run refuses, and the owner sentence is per-command because getting it WRONG sends a reader to the
+// wrong tool. The client does not implement `seatcheck`, but the checker itself is already Go, so
+// naming the Python client as the authority for it would be false as well as unhelpful. The `bridge`
+// branch this replaces was UNREACHABLE rather than stale, and its premise was backwards: `bridge` IS
+// a registered command (clientbridge.Commands(), internal/clientbridge/commands.go:30, appended to
+// the registry in commands() below), while THIS method only ever runs for a PENDING verb - and the
+// pending table registers feedback and seatcheck alone, so no pendingCommand named `bridge` existed
+// to reach that test.
 func (c pendingCommand) Run(_ context.Context, _ *clientcmd.Rig, _ []string, _, stderr io.Writer) int {
 	owner := "the Python client is still the authority for it"
-	if c.name == "bridge" {
-		owner = "openrig_bridge.py is still the authority for it (its package, internal/clientbridge, lands next)"
+	if c.name == "seatcheck" {
+		owner = "run the seatcheck binary instead (it is already Go: cmd/seatcheck, built and linked as " +
+			"`seatcheck` by `4genteam sync install-checker`)"
 	}
 	return refuse(stderr, c.name, owner)
 }
