@@ -107,7 +107,7 @@ Row counts (pg_stat_user_tables `n_live_tup`, estimates): tasks 299, task_contex
 
 Env comparison (names Go reads vs production):
 - Provided and read by Go: `AUTH_ENABLED`, `AUTH_PROVIDER`, `CORS_ORIGINS`, `DATABASE_TYPE`, `DATABASE_HOST/PORT/NAME/USER/PASSWORD`, `JWT_SECRET_KEY`, `KEYCLOAK_URL/REALM/CLIENT_ID/CLIENT_SECRET`, `FASTMCP_HOST/PORT`, `CONTAINER_ENV`; `TOOL_*` and `FEATURE_*` are also read (`tool_config.go`, `feature_flag_service.go`).
-- Read by Go, absent in production: `DEFAULT_USER_ID` (only used when `AUTH_ENABLED` is not true; production has it true, so not a blocker), `SYSTEM_USER_ID` (Python-side usage must be checked; Go falls back when empty), `JWT_ISSUER`, `LOG_*`, `REDIS_URL`, `SUPABASE_*`, `MCP_AUTH_TYPE`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `KEYCLOAK_ADMIN_PASSWORD`. Not verified which of these a production feature needs; no blocker is claimed from names alone.
+- Read by Go, absent in production: `DEFAULT_USER_ID` (only used when `AUTH_ENABLED` is not true; production has it true, so not a blocker), `SYSTEM_USER_ID` (Python-side usage must be checked; Go falls back when empty), `JWT_ISSUER`, `LOG_*`, `REDIS_URL`, `SUPABASE_*`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `KEYCLOAK_ADMIN_PASSWORD`. Not verified which of these a production feature needs; no blocker is claimed from names alone.
 - Provided by production, ignored by Go: pool/keepalive/timeout settings (`DATABASE_POOL_*`, `DATABASE_STATEMENT_TIMEOUT`, `DATABASE_CONNECT_TIMEOUT`, `DATABASE_SSL_MODE` is read by the scratch harness only), `ALLOWED_HOSTS`, `FORWARDED_ALLOW_IPS`, `SECURE_PROXY_SSL_HEADER`, `USE_X_FORWARDED_*`. Behavioural effect untested.
 
 ## 7. Rollback plan
