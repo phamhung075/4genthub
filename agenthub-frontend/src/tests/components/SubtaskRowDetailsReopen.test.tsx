@@ -53,7 +53,6 @@ const SUB = vi.hoisted(() => ({
   updated_at: '2026-10-08T00:00:00Z',
   assignees: [],
   labels: [],
-  progress_history: {},
   subtask_count: 0,
   completed_subtasks: 0,
 }));

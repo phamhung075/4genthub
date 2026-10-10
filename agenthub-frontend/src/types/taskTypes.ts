@@ -156,8 +156,6 @@ export interface SubtaskSummary {
   priority: string;
   assignees?: string[];
   progress_percentage?: number;
-  progress_history?: Record<string, ProgressHistoryEntry>;  // Detailed progress tracking
-  progress_count?: number;  // Number of progress entries
   created_at?: string;
   updated_at?: string;
 }

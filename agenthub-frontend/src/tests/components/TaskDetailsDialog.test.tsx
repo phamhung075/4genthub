@@ -116,9 +116,7 @@ describe('TaskDetailsDialog', () => {
       completion_percentage: 85,
       status: 'completed',
       testing_notes: ['Unit tests passed', 'Integration tests verified']
-    },
-    progress_history: [],
-    progress_count: 0
+    }
   };
 
   const mockTaskContext = {

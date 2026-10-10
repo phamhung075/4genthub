@@ -82,8 +82,6 @@ describe('TaskDetailsDialog - an OPEN dialog takes an arriving status change', (
       project_id: 'project-123',
       assignees: [],
       labels: [],
-      progress_history: [],
-      progress_count: 0,
       created_at: '2026-10-09T18:00:00Z',
       updated_at: '2026-10-09T18:00:00Z',
     } as unknown as Task;
