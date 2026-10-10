@@ -102,7 +102,7 @@ func (f *TaskFacadeFactory) CreateTaskFacade(session any, projectID, gitBranchID
 	}
 
 	if TaskFacadeBuilder == nil {
-		return nil, &value_objects.ValueError{Msg: "TaskApplicationFacade is not ported"}
+		return nil, &value_objects.ValueError{Msg: "TaskFacadeBuilder is not wired: set it at server composition"}
 	}
 	return TaskFacadeBuilder(taskRepository, subtaskRepository, contextService, gitBranchRepository, projectRepository)
 }

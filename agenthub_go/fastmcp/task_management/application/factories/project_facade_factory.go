@@ -67,7 +67,7 @@ func (f *ProjectFacadeFactory) CreateProjectFacade(session any, userID string) (
 		return nil, err
 	}
 	if ProjectFacadeBuilder == nil {
-		return nil, &value_objects.ValueError{Msg: "ProjectApplicationFacade is not ported"}
+		return nil, &value_objects.ValueError{Msg: "ProjectFacadeBuilder is not wired: set it at server composition"}
 	}
 	facade, err := ProjectFacadeBuilder(projectRepository, validated)
 	if err != nil {

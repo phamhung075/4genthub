@@ -71,7 +71,7 @@ func (f *GitBranchFacadeFactory) CreateGitBranchFacade(session any, projectID st
 	}
 
 	if GitBranchFacadeBuilder == nil {
-		return nil, &value_objects.ValueError{Msg: "GitBranchApplicationFacade is not ported"}
+		return nil, &value_objects.ValueError{Msg: "GitBranchFacadeBuilder is not wired: set it at server composition"}
 	}
 
 	repoProvider := services.RepositoryProviderService{}.GetInstance()
