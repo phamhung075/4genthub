@@ -1,3 +1,20 @@
+## Release `0.0.30` — the deploy marker, because production already reports `0.0.29`
+
+### Changed
+- `agenthub_go/fastmcp/config/version.go:21`: `ReleaseVersion` `0.0.29` -> **`0.0.30`**, as the last commit of the gated batch. It is the only *code* literal that moves: `git grep -n -E '0\.0\.29'` outside the build caches returns that line and four prose records in this file (`:162`, `:211`, `:239`, `:242`), which are a log and stay. **Confirmed by reading the file rather than assuming:** `agenthub_go/fastmcp/server/httpapp/http.go:160` declares `const healthVersion = config.ReleaseVersion` and `:173` sets `/health`'s `version` from it, so `/health` — and the MCP surfaces built from the same constant — move with this one string. The `http.go` constant was NOT edited.
+- `README.md:665` still carries a dated measurement — production `0.0.22`, "`origin/main` (`07a66f8f`) declares `0.0.27`", "the tree's release literal reads `0.0.28`" — which is now two releases behind the tree. Left alone deliberately, the way the `0.0.29` entry left its predecessor's lines: a new number belongs to the next README measurement pass, and this line is the pointer for whoever runs it.
+
+### Why it is on the critical path
+- **Production already reports `0.0.29`, read first-hand today rather than recalled:** `GET https://api.4genthub.com/health` (read-only) answers `{"status":"healthy",…,"version":"0.0.29",…}`, and the tree's literal also read `0.0.29`. The Docker build context carries no `.git`, so this string is the only thing that confirms a deploy landed — pushing this batch without the bump would have auto-deployed it under the number the deploy before already reports.
+- **It is the LAST commit in the set.** 25 commits sat above `origin/main` (`38c0eeaf`, itself the `0.0.29` bump) when the bump was written, every one of them carrying a reviewer APPROVE, and nothing lands on top of the bump before the owner pushes. That is the rule the constant's own comment states at `version.go:20` — and the tree moved while this entry was being written, so the readings below are three separate measurements rather than one.
+
+### Verified
+- **The tip was re-measured, not recalled — and then re-measured AGAIN because it moved.** First reading: `git rev-parse --short HEAD` -> `51b30800`, `git rev-list --count origin/main..HEAD` -> `24`. By the time the bump was committed the tip was `22705d21` (`feat(seats): pin caveman as a submodule and add the reply-voice rule to the seat guide`, landed in between) with the count at **25**; with the bump the batch is **26**. `git rev-parse --short origin/main` -> `38c0eeaf` in all three readings. The moving tree is named rather than smoothed over, because this entry's subject is a number that has to describe exactly one tree.
+- From `agenthub_go`, with `GOCACHE`/`TMPDIR` inside `.gocache`/`.gotmp`: `gofmt -l fastmcp/config/version.go fastmcp/server/httpapp/` printed nothing; `go vet ./fastmcp/config/... ./fastmcp/server/httpapp/...` exit **0**; `go test -count=1 ./fastmcp/config/... ./fastmcp/server/httpapp/...` exit **0** — `ok agenthub/fastmcp/config 0.076s`, `ok agenthub/fastmcp/server/httpapp 1.238s`.
+
+### Found by
+- The lead's ruling on row `89a03b6c`; landed by go-dev.
+
 ## The seat chat window's POST was answered 405, so the route is mounted and refuses in words
 
 ### Changed
