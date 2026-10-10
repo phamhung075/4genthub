@@ -64,6 +64,31 @@ func (r *zpUpdateRepo) Save(context.Context, *entities.Task) (*entities.Task, er
 	return r.task, nil
 }
 
+// The pass-through ledger seam, mirroring the one `f059e78c` wired into update_task_test.go and
+// complete_task_test.go: a status write with no ledger is refused by design, so a fixture that
+// exercises a status change must wire one. `StatusOf` reports the same status before and after the
+// save, and the recorder writes its entry into nothing - the refusal stays exactly as it is, and
+// there is no bypass for a caller that forgets.
+type unmovedLedgerRecorder struct{}
+
+func (unmovedLedgerRecorder) StatusOf(context.Context, string) (string, error) {
+	return "unchanged", nil
+}
+
+func (unmovedLedgerRecorder) RecordStatusChange(context.Context, string, string, string) (*entities.TaskEvent, error) {
+	return &entities.TaskEvent{}, nil
+}
+
+type passThroughTx struct{}
+
+func (passThroughTx) Transaction(ctx context.Context, fn func(context.Context) error) error {
+	return fn(ctx)
+}
+
+func noopStatusLedger() use_cases.StatusLedger {
+	return use_cases.StatusLedger{Tx: passThroughTx{}, Ledger: unmovedLedgerRecorder{}}
+}
+
 // newUpdateFacadeUnderTest builds the real facade over the real UpdateTaskUseCase, so the test
 // walks the same path a browser request does: facade -> use case -> broadcast.
 func newUpdateFacadeUnderTest(t *testing.T, actor string) (*TaskApplicationFacade, *zpUpdateRepo, *zpBroadcastCapture) {
@@ -91,7 +116,7 @@ func newUpdateFacadeUnderTest(t *testing.T, actor string) (*TaskApplicationFacad
 	repo := &zpUpdateRepo{task: task}
 	capture := &zpBroadcastCapture{}
 	facade := NewTaskApplicationFacade(repo, nil, TaskFacadeDeps{
-		UpdateTask:    use_cases.NewUpdateTaskUseCase(repo, nil),
+		UpdateTask:    use_cases.NewUpdateTaskUseCase(repo, nil).WithLedger(noopStatusLedger()),
 		Notifier:      capture,
 		CurrentUserID: func(context.Context) *string { return &owner },
 	})

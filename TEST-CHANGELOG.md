@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the facade fixture wires the ledger, and the batch's red suite goes green
+
+- CHANGED `agenthub_go/fastmcp/task_management/application/facades/task_update_broadcast_test.go`: `newUpdateFacadeUnderTest` now builds `use_cases.NewUpdateTaskUseCase(repo, nil).WithLedger(noopStatusLedger())`. It was the last unwired construction after `f059e78c` migrated `update_task_test.go` and `complete_task_test.go`, and both of its tests were failing with the refusal text (`task_update_broadcast_test.go:111` and `:139`) — the test was relying on the silent success the refusal removed. The seam (`unmovedLedgerRecorder`, `passThroughTx`, `noopStatusLedger`) is declared in this file because the use-case package's `noopLedger()` is test-only and not importable across packages. **The refusal is not weakened and no bypass was added.**
+- VERIFIED: `go test ./fastmcp/task_management/application/facades/ -count=1` ok (0.043s); `go vet` clean on that package; both previously failing tests pass. Module-wide result recorded on row `qitem-20261010184615-ec57412642f21722`.
+
 ## 2026-10-10 - one key for one idea: the context entity's progress entry is asserted on the surviving name
 
 - CHANGED `agenthub_go/fastmcp/task_management/domain/entities/context_test.go` (`TestTaskContextUnified`): added an assertion that `TaskContextUnified.UpdateProgress` writes exactly one entry into `ImplementationNotes["progress_updates"]` carrying the whole transition (old, new, notes, timestamp), and that `Metadata["progress_history"]` — the retired name — is **not written at all**. It fails on the previous two-key write and passes after: verified by running the new test against HEAD (`d8bc319e`) in a detached worktree with only this test file copied in, where it fails at line 117 with "progress_history is the retired name and must not be written".
