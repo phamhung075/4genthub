@@ -18,7 +18,7 @@ package config
 // Bump this with every change that must be confirmable after a deploy. It is the LAST commit in
 // the set before a deploy is requested, so the string can never cover a tree that lacks the
 // content it marks; if a commit lands after the bump, the bump moves to it or the deploy waits.
-const ReleaseVersion = "0.0.30"
+const ReleaseVersion = "0.0.31"
 
 // ServerName is the server's NAME — the brand subtitle after the dash, not a
 // description sentence. One definition for every place that advertises the
