@@ -640,7 +640,7 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request, u *authdomain.User
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
-	body.Set("room", seatAdminRoomBody(room))
+	body.Set("room", seatAdminRoomBody(room, userID(u)))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -656,7 +656,7 @@ func handleListRooms(w http.ResponseWriter, r *http.Request, u *authdomain.User,
 	}
 	out := make([]any, 0, len(rooms))
 	for i := range rooms {
-		out = append(out, seatAdminRoomBody(&rooms[i]))
+		out = append(out, seatAdminRoomBody(&rooms[i], userID(u)))
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
@@ -752,7 +752,7 @@ func handleSetRoomTeam(w http.ResponseWriter, r *http.Request, u *authdomain.Use
 	}
 	body := entities.NewOrderedMap[any]()
 	body.Set("success", true)
-	body.Set("room", seatAdminRoomBody(updated))
+	body.Set("room", seatAdminRoomBody(updated, userID(u)))
 	writeJSON(w, http.StatusOK, body)
 }
 
@@ -1663,16 +1663,32 @@ func seatAdminLinkKind(kind string) bool {
 	return commpolicy.ValidKind(commpolicy.LinkKind(kind))
 }
 
-func seatAdminRoomBody(room *repositories.Room) *entities.OrderedMap[any] {
+// seatAdminRoomBody builds the room wire body for ONE caller. role is the caller's standing on
+// this room, and it is derived from the ownership every write path already authorizes on: a
+// mutation matches "user_id" = the caller (SetTeam answers ErrRoomNotOwned otherwise), so the
+// wire can never say owner for a caller those routes would 404 on. A client needs it because
+// team_id is non-empty for BOTH the owner of a shared room and a viewer reading it, and a room
+// row offers owner-only controls (delete, add seat) that the server refuses for a viewer.
+func seatAdminRoomBody(room *repositories.Room, callerID string) *entities.OrderedMap[any] {
 	body := entities.NewOrderedMap[any]()
 	body.Set("id", room.ID)
 	body.Set("slug", room.Slug)
 	body.Set("name", room.Name)
+	body.Set("role", seatAdminRoomRole(room, callerID))
 	// team_id is the sharing state of the room: empty while the room is private to its owner.
 	// The raw id is emitted rather than the slug so a list stays one query; the palette already
 	// reads GET /api/v2/openrig/teams for the slugs.
 	body.Set("team_id", room.TeamID)
 	return body
+}
+
+// seatAdminRoomRole names the ownership test in the teams vocabulary, so a room row and a team
+// row spell the same fact the same way (team_mount.go emits RoleOwner the same way).
+func seatAdminRoomRole(room *repositories.Room, callerID string) string {
+	if room.UserID == callerID {
+		return teamrepositories.RoleOwner
+	}
+	return teamrepositories.RoleViewer
 }
 
 func seatAdminModuleBody(module *repositories.ModuleVersion) *entities.OrderedMap[any] {

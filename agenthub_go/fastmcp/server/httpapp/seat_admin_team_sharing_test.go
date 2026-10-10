@@ -255,6 +255,61 @@ func TestSeatAdminViewerReadsSharedRoom(t *testing.T) {
 	assertScopeIsOwner(t, fake, "owner-user")
 }
 
+// TestSeatAdminRoomRole pins the field that lets a client tell a room it OWNS from one SHARED
+// WITH IT, and pins it on all three call sites that build a room body. The fake's older
+// convention - an empty Room.UserID means "the caller owns it" - reads as viewer under the role
+// rule, so the owner's room below carries the caller's real id, the way production's rooms.user_id
+// always does.
+func TestSeatAdminRoomRole(t *testing.T) {
+	fake := newSharingSeatAdmin()
+	seedSharedRoom(fake)                               // "dev": owned by owner-user, shared with team-eng
+	fake.sharedRoom("mine", mountTestUser, "team-eng") // "mine": owned by the caller, shared too
+	mux := sharingTestMux(t, fake)
+
+	rec := doTestRequest(t, mux, http.MethodGet, "/api/v2/openrig/rooms", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list rooms: %d %s", rec.Code, rec.Body.String())
+	}
+	rooms, _ := sharingTestField(t, rec.Body.Bytes(), "rooms").([]any)
+	bySlug := map[string]map[string]any{}
+	for _, raw := range rooms {
+		room, _ := raw.(map[string]any)
+		bySlug[fmt.Sprint(room["slug"])] = room
+	}
+	if len(bySlug) != 2 {
+		t.Fatalf("listed %d rooms, want 2: %s", len(bySlug), rec.Body.String())
+	}
+	// team_id is non-empty for BOTH rows, which is exactly why the client cannot answer this
+	// question from the sharing state alone.
+	for _, slug := range []string{"dev", "mine"} {
+		if team := bySlug[slug]["team_id"]; team != "team-eng" {
+			t.Fatalf("%s team_id = %v, want team-eng", slug, team)
+		}
+	}
+	if role := bySlug["dev"]["role"]; role != teamrepositories.RoleViewer {
+		t.Fatalf("the shared room read role %v to a member, want %q", role, teamrepositories.RoleViewer)
+	}
+	if role := bySlug["mine"]["role"]; role != teamrepositories.RoleOwner {
+		t.Fatalf("the caller's own shared room read role %v, want %q", role, teamrepositories.RoleOwner)
+	}
+
+	// The other two call sites carry the caller as well: the share echo, and the create echo.
+	rec = doTestRequest(t, mux, http.MethodPut, "/api/v2/openrig/rooms/mine/team", `{"team":"eng"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("share the caller's own room: %d %s", rec.Code, rec.Body.String())
+	}
+	if role := sharingTestField(t, rec.Body.Bytes(), "room", "role"); role != teamrepositories.RoleOwner {
+		t.Fatalf("the share echo read role %v, want %q", role, teamrepositories.RoleOwner)
+	}
+	rec = doTestRequest(t, mux, http.MethodPost, "/api/v2/openrig/rooms", `{"slug":"fresh","name":"Fresh"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("create room: %d %s", rec.Code, rec.Body.String())
+	}
+	if role := sharingTestField(t, rec.Body.Bytes(), "room", "role"); role != teamrepositories.RoleOwner {
+		t.Fatalf("the create echo read role %v, want %q", role, teamrepositories.RoleOwner)
+	}
+}
+
 func TestSeatAdminNonMemberGetsNotFound(t *testing.T) {
 	fake := newSharingSeatAdmin()
 	seedSharedRoom(fake)

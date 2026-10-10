@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the room body's `role`, green and red
+
+- ADDED `TestSeatAdminRoomRole` to `agenthub_go/fastmcp/server/httpapp/seat_admin_team_sharing_test.go`: the SAME shared room reads `role: "viewer"` to the member who reached it through `team_members` and `role: "owner"` to the caller who owns it, with `team_id` non-empty for both - the two rows a client could not tell apart. It covers all three call sites that build a room body: the list, the share echo (`PUT /rooms/{room}/team`) and the create echo (`POST /rooms`).
+- RED WITHOUT THE CHANGE, measured rather than assumed: with the edited test file applied in a throwaway worktree at `42de79c2` (whose `seat_admin_mount.go` has no `role` field), it fails `the shared room read role <nil> to a member, want "viewer"`.
+- FAKE CONVENTION, named in the test so a reader is not misled: the mount fake's older "an empty `Room.UserID` means the caller owns it" reads as `viewer` under this rule, so the owner's room in the new test carries the caller's real id - the way production's `rooms.user_id` always does. No existing test asserted a room's `role`, so none needed changing.
+- VERIFIED: `AGENTHUB_TEST_PG_URL=... go test ./fastmcp/server/httpapp/ -count=1` -> full package `ok` 110.077s; the seven sharing tests `PASS` (0.011s); `go build ./...` rc 0; `gofmt -l` empty on both touched files.
+
 ## 2026-10-10 - the seat pin route's case, and the three fakes that had to move with it
 
 - ADDED `agenthub_go/fastmcp/server/httpapp/seat_admin_pin_test.go`, one case (`TestSeatAdminPinSeatVersion`) covering R1's acceptance: pin to a version the seat's type does not have -> 400; to `1.4.2` -> 200 carrying `"pinned_version":"1.4.2"`; a following `GET /api/v2/openrig/rooms/dev/seats` reads the pin back out of the store, so the case cannot pass on an echo; an omitted version -> 400; an absent seat -> 404. It drives the real mux built by `mountSeatAdminRoutes`, so the request crosses the handler, the service and its version check.
