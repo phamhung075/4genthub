@@ -34,6 +34,13 @@ overrides:
   vite: '^7.3.5'
   rollup: '^4.59.0'
   postcss: '^8.5.18'
+  # GHSA-rj75-hqrm-r3gf / CVE-2026-104844 (quadratic complexity in flat selector parsing),
+  # fixed in 7.1.6. The consumers are tailwindcss 3.4.17 and postcss-nested 6.2.0, whose
+  # declared ranges stop at 6.x - and an override outranks a declared range, which is the
+  # only route short of the tailwind major (COST-TAILWIND-V4-2026-10-07.md). The consumer
+  # risk is NOT an install error but a silently dropped utility class, so the proof is a
+  # built-CSS diff, not a green unit suite.
+  postcss-selector-parser: '^7.1.6'
   nanoid: '^3.3.18'
   browserslist: '^4.28.7'
   flatted: '^3.4.0'
