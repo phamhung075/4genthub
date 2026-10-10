@@ -2,6 +2,22 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the address layer's four boundaries, pinned as mirror cases
+
+- ADDED five cases to `agenthub_go/fastmcp/seat_management/domain/contextpacks/address_test.go`, mirrored out of the SOURCE's own suite (`packages/daemon/test/markdown-address.test.ts` and `markdown-address-indentation.test.ts`) rather than invented: the backtick-in-info-string opener, the empty ATX heading, the empty H1/H4 scope and its named-H1 release, the empty-slug contrast, and the 1-3-space / 4-space boundary including a fence opened at three spaces. Test functions 7 -> 12, `=== RUN` lines 37.
+- RED BEFORE, MEASURED: with the previous `address.go` restored from `HEAD` into a throwaway copy (`/tmp/pkgfalsify2`, own module, the new test file left in place), FOUR of the five FAIL — `TestAFenceOpenerWithABacktickInItsInfoStringDoesNotOpen`, `TestAnEmptyHeadingEndsTheSpanAndOwnsItsChildren`, `TestEmptyH1KeepsChildrenUnaddressableAndANamedH1ReleasesThem`, `TestIndentationBoundaryAndIndentedCode`. The fifth, `TestANamedHeadingWithAnEmptySlugFlagsTheWholeFamily`, passes on the old rules by construction: it is the contrast case.
+- THE VALIDATOR'S SKIP IS PINNED TOO, MEASURED SEPARATELY: with only the blank-scope skip disabled in the current rules (`/tmp/pkgfalsify3`), the two blank-heading cases fail on their findings assertions (`unaddressable-header` for the blank heading and for its child) and the empty-slug control still passes — so the skip is load-bearing and not blind.
+- VERIFIED: `gofmt -l` on the package prints nothing; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok`; `go vet` rc=0; `go build ./...` rc=0.
+
+## 2026-10-10 - the ×2 the gate asked for, through the production wiring
+
+- ADDED `agenthub_go/fastmcp/server/httpapp/unified_context_notes_pg_test.go`: `TestAddProgressTwiceReachesTheColumnTheRepositoryReads` builds the four context repositories with `unifiedContextRepositories` — the same builder `app.go` hands to `factories.UnifiedContextRepositoryBuilder` — writes two notes through the service's `AddProgress`, then reads them with `TaskContextRepository.Get` on testpg. It asserts exactly two entries in order and that `Metadata` no longer carries `implementation_notes`.
+- WHY IN `httpapp` AND NOT `services`: the bridge from the typed repository to the service's duck-typed `UnifiedContextRepository` is `ctxRepo` in `context_repos.go`, and `services` cannot import `httpapp` (httpapp imports services). A test in `services` would have to ship its own copy of the adapter and then verify the copy.
+- RED BEFORE: `git checkout f99d10eb^ -- …/task_context_repository.go` (the pre-fix source), then the ×2 through the production adapters fails with `ImplementationNotes[progress_updates]=<nil> after two AddProgress calls` — the gate's measurement, reproduced over the real wiring rather than a fake. Restored with `git checkout HEAD -- …`.
+- A FIRST RED ATTEMPT WAS INVALID and is recorded so nobody repeats it: `git stash push -- <file>` reverted nothing because the fix was already committed, so that run exercised the fixed code and passed. Reverting must come from a commit, not the stash.
+- VERIFIED: `gofmt` clean; the single case `ok` 1.468s; the whole `httpapp` package `ok` 48.742s with `AGENTHUB_TEST_PG_URL` set, so its PG-gated cases ran.
+- This supersedes the "what this test is not" paragraph in the previous entry: the repository-level round trip still pins the mapping, and the service path is now covered end to end.
+
 ## 2026-10-10 - implementation_notes round-trips through the real repository
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/repositories/task_context_repository_test.go`: `TestTaskContextRepositoryImplementationNotesRoundTrip` creates a task context with a note and reads it back through the real `TaskContextRepository` on a throwaway testpg database, asserting the note survives in `ImplementationNotes` and that `implementation_notes` no longer travels through `Metadata`.
