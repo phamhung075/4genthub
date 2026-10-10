@@ -40,7 +40,6 @@ import (
 //     deterministic; they can differ only for ids that order differently under byte comparison than
 //     under the runtime's default collation, i.e. non-ASCII ids. Every id in this tree is a slug.
 
-
 // Piece is one composed atom's resolved bytes.
 type Piece struct {
 	AtomID          string

@@ -32,7 +32,11 @@ var (
 	nonAlnumRun      = regexp.MustCompile(`[^a-z0-9]+`)
 	fenceLine        = regexp.MustCompile("^\\s{0,3}(`{3,}|~{3,})")
 	fenceRest        = regexp.MustCompile("^[ \t\r]*$")
-	headerLine       = regexp.MustCompile(`^(#{1,6})\s+(.*\S)\s*$`)
+	// The header rule is the source's, and both halves are pinned by its own cases: up to three
+	// leading SPACES are allowed (a fourth is an indented code block, and the source keeps an
+	// indentation test file for exactly that boundary), and the title group is OPTIONAL because an
+	// empty ATX heading still ends a span and changes the scope.
+	headerLine = regexp.MustCompile(`^ {0,3}(#{1,6})(?:\s+(.*\S))?\s*$`)
 )
 
 // SlugifyHeader is the one slug rule: lower-cased; markdown emphasis/code markers stripped with
@@ -128,6 +132,12 @@ func scanHeaders(lines []string) headerScan {
 		if m != nil {
 			marker := m[1][:1]
 			length := len(m[1])
+			// A backtick fence whose INFO STRING contains a backtick does not open a block: an
+			// inline code span must not hide the real headings after it (the source's case keeps
+			// "```literal ` backticks```" as ordinary text and still resolves the next heading).
+			if openFenceAt == nil && marker == "`" && strings.Contains(line[len(m[0]):], "`") {
+				continue
+			}
 			switch {
 			case openFenceAt == nil:
 				fenceMarker, fenceLength = marker, length
@@ -154,26 +164,35 @@ func ParseMarkdownSections(text string) []MarkdownSection {
 	lines := strings.Split(text, "\n")
 	headers := scanHeaders(lines).hits
 	sections := make([]MarkdownSection, 0, len(headers))
-	currentH2 := ""
-	haveH2 := false
+	// currentH2 carries the source's TRI-STATE, and the difference is not cosmetic: nil means no H2
+	// scope (a following child is top-level), while a pointer to "" is a BLANK scope — a child
+	// stays under an empty segment and is therefore unreachable by any legal address, where a
+	// truthiness test would silently promote it to a top-level-looking address (the source's r1 F2).
+	var currentH2 *string
 
 	for idx, h := range headers {
 		if h.level < minLevel || h.level > maxLevel {
 			if h.level < minLevel {
-				haveH2 = false // an H1 resets the H2 scope
+				if h.title == "" {
+					blank := ""
+					currentH2 = &blank // a blank H1 keeps its children unaddressable
+				} else {
+					currentH2 = nil // a NAMED H1 puts following children at top level
+				}
 			}
 			continue
 		}
 		slug := SlugifyHeader(h.title)
 		if h.level == 2 {
-			currentH2, haveH2 = slug, true
+			s := slug
+			currentH2 = &s
 		}
 		var headerPath []string
 		switch {
 		case h.level == 2:
 			headerPath = []string{slug}
-		case haveH2:
-			headerPath = []string{currentH2, slug}
+		case currentH2 != nil:
+			headerPath = []string{*currentH2, slug}
 		default:
 			headerPath = []string{slug}
 		}
@@ -290,7 +309,22 @@ func ValidateMarkdownAddressability(text string) []AddressabilityFinding {
 
 	seen := map[string][]int{}
 	order := []string{}
+	// Blank headings are SCOPE BOUNDARIES, not names to validate, so the walk over headers in line
+	// order is what tells a named child of a BLANK parent (skipped: the source's `##` / `#` cases
+	// validate clean) from a child under a NAMED heading whose slug came out empty (flagged, parent
+	// and child both — the emoji-title case, where silence would be silent content loss).
+	blankParentScope := false
+	headerIndex := 0
 	for _, s := range sections {
+		for headerIndex < len(scan.hits) && scan.hits[headerIndex].line <= s.HeaderLine {
+			if scan.hits[headerIndex].level <= 2 {
+				blankParentScope = scan.hits[headerIndex].title == ""
+			}
+			headerIndex++
+		}
+		if s.Title == "" || (blankParentScope && len(s.HeaderPath) == 2 && s.HeaderPath[1] != "") {
+			continue
+		}
 		unaddressable := false
 		for _, seg := range s.HeaderPath {
 			if seg == "" {
