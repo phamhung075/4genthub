@@ -1,8 +1,8 @@
 package handlers
 
 // The create_task assignee rule is entities.NormalizeAssignees, the same one
-// subtask creation uses: '@<name>' (a seat key or a role) is kept, a bare known role
-// becomes '@<role>', any other bare name is rejected.
+// subtask creation uses: '@<seat_key>' is kept as given and is the only valid
+// assignee identity, every bare name is rejected.
 
 import (
 	"context"
@@ -48,18 +48,7 @@ func TestCreateTaskAcceptsSeatKeyWithAtPrefix(t *testing.T) {
 	}
 }
 
-func TestCreateTaskPrefixesABareKnownRole(t *testing.T) {
-	facade, formatter := createWithAssignees("coding-agent")
-
-	if facade.request == nil {
-		t.Fatalf("a known role was rejected: %q", formatter.lastMessage)
-	}
-	if got := facade.request.Assignees[0]; got != "@coding-agent" {
-		t.Fatalf("assignee = %q, want @coding-agent", got)
-	}
-}
-
-func TestCreateTaskRejectsABareNameThatIsNoKnownRole(t *testing.T) {
+func TestCreateTaskRejectsABareName(t *testing.T) {
 	facade, formatter := createWithAssignees("go-dev", "@lead")
 
 	if facade.request != nil {

@@ -69,7 +69,7 @@ func (h *SubtaskCRUDHandler) CreateSubtask(ctx context.Context, facade *facades.
 			return h.responseFormatter.CreateErrorResponse("create_subtask",
 				err.Error(),
 				ErrorCodeValidation,
-				metaMap("field", "assignees", "hint", "Provide '@<seat_key>' or a known agent role"))
+				metaMap("field", "assignees", "hint", "Provide '@<seat_key>'"))
 		}
 		assignees = validated
 	}

@@ -85,21 +85,21 @@ func (h *CRUDHandler) CreateTask(ctx context.Context, facade TaskFacade,
 	if len(assignees) == 0 {
 		return h.createStandardizedError("create_task", "assignees",
 			"At least one agent must be assigned to the task",
-			"Include 'assignees' with at least one valid agent (e.g., ['coding-agent'] or ['@test-orchestrator-agent'])")
+			"Include 'assignees' with at least one '@<seat_key>' (for example '@lead')")
 	}
 
-	// One rule for every path (see entities.NormalizeAssignees): '@<name>' (a seat key or
-	// a role) is kept, a bare known role or legacy name becomes '@<role>', anything else is rejected.
+	// One rule for every path (see entities.NormalizeAssignees): '@<seat_key>' is kept and is
+	// the only valid assignee identity; every bare name is rejected.
 	validatedAssignees, err := entities.NormalizeAssignees(assignees)
 	if err != nil {
 		return h.createStandardizedError("create_task", "assignees",
-			"'@<seat_key>' (for example '@lead') or a known agent role",
-			err.Error()+" Use '@<seat_key>', or a known agent role like 'coding-agent'")
+			"'@<seat_key>' (for example '@lead')",
+			err.Error()+" Use '@<seat_key>' (for example '@lead')")
 	}
 	if len(validatedAssignees) == 0 {
 		return h.createStandardizedError("create_task", "assignees",
 			"At least one valid agent must be assigned",
-			"Provide at least one '@<seat_key>' or known agent role like 'coding-agent'")
+			"Provide at least one '@<seat_key>' (for example '@lead')")
 	}
 	assignees = validatedAssignees
 

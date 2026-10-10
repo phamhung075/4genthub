@@ -27,10 +27,6 @@ type gitBranchFacadeFactory interface {
 	CreateFacade(projectID, userID *string) (any, error)
 }
 
-type agentFacadeFactory interface {
-	CreateAgentFacade(projectID string, userID *string) (any, error)
-}
-
 type unifiedContextFacadeFactory interface {
 	CreateFacade(userID, projectID, gitBranchID *string) (any, error)
 }
@@ -45,7 +41,6 @@ type FacadeService struct {
 	subtaskFactory subtaskFacadeFactory
 	projectFactory projectFacadeFactory
 	branchFactory  gitBranchFacadeFactory
-	agentFactory   agentFacadeFactory
 	contextFactory unifiedContextFacadeFactory
 	tokenFactory   tokenFacadeFactory
 	authFactory    func() (any, error)
@@ -97,7 +92,6 @@ func NewFacadeService(
 	subtaskFactory subtaskFacadeFactory,
 	projectFactory projectFacadeFactory,
 	branchFactory gitBranchFacadeFactory,
-	agentFactory agentFacadeFactory,
 	contextFactory unifiedContextFacadeFactory,
 	tokenFactory tokenFacadeFactory,
 ) *FacadeService {
@@ -106,7 +100,6 @@ func NewFacadeService(
 		subtaskFactory: subtaskFactory,
 		projectFactory: projectFactory,
 		branchFactory:  branchFactory,
-		agentFactory:   agentFactory,
 		contextFactory: contextFactory,
 		tokenFactory:   tokenFactory,
 	}
@@ -142,14 +135,6 @@ func (s *FacadeService) GetBranchFacade(projectID, userID *string) (any, error) 
 		return nil, errFactoryNotConfigured("git branch")
 	}
 	return s.branchFactory.CreateFacade(projectID, userID)
-}
-
-// GetAgentFacade returns an agent facade with the given context.
-func (s *FacadeService) GetAgentFacade(projectID string, userID *string) (any, error) {
-	if s.agentFactory == nil {
-		return nil, errFactoryNotConfigured("agent")
-	}
-	return s.agentFactory.CreateAgentFacade(projectID, userID)
 }
 
 // GetContextFacade returns a unified context facade with the given context.

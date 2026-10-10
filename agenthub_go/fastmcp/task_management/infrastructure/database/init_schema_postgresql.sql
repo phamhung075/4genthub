@@ -37,7 +37,6 @@ DROP TABLE IF EXISTS context_inheritance_cache CASCADE;
 DROP TABLE IF EXISTS context_delegations CASCADE;
 DROP TABLE IF EXISTS branch_contexts CASCADE;
 DROP TABLE IF EXISTS api_tokens CASCADE;
-DROP TABLE IF EXISTS agents CASCADE;
 
 -- ================================================================================
 -- CREATE TABLES
@@ -50,22 +49,6 @@ DROP TABLE IF EXISTS agents CASCADE;
 -- Sequence for task_dependencies table
 -- NOTE: Created AFTER drops because CASCADE removes sequences
 CREATE SEQUENCE IF NOT EXISTS task_dependencies_id_seq;
-
--- Table: agents
-CREATE TABLE agents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR NOT NULL,
-    description TEXT NOT NULL,
-    role VARCHAR NOT NULL,
-    capabilities JSONB NOT NULL,
-    status VARCHAR NOT NULL,
-    availability_score DOUBLE PRECISION NOT NULL,
-    last_active_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-    metadata JSONB NOT NULL,
-    user_id VARCHAR NOT NULL
-);
 
 -- Table: api_tokens
 CREATE TABLE api_tokens (
@@ -522,10 +505,6 @@ ALTER TABLE user_token_balances ADD CONSTRAINT user_token_balances_user_id_fkey 
 -- INDEXES
 -- ================================================================================
 
--- Indexes for agents
-CREATE INDEX idx_agent_availability ON agents (availability_score);
-CREATE INDEX idx_agent_status ON agents (status);
-
 -- Indexes for context_delegations
 CREATE INDEX idx_delegation_processed ON context_delegations (processed);
 CREATE INDEX idx_delegation_source ON context_delegations (source_level, source_id);
@@ -698,9 +677,6 @@ COMMENT ON TABLE branch_contexts IS '4-tier context hierarchy - Branch level';
 COMMENT ON TABLE task_contexts IS '4-tier context hierarchy - Task level';
 COMMENT ON TABLE context_delegations IS 'Context delegation between hierarchy levels';
 COMMENT ON TABLE context_inheritance_cache IS 'Cached resolved context with inheritance chain';
-
--- Agents
-COMMENT ON TABLE agents IS 'Legacy agent tracking table';
 
 -- Authentication & Authorization
 COMMENT ON TABLE users IS 'User accounts and authentication';

@@ -29,10 +29,6 @@ func (providerBackendStub) CreateProjectRepository(*string) (repositories.Projec
 	return nil, nil
 }
 
-func (providerBackendStub) NewAgentRepositoryFactory() services.RepositoryProviderAgentFactoryPort {
-	return agentRepositoryFactoryStub{}
-}
-
 func (providerBackendStub) CreateGitBranchRepository(*string) (repositories.GitBranchRepository, error) {
 	return nil, nil
 }
@@ -70,12 +66,6 @@ func (subtaskRepositoryFactoryStub) CreateORMSubtaskRepository(*string) (reposit
 }
 
 func (subtaskRepositoryFactoryStub) CreateSubtaskRepository(string, string, *string) (repositories.SubtaskRepository, error) {
-	return nil, nil
-}
-
-type agentRepositoryFactoryStub struct{}
-
-func (agentRepositoryFactoryStub) CreateRepository(any) (repositories.AgentRepository, error) {
 	return nil, nil
 }
 

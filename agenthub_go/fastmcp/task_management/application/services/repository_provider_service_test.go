@@ -44,23 +44,12 @@ func (f *repoProviderFakeSubtaskFactory) CreateSubtaskRepository(projectID, gitB
 	return nil, nil
 }
 
-type repoProviderFakeAgentFactory struct {
-	createCount int
-}
-
-func (f *repoProviderFakeAgentFactory) CreateRepository(session any) (domainrepos.AgentRepository, error) {
-	f.createCount++
-	return nil, nil
-}
-
 type repoProviderFakeBackend struct {
 	ormTaskSession     any
 	ormTaskBranchName  string
 	ormTaskUserID      *string
 	taskFactory        *repoProviderFakeTaskFactory
 	subtaskFactory     *repoProviderFakeSubtaskFactory
-	agentFactory       *repoProviderFakeAgentFactory
-	agentFactoryBuilds int
 	globalContextCalls int
 	globalContextRepo  *repoProviderFakeContextRepo
 	gitBranchUserID    *string
@@ -85,11 +74,6 @@ func (b *repoProviderFakeBackend) NewSubtaskRepositoryFactory() repoProviderSubt
 func (b *repoProviderFakeBackend) CreateProjectRepository(userID *string) (domainrepos.ProjectRepository, error) {
 	b.projectUserID = userID
 	return nil, nil
-}
-
-func (b *repoProviderFakeBackend) NewAgentRepositoryFactory() repoProviderAgentRepositoryFactory {
-	b.agentFactoryBuilds++
-	return b.agentFactory
 }
 
 func (b *repoProviderFakeBackend) CreateGitBranchRepository(userID *string) (domainrepos.GitBranchRepository, error) {
@@ -183,24 +167,11 @@ func TestRepoProviderGetSubtaskRepositoryBranches(t *testing.T) {
 	}
 }
 
-func TestRepoProviderCachesAgentFactoryAndContextRepository(t *testing.T) {
-	agentFactory := &repoProviderFakeAgentFactory{}
+func TestRepoProviderCachesGlobalContextRepository(t *testing.T) {
 	contextRepo := &repoProviderFakeContextRepo{name: "global"}
-	backend := &repoProviderFakeBackend{agentFactory: agentFactory, globalContextRepo: contextRepo}
+	backend := &repoProviderFakeBackend{globalContextRepo: contextRepo}
 	repoProviderInstallBackend(backend)
 	provider := RepositoryProviderService{}.GetInstance()
-
-	for i := 0; i < 2; i++ {
-		if _, err := provider.GetAgentRepository(nil); err != nil {
-			t.Fatalf("GetAgentRepository error: %v", err)
-		}
-	}
-	if backend.agentFactoryBuilds != 1 {
-		t.Fatalf("agent factory builds = %d, want 1", backend.agentFactoryBuilds)
-	}
-	if agentFactory.createCount != 2 {
-		t.Fatalf("agent create_repository calls = %d, want 2", agentFactory.createCount)
-	}
 
 	first, err := provider.GetGlobalContextRepository(nil)
 	if err != nil {

@@ -86,7 +86,7 @@ func TestMountTokenRoutesWithWiredFacade(t *testing.T) {
 
 	repo := &fakeMemoryTokenRepo{}
 	tf := fakeTokenFactory{repo: repo}
-	svc := services.NewFacadeService(nil, nil, nil, nil, nil, nil, tf)
+	svc := services.NewFacadeService(nil, nil, nil, nil, nil, tf)
 	services.SetInstance(svc)
 
 	mux := http.NewServeMux()
@@ -151,7 +151,7 @@ func TestMountTokenRoutesUnsetSecretNamesVariable(t *testing.T) {
 	defer func() { authinterface.GetCurrentUserUniversal = prevUserUniversal }()
 
 	tf := fakeTokenFactory{repo: &fakeMemoryTokenRepo{}}
-	services.SetInstance(services.NewFacadeService(nil, nil, nil, nil, nil, nil, tf))
+	services.SetInstance(services.NewFacadeService(nil, nil, nil, nil, nil, tf))
 
 	mux := http.NewServeMux()
 	mountTokenRoutes(mux, routeDeps{
@@ -193,7 +193,7 @@ func TestMountTokenRoutesSiblingsCarryCause(t *testing.T) {
 	defer func() { authinterface.GetCurrentUserUniversal = prevUserUniversal }()
 
 	tf := fakeTokenFactory{repo: &fakeMemoryTokenRepo{}}
-	services.SetInstance(services.NewFacadeService(nil, nil, nil, nil, nil, nil, tf))
+	services.SetInstance(services.NewFacadeService(nil, nil, nil, nil, nil, tf))
 
 	mux := http.NewServeMux()
 	mountTokenRoutes(mux, routeDeps{

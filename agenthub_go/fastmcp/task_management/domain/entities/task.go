@@ -315,21 +315,10 @@ func (t *Task) UpdateEstimatedEffort(effort string) error {
 	return nil
 }
 
-// normalizeAssignee resolves legacy roles, valid roles and @-prefixed names;
-// known is false when the assignee is none of those.
+// normalizeAssignee accepts an '@<seat_key>' assignee and refuses every bare
+// name: with the agent role registry retired, a seat key is the only identity an
+// assignee can carry.
 func normalizeAssignee(assignee string) (validated string, known bool) {
-	if resolved, ok := value_objects.ResolveLegacyRole(assignee); ok {
-		if !strings.HasPrefix(resolved, "@") {
-			resolved = "@" + resolved
-		}
-		return resolved, true
-	}
-	if value_objects.IsValidRole(assignee) {
-		if !strings.HasPrefix(assignee, "@") {
-			assignee = "@" + assignee
-		}
-		return assignee, true
-	}
 	if strings.HasPrefix(assignee, "@") {
 		return assignee, true
 	}
@@ -350,11 +339,6 @@ func (t *Task) UpdateAssignees(assignees []string) error {
 	return nil
 }
 
-// AddAssigneeRole adds an AgentRole assignee as "@<role>".
-func (t *Task) AddAssigneeRole(role value_objects.AgentRole) error {
-	return t.AddAssignee("@" + string(role))
-}
-
 func (t *Task) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
@@ -373,10 +357,6 @@ func (t *Task) AddAssignee(assignee string) error {
 	}
 	t.emit("assignees", map[string]any{"action": "assignee_added", "new_value": validated})
 	return nil
-}
-
-func (t *Task) RemoveAssigneeRole(role value_objects.AgentRole) error {
-	return t.RemoveAssignee("@" + string(role))
 }
 
 func (t *Task) RemoveAssignee(assignee string) error {
@@ -404,42 +384,14 @@ func (t *Task) GetPrimaryAssignee() *string {
 func (t *Task) GetAssigneesCount() int { return len(t.Assignees) }
 func (t *Task) IsMultiAssignee() bool  { return len(t.Assignees) > 1 }
 
-func titleName(s string) string {
-	return value_objects.PyTitle(strings.ReplaceAll(strings.ReplaceAll(s, "-", " "), "_", " "))
-}
-
-func roleInfo(assignee string) map[string]any {
-	if role, ok := value_objects.GetRoleBySlug(assignee); ok {
-		return map[string]any{
-			"role": string(role), "display_name": role.DisplayName(), "folder_name": role.FolderName(), "metadata": nil,
-		}
-	}
-	return map[string]any{
-		"role": assignee, "display_name": titleName(assignee),
-		"folder_name": strings.ReplaceAll(assignee, "-", "_"), "metadata": nil,
-	}
-}
-
-// GetAssigneesInfo returns role information for all assignees.
-func (t *Task) GetAssigneesInfo() []map[string]any {
-	info := []map[string]any{}
-	for _, a := range t.Assignees {
-		if a == "" {
-			continue
-		}
-		info = append(info, roleInfo(a))
-	}
-	return info
-}
-
 func (t *Task) GetInheritedAssigneesForSubtasks() []string {
 	return append([]string{}, t.Assignees...)
 }
 
 // NormalizeAssignees is the one assignee rule of every path that stores assignees (REST and
-// MCP create, task and subtask updates, subtask creation): blank entries are dropped, the rest is stripped,
-// '@<name>' (a seat key or a role) is kept as given, a bare known role or legacy name becomes
-// '@<role>', and any other bare name is rejected.
+// MCP create, task and subtask updates, subtask creation): blank entries are dropped, the rest is
+// stripped, and '@<seat_key>' is the only accepted identity - kept exactly as given. Any bare name,
+// whether a seat key or a retired role, is rejected.
 func NormalizeAssignees(assignees []string) ([]string, error) {
 	if len(assignees) == 0 {
 		return []string{}, nil
@@ -456,7 +408,7 @@ func NormalizeAssignees(assignees []string) ([]string, error) {
 	}
 	if len(invalid) > 0 {
 		return nil, value_objects.ValueErrorf(
-			"Invalid assignees: %s. An assignee is '@<seat_key>' or a known agent role.", value_objects.PyRepr(invalid))
+			"Invalid assignees: %s. An assignee is '@<seat_key>'.", value_objects.PyRepr(invalid))
 	}
 	return validated, nil
 }
@@ -814,18 +766,6 @@ func (t *Task) GetEffortLevel() string {
 		return "medium"
 	}
 	return e.GetLevel()
-}
-
-// GetAssigneeRoleInfo returns role info for the primary assignee; empty metadata becomes nil.
-func (t *Task) GetAssigneeRoleInfo() map[string]any {
-	if len(t.Assignees) == 0 {
-		return nil
-	}
-	info := roleInfo(t.Assignees[0])
-	if md, ok := info["metadata"].(map[string]any); ok && len(md) == 0 {
-		info["metadata"] = nil
-	}
-	return info
 }
 
 func (t *Task) CanBeStarted() bool { return t.Status.IsTodo() }

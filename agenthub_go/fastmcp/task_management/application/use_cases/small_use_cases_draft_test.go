@@ -127,21 +127,6 @@ func (f *smallUCFakeProjectRepo) Update(_ context.Context, p *entities.Project) 
 	return nil
 }
 
-type smallUCFakeAgentRepo struct {
-	repositories.AgentRepository
-	unassignResult   map[string]any
-	unassignErr      error
-	unregisterResult map[string]any
-	unregisterErr    error
-}
-
-func (f *smallUCFakeAgentRepo) UnassignAgentFromTree(context.Context, string, string, *string) (map[string]any, error) {
-	return f.unassignResult, f.unassignErr
-}
-func (f *smallUCFakeAgentRepo) UnregisterAgent(context.Context, string, string) (map[string]any, error) {
-	return f.unregisterResult, f.unregisterErr
-}
-
 // --- helpers ---
 
 func smallUCNewTask(id int, title string) *entities.Task {
@@ -565,62 +550,5 @@ func TestSmallUCProjectHealthCheckCircular(t *testing.T) {
 	}
 	if v, _ := health.Get("cross_tree_dependencies"); v != 2 {
 		t.Fatalf("cross_tree_dependencies = %v", v)
-	}
-}
-
-// --- unassign_agent / unregister_agent ---
-
-func TestSmallUCUnassignAgentSuccess(t *testing.T) {
-	repo := &smallUCFakeAgentRepo{unassignResult: map[string]any{
-		"removed_assignments":   []string{"b1"},
-		"remaining_assignments": []string{},
-	}}
-	uc := NewUnassignAgentUseCase(repo)
-	resp := uc.Execute(context.Background(), &UnassignAgentRequest{ProjectID: "p", AgentID: "a"})
-	if !resp.Success || resp.Message == nil || *resp.Message != "Agent a unassigned from 1 tree(s)" {
-		t.Fatalf("resp = %+v", resp)
-	}
-	if !reflect.DeepEqual(resp.ToDict().Keys(), []string{"success", "agent_id", "removed_assignments", "remaining_assignments", "message"}) {
-		t.Fatalf("keys = %v", resp.ToDict().Keys())
-	}
-}
-
-func TestSmallUCUnassignAgentNotFound(t *testing.T) {
-	repo := &smallUCFakeAgentRepo{unassignErr: exceptions.NewAgentNotFoundError("Agent a not found")}
-	uc := NewUnassignAgentUseCase(repo)
-	resp := uc.Execute(context.Background(), &UnassignAgentRequest{ProjectID: "p", AgentID: "a"})
-	if resp.Success || resp.Error == nil || *resp.Error != "Agent a not found" {
-		t.Fatalf("resp = %+v", resp)
-	}
-	if !reflect.DeepEqual(resp.ToDict().Keys(), []string{"success", "agent_id", "error"}) {
-		t.Fatalf("keys = %v", resp.ToDict().Keys())
-	}
-}
-
-func TestSmallUCUnregisterAgentSuccess(t *testing.T) {
-	data := entities.NewOrderedMap[any]()
-	repo := &smallUCFakeAgentRepo{unregisterResult: map[string]any{
-		"agent_data":          data,
-		"removed_assignments": []string{"b1"},
-	}}
-	uc := NewUnregisterAgentUseCase(repo)
-	resp := uc.Execute(context.Background(), &UnregisterAgentRequest{ProjectID: "p", AgentID: "a"})
-	if !resp.Success || resp.AgentData != data {
-		t.Fatalf("resp = %+v", resp)
-	}
-	if resp.Message == nil || *resp.Message != "Agent a unregistered from project p" {
-		t.Fatalf("message = %v", resp.Message)
-	}
-	if !reflect.DeepEqual(resp.RemovedAssignments, []string{"b1"}) {
-		t.Fatalf("removed = %v", resp.RemovedAssignments)
-	}
-}
-
-func TestSmallUCUnregisterAgentUnexpected(t *testing.T) {
-	repo := &smallUCFakeAgentRepo{unregisterErr: context.DeadlineExceeded}
-	uc := NewUnregisterAgentUseCase(repo)
-	resp := uc.Execute(context.Background(), &UnregisterAgentRequest{ProjectID: "p", AgentID: "a"})
-	if resp.Success || resp.Error == nil || *resp.Error != "Unexpected error: context deadline exceeded" {
-		t.Fatalf("resp = %+v", resp)
 	}
 }

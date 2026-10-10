@@ -182,7 +182,7 @@ func TestAgentInheritanceService_ValidateAgentAssignments(t *testing.T) {
 		t.Fatalf("empty = %v, %v; want [] and nil", empty, err)
 	}
 
-	valid, err := svc.ValidateAgentAssignments([]string{"coding-agent"})
+	valid, err := svc.ValidateAgentAssignments([]string{"@coding-agent"})
 	if err != nil {
 		t.Fatalf("valid error: %v", err)
 	}
@@ -190,8 +190,8 @@ func TestAgentInheritanceService_ValidateAgentAssignments(t *testing.T) {
 		t.Fatalf("valid = %v, want [@coding-agent]", valid)
 	}
 
-	if _, err := svc.ValidateAgentAssignments([]string{"nonexistent-agent-xyz"}); err == nil {
-		t.Fatalf("expected ValueError for invalid assignee")
+	if _, err := svc.ValidateAgentAssignments([]string{"coding-agent"}); err == nil {
+		t.Fatalf("expected ValueError for a bare role name: only '@<seat_key>' is a valid assignee")
 	}
 }
 

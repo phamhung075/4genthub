@@ -26,16 +26,19 @@ func TestTaskLifecycle(t *testing.T) {
 	if err := task.UpdateStatus(mustTaskStatus("blocked")); err == nil || err.Error() != "Cannot transition from todo to blocked" {
 		t.Fatalf("transition: %v", err)
 	}
-	if err := task.UpdateAssignees([]string{"coding-agent", "", "@x"}); err != nil {
+	if err := task.UpdateAssignees([]string{"@go-dev", "", "@x"}); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(task.Assignees, ",") != "@coding-agent,@x" {
+	if strings.Join(task.Assignees, ",") != "@go-dev,@x" {
 		t.Fatalf("assignees %v", task.Assignees)
 	}
-	if err := task.UpdateAssignees([]string{"custom"}); err == nil || err.Error() != "Invalid assignees: ['custom']. An assignee is '@<seat_key>' or a known agent role." {
+	if err := task.UpdateAssignees([]string{"coding-agent"}); err == nil || err.Error() != "Invalid assignees: ['coding-agent']. An assignee is '@<seat_key>'." {
+		t.Fatalf("validate bare name: %v", err)
+	}
+	if err := task.UpdateAssignees([]string{"custom"}); err == nil || err.Error() != "Invalid assignees: ['custom']. An assignee is '@<seat_key>'." {
 		t.Fatalf("validate: %v", err)
 	}
-	if strings.Join(task.Assignees, ",") != "@coding-agent,@x" {
+	if strings.Join(task.Assignees, ",") != "@go-dev,@x" {
 		t.Fatalf("a rejected update must leave assignees unchanged: %v", task.Assignees)
 	}
 	if err := task.UpdateDueDate(ptr("2025-10-29")); err != nil || *task.DueDate != "2025-10-29T00:00:00+00:00" {
@@ -87,12 +90,12 @@ func TestTaskProgressMilestones(t *testing.T) {
 // every comparison miss. The Python normalised in to_dict; this departure is deliberate.
 func TestTaskToDictCarriesAssigneesAsStored(t *testing.T) {
 	task := newTestTask(t)
-	task.Assignees = []string{"@coding-agent", "bob"}
+	task.Assignees = []string{"@go-dev", "@lead"}
 	d, err := task.ToDict()
 	if err != nil || d["overall_progress"] != 0 || d["completion_summary"] != "" {
 		t.Fatalf("dict: %v %v", err, d)
 	}
-	if got, ok := d["assignees"].([]string); !ok || !reflect.DeepEqual(got, []string{"@coding-agent", "bob"}) {
+	if got, ok := d["assignees"].([]string); !ok || !reflect.DeepEqual(got, []string{"@go-dev", "@lead"}) {
 		t.Fatalf("assignees = %#v, want the stored values unchanged", d["assignees"])
 	}
 }
@@ -117,35 +120,52 @@ func TestTaskEventsSerializeTaskIDLikeAsdict(t *testing.T) {
 	}
 }
 
-// A seat key is an '@'-prefixed assignee: NormalizeAssignees keeps it as given, a bare
-// known role gets the prefix and a bare name that is no role is rejected.
+// A seat key is an '@'-prefixed assignee: NormalizeAssignees keeps it as given and
+// any bare name (a role or otherwise) is refused.
 func TestNormalizeAssigneesAcceptsSeatKeysAndRejectsBareUnknownNames(t *testing.T) {
-	got, err := NormalizeAssignees([]string{"@go-dev", " @lead ", "coding-agent", ""})
+	got, err := NormalizeAssignees([]string{"@go-dev", " @lead ", ""})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if strings.Join(got, ",") != "@go-dev,@lead,@coding-agent" {
+	if strings.Join(got, ",") != "@go-dev,@lead" {
 		t.Fatalf("validated = %v", got)
 	}
 	if _, err := NormalizeAssignees([]string{"go-dev"}); err == nil {
-		t.Fatal("a bare name that is no role must be rejected")
+		t.Fatal("a bare name must be rejected")
 	}
 }
 
 func TestTaskAddAssigneeUsesTheOneRule(t *testing.T) {
 	task := newTestTask(t)
-	for _, a := range []string{"coding-agent", "@go-dev", "@go-dev"} {
+	for _, a := range []string{"@fe-dev", "@go-dev", "@go-dev"} {
 		if err := task.AddAssignee(a); err != nil {
 			t.Fatalf("AddAssignee(%q): %v", a, err)
 		}
 	}
-	if strings.Join(task.Assignees, ",") != "@coding-agent,@go-dev" {
+	if strings.Join(task.Assignees, ",") != "@fe-dev,@go-dev" {
 		t.Fatalf("assignees = %v", task.Assignees)
 	}
 	if err := task.AddAssignee("go-dev"); err == nil {
-		t.Fatal("a bare name that is no role must be refused")
+		t.Fatal("a bare name must be refused")
 	}
-	if strings.Join(task.Assignees, ",") != "@coding-agent,@go-dev" {
+	if strings.Join(task.Assignees, ",") != "@fe-dev,@go-dev" {
 		t.Fatalf("a refused add must change nothing: %v", task.Assignees)
+	}
+}
+
+// STEP 1(b) of the agent-library retirement (item 3, CHOICE B). A bare role name is no longer an
+// assignee: '@<seat_key>' is the only assignee identity, so a bare name is refused whether or not it
+// once named a role. The seat keys themselves are untouched.
+func TestNormalizeAssigneesRefusesABareRoleName(t *testing.T) {
+	if got, err := NormalizeAssignees([]string{"coding-agent"}); err == nil {
+		t.Fatalf("NormalizeAssignees([\"coding-agent\"]) = %v, want a refusal: a bare role name is not an assignee", got)
+	}
+
+	got, err := NormalizeAssignees([]string{"@go-dev", " @lead "})
+	if err != nil {
+		t.Fatalf("seat keys must stay accepted: %v", err)
+	}
+	if strings.Join(got, ",") != "@go-dev,@lead" {
+		t.Fatalf("validated = %v, want the seat keys kept", got)
 	}
 }

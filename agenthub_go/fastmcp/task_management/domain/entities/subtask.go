@@ -43,10 +43,11 @@ func NewSubtask(st Subtask) (*Subtask, error) {
 }
 
 // RestoreSubtask rebuilds a subtask from stored data: it applies the defaults and
-// validates the entity but does not reject stored assignees. A known role or '@' name is
-// shown in its '@' form, any other stored name stays as stored. A row written under an
-// older assignee rule must still load, or one such row would fail every list that
-// contains it; the rule applies to what is written (NewSubtask, UpdateAssignees).
+// validates the entity but does not reject stored assignees. An '@' name is kept in its '@'
+// form and any other stored name stays exactly as stored - nothing is prefixed, and no role
+// table is consulted. A row written under an older assignee rule must still load, or one such
+// row would fail every list that contains it; the rule applies to what is written
+// (NewSubtask, UpdateAssignees).
 func RestoreSubtask(st Subtask) (*Subtask, error) {
 	s := st
 	if s.Assignees != nil {
@@ -256,10 +257,6 @@ func (s *Subtask) AppendProgress(content string) error {
 	return nil
 }
 
-func (s *Subtask) AddAssigneeRole(role value_objects.AgentRole) error {
-	return s.AddAssignee("@" + string(role))
-}
-
 func (s *Subtask) AddAssignee(assignee string) error {
 	if strings.TrimSpace(assignee) == "" {
 		return nil
@@ -278,10 +275,6 @@ func (s *Subtask) AddAssignee(assignee string) error {
 	}
 	s.emit("subtask_assignees", "assignee_added", validated)
 	return nil
-}
-
-func (s *Subtask) RemoveAssigneeRole(role value_objects.AgentRole) error {
-	return s.RemoveAssignee("@" + string(role))
 }
 
 func (s *Subtask) RemoveAssignee(assignee string) error {

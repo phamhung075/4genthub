@@ -163,7 +163,6 @@ func (a *MCPKeycloakAuth) GetAllowedTools(roles []string) *entities.OrderedMap[a
 		src.Set("project", []string{"manage_project", "manage_git_branch"})
 		src.Set("task", []string{"manage_task", "manage_subtask"})
 		src.Set("context", []string{"manage_context"})
-		src.Set("agent", []string{"manage_agent"})
 		src.Set("development", []string{"*"})
 		a.MergeToolPermissions(allowedTools, src)
 	}

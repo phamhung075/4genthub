@@ -13,7 +13,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/configuration"
 	"agenthub/fastmcp/task_management/infrastructure/utilities"
-	"agenthub/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller"
 	branchctl "agenthub/fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller"
 	projectctl "agenthub/fastmcp/task_management/interface/mcp_controllers/project_mcp_controller"
 	projectfactories "agenthub/fastmcp/task_management/interface/mcp_controllers/project_mcp_controller/factories"
@@ -37,7 +36,6 @@ type DDDCompliantMCPTools struct {
 	SubtaskController        *subtaskctl.SubtaskMCPController
 	ProjectController        *projectctl.ProjectMCPController
 	GitBranchController      *branchctl.GitBranchMCPController
-	AgentController          *agent_mcp_controller.AgentMCPController
 	ManageSeatController     *seatcontrollers.ManageSeatController
 	CallSeatController       *seatcontrollers.CallSeatController
 	SubmitFeedbackController *seatcontrollers.SubmitFeedbackController
@@ -124,9 +122,6 @@ func (t *DDDCompliantMCPTools) initControllers(deps Dependencies, formatter *uti
 		projectfactories.NewProjectResponseFactory(meta))
 
 	if t.GitBranchController, err = branchctl.NewGitBranchMCPController(t.FacadeService, t.Config, meta); err != nil {
-		return err
-	}
-	if t.AgentController, err = agent_mcp_controller.NewAgentMCPController(t.FacadeService, t.Config, meta); err != nil {
 		return err
 	}
 	return nil
@@ -246,11 +241,6 @@ func (t *DDDCompliantMCPTools) ToolDefinitions() []ToolDefinition {
 				return t.GitBranchController.ManageGitBranch(ctx, kwString(a, "action"), argString(a, "project_id"), argString(a, "git_branch_id"),
 					argString(a, "git_branch_name"), argString(a, "git_branch_description"), argString(a, "agent_id"), argString(a, "user_id"))
 			}},
-		ToolDefinition{Name: "manage_agent", Description: agent_mcp_controller.GetManageAgentDescription(), Parameters: asOrdered(agent_mcp_controller.GetManageAgentParameters()),
-			Handler: func(ctx context.Context, a *entities.OrderedMap[any]) *entities.OrderedMap[any] {
-				return t.AgentController.ManageAgent(ctx, kwString(a, "action"), argString(a, "project_id"), argString(a, "agent_id"),
-					argString(a, "name"), argString(a, "call_agent"), argString(a, "git_branch_id"), argString(a, "user_id"))
-			}},
 	)
 	for i := range defs {
 		defs[i].Parameters = toolInputSchema(defs[i].Name, defs[i].Parameters)
@@ -303,9 +293,4 @@ func (t *DDDCompliantMCPTools) ManageSubtask(ctx context.Context, action, taskID
 // where Python raises AttributeError on None).
 func (t *DDDCompliantMCPTools) ManageContext(ctx context.Context, kwargs map[string]any) *entities.OrderedMap[any] {
 	return t.ContextController.ManageContext(ctx, kwargs)
-}
-
-// ManageAgent delegates to the agent controller.
-func (t *DDDCompliantMCPTools) ManageAgent(ctx context.Context, action string, projectID, agentID, name, callAgent, gitBranchID, userID *string) *entities.OrderedMap[any] {
-	return t.AgentController.ManageAgent(ctx, action, projectID, agentID, name, callAgent, gitBranchID, userID)
 }

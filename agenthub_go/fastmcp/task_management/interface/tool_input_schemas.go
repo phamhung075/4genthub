@@ -118,15 +118,6 @@ var toolParamSpecs = map[string][]toolParam{
 		{"agent_id", "[REQUIRED for 'assign_agent' and 'unassign_agent' actions] ", `{"type":"string"}`},
 		{"user_id", "[OPTIONAL] ", `{"type":"string"}`},
 	},
-	"manage_agent": {
-		{"action", "[OPTIONAL] ", `{"type":"string"}`},
-		{"project_id", "[REQUIRED for all actions] ", `{"anyOf":[{"type":"string"},{"type":"null"}]}`},
-		{"agent_id", "[REQUIRED for most actions except 'register', 'list', and 'rebalance'] ", `{"type":"string"}`},
-		{"name", "[REQUIRED for 'register' action] ", `{"type":"string"}`},
-		{"call_agent", "[OPTIONAL] ", `{"type":"string"}`},
-		{"git_branch_id", "[REQUIRED for 'assign' and 'unassign' actions] ", `{"type":"string"}`},
-		{"user_id", "[OPTIONAL] ", `{"type":"string"}`},
-	},
 }
 
 // toolInputSchema builds the MCP inputSchema FastMCP derives from the Python tool

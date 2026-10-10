@@ -88,25 +88,6 @@ type AgentSession struct {
 // GetUserID satisfies repositories.HasUserID (user isolation).
 func (r *AgentSession) GetUserID() string { return r.UserID }
 
-// Agent is a row of agents.
-type Agent struct {
-	ID                string          `db:"id"`
-	Name              string          `db:"name"`
-	Description       string          `db:"description"`
-	Role              string          `db:"role"`
-	Capabilities      json.RawMessage `db:"capabilities"`
-	Status            string          `db:"status"`
-	AvailabilityScore float64         `db:"availability_score"`
-	LastActiveAt      *time.Time      `db:"last_active_at"`
-	CreatedAt         time.Time       `db:"created_at"`
-	UpdatedAt         time.Time       `db:"updated_at"`
-	Metadata          json.RawMessage `db:"metadata"`
-	UserID            string          `db:"user_id"`
-}
-
-// GetUserID satisfies repositories.HasUserID (user isolation).
-func (r *Agent) GetUserID() string { return r.UserID }
-
 // APIToken is a row of api_tokens.
 type APIToken struct {
 	ID            string          `db:"id"`
@@ -614,24 +595,6 @@ var Tables = []TableDef{
 	}, DDL: []string{
 		"CREATE TABLE agent_sessions (\n\tid VARCHAR(36) NOT NULL,\n\tuser_id VARCHAR(64) NOT NULL,\n\tconnector_id VARCHAR(64) NOT NULL,\n\tsession_key VARCHAR(255) NOT NULL,\n\tname VARCHAR(255) NOT NULL,\n\tproject VARCHAR(255),\n\tstatus VARCHAR(20) NOT NULL,\n\tlast_seq INTEGER NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tlast_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\troom_slug VARCHAR(255),\n\tseat_key VARCHAR(255),\n\tPRIMARY KEY (id),\n\tCONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key),\n\tCONSTRAINT ck_agent_sessions_seat_pair CHECK ((room_slug IS NULL) = (seat_key IS NULL))\n)",
 		"CREATE INDEX ix_agent_sessions_user_id ON agent_sessions (user_id)",
-	}},
-	{Name: "agents", Model: "Agent", Columns: []ColumnDef{
-		{Name: "id", Attr: "id", GoField: "ID", SQLType: "UUID", Nullable: false, PrimaryKey: true, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "name", Attr: "name", GoField: "Name", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "description", Attr: "description", GoField: "Description", SQLType: "TEXT", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "role", Attr: "role", GoField: "Role", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"assistant\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "capabilities", Attr: "capabilities", GoField: "Capabilities", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyList, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "status", Attr: "status", GoField: "Status", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultString, DefaultValue: "\"available\"", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "availability_score", Attr: "availability_score", GoField: "AvailabilityScore", SQLType: "FLOAT", Nullable: false, PrimaryKey: false, Default: DefaultFloat, DefaultValue: "1.0", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "last_active_at", Attr: "last_active_at", GoField: "LastActiveAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "created_at", Attr: "created_at", GoField: "CreatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "updated_at", Attr: "updated_at", GoField: "UpdatedAt", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "metadata", Attr: "model_metadata", GoField: "Metadata", SQLType: "JSON", Nullable: false, PrimaryKey: false, Default: DefaultEmptyDict, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-		{Name: "user_id", Attr: "user_id", GoField: "UserID", SQLType: "VARCHAR", Nullable: false, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
-	}, DDL: []string{
-		"CREATE TABLE agents (\n\tid UUID NOT NULL,\n\tname VARCHAR NOT NULL,\n\tdescription TEXT NOT NULL,\n\trole VARCHAR NOT NULL,\n\tcapabilities JSON NOT NULL,\n\tstatus VARCHAR NOT NULL,\n\tavailability_score FLOAT NOT NULL,\n\tlast_active_at TIMESTAMP WITHOUT TIME ZONE,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tupdated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tmetadata JSON NOT NULL,\n\tuser_id VARCHAR NOT NULL,\n\tPRIMARY KEY (id)\n)",
-		"CREATE INDEX idx_agent_availability ON agents (availability_score)",
-		"CREATE INDEX idx_agent_status ON agents (status)",
 	}},
 	{Name: "api_tokens", Model: "APIToken", Columns: []ColumnDef{
 		{Name: "id", Attr: "id", GoField: "ID", SQLType: "VARCHAR", Nullable: false, PrimaryKey: true, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},

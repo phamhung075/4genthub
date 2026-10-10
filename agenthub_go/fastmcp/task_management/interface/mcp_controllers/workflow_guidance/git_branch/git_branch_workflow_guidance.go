@@ -138,11 +138,6 @@ func (g *GitBranchWorkflowGuidance) getNextActions(action string, context *entit
 					"git_branch_id", workflow_guidance.OrValue(gitBranchID, "branch_id"),
 					"include_context", true,
 				))),
-			gbNext("medium", "List all agents on branch", "See who else is working on this branch",
-				gbExample("manage_agent", gbParams(
-					"action", "list",
-					"project_id", workflow_guidance.OrValue(projectID, "project_id"),
-				))),
 		)
 	case "delete":
 		nextActions = append(nextActions,

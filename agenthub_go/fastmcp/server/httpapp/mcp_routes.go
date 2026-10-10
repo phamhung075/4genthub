@@ -478,18 +478,6 @@ func (a *App) dispatchMCPTool(ctx context.Context, r *http.Request, name string,
 		}
 		return map[string]any{"error": "ContextController not initialized"}, true
 
-	case "manage_agent":
-		if a.mcpTools != nil && a.mcpTools.AgentController != nil {
-			pID := getOptStringPtr(args, "project_id")
-			agID := getOptStringPtr(args, "agent_id", "id")
-			name := getOptStringPtr(args, "name")
-			callAgent := getOptStringPtr(args, "call_agent")
-			bID := getOptStringPtr(args, "git_branch_id", "branch_id")
-			res := a.mcpTools.AgentController.ManageAgent(ctx, action, pID, agID, name, callAgent, bID, userID)
-			return res, false
-		}
-		return map[string]any{"error": "AgentController not initialized"}, true
-
 	case seatcontrollers.ManageSeatToolName:
 		if a.mcpTools != nil && a.mcpTools.ManageSeatController != nil {
 			res := a.mcpTools.ManageSeatController.ManageSeat(ctx, action, getOptStringPtr(args, "room"), getOptStringPtr(args, "seat"),

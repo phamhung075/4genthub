@@ -13,7 +13,6 @@ import (
 	"agenthub/fastmcp/task_management/domain/entities"
 	"agenthub/fastmcp/task_management/domain/repositories"
 	"agenthub/fastmcp/task_management/domain/value_objects"
-	"agenthub/fastmcp/task_management/interface/mcp_controllers/agent_mcp_controller"
 	"agenthub/fastmcp/task_management/interface/mcp_controllers/auth_helper"
 	authservices "agenthub/fastmcp/task_management/interface/mcp_controllers/auth_helper/services"
 	branchctl "agenthub/fastmcp/task_management/interface/mcp_controllers/git_branch_mcp_controller"
@@ -23,7 +22,6 @@ import (
 	subtaskctl "agenthub/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller"
 	subtaskhandlers "agenthub/fastmcp/task_management/interface/mcp_controllers/subtask_mcp_controller/handlers"
 	taskfactories "agenthub/fastmcp/task_management/interface/mcp_controllers/task_mcp_controller/factories"
-	wfagent "agenthub/fastmcp/task_management/interface/mcp_controllers/workflow_guidance/agent"
 	wfbranch "agenthub/fastmcp/task_management/interface/mcp_controllers/workflow_guidance/git_branch"
 	wfsubtask "agenthub/fastmcp/task_management/interface/mcp_controllers/workflow_guidance/subtask"
 	"agenthub/fastmcp/task_management/interface/mcp_controllers/workflow_hint_enhancer"
@@ -388,7 +386,6 @@ func wireAuthHooks() {
 		return nil
 	}
 	branchctl.GetCurrentUserIDHook = anyUserID
-	agent_mcp_controller.GetCurrentUserIDHook = anyUserID
 	projectctl.GetAuthenticatedUserID = auth_helper.GetAuthenticatedUserID
 	projectctl.GetCurrentAuthInfo = authmw.GetCurrentAuthInfo
 	authservices.RequestContextUserIDProvider = userID
@@ -413,12 +410,6 @@ func (a branchGuidanceAdapter) GenerateGuidance(action string, ctx *entities.Ord
 	return a.g.GenerateGuidance(action, ctx)
 }
 
-type agentGuidanceAdapter struct{ g wfagent.AgentWorkflowGuidance }
-
-func (a agentGuidanceAdapter) GenerateGuidance(action string, ctx *entities.OrderedMap[any]) any {
-	return a.g.GenerateGuidance(action, ctx)
-}
-
 // wireWorkflowGuidance sets the controllers' workflow-guidance factories (the
 // Python *WorkflowFactory.create() calls); it must run before the controllers
 // are constructed.
@@ -426,8 +417,5 @@ func wireWorkflowGuidance() {
 	subtaskctl.DefaultWorkflowGuidanceFactory = func() subtaskctl.SubtaskWorkflowGuidance { return &wfsubtask.SubtaskWorkflowGuidance{} }
 	branchctl.DefaultWorkflowGuidanceFactory = func() branchctl.WorkflowGuidance {
 		return branchGuidanceAdapter{wfbranch.GitBranchWorkflowFactory{}.Create()}
-	}
-	agent_mcp_controller.DefaultWorkflowGuidanceFactory = func() agent_mcp_controller.WorkflowGuidance {
-		return agentGuidanceAdapter{wfagent.AgentWorkflowFactory{}.Create()}
 	}
 }

@@ -110,7 +110,6 @@ func GetDictParametersForTool(toolName string) []string {
 		"manage_context":    {"data", "delegate_data", "filters", "data_metadata"},
 		"manage_connection": {"client_info"},
 		"manage_dependency": {"dependency_data"},
-		"manage_agent":      {"agent_config", "agent_metadata"},
 		"manage_rule":       {"rule_data", "rule_config"},
 	}
 	if v, ok := toolSpecific[toolName]; ok {

@@ -1837,67 +1837,6 @@ export const apiReference: ApiReference = {
       "actions": []
     },
     {
-      "name": "manage_agent",
-      "description": "\nAGENT MANAGEMENT - Registration, assignment and lifecycle of project agents\n\nACTIONS: register | assign | get | list | update | unassign | unregister | rebalance\n\nKEY PARAMS: project_id (REQUIRED for all) | name (REQUIRED for register) | agent_id (REQUIRED for most except register/list/rebalance) | git_branch_id (REQUIRED for assign/unassign)\n\nREGISTRATION: agent_id auto-generated if not provided\n\nERRORS: Missing fields→specific error | Unknown actions→valid list | Internal→logged+generic\n",
-      "parameters": {
-        "properties": {
-          "action": {
-            "description": "[OPTIONAL] Agent management action to perform. Valid values: register, assign, get, list, update, unassign, unregister, rebalance",
-            "title": "Action",
-            "type": "string"
-          },
-          "agent_id": {
-            "default": null,
-            "description": "[REQUIRED for most actions except 'register', 'list', and 'rebalance'] Agent identifier. Required for most actions except register/list/rebalance",
-            "title": "Agent Id",
-            "type": "string"
-          },
-          "call_agent": {
-            "default": null,
-            "description": "[OPTIONAL] Call agent string or configuration. Optional, for register/update actions",
-            "title": "Call Agent",
-            "type": "string"
-          },
-          "git_branch_id": {
-            "default": null,
-            "description": "[REQUIRED for 'assign' and 'unassign' actions] Task tree identifier. Required for assign/unassign actions",
-            "title": "Git Branch Id",
-            "type": "string"
-          },
-          "name": {
-            "default": null,
-            "description": "[REQUIRED for 'register' action] Agent name. Required for register, optional for update",
-            "title": "Name",
-            "type": "string"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "[REQUIRED for all actions] [REQUIRED] Project identifier for agent management. No default value - must be provided",
-            "title": "Project Id"
-          },
-          "user_id": {
-            "default": null,
-            "description": "[OPTIONAL] User identifier for authentication and audit trails",
-            "title": "User Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "type": "object"
-      },
-      "actions": []
-    },
-    {
       "name": "manage_seat",
       "description": "Manage seats: list, get, set_occupant (switch the LLM of a seat: runtime claude-code|codex|agy|omp and model id)",
       "parameters": {

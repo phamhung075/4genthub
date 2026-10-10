@@ -26,7 +26,6 @@ type RepositoryFactory struct {
 	MockProjectRepositoryFactory   func() domainrepos.ProjectRepository
 	MockGitBranchRepositoryFactory func() domainrepos.GitBranchRepository
 	MockSubtaskRepositoryFactory   func() domainrepos.SubtaskRepository
-	MockAgentRepositoryFactory     func() domainrepos.AgentRepository
 	MockContextRepositoryFactory   func() any
 }
 
@@ -126,21 +125,6 @@ func (f *RepositoryFactory) GetSubtaskRepository(userID *string) (domainrepos.Su
 		return f.MockSubtaskRepositoryFactory(), nil
 	}
 	return NewORMSubtaskRepository(f.Sessions, userID)
-}
-
-// GetAgentRepository creates the agent repository for the environment.
-func (f *RepositoryFactory) GetAgentRepository() (domainrepos.AgentRepository, error) {
-	config, err := f.GetEnvironmentConfig()
-	if err != nil {
-		return nil, err
-	}
-	if repositoryFactoryConfigString(config, "environment") == "test" {
-		if f.MockAgentRepositoryFactory == nil {
-			return nil, exceptions.NewConfigurationException("MockAgentRepository is not available", "")
-		}
-		return f.MockAgentRepositoryFactory(), nil
-	}
-	return NewORMAgentRepository(f.Sessions, nil, nil)
 }
 
 // GetContextRepository creates the (task) context repository for the environment.

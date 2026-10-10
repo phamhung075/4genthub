@@ -30,7 +30,7 @@ func newCallSeatTestApp(t *testing.T, resolved *repositories.ResolvedSeat) *App 
 	t.Helper()
 	controller := seatcontrollers.NewCallSeatController(stubSeatAuth{}, stubCallSeatResolver{resolved: resolved})
 	tools, err := interfacelayer.NewDDDCompliantMCPTools(interfacelayer.Dependencies{
-		FacadeService:     services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil),
+		FacadeService:     services.NewFacadeService(nil, nil, nil, nil, nil, nil),
 		DatabaseAvailable: true,
 		CallSeat:          controller,
 	}, nil)
@@ -58,11 +58,6 @@ func TestMCPToolsListPublishesCallSeat(t *testing.T) {
 	}
 	if err := json.Unmarshal(rec.Body.Bytes(), &wire); err != nil {
 		t.Fatalf("decode tools/list: %v", err)
-	}
-	for _, tool := range wire.Result.Tools {
-		if tool.Name == "call_agent" {
-			t.Fatal("tools/list still publishes the removed call_agent tool")
-		}
 	}
 	for _, tool := range wire.Result.Tools {
 		if tool.Name != "call_seat" {

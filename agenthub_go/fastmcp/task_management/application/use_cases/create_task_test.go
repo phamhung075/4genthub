@@ -69,7 +69,7 @@ func TestCreateTaskUseCaseSuccess(t *testing.T) {
 		Description:     &desc,
 		Details:         "first steps",
 		EstimatedEffort: "3h",
-		Assignees:       []string{"coding-agent", "@bob"},
+		Assignees:       []string{"@coding-agent", "@bob"},
 		Labels:          []string{"bug"},
 	})
 	if err != nil {

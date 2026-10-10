@@ -198,10 +198,10 @@ func TestCreateSubtaskRefusesABareUnknownAssignee(t *testing.T) {
 	if f.operation != "create_subtask" || f.errorCode != ErrorCodeValidation {
 		t.Fatalf("op=%q code=%q msg=%q", f.operation, f.errorCode, f.errMsg)
 	}
-	if f.errMsg != "Invalid assignees: ['go-dev']. An assignee is '@<seat_key>' or a known agent role." {
+	if f.errMsg != "Invalid assignees: ['go-dev']. An assignee is '@<seat_key>'." {
 		t.Errorf("msg=%q", f.errMsg)
 	}
-	if v, _ := f.metadata.Get("hint"); v != "Provide '@<seat_key>' or a known agent role" {
+	if v, _ := f.metadata.Get("hint"); v != "Provide '@<seat_key>'" {
 		t.Errorf("hint=%v", v)
 	}
 }

@@ -19,12 +19,12 @@ type recordingServer struct{ names []string }
 func (r *recordingServer) Tool(name, _ string, _ any) { r.names = append(r.names, name) }
 
 func TestNewDDDCompliantMCPToolsRegistersTools(t *testing.T) {
-	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil)
+	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil)
 	tools, err := NewDDDCompliantMCPTools(Dependencies{FacadeService: fs}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]bool{"manage_task": true, "manage_subtask": true, "manage_project": true, "manage_git_branch": true, "manage_agent": true}
+	want := map[string]bool{"manage_task": true, "manage_subtask": true, "manage_project": true, "manage_git_branch": true}
 	for _, d := range tools.ToolDefinitions() {
 		if d.Handler == nil || d.Parameters == nil {
 			t.Errorf("%s: missing handler or schema", d.Name)
@@ -71,7 +71,7 @@ func TestToolDefinitionsMatchPythonToolRegistry(t *testing.T) {
 	if err := json.Unmarshal(raw, &golden); err != nil {
 		t.Fatal(err)
 	}
-	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil, nil)
+	fs := services.NewFacadeService(nil, nil, nil, nil, nil, nil)
 	tools, err := NewDDDCompliantMCPTools(Dependencies{FacadeService: fs, DatabaseAvailable: true}, nil)
 	if err != nil {
 		t.Fatal(err)

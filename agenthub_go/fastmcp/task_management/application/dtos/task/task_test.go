@@ -15,7 +15,7 @@ import (
 func TestCreateTaskRequestNormalization(t *testing.T) {
 	r, err := NewCreateTaskRequest(CreateTaskRequest{
 		Title: "t", GitBranchID: "b",
-		Assignees: []string{"coding-agent", "test-orchestrator-agent", "system-architect-agent", "@custom", "@already"},
+		Assignees: []string{"@coding-agent", "@test-orchestrator-agent", "@system-architect-agent", "@custom", "@already"},
 		Labels:    []string{"bug", "  Frontend ", "weird label!", ""},
 	})
 	if err != nil {
@@ -24,6 +24,11 @@ func TestCreateTaskRequestNormalization(t *testing.T) {
 	wantAssignees := []string{"@coding-agent", "@test-orchestrator-agent", "@system-architect-agent", "@custom", "@already"}
 	if !reflect.DeepEqual(r.Assignees, wantAssignees) {
 		t.Fatalf("assignees = %v", r.Assignees)
+	}
+	if _, err := NewCreateTaskRequest(CreateTaskRequest{
+		Title: "t", GitBranchID: "b", Assignees: []string{"coding-agent"},
+	}); err == nil || err.Error() != "Invalid assignees: ['coding-agent']. An assignee is '@<seat_key>'." {
+		t.Fatalf("bare name: %v", err)
 	}
 	wantLabels := []string{"bug", "Frontend", "weird label!"}
 	if !reflect.DeepEqual(r.Labels, wantLabels) {

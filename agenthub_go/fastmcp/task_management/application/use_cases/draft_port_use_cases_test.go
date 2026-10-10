@@ -5,11 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	agentdto "agenthub/fastmcp/task_management/application/dtos/agent"
 	contextdto "agenthub/fastmcp/task_management/application/dtos/context"
 	subtaskdto "agenthub/fastmcp/task_management/application/dtos/subtask"
 	"agenthub/fastmcp/task_management/domain/entities"
-	"agenthub/fastmcp/task_management/domain/exceptions"
 	"agenthub/fastmcp/task_management/domain/value_objects"
 )
 
@@ -171,40 +169,6 @@ func TestDraftRemoveDependency(t *testing.T) {
 	if result.Success || result.Message != "Dependency "+depID.Value+" does not exist" {
 		t.Fatalf("result = %+v", result)
 	}
-}
-
-// --- register_agent ---
-
-func TestDraftRegisterAgent(t *testing.T) {
-	projectID := value_objects.NewUUIDv4()
-	agentID := value_objects.NewUUIDv4()
-	name := "Coder"
-	call := "call me"
-	request, err := agentdto.NewRegisterAgentRequest(projectID, &agentID, &name, &call)
-	if err != nil {
-		t.Fatal(err)
-	}
-	aid, _ := value_objects.NewAgentId(agentID)
-	result, _ := entities.NewAgent(entities.Agent{ID: &aid, Name: name, Description: call,
-		AssignedTrees: map[string]struct{}{"tree-1": {}}})
-
-	resp := NewRegisterAgentUseCase(&draftAgentRepo{result: result}).Execute(context.Background(), request)
-	if !resp.Success {
-		t.Fatalf("resp = %+v", resp)
-	}
-	want := "Agent " + agentID + " registered successfully to project " + projectID
-	if resp.Message == nil || *resp.Message != want {
-		t.Fatalf("message = %v", resp.Message)
-	}
-	if resp.Agent == nil || resp.Agent.ID != agentID || !reflect.DeepEqual(resp.Agent.Assignments, []string{"tree-1"}) {
-		t.Fatalf("agent = %+v", resp.Agent)
-	}
-
-	errResp := NewRegisterAgentUseCase(&draftAgentRepo{err: exceptions.NewProjectNotFoundError("proj missing")}).Execute(context.Background(), request)
-	if errResp.Success {
-		t.Fatal("expected failure")
-	}
-	draftCheckError(t, errResp.Error, "proj missing")
 }
 
 // --- list_projects ---
