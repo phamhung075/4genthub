@@ -490,6 +490,17 @@ func BroadcastDataChange(ctx context.Context, eventType, entityType, entityID, u
 		connectionUser := connection.User
 		connectionUserID := wrUserID(connectionUser)
 
+		// A notification is addressed to ONE user, and it is the only entity whose fan-out is
+		// single-recipient. Every other socket - another user's, and one with no resolved user -
+		// is not a target, and running the authorization check for it answers with TWO error
+		// frames, authorization_denied and notification_blocked, each carrying the notification's
+		// entity_id: noise on every other screen, and a cross-tenant leak of the row id. Non-target
+		// sockets are skipped rather than answered, and a notification addressed to nobody (an
+		// empty user) goes to no socket at all.
+		if entityType == "notification" && (userID == "" || connectionUserID != userID) {
+			continue
+		}
+
 		authorized := IsUserAuthorizedForMessage(ctx, ws, entityType, entityID, userID, metadata)
 		if authorized {
 			messageID, _ := message.Get("id")
