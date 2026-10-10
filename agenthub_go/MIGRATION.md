@@ -205,7 +205,7 @@ Source: `agenthub_main/src/fastmcp` (Python, untouched). Target: `agenthub_go/` 
 | 1-domain | `task_management/domain/value_objects/template_id.py` | `fastmcp/task_management/domain/value_objects/template_id.go` | 19 | done (tested) |
 | 1-domain | `task_management/domain/value_objects/vision_objects.py` | `fastmcp/task_management/domain/value_objects/vision_objects.go` | 291 | done (tested) |
 | 1-domain | `task_management/domain/websocket_protocol.py` | `fastmcp/task_management/domain/websocket_protocol.go` | 586 | done |
-| 2-infrastructure | `agent_management/infrastructure/database/models.py` | `fastmcp/agent_management/infrastructure/database/models.go` | 386 | done (tested; see models_agent_management.go) |
+| 2-infrastructure | `agent_management/infrastructure/database/models.py` | `fastmcp/agent_management/infrastructure/database/models.go` | 386 | removed (the PORT was `models_agent_management.go` — added by `6b0bdd5f`, deleted by `e0338f54` with the old agent system, T7 Go half; the path this row names was tracked on NO branch) |
 | 2-infrastructure | `agent_management/infrastructure/repositories/orm/agent_template_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/agent_template_repository.go` | 377 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
 | 2-infrastructure | `agent_management/infrastructure/repositories/orm/user_agent_instance_repository.py` | `fastmcp/agent_management/infrastructure/repositories/orm/user_agent_instance_repository.go` | 696 | removed (e0338f54 removed the old agent system from Go, T7 Go half) |
 | 2-infrastructure | `auth/infrastructure/database/models.py` | `fastmcp/auth/infrastructure/database/models.go` | 287 | done (tested; see models_auth.go) |
