@@ -15,7 +15,31 @@ import (
 // compose different profiles from the SAME graph). Each piece carries a source label. Budgets are
 // evaluated AT COMPOSE and, on overage, REPORT the amount and the priority-ordered drop
 // candidates — composition never silently truncates (D2: budgets flag for review, never silently
-// govern). Every failure is LOUD and names the atom.
+// govern). Every failure is LOUD and names the atom — WITH THE TWO RECORDED EXCEPTIONS BELOW.
+//
+// RECORDED DIVERGENCES FROM profile-composer.ts. Both are deliberate and neither is silent (this
+// block is the lead's ruling (B) of 2026-10-10, taken on the parity audit in
+// seats/4genthub-min/FINDING-F2-PORT-FIDELITY-2026-10-10.md, so that the sentence above cannot read
+// as an unqualified claim):
+//
+//  1. THE POST-COMPACTION ABSENT-RECAP SKIP IS NOT IMPLEMENTED. The source has exactly ONE
+//     exception to "a compose stops rather than thinning the walk" (profile-composer.ts:22-24, the
+//     catch at :122-130): a POST-COMPACTION compose SKIPS a genuinely absent seat recap and reports
+//     it in `skipped`, because a compacted seat still has its own restore map and transcript, while a
+//     HANDOVER successor has neither — so its missing recap still fails. This package refuses EVERY
+//     unreadable atom instead (resolvePieces below), because the source's predicate is not
+//     expressible here: the address grammar carries no scheme (address.go; ParsedAddress.Ref is
+//     untyped by the B2 decision, "the caller's resolver owns what it names"), so "is this a seat
+//     recap address?" cannot be answered from the address, and ReadFile returns an error with no
+//     typed absent class. A consumer that needs the source's behaviour must supply the FACT — a
+//     seat-recap predicate plus a typed absence — and the algebra then grows a skip field. That is
+//     ruling (A), NOT YET TAKEN: it is new API surface, so it waits for the consumer that needs it
+//     (O4's resume brief) rather than being added for symmetry.
+//  2. THE ID TIEBREAK IS BYTE-WISE, NOT localeCompare. A tie on `order` is broken by
+//     `walk[i].ID < walk[j].ID` where the source uses `x.id.localeCompare(y.id)`. Both are
+//     deterministic; they can differ only for ids that order differently under byte comparison than
+//     under the runtime's default collation, i.e. non-ASCII ids. Every id in this tree is a slug.
+
 
 // Piece is one composed atom's resolved bytes.
 type Piece struct {
