@@ -31,21 +31,12 @@ func TestEnsureTaskEventColumnsMatchTheDefinition(t *testing.T) {
 				vocabulary.column, clause)
 		}
 	}
-	statements := strings.Join(append(append([]string{}, taskEventDefinitionStatements...), taskEventUniqueStatements...), "\n")
-	for _, want := range []string{
-		"ADD COLUMN IF NOT EXISTS user_seq BIGINT",
-		"ADD COLUMN IF NOT EXISTS client_event_id UUID",
-		"ALTER COLUMN user_seq SET NOT NULL",
-		"uq_task_event_user_seq",
-		"uq_task_event_client_event",
-	} {
-		if !strings.Contains(statements, want) {
-			t.Errorf("the ensurer no longer performs %q", want)
-		}
-	}
-	for _, declared := range []string{"user_seq BIGINT", "client_event_id UUID"} {
-		if !strings.Contains(ddl, declared) {
-			t.Errorf("the TableDef no longer declares %q, so the ensurer adds a column the definition does not have", declared)
-		}
-	}
+	// The COLUMN half of this test is gone with the hand-written list it pinned: the ensurer now takes
+	// its columns from the TableDef (EnsureTableColumns, via taskEventDatabaseTables), so "the ensurer
+	// adds a column the definition lacks" and "a declared column is left out" are no longer expressible.
+	// What that asserted is now measured by behaviour instead of by text, in
+	// TestTaskEventEnsurerRestoresEveryColumnOfTheDefinition, which builds the table from the
+	// definition minus one column and requires the ensurer to restore it - the case the old fixture
+	// could not make, because it modelled the shape the ensurer handles rather than the one production
+	// has. The two per-user uniques stay covered by their own behavioural case too.
 }

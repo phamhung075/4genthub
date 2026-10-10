@@ -105,6 +105,26 @@ func (s *fakeStmt) Query(args []driver.Value) (driver.Rows, error) {
 			rows = append(rows, []driver.Value{c})
 		}
 		return &fakeRows{cols: []string{"column_name"}, rows: rows}, nil
+	case strings.Contains(s.q, "pg_attribute"):
+		// The ensurer's verify pass reads the catalogue back. This double exists to model the DDL path,
+		// not to disagree with it, so it answers from the same TableDef the schema is built from: a
+		// relation the registry does not know returns no rows, which is how a fake database says it
+		// does not have that table.
+		if s.f.failQuery != nil {
+			if err := s.f.failQuery(s.q); err != nil {
+				return nil, err
+			}
+		}
+		var rows [][]driver.Value
+		for _, def := range Tables {
+			if def.Name != args[0].(string) {
+				continue
+			}
+			for _, c := range def.Columns {
+				rows = append(rows, []driver.Value{c.Name, c.SQLType, !c.Nullable})
+			}
+		}
+		return &fakeRows{cols: []string{"attname", "format_type", "attnotnull"}, rows: rows}, nil
 	case s.q == "SELECT version()":
 		return &fakeRows{cols: []string{"version"}, rows: [][]driver.Value{{"PostgreSQL 16 fake"}}}, nil
 	case s.q == "SELECT current_database()":

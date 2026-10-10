@@ -14,6 +14,12 @@ package database
 //  3. ck_task_event_kind widened to the twelve-kind vocabulary
 //  4. ck_task_event_actor_kind widened to seat|client|gate|human
 //
+// Parts 1 and 2 are now DERIVED from the task_events TableDef's ColumnDefs (EnsureTableColumns), so
+// they can no longer fall behind it; a column the definition declares is added here without a second
+// list to keep in step. Parts 3 and 4 are constraints, which exist only as DDL text in the TableDef, so
+// they stay hand-written with the vocabularies below and TestEnsureTaskEventColumnsMatchTheDefinition
+// comparing them against the definition.
+//
 // Parts 3 and 4 are on the write path too, and that is not theoretical: the recorder stamps
 // actor_kind 'seat' and the ledger's own next writers emit kinds the five-kind vocabulary never had,
 // so on a database carrying the OLD checks a status write is refused by the actor check and a
@@ -54,22 +60,18 @@ const (
 	taskEventActorKindVocabulary = "'seat', 'client', 'gate', 'human'"
 )
 
-// The statements are split so a reader can see which shape guards what, and they run in ONE
-// transaction: a database either ends up with the whole delta or it is left exactly as it was.
-var taskEventDefinitionStatements = []string{
-	// 1. the per-user sequence: nullable first, backfilled, then NOT NULL, then unique.
-	"ALTER TABLE task_events ADD COLUMN IF NOT EXISTS user_seq BIGINT",
-	`UPDATE task_events e SET user_seq = numbered.rn FROM (
+// backfillTaskEventUserSeq numbers every row that has no user_seq yet, per user, in (created_at, id)
+// order, ABOVE that user's current maximum, inside the derived step's transaction. The numbering must
+// not restart at 1 above rows that already carry a value: an existing database may have had the column
+// added by hand, and a collision there would fail the unique this same run is about to create.
+func backfillTaskEventUserSeq(ctx context.Context, tx *sql.Tx, table, column string) error {
+	_, err := tx.ExecContext(ctx, `UPDATE task_events e SET user_seq = numbered.rn FROM (
 		SELECT t.id,
 		       COALESCE((SELECT MAX(m.user_seq) FROM task_events m WHERE m.user_id = t.user_id), 0)
 		       + ROW_NUMBER() OVER (PARTITION BY t.user_id ORDER BY t.created_at, t.id) AS rn
 		FROM task_events t WHERE t.user_seq IS NULL
-	) numbered WHERE e.id = numbered.id`,
-	"ALTER TABLE task_events ALTER COLUMN user_seq SET NOT NULL",
-	// 2. the outbox key: nullable by definition, so there is nothing to backfill - NULL is the
-	// honest value for a row that never carried the caller's idempotency key, and the unique index
-	// treats NULLs as distinct.
-	"ALTER TABLE task_events ADD COLUMN IF NOT EXISTS client_event_id UUID",
+	) numbered WHERE e.id = numbered.id`)
+	return err
 }
 
 // The two closed vocabularies are re-created from the definition rather than widened in place. They
@@ -111,7 +113,12 @@ var taskEventUniqueStatements = []string{
 // an operator has to migrate deliberately. On the real ledger this cannot arise: nothing wrote
 // task_events before P1's reader landed, so the table the widening meets is empty.
 func EnsureTaskEventColumns(ctx context.Context, db *sql.DB) error {
-	if err := applyTaskEventStatements(ctx, db, append(append([]string{}, taskEventDefinitionStatements...), taskEventUniqueStatements...)); err != nil {
+	// The COLUMNS come from the TableDef itself, so this file can no longer fall behind it: a column
+	// added to task_event_tables.go arrives here without a second list that can leave it out. The two
+	// uniques ride the same transaction; the vocabularies follow in their own, for the reason above.
+	if err := EnsureTableColumns(ctx, db, taskEventDatabaseTables[0], map[string]ColumnDataMove{
+		"user_seq": backfillTaskEventUserSeq,
+	}, taskEventUniqueStatements); err != nil {
 		return err
 	}
 	return applyTaskEventStatements(ctx, db, taskEventVocabularyStatements)

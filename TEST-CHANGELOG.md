@@ -9,6 +9,16 @@ Track test suite changes, fixes, and improvements for agenthub.
 - THE VALIDATOR'S SKIP IS PINNED TOO, MEASURED SEPARATELY: with only the blank-scope skip disabled in the current rules (`/tmp/pkgfalsify3`), the two blank-heading cases fail on their findings assertions (`unaddressable-header` for the blank heading and for its child) and the empty-slug control still passes — so the skip is load-bearing and not blind.
 - VERIFIED: `gofmt -l` on the package prints nothing; `go test -count=1 ./fastmcp/seat_management/domain/contextpacks/` -> `ok`; `go vet` rc=0; `go build ./...` rc=0.
 
+## 2026-10-10 - the ensurer's fixture is derived from the TableDef, one case per column
+
+- REPLACED the hand-written `oldShapeColumnsDDL` in `task_event_ensurer_test.go` with `oldShapeDDL(t, drop)`: it renders the table from the `task_events` TableDef's own ColumnDefs, minus the two P1 columns and minus `drop`, and drops any constraint that names a dropped column. The old fixture modelled the shape the ensurer HANDLES (it already carried `subtask_id`), so a case built from it could not see a column the ensurer never adds.
+- ADDED `TestTaskEventEnsurerRestoresEveryColumnOfTheDefinition`: one subtest per non-PK column, each building the table without that column and requiring the ensurer to restore it with the right type and nullability.
+- ADDED `TestTaskEventEnsurerFailsLoudlyOnAPopulatedColumnWithNoDataMove`: `seq` removed, one row present, the ensurer must fail naming the column rather than invent a value.
+- FALSIFICATION, run against the LANDED ensurer first: `subtask_id is still missing after the ensurer ran`, with every non-PK column failing except `user_seq` and `client_event_id` - exactly the two the hand-written list knew.
+- DELETED the column half of `TestEnsureTaskEventColumnsMatchTheDefinition`, which text-pinned the removed list; derivation makes its claim inexpressible and the new behavioural case covers what it asserted. The vocabulary half stays, because constraints exist only as DDL text.
+- ADDED a `pg_attribute` case to the fake driver (`fakedriver_test.go`), which answers the verify pass from the same TableDef the schema is built from, so the AUTO_MIGRATE flow tests still see no unexpected query.
+- VERIFIED: `gofmt -l` on every changed file empty; `go test ./fastmcp/task_management/infrastructure/database/ -count=1` `ok` 10.266s with `AGENTHUB_TEST_PG_URL` set, so the PG-gated cases ran.
+
 ## 2026-10-10 - the ×2 the gate asked for, through the production wiring
 
 - ADDED `agenthub_go/fastmcp/server/httpapp/unified_context_notes_pg_test.go`: `TestAddProgressTwiceReachesTheColumnTheRepositoryReads` builds the four context repositories with `unifiedContextRepositories` — the same builder `app.go` hands to `factories.UnifiedContextRepositoryBuilder` — writes two notes through the service's `AddProgress`, then reads them with `TaskContextRepository.Get` on testpg. It asserts exactly two entries in order and that `Metadata` no longer carries `implementation_notes`.

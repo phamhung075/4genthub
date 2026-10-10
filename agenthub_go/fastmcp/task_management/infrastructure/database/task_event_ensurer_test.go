@@ -23,26 +23,76 @@ import (
 	"agenthub/fastmcp/task_management/infrastructure/repositories"
 )
 
-// oldShapeColumnsDDL is the shape P1 met: the table exists, WITHOUT user_seq, client_event_id and
-// the two per-user uniques, under the CURRENT closed vocabularies - the wave that renamed the actor
-// classes and widened the kinds ran before P1's columns, so this is the shape whose only gap is the
-// columns. The foreign key to tasks is left out because nothing in these cases depends on it.
-const oldShapeColumnsDDL = `CREATE TABLE task_events (
-	id UUID NOT NULL,
-	task_id UUID NOT NULL,
-	subtask_id UUID,
-	user_id VARCHAR(64) NOT NULL,
-	seq INTEGER NOT NULL,
-	kind VARCHAR(32) NOT NULL,
-	actor_kind VARCHAR(16) NOT NULL,
-	actor_id VARCHAR(255) NOT NULL,
-	payload JSONB,
-	created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now() NOT NULL,
-	PRIMARY KEY (id),
-	CONSTRAINT uq_task_event_seq UNIQUE (task_id, seq),
-	CONSTRAINT ck_task_event_kind CHECK (kind IN ('assigned', 'claimed', 'delivered', 'context_loaded', 'progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'escalated', 'human_decision', 'handover', 'context_updated')),
-	CONSTRAINT ck_task_event_actor_kind CHECK (actor_kind IN ('seat', 'client', 'gate', 'human'))
-)`
+// taskEventDef returns the task_events definition from the registry, so the fixtures below are built from
+// the SAME ColumnDefs the ensurer reads. The hand-written DDL this replaces modelled the shape the ensurer
+// HANDLES rather than the shape production HAS: it already carried subtask_id, so a case built from it could
+// not see a column the ensurer never adds.
+func taskEventDef(t *testing.T) database.TableDef {
+	t.Helper()
+	for _, def := range database.Tables {
+		if def.Name == "task_events" {
+			return def
+		}
+	}
+	t.Fatal("task_events is not in the table registry")
+	return database.TableDef{}
+}
+
+// oldShapeDDL builds the pre-P1 shape from the TableDef's COLUMNS with `drop` left out: it omits the
+// two columns P1 added, because that is what makes it the OLD shape - a table that never received them -
+// and it leaves out `drop` so a case can ask whether one column comes back. The constraints are
+// hand-written because they are not derivable - they exist only as DDL text inside the TableDef (the
+// architect's ruling) - and each is dropped when it names a column the case removes, since a constraint
+// over a column the table does not have is refused at CREATE TABLE.
+func oldShapeDDL(t *testing.T, drop string) string {
+	t.Helper()
+	var cols []string
+	for _, c := range taskEventDef(t).Columns {
+		if c.Name == drop || c.Name == "user_seq" || c.Name == "client_event_id" {
+			continue
+		}
+		var b strings.Builder
+		b.WriteString("\t" + c.Name + " " + c.SQLType)
+		if c.ServerDefault != "" {
+			b.WriteString(" DEFAULT " + c.ServerDefault)
+		}
+		if !c.Nullable {
+			b.WriteString(" NOT NULL")
+		}
+		cols = append(cols, b.String())
+	}
+	cols = append(cols, "\tPRIMARY KEY (id)")
+	if drop != "task_id" && drop != "seq" {
+		cols = append(cols, "\tCONSTRAINT uq_task_event_seq UNIQUE (task_id, seq)")
+	}
+	if drop != "kind" {
+		cols = append(cols, "\tCONSTRAINT ck_task_event_kind CHECK (kind IN ('assigned', 'claimed', 'delivered', 'context_loaded', 'progress', 'status_changed', 'evidence_submitted', 'gate_verdict', 'escalated', 'human_decision', 'handover', 'context_updated'))")
+	}
+	if drop != "actor_kind" {
+		cols = append(cols, "\tCONSTRAINT ck_task_event_actor_kind CHECK (actor_kind IN ('seat', 'client', 'gate', 'human'))")
+	}
+	return "CREATE TABLE task_events (\n" + strings.Join(cols, ",\n") + "\n)"
+}
+
+// columnState reads one column back out of the catalogue: present, its reported type, and whether it is
+// NOT NULL.
+func columnState(t *testing.T, db *sql.DB, name string) (bool, string, bool) {
+	t.Helper()
+	var present bool
+	var typ sql.NullString
+	var notNull bool
+	if err := db.QueryRowContext(context.Background(),
+		`SELECT count(*) > 0,
+		        COALESCE(min(format_type(a.atttypid, a.atttypmod)), ''),
+		        COALESCE(bool_or(a.attnotnull), false)
+		   FROM pg_attribute a
+		   JOIN pg_class c ON c.oid = a.attrelid
+		  WHERE c.relname = 'task_events' AND a.attname = $1 AND a.attnum > 0 AND NOT a.attisdropped`,
+		name).Scan(&present, &typ, &notNull); err != nil {
+		t.Fatal(err)
+	}
+	return present, typ.String, notNull
+}
 
 // legacyVocabularyDDL is the shape BEFORE the vocabulary wave: five kinds, three actor classes. The
 // ensurer must widen it - the recorder stamps actor_kind 'seat', which this check refuses - and that
@@ -80,7 +130,7 @@ func newEnsurerTestDB(t *testing.T) *sql.DB {
 func oldShapeWithRows(t *testing.T, db *sql.DB) {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := db.ExecContext(ctx, oldShapeColumnsDDL); err != nil {
+	if _, err := db.ExecContext(ctx, oldShapeDDL(t, "")); err != nil {
 		t.Fatal(err)
 	}
 	rows := []struct {
@@ -349,5 +399,67 @@ func TestTaskEventEnsurerNamesTheValueMigrationAPopulatedOldTableNeeds(t *testin
 	exists, notNull, constraint := userSeqState(t, db)
 	if !exists || !notNull || !constraint {
 		t.Fatalf("the columns did not land even though the widening failed: exists=%v notNull=%v unique=%v", exists, notNull, constraint)
+	}
+}
+
+// normaliseType maps the one alias pair PostgreSQL and the TableDef spell differently, which is all the
+// verify pass has to normalise for this table.
+func normaliseType(s string) string {
+	return strings.ReplaceAll(strings.ToLower(s), "varchar(", "character varying(")
+}
+
+// (g) EVERY COLUMN OF THE DEFINITION IS COVERED, one case per column, the table built from the TableDef
+// minus that column. This is the case the hand-written fixture could not make: it modelled the shape the
+// ensurer HANDLES rather than the shape production HAS, so it could not see a column the ensurer never
+// adds - subtask_id among them, which is what the live table was missing.
+func TestTaskEventEnsurerRestoresEveryColumnOfTheDefinition(t *testing.T) {
+	for _, c := range taskEventDef(t).Columns {
+		if c.PrimaryKey {
+			continue
+		}
+		t.Run(c.Name, func(t *testing.T) {
+			db := newEnsurerTestDB(t)
+			ctx := context.Background()
+			if _, err := db.ExecContext(ctx, oldShapeDDL(t, c.Name)); err != nil {
+				t.Fatal(err)
+			}
+			if err := database.EnsureTaskEventColumns(ctx, db); err != nil {
+				t.Fatalf("the ensurer did not restore %s: %v", c.Name, err)
+			}
+			present, typ, notNull := columnState(t, db, c.Name)
+			if !present {
+				t.Fatalf("%s is still missing after the ensurer ran", c.Name)
+			}
+			if normaliseType(typ) != normaliseType(c.SQLType) {
+				t.Errorf("%s came back as %s, want %s", c.Name, typ, c.SQLType)
+			}
+			if notNull == c.Nullable {
+				t.Errorf("%s is NOT NULL=%v, want NOT NULL=%v", c.Name, notNull, !c.Nullable)
+			}
+		})
+	}
+}
+
+// (h) A NOT NULL COLUMN WITH NO DATA MOVE FAILS LOUDLY, BY NAME, ON A POPULATED TABLE. The intended
+// outcome is the column named, not a guessed default: seq carries no data move, so the ensurer adds it
+// nullable and SET NOT NULL refuses the existing row.
+func TestTaskEventEnsurerFailsLoudlyOnAPopulatedColumnWithNoDataMove(t *testing.T) {
+	db := newEnsurerTestDB(t)
+	ctx := context.Background()
+	if _, err := db.ExecContext(ctx, oldShapeDDL(t, "seq")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx,
+		`INSERT INTO task_events (id, task_id, user_id, kind, actor_kind, actor_id)
+		 VALUES ('99999999-9999-9999-9999-999999999999', 'aaaaaaaa-0000-0000-0000-000000000009',
+		         'user-1', 'status_changed', 'seat', 'room/one')`); err != nil {
+		t.Fatal(err)
+	}
+	err := database.EnsureTaskEventColumns(ctx, db)
+	if err == nil {
+		t.Fatal("the ensurer reported success over a NOT NULL column it cannot fill; it must fail loudly")
+	}
+	if !strings.Contains(err.Error(), "seq") {
+		t.Errorf("the failure does not name the column an operator has to fill: %v", err)
 	}
 }
