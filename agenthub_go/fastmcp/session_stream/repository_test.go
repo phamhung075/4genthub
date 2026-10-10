@@ -72,6 +72,34 @@ func event(typ string, payload any) *entities.OrderedMap[any] {
 	return m
 }
 
+// The pair a connector reports is refused unless it is whole and each half could name a seat:
+// half a pair, or a value the room/seat tables would reject, never reaches the row. No database is
+// needed - the rule is checked before any statement is built.
+func TestSeatIdentityRefusesHalfAPairAndBadNames(t *testing.T) {
+	if room, seat, err := seatIdentity(nil, nil); room != nil || seat != nil || err != nil {
+		t.Errorf("neither reported: got %v, %v, %v - want all nil", room, seat, err)
+	}
+	for _, c := range []struct {
+		name       string
+		room, seat *string
+	}{
+		{"room without seat", new("dev"), nil},
+		{"seat without room", nil, new("alice")},
+		{"room that cannot name a pod", new("not a room"), new("alice")},
+		{"seat that cannot name a member", new("dev"), new("-lead")},
+	} {
+		if room, seat, err := seatIdentity(c.room, c.seat); err == nil {
+			t.Errorf("%s: got %v, %v with no error, want a refusal", c.name, room, seat)
+		} else if !strings.Contains(err.Error(), "room") && !strings.Contains(err.Error(), "seat") {
+			t.Errorf("%s: error = %v, want it to name the rule", c.name, err)
+		}
+	}
+	room, key, err := seatIdentity(new("dev"), new("alice"))
+	if err != nil || room == nil || key == nil || *room != "dev" || *key != "alice" {
+		t.Errorf("a whole pair must pass through: %v, %v, %v", room, key, err)
+	}
+}
+
 func TestRepositoryPostgres(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
@@ -81,11 +109,12 @@ func TestRepositoryPostgres(t *testing.T) {
 	sid := SessionIDFor(user, connector, key)
 
 	project := "proj"
-	row, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project)
+	room, seat := "dev", "alice"
+	row, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project, &room, &seat)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen"}
+	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen", "room_slug", "seat_key"}
 	if got := row.Keys(); strings.Join(got, ",") != strings.Join(wantKeys, ",") {
 		t.Fatalf("row keys = %v, want %v", got, wantKeys)
 	}
@@ -103,7 +132,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 
 	// A different user has a different deterministic id and cannot see user1's row.
-	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil)
+	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +145,7 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// Update keeps project when the new one is empty, updates name.
 	empty := ""
-	row2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty)
+	row2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +154,12 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 	if v, _ := row2.Get("project"); v != "proj" {
 		t.Errorf("project = %v, want proj (kept)", v)
+	}
+	if v, _ := row2.Get("room_slug"); v != "dev" {
+		t.Errorf("room_slug = %v, want dev (kept: the frame carried no pair)", v)
+	}
+	if v, _ := row2.Get("seat_key"); v != "alice" {
+		t.Errorf("seat_key = %v, want alice (kept: the frame carried no pair)", v)
 	}
 
 	// Append assigns seq server-side.
@@ -234,7 +269,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil)
+	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil, nil, nil)
 	if !errors.As(err, &pe) || pe.Msg != "session belongs to another user" {
 		t.Fatalf("foreign row upsert err = %v", err)
 	}
@@ -246,7 +281,7 @@ func TestRepositoryPostgres(t *testing.T) {
 func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
-	row, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil)
+	row, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

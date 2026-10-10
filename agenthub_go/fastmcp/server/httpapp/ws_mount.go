@@ -342,9 +342,13 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 				if name == "" {
 					name = key
 				}
-				row, err := session_stream.UpsertSession(ctx, sessions, userID, connectorID, key, name, wsOptString(wsGet(msg, "project")))
+				// The seat's identity as the connector observed it. Both-or-neither and the name rule
+				// are enforced by the writer, so a frame naming half a pair is refused rather than
+				// stored as a fact the rest of the system would have to guess about.
+				row, err := session_stream.UpsertSession(ctx, sessions, userID, connectorID, key, name,
+					wsOptString(wsGet(msg, "project")), wsOptString(wsGet(msg, "room")), wsOptString(wsGet(msg, "seat")))
 				if err != nil {
-					_ = wsSend(ctx, conn, wsConnectorError("internal error"))
+					_ = wsSend(ctx, conn, wsConnectorError(wsAppendError(err)))
 					continue
 				}
 				id, _ := row.Get("id")
@@ -391,8 +395,10 @@ func handleConnector(sessions *database.SessionManager) http.HandlerFunc {
 	}
 }
 
-// wsAppendError maps append_events failures to the connector error text: the typed
-// ValueError/PermissionError carry their message, anything else is internal.
+// wsAppendError maps a typed failure from the stream writers - append_events and the session
+// frame - to the connector error text: the typed ValueError/PermissionError carry their message,
+// anything else is internal. A refused seat identity therefore says which rule it broke rather
+// than reporting "internal error".
 func wsAppendError(err error) string {
 	switch e := err.(type) {
 	case *value_objects.ValueError:

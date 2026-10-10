@@ -11,6 +11,8 @@ import (
 	"agenthub/fastmcp/task_management/domain/entities"
 	tmvo "agenthub/fastmcp/task_management/domain/value_objects"
 	"agenthub/fastmcp/task_management/infrastructure/database"
+
+	seatnames "agenthub/fastmcp/seat_management/domain/repositories"
 )
 
 // MAX_EVENTS_PER_BATCH and MAX_PAYLOAD_CHARS.
@@ -112,16 +114,29 @@ func sessionRow(s *database.AgentSession) *entities.OrderedMap[any] {
 	} else {
 		m.Set("last_seen", tmvo.IsoFormatNaive(s.LastSeen))
 	}
+	// The seat's identity, observed by the connector and reported at ingest. Null means the
+	// connector could not name one - the session has no seat to send to, which is a fact about the
+	// session rather than an error.
+	if s.RoomSlug != nil {
+		m.Set("room_slug", *s.RoomSlug)
+	} else {
+		m.Set("room_slug", nil)
+	}
+	if s.SeatKey != nil {
+		m.Set("seat_key", *s.SeatKey)
+	} else {
+		m.Set("seat_key", nil)
+	}
 	return m
 }
 
-const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen"
+const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key"
 
 type rowScanner interface{ Scan(dest ...any) error }
 
 func scanAgentSession(row rowScanner, dst *database.AgentSession) error {
 	return row.Scan(&dst.ID, &dst.UserID, &dst.ConnectorID, &dst.SessionKey, &dst.Name,
-		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen)
+		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen, &dst.RoomSlug, &dst.SeatKey)
 }
 
 func scanAgentSessionEvent(row rowScanner, dst *database.AgentSessionEvent) error {
@@ -142,9 +157,37 @@ func truncatedPayload() *entities.OrderedMap[any] {
 	return m
 }
 
+// seatIdentity checks the pair a connector reports: both or neither, and each must name a pod or a
+// member the way OpenRig names them - the rule the room and seat tables already use, imported
+// rather than copied so there is one statement of it. A frame carrying half a pair, or a value
+// that could never name a seat, is refused here instead of being stored as a fact the rest of the
+// system would have to guess about. The dependency is a pure domain package: no query, no foreign
+// key, so the hot socket path stays free of seat_management's storage.
+func seatIdentity(roomSlug, seatKey *string) (*string, *string, error) {
+	room, seat := clip(roomSlug), clip(seatKey)
+	if (room == nil) != (seat == nil) {
+		return nil, nil, &tmvo.ValueError{Msg: "room and seat must be reported together"}
+	}
+	if room == nil {
+		return nil, nil, nil
+	}
+	for _, named := range []struct {
+		kind, value string
+	}{{"room", *room}, {"seat", *seat}} {
+		if err := seatnames.ValidateName(named.kind, named.value); err != nil {
+			return nil, nil, &tmvo.ValueError{Msg: err.Error()}
+		}
+	}
+	return room, seat, nil
+}
+
 // UpsertSession is upsert_session.
-func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project *string) (*entities.OrderedMap[any], error) {
+func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project, roomSlug, seatKey *string) (*entities.OrderedMap[any], error) {
 	sessions, err := resolveSessions(sessions)
+	if err != nil {
+		return nil, err
+	}
+	roomSlug, seatKey, err = seatIdentity(roomSlug, seatKey)
 	if err != nil {
 		return nil, err
 	}
@@ -168,35 +211,45 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 				SessionKey:  sessionKey,
 				Name:        pyClip(name, 255),
 				Project:     clip(project),
+				RoomSlug:    roomSlug,
+				SeatKey:     seatKey,
 				Status:      "active",
 				LastSeq:     0,
 				CreatedAt:   ts,
 				LastSeen:    ts,
 			}
 			if _, err := s.ExecContext(ctx,
-				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen) "+
-					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key) "+
+					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
 				row.ID, row.UserID, row.ConnectorID, row.SessionKey, row.Name, row.Project,
-				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen); err != nil {
+				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen, row.RoomSlug, row.SeatKey); err != nil {
 				return err
 			}
 			out = sessionRow(&row)
 			return nil
 		}
 
-		// Existing row: update name, keep the project when the new value is empty.
+		// Existing row: update name, keep the project when the new value is empty, and move the seat
+		// identity only when the frame carried one - the pair travels together or not at all, which
+		// seatIdentity has already enforced.
 		newProject := existing.Project
 		if p := clip(project); p != nil {
 			newProject = p
 		}
+		newRoom, newSeat := existing.RoomSlug, existing.SeatKey
+		if roomSlug != nil {
+			newRoom, newSeat = roomSlug, seatKey
+		}
 		ts := tNow()
 		if _, err := s.ExecContext(ctx,
-			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4 WHERE id = $5",
-			pyClip(name, 255), newProject, "active", ts, sid); err != nil {
+			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4, room_slug = $5, seat_key = $6 WHERE id = $7",
+			pyClip(name, 255), newProject, "active", ts, newRoom, newSeat, sid); err != nil {
 			return err
 		}
 		existing.Name = pyClip(name, 255)
 		existing.Project = newProject
+		existing.RoomSlug = newRoom
+		existing.SeatKey = newSeat
 		existing.Status = "active"
 		existing.LastSeen = ts
 		out = sessionRow(&existing)
