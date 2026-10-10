@@ -672,6 +672,20 @@ func (r *ORMTaskRepository) DeleteTask(ctx context.Context, taskID string) (bool
 			if _, err := s.ExecContext(ctx, `DELETE FROM task_labels WHERE task_id = $1::uuid`, taskID); err != nil {
 				return err
 			}
+			// The task-event ledger. task_events.task_id is the one foreign key into tasks with NO
+			// ON DELETE CASCADE (task_event_tables.go: "No CASCADE on the foreign key, by this
+			// schema's design: the application layer cascades"), while the tables above cascade in
+			// the database. Nothing else deletes these rows, so without this statement a task that
+			// has any event row beyond the status check cannot be deleted at all: PostgreSQL refuses
+			// the parent delete with 23503, this function swallows the error into `false` like
+			// Python, and the caller reports OPERATION_FAILED with no reason.
+			//
+			// One statement covers the whole ledger for the task, subtask events included: every
+			// event row carries the parent task_id (task_events.task_id is NOT NULL and
+			// subtask_id is a plain uuid with no foreign key), so an event is addressed by its task.
+			if _, err := s.ExecContext(ctx, `DELETE FROM task_events WHERE task_id = $1::uuid`, taskID); err != nil {
+				return err
+			}
 			if row.GitBranchID != "" {
 				var taskCount, completedCount int64
 				var status string
