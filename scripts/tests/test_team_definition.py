@@ -314,7 +314,10 @@ def test_overlays_send_full_op_lists(server, env, capsys):
     }
     company = overlays["/api/v2/openrig/overlay"]
     assert company["ops"] == [
-        {"kind": "add", "slug": "project-4genthub", "version": "1.0.0", "content": ""},
+        # Pinned deliberately: the pending company-overlay apply depends on the ref reading 1.0.1.
+        # Back at 1.0.0, the apply publishes 1.0.1 (nextPatch) while the overlay keeps 1.0.0,
+        # a publish nothing references (row 9651609a).
+        {"kind": "add", "slug": "project-4genthub", "version": "1.0.1", "content": ""},
         {"kind": "add", "slug": "delegate-deepseek", "version": "1.1.0", "content": ""},
     ]
     room = "/api/v2/openrig/rooms/4genthub-dev/seats"
@@ -397,7 +400,11 @@ def test_rerun_tolerates_existing_room_and_seats(server, env, capsys):
 
 
 def test_409_on_a_module_is_an_error(server, env, capsys):
-    path = "/api/v2/openrig/modules/project-4genthub/versions/1.0.0"
+    # Read from the definition: this case is about the 409, and a literal stops matching when the ref moves.
+    version = next(
+        m["version"] for m in _definition("4genthub")["modules"] if m["slug"] == "project-4genthub"
+    )
+    path = f"/api/v2/openrig/modules/project-4genthub/versions/{version}"
     server.overrides[("PUT", path)] = (
         409,
         '{"detail":"already exists with different content"}',
