@@ -213,7 +213,7 @@ See `ai_docs/api-integration/surface-inventory.md` §2 for the full MCP surface.
 
 ```bash
 # Clone → Setup → Run (that's it!)
-git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.sh
+git clone <repository-url> && cd 4genthub && ./docker-system/docker-menu.sh
 ```
 
 #### 📋 **Prerequisites**
@@ -358,7 +358,7 @@ mcp__agenthub_http__manage_context(
 | 🛠️ **Operations Manual** | Deployment and maintenance | `ai_docs/operations/` |
 | 🔍 **Troubleshooting** | Common issues and solutions | `ai_docs/troubleshooting-guides/` |
 | 🧭 **API & MCP reference** | The mounted route and tool surface | `ai_docs/api-integration/surface-inventory.md` |
-| 📋 **Changelog** | Version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
+| 📋 **Changelog** | Version history and release notes | [CHANGELOG/](CHANGELOG/) |
 
 ---
 
@@ -536,10 +536,10 @@ Track all changes, releases, and improvements to the agenthub platform through o
 
 | Resource | Description | Link |
 |----------|-------------|------|
-| 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG.md](CHANGELOG.md) |
+| 📋 **Main Changelog** | Complete version history and release notes | [CHANGELOG/](CHANGELOG/) |
 | 🏷️ **Release Format** | Follows Keep a Changelog specification | [keepachangelog.com](https://keepachangelog.com/) |
 | 🔢 **Versioning** | Semantic Versioning (MAJOR.MINOR.PATCH) | [semver.org](https://semver.org/) |
-| 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Measured 2026-10-09: `origin/main` declares `0.0.27` (`07a66f8f`) and THE TREE'S RELEASE LITERAL READS `0.0.28`; production's own read still stands at `"version":"0.0.22"` from 2026-10-06 and was NOT re-read by this pass** — the value lives in `agenthub_go/fastmcp/config/version.go:21` and is read by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so **the deployed and the prepared state now DIFFER and the tree sits 44 commits above the deployed tip** (packet 4, `fcd4c268`; the previous deploy was `0.0.21` at packet 3, `0018c644`). **Pass 2's sentence "the first deploy where the two agree" was true when it was written and is false now; it is corrected here rather than quietly dropped, because a row that says two versions agree is itself a claim that drifts.** The newest *released* section of the changelog is **`0.0.5` (2025-09-26)** — a separate numbering scheme — so this row carries the deploy marker and links the release history; the dated reads of both halves live in the packet-4 deploy record rather than here, where a bundle name would go stale. | [CHANGELOG.md](CHANGELOG.md) |
+| 🎯 **Deploy marker** | `GET /health` reports the running version — **and only the BACKEND's: the frontend ships as a separate artifact, so its half is checked by the bundle filename the dashboard actually serves, and a deploy is complete only when both halves move.** **Read it rather than trusting this cell:** the deployed version IS the tree's `config.ReleaseVersion` (`agenthub_go/fastmcp/config/version.go:21`), served by `healthVersion = config.ReleaseVersion` (`agenthub_go/fastmcp/server/httpapp/http.go:160`), so compare that literal with `curl -sS https://api.4genthub.com/health` — they must agree, and any number quoted here would be a reading with a date on it, not a fact. | [CHANGELOG/](CHANGELOG/) |
 
 ### 🚀 **Latest Releases**
 
@@ -651,7 +651,7 @@ Our release process follows industry best practices:
 
 ### 🏠 **Advanced: Self-Hosted**
 ```bash
-git clone <repository-url> && cd agentic-project && ./docker-system/docker-menu.sh
+git clone <repository-url> && cd 4genthub && ./docker-system/docker-menu.sh
 ```
 
 **Then visit:** http://localhost:3800 **and watch the magic happen** ✨
