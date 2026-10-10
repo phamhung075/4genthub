@@ -155,9 +155,16 @@ func TestUsageRefusalIsExitTwo(t *testing.T) {
 }
 
 // shelfUnder builds a root holding the library's own block files and the interim sources they were
-// copied from, minus the one source the caller withholds. The block files are copied verbatim from
-// this checkout, which is what the binary embedded, so the only difference from the real tree is the
-// withheld source — the fixture cannot pass by diverging on something else.
+// copied from, minus the one source the caller withholds. The bytes come from this checkout, which is
+// what the binary embedded, so the only difference from the real tree is the withheld source — the
+// fixture cannot pass by diverging on something else.
+//
+// THE INTERIM SOURCES ARE WRITTEN FROM THEIR BLOCKS, because the shelf is now the only home for that
+// text: row 5ef06b16 deleted ai_docs/operations/seat-guides/, and the lock records block and source
+// under the SAME digest, so a source written from its block is the byte-identical file the migration
+// copied out. Reading the repository copy instead would have made this fixture a reader of a directory
+// the migration is in the middle of deleting — which is how it went red, in this package, the moment
+// the deletion landed.
 func shelfUnder(t *testing.T, withholdSource string) string {
 	t.Helper()
 	table, err := seedlibrary.BlockProvenanceTable()
@@ -173,7 +180,7 @@ func shelfUnder(t *testing.T, withholdSource string) string {
 		if e.SourcePath == "" || e.SourcePath == withholdSource {
 			continue
 		}
-		copyInto(t, root, e.SourcePath)
+		copyAs(t, root, e.Path, e.SourcePath)
 	}
 	return root
 }
@@ -187,6 +194,24 @@ func copyInto(t *testing.T, root, rel string) {
 	if err != nil {
 		t.Fatalf("fixture source %s: %v", rel, err)
 	}
+	writeInto(t, root, rel, data)
+}
+
+// copyAs copies one repository-relative file to a SECOND repository-relative path inside the fixture
+// root. It exists for the migration's own shape, where a block's bytes are also its interim source's
+// bytes: the interim file is written from the shelf rather than read from the directory the migration
+// deleted.
+func copyAs(t *testing.T, root, srcRel, dstRel string) {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", filepath.FromSlash(srcRel)))
+	if err != nil {
+		t.Fatalf("fixture source %s: %v", srcRel, err)
+	}
+	writeInto(t, root, dstRel, data)
+}
+
+func writeInto(t *testing.T, root, rel string, data []byte) {
+	t.Helper()
 	dst := filepath.Join(root, filepath.FromSlash(rel))
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		t.Fatal(err)
