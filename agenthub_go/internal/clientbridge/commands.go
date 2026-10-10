@@ -255,13 +255,3 @@ func DefaultStatePath() string {
 	}
 	return filepath.Join(home, ".openrig", "bridge-sync.json")
 }
-
-// DefaultEnvFile is where the service unit reads AGENTHUB_URL and AGENTHUB_TOKEN
-// (EnvironmentFile=%h/.config/agenthub-bridge.env).
-func DefaultEnvFile() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
-	return filepath.Join(home, ".config", "agenthub-bridge.env")
-}

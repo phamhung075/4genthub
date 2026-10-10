@@ -13,7 +13,7 @@
 - `agenthub-frontend/src/docs/apiReference.ts` regenerated (144 routes).
 
 ### Deployment
-- Deploy the server first. Clients that still send a machine token get 401 afterwards: set `AGENTHUB_TOKEN` in the bridge env file (`~/.config/agenthub-bridge.env`) and restart the bridge and seats.
+- Deploy the server first. Clients that still send a machine token get 401 afterwards: set `AGENTHUB_TOKEN` in the client `.env` (the Python client no longer reads `~/.config/agenthub-bridge.env`; its service unit now loads the client `.env`) and restart the bridge and seats.
 - The `machine_tokens` table stays in existing databases until dropped by hand.
 
 ### Tested
