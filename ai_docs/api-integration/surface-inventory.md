@@ -580,10 +580,8 @@ the correction. The checks themselves are unchanged and re-runnable from Appendi
    `action`. The file now carries the ten published tools (`manage_seat` at line 13,
    `call_seat` at line 14), a `### call_agent — retired` section, and an explicit note
    that the two seat tools and `manage_connection` take no `action`.
-2. **`ai_docs/api-behavior/api-parameter-handling-complete.md`** — **CLOSED**. The original
-   finding: it shared the old tool set and predated the seat tools. It now carries a
-   `Seat (manage_seat, call_seat)` row and states that the seat tools are the exception
-   to the `action` rule.
+2. **`api-parameter-handling-complete.md`** — **CLOSED**; the page was deleted, the seat-tool
+   exception to the `action` rule is stated in the tool table of this file.
 3. **`ai_docs/core-architecture/agenthub-system-architecture.md section 3`** — **CLOSED** (`95ffca45`
    and the 2026-10-06 truth-audit). The original finding: "32+ specialized agents", a
    **SQLite (fallback)** claim, and SQLAlchemy/Alembic described as the persistence path.

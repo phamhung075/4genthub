@@ -1,3 +1,35 @@
+## Anyone could forge a notification for any user through POST /api/v2/broadcast/notify
+
+### Changed
+- `agenthub_go/fastmcp/server/httpapp/routes_mount.go`: `POST /api/v2/broadcast/notify` is now **machine-authenticated**, and the target user comes **from the machine token, never from the request body**. The route was a bare `mux.HandleFunc` with **no auth wrapper at all** that read `user_id` straight out of the JSON body, so an unauthenticated caller could write a notification into any user's session - a live unauthenticated write path, not a theoretical one. The wrapper is **`machineAuthed`**, already in the tree (`machine_token_mount.go:111`) and already used for `POST /api/v2/openrig/seat-status` (`seat_status_mount.go:113`); it is mounted **at the broadcast mount itself**, in `mountBroadcastRoutes`, and the handler no longer reads the body's `user_id`, which is no longer a required field.
+- **Why the machine wrapper and not the user one:** the only caller is the bridge, which holds `AGENTHUB_MACHINE_TOKEN` (`agenthub_go/internal/clientbridge/commands.go:252`; `agenthub_client/.../bridge.py`). The ordinary user wrapper would have left the bridge unable to post at all and blocked the producer row `628a445d` that depends on this route. Nothing about the producer's ingress assumption changes.
+- **Residual, stated rather than implied:** `metadata.user_id` / `metadata.user_ids` still add broadcast targets inside `BroadcastDataChange` (`fastmcp/server/routes/websocket_routes.go:578-589`). That is the ported fan-out feature and it is now reachable only with a machine token, but it does mean a body can still name an additional recipient; the top-level `user_id` - the field the defect was about - cannot.
+
+### Verified
+- `fastmcp/server/httpapp/broadcast_notify_auth_test.go` (new) drives the route through the same `mountBroadcastRoutes` the server mounts: **no `Authorization` header -> 403**, **unknown machine token -> 401**, **valid machine token -> 200**, and the broadcast callback receives the **token's user** while the body names another user. On the old code the first case could not hold - the unauthenticated request reached the broadcast - which is the defect the case pins.
+
+### Not verified, stated rather than omitted
+- `TestMissedNotificationStoredOfflineAndReplayedOnce` now authenticates with a machine token belonging to the target and forges the body's `user_id` to the other user. It **SKIPS without `AGENTHUB_TEST_PG_URL`**, so that edit is compile-verified only and has not been run against a database.
+
+### Found by
+- Row `ac2d6106`; the ingress shape is the dependency assumption recorded on row `628a445d`.
+
+## Unreleased — ai_docs cut from 57 files to 21
+
+### Removed
+- `ai_docs/_workplace/`, `ai_docs/claude-code/`, `ai_docs/reports-status/`: dated scratch, retired-model records and two dated reports.
+- The three `cleanup-analysis-*` pages, `token-optimization-complete-summary-2025-11-03.md`, `mcp-crud-all-layers-report.md`, `mcp_test_issues.md`, `testing-qa/mcp-comprehensive-test-report-2025-11-29.md`: analyses and generated reports of the retired Python tree.
+- Vendor reference copies: the four `anthropic_*.md`, `openai_quick_start.md`, `cc_hooks_docs.md`, `user_prompt_submit_hook.md`, `uv-single-file-scripts.md`; their five `Read` lines in `.gemini/commands/prime.toml` and `prime_tts.toml` go with them.
+- Python-era guides the architecture doc and the surface inventory supersede: `development-guides/{ddd-architecture,development-workflow,development-infrastructure}-complete.md`, `ui-patterns/toast-notification-architecture.md`, `testing-qa/{qa-strategy-planning,contract-integration,mcp-tools-validation}-complete.md`, `testing-qa/e2e/End_to_End_Testing_Guidelines.md` (an unfilled template), `api-behavior/api-parameter-handling-complete.md`, `agent-system/agents-md-migration-map.md`; the pointers to the last two in `AGENTS.md`, `ai_docs/agent-system/*.md` and `ai_docs/api-integration/surface-inventory.md` are reworded.
+
+### Added
+- `ai_docs/development-guides/development.md`: one page of the commands that run the project and where each kind of fact lives.
+
+### Changed
+- `ai_docs/index.json` regenerated (20 indexed files).
+- Validated: `go test ./...`, `scripts/tests` (49 passed) and the client suite.
+- Not changed: `operations/complete-operations-guide.md`, `setup-guides/`, `troubleshooting-guides/` and `authentication/` still carry dated "struck" and "earlier revisions" notes; rewriting them needs the real production deploy path, which no file in the tree states.
+
 ## fastmcp/server was a server nothing could reach, and the tree kept compiling it
 
 ### Changed

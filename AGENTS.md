@@ -42,9 +42,20 @@ These are pointers; never copy their content into this file.
 3. **Changelog duties.** Update `CHANGELOG.md` for changes that ship and `TEST-CHANGELOG.md` for
    test-suite changes. Detail: same file.
 4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
-   Stage by explicit path; never `git add -A`. (The old "`CLAUDE.md` stays out of every commit"
-   rule is superseded — that file was renamed to `AGENTS.md`, which is tracked; see
-   `agenthub_go/NEXT_GEN.md`.)
+   **Stage by explicit path; never `git add -A`** is **RETIRED** — the index is shared with every other
+   seat working in this worktree, so a staged line can be taken by another seat's commit. **Commit by
+   pathspec and do not stage first:** `git commit -m "<type(scope): subject>" -- <paths>`, and a
+   brand-new file is the one exception, marked with `git add -N -- <new>` (intent-to-add, nothing enters
+   the index) before the same commit. Never `git add .`, `-A` or `--amend`. **A removal is attributed by
+   the COMMIT that carries it, never by the staging area** (`git show --numstat --format= <sha> -- <path>`);
+   **a shared changelog takes the WHOLE file**, so check it is clear of other seats' entries, or sequence
+   with that seat, or name what you carry. **If the pre-commit framework refuses a pathspec commit because
+   the config is unstaged:** if the config is yours, commit it by itself by pathspec and the guard clears
+   itself; if it is not, ask its owner; `--no-verify` only as a last resort, with the hooks run over your
+   own paths and the skipped ones named. **The hooks also rewrite a path you named**, so read
+   `git show --numstat` after committing. (`b059b863`; the full text and the checks: the file below.)
+   (The old "`CLAUDE.md` stays out of every commit" rule is superseded — that file was renamed to
+   `AGENTS.md`, which is tracked; see `agenthub_go/NEXT_GEN.md`.)
 5. **The owner approves every push.** Never push, deploy or touch production or another rig without
    the owner's explicit go-ahead.
 
@@ -57,8 +68,6 @@ These are pointers; never copy their content into this file.
   the ten published MCP tools.
 - `ai_docs/agent-system/task-workflow-and-reporting.md` — MCP task/subtask tracking and reporting
   guidance (product usage).
-- `ai_docs/agent-system/agents-md-migration-map.md` — what this file used to carry and where each
-  section went.
 
 ## 5. Record work in 4genthub through its MCP tools
 

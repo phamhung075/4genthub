@@ -23,109 +23,56 @@
       ],
       "path": "_absolute_docs/scripts"
     },
-    "_workplace/workers": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "fc42ded5e21cb2270940a5c1f51da3d9",
-          "modified": "2026-10-06T18:47:20.756242",
-          "name": "scripts-cleanup-analysis.md",
-          "path": "_workplace/workers/scripts-cleanup-analysis.md",
-          "size": 22591
-        }
-      ],
-      "path": "_workplace/workers"
-    },
-    "_workplace/workers/fix_tests_loop": {
-      "count": 2,
-      "files": [
-        {
-          "hash": "3871e12ce8936260ddfe7dd29530a17e",
-          "modified": "2026-10-06T18:47:20.776240",
-          "name": "AI_README.md",
-          "path": "_workplace/workers/fix_tests_loop/AI_README.md",
-          "size": 4930
-        },
-        {
-          "hash": "d8eed66d4bd0c3815bca3cdda527751d",
-          "modified": "2026-10-06T18:47:20.808237",
-          "name": "fix-1by1.md",
-          "path": "_workplace/workers/fix_tests_loop/fix-1by1.md",
-          "size": 7315
-        }
-      ],
-      "path": "_workplace/workers/fix_tests_loop"
-    },
     "agent-system": {
-      "count": 5,
+      "count": 4,
       "files": [
         {
-          "hash": "0e93eb2c2da411223506dce0c5ddd320",
-          "modified": "2026-10-05T22:20:25.166497",
+          "hash": "05c899e3a912c0e971d8bcd426a52361",
+          "modified": "2026-10-09T23:04:15.004247",
           "name": "skill-library.md",
           "path": "agent-system/skill-library.md",
-          "size": 17045
+          "size": 18071
         },
         {
-          "hash": "f29ac03da3740d3009e284d3d57623cf",
-          "modified": "2026-10-06T19:00:35.088099",
+          "hash": "be7a84f7c5c905e53c67969888913a7b",
+          "modified": "2026-10-10T09:36:13.411518",
           "name": "seat-model-and-mcp-surface.md",
           "path": "agent-system/seat-model-and-mcp-surface.md",
-          "size": 3448
+          "size": 4926
         },
         {
-          "hash": "74211fa530810d367a67922d3ee70cf9",
-          "modified": "2026-10-08T23:21:29.318959",
+          "hash": "3a24a530f529ff5a805ac864d9ba88e8",
+          "modified": "2026-10-10T09:36:13.411518",
           "name": "repo-agent-rules.md",
           "path": "agent-system/repo-agent-rules.md",
-          "size": 9241
+          "size": 8997
         },
         {
-          "hash": "59c1599dc8066845220c990978b247c0",
-          "modified": "2026-10-05T21:31:57.438635",
-          "name": "agents-md-migration-map.md",
-          "path": "agent-system/agents-md-migration-map.md",
-          "size": 6986
-        },
-        {
-          "hash": "01a1385c251e42c0bdf190c34f45675e",
-          "modified": "2026-10-05T21:25:15.859658",
+          "hash": "a202bb5eaba4b09db48c389503b6ca96",
+          "modified": "2026-10-10T09:36:13.411518",
           "name": "task-workflow-and-reporting.md",
           "path": "agent-system/task-workflow-and-reporting.md",
-          "size": 4638
+          "size": 4520
         }
       ],
       "path": "agent-system"
-    },
-    "api-behavior": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "acbd5e525e71179c0fd02b6ab8346110",
-          "modified": "2026-10-05T20:51:34.138975",
-          "name": "api-parameter-handling-complete.md",
-          "path": "api-behavior/api-parameter-handling-complete.md",
-          "size": 7165
-        }
-      ],
-      "path": "api-behavior"
     },
     "api-integration": {
       "count": 2,
       "files": [
         {
-          "hash": "b054c585c49554df7a87426ecced23dc",
-          "modified": "2026-10-08T20:16:12.532940",
+          "hash": "7c4d404b7585b0eed19f89db73fcf729",
+          "modified": "2026-10-09T21:09:27.714661",
           "name": "mcp-tools-api-complete.md",
           "path": "api-integration/mcp-tools-api-complete.md",
-          "size": 19440
+          "size": 19860
         },
         {
-          "hash": "377f3e2f5a1725344f2391cf4573c20b",
-          "modified": "2026-10-08T22:00:46.275560",
+          "hash": "11209cb74cad5bdf98d41a769672e160",
+          "modified": "2026-10-10T09:36:13.411518",
           "name": "surface-inventory.md",
           "path": "api-integration/surface-inventory.md",
-          "size": 56008
+          "size": 72294
         }
       ],
       "path": "api-integration"
@@ -143,421 +90,92 @@
       ],
       "path": "authentication"
     },
-    "claude-code": {
-      "count": 8,
-      "files": [
-        {
-          "hash": "c333f590bc7f6c4b18378ef31ea5b355",
-          "modified": "2026-10-06T18:33:59.714255",
-          "name": "phase2-hook-optimization-strategy.md",
-          "path": "claude-code/phase2-hook-optimization-strategy.md",
-          "size": 14150
-        },
-        {
-          "hash": "62f36d8aafd0a2fb15fbfbbd53bde1a4",
-          "modified": "2026-10-06T18:33:56.238256",
-          "name": "phase3-development-guides-optimization-results.md",
-          "path": "claude-code/phase3-development-guides-optimization-results.md",
-          "size": 16408
-        },
-        {
-          "hash": "51debe1ac78c63555aba64a880db6b2b",
-          "modified": "2026-10-06T18:33:56.262255",
-          "name": "phase3-hook-migration-complete.md",
-          "path": "claude-code/phase3-hook-migration-complete.md",
-          "size": 9546
-        },
-        {
-          "hash": "ecf1c1aef15951e2982b3231e74f04d8",
-          "modified": "2026-10-05T20:00:12.577375",
-          "name": "token-optimization-comparison.md",
-          "path": "claude-code/token-optimization-comparison.md",
-          "size": 15713
-        },
-        {
-          "hash": "2dac5d3ba65daa45aefcd0e760163970",
-          "modified": "2026-10-05T20:00:12.557376",
-          "name": "CLAUDE-optimized-demo.md",
-          "path": "claude-code/CLAUDE-optimized-demo.md",
-          "size": 16650
-        },
-        {
-          "hash": "a741fd69296bf15de1f895853ee493fc",
-          "modified": "2026-10-05T20:00:12.597375",
-          "name": "claude-md-optimization-results.md",
-          "path": "claude-code/claude-md-optimization-results.md",
-          "size": 5759
-        },
-        {
-          "hash": "30ce63d2704c68c42f967b7638386234",
-          "modified": "2026-10-06T18:34:30.172705",
-          "name": "cclaude-cli-research.md",
-          "path": "claude-code/cclaude-cli-research.md",
-          "size": 10378
-        },
-        {
-          "hash": "5fa0de0970ff55e2e96a132f791ef38f",
-          "modified": "2026-10-05T20:00:12.541376",
-          "name": "CLAUDE-stable-version-backup.md",
-          "path": "claude-code/CLAUDE-stable-version-backup.md",
-          "size": 39289
-        }
-      ],
-      "path": "claude-code"
-    },
     "core-architecture": {
       "count": 1,
       "files": [
         {
-          "hash": "57a16b26375825791eb91fc443a104a0",
-          "modified": "2026-10-08T23:13:34.739209",
+          "hash": "09727abbcf7cb3d1fcc1b1e426480746",
+          "modified": "2026-10-10T09:02:46.407226",
           "name": "agenthub-system-architecture.md",
           "path": "core-architecture/agenthub-system-architecture.md",
-          "size": 74242
+          "size": 107277
         }
       ],
       "path": "core-architecture"
     },
     "development-guides": {
-      "count": 3,
+      "count": 1,
       "files": [
         {
-          "hash": "1ea755da134411f23c8f470331d87354",
-          "modified": "2026-10-05T19:57:20.897152",
-          "name": "development-workflow-complete.md",
-          "path": "development-guides/development-workflow-complete.md",
-          "size": 16054
-        },
-        {
-          "hash": "8657d07c2daefbd0483b9c7c80efb08b",
-          "modified": "2026-10-06T18:31:38.534274",
-          "name": "development-infrastructure-complete.md",
-          "path": "development-guides/development-infrastructure-complete.md",
-          "size": 18690
-        },
-        {
-          "hash": "806b454b12a371c491598071e24d1eac",
-          "modified": "2026-10-06T18:31:33.662275",
-          "name": "ddd-architecture-complete.md",
-          "path": "development-guides/ddd-architecture-complete.md",
-          "size": 20065
+          "hash": "e645510b93760a0dce90e6aebb1e119f",
+          "modified": "2026-10-10T09:36:09.307557",
+          "name": "development.md",
+          "path": "development-guides/development.md",
+          "size": 1473
         }
       ],
       "path": "development-guides"
     },
-    "development-guides/ui-patterns": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "562b23f4dfe1e3b13f5418294bc38b77",
-          "modified": "2025-11-15T16:13:47",
-          "name": "toast-notification-architecture.md",
-          "path": "development-guides/ui-patterns/toast-notification-architecture.md",
-          "size": 11780
-        }
-      ],
-      "path": "development-guides/ui-patterns"
-    },
     "operations": {
-      "count": 5,
+      "count": 6,
       "files": [
         {
-          "hash": "52953ce8cf70c548d7767fdb6e6337e1",
-          "modified": "2026-10-08T23:20:11.587655",
+          "hash": "1d2fd0f924a73a033df6f3f3e6b1520e",
+          "modified": "2026-10-10T09:01:25.824031",
           "name": "openrig-seat-limits.md",
           "path": "operations/openrig-seat-limits.md",
-          "size": 5680
+          "size": 7284
         },
         {
-          "hash": "d41d8cd98f00b204e9800998ecf8427e",
-          "modified": "2026-10-08T23:28:21.143272",
+          "hash": "4ae21b7e5aa192b48b8609a456ef444d",
+          "modified": "2026-10-09T21:55:15.917743",
           "name": "complete-operations-guide.md",
           "path": "operations/complete-operations-guide.md",
-          "size": 0
+          "size": 22857
         },
         {
-          "hash": "b66ac94273e67ca7b7fb626b1557dcb3",
-          "modified": "2026-10-09T18:35:40.948058",
+          "hash": "7aee1e932ba684aa53925cee4a86b2df",
+          "modified": "2026-10-09T21:46:13.780653",
           "name": "watching-openrig-seats.md",
           "path": "operations/watching-openrig-seats.md",
-          "size": 7497
+          "size": 8109
         },
         {
-          "hash": "78af71a2ad99950852590807db4829e4",
-          "modified": "2026-10-08T23:20:11.587655",
+          "hash": "89dd3efa63b95c1bbdf539afddef78be",
+          "modified": "2026-10-10T09:03:36.722727",
           "name": "seat-approval-and-the-startup-call.md",
           "path": "operations/seat-approval-and-the-startup-call.md",
-          "size": 11532
+          "size": 12686
         },
         {
-          "hash": "ac3399dc0e3ac544e784e564376916ba",
-          "modified": "2026-10-08T22:00:46.275560",
+          "hash": "c25b8db7ef43546df355964a8852e4d5",
+          "modified": "2026-10-10T09:34:42.664375",
           "name": "syncing-seats-with-the-cloud.md",
           "path": "operations/syncing-seats-with-the-cloud.md",
-          "size": 2923
+          "size": 5682
+        },
+        {
+          "hash": "a037e24f3afc7beca828f4da4bb88a66",
+          "modified": "2026-10-09T21:32:48.271078",
+          "name": "seat-compaction-supervisor.md",
+          "path": "operations/seat-compaction-supervisor.md",
+          "size": 3797
         }
       ],
       "path": "operations"
-    },
-    "operations/seat-guides": {
-      "count": 10,
-      "files": [
-        {
-          "hash": "d8a4b6bb04416474a18024f0b2ef230a",
-          "modified": "2026-10-06T21:15:44.524850",
-          "name": "fe-dev.md",
-          "path": "operations/seat-guides/fe-dev.md",
-          "size": 1850
-        },
-        {
-          "hash": "86166336f81c376f4b54a9a22d8ebee2",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "context-dev.md",
-          "path": "operations/seat-guides/context-dev.md",
-          "size": 1408
-        },
-        {
-          "hash": "410e094ed953a97b8ba13f60989bd109",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "writer.md",
-          "path": "operations/seat-guides/writer.md",
-          "size": 1463
-        },
-        {
-          "hash": "0dc6b3a84ae73ee9bf161021e6d25095",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "go-dev.md",
-          "path": "operations/seat-guides/go-dev.md",
-          "size": 1775
-        },
-        {
-          "hash": "2459ec31318b28186abbdddb10b7db5c",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "web-dev.md",
-          "path": "operations/seat-guides/web-dev.md",
-          "size": 1304
-        },
-        {
-          "hash": "20e9f2cf9bac055a0bcd5e7aaa06a3fe",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "lead.md",
-          "path": "operations/seat-guides/lead.md",
-          "size": 2029
-        },
-        {
-          "hash": "64d02643769b42104498d5a44d827aec",
-          "modified": "2026-10-08T23:13:34.739209",
-          "name": "_common.md",
-          "path": "operations/seat-guides/_common.md",
-          "size": 4783
-        },
-        {
-          "hash": "ec95d1601a34054d121156dc189bd72e",
-          "modified": "2026-10-08T23:13:34.739209",
-          "name": "reviewer.md",
-          "path": "operations/seat-guides/reviewer.md",
-          "size": 1941
-        },
-        {
-          "hash": "8686af95ae452a00ba1c5648076fe749",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "skills-dev.md",
-          "path": "operations/seat-guides/skills-dev.md",
-          "size": 1403
-        },
-        {
-          "hash": "07aa95696b84b9eb71da5a30f4f7f849",
-          "modified": "2026-10-06T21:08:35.680580",
-          "name": "feedback-dev.md",
-          "path": "operations/seat-guides/feedback-dev.md",
-          "size": 1281
-        }
-      ],
-      "path": "operations/seat-guides"
-    },
-    "reports-status": {
-      "count": 2,
-      "files": [
-        {
-          "hash": "ef1ce46f910fa0f6b56bd5385a83dc72",
-          "modified": "2026-10-06T06:14:07.384248",
-          "name": "session-handoff-2026-10-04.md",
-          "path": "reports-status/session-handoff-2026-10-04.md",
-          "size": 10922
-        },
-        {
-          "hash": "fd8175e46b6ae865f6af0a2c5efcfc16",
-          "modified": "2026-10-06T19:56:02.383446",
-          "name": "openrig-side-defects-2026-10-06.md",
-          "path": "reports-status/openrig-side-defects-2026-10-06.md",
-          "size": 7702
-        }
-      ],
-      "path": "reports-status"
-    },
-    "root": {
-      "count": 14,
-      "files": [
-        {
-          "hash": "cb5cb8b628c6e65bc9add252db13b46f",
-          "modified": "2025-11-29T11:56:28",
-          "name": "mcp_test_issues.md",
-          "path": "mcp_test_issues.md",
-          "size": 2242
-        },
-        {
-          "hash": "55ef1dbcc0f460c7907dab88452b5f13",
-          "modified": "2026-10-05T20:54:02.980862",
-          "name": "anthropic_output_styles.md",
-          "path": "anthropic_output_styles.md",
-          "size": 3681
-        },
-        {
-          "hash": "b11b74928fc3ae8551b572aca91a2d00",
-          "modified": "2026-10-06T18:34:10.902253",
-          "name": "token-optimization-complete-summary-2025-11-03.md",
-          "path": "token-optimization-complete-summary-2025-11-03.md",
-          "size": 23453
-        },
-        {
-          "hash": "3d1d6533daf90104eedaf009f4823867",
-          "modified": "2026-10-05T20:54:02.976862",
-          "name": "anthropic_docs_subagents.md",
-          "path": "anthropic_docs_subagents.md",
-          "size": 11848
-        },
-        {
-          "hash": "2f1ea8f81370322905c6a2abe2eb9313",
-          "modified": "2025-11-15T16:13:47",
-          "name": "uv-single-file-scripts.md",
-          "path": "uv-single-file-scripts.md",
-          "size": 4134
-        },
-        {
-          "hash": "b6b40ac9d74d9b666c4d5aa2190da081",
-          "modified": "2026-10-05T20:54:02.976862",
-          "name": "anthropic_custom_slash_commands.md",
-          "path": "anthropic_custom_slash_commands.md",
-          "size": 9890
-        },
-        {
-          "hash": "1246aebcf8bc762b712ffbe08d06bfeb",
-          "modified": "2026-10-06T18:34:06.914253",
-          "name": "mcp-crud-all-layers-report.md",
-          "path": "mcp-crud-all-layers-report.md",
-          "size": 5469
-        },
-        {
-          "hash": "01f903a8aac3031b21d12f25b4d43787",
-          "modified": "2025-11-15T16:13:47",
-          "name": "openai_quick_start.md",
-          "path": "openai_quick_start.md",
-          "size": 9456
-        },
-        {
-          "hash": "e836845dbc9ddb2a35e03dde03dd19a0",
-          "modified": "2026-10-05T20:54:02.980862",
-          "name": "cc_hooks_docs.md",
-          "path": "cc_hooks_docs.md",
-          "size": 9493
-        },
-        {
-          "hash": "ea2e21e685fd8d59ae148b4a182cb9f4",
-          "modified": "2025-11-15T16:13:47",
-          "name": "anthropic_quick_start.md",
-          "path": "anthropic_quick_start.md",
-          "size": 6661
-        },
-        {
-          "hash": "e5565145b819a818a725455dabaac7ff",
-          "modified": "2026-10-06T18:47:25.671729",
-          "name": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
-          "path": "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
-          "size": 6480
-        },
-        {
-          "hash": "f36bd93e951295ca30e9d85b3b31cbad",
-          "modified": "2025-11-15T16:13:47",
-          "name": "user_prompt_submit_hook.md",
-          "path": "user_prompt_submit_hook.md",
-          "size": 10561
-        },
-        {
-          "hash": "5246701b6a32d67cf6628b9edb1057d0",
-          "modified": "2026-10-06T18:47:25.651731",
-          "name": "cleanup-analysis-2025-11-03.md",
-          "path": "cleanup-analysis-2025-11-03.md",
-          "size": 7220
-        },
-        {
-          "hash": "fa3c239bec4b9a8a78f1e0d160511e3c",
-          "modified": "2026-10-06T18:47:25.691727",
-          "name": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
-          "path": "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
-          "size": 12182
-        }
-      ],
-      "path": ""
     },
     "setup-guides": {
       "count": 1,
       "files": [
         {
-          "hash": "52fe3f1d80dfc70b3ce3cd69b871e8c8",
-          "modified": "2026-10-06T18:30:49.054281",
+          "hash": "d0e8629c07e802887e9f9bea9313d0bd",
+          "modified": "2026-10-09T21:14:44.794018",
           "name": "complete-setup-guide.md",
           "path": "setup-guides/complete-setup-guide.md",
-          "size": 12296
+          "size": 12523
         }
       ],
       "path": "setup-guides"
-    },
-    "testing-qa": {
-      "count": 4,
-      "files": [
-        {
-          "hash": "1561161f3e43f48048915fb02c8cf15b",
-          "modified": "2026-10-05T19:56:14.930603",
-          "name": "mcp-comprehensive-test-report-2025-11-29.md",
-          "path": "testing-qa/mcp-comprehensive-test-report-2025-11-29.md",
-          "size": 20286
-        },
-        {
-          "hash": "60fc7f23c286f937d231831fe62492c0",
-          "modified": "2026-10-05T20:51:34.278973",
-          "name": "contract-integration-complete.md",
-          "path": "testing-qa/contract-integration-complete.md",
-          "size": 14292
-        },
-        {
-          "hash": "a2f2275cb6126dce24e767d70ffa5580",
-          "modified": "2026-10-06T19:00:39.751854",
-          "name": "mcp-tools-validation-complete.md",
-          "path": "testing-qa/mcp-tools-validation-complete.md",
-          "size": 8476
-        },
-        {
-          "hash": "3ed7649a7c19dd69249126f18809b3a2",
-          "modified": "2026-10-05T19:56:14.914603",
-          "name": "qa-strategy-planning-complete.md",
-          "path": "testing-qa/qa-strategy-planning-complete.md",
-          "size": 9657
-        }
-      ],
-      "path": "testing-qa"
-    },
-    "testing-qa/e2e": {
-      "count": 1,
-      "files": [
-        {
-          "hash": "8294a929bb0441b25537251c6ec1adf7",
-          "modified": "2026-10-05T20:01:29.703678",
-          "name": "End_to_End_Testing_Guidelines.md",
-          "path": "testing-qa/e2e/End_to_End_Testing_Guidelines.md",
-          "size": 3811
-        }
-      ],
-      "path": "testing-qa/e2e"
     },
     "troubleshooting-guides": {
       "count": 1,
@@ -576,11 +194,11 @@
       "count": 2,
       "files": [
         {
-          "hash": "c7bd99adc2b935fa188fad99db695a08",
-          "modified": "2026-10-06T21:22:35.481446",
+          "hash": "e17cfd21f77c0a1114390d78946efeb4",
+          "modified": "2026-10-09T20:47:23.351450",
           "name": "of4-local-stack.md",
           "path": "verification/of4-local-stack.md",
-          "size": 10130
+          "size": 10754
         },
         {
           "hash": "7e093ffd894fbafa9aaa657cb2bae3c8",
@@ -593,8 +211,9 @@
       "path": "verification"
     }
   },
-  "generated_at": "2026-10-09T18:35:41.024119",
+  "generated_at": "2026-10-10T09:36:40.654243",
   "structure": {
+    "__pycache__": {},
     "_absolute_docs": {
       "scripts": {
         "files": [
@@ -602,31 +221,12 @@
         ]
       }
     },
-    "_workplace": {
-      "workers": {
-        "files": [
-          "scripts-cleanup-analysis.md"
-        ],
-        "fix_tests_loop": {
-          "files": [
-            "AI_README.md",
-            "fix-1by1.md"
-          ]
-        }
-      }
-    },
     "agent-system": {
       "files": [
-        "agents-md-migration-map.md",
         "repo-agent-rules.md",
         "seat-model-and-mcp-surface.md",
         "skill-library.md",
         "task-workflow-and-reporting.md"
-      ]
-    },
-    "api-behavior": {
-      "files": [
-        "api-parameter-handling-complete.md"
       ]
     },
     "api-integration": {
@@ -640,18 +240,6 @@
         "complete-authentication-guide.md"
       ]
     },
-    "claude-code": {
-      "files": [
-        "CLAUDE-optimized-demo.md",
-        "CLAUDE-stable-version-backup.md",
-        "cclaude-cli-research.md",
-        "claude-md-optimization-results.md",
-        "phase2-hook-optimization-strategy.md",
-        "phase3-development-guides-optimization-results.md",
-        "phase3-hook-migration-complete.md",
-        "token-optimization-comparison.md"
-      ]
-    },
     "core-architecture": {
       "files": [
         "agenthub-system-architecture.md"
@@ -659,77 +247,22 @@
     },
     "development-guides": {
       "files": [
-        "ddd-architecture-complete.md",
-        "development-infrastructure-complete.md",
-        "development-workflow-complete.md"
-      ],
-      "ui-patterns": {
-        "files": [
-          "toast-notification-architecture.md"
-        ]
-      }
+        "development.md"
+      ]
     },
-    "files": [
-      "anthropic_custom_slash_commands.md",
-      "anthropic_docs_subagents.md",
-      "anthropic_output_styles.md",
-      "anthropic_quick_start.md",
-      "cc_hooks_docs.md",
-      "cleanup-analysis-2025-11-03.md",
-      "cleanup-analysis-hint-enrichment-services-2025-11-03.md",
-      "cleanup-analysis-minimal-serializer-implementation-2025-11-03.md",
-      "mcp-crud-all-layers-report.md",
-      "mcp_test_issues.md",
-      "openai_quick_start.md",
-      "token-optimization-complete-summary-2025-11-03.md",
-      "user_prompt_submit_hook.md",
-      "uv-single-file-scripts.md"
-    ],
     "operations": {
       "files": [
         "complete-operations-guide.md",
         "openrig-seat-limits.md",
         "seat-approval-and-the-startup-call.md",
+        "seat-compaction-supervisor.md",
         "syncing-seats-with-the-cloud.md",
         "watching-openrig-seats.md"
-      ],
-      "seat-guides": {
-        "files": [
-          "_common.md",
-          "context-dev.md",
-          "fe-dev.md",
-          "feedback-dev.md",
-          "go-dev.md",
-          "lead.md",
-          "reviewer.md",
-          "skills-dev.md",
-          "web-dev.md",
-          "writer.md"
-        ]
-      }
-    },
-    "reports-status": {
-      "files": [
-        "openrig-side-defects-2026-10-06.md",
-        "session-handoff-2026-10-04.md"
       ]
     },
     "setup-guides": {
       "files": [
         "complete-setup-guide.md"
-      ]
-    },
-    "testing-qa": {
-      "e2e": {
-        "files": [
-          "End_to_End_Testing_Guidelines.md"
-        ]
-      },
-      "files": [
-        "contract-integration-complete.md",
-        "mcp-comprehensive-test-report-2025-11-29.md",
-        "mcp-tools-validation-complete.md",
-        "qa-strategy-planning-complete.md"
       ]
     },
     "troubleshooting-guides": {
@@ -744,6 +277,6 @@
       ]
     }
   },
-  "total_directories": 21,
-  "total_files": 66
+  "total_directories": 12,
+  "total_files": 20
 }

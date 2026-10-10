@@ -1,9 +1,6 @@
 # Repository agent rules (full detail)
 
-> Moved out of the root `AGENTS.md` on 2026-10-05, when that file was slimmed to identity, where
-> context lives, the shared hard rules and pointers. This file holds the detail behind the hard
-> rules. The mapping of every moved section is in
-> [`agents-md-migration-map.md`](./agents-md-migration-map.md).
+> The detail behind the hard rules in the root `AGENTS.md`.
 
 ## Clean code only — no compatibility, no fallbacks
 

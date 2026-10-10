@@ -1,7 +1,6 @@
 # Seat model and MCP surface
 
-> Moved out of the root `AGENTS.md` on 2026-10-05 (see
-> [`agents-md-migration-map.md`](./agents-md-migration-map.md)). The authoritative list of mounted
+> The authoritative list of mounted
 > routes, tables and MCP tools is `ai_docs/api-integration/surface-inventory.md`; this file is the
 > agent-facing summary.
 
