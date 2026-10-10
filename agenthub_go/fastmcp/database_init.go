@@ -108,15 +108,6 @@ func (d *DatabaseInitializer) CreateDefaultProject(userID string) (string, bool)
 	return projectID, true
 }
 
-// InitializeForUser mirrors initialize_for_user; both Python branches return true.
-func (d *DatabaseInitializer) InitializeForUser(userID string) bool {
-	projectID, _ := d.CreateDefaultProject(userID)
-	if projectID != "" {
-		return true
-	}
-	return true
-}
-
 // EnsureTablesExist checks the four core tables exist.
 func (d *DatabaseInitializer) EnsureTablesExist() bool {
 	db, err := database.PgxOpener(d.DatabaseURL, database.EngineOptions{})
@@ -131,22 +122,6 @@ func (d *DatabaseInitializer) EnsureTablesExist() bool {
 		return false
 	}
 	return tableCount >= 4
-}
-
-// InitializeDatabaseForCurrentUser mirrors initialize_database_for_current_user.
-func InitializeDatabaseForCurrentUser() bool {
-	userID := os.Getenv("CURRENT_USER_ID")
-	if userID == "" {
-		userID = os.Getenv("DEFAULT_USER_ID")
-		if userID == "" {
-			userID = "default-user-001"
-		}
-	}
-	initializer := NewDatabaseInitializer("")
-	if !initializer.EnsureTablesExist() {
-		return false
-	}
-	return initializer.InitializeForUser(userID)
 }
 
 func databaseInitUUID4() string {
