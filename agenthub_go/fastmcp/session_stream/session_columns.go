@@ -11,6 +11,13 @@ package session_stream
 // be stored by any path. Nothing here is destructive: ADD COLUMN IF NOT EXISTS and a constraint
 // re-created by DROP IF EXISTS then ADD make a repeated boot a no-op.
 //
+// client_cursor and seat_state postdate the table too, and take the same path for the same reason:
+// client_cursor is the connector's own resume position, committed with the events it describes
+// (rigd-boundaries.md 2.1 option A / 5 step 1), and seat_state is the state the connector last
+// reported for the session's seat (2.3a). Neither carries a constraint of its own: seat_state's
+// closed set is enforced by the ingest, which refuses a value it cannot store rather than letting
+// the whole session frame fail on a CHECK.
+//
 // It runs only under AUTO_MIGRATE=true: CreateTables is the ensurers' only caller
 // (task_management/infrastructure/database/database_config.go), and InitDatabase reaches it only
 // under that opt-in.
@@ -22,8 +29,9 @@ import (
 	taskdb "agenthub/fastmcp/task_management/infrastructure/database"
 )
 
-// ensureAgentSessionSeatColumns adds the seat identity a session reports - the room slug and the
-// seat key the connector observed - and the both-or-neither constraint over them.
+// EnsureAgentSessionSeatColumns adds the seat identity a session reports - the room slug and the
+// seat key the connector observed - the both-or-neither constraint over them, the connector's
+// opaque resume cursor and the seat state it last reported.
 func EnsureAgentSessionSeatColumns(ctx context.Context, db *sql.DB) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -35,6 +43,8 @@ func EnsureAgentSessionSeatColumns(ctx context.Context, db *sql.DB) error {
 		"ALTER TABLE agent_sessions DROP CONSTRAINT IF EXISTS ck_agent_sessions_seat_pair",
 		"ALTER TABLE agent_sessions ADD CONSTRAINT ck_agent_sessions_seat_pair " +
 			"CHECK ((room_slug IS NULL) = (seat_key IS NULL))",
+		"ALTER TABLE agent_sessions ADD COLUMN IF NOT EXISTS client_cursor VARCHAR(512)",
+		"ALTER TABLE agent_sessions ADD COLUMN IF NOT EXISTS seat_state VARCHAR(20)",
 	} {
 		if _, err := tx.ExecContext(ctx, stmt); err != nil {
 			_ = tx.Rollback()

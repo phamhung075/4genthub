@@ -16,10 +16,13 @@ import (
 	seatnames "agenthub/fastmcp/seat_management/domain/repositories"
 )
 
-// MAX_EVENTS_PER_BATCH and MAX_PAYLOAD_CHARS.
+// MAX_EVENTS_PER_BATCH, MAX_PAYLOAD_CHARS and MAX_CURSOR_BYTES.
 const (
 	MaxEventsPerBatch = 200
 	MaxPayloadChars   = 64 * 1024
+	// MaxCursorBytes bounds the connector's opaque resume position (rigd-boundaries.md 2.2: "at
+	// most 512 bytes"). It is the column's width too, so the two cannot drift apart.
+	MaxCursorBytes = 512
 )
 
 // streamNamespace is uuid.UUID("6f1c2d3e-4a5b-4c6d-8e7f-0a1b2c3d4e5f").
@@ -128,16 +131,25 @@ func sessionRow(s *database.AgentSession) *entities.OrderedMap[any] {
 	} else {
 		m.Set("seat_key", nil)
 	}
+	// 2.3a: the browser row carries the seat state the connector last reported, and null when no
+	// connector has reported one. It is not the connection fact `status` above; the two are
+	// independent and the dashboard applies the ruled precedence over them.
+	if s.SeatState != nil {
+		m.Set("seat_state", *s.SeatState)
+	} else {
+		m.Set("seat_state", nil)
+	}
 	return m
 }
 
-const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key"
+const sessionCols = "id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key, client_cursor, seat_state"
 
 type rowScanner interface{ Scan(dest ...any) error }
 
 func scanAgentSession(row rowScanner, dst *database.AgentSession) error {
 	return row.Scan(&dst.ID, &dst.UserID, &dst.ConnectorID, &dst.SessionKey, &dst.Name,
-		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen, &dst.RoomSlug, &dst.SeatKey)
+		&dst.Project, &dst.Status, &dst.LastSeq, &dst.CreatedAt, &dst.LastSeen, &dst.RoomSlug, &dst.SeatKey,
+		&dst.ClientCursor, &dst.SeatState)
 }
 
 func scanAgentSessionEvent(row rowScanner, dst *database.AgentSessionEvent) error {
@@ -197,9 +209,37 @@ func warnUnaddressableSeatPair(sessionKey, connectorID, room, seat string) {
 		"session_key", sessionKey, "connector_id", connectorID, "room_slug", room, "seat_key", seat)
 }
 
+// SessionUpsert is what a session frame reports back to the socket: the stored row, and the client
+// cursor the last events batch committed. session_ack carries the row's last_seq and that cursor,
+// which is how a connector that lost its ack resumes exactly where its source stopped (2.1, 2.2).
+type SessionUpsert struct {
+	Row    *entities.OrderedMap[any]
+	Cursor *string
+}
+
+// reportedState is session.state, checked against the two ruled values (2.3a) and clipped to the
+// column. Null means the frame carried no state, and a frame that carries none must not overwrite
+// the state an earlier one reported - the same rule the project and the seat pair follow.
+func reportedState(state *string) (*string, error) {
+	if state == nil || *state == "" {
+		return nil, nil
+	}
+	s := pyClip(*state, 20)
+	if s != "running" && s != "stopped" {
+		return nil, &tmvo.ValueError{Msg: "bad state"}
+	}
+	return &s, nil
+}
+
 // UpsertSession is upsert_session.
-func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project, roomSlug, seatKey *string) (*entities.OrderedMap[any], error) {
+func UpsertSession(ctx context.Context, sessions *database.SessionManager, userID, connectorID, sessionKey, name string, project, roomSlug, seatKey, state *string) (*SessionUpsert, error) {
 	sessions, err := resolveSessions(sessions)
+	if err != nil {
+		return nil, err
+	}
+	// The state is checked before any statement is built, so a bad value costs the connector its
+	// frame and nothing else.
+	seatState, err := reportedState(state)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +254,7 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 		warnUnaddressableSeatPair(sessionKey, connectorID, *frameRoom, *frameSeat)
 	}
 	sid := SessionIDFor(userID, connectorID, sessionKey)
-	var out *entities.OrderedMap[any]
+	var out *SessionUpsert
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		var existing database.AgentSession
 		scanErr := scanAgentSession(s.QueryRowContext(ctx, "SELECT "+sessionCols+" FROM agent_sessions WHERE id = $1", sid), &existing)
@@ -235,19 +275,20 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 				Project:     clip(project),
 				RoomSlug:    roomSlug,
 				SeatKey:     seatKey,
+				SeatState:   seatState,
 				Status:      "active",
 				LastSeq:     0,
 				CreatedAt:   ts,
 				LastSeen:    ts,
 			}
 			if _, err := s.ExecContext(ctx,
-				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key) "+
-					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+				"INSERT INTO agent_sessions (id, user_id, connector_id, session_key, name, project, status, last_seq, created_at, last_seen, room_slug, seat_key, seat_state) "+
+					"VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
 				row.ID, row.UserID, row.ConnectorID, row.SessionKey, row.Name, row.Project,
-				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen, row.RoomSlug, row.SeatKey); err != nil {
+				row.Status, row.LastSeq, row.CreatedAt, row.LastSeen, row.RoomSlug, row.SeatKey, row.SeatState); err != nil {
 				return err
 			}
-			out = sessionRow(&row)
+			out = &SessionUpsert{Row: sessionRow(&row), Cursor: row.ClientCursor}
 			return nil
 		}
 
@@ -267,19 +308,24 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 		case roomSlug != nil:
 			newRoom, newSeat = roomSlug, seatKey
 		}
+		newState := existing.SeatState
+		if seatState != nil {
+			newState = seatState
+		}
 		ts := tNow()
 		if _, err := s.ExecContext(ctx,
-			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4, room_slug = $5, seat_key = $6 WHERE id = $7",
-			pyClip(name, 255), newProject, "active", ts, newRoom, newSeat, sid); err != nil {
+			"UPDATE agent_sessions SET name = $1, project = $2, status = $3, last_seen = $4, room_slug = $5, seat_key = $6, seat_state = $7 WHERE id = $8",
+			pyClip(name, 255), newProject, "active", ts, newRoom, newSeat, newState, sid); err != nil {
 			return err
 		}
 		existing.Name = pyClip(name, 255)
 		existing.Project = newProject
 		existing.RoomSlug = newRoom
 		existing.SeatKey = newSeat
+		existing.SeatState = newState
 		existing.Status = "active"
 		existing.LastSeen = ts
-		out = sessionRow(&existing)
+		out = &SessionUpsert{Row: sessionRow(&existing), Cursor: existing.ClientCursor}
 		return nil
 	})
 	if err != nil {
@@ -288,16 +334,26 @@ func UpsertSession(ctx context.Context, sessions *database.SessionManager, userI
 	return out, nil
 }
 
-// AppendEvents is append_events: append events, assigning seq on the server.
-func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, events []any) ([]*entities.OrderedMap[any], error) {
+// AppendEvents is append_events: append events, assigning seq on the server, and commit the
+// connector's cursor in the SAME transaction (rigd-boundaries.md 5 step 1). Committing both
+// together is the whole point of storing the cursor at all: "stored" and "resumable from" cannot
+// disagree, so a batch whose ack was lost is resumed from and never re-sent (2.1, option A).
+//
+// The returned cursor is the value the transaction stored - the one the frame carried, or null
+// when it carried none, which is what events_ack echoes.
+func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID, sessionID string, events []any, cursor *string) ([]*entities.OrderedMap[any], *string, error) {
 	if len(events) > MaxEventsPerBatch {
-		return nil, &tmvo.ValueError{Msg: fmt.Sprintf("at most %d events per batch", MaxEventsPerBatch)}
+		return nil, nil, &tmvo.ValueError{Msg: fmt.Sprintf("at most %d events per batch", MaxEventsPerBatch)}
+	}
+	if cursor != nil && len(*cursor) > MaxCursorBytes {
+		return nil, nil, &tmvo.ValueError{Msg: "cursor is too long"}
 	}
 	sessions, err := resolveSessions(sessions)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	stored := []*entities.OrderedMap[any]{}
+	var storedCursor *string
 	err = sessions.WithSession(ctx, func(ctx context.Context, s database.DBTX) error {
 		for _, ev := range events {
 			if _, ok := ev.(*entities.OrderedMap[any]); !ok {
@@ -344,17 +400,19 @@ func AppendEvents(ctx context.Context, sessions *database.SessionManager, userID
 			stored = append(stored, m)
 		}
 
+		// The cursor moves with the events above, never in a statement of its own.
 		if _, err := s.ExecContext(ctx,
-			"UPDATE agent_sessions SET last_seq = $1, last_seen = $2 WHERE id = $3",
-			row.LastSeq, tNow(), sessionID); err != nil {
+			"UPDATE agent_sessions SET last_seq = $1, last_seen = $2, client_cursor = $3 WHERE id = $4",
+			row.LastSeq, tNow(), cursor, sessionID); err != nil {
 			return err
 		}
+		storedCursor = cursor
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return stored, nil
+	return stored, storedCursor, nil
 }
 
 // ListSessions is list_sessions, newest last_seen first.

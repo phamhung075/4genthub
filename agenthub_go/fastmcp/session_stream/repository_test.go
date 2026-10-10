@@ -51,7 +51,7 @@ func TestClip(t *testing.T) {
 }
 
 func TestAppendEventsBatchLimit(t *testing.T) {
-	_, err := AppendEvents(context.Background(), nil, "u", "s", make([]any, MaxEventsPerBatch+1))
+	_, _, err := AppendEvents(context.Background(), nil, "u", "s", make([]any, MaxEventsPerBatch+1), nil)
 	var ve *tmvo.ValueError
 	if !errors.As(err, &ve) || ve.Msg != "at most 200 events per batch" {
 		t.Fatalf("err = %v, want ValueError 'at most 200 events per batch'", err)
@@ -169,11 +169,12 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	project := "proj"
 	room, seat := "dev", "alice"
-	row, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project, &room, &seat)
+	up, err := UpsertSession(ctx, sessions, user, connector, key, "name", &project, &room, &seat, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen", "room_slug", "seat_key"}
+	row := up.Row
+	wantKeys := []string{"id", "name", "project", "status", "connector_id", "last_seq", "created_at", "last_seen", "room_slug", "seat_key", "seat_state"}
 	if got := row.Keys(); strings.Join(got, ",") != strings.Join(wantKeys, ",") {
 		t.Fatalf("row keys = %v, want %v", got, wantKeys)
 	}
@@ -191,11 +192,11 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 
 	// A different user has a different deterministic id and cannot see user1's row.
-	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil, nil, nil)
+	rowOther, err := UpsertSession(ctx, sessions, "user2", connector, key, "n", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if otherID, _ := rowOther.Get("id"); otherID == sid {
+	if otherID, _ := rowOther.Row.Get("id"); otherID == sid {
 		t.Fatalf("user2 got user1's id")
 	}
 	if g, _ := GetSessionForUser(ctx, sessions, "user2", sid); g != nil {
@@ -204,10 +205,11 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// Update keeps project when the new one is empty, updates name.
 	empty := ""
-	row2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty, nil, nil)
+	up2, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", &empty, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	row2 := up2.Row
 	if v, _ := row2.Get("name"); v != "renamed" {
 		t.Errorf("name = %v", v)
 	}
@@ -226,10 +228,11 @@ func TestRepositoryPostgres(t *testing.T) {
 	// raw. This is what a rig the server never rendered reaches - namePattern is the pod-or-member
 	// rule, while room_slug holds a rig name.
 	badRoom, badSeat := "4genthub.dev", "go-dev"
-	droppedRow, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", nil, &badRoom, &badSeat)
+	upDropped, err := UpsertSession(ctx, sessions, user, connector, key, "renamed", nil, &badRoom, &badSeat, nil)
 	if err != nil {
 		t.Fatalf("an unaddressable pair must not refuse the frame: %v", err)
 	}
+	droppedRow := upDropped.Row
 	if v, _ := droppedRow.Get("room_slug"); v != nil {
 		t.Errorf("room_slug = %v, want nil (the pair was not addressable)", v)
 	}
@@ -252,7 +255,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	p1.Set("text", "one")
 	p2 := entities.NewOrderedMap[any]()
 	p2.Set("text", "two")
-	stored, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", p1), event("output", p2)})
+	stored, _, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", p1), event("output", p2)}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +276,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}
 
 	// Non-object events are rejected.
-	_, err = AppendEvents(ctx, sessions, user, sid, []any{"nope"})
+	_, _, err = AppendEvents(ctx, sessions, user, sid, []any{"nope"}, nil)
 	var ve *tmvo.ValueError
 	if !errors.As(err, &ve) || ve.Msg != "each event must be an object" {
 		t.Fatalf("non-object event err = %v", err)
@@ -281,7 +284,7 @@ func TestRepositoryPostgres(t *testing.T) {
 
 	// Unknown session is a PermissionError.
 	var pe *PermissionError
-	_, err = AppendEvents(ctx, sessions, user, "00000000-0000-0000-0000-000000000000", []any{event("message", p1)})
+	_, _, err = AppendEvents(ctx, sessions, user, "00000000-0000-0000-0000-000000000000", []any{event("message", p1)}, nil)
 	if !errors.As(err, &pe) || pe.Msg != "unknown session" {
 		t.Fatalf("unknown session err = %v", err)
 	}
@@ -289,7 +292,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	// Oversized payload becomes {"truncated": true}.
 	big := entities.NewOrderedMap[any]()
 	big.Set("x", strings.Repeat("a", MaxPayloadChars))
-	storedBig, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", big)})
+	storedBig, _, err := AppendEvents(ctx, sessions, user, sid, []any{event("message", big)}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +357,7 @@ func TestRepositoryPostgres(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil, nil, nil)
+	_, err = UpsertSession(ctx, sessions, user, connector, key, "x", nil, nil, nil, nil)
 	if !errors.As(err, &pe) || pe.Msg != "session belongs to another user" {
 		t.Fatalf("foreign row upsert err = %v", err)
 	}
@@ -366,10 +369,11 @@ func TestRepositoryPostgres(t *testing.T) {
 func TestSessionTimestampsRenderAsNaiveUTC(t *testing.T) {
 	sessions := testdb.NewSessions(t)
 	ctx := context.Background()
-	row, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil, nil, nil)
+	up, err := UpsertSession(ctx, sessions, "user1", "conn1", "key1", "name", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	row := up.Row
 	for _, key := range []string{"created_at", "last_seen"} {
 		v, _ := row.Get(key)
 		s, ok := v.(string)

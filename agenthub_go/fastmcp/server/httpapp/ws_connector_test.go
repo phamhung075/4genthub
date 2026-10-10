@@ -275,7 +275,7 @@ func TestUserBCannotListReadReplayOrAppendToUserAsSession(t *testing.T) {
 		t.Fatalf("user A's events changed: %d %v", status, body)
 	}
 	// and the repository itself refuses B an append to A's session
-	if _, err := session_stream.AppendEvents(context.Background(), env.sessions, "user-b", sidA, []any{entities.NewOrderedMap[any]()}); err == nil ||
+	if _, _, err := session_stream.AppendEvents(context.Background(), env.sessions, "user-b", sidA, []any{entities.NewOrderedMap[any]()}, nil); err == nil ||
 		err.Error() != "unknown session" {
 		t.Fatalf("repository append for another user: %v", err)
 	}

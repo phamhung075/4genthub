@@ -83,6 +83,16 @@ type AgentSession struct {
 	// ck_agent_sessions_seat_pair and by the ingest, never by this struct.
 	RoomSlug *string `db:"room_slug"`
 	SeatKey  *string `db:"seat_key"`
+	// The connector's own position in the source it reads, opaque to the server and at most 512
+	// bytes (rigd-boundaries.md 2.2). It is written by append_events in the SAME transaction as the
+	// events and read back in session_ack, which is what makes a resume after a lost ack exact
+	// (2.1, option A). Null means the session never reported one: resume from the source's start.
+	ClientCursor *string `db:"client_cursor"`
+	// The state the connector last reported for this session's seat, written from session.state on
+	// every session frame (2.3a). It is NOT status: status is the connection fact MarkOffline sets.
+	// Null means no connector has reported a state - an old one-shot upload, or one that could not
+	// name the seat. The ruled values are running and stopped.
+	SeatState *string `db:"seat_state"`
 }
 
 // GetUserID satisfies repositories.HasUserID (user isolation).
@@ -596,8 +606,10 @@ var Tables = []TableDef{
 		{Name: "last_seen", Attr: "last_seen", GoField: "LastSeen", SQLType: "TIMESTAMP WITHOUT TIME ZONE", Nullable: false, PrimaryKey: false, Default: DefaultNowUTCNaive, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "room_slug", Attr: "room_slug", GoField: "RoomSlug", SQLType: "VARCHAR(255)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 		{Name: "seat_key", Attr: "seat_key", GoField: "SeatKey", SQLType: "VARCHAR(255)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "client_cursor", Attr: "client_cursor", GoField: "ClientCursor", SQLType: "VARCHAR(512)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
+		{Name: "seat_state", Attr: "seat_state", GoField: "SeatState", SQLType: "VARCHAR(20)", Nullable: true, PrimaryKey: false, Default: DefaultNone, DefaultValue: "", ServerDefault: "", ForeignKey: "", OnDelete: "", EnumName: ""},
 	}, DDL: []string{
-		"CREATE TABLE agent_sessions (\n\tid VARCHAR(36) NOT NULL,\n\tuser_id VARCHAR(64) NOT NULL,\n\tconnector_id VARCHAR(64) NOT NULL,\n\tsession_key VARCHAR(255) NOT NULL,\n\tname VARCHAR(255) NOT NULL,\n\tproject VARCHAR(255),\n\tstatus VARCHAR(20) NOT NULL,\n\tlast_seq INTEGER NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tlast_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\troom_slug VARCHAR(255),\n\tseat_key VARCHAR(255),\n\tPRIMARY KEY (id),\n\tCONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key),\n\tCONSTRAINT ck_agent_sessions_seat_pair CHECK ((room_slug IS NULL) = (seat_key IS NULL))\n)",
+		"CREATE TABLE agent_sessions (\n\tid VARCHAR(36) NOT NULL,\n\tuser_id VARCHAR(64) NOT NULL,\n\tconnector_id VARCHAR(64) NOT NULL,\n\tsession_key VARCHAR(255) NOT NULL,\n\tname VARCHAR(255) NOT NULL,\n\tproject VARCHAR(255),\n\tstatus VARCHAR(20) NOT NULL,\n\tlast_seq INTEGER NOT NULL,\n\tcreated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\tlast_seen TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n\troom_slug VARCHAR(255),\n\tseat_key VARCHAR(255),\n\tclient_cursor VARCHAR(512),\n\tseat_state VARCHAR(20),\n\tPRIMARY KEY (id),\n\tCONSTRAINT uq_agent_sessions_key UNIQUE (user_id, connector_id, session_key),\n\tCONSTRAINT ck_agent_sessions_seat_pair CHECK ((room_slug IS NULL) = (seat_key IS NULL))\n)",
 		"CREATE INDEX ix_agent_sessions_user_id ON agent_sessions (user_id)",
 	}},
 	{Name: "api_tokens", Model: "APIToken", Columns: []ColumnDef{
