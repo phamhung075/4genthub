@@ -34,12 +34,9 @@
   (Trivy, results uploaded as SARIF to the Security tab) → **Build Images** (backend and
   frontend) → **Deploy to Staging** → **Deploy to Production**. **DATED NOTE 2026-10-09: that file is absent from the working tree and the index — staged for deletion and held with the pending line decision (`git status --porcelain -- .github/workflows/` → `D .github/workflows/production-deployment.yml`) — so this paragraph describes the workflow at HEAD, not on disk.**
 - **`test_coverage.yml`** — removed with the Python tree: it only ran the archived Python
-  suite (`working-directory: agenthub_main`). No workflow now runs Go or frontend tests.
+  suite (`working-directory: agenthub_main`). **CORRECTED 2026-10-10 (writer seat): this read "No workflow now runs Go or frontend tests.", and that is FALSE of this tree — `.github/workflows/ci.yml` runs both, and it is the only workflow left in the directory.** See the next item.
 
-**Two facts about that pipeline worth stating in the operations manual:** neither workflow
-installs or runs Go, and neither runs the frontend test runner — so a green pipeline says
-nothing about whether the shipped server passes its tests. The de-link of the archived tree
-from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
+**`ci.yml` is the workflow that runs the code's own suites, and it is the only file left in `.github/workflows/` (measured 2026-10-10: `ls .github/workflows/` lists `ci.yml` alone).** It has two jobs, each declaring its `working-directory` — `ci.yml:13` (`agenthub_go`) and `ci.yml:27` (`agenthub-frontend`). The **`go`** job (`:9-21`) runs `go vet ./...` (`:20`) and `go test ./...` (`:21`); the **`frontend`** job (`:23-40`) runs `pnpm install --frozen-lockfile` (`:38`), `pnpm test` (`:39`) and `pnpm build` (`:40`). Triggers are a push to `main` or a pull request (`:3-6`). **CORRECTED 2026-10-10 (writer seat): the paragraph here read "**Two facts about that pipeline worth stating in the operations manual:** neither workflow installs or runs Go, and neither runs the frontend test runner — so a green pipeline says nothing about whether the shipped server passes its tests."** Both halves were true of the two workflows it described and FALSE of the repository, because it did not name `ci.yml` at all. What survives, stated precisely rather than dropped: **the `go` job declares no PostgreSQL service, so the tests gated on `AGENTHUB_TEST_PG_URL` SKIP in CI — and this repository's own rule is that a skip is not a pass (the same reading is recorded for the ledger tests at `NEXT_GEN.md` O1a).** So a green `ci.yml` is evidence that the Go unit tests and the frontend suite pass, and is NOT evidence about the PostgreSQL-backed tests. The de-link of the archived tree from CI is tracked in `agenthub_go/NEXT_GEN.md` (directive 6).
 
 ### Deployment Execution
 
