@@ -1524,7 +1524,7 @@ export const apiReference: ApiReference = {
           },
           "assignees": {
             "default": null,
-            "description": "[OPTIONAL] Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: 'coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.",
+            "description": "[OPTIONAL] Assignee seat keys in the '@\u003cseat_key\u003e' form - **Inherits from the parent task if not specified**. A bare name is rejected. Comma-separated for multiple: '@lead,@go-dev'. Leave empty to inherit the parent task's assignees automatically.",
             "title": "Assignees",
             "type": "string"
           },

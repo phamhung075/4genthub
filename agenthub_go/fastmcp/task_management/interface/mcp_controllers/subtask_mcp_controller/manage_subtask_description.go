@@ -77,7 +77,7 @@ var MANAGE_SUBTASK_PARAMETERS_DESCRIPTION = func() *entities.OrderedMap[any] {
 	m.Set("description", "Detailed subtask description explaining what needs to be done. Include acceptance criteria if relevant")
 	m.Set("status", "Subtask status: 'todo', 'in_progress', 'done'. Note: use progress_percentage instead for automatic status mapping")
 	m.Set("priority", "Subtask priority: 'low', 'medium', 'high', 'urgent', 'critical'. Default: inherits from parent")
-	m.Set("assignees", "Agent identifiers - **Inherits from parent task if not specified**. Use @agent-name format. Comma-separated for multiple: 'coding-agent,@test-orchestrator-agent'. Leave empty to inherit parent's agents automatically.")
+	m.Set("assignees", "Assignee seat keys in the '@<seat_key>' form - **Inherits from the parent task if not specified**. A bare name is rejected. Comma-separated for multiple: '@lead,@go-dev'. Leave empty to inherit the parent task's assignees automatically.")
 	m.Set("acceptance_criteria", "Acceptance criteria - the verifiable conditions that must hold for the subtask to be done, as a JSON array of strings (a comma-separated string is also accepted). Optional for create and update")
 	m.Set("scope", "Scope - glob patterns for the files or areas the subtask may touch, as a JSON array of strings (a comma-separated string is also accepted), e.g. ['internal/**', 'cmd/*.go']. Optional for create and update")
 	m.Set("progress_percentage", "Integer 0-100 representing completion. Automatically maps to status (0=todo, 1-99=in_progress, 100=done). Use this instead of status field")
