@@ -1,0 +1,96 @@
+{
+  "room": {
+    "slug": "4genthub-ab",
+    "name": "4genthub A/B guide arms"
+  },
+  "modules": [
+    {
+      "slug": "ab-guide-lead",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-lead.md"
+    },
+    {
+      "slug": "ab-guide-go-dev",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-go-dev.md"
+    },
+    {
+      "slug": "ab-policy-lead",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-lead.json"
+    },
+    {
+      "slug": "ab-policy-go-dev",
+      "version": "1.1.0",
+      "kind": "policy",
+      "file": "../4genthub-min/policy-go-dev.json"
+    },
+    {
+      "slug": "ab-terse",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "ab-terse.md"
+    },
+    {
+      "slug": "ab-verify",
+      "version": "1.0.0",
+      "kind": "instruction",
+      "file": "ab-verify.md"
+    }
+  ],
+  "seats": [
+    {
+      "seat_key": "lead",
+      "seat_type": "lead",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "arm-control",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "arm-terse",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    },
+    {
+      "seat_key": "arm-verify",
+      "seat_type": "developer",
+      "runtime": "omp",
+      "model": "deepseek/deepseek-flash",
+      "pinned_version": "1.3.0"
+    }
+  ],
+  "links": [],
+  "company_overlay": [],
+  "seat_overlays": {
+    "lead": [
+      "ab-guide-lead",
+      "ab-policy-lead"
+    ],
+    "arm-control": [
+      "ab-guide-go-dev",
+      "ab-policy-go-dev"
+    ],
+    "arm-terse": [
+      "ab-guide-go-dev",
+      "ab-policy-go-dev",
+      "ab-terse"
+    ],
+    "arm-verify": [
+      "ab-guide-go-dev",
+      "ab-policy-go-dev",
+      "ab-verify"
+    ]
+  }
+}
