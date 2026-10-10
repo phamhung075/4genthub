@@ -98,10 +98,11 @@ SEAT_TYPES = {
 # unnoticed, and a band no file uses is stale. A file a room points at outside its own directory
 # (the Go seed library's blocks) only has to resolve here; its content is the Go seed's to check.
 #
-# HOW THE NUMBERS ARE SET, because three of these bands were once within three, four and five words
-# of their ceiling and a bound that close catches nothing - the file cannot grow and cannot be
-# truncated: the ceiling is a round number above the file's own length with room for about two
-# sentences of honest editing, and the floor is the truncation check rather than a style bound.
+# HOW THE NUMBERS ARE SET, because four of these bands were once within five words of their
+# ceiling - at two, three, four and five words - and a bound that close catches nothing: the file
+# cannot grow and cannot be truncated: the ceiling is a round number above the file's own length
+# with room for about two sentences of honest editing, and the floor is the truncation check rather
+# than a style bound.
 # Both ends bite, which is the point: a band states the room a file is allowed, not what it happens
 # to weigh today.
 #
