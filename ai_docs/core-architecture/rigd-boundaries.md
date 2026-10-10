@@ -332,3 +332,88 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 | Exit | `doctor` → 3 |
 
 The suggested first test is client-only and needs no server: a live child whose heartbeat is 31 s old reads `silent`, not `running`, for `compact`.
+
+### 7.7 Addendum: quiet because it is working is NOT stopped (lead's note 22:54Z, folded in)
+
+The lead measured two false signals in OpenRig.
+
+- queue-stuck-sweep raised `stalled-after-claim` on a row whose owner was live, inside a tool call that was waiting for a delegated worker.
+- That row's `waiting.liveness` read `idle-at-prompt`, with confidence `oracle`, for the same seat.
+
+Both read the absence of a signal as the absence of work, which is the same failure as the incident.
+
+**Ruling: last activity is a heartbeat OR a declared in-flight call with a deadline. A missing signal means stopped only when nothing was declared in flight.**
+
+- **Safeguards (new, extends 7.2).** Before any call that can block longer than its threshold (7.4), the child writes `in_flight {op, since, deadline}` into its heartbeat file, and clears it when the call returns. Examples are the watchdog's `rig up --existing` restore and the supervisor's `rpcCompact`.
+  - Every such call runs under a context deadline. A declared call extends liveness to its deadline and never past it.
+  - The state is `running` with detail `busy <op> since <t>` while `now < deadline`.
+  - It is `silent` when the heartbeat is past the threshold and either nothing is in flight or the deadline has passed.
+  - A child with no deadline on a blocking call is a defect, not an exemption.
+- **Seats (new; rigd already tails the transcript, section 5).** A seat's last activity is its last transcript write, OR an open tool call: a `tool_use` with no matching `tool_result` yet.
+  - A seat is idle at the prompt only when its last entry ends the turn and no tool call is open.
+  - A seat waiting on a delegated worker therefore reads `working` for as long as its tool call is open.
+  - rigd sends this in `session.state` as `running`. The ruled two values do not change, and idle is not a stopped seat.
+- **OpenRig's own sweep and oracle are NOT this repository's code**, and no seat edits under `rig/`. The two false signals go to the OpenRig owner as a friction report carrying the rule above. Until it is fixed, a `stalled-after-claim` raised on a row whose owner shows an open tool call is a known false positive, and closing it is not evidence of a stall.
+
+### 7.8 Addendum: `4genteam up RIG` is the only room entry point (owner refinement 2026-10-11, folded in)
+
+**1. One list, compiled.**
+
+| | A: a compiled Go table | B: a data list in `rigd.json` |
+|---|---|---|
+| A row's liveness check | Code beside the row | Would need a mini-language |
+| Can an operator drop an obligatory service? | No | Yes, contradicting "obligatory" |
+
+**Ruling: A.**
+
+- **New:** package `internal/clientservices`, file `services.go`, `var Obligatory = []Service{...}` in start order.
+- **The type:** `Service {Name; Scope machine|rig; Start func(ctx, Env) error; Check func(ctx, Env) Health; RestartBy rigd|watchdog|none}`.
+- Each row declares its own `Check`, which returns the 7.2 row. `up`, `doctor`, `status --json` and rigd iterate this ONE list, so a new service is one new row.
+- The duplicate daemon start, `lifecycle.go:193` and `clientrestore/restore.go:189`, becomes the `daemon` row's `Start`.
+- The two restore paths, `up`'s `ensureRig` (`lifecycle.go:203`) and `clientrestore`'s restorer, become the `seats` row's `Start`. The kept path is the restorer, which runs the peak gate.
+
+| Row | Scope | Start | Check (alive means) | RestartBy |
+|---|---|---|---|---|
+| `daemon` | machine | `rig daemon start` | `rig daemon status` succeeds | rigd |
+| `gate` | rig | none | the schedule and the room's models are readable. A peak refusal is the gate WORKING; see 3. | none |
+| `seats` | rig | the restorer (gate first) | every node is `running` AND the tmux live count equals the expected count (the watchdog's `verdict`) | watchdog |
+| `rigd` | machine | spawn plus `awaitStart` | heartbeat 7.2 | none locally; the server's dead-man (7.3) |
+| `bridge` | machine | rigd child | heartbeat | rigd |
+| `compact` | rig | rigd child | heartbeat | rigd |
+| `watchdog` | rig | rigd child | heartbeat | rigd |
+
+**2. No start cycle.**
+
+- `up` is a short-lived foreground root. It starts the daemon, evaluates the gate, starts the seats, then rigd, in that order. Then it verifies (5).
+- rigd starts its three children. It restarts the daemon when the daemon's check fails, because `rig daemon start` detaches on its own and is not a child.
+- **Nothing starts `up`, and nothing but `up` starts rigd.** Seats are restored only by the watchdog (plus `up`). rigd restarts the watchdog and never restores a seat itself, so there is one mechanism per thing.
+
+**3. A gate is not a process.**
+
+- The gate's `Check` is "readable", not "running". Peak for a DeepSeek room is a correct closed state, and `up` already refuses with exit 3 naming the gate (`PeakGate`, `lifecycle.go:251`). That stays.
+- An unreadable schedule is the gate failing: today `ExitUsage`, unchanged.
+- The gate is evaluated on every seat start, including the watchdog's restores. It is not polled.
+
+**4. Clean cutover.**
+
+- **Deleted:** the `continue` verb (`clientrestore/continue.go`). `up` is the entry point, and its seat restore is the same restorer, so its brief step moves into the `seats` row's `Start`.
+- **Not deletable here:** `rig up` is the OpenRig CLI. It is not this repository's code, and the client keeps calling it internally. A room started by hand with `rig up` has no rigd row, and `doctor` names it.
+- **Owner action, not done by a seat:** `~/.openrig/bin/rig-continue.sh` and `rig-watchdog.sh` are the owner's own copies outside this repository (`clientrestore/paths.go:7`). The ruling is that they go, and the owner deletes them; no seat touches the owner's home.
+
+**5. Verify-before-success composes with `doctor`.**
+
+- **New:** one function, `clientservices.Verify(ctx, Env) []Health`.
+- `doctor` = `Verify` only: read-only, exit 3 naming every row not `running`.
+- `up` = `Start` each row in order, then poll `Verify` until every row is `running` or each row's 7.4 threshold has passed (the start grace). Then it exits 0, or 3 with the same lines as `doctor`.
+- The verify code is shared and not copied. `up` repairs and `doctor` observes, and they agree on what "alive" means because they run the same `Check`.
+
+**Names a failing test may assert (in addition to 7.6):**
+
+| Kind | Names |
+|---|---|
+| Package and variable | `clientservices.Obligatory` |
+| Row names | `daemon`, `gate`, `seats`, `rigd`, `bridge`, `compact`, `watchdog` |
+| Heartbeat field | `in_flight` |
+| Detail prefix | `busy` |
+
+A first test: a `compact` heartbeat 31 s old that carries `in_flight` with a future deadline reads `running`. With the deadline passed, it reads `silent`.
