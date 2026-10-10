@@ -2,6 +2,11 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - `4genteam sync rig` launches a new room by itself: the verbatim-spec and refusal cases give way to the launch-spec cases
+
+- `agenthub_client/tests/test_seat_sync.py` - `rig.yaml` is no longer the server's text byte for byte, so the three assertions that compared it to the fixture now parse it: members keep their ids and `agent_ref`, `cwd` is the room directory, `permission_policy` is `builtin:yolo`. The refusal for an absent seat agent directory is replaced by a case that the directory is created and the render installed on the first run. Two new cases: the `.env` link to the one DeepSeek key for a room with a `deepseek/` seat, and the refusal naming the path when that key file is missing (nothing built).
+- Commands, from `agenthub_client`: `PYTHONPATH=src python3 -m pytest tests -q` -> 321 passed, 1 failed (`test_team_setup.py::test_context_files_respect_word_limits[area-docs]`, 158 > 150 words in a file this change does not touch).
+
 ## 2026-10-10 - the session-resolution refusal gets its own instrument: a fake `rig` on PATH, seen red before the guard existed
 
 - `agenthub_go/internal/clientsync/messagesverb_test.go` - TWO cases, and the INSTRUMENT is the point: `fakeRig(t, json)` writes a shell script answering `rig ps --json` into a temp dir and PREPENDS it to `PATH`, so the verb's REAL resolution path runs instead of a substituted function (the only other place this verb shells out to `rig` is the local send, which the existing fixture already replaces). `TestMessagesVerbRefusesToGuessWhichSessionToTypeInto` - a fake two-session rig asserts the REFUSAL: exit `ExitUnavailable`, NOTHING typed, THE CLOUD UNTOUCHED (the refusal happens before the pull, so no ACK is spent), and stderr naming BOTH candidates and `--session`. `TestMessagesVerbUsesTheOnlySessionTheRigReports` - a fake one-session rig asserts the message STILL FLOWS: `GET | SEND only-one hello | ACK m1`.
