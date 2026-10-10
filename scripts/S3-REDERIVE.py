@@ -20,12 +20,23 @@ between base and rev, `STALE->EARLIER` was already stale before the base. EVERY 
 fails the run; the classification says who moved it, not whether it is acceptable.
 
 WHAT IT DOES NOT COVER, said here rather than left to be assumed clean:
-  * §2, §4 and §3.5. The registry census (§2's tool/agent registry and §4) is its own design and
-    NOTHING runs it today; §3.5 is prose.
-  * the `file:line` anchors outside section 3. `scripts/CITATION-AUDIT.py` owns the route tables
-    and does not reach the rest; the count of those anchors is not restated here because it moves.
-  * any semantic claim about prose. An anchor can resolve perfectly while the sentence beside it
-    is wrong; nothing here reads the sentence.
+  * THE CITATION-LOOKING TOKENS ON NON-TABLE LINES, which is the real uncovered surface. Measured at
+    the commit that added this file, by `re.finditer(r"(?:[\w./-]+\.(go|py|sql|ts|tsx|md|json)|)\:(\d+)")`
+    over `ai_docs/api-integration/surface-inventory.md`: the two instruments resolve TABLE ROWS and
+    nothing else - §1's route rows (144) by `scripts/CITATION-AUDIT.py`, §3.1-§3.4's rows (46 rows,
+    66 anchors) here - while 149 such tokens sit on NON-table lines: §2.1 29, §2.3 17, Appendix A 16,
+    §1's own prose 15 + 11 + 4, §3.3 14, §4 10, §3.6 7, §5 7, §2.5 5, §2.4 4, §2.2 3, §3.4 2, and
+    the rest spread thinner. No instrument resolves them, and SOME ARE QUOTATIONS, which the
+    inventory's own rule forbids "repairing": a citation asserts what the code says now, a quotation
+    asserts what a document said then. They stay DECLARED-UNCOVERED rather than half-covered by a
+    weaker check under a stronger name.
+  * NUMBERS are a different instrument's business, and §3.5's are already anchored:
+    `scripts/COUNTS-AUDIT.py` reads the document's headline figures by anchored pattern (11 keys,
+    10 of them stating a figure in the document - §3.5's seat-table, registered-total and
+    ProductionTables counts among them). So §3.5 is NOT "checked by nothing": its counts are
+    anchored and its prose is not.
+  * any semantic claim about prose. An anchor can resolve perfectly while the sentence beside it is
+    wrong; nothing here reads the sentence.
   * the worktree. It reads commits, so an uncommitted edit to the inventory is invisible to it.
 
 USAGE:  python3 scripts/S3-REDERIVE.py                    # rev=HEAD, base=<BASE_REV below>
