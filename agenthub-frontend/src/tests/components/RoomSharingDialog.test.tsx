@@ -19,9 +19,11 @@ import { RoomSharingDialog } from '../../components/seats/RoomSharingDialog';
 import type { Room, TeamMembership } from '../../types/seatTypes';
 
 // vi.mock is hoisted above the module body, so the state the factory closes over must be hoisted too.
+// `mutate` is a real vi.fn (not a cast stub) because the cases read `mock.calls` to assert the slug
+// that reaches the route - a plain function type would hide that.
 const mocks = vi.hoisted(() => ({
   teams: [] as TeamMembership[],
-  mutate: (() => {}) as unknown as (team: string, options?: { onSuccess?: () => void }) => void,
+  mutate: vi.fn(),
   isPending: false,
   isError: false,
   error: null as Error | null,

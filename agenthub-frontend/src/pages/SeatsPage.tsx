@@ -91,9 +91,12 @@ export const SeatsPage: React.FC = () => {
   const [seatToRemove, setSeatToRemove] = useState<Seat | null>(null);
   const [deleteRoomOpen, setDeleteRoomOpen] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
-  // The sharing dialog is mounted only while it is open, so it always starts from the room's current
-  // state - the room object carries the `role` the wire reported, which is what gates the control.
-  const sharingRoom = rooms.find(room => room.slug === selectedRoom);
+  // The selected room as the wire reported it. `role` is the server's own answer about what THIS
+  // caller may do with the room (`seatAdminRoomRole`), and every room-scoped write below is gated on
+  // it: the mutation routes resolve a room through an owner-only lookup, so a viewer's write comes
+  // back as a 404 saying "room not found" about a room they are reading. One predicate, all controls.
+  const selectedRoomData = rooms.find(room => room.slug === selectedRoom);
+  const isRoomOwner = selectedRoomData?.role === 'owner';
 
   // The server deletes an EMPTY room only (room_deletion_service.DeleteRoom refuses a room
   // that still holds seats with 409 and names how many remain), so what the dialog may claim
@@ -345,21 +348,35 @@ export const SeatsPage: React.FC = () => {
               <Button variant="outline" onClick={() => setSharingOpen(true)}>
                 <Users className="h-4 w-4" /> Sharing
               </Button>
-              <Button variant="destructive" onClick={() => {
-                  deleteRoom.reset();
-                  setDeleteRoomOpen(true);
-                }}>
-                <Trash2 className="h-4 w-4" /> Delete room
-              </Button>
-              <Button onClick={() => {
-                  createSeat.reset();
-                  setAddSeatOpen(true);
-                }}
-                disabled={seatTypesLoading}>
-                <Plus className="h-4 w-4" /> Add seat
-              </Button>
+              {isRoomOwner && (
+                <>
+                  <Button variant="destructive" onClick={() => {
+                      deleteRoom.reset();
+                      setDeleteRoomOpen(true);
+                    }}>
+                    <Trash2 className="h-4 w-4" /> Delete room
+                  </Button>
+                  <Button onClick={() => {
+                      createSeat.reset();
+                      setAddSeatOpen(true);
+                    }}
+                    disabled={seatTypesLoading}>
+                    <Plus className="h-4 w-4" /> Add seat
+                  </Button>
+                </>
+              )}
             </div>
           </div>
+          {/* A viewer reads a room its owner shared with their team, and every room-scoped write in
+              this page is refused for them with a 404 that says "room not found" about a room they are
+              looking at. So the controls are absent and the standing is stated once, in the client's
+              words - the server has no per-action sentence to quote. */}
+          {!isRoomOwner && (
+            <p className="text-xs text-muted-foreground">
+              Shared with you by its owner: you can read this room and its seats. Adding seats, removing
+              seats and deleting the room belong to the owner.
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
             A seat is an OpenRig member (a fixed role slot).
           </p>
@@ -444,17 +461,19 @@ export const SeatsPage: React.FC = () => {
                     >
                       Details <ArrowRight className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      aria-label={`Remove seat ${seat.seat_key}`}
-                      onClick={() => {
-                        removeSeat.reset();
-                        setSeatToRemove(seat);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isRoomOwner && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        aria-label={`Remove seat ${seat.seat_key}`}
+                        onClick={() => {
+                          removeSeat.reset();
+                          setSeatToRemove(seat);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -626,8 +645,8 @@ export const SeatsPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {sharingOpen && sharingRoom && (
-        <RoomSharingDialog room={sharingRoom} onClose={() => setSharingOpen(false)} />
+      {sharingOpen && selectedRoomData && (
+        <RoomSharingDialog room={selectedRoomData} onClose={() => setSharingOpen(false)} />
       )}
 
       {/* Delete room confirmation. An empty room only: the server refuses one that still holds

@@ -2,6 +2,15 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the seats page's viewer standing: one case per refused control, and the fixtures that must model the wire
+
+- MODIFIED `agenthub-frontend/src/tests/pages/SeatsPage.test.tsx` (+2 cases, 32 -> 34). `a room shared with the viewer > offers no room-scoped write to a viewer, and states the standing instead` asserts the absences for all three controls (`Delete room`, `Add seat`, `Remove seat alice`) **and** the positive controls that stop those absences passing vacuously - the seat card `alice`, its `Details` button and the `Sharing` control must all be present, so a page that rendered no room, no seats or nothing at all fails the case instead of satisfying it. The seat card is awaited BEFORE the absence checks, for the same reason. `... > keeps all three write controls for the room owner` asserts the owner's path is unchanged and that the viewer sentence is absent.
+- FIXTURES NOW MODEL THE WIRE: the shared `room` fixture and the `createRoom` response carry `team_id` and `role`. This is not cosmetic - with `role` absent the page reads `undefined !== 'owner'`, so every owner case in the file would have silently asserted the VIEWER path. The two errors the newly required `Room` fields exposed in this file are fixed in the same change, which is why the tests-config reading fell rather than grew.
+- RED WITHOUT THE CHANGE, measured rather than assumed: with `isRoomOwner` forced to `true`, the run is **1 failed | 33 passed**, the single failure being exactly `offers no room-scoped write to a viewer, and states the standing instead` -> `expected document not to contain element, found <button Delete room`; the owner case stays green under that perturbation.
+- MODIFIED `agenthub-frontend/src/tests/components/RoomSharingDialog.test.tsx`: `mocks.mutate` is a real `vi.fn()` rather than a cast stub, because the cases read `mock.calls` to assert the slug that reaches the route - the cast hid `.mock` from the tests config and cost two errors.
+- VERIFIED, from `agenthub-frontend`: `npx vitest run` -> exit 0, **120 files / 1871 tests passed, 0 failed**; the three touched files -> **3 files / 64 tests passed**; `npx tsc --noEmit -p tsconfig.tests.json` -> **195**, down from **199** at the start of this change, with a `grep` over that output finding no error in any file this change touches.
+- NO CASE WAS DELETED OR RE-PINNED, and no existing case's wording was touched.
+
 ## 2026-10-11 - the subtask progress path gets the cases the task path got, and the shaped-payload limit is recorded rather than papered over
 
 - ADDED, two cases in the EXISTING `agenthub-frontend/src/tests/components/SubtaskDetailsDialog.test.tsx` (no new file; one `describe` block appended and the file's earlier case untouched): the two frontend MINORS of the `88ab4230` gate (`GATE-88ab4230-client-half-of-progress-cutover-2026-10-10.md`), row `qitem-20261010214733-a767e54b9651221e`.

@@ -65,7 +65,11 @@ const renderPage = () => {
   );
 };
 
-const room = { id: 'room-1', slug: 'dev', name: 'Development' };
+// The room carries what GET /rooms sends: team_id is the sharing state (empty while private) and role
+// is the server's answer about this caller's standing on the room, which is what gates every
+// room-scoped write below. A fixture without `role` would read as "not the owner" and silently
+// assert the viewer path in every owner case.
+const room = { id: 'room-1', slug: 'dev', name: 'Development', team_id: '', role: 'owner' as const };
 
 const seatType = {
   slug: 'coder',
@@ -119,7 +123,7 @@ describe('SeatsPage', () => {
     mockApi.fetchMachines.mockResolvedValue({ success: true, machines: [] });
     mockApi.createRoom.mockResolvedValue({
       success: true,
-      room: { id: 'room-2', slug: 'eng', name: 'Engineering' },
+      room: { id: 'room-2', slug: 'eng', name: 'Engineering', team_id: '', role: 'owner' as const },
     });
     mockApi.createSeat.mockResolvedValue({ success: true, seat });
     mockApi.removeSeat.mockResolvedValue({ success: true });
@@ -149,6 +153,48 @@ describe('SeatsPage', () => {
     expect(await screen.findByText('alice')).toBeInTheDocument();
     expect(mockApi.listSeats).toHaveBeenCalledWith('dev');
     expect(screen.getAllByText('coder').length).toBeGreaterThan(0);
+  });
+
+  describe('a room shared with the viewer', () => {
+    const sharedRoom = { ...room, team_id: 'team-eng', role: 'viewer' as const };
+
+    const openSharedRoom = async () => {
+      mockApi.listRooms.mockResolvedValue({ success: true, rooms: [sharedRoom] });
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByText(/Seats in dev/);
+    };
+
+    // ONE CASE PER CONTROL, because they are three separate rendered affordances and a regression in
+    // any one of them is invisible to the others. The positive controls matter as much as the
+    // absences: the seats ARE readable here, so "no button" cannot pass against a page that rendered
+    // no room, no seat or nothing at all.
+    it('offers no room-scoped write to a viewer, and states the standing instead', async () => {
+      await openSharedRoom();
+      // Await the seat card FIRST: without it the absences below would pass against a page whose
+      // seat list had not rendered yet, which is the vacuous version of this assertion.
+      await screen.findByText('alice');
+
+      expect(screen.queryByRole('button', { name: /Delete room/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Add seat/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Remove seat alice/ })).not.toBeInTheDocument();
+
+      expect(screen.getByText(/Shared with you by its owner/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Details/ })).toBeInTheDocument();
+      // The sharing control is the one write-adjacent affordance a viewer still gets, and it opens the
+      // read-only state rather than a picker (RoomSharingDialog.test.tsx pins that half).
+      expect(screen.getByRole('button', { name: /Sharing/ })).toBeInTheDocument();
+    });
+
+    it('keeps all three write controls for the room owner', async () => {
+      renderPage();
+      fireEvent.click(await screen.findByRole('button', { name: /Development/ }));
+      await screen.findByRole('button', { name: /Remove seat alice/ });
+
+      expect(screen.getByRole('button', { name: /Delete room/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Add seat/ })).toBeInTheDocument();
+      expect(screen.queryByText(/Shared with you by its owner/)).not.toBeInTheDocument();
+    });
   });
 
   describe('delete room', () => {
