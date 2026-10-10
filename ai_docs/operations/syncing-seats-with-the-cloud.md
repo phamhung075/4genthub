@@ -2,7 +2,7 @@
 
 The cloud owns what a seat is and resolves it to a snapshot named by a hash. The local client
 compares each seat's pinned hash with the cloud's, adopts a newer snapshot, and can restart the
-seat so it loads it. Tool: `agenthub_client/src/agenthub_client/seat_client.py`, run as
+seat so it loads it. Tool: `agenthub_client/internal/clientseat/` (`seat.go` holds `Commands` at `:52`) — **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): this named `agenthub_client/src/agenthub_client/seat_client.py`, which the client's Go port retired** — run as
 `4genteam seat` (it calls `4genteam sync rig ROOM --update` to adopt, so the pinning rules live in
 one place: never fall back to another snapshot; a missing pin is an error).
 
