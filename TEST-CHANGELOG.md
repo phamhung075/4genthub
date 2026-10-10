@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the no-op `add_progress` and its preserved-bug tests are deleted
+
+- REMOVED `agenthub_go/fastmcp/task_management/application/use_cases/small_use_cases_draft_test.go`: the two cases `TestSmallUCAddContextProgressMissingContext` and `TestSmallUCAddContextProgressKeepsAttributeBug`, with their section comment. They pinned a deliberate no-op's reproduced Python bug — the kind of test the mission says to delete rather than preserve, since it asserts a quirk and not a behaviour the product wants.
+- DELETED WITH THEM: `use_cases/add_context_progress.go` (the no-op implementation) and the now-orphaned `AddProgressRequest` / `NewAddProgressRequest` in `dtos/context/context_request.go`.
+- WHY: the verb `manage_context add_progress` is served by `UnifiedContextService.AddProgress` (handler → facade → service); the deleted implementation had **no non-test caller anywhere in the module**, so this removes an ambiguity rather than a path. No test was kept as a compatibility surface, and none was weakened.
+- VERIFIED: `grep -rn "AddContextProgressUseCase\|AddProgressRequest" --include=*.go` → nothing; `gofmt` clean; `go vet` clean; the DTO and use-case packages ok; module-wide `go test ./... -count=1` → exit 0, 140 ok, 38 no-test, 0 FAIL.
+
 ## 2026-10-10 - the persisted flag renamed: the two test files that pinned the old key move with it
 
 - CHANGED `agenthub_go/fastmcp/task_management/interface/utils/response_formatter_test.go` and `agenthub_go/fastmcp/task_management/application/services/response_optimizer_test.go`: the assertion strings `data_persisted` became `data_present`, and the optimizer test's `meta.Get("persisted")` became `meta.Get("data_present")`. These were the only two files pinning the old name, and they are updated with the change rather than kept as a compatibility surface.

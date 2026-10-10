@@ -156,33 +156,6 @@ func smallUCNewTask(id int, title string) *entities.Task {
 	return task
 }
 
-// --- add_context_progress ---
-
-func TestSmallUCAddContextProgressMissingContext(t *testing.T) {
-	uc := NewAddContextProgressUseCase(&smallUCFakeContextRepo{exists: false})
-	resp := uc.Execute(context.Background(), &contextdto.AddProgressRequest{TaskID: "t1"})
-	if resp.Success {
-		t.Fatal("expected failure")
-	}
-	want := "Context not found for task t1"
-	if resp.Error == nil || *resp.Error != want {
-		t.Fatalf("error = %v, want %q", resp.Error, want)
-	}
-	if got := resp.ToDict().Keys(); !reflect.DeepEqual(got, []string{"success", "message", "error"}) {
-		t.Fatalf("keys = %v", got)
-	}
-}
-
-// Preserved Python bug: AddProgressRequest has no `content` field.
-func TestSmallUCAddContextProgressKeepsAttributeBug(t *testing.T) {
-	uc := NewAddContextProgressUseCase(&smallUCFakeContextRepo{exists: true})
-	resp := uc.Execute(context.Background(), &contextdto.AddProgressRequest{TaskID: "t1", Action: "did"})
-	want := "Failed to add progress: 'AddProgressRequest' object has no attribute 'content'"
-	if resp.Error == nil || *resp.Error != want {
-		t.Fatalf("error = %v, want %q", resp.Error, want)
-	}
-}
-
 // --- list_contexts ---
 
 func TestSmallUCListContextsEmpty(t *testing.T) {
