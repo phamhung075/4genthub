@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - the frontend gets a browser-level check, and the deployed app passes it
+
+- ADDED, all NEW: `agenthub-frontend/e2e/account.ts` (the shared test account read INSIDE the process, so no value can reach a log, a title, a trace or a commit), `agenthub-frontend/e2e/smoke.spec.ts` (one case: sign in, dashboard, Topology, Sessions, sign out) and `agenthub-frontend/playwright.config.ts` (`testDir ./e2e`, `E2E_BASE_URL` with the deployed app as default, one worker, no retries, trace and screenshot on failure only).
+- WHY THE ASSERTIONS ARE WHERE THEY ARE: every selector is a role or visible text, and two are scoped for a reason a bare locator hides - the MUI labels carry a required asterisk, so an exact `getByLabel` misses and the field resolves by role `textbox`; and the sidebar renders a `role=list`, so an unscoped `getByRole('list')` is a STRICT-MODE violation rather than a page defect. The sessions check therefore accepts exactly two states inside `main`: rows, or the empty state naming `sessions:write`. A screen with neither fails it.
+- THE RUN: `npx playwright test e2e/smoke.spec.ts --workers=1` -> **1 passed (4.4s)** against the deployed app. `npx tsc --noEmit -p .` -> **0** `error TS` with the new files in the project. `npx playwright install chromium` installed the headless shell into this seat's own cache (104.3 MiB) and added no system dependency.
+- NOT RUN, named: no local-rigd run, because the stack go-dev's step 1 builds does not exist yet; the harness is the vehicle for it (`E2E_BASE_URL=http://localhost:3800`). Nothing was created on production - the case signs in, reads two pages and signs out.
+- THREE FAILED RUNS SHAPED IT, AND NONE WAS AN APPLICATION DEFECT: runs 1 and 2 died on locator strictness and label matching before any login was submitted, run 3 reached the sessions page and died on the unscoped list; the app itself never errored, and the final spec is the one that passed.
+
 ## 2026-10-11 - the token-cost count moves, and three values the caller actually reads
 
 - CHANGED, in one existing file (no new file), `agenthub_go/fastmcp/auth/config/token_costs_test.go`: both length pins move 57 -> 60 (`TestTokenCostsContentAndOrder` and `TestGetAllCostsIsCopy`), and the `cases` map gains `assign_agent: 3`, `unassign_agent: 2` and `rebalance_agents: 5` - the VALUES the caller reads, not only the row count, because a count passes for a wrong restored value while these three fail.
