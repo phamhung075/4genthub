@@ -124,3 +124,34 @@ func TestAssembleBundleTrimsEndLikeJavaScript(t *testing.T) {
 		t.Errorf("bytes = %d, want the UNTRIMMED %d", got.Files[0].Bytes, len(jsRun))
 	}
 }
+
+// The PURPOSE is trimmed with the source's .trim(), which is not Go's TrimSpace: measured against
+// the engine over the whole BMP the two sets differ at exactly two code points — U+FEFF, which
+// ECMAScript strips and unicode.IsSpace keeps, and U+0085, which unicode.IsSpace strips and
+// ECMAScript keeps. This is the call site the earlier trimEnd fix did not convert, so both ends are
+// pinned: the BOM must go and the NEL must stay.
+func TestAssembleBundleTrimsThePurposeLikeJavaScript(t *testing.T) {
+	abs := "/p/a.md"
+	purpose := "\ufeffa BOM-led purpose\u0085"
+	// The control that makes this a test of the CALL SITE: the two functions disagree on this exact
+	// input, so a swap of jsTrim back to strings.TrimSpace cannot satisfy this and the assertions
+	// below at once.
+	if strings.TrimSpace(purpose) == jsTrim(purpose) {
+		t.Fatalf("this input no longer separates the ECMAScript set from Go's: %q", purpose)
+	}
+	pack := BundlePack{Name: "x", Version: "1", Purpose: purpose,
+		Files: []BundleFile{{Path: "a.md", Role: "prd", AbsolutePath: &abs}}}
+	got, err := AssembleBundle(pack, func(string) (string, error) { return "body", nil })
+	if err != nil {
+		t.Fatalf("assemble: %v", err)
+	}
+	if !strings.Contains(got.Text, "\n\na BOM-led purpose\u0085\n\n") {
+		t.Errorf("the purpose was not trimmed to the ECMAScript set: %q", got.Text)
+	}
+	if strings.Contains(got.Text, "\ufeff") {
+		t.Errorf("the BOM survived the purpose trim, and ECMAScript trim removes it: %q", got.Text)
+	}
+	if !strings.Contains(got.Text, "a BOM-led purpose\u0085") {
+		t.Errorf("the trailing NEL was trimmed, and ECMAScript trim keeps it: %q", got.Text)
+	}
+}

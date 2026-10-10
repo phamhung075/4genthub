@@ -133,14 +133,28 @@ type AssembledBundle struct {
 // set (LF, CR, LS, PS). That is NOT Go's unicode.IsSpace — that set adds U+0085 (NEL) and would
 // trim a byte the source contract keeps, so the set is spelled out rather than delegated.
 func jsTrimEnd(s string) string {
-	return strings.TrimRightFunc(s, func(r rune) bool {
-		switch r {
-		case '\t', '\n', '\v', '\f', '\r', ' ', '\u00a0', '\u1680', '\u2028', '\u2029',
-			'\u202f', '\u205f', '\u3000', '\ufeff':
-			return true
-		}
-		return r >= '\u2000' && r <= '\u200a'
-	})
+	return strings.TrimRightFunc(s, isECMAScriptSpace)
+}
+
+// jsTrim removes exactly what String.prototype.trim removes — the same set at BOTH ends. It exists
+// because the source calls .trim() on a pack's purpose (bundle-assembler.ts) and `strings.TrimSpace`
+// is NOT that function: measured against the engine over the whole BMP, the two sets differ at
+// exactly two code points — U+FEFF, which ECMAScript strips and unicode.IsSpace keeps, and U+0085,
+// which unicode.IsSpace strips and ECMAScript keeps. A purpose carrying a leading BOM therefore has
+// to lose it here, as it does in the assembler this ports.
+func jsTrim(s string) string {
+	return strings.TrimFunc(s, isECMAScriptSpace)
+}
+
+// isECMAScriptSpace is the one definition of the ECMAScript WhiteSpace + LineTerminator set, shared
+// by jsTrimEnd and jsTrim so the two ends cannot drift apart.
+func isECMAScriptSpace(r rune) bool {
+	switch r {
+	case '\t', '\n', '\v', '\f', '\r', ' ', '\u00a0', '\u1680', '\u2028', '\u2029',
+		'\u202f', '\u205f', '\u3000', '\ufeff':
+		return true
+	}
+	return r >= '\u2000' && r <= '\u200a'
 }
 
 // AssembleBundle concatenates a pack into one paste-ready string:
@@ -159,7 +173,10 @@ func AssembleBundle(pack BundlePack, readFile func(absPath string) (string, erro
 	}
 	sections := []string{fmt.Sprintf("%s %s v%s", packHeaderPrefix, pack.Name, pack.Version)}
 	if pack.Purpose != "" {
-		sections = append(sections, strings.TrimSpace(pack.Purpose))
+		// The source calls .trim() here, not Go's TrimSpace: measured over the whole BMP the two
+		// sets differ at exactly U+FEFF (ECMAScript strips it, unicode.IsSpace keeps it) and U+0085
+		// (the reverse). jsTrim is the ECMAScript set, at both ends.
+		sections = append(sections, jsTrim(pack.Purpose))
 	}
 
 	files := []BundleFileEntry{}
