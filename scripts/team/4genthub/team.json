@@ -6,7 +6,7 @@
   "modules": [
     {
       "slug": "project-4genthub",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "project-4genthub.txt"
     },
