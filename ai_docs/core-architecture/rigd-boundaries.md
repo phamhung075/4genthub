@@ -417,3 +417,91 @@ Both read the absence of a signal as the absence of work, which is the same fail
 | Detail prefix | `busy` |
 
 A first test: a `compact` heartbeat 31 s old that carries `in_flight` with a future deadline reads `running`. With the deadline passed, it reads `silent`.
+
+### 7.9 Addendum: the idle nudge, and the off-peak gate over every automatic wake (lead's `qitem-20261010230121-aba9ffb6153fb3fa`)
+
+The owner's requirement:
+- When every seat of a room has been idle for one setting's worth of time (default 5 minutes), the client sends the room's lead ONE message to continue.
+- It fires never while any seat works, and at most once per idle period.
+- It is skipped for a room the owner stopped on purpose.
+- Each nudge is logged and sent upstream as an event.
+- It obeys the off-peak gate, and so does every other automatic wake.
+
+**1. Where it lives, and the activity source: it reuses 7.7 and adds no second source.**
+
+The nudge is a loop inside rigd. It reads the same per-seat activity that rigd already derives from the transcript tail for 7.7: the last transcript write, plus whether a tool call is open.
+
+- A seat is **idle** when no tool call is open, its last entry ends the turn, and its last write is older than the setting.
+- A room is idle when EVERY seat is `running` (7.8 `seats` row) AND idle. A stopped seat is not idle; the watchdog owns it.
+- The OpenRig daemon's cached records are NOT read for idleness. They are read only for the seats' models, which the gate needs. That is the same reading `up` already makes (`rigNodes`, `lifecycle.go:227`).
+
+**New setting:** `IDLE_NUDGE_MINUTES`, ONE variable, default 5, read through `clientenv.Limit`. `0` turns the nudge off, so there is no second on/off flag.
+
+**2. The gate: it already lives in ONE place, and every automatic wake reads it.**
+
+- `internal/clientoffpeak` holds:
+  - the setting `OFFPEAK_ONLY` (`gate.go:31`);
+  - the override `--allow-peak` (`gate.go:43`);
+  - the schedule, evaluated in UTC (`schedule.go:111`, `At` takes `now.UTC()`; peak is 01:00-04:00 and 06:00-10:00 Monday-Friday, plus the holiday file);
+  - the room decision `Check(allowPeak, nodes, getenv)` (`gate.go:109`), which gates only a room whose seats run a `deepseek/` model.
+- `clientlifecycle.PeakGate` (`lifecycle.go:251`) is the one call site that wraps it. Nothing new is built for the gate. The rule is that every automatic wake calls `PeakGate` and nothing else.
+
+| Wake | Gated today? | Ruling |
+|---|---|---|
+| `up`, `compact` | yes (`lifecycle.go:176`) | unchanged |
+| watchdog restore | yes (`restore.go:204`) | unchanged |
+| **idle nudge** | new | `PeakGate` before every send |
+| **supervisor's post-compaction "resume" message** (`supervisor.go`, `Step`, `resumeText`) | **NO: zero gate references in `supervisor.go` (architect grep, 2026-10-11). Today it can wake a DeepSeek seat at peak.** | **Defect against this rule.** At peak the message is held, and it is sent at the first open minute when the seat is still idle. The compaction itself is NOT held: compacting a seat past its limit is a safety action on a seat that is already running, not a wake. |
+| rigd restarting `compact`, `watchdog`, `bridge` | — | Not a wake: those processes start no seat. The watchdog they restart gates its own restores. |
+
+**The override never reaches an automatic path.** `--allow-peak` applies to the one foreground run that was given it. rigd and the children it launches never pass it, and it is not persisted. For automatic wakes, the only way to open the gate is `OFFPEAK_ONLY=off`. One setting and one flag; no second copy.
+
+**3. The latch, and how it composes with the deferral: one rule, keyed on the idle period.**
+
+- **The idle period's identity** is `T` = the newest last-activity time across the room's seats. Any seat working moves `T`, which starts a new period.
+- **The latch is new:** `nudged_for` per room, holding the `T` it fired for, persisted in rigd's local state so a rigd restart does not fire again.
+- On each tick, rigd sends ONE nudge iff all of these hold:
+  - the room is idle (1);
+  - `now − T ≥ IDLE_NUDGE_MINUTES`;
+  - `nudged_for ≠ T`;
+  - `PeakGate` proceeds.
+
+  It then sets `nudged_for = T`.
+- **The deferral is not a separate state.** At peak the gate refuses, so nothing fires and nothing is queued. At the first open minute, the same test passes if the room is still in the same idle period, and that is the one nudge.
+- If a seat worked in between, `T` moved. The old period is gone and never fires. The new period fires only once it has itself been idle for the full setting.
+- The owner's case therefore holds by construction, and the test is a property of `T`, not a timer.
+
+**4. "Stopped on purpose" is decidable: a room's membership in rigd's room list.**
+
+- `up RIG` adds the room to the `rigs` list in the local `rigd.json` (7.1).
+- **New** verb `4genteam down RIG` removes it, then stops the room's seats through `rig down`.
+- A room NOT in the list is stopped on purpose: no nudge, no watchdog restore and no supervisor for it. A room in the list is meant to run.
+- `rig down` run by hand leaves the room listed. The watchdog then restores it, which is the existing behaviour and matches "up is the only entry" (7.8). The decidable intent is `4genteam down`, and nothing else.
+- The existing `stop` verb (rigd and its children, machine-wide) is not room intent and does not change the list.
+
+**5. The message and the event.**
+
+- **Target:** the room's lead seat, by its room seat key (`lead`), with `rig send`, which is the existing path the supervisor already uses (`rigSay`). The text is fixed in code:
+
+  > "Every seat in this room has been idle for N minutes. Re-scan the board, take the unblocked items, and if nothing is runnable say so."
+
+- **Log:** one line in `alerts.log`'s sibling, `<LogDir>/nudge-<rig>.log`: `<UTC> <rig> nudged lead, idle since <T>`.
+- **New upstream event** on the socket. It is an `events` item on the lead's session, so it gets the session's `seq` and `cursor`; there is no new frame kind:
+
+  `{kind: "idle_nudge", rig, idle_since: T, idle_minutes, at}`
+
+  It is redaction-exempt because it carries no seat content. A held nudge sends nothing upstream: no event is emitted for "nothing happened".
+
+**Tests the owner named, and how they map to inputs:**
+
+| Test | Inputs | Expected |
+|---|---|---|
+| Peak and idle | `OFFPEAK_ONLY` unset, a `deepseek/` room, `At` = Mon 02:00 UTC, idle 6 min | no `rig send`, no `idle_nudge` |
+| Off-peak and idle | the same at Mon 04:00 UTC | exactly ONE `rig send` to `lead` and one event; a second tick sends nothing |
+| Gate off | `OFFPEAK_ONLY=off`, Mon 02:00 UTC | exactly ONE |
+
+Add two more for the latch:
+- Idle from 02:00, a seat works at 03:58, then idle again from 03:58: at 04:00 it sends NOTHING (the old period is gone and the new one is 2 minutes old), and at 04:03 it sends ONE.
+- A room not in `rigd.json` `rigs` never sends.
+
+The clock and `rig send` must be seams, so the tests never read wall time.
