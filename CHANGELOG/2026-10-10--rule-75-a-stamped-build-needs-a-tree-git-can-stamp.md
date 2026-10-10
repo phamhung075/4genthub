@@ -11,3 +11,8 @@ Filed from `qitem-20261010185322-02a9cfc29de69270`, beside rule 74 — the pair 
 
 ### Not run
 - No build, no clone, and no `go version -m` run by this seat: the A0 artefact and its stamps are other seats' measurements, attributed rather than re-derived. Nothing was edited outside `NEXT_GEN.md` in this repository.
+
+### CORRECTION 2026-10-10 18:56Z — the reason this entry carried was refuted four minutes after it landed
+- **What was wrong:** this entry recorded the worktree's missing stamp as *"because Go does not stamp where `.git` is a file"* — a **relayed** reason. `context-dev` measured four scratch probes (no rig state touched) and refuted it: a **submodule checkout, where `.git` is likewise a file, stamps fine** (probe C) — and stamps **the host repository's revision, not the submodule's**, which is a wrong stamp that looks genuine. The **observation** stands (a detached worktree of a sibling repository carries no stamps at all, probes A and B), and the **mechanism** to print is: **Go stamps the nearest ANCESTOR DIRECTORY holding `.git` as a directory, and passes over any `.git` file.**
+- **Where it is corrected:** `NEXT_GEN.md` rule 75 now carries a dated correction with all four probes, the ancestor rule, and the consequence that matters most — **`agenthub_client` is a submodule of a repository whose `.git` is a directory, so a build inside the client is stamped with a 4genthub commit, and A0's two conditions can be satisfied by a stamp naming the wrong tree.**
+- **Not rewritten:** the refuted sentence is left standing above the correction, because a relayed mechanism that was believed and then measured is the record's own lesson; the rule now says which half was observed and which half was assumed.
