@@ -12,6 +12,7 @@ Newest 30 at the time of the split (2026-10-10):
 |---|---|---|
 | 2026-10-10 | Every seat now answers in the caveman voice, from a pinned submodule | `2026-10-10--caveman-voice-for-every-seat.md` |
 | 2026-10-10 | Release `0.0.30` — the deploy marker, because production already reports `0.0.29` | `2026-10-10--release-0-0-30-the-deploy-marker-because-production-already-reports-0-0-29.md` |
+| 2026-10-10 | Release `0.0.33` — the deploy marker, because production and `origin/main` both report `0.0.32` | `2026-10-10--release-0-0-33-the-deploy-marker-because-production-and-origin-main-both-report-0-0-32.md` |
 | 2026-10-10 | The seat chat window's POST was answered 405, so the route is mounted and refuses in words | `2026-10-10--the-seat-chat-window-s-post-was-answered-405-so-the-route-is-mounted-and.md` |
 | 2026-10-10 | The readiness report still listed an environment variable Go stopped reading | `2026-10-10--the-readiness-report-still-listed-an-environment-variable-go-stopped-reading.md` |
 | 2026-10-10 | fastmcp/server/cache was the sibling nobody imported, so it goes with the server package | `2026-10-10--fastmcp-server-cache-was-the-sibling-nobody-imported-so-it-goes-with-the-server.md` |
