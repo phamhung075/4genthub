@@ -2,6 +2,7 @@ package use_cases
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -20,6 +21,7 @@ type completeTaskFakeTaskRepository struct {
 	findAllErr error
 	saves      []*entities.Task
 	saveErr    error
+	saveErrOn  string
 }
 
 func (f *completeTaskFakeTaskRepository) FindByID(_ context.Context, _ value_objects.TaskId) (*entities.Task, error) {
@@ -28,7 +30,12 @@ func (f *completeTaskFakeTaskRepository) FindByID(_ context.Context, _ value_obj
 
 func (f *completeTaskFakeTaskRepository) Save(_ context.Context, task *entities.Task) (*entities.Task, error) {
 	f.saves = append(f.saves, task)
-	return task, f.saveErr
+	// saveErrOn narrows saveErr to a single task, so a test can fail the DEPENDENT task's write while the
+	// completed task's own write - which runs first - still succeeds.
+	if f.saveErr != nil && (f.saveErrOn == "" || (task.ID != nil && task.ID.Value == f.saveErrOn)) {
+		return task, f.saveErr
+	}
+	return task, nil
 }
 
 func (f *completeTaskFakeTaskRepository) FindAll(_ context.Context) ([]*entities.Task, error) {
@@ -363,6 +370,37 @@ func TestCompleteTaskIncompleteSubtasks(t *testing.T) {
 	}
 	if v, _ := list[0].Get("status"); v != "todo" {
 		t.Fatalf("detail.status = %v", v)
+	}
+}
+
+// A dependent task's unblock is a status write of its own, and when it fails the failure must reach this use
+// case's caller. Discarding it is what made a write that did not happen read as success.
+func TestCompleteTaskReportsAFailedDependentUnblock(t *testing.T) {
+	taskA, idA := completeTaskNewTestTask(t)
+
+	idB, err := value_objects.NewTaskId("33333333-3333-3333-3333-333333333333")
+	if err != nil {
+		t.Fatalf("NewTaskId: %v", err)
+	}
+	taskB, err := entities.NewTask(entities.Task{ID: &idB, Title: "Dependent", Description: "d"})
+	if err != nil {
+		t.Fatalf("NewTask: %v", err)
+	}
+	blocked, _ := value_objects.NewTaskStatus("blocked")
+	taskB.Status = &blocked
+	taskB.Dependencies = []value_objects.TaskId{idA}
+
+	// Only the dependent task's save fails; taskA's own save is the earlier write in the flow.
+	repo := &completeTaskFakeTaskRepository{
+		task: taskA, allTasks: []*entities.Task{taskA, taskB},
+		saveErr: errors.New("dependent save failed"), saveErrOn: idB.Value,
+	}
+	subRepo := &completeTaskFakeSubtaskRepository{}
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
+	summary := "done"
+
+	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err == nil {
+		t.Fatal("a dependent task whose unblock failed to save was reported as success")
 	}
 }
 

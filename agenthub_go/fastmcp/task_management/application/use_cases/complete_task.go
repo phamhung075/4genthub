@@ -143,7 +143,9 @@ func (uc *CompleteTaskUseCase) Execute(
 	}
 
 	// Update dependent tasks
-	uc.updateDependentTasks(ctx, task)
+	if err := uc.updateDependentTasks(ctx, task); err != nil {
+		return nil, err
+	}
 
 	// Handle domain events (only TaskUpdated events are inspected).
 	for _, event := range task.GetEvents() {
@@ -588,11 +590,14 @@ func (uc *CompleteTaskUseCase) newFacade(gitBranchID, projectID *string) complet
 	return uc.contextFacadeFactory.CreateFacade(gitBranchID, projectID)
 }
 
-// updateDependentTasks mirrors _update_dependent_tasks (errors swallowed).
-func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, completedTask *entities.Task) {
+// updateDependentTasks mirrors _update_dependent_tasks, with one deliberate difference: a dependent task's failed
+// status write is returned instead of swallowed, because discarding it made a write that did not happen read as
+// success to this use case's caller. The lookup failure is still skipped - Python logs it and continues, and it
+// records nothing the caller could act on.
+func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, completedTask *entities.Task) error {
 	allTasks, err := uc.taskRepository.FindAll(ctx)
 	if err != nil {
-		return
+		return nil
 	}
 
 	completedID := ""
@@ -624,12 +629,15 @@ func (uc *CompleteTaskUseCase) updateDependentTasks(ctx context.Context, complet
 	}
 
 	for _, dependentTask := range dependentTasks {
-		uc.updateSingleDependentTask(ctx, dependentTask, allTasks)
+		if err := uc.updateSingleDependentTask(ctx, dependentTask, allTasks); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // updateSingleDependentTask mirrors _update_single_dependent_task.
-func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, dependentTask *entities.Task, allTasks []*entities.Task) {
+func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, dependentTask *entities.Task, allTasks []*entities.Task) error {
 	allDependenciesComplete := completeTaskAllDependenciesComplete(dependentTask, allTasks)
 	if allDependenciesComplete && dependentTask.Status != nil {
 		switch dependentTask.Status.Value {
@@ -637,18 +645,21 @@ func (uc *CompleteTaskUseCase) updateSingleDependentTask(ctx context.Context, de
 			todo, _ := value_objects.NewTaskStatus("todo")
 			dependentTask.Status = &todo
 			// The unblock is this OTHER task's status write, so it carries its own entry, in its own
-			// transaction. The error is swallowed exactly as the bare save's was (Python logs it and
-			// continues), so a failure to record cannot fail the completion.
-			_ = uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
+			// transaction. Python logs a failure here and continues; that discard is exactly what made a
+			// failed write read as success to this use case's caller, so the error is returned instead.
+			if err := uc.ledger.SaveStatus(ctx, func(ctx context.Context) error {
 				_, err := uc.taskRepository.Save(ctx, dependentTask)
 				return err
-			}, ledgerTaskID(dependentTask))
+			}, ledgerTaskID(dependentTask)); err != nil {
+				return err
+			}
 		case "todo":
 			// Ready to start: all dependencies completed.
 		default:
 			// No change needed.
 		}
 	}
+	return nil
 }
 
 // completeTaskAllDependenciesComplete mirrors _check_all_dependencies_complete.

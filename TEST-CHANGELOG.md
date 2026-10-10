@@ -2,6 +2,13 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - a failed dependent unblock stopped reading as success
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/complete_task_test.go`: `TestCompleteTaskReportsAFailedDependentUnblock` drives `Execute` with a blocked dependent task whose unblock write fails and asserts the caller sees an error.
+- ADDED `saveErrOn` to `completeTaskFakeTaskRepository` so `saveErr` can be narrowed to one task: the dependent task's write fails while the completed task's own earlier write succeeds — without it the flow would stop at the first save and the test would pass for the wrong reason.
+- RED BEFORE: with the source stashed and the test left in place, the run fails at "a dependent task whose unblock failed to save was reported as success".
+- VERIFIED: `gofmt` clean; `go vet ./fastmcp/task_management/application/use_cases/` clean; the package ok; module-wide `go test ./... -count=1` green.
+
 ## 2026-10-10 - the progress note is read back through the entity's own load
 
 - ADDED `agenthub_go/fastmcp/task_management/application/services/unified_context_service_test.go`: `TestZucsAddProgressLandsWhereTheEntityLoadsItsNotes` writes two notes through `UnifiedContextService.AddProgress` and asserts them in `TaskContextUnified.ImplementationNotes["progress_updates"]` on the entity the service built from the saved dict — the read-back the location change is about.
