@@ -85,9 +85,26 @@ failed, 4 `status` found a seat behind or not pulled.
   `project-4genthub.txt`, `e1720a0b` `area-quality.txt`), and the ref at
   `scripts/team/4genthub/team.json:9` now names **1.0.2**, not 1.0.1 (`88424aa4`) — so
   the next publish of this module cannot reuse 1.0.1, and no `pinned_version` of any
-  other room was touched. **A seat still reads the old text:** production answers
-  `0.0.34` from the same process that was serving before the push, the rooms still
-  serve their 1.0.0 body, and `main` is at `c510c065`. So the **source** now diverges
+  other room was touched. **A seat still reads the old text, and that is the half the
+  deploy did not touch — production's own version is a different claim.** `0.0.34` held
+  at 20:31Z, from the process that had been serving since before the push (the lead
+  read it at `uptime_seconds` 3772); at 20:32:39Z `/health` moved to `0.0.35` from a
+  NEW process, and re-measured here at 20:35:41Z it reads `version 0.0.35` with
+  `uptime_seconds 245.2` — a process started ≈20:31:36Z — and the lead then ran ASK 4's
+  acceptance himself (a board status change lands), so the write path is repaired.
+  **What a seat READS is not repaired.** Measured with `call_seat`, room `4genthub-min`,
+  seat `lead`, hash
+  `2426785a140553447f089e4a8b4ca13a1fdf6cc85f97f67360c82198a9002f1f` (read 20:35Z): the
+  rendered `project-4genthub` block still carries all three hunks verbatim — the
+  `PROJECT.` line "being ported from the Python backend in `agenthub_main`", the LAYOUT
+  bullet "`agenthub_main`: legacy Python backend; its script tests live in
+  `agenthub_main/src/tests/scripts`.", and the pre-move pytest line beside a "(23 known
+  pre-existing errors)" TS baseline — while the **pin** in that same render is `1.3.0`
+  (`agent.yaml` `version: "1.3.0"` and `seat-type-version: 1.3.0`). So the pin is not
+  the stale part; the served body is. Pins, measured by the lead through the seat API on
+  2026-10-10: all ten `4genthub-min` seats read `pinned_version` **1.3.0**, the
+  `4genthub-dev` room's eight seats read **1.0.0**, and `4genthub-client` and
+  `4genthub-ab` read **1.3.0**. `main` is at `c510c065`. So the **source** now diverges
   from the served body in **two** hunks (the `PROJECT.` line and the LAYOUT bullet)
   while **what a seat reads** still carries all **three**. The remaining chain is two
   applies, as the disposition ruled: the armed 1.0.1 run, then a second publish of
