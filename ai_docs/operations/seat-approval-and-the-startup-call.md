@@ -57,7 +57,7 @@ policy has no command-level surface on this runtime, so the launch flag is the e
 ## 3. The fix — two lines in a file this repo already generates
 
 The seat's approval rules live in its **own omp config**, `agent/config.yml`, and that file is rendered by
-**`agenthub_client/src/agenthub_client/seat_policy.py:152`** (`render_config` — the port of the deleted `scripts/openrig_seat_policy.py`, where the same function sat at `:145-161`), which today emits only **deny** rules:
+**`agenthub_client/src/agenthub_client/seat_policy.py:152`** (`render_config` — the port of the deleted `scripts/openrig_seat_policy.py`, where the same function sat at `:145-161`), which today emits only **deny** rules: **CORRECTED 2026-10-10 (writer seat, at the pinned client commit `eaa6ba7`): the Python port is gone. `RenderConfig` is `agenthub_client/internal/clientpolicy/policy.go:174`, and it no longer emits only deny rules** — it writes the header (`:177`), `mcp.startupTimeoutMs: 0` (`:178`), `compaction.keepRecentTokens` (`:179`), an optional `defaultThinkingLevel` (`:180`-`:182`), then `bash.allowCompoundCommands` with the `rig whoami*` allow FIRST (`:183`-`:184`), the role's denials (`:185`-`:187`) and `tools.approval` (`:188`-`:193`). The YAML below is a subset of that document, not the whole of it.
 
 ```yaml
 bash:
@@ -100,7 +100,7 @@ level** (`merge_config_key`, `:819`; the install step is `:717`), and the commen
 describes the guide file as going *"where the script that hand-wrote it used to"*. So the two lines belong in
 **whichever writer is live when they land**: if the render has taken over, the render's document is the home — and
 the only repository-side writer left is the client's port,
-`agenthub_client/src/agenthub_client/seat_policy.py`.
+`agenthub_client/src/agenthub_client/seat_policy.py`. **CORRECTED 2026-10-10 (writer seat, at `eaa6ba7`): both halves of this paragraph are now Go.** The installer and its key-level merge are `agenthub_client/internal/clientsync/rigverb.go` — the render path constant `rigOMPConfigRenderPath = "runtime/omp-config.yml"` (`:69`), the merge mapping (`:720`), the call (`:459`) and `rigMergeConfigKey` (`:800`-`:805`, its own comment naming it as `merge_config_key`), whereas `OMP_CONFIG_RENDER_PATH` (`:136`), `merge_config_key` (`:819`) and the install step (`:717`) are the retired Python's line numbers. The repository-side writer is `agenthub_client/internal/clientpolicy/policy.go` (`RenderConfig`, `:174`).
 
 **What is verified here, and what is not.** Verified: `bash.patterns` is the live evaluator for a seat —
 during this work a **deny** entry fired on this seat's own `rm -rf …`, refused with
@@ -129,7 +129,7 @@ of history that did not survive (`11e57beb` is not an ancestor of `HEAD`, and th
 `1c7b6631^`), so it is `1c7b6631` that carries the removal on the live line).
 Specified, not landed: the two-line addition to `render_config` — it belongs in the live writer,
 `agenthub_client/src/agenthub_client/seat_policy.py` (the port of the deleted `scripts/openrig_seat_policy.py`),
-and code is not this seat's lane. Applying the rendered configs is runtime state; not done here.
+and code is not this seat's lane. Applying the rendered configs is runtime state; not done here. **CORRECTED 2026-10-10 (writer seat, at `eaa6ba7`): THE ADDITION HAS LANDED.** `agenthub_client/internal/clientpolicy/policy.go:184` renders `- match: "rig whoami*"` with `approval: allow` as the FIRST pattern, ahead of the role's denials, and the comment at `:172` gives the reason this paragraph gives. The live writer is that file. What is still not verified is the runtime half this paragraph names — a seat actually launched `always-ask` — and that is a launch, not a code change.
 
 ## 4. Reproduce
 
