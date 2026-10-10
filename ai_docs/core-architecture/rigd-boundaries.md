@@ -255,6 +255,14 @@ The incident: the compaction supervisor and the rig watchdog were not running, a
 2. **Heartbeat.** A live process whose heartbeat is older than the threshold (7.4), or whose heartbeat `pid` is not the live pid, is `silent`. This is the hung case, the silence the owner named.
 3. **Log timestamps are never authoritative.** They are shown for reading only, because of the supervisor fact above.
 
+**`failing` beats a live process** (ruled 2026-10-11 on minor m1 of `GATE-39e51529`; the lead's `qitem-20261010234255-72dac9f9fb10cae8`). The process decides only `running` against `stopped`; it cannot count deaths. A row that rigd records as `failing` (3 deaths inside the window, 7.1) is `failing` whether its process is alive right now or not. It is therefore not `running` for the health report, `doctor`'s exit or `up` (7.5).
+
+The rejected reading is "a live process is `running`, and `restarts` is the only signal." Under it, the same crash loop exits 0 or 3 depending on the second `doctor` is run, and nothing acts on the counter.
+
+The precedence is `stopped` (dead and not failing), then `failing`, then `silent`, then `running`. The state clears when rigd's `prune` drops the deaths out of the window.
+
+**Code:** move `verifyRow`'s recorded-`failing` check (`clientservices/services.go:342`) ahead of the liveness switch. That owner is go-dev, the rigd phase 1 implementer (`e59f4162`). The test is a live child with a fresh beat whose recorded state is `failing`; it must read `failing`.
+
 `status --json` and `doctor` compute these rows themselves from the heartbeat files and `pgrep`. They do NOT read a report from rigd, because a dead rigd must still be reported.
 
 ### 7.3 (c) The alert
