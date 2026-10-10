@@ -505,3 +505,74 @@ Add two more for the latch:
 - A room not in `rigd.json` `rigs` never sends.
 
 The clock and `rig send` must be seams, so the tests never read wall time.
+
+**7.9a Two inputs from the same row, folded in late. Both were on the row before it closed, at 23:01:50Z and 23:02:22Z.**
+- **A park arms a wake timer only when its blocker can plausibly clear inside the interval.** Otherwise the row's own record and the idle nudge are enough. This is fe-dev's rule, which the lead measured. It is why the 12-hour timer on a missing endpoint was stopped.
+- **`rig queue block --wake-after` arms a RECURRING reminder.** N parked rows therefore show as N reminders, one per row, and none of them are duplicates. Whether a park should be one-shot is the OpenRig owner's surface question, so it joins the 7.7 friction report. The client parks no rows of its own, so 7.9 itself needs no change.
+
+### 7.10 Addendum: the auto-fix (the owner's requirement; the lead's note on `qitem-20261010230121-aba9ffb6153fb3fa`, 23:03Z; board row `411f5351`)
+
+**This ruling is late.** The note landed at 23:03:04Z, and that row was closed at 23:04:11Z without the note being read.
+
+**When the client finds an anomaly that its deterministic repair did not clear, and auto-fix is on, it runs ONE headless `claude -p` session. That session's only job is to restore the running room.** The question that decides everything else is how a session in bypass permission mode is kept to that job. The owner chose bypass.
+
+| Option | Verdict |
+|---|---|
+| **A. Prompt only.** All tools, and a prompt that forbids the six things. | **Rejected.** A prompt is a request, not a control. The session reads evidence written by other models and by users, and under bypass any instruction hidden in that text runs with the owner's rights. |
+| **B. `--restricted`.** It removes the shell tools and confines the file tools. | **Rejected.** Measured with `claude --help`, 2.1.296: restricted mode "refuses bypassPermissions". It contradicts the owner's choice and still leaves the file tools. |
+| **C. Bypass, with no power except the repair verbs.** | **Ruled.** |
+
+**The command line under C.** The client builds it from constants only:
+
+`claude -p --permission-mode bypassPermissions --tools "" --strict-mcp-config --mcp-config <LogDir>/autofix/<rig>/mcp.json --output-format stream-json --system-prompt <embedded prompt> <evidence>`
+
+It runs from the empty directory `<LogDir>/autofix/<rig>/work`, so no repository settings or instructions load.
+- `--tools ""` removes every built-in tool: no shell, no edit, no write, no fetch.
+- `--strict-mcp-config` leaves exactly one server: the client's own stdio subcommand, `agenthub-client autofix-mcp --rig R`.
+
+**That server's tools are the only power the session has:**
+
+| Verb | Does | Refuses |
+|---|---|---|
+| `recheck()` | returns `Verify()` (7.8) and the 7.7 seat activity for R | - |
+| `restart_service(name)` | runs that row's `Start` | any name not in `clientservices.Obligatory` for R |
+| `up_room()` | runs the same function as `4genteam up R` | any other room |
+| `rebrief_seat(seat)` | sends the fixed brief with `rig send` | any seat not in R |
+
+Deleting data, pushing, editing code, changing credentials and every other unsupported state change are impossible because **no tool performs them**. The prompt still names them, but the prompt is no longer the control. **Asserted, not assumed:** the client reads the `system`/`init` event from stream-json. If that event lists any tool other than these four, or any other MCP server, the client kills the run and logs it as `refused_tools`.
+
+**The guardrails and the open points, each ruled:**
+1. **The setting:** `AUTO_FIX`, off by default; only `on` enables it. The per-run override is `4genteam up RIG --auto-fix`, which lasts for that rigd's lifetime and is never persisted.
+2. **The anomaly list is closed, and every item comes from a source that is already ruled.** There is no second source.
+   - An obligatory row is `failing` (7.1: rigd gave up) or `silent` past its 7.4 threshold. `stopped` is not on the list, because rigd restarts that itself.
+   - Seats are gone: `Verify()`'s seats row still fails after the watchdog's own restore pass.
+   - A seat is past its context wall. This is read from the 7.7 transcript tail against the wall the compact safeguard already uses, and counts only when compact has not cleared it within compact's 7.4 threshold.
+   - The room is stuck: 7.9 nudged for `T`, and `T` has not moved for a further `IDLE_NUDGE_MINUTES`.
+
+   **The deterministic repair always runs first.** The auto-fix sees only what it left.
+3. **The circuit breaker:** N = **2** per (room, anomaly) per rolling hour, a constant with no setting. That allows the first run plus one retry on fresh evidence; a third run would be a loop. After that the breaker opens and the client alerts through 7.3's path: entity `rig_safeguard`, `safeguard_alert`, detail `autofix_breaker_open`. That is the owner channel that exists. The breaker closes when the anomaly clears by itself, or on `4genteam autofix reset RIG`.
+4. **One run at a time per room:** a `flock` on `<LogDir>/autofix/<rig>.lock`. A second anomaly waits for the next tick.
+5. **A run that hangs or dies:**
+   - The deadline is 10 minutes of wall-clock time. The run is declared as `in_flight {op: "autofix", since, deadline}` per 7.7, so the room reads as busy, not stopped.
+   - At the deadline the client kills the process group.
+   - A killed or crashed run counts as an attempt, with result `killed`, and the re-check still runs.
+6. **The re-check is the CLIENT's,** using the same function that raised the anomaly. The result is `fixed`, `still_broken` or `killed`. The model's own claim is logged and never used.
+7. **The off-peak gate:** a repair is an automatic wake, so it goes through `PeakGate` (7.9). At peak, the anomaly is logged as held and nothing runs.
+8. **Where things live:**
+   - The prompt is embedded in the client (`go:embed`), like the redaction rules. No environment variable and nothing in the cloud can replace it.
+   - The log is `<LogDir>/autofix/<rig>/<UTC>.log`. It holds the anomaly and its evidence, the argv, the full stream-json output, every tool call with its result, and the re-check result.
+   - Upstream, an `events` item on the lead's session, like `idle_nudge`: `{kind: "auto_fix", rig, anomaly, attempt, result, at}`. It is sent at the start (`result: "started"`) and at the end. This is the visible notice. Whether the owner is present is NOT detected, because detecting it would need a second source.
+9. **"No secrets on the command line" is asserted, not promised.** The argv holds only constants and paths. The credential reaches `claude` through the inherited environment, which is never logged. The argv and the output both go through the section 3 redaction, which fails closed.
+10. **The evidence is structured rows only:** `Verify()` rows, safeguard rows, activity times, and the anomaly name. No transcript text, seat output or log tails go into the prompt.
+11. **A missing `claude` binary** is a `doctor` row that fails, and an auto-fix that refuses loudly through the same alert. The lead measured that the binary is present here: 2.1.296.
+
+**Tests.** The `claude` binary path, the clock and the four verbs are seams.
+
+| Test | Expected |
+|---|---|
+| anomaly, `AUTO_FIX=on` | exactly one run and one log file |
+| anomaly, `AUTO_FIX` unset | no run |
+| two runs whose re-check stays broken | the third tick starts nothing and raises one `autofix_breaker_open` alert |
+| a fake `claude` whose init event lists `Bash` | the run is killed and logged `refused_tools` |
+| a sentinel value in the token environment variable, and a fake `claude` that echoes its environment and argv | the sentinel appears in neither the log nor the event |
+| a fake `claude` that sleeps past the deadline | killed, counted as an attempt, and the re-check ran |
