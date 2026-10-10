@@ -1,7 +1,7 @@
-DOCS. Documentation lives in ai_docs/. Check ai_docs/index.json for an existing document before writing a new one; hooks regenerate the index.
+DOCS. Documentation lives in ai_docs/. Check ai_docs/index.json for an existing document before writing; hooks regenerate it.
 
 Rules:
-- ai_docs subfolders use kebab-case (api-integration, setup-guides). _absolute_docs and _obsolete_docs are the only exceptions.
+- ai_docs subfolders use kebab-case (api-integration, setup-guides); _absolute_docs and _obsolete_docs excepted.
 - Only four .md files are allowed in the repository root: README.md, TEST-CHANGELOG.md, AGENTS.md and CLAUDE.local.md. Every other document goes under ai_docs.
 - Write documentation only when asked, and test any code example before documenting it.
 
@@ -11,4 +11,4 @@ Changelogs (Keep a Changelog format, include file paths, impact and testing):
 - TEST-CHANGELOG.md when test files change.
 Never create a CHANGELOG.md or CHANGELOG/ in other directories.
 
-agenthub_go/NEXT_GEN.md is the running backlog and decision record for new features after the Go port: tick a box only when its check is met, and record owner decisions with the date.
+agenthub_go/NEXT_GEN.md is the running backlog and decision record for post-port features: tick a box only when its check is met, and record owner decisions with the date.

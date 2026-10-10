@@ -1,0 +1,19 @@
+## The docs seat prompt fits its own word limit again, 158 -> 147 words
+
+### Changed
+- `scripts/team/4genthub/area-docs.txt`: three clauses compressed so the file fits the limit the repo's own test enforces. `agenthub_client/tests/test_team_setup.py:44` pins `area-docs` to 80-150 words (`words = len(_context_file(slug).read_text().split())` at `:427`), and the file measured 158, so `test_context_files_respect_word_limits[area-docs]` was RED for everyone.
+- **Every rule survives, and only phrasing moved:** the index check before writing (dropped "a new one"), "are the only exceptions" -> "excepted", and "new features after the Go port" -> "post-port features". The three clauses that state rules - the four allowed root `.md` files, the `CHANGELOG/` conventions, and the `NEXT_GEN.md` tick rule - are structurally untouched.
+- **The limit was not moved and the test was not touched.** The task's stop condition ("unless measurement shows the limit itself is the wrong instrument") did not fire: 147 is inside 80-150 with margin, so the instrument is not what was wrong.
+
+### Verified
+- **RED first, on the unfixed file:** `cd agenthub_client && PYTHONPATH=src python3 -m pytest "tests/test_team_setup.py::test_context_files_respect_word_limits" -q` -> `1 failed, 6 passed`, `AssertionError: area-docs: 158 words, expected 80-150`.
+- **GREEN after, same command:** `7 passed in 0.04s`; the whole file `tests/test_team_setup.py` -> `54 passed in 18.30s`; the full suite (`cd agenthub_client && PYTHONPATH=src python3 -m pytest tests -q`) -> **`324 passed in 75.65s`**, zero failures.
+- **The total is NOT a figure to quote, and here is what moved it.** The same command read `324 passed in 75.65s` and then `325 passed in 76.26s`, and the difference is the BASE rather than noise: at the first reading HEAD was `d8d333b6` with `agenthub_client/tests/test_seat_sync.py` DIRTY in the shared worktree, and by the second `033f7211` ("the key link refuses to replace a .env file it did not create") had landed, touching that file. The reviewer's gate read `1 failed, 321 passed` two commits earlier. So the figure that carries the comparison is the FAILURE count, **1 -> 0**, and any total has to be quoted with the commit it was read at (rule 68).
+- **The pair RE-RUN at the current base `033f7211`** (the landing rule: a red-first demonstration is only valid at the base it was taken on): unfixed file -> `1 failed, 6 passed`; fixed -> `7 passed`; whole file -> `54 passed in 18.24s`; full suite -> **`325 passed in 75.87s`, zero failures**, the same 325 that `--collect-only` reports at that base. The fixed file was backed up and restored byte-identical after the red run (`md5 b93dd146c756cc0f5dbbf874f00dd556`, 147 words), so the tree still carries the fix and nothing else of mine changed.
+- **The claim that travels, labelled as asked:** the FAILURE count is **0** at this commit. The TOTAL is not portable - it is a property of the shared worktree, not of a commit (rule 68): **322** at the reviewer's gate of `d8d333b6`, **324** in my first run, **325** at `033f7211`.
+- **Word count re-measured with the test's own instrument:** 147.
+- **The file's "only four .md files are allowed in the repository root" claim was truth-checked before being kept** - `git ls-files -- '*.md' | grep -v /` -> `AGENTS.md`, `CLAUDE.local.md`, `README.md`, `TEST-CHANGELOG.md`, exactly the four it names.
+- **Nothing else in the tree pins this file's bytes or wording:** it is declared in `scripts/team/4genthub/team.json` (`"slug": "area-docs"`, `"file": "area-docs.txt"`), and no test asserts a phrase from it - the only assertions are the word budget and `slugs("writer") == ["area-docs"]`.
+
+### Found by
+- Board row `8510f14b`, raised from the reviewer's gate of `d8d333b6` ("1 failed, 321 passed"), and confirmed on this seat before and after the edit.
