@@ -16,6 +16,24 @@ import { webSocketAnimationService } from '../../services/WebSocketAnimationServ
 import { animationFactory } from '../../services/AnimationFactory';
 import type { WSMessage } from '../../types/websocketTypes';
 
+// The service's WSMessage requires `payload.data.primary` and `metadata.source`, and the
+// fixtures below omit them ON PURPOSE - several cases exist to prove the fallbacks those
+// omissions force (`payload.data.id`, `metadata.entity_id`). Typing a fixture as WSMessage
+// would make it claim two fields its case exists to leave out, so the fixture type names the
+// shape the service is actually handed here. The call site re-widens through `unknown`,
+// because a fixture that omits required wire fields is deliberately not assignable to WSMessage.
+type FixtureMessage = {
+  id: string;
+  type: string;
+  source: string;
+  timestamp: string;
+  priority: string;
+  payload: { entity: string; action: string; data: Record<string, any> };
+  metadata: Record<string, any>;
+  aiProcessed: boolean;
+  [key: string]: any;
+};
+
 // Mock dependencies
 vi.mock('../../services/AnimationFactory', () => ({
   animationFactory: {
@@ -74,7 +92,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     describe('Task Entity', () => {
       it('should trigger create animation for task created', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-task-created',
           type: 'update',
           source: 'backend',
@@ -89,7 +107,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         // Tasks DO animate on create (unlike subtask/branch/project).
@@ -97,7 +115,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
       });
 
       it('should trigger update animation for task updated', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-task-updated',
           type: 'update',
           source: 'backend',
@@ -112,14 +130,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-456', 'update', 'websocket');
       });
 
       it('should trigger complete animation for task completed', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-task-completed',
           type: 'update',
           source: 'backend',
@@ -134,14 +152,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-789', 'complete', 'websocket');
       });
 
       it('should trigger delete animation for task deleted', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-task-deleted',
           type: 'update',
           source: 'backend',
@@ -156,7 +174,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('task-101', 'delete', 'websocket');
@@ -165,7 +183,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     describe('Subtask Entity', () => {
       it('should trigger create animation for subtask created', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-subtask-created',
           type: 'update',
           source: 'backend',
@@ -180,14 +198,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).not.toHaveBeenCalled(); // Created events are skipped for subtasks!
       });
 
       it('should trigger update animation for subtask updated', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-subtask-updated',
           type: 'update',
           source: 'backend',
@@ -202,14 +220,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('subtask-456', 'update', 'websocket');
       });
 
       it('should trigger complete animation for subtask completed', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-subtask-completed',
           type: 'update',
           source: 'backend',
@@ -224,14 +242,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('subtask-789', 'complete', 'websocket');
       });
 
       it('should trigger delete animation for subtask deleted', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-subtask-deleted',
           type: 'update',
           source: 'backend',
@@ -246,7 +264,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('subtask-101', 'delete', 'websocket');
@@ -255,7 +273,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     describe('Branch Entity', () => {
       it('should skip create animation for branch created (mount animation handles it)', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-branch-created',
           type: 'update',
           source: 'backend',
@@ -270,14 +288,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).not.toHaveBeenCalled();
       });
 
       it('should trigger update animation for branch updated', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-branch-updated',
           type: 'update',
           source: 'backend',
@@ -292,14 +310,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('branch-456', 'update', 'websocket');
       });
 
       it('should trigger delete animation for branch deleted', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-branch-deleted',
           type: 'update',
           source: 'backend',
@@ -314,7 +332,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('branch-789', 'delete', 'websocket');
@@ -323,7 +341,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     describe('Project Entity - NEW SUPPORT (2025-10-31)', () => {
       it('should skip create animation for project created (mount animation handles it)', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-project-created',
           type: 'update',
           source: 'backend',
@@ -338,7 +356,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         // Project entities ARE routed through the service; created is skipped
@@ -347,7 +365,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
       });
 
       it('should trigger update animation for project updated', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-project-updated',
           type: 'update',
           source: 'backend',
@@ -362,14 +380,14 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('project-456', 'update', 'websocket');
       });
 
       it('should trigger delete animation for project deleted', () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: 'msg-project-deleted',
           type: 'update',
           source: 'backend',
@@ -384,7 +402,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         expect(animationFactory.animate).toHaveBeenCalledWith('project-789', 'delete', 'websocket');
@@ -399,7 +417,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     entities.forEach(entity => {
       describe(`${entity} ID extraction`, () => {
         it(`should extract ${entity} ID from primary object`, () => {
-          const message: WSMessage = {
+          const message: FixtureMessage = {
             id: `msg-${entity}-primary`,
             type: 'update',
             source: 'backend',
@@ -418,7 +436,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
             aiProcessed: false
           };
 
-          webSocketAnimationService.handleWebSocketMessage(message);
+          webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
           vi.advanceTimersByTime(150);
 
           expect(animationFactory.animate).toHaveBeenCalledWith(
@@ -429,7 +447,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         });
 
         it(`should extract ${entity} ID from data directly`, () => {
-          const message: WSMessage = {
+          const message: FixtureMessage = {
             id: `msg-${entity}-direct`,
             type: 'update',
             source: 'backend',
@@ -446,7 +464,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
             aiProcessed: false
           };
 
-          webSocketAnimationService.handleWebSocketMessage(message);
+          webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
           vi.advanceTimersByTime(150);
 
           expect(animationFactory.animate).toHaveBeenCalledWith(
@@ -457,7 +475,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         });
 
         it(`should extract ${entity} ID from metadata`, () => {
-          const message: WSMessage = {
+          const message: FixtureMessage = {
             id: `msg-${entity}-metadata`,
             type: 'update',
             source: 'backend',
@@ -474,7 +492,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
             aiProcessed: false
           };
 
-          webSocketAnimationService.handleWebSocketMessage(message);
+          webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
           vi.advanceTimersByTime(150);
 
           expect(animationFactory.animate).toHaveBeenCalledWith(
@@ -485,7 +503,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         });
 
         it(`should not trigger animation if ${entity} has no ID`, () => {
-          const message: WSMessage = {
+          const message: FixtureMessage = {
             id: `msg-${entity}-no-id`,
             type: 'update',
             source: 'backend',
@@ -501,7 +519,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           };
 
           animationFactory.animate = vi.fn().mockClear();
-          webSocketAnimationService.handleWebSocketMessage(message);
+          webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
           vi.advanceTimersByTime(150);
 
           expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -520,7 +538,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     entities.forEach(({ entity, action, id }) => {
       it(`should defer ${entity} animation by exactly 150ms`, () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: `msg-${entity}-timing`,
           type: 'update',
           source: 'backend',
@@ -535,7 +553,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
 
         // Should not trigger immediately
         expect(animationFactory.animate).not.toHaveBeenCalled();
@@ -558,7 +576,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
     deleteActions.forEach(deleteAction => {
       entities.forEach(entity => {
         it(`should handle "${deleteAction}" action for ${entity}`, () => {
-          const message: WSMessage = {
+          const message: FixtureMessage = {
             id: `msg-${entity}-${deleteAction}`,
             type: 'update',
             source: 'backend',
@@ -573,7 +591,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
             aiProcessed: false
           };
 
-          webSocketAnimationService.handleWebSocketMessage(message);
+          webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
           vi.advanceTimersByTime(150);
 
           expect(animationFactory.animate).toHaveBeenCalledWith(
@@ -611,7 +629,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
 
     mappings.forEach(({ entity, action, expectedType, skipped }) => {
       it(`should map ${entity}.${action} → ${skipped ? 'no animation' : expectedType}`, () => {
-        const message: WSMessage = {
+        const message: FixtureMessage = {
           id: `msg-mapping-${entity}-${action}`,
           type: 'update',
           source: 'backend',
@@ -626,7 +644,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
           aiProcessed: false
         };
 
-        webSocketAnimationService.handleWebSocketMessage(message);
+        webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
         vi.advanceTimersByTime(150);
 
         if (skipped) {
@@ -647,7 +665,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
       // This test ensures we never regress back to ignoring projects.
       // Project `created` is intentionally skipped (mount animation handles it),
       // so `updated` proves the entity is routed to AnimationFactory.
-      const message: WSMessage = {
+      const message: FixtureMessage = {
         id: 'msg-regression-check',
         type: 'update',
         source: 'backend',
@@ -662,7 +680,7 @@ describe('WebSocketAnimationService - Unified 4-Entity Support', () => {
         aiProcessed: false
       };
 
-      webSocketAnimationService.handleWebSocketMessage(message);
+      webSocketAnimationService.handleWebSocketMessage(message as unknown as WSMessage);
       vi.advanceTimersByTime(150);
 
       // MUST trigger animation - this is the fix we implemented

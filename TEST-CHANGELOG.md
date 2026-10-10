@@ -15,6 +15,14 @@ Track test suite changes, fixes, and improvements for agenthub.
 - RED AND GREEN, MEASURED INDEPENDENTLY BY THE GATE in a worktree at `204f83b1`: GREEN PASS 7.34s; with only `task_context_repository.go` reverted (`git restore --source=f99d10eb^ fastmcp/task_management/infrastructure/repositories/task_context_repository.go`) -> RED FAIL 6.99s, the tool answering `{success: true, data: {}}` while the note column read `[]`. That pair is what pins the repository line as the fix for the "reports success, loses the note" observable.
 - RUNS ONLY WITH A DATABASE: it skips loudly when `AGENTHUB_TEST_PG_URL` is unset. Command: `AGENTHUB_TEST_PG_URL=postgresql://agenthub_user@127.0.0.1:55432/postgres go test ./fastmcp/server/httpapp/ -run TestAddProgressThroughTheToolPathLandsWhereTheEntityReads -count=1 -v` -> PASS (5.09s).
 
+## 2026-10-10 - the tests-config ratchet: 43 more off it, from `services/WebSocketAnimationService.unified.test.ts`
+
+- BEFORE **287**, AFTER **244** (`npx tsc --noEmit -p tsconfig.tests.json`), measured on both sides; the error-CODE sets are compared, not just the totals, and NO new code appears. No other file's count moved.
+- THE SLICE IS ONE FILE AND ONE FAMILY: all 43 were `TS2741`, the fixtures missing `payload.data.primary` and `metadata.source`.
+- THE OMISSIONS ARE THE TESTS' POINT, which is why the fields were not simply added: several cases exist to prove the fallbacks those omissions force (`payload.data.id`, `metadata.entity_id`), so supplying the fields would change what those cases test. A fixture type names the shape the service is actually handed, and the call site re-widens through `unknown` - because a fixture that omits required wire fields is deliberately not assignable to `WSMessage`.
+- TYPE-ONLY: 22 fixture annotations and 22 call-site casts. No assertion, expected value, test name, fixture field, or runtime value changed, and no `src/` file was touched.
+- VERIFIED BY BEHAVIOUR, NOT BY READING: `npx vitest run` -> 118 files / 1861 tests / 0 failed, the same counts as before the change, and the file's own 55 tests pass.
+
 ## 2026-10-10 - the tests-config ratchet: 76 error TS off it, from one file
 
 - BEFORE **363**, AFTER **287** (`npx tsc --noEmit -p tsconfig.tests.json`), both measured around this change; the error-CODE sets are compared, not just the totals, and NO new code appears.
