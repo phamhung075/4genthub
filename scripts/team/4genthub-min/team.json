@@ -18,49 +18,25 @@
     },
     {
       "slug": "guide-fe-dev",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-fe-dev.md"
     },
     {
-      "slug": "guide-web-dev",
-      "version": "1.0.0",
+      "slug": "guide-e2e-dev",
+      "version": "1.1.0",
       "kind": "instruction",
-      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-web-dev.md"
-    },
-    {
-      "slug": "guide-skills-dev",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-skills-dev.md"
-    },
-    {
-      "slug": "guide-context-dev",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-context-dev.md"
-    },
-    {
-      "slug": "guide-feedback-dev",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-feedback-dev.md"
+      "file": "guide-e2e-dev.md"
     },
     {
       "slug": "guide-reviewer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-reviewer.md"
     },
     {
-      "slug": "guide-writer",
-      "version": "1.0.0",
-      "kind": "instruction",
-      "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-writer.md"
-    },
-    {
       "slug": "guide-architect",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "instruction",
       "file": "../../../agenthub_go/fastmcp/seat_management/domain/seedlibrary/blocks/guide-architect.md"
     },
@@ -78,45 +54,15 @@
     },
     {
       "slug": "policy-fe-dev",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "kind": "policy",
       "file": "policy-fe-dev.json"
-    },
-    {
-      "slug": "policy-web-dev",
-      "version": "1.1.0",
-      "kind": "policy",
-      "file": "policy-web-dev.json"
-    },
-    {
-      "slug": "policy-skills-dev",
-      "version": "1.1.0",
-      "kind": "policy",
-      "file": "policy-skills-dev.json"
-    },
-    {
-      "slug": "policy-context-dev",
-      "version": "1.1.0",
-      "kind": "policy",
-      "file": "policy-context-dev.json"
-    },
-    {
-      "slug": "policy-feedback-dev",
-      "version": "1.1.0",
-      "kind": "policy",
-      "file": "policy-feedback-dev.json"
     },
     {
       "slug": "policy-reviewer",
       "version": "1.1.0",
       "kind": "policy",
       "file": "policy-reviewer.json"
-    },
-    {
-      "slug": "policy-writer",
-      "version": "1.1.0",
-      "kind": "policy",
-      "file": "policy-writer.json"
     },
     {
       "slug": "policy-architect",
@@ -148,43 +94,8 @@
       "pinned_version": "1.3.0"
     },
     {
-      "seat_key": "web-dev",
-      "seat_type": "developer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.3.0"
-    },
-    {
-      "seat_key": "skills-dev",
-      "seat_type": "developer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.3.0"
-    },
-    {
-      "seat_key": "context-dev",
-      "seat_type": "developer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.3.0"
-    },
-    {
-      "seat_key": "feedback-dev",
-      "seat_type": "developer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.3.0"
-    },
-    {
       "seat_key": "reviewer",
       "seat_type": "reviewer",
-      "runtime": "omp",
-      "model": "deepseek/deepseek-flash",
-      "pinned_version": "1.3.0"
-    },
-    {
-      "seat_key": "writer",
-      "seat_type": "writer",
       "runtime": "omp",
       "model": "deepseek/deepseek-flash",
       "pinned_version": "1.3.0"
@@ -209,31 +120,12 @@
     ],
     "fe-dev": [
       "guide-fe-dev",
+      "guide-e2e-dev",
       "policy-fe-dev"
-    ],
-    "web-dev": [
-      "guide-web-dev",
-      "policy-web-dev"
-    ],
-    "skills-dev": [
-      "guide-skills-dev",
-      "policy-skills-dev"
-    ],
-    "context-dev": [
-      "guide-context-dev",
-      "policy-context-dev"
-    ],
-    "feedback-dev": [
-      "guide-feedback-dev",
-      "policy-feedback-dev"
     ],
     "reviewer": [
       "guide-reviewer",
       "policy-reviewer"
-    ],
-    "writer": [
-      "guide-writer",
-      "policy-writer"
     ],
     "architect": [
       "guide-architect",
