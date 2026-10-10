@@ -18,6 +18,7 @@ import {
 } from '../types/websocket-protocol';
 import { animationFactory } from '../services/AnimationFactory';
 import { seatKeys } from './useSeats';
+import { sessionKeys } from './useSessions';
 import { topologyKeys } from './useTopology';
 import { useNotificationStore } from '../store/notifications';
 
@@ -913,6 +914,19 @@ export const useRealtimeSync = (
       }
     };
 
+    // Handler for connector-session updates: the RULED browser surface (rigd-boundaries.md 2.3a).
+    // Every action - a seat_state change, a status change, or MarkOffline's one frame per session -
+    // invalidates the same key, and NOTHING is read out of the frame: `GET /api/v2/sessions` stays
+    // the single read path, so a row is never assembled from a push. An action the server adds later
+    // invalidates too, which is the safe direction for a list.
+    const handleAgentSessionUpdate = (message: WSMessage) => {
+      logger.debug(
+        '[useRealtimeSync] Agent session event, invalidating the session list:',
+        message.payload?.action
+      );
+      queryClient.invalidateQueries({ queryKey: sessionKeys.list });
+    };
+
     // Handler for dashboard notifications: an agent-to-human message arriving over the socket,
     // either live or replayed from the missed-notification store on reconnect.
     const handleNotification = (message: WSMessage) => {
@@ -1026,6 +1040,9 @@ export const useRealtimeSync = (
               break;
             case 'seat':
               handleSeatUpdate(message);
+              break;
+            case 'agent_session':
+              handleAgentSessionUpdate(message);
               break;
             case 'room':
               handleRoomUpdate(message);

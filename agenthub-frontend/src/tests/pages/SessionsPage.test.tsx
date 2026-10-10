@@ -182,6 +182,33 @@ describe('SessionsPage', () => {
     expect(screen.queryByText('4genthub-min/web-dev')).not.toBeInTheDocument();
   });
 
+  it("renders the seat's state by the RULED precedence: offline wins, then stopped, else live", () => {
+    // rigd-boundaries.md 2.3a: `status: offline` shows as offline WITH the last seat_state as
+    // secondary text; otherwise seat_state decides - `stopped` is stopped, and `running` or null is
+    // live. One row per branch, so a list that ignored seat_state entirely fails on the middle rows
+    // and a list that ignored `status` fails on the third.
+    useSessionsMock.mockReturnValue({
+      sessions: [
+        { ...session('s1', 'alpha'), status: 'active', seat_state: 'running' },
+        { ...session('s2', 'beta'), status: 'active', seat_state: 'stopped' },
+        { ...session('s3', 'gamma'), status: 'offline', seat_state: 'stopped' },
+        { ...session('s4', 'delta'), status: 'active', seat_state: null },
+      ],
+      isLoading: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+
+    renderPage('/sessions');
+
+    // `running` and null both read as live; `stopped` is the only stopped badge, because the offline
+    // row shows its own state as secondary text rather than as the badge's word.
+    expect(screen.getAllByText('live')).toHaveLength(2);
+    expect(screen.getAllByText('stopped')).toHaveLength(1);
+    expect(screen.getByText('offline')).toBeInTheDocument();
+    expect(screen.getByText('seat stopped')).toBeInTheDocument();
+  });
+
   it('shows a user with no sessions the empty state, and never a row the response did not carry', () => {
     // THE RIGHT-USER-ONLY HALF, at the only layer the browser owns it. The isolation itself is the
     // server's: `ListSessions` scopes by `WHERE user_id = $1` (session_stream/repository.go:361) with

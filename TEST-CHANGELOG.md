@@ -2,6 +2,14 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-11 - seat_state's precedence and the agent_session frame: two cases, both falsifications induced
+
+- ADDED, one NEW file (`src/tests/hooks/test_useRealtimeSync_session.test.tsx`, one case) and one case in the EXISTING `src/tests/pages/SessionsPage.test.tsx`, for the ruled browser surface (`ai_docs/core-architecture/rigd-boundaries.md` 2.3a; rows `qitem-20261010224317-a8b17998c2e8ec36` and `qitem-20261010222722-57173db971f9c951`).
+- THE REALTIME CASE drives a real `agent_session` frame through the hook's own dispatcher and asserts `invalidateQueries({ queryKey: ['sessions'] })` for `created`, `updated` AND `deleted` in one case, because the ruling names all three (and `MarkOffline` emits one per session). The frame deliberately CARRIES a row (`{id, seat_state, status}`), so a future handler that parsed it would still have to keep the invalidation to pass: the ruling keeps `GET /api/v2/sessions` the single read path.
+- THE PRECEDENCE CASE renders one row per branch - active/running, active/stopped, offline/stopped, active/null - and asserts two `live` badges, exactly one `stopped`, one `offline`, and the secondary `seat stopped` text. A list that ignored `seat_state` fails on the middle rows; one that ignored `status` fails on the third.
+- FALSIFICATIONS, INDUCED IN A SCRATCH WORKTREE and then deleted rather than merely asserted: neutralising the `agent_session` dispatch case -> the realtime case fails `expected "invalidateQueries" to be called with arguments: [ { queryKey: [ 'sessions' ] } ]`; dropping the offline branch from `displayState` -> the list case fails `expected [ <span>, ... ] to have a length of 1 but got 2`. The delivered tree is unperturbed.
+- NUMBERS: `npx vitest run <the four sessions files>` -> **4 files / 18 tests passed**; `npx vitest run` -> **122 files / 1878 tests passed, 0 failed** (98.96s) READ ON THE SHARED TREE, so that total is not this change's alone; `npx tsc --noEmit -p .` -> **0** `error TS` (NON-TEST scope); `npx tsc --noEmit -p tsconfig.tests.json` -> **194**, with neither new case contributing an error.
+
 ## 2026-10-11 - the withheld-event gap gets its case, and the phase-1 command surface leaves with the ruling's own words
 
 - CHANGED, in two existing files (no new file), the frontend side of the rigd slice (`ai_docs/core-architecture/rigd-boundaries.md` section 5 step 3; row `qitem-20261010222722-57173db971f9c951`): `src/tests/pages/SessionsPage.test.tsx` and `src/tests/components/SeatInputBox.test.tsx`.

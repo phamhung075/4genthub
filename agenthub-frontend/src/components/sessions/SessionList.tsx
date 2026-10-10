@@ -40,6 +40,12 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
     <ul role="list" className="divide-y divide-surface-border-hover">
       {sessions.map((session) => {
         const isSelected = session.id === selectedId;
+        const seatState = session.seat_state ?? null;
+        // Rendering precedence, RULED (rigd-boundaries.md 2.3a): `offline` wins and carries the last
+        // reported seat_state as secondary text; otherwise seat_state decides - `stopped` shows as
+        // stopped, and `running` or null shows as live.
+        const displayState =
+          session.status === 'offline' ? 'offline' : seatState === 'stopped' ? 'stopped' : 'live';
         return (
           <li key={session.id}>
             <button
@@ -56,9 +62,14 @@ export const SessionList: React.FC<SessionListProps> = ({ sessions, selectedId, 
                   <Terminal className="h-4 w-4 shrink-0 text-teal-500" />
                   <span className="truncate">{session.name}</span>
                 </span>
-                <Badge variant={session.status === 'active' ? 'default' : 'secondary'}>
-                  {session.status}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-2">
+                  {displayState === 'offline' && seatState && (
+                    <span className="text-xs text-base-secondary">seat {seatState}</span>
+                  )}
+                  <Badge variant={displayState === 'live' ? 'default' : 'secondary'}>
+                    {displayState}
+                  </Badge>
+                </div>
               </div>
               <div className="mt-1 flex items-center justify-between gap-2 text-xs text-base-secondary">
                 <span className="truncate">{session.project ?? session.connector_id}</span>

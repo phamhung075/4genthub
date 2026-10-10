@@ -21,6 +21,13 @@ export interface SessionSummary {
   project: string | null;
   /** 'active' while the connector is holding it, 'offline' after MarkOffline. */
   status: string;
+  /**
+   * The SEAT's own running/stopped state as rigd last reported it on a `session` frame, stored by
+   * the server (`agent_sessions.seat_state`, rigd-boundaries.md 2.3a). Null means no rigd has
+   * reported one - an old one-shot `sync connector` upload, for instance - and renders as live.
+   * This is a different fact from `status`, which is about the CONNECTOR holding the session.
+   */
+  seat_state?: 'running' | 'stopped' | null;
   /** Id of the connector that registered the session. */
   connector_id: string;
   /** Highest event seq stored for the session. */
