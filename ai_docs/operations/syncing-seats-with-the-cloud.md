@@ -35,6 +35,8 @@ token is passed on in the environment and never printed or written. The store is
 4genteam seat sync 4genthub-dev --relaunch quiet     # adopt, then restart changed seats
 4genteam seat watch 4genthub-dev --interval 60 --relaunch quiet
 4genteam sync rig 4genthub-dev --update              # materialize the room: rig.yaml plus links
+4genteam seat reseat 4genthub-min --seat go-dev --seat lead   # restart live seats at their quiet point
+4genteam send [--from NAME] 4genthub-min lead "text"          # one signed message to one seat
 ```
 
 `--seat NAME` (repeatable) limits the work; `--rig NAME` when the rig name differs from the room.
@@ -45,6 +47,15 @@ materializes (`--help` lists its seven subcommands).
 |---|---|
 | `--relaunch none` (default) | adopt only; a running seat keeps what it loaded and changes at its next launch |
 | `--relaunch quiet` | restart each changed seat after it has been idle 30 s; a seat that is not quiet within 25 min is reported and left running |
+
+`seat reseat RIG --seat NAME...` restarts each named seat once it is quiet, one after the other, whatever its
+pin says. Use it when a seat has to load something that is not part of its snapshot: a new skill, a new cwd, a
+changed guide in the repo. `seat sync --relaunch quiet` cannot do that, because a seat whose pin is already
+current is reported "in sync" and is never restarted. The DeepSeek peak gate applies (`--allow-peak` skips it).
+A `rig launch` whose reply times out counts as done when the seat's tmux session comes up within 60 s.
+
+`send` puts `From NAME:` in front of the text (default `owner session`) because `rig send` does not carry the
+sender outside a seat shell, and it passes the text to `rig` as one argument, so a shell expands nothing in it.
 
 Exit codes: 0 ok (`status`: all in sync), 2 usage or environment, 3 a cloud, sync or relaunch step
 failed, 4 `status` found a seat behind or not pulled.
