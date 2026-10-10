@@ -11,9 +11,11 @@ package seedlibrary
 // failed, because a pipeline reports the LAST command's status. Each assertion below says which of
 // those two stale classes it covers.
 //
-// The copies: the embedded shelf, the repo-side source under ai_docs/operations/seat-guides, and the txt
-// sources under scripts/team/4genthub. They are byte-identical today (measured: sha256 equal for both
-// pairs), so this file asserts IDENTITY rather than treating the mirror as an independent second opinion.
+// The sources: the embedded shelf and the txt sources under scripts/team/4genthub. The repo-side copies
+// under ai_docs/operations/seat-guides were DELETED (row 5ef06b16): the shelf is the only home for the
+// guide text now, so the identity assertion between a copy and its source retired with its subject, and
+// what replaces it is the migration's own contract - every source_path guides.lock.json still records
+// must be ABSENT, which is what makes the deletion landed rather than believed.
 
 import (
 	"io/fs"
@@ -129,26 +131,16 @@ func TestGuidesStateTheNoPipeRuleBesideTheCommand(t *testing.T) {
 	}
 }
 
-// C: the two copies of the guide text cannot diverge, and the txt sources carry the command too. The mirror
-// is DUPLICATIVE today, not independent - both pairs are byte-identical - so identity is the assertion, and
-// a divergence is the finding rather than a licence.
-func TestGuideCopiesCannotDivergeAndTheTxtSourcesCarryTheCommand(t *testing.T) {
+// C: the txt sources carry the command too, and the migration's second half is visible rather than
+// assumed. THE COPY-PAIR HALF WAS RETIRED WITH ITS SUBJECT: the two repo-side sources it compared
+// (ai_docs/operations/seat-guides/_common.md and reviewer.md) are gone - the embedded shelf is the only
+// home for the guide text now - so there is no second copy left for the shelf to disagree with. What
+// replaces it is not a weaker claim but the next one: every source_path guides.lock.json still records
+// must be ABSENT, which is what makes the deletion landed rather than believed, and what a stray re-copy
+// would break. The list comes from the lock, so a new guide cannot leave it stale.
+func TestTheTxtSourcesCarryTheCommandAndTheRecordedSourcesAreGone(t *testing.T) {
 	root := repoRoot(t)
-	pairs := []struct{ source, embedded string }{
-		{"ai_docs/operations/seat-guides/_common.md", guideCommonFile},
-		{"ai_docs/operations/seat-guides/reviewer.md", guideReviewerFile},
-	}
-	for _, pair := range pairs {
-		source := filepath.Join(root, filepath.FromSlash(pair.source))
-		data, err := os.ReadFile(source)
-		if err != nil {
-			t.Errorf("read the publish source %s: %v", pair.source, err)
-			continue
-		}
-		if string(data) != readEmbeddedGuide(t, pair.embedded) {
-			t.Errorf("%s and the embedded %s have diverged; the shelf is copied from the source, so one of them is stale", pair.source, pair.embedded)
-		}
-	}
+
 	for _, txt := range []string{
 		"scripts/team/4genthub/area-quality.txt",
 		"scripts/team/4genthub/project-4genthub.txt",
@@ -165,5 +157,23 @@ func TestGuideCopiesCannotDivergeAndTheTxtSourcesCarryTheCommand(t *testing.T) {
 		if strings.Contains(text, retiredScriptTestPath) {
 			t.Errorf("%s still names %q", txt, retiredScriptTestPath)
 		}
+	}
+
+	lock, err := loadGuideLock()
+	if err != nil {
+		t.Fatalf("read guides.lock.json: %v", err)
+	}
+	checked := 0
+	for slug, entry := range lock {
+		if entry.SourcePath == "" {
+			continue
+		}
+		checked++
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(entry.SourcePath))); !os.IsNotExist(err) {
+			t.Errorf("%s: the lock still records %s as the publish source and it exists (stat err=%v): the retirement did not land, or the copy came back", slug, entry.SourcePath, err)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("the lock records no source_path, so this check found nothing to verify - a check that cannot fail is not a check")
 	}
 }

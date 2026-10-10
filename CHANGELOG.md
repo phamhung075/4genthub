@@ -3,6 +3,23 @@
 ### Added
 - `.github/workflows/ci.yml`: replaces the `test_coverage.yml` deleted in `d1114170`. Job `go` runs `go vet ./...` and `go test ./...` in `agenthub_go`; job `frontend` runs `pnpm install --frozen-lockfile`, `pnpm test` (vitest) and `pnpm build` in `agenthub-frontend` (the lockfile is `pnpm-lock.yaml`). Triggers: push to `main` and pull requests. Not run locally: the workflow has never executed on GitHub, so its first run is the validation.
 
+## The eleven seat-guide copies are gone, and the guard that says so is the lock's own record (row `5ef06b16`)
+
+### Changed
+- **DELETED — ELEVEN files, each named, none recursive:** `ai_docs/operations/seat-guides/{_common,architect,context-dev,fe-dev,feedback-dev,go-dev,lead,reviewer,skills-dev,web-dev,writer}.md`. That is `_common` plus the TEN seat guides — **ELEVEN** — and it is exactly the `source_path` set of the library's `guides.lock.json` (re-measured before the deletion: 11 entries, all present, all tracked, every file's sha256 equal to its recorded `source_sha256`, so the pairing was intact and the pre-deletion run had 0 divergences as well as 0 already-gone).
+- **`agenthub_go/fastmcp/seat_management/domain/seedlibrary/guide_script_tests_test.go`:** the two-row copy table is **dropped with its subject** — the embedded shelf is now the only home for the guide text, so identity between a copy and its source cannot be asserted — the header comment that named the repo-side source as one of "the copies" is updated, the txt half is kept (both files present, subject intact), and the retired guard is **REPLACED** by the migration's own contract, `TestTheTxtSourcesCarryTheCommandAndTheRecordedSourcesAreGone`: every `source_path` the lock still records must be **ABSENT**, read from the lock rather than from a hand-written list, with a `checked == 0` refusal so the check cannot pass vacuously.
+- **`agenthub_go/fastmcp/seat_management/domain/seedlibrary/guides.lock.json` is UNTOUCHED**, deliberately: its `source_path`/`source_sha256` records are what make `cmd/blockdrift` print `expected: … is gone` with exit 0, and `verifyGuideLocks` (`blockprovenance.go:118-137`) compares only shelf digests, so `Load()` keeps working.
+- `ai_docs/index.json` is **not** in this commit and was not staged.
+
+### Verified
+- **The instrument before and after, both exit 0:** `go build -o /tmp/ctx-blockdrift ./cmd/blockdrift && /tmp/ctx-blockdrift -root ..` → before, `blockdrift: 17 block(s) in step under …; 0 source file(s) already gone (expected after the migration)`; after, `17 block(s) in step under …; **11 source file(s) already gone** (expected after the migration)`. The block count is incidental and moves with other seats' work; the **eleven** is the count this row is about, and the word in the commit message.
+- **The guard was SEEN RED on its perturbation, on disk before the run was read:** restoring `ai_docs/operations/seat-guides/reviewer.md` from the embedded shelf fails it with `guide-reviewer: the lock still records ai_docs/operations/seat-guides/reviewer.md as the publish source and it exists (stat err=<nil>): the retirement did not land, or the copy came back` — **1 failed** — and removing the file again gives **ok 0.002s**. The perturbed file was deleted and its directory left absent, so the green is a real absence and not a restored copy.
+- `gofmt -l fastmcp/seat_management/domain/seedlibrary/` printed nothing; `go vet ./fastmcp/seat_management/domain/seedlibrary/...` exit 0; `go test -count=1 ./fastmcp/seat_management/domain/seedlibrary/...` → `ok agenthub/fastmcp/seat_management/domain/seedlibrary 0.031s`.
+- **Committed by explicit pathspec** — the eleven named deletions, the test file, `TEST-CHANGELOG.md` and `CHANGELOG.md` — never a bare `git commit`, because the shared index carries four staged doc paths that are not this seat's.
+
+### Found by
+- context-dev, prepared and drift-re-audited as row `5ef06b16`. The amended shape — drop the table **and** replace it with the lock-driven absence assertion — was the lead's ruling, on the ground that removing a guard and putting nothing in its place is how a deletion looks done while the invariant it was about goes unheld.
+
 ## Release `0.0.29` — the deploy marker, because production already reports `0.0.28`
 
 ### Changed
