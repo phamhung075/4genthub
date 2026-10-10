@@ -39,7 +39,8 @@ These are pointers; never copy their content into this file.
 2. **The entity/ORM is the source of truth, over the tests.** Order: prompt input → ORM/entity
    model → database → tests → code. A failing test means fix the code (or the test) to match the
    model; never add compatibility code to make tests pass. Rules and locations: same file.
-3. **Changelog duties.** Update `CHANGELOG.md` for changes that ship and `TEST-CHANGELOG.md` for
+3. **Changelog duties.** Update the changelog for changes that ship (one new file
+   `CHANGELOG/<date>--<title>.md`) and `TEST-CHANGELOG.md` for
    test-suite changes. Detail: same file.
 4. **Keep-out files and staging.** `.claude/` and `agenthub_go/seatcheck` never enter a commit.
    **Stage by explicit path; never `git add -A`** is **RETIRED** — the index is shared with every other
