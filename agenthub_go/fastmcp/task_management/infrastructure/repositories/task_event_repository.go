@@ -58,10 +58,16 @@ func (r *TaskEventRepository) Append(ctx context.Context, in entities.AppendTask
 			// a parameter's type once for all of its uses. Left alone the comparison resolves $1 as text
 			// (the string category's preferred type, preferred over the column's varchar) while the insert
 			// slot resolves the column's VARCHAR(64), and the two resolutions collide as SQLSTATE 42P08.
-			// Stating the column's own type on the parameter makes both uses resolve to varchar(64).
+			// Stating the string type on the parameter makes both uses resolve to varchar.
+			//
+			// THE CAST IS DELIBERATELY UNLENGTH. A cast to varchar(64) fixes the same collision but adds a
+			// second effect: it truncates an over-length parameter silently - measured on task_events, 100
+			// characters were stored as 64 with no error under ::varchar(64), where ::varchar leaves the
+			// width to the column that owns it and gets SQLSTATE 22001 (value too long) instead. Silent
+			// truncation of an identity is worse than a refusal, so the length stays off the cast.
 			row := s.QueryRowContext(ctx, `
 				INSERT INTO task_events (id, user_id, task_id, seq, kind, actor_kind, actor_id, payload)
-				SELECT $3, $1::varchar(64), $2, COALESCE(MAX("seq"), 0) + 1, $4, $5, $6, $7
+				SELECT $3, $1::varchar, $2, COALESCE(MAX("seq"), 0) + 1, $4, $5, $6, $7
 				FROM task_events WHERE `+conds+`
 				RETURNING "seq", "created_at"`, args...)
 			var seq int
