@@ -115,7 +115,6 @@ func taskCtxRepoTestEntity(taskID, branchID string) *entities.TaskContextUnified
 		NextSteps: []any{"next"},
 		Metadata: map[string]any{
 			"local_overrides":      map[string]any{"l": int64(1)},
-			"implementation_notes": map[string]any{"i": int64(1)},
 			"delegation_triggers":  map[string]any{"d": int64(1)},
 			"inheritance_disabled": true,
 			"force_local_only":     true,

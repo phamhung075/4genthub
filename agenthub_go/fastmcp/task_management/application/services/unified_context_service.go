@@ -923,7 +923,6 @@ func (s *UnifiedContextService) createContextEntity(level value_objects.ContextL
 		metadata := zpUCSAsOrdered(zpUCSGetOr(data, "metadata", nil)).Copy()
 		metadata.Set("execution_context", zpUCSGetOr(data, "execution_context", nil))
 		metadata.Set("discovered_patterns", zpUCSGetOr(data, "discovered_patterns", nil))
-		metadata.Set("implementation_notes", zpUCSGetOr(data, "implementation_notes", nil))
 		metadata.Set("test_results", zpUCSGetOr(data, "test_results", nil))
 		metadata.Set("blockers", zpUCSGetOr(data, "blockers", nil))
 		t := entities.NewTaskContextUnified(contextID, branchIDStr)
