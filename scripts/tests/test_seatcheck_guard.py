@@ -21,10 +21,16 @@ from pathlib import Path
 
 import pytest
 
+
+import _client_tree
+
+
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
-GO_DIR = Path(__file__).resolve().parents[2] / "agenthub_go"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+GO_DIR = REPO_ROOT / "agenthub_go"
 
 HASH_A = "a1" * 32
 FILES = [{"path": "docs/readme.md", "content": "hello"}]
@@ -43,6 +49,16 @@ ACCEPT_POLICY = {
 
 
 def _load_module():
+    """The client's `seat_sync`, read out of the pinned revision rather than the pod's checkout.
+
+    It is imported at import time, so a missing path used to be a COLLECTION error that yielded no
+    verdict at all. The pin is materialised read-only from the gitlink; a machine that cannot supply
+    it gets a skip that says so, which is the opposite of the silence this closes.
+    """
+    try:
+        _client_tree.ensure_on_path(REPO_ROOT)
+    except _client_tree.ClientTreeUnavailable as unavailable:
+        pytest.skip(f"SKIPPED, NOT PASSED: {unavailable}", allow_module_level=True)
     return importlib.import_module("agenthub_client.seat_sync")
 
 

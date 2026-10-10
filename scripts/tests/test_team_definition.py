@@ -43,6 +43,9 @@ from pathlib import Path
 import pytest
 
 
+import _client_tree
+
+
 # These tests are self-contained and must not spin up the test database.
 pytestmark = pytest.mark.unit
 
@@ -149,6 +152,15 @@ ROOM_RUNTIMES = {
 
 
 def _load_module():
+    """The client's `team_setup`, read out of the pinned revision rather than the pod's checkout.
+
+    Imported at import time, so a missing path was a COLLECTION error that yielded no verdict. The
+    pin is materialised read-only from the gitlink, and a machine that cannot supply it skips loudly.
+    """
+    try:
+        _client_tree.ensure_on_path(REPO_ROOT)
+    except _client_tree.ClientTreeUnavailable as unavailable:
+        pytest.skip(f"SKIPPED, NOT PASSED: {unavailable}", allow_module_level=True)
     return importlib.import_module("agenthub_client.team_setup")
 
 
