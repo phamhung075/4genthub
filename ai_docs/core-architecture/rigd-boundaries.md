@@ -576,3 +576,16 @@ Deleting data, pushing, editing code, changing credentials and every other unsup
 | a fake `claude` whose init event lists `Bash` | the run is killed and logged `refused_tools` |
 | a sentinel value in the token environment variable, and a fake `claude` that echoes its environment and argv | the sentinel appears in neither the log nor the event |
 | a fake `claude` that sleeps past the deadline | killed, counted as an attempt, and the re-check ran |
+
+### 7.11 Addendum: a handoff target must be live at closure time (the reviewer's GATE `f541f2f5`; the lead's `qitem-20261010233502-641a56880b826f98`)
+
+**The rule (every seat):** a `handed_off_to` closure takes its destination only from the **live set at closure time**: `rig ps --nodes --rig <rig>` (`sessionStatus: running`) or `rig whoami --json`. A commit trailer (`Seat: ...`), the startup identity hint and memory are not evidence that a seat can accept. They can name seats that `team.json` no longer has, such as `@writer` and `@web-dev`. If the destination is not live, re-route the work with `rig queue fallback <qitem>` to a live seat, then close the orphan with the reason recorded.
+
+**The guard.** There are two options:
+
+| | A: `seatcheck send` refuses a destination that is not live | B: a new verb, `4genteam queue close`, that resolves the live set and refuses |
+|---|---|---|
+| Where the orphan is stopped | at creation: every `rig queue create` and `rig send` already passes `seatcheck send`, and `commpolicy.BypassSuspected` flags a direct `rig queue` | at closure only, and only for seats that remember to use the new verb |
+| New surface | one reason, `not_live`, beside `commpolicy.Decide` | a new verb that duplicates `rig queue update` |
+
+**Ruling: A.** In addition, `doctor` adds a row, `orphan_handoffs`, which names each pending qitem whose destination is not live. This is the same predicate as `up`'s room/team mismatch check, so both belong to the team-prune item `00f2e9cf`. Neither guard moves a seat.
