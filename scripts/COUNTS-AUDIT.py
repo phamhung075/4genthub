@@ -36,7 +36,13 @@ GO = f"{ROOT}/agenthub_go"
 # The numbers as the surface inventory states them. Each entry names the instrument that
 # re-derives it, because a number without its instrument is the failure this file exists for.
 EXPECTED = {
-    "httpapp route registrations": 124,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+    "httpapp route registrations": 125,     # grep -rn 'mux.HandleFunc(' fastmcp/server/httpapp, minus _test.go
+                                            #   124 -> 125 (docs duty pass 7): 42de79c2 added PUT /api/v2/
+                                            #     openrig/rooms/{room}/seats/{seat}/pin at seat_admin_mount.go:362,
+                                            #     handler handleSetSeatPin. The tree moved and BOTH this file and the
+                                            #     document stood still, which is exactly the shape this audit exists
+                                            #     for; the §1 table also gained the row, because a count that is
+                                            #     right says nothing about a row that is absent.
                                             #   124 -> 125: O1a's GET /{id}/events route landed and THIS expectation
                                             #     never moved, so the audit was already red before the change below.
                                             #   125 -> 123: e6829b32 removed the two always-500 task routes, and the

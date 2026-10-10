@@ -23,7 +23,7 @@ so a naive `grep HandleFunc` prints `"POST "+base+"/"` instead of `/api/v2/proje
 **Resolve them with the generator rather than by hand:** `cd agenthub_go && go run ./cmd/apirefgen` follows each `RegisterRoutes` call into the package that owns it and prints `<n> routes, <n> tools`; pass `-out /tmp/apiref.ts` to read the resolved list without writing the frontend artefact. At `db9d2bc3` it emitted **143 routes, 10 tools**, independently matching this section's count and resolving the function-scoped bases above (e.g. `/api/v2/tasks/{id}/events`). Writing a regex for this is how a reader reinvents the bug this paragraph describes — three such attempts on 2026-10-08 produced junk path keys while reporting plausible counts.
 The commands used and the full registration dump are in the acceptance appendix.
 
-**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **144** (httpapp 124, auth 20), re-run at `a7990665`; the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
+**Reproduce:** `cd agenthub_go && grep -rn "mux\.HandleFunc(" --include='*.go' --exclude='*_test.go' fastmcp/server/httpapp fastmcp/auth | wc -l` -> **145** (httpapp 125, auth 20), re-run at `42de79c2`; the same command returned **146** (httpapp 126) at `6cfd56ab` before `e5ecff63` removed the two machine-token routes, and **145** (httpapp 125) before `e6829b32` removed the two always-500 task routes. *`rg` is NOT installed in this environment, so the earlier `rg -n` form could not run here, and it also counted `*_test.go` registrations — 125 at `db9d2bc3` rather than that pass's no-tests **123**; the tests-inclusive count for `httpapp` is now the number the no-tests figure used to be, which is how this line rots silently if it is quoted without its date.* The command above is the one that produced the number.*
 
 **RE-RUN 2026-10-10 (writer seat) at HEAD `ab8ff69f`: the command above returns the same **144** (httpapp 124, auth 20), `go run ./cmd/apirefgen` independently wrote `144 routes, 10 tools`, and every one of the 124 `httpapp` registrations carries a citation in §1 within three lines — a COVERAGE check only, not a row-by-row re-resolution, so the §1 rows keep the dates their own passes recorded.**
 
@@ -47,6 +47,12 @@ names the function that actually performs the work; the registration line is the
 **RE-MEASURED 2026-10-10 at `a7990665` (go-dev, at the `e5ecff63` gate), BOTH INSTRUMENTS RE-RUN RATHER THAN QUOTED.** `cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref-check.ts` -> `wrote /tmp/apiref-check.ts: **144 routes, 10 tools**`; `python3 scripts/COUNTS-AUDIT.py` -> **exit 1, but on its own memory rather than on this document or the tree**: the tree reads `httpapp` registrations **124**, seat tables **15**, registered tables **40** and SQL `CREATE TABLE` statements **17**, and this document now states those four, while **the instrument and this document now AGREE on all four — `python3 scripts/COUNTS-AUDIT.py` exits 0 with every row matching, because the writer's row `0a94db94` retuned `EXPECTED` to the tree's figures in the same window (`a691276c`) — and this paragraph records the split as it stood rather than leaving a red instrument unexplained.** **WHAT MOVED, NAMED RATHER THAN COUNTED: ONE COMMIT, `e5ecff63` ("one credential: AGENTHUB_TOKEN replaces the per-machine token"), which removed the two `POST`/`DELETE /api/v2/openrig/machines` registrations and the `machine_tokens` table.** The tool count is unchanged at 10 and `auth` at 20, so the route total is **144 = 124 + 20**.
 
 **RE-RESOLVED 2026-10-10 at `a7990665` (go-dev, at the same gate), because that commit edited five mount files and these tables cite lines inside them.** `python3 ~/.openrig/agenthub-seats/4genthub-min/CITATION-AUDIT.py` (checking mode) reported **`rows 144  stale 59  unresolved 0`**: every row still points at a file carrying its method+route, 59 line numbers had drifted (`routes_mount.go` 44, `app.go` 6, `seat_mount.go` 5, `seat_status_mount.go` 2, `seat_feedback_mount.go` 2), and **the rewrite was then run OUTSIDE any gate, as that tool's own header requires** (`--write`), after which the same command reports `rows 144  stale 0  unresolved 0`. **IT THEN REPORTED 3 STALE AGAIN, AND THE CAUSE WAS THIS PASS ITSELF:** the fix of the `seat_mount.go:223` comment added one line to that file, so the three rows citing registrations below it moved by +1 (`227 -> 228` and its neighbours); a second `--write` closes it and the check reads `stale 0`. **That is the pointer-rot the method predicts, caught on the pass that caused it rather than by the next reader.** **NOT COVERED, SAID PLAINLY RATHER THAN IMPLIED: neither instrument resolves §3's table rows, so §3 was not re-derived as a whole — the two rows measured in this pass (`seat_messages` and `machine_edges`, both `e5ecff63` casualties) are corrected and the rest stand unverified rather than implied clean.**
+
+**RE-MEASURED 2026-10-10 at `42de79c2` (writer seat, docs duty pass 7), BOTH INSTRUMENTS RE-RUN RATHER THAN QUOTED — and this pass found a class the count instruments cannot see.** Route total **145** = **125 `httpapp`** + **20 `auth`**, emitted by the generator itself (`cd agenthub_go && go run ./cmd/apirefgen -out /tmp/apiref-final.ts` -> `wrote /tmp/apiref-final.ts: 145 routes, 10 tools`); MCP tools unchanged at **10**. **WHAT MOVED, NAMED:** one registration, `PUT /api/v2/openrig/rooms/{room}/seats/{seat}/pin` (`seat_admin_mount.go:362`, handler `handleSetSeatPin`), from `42de79c2`. `python3 scripts/COUNTS-AUDIT.py` -> **exit 1 on one row**, `httpapp` registrations: the tree reads **125** while this document and that file's `EXPECTED` both said 124 — the tree moved, and both were retuned in this pass.
+
+**THE FINDING THIS PASS ADDS: a route can be missing from the table while every count still looks right, and nothing in either instrument's output would say so.** §1 held **144 rows for 145 live registrations**. The check that finds it is a **set join**, not a count: extract every `| METHOD | \`path\` |` row of §1 and join it against the generator's own emitted route list — **144 rows, zero duplicates, zero rows claiming a route the server does not mount, and exactly one live route with no row** (the pin route above, now added in file order between `permission-policy` and `overlay`). Counts agree with each other by construction when a row is simply absent; only the join disagrees. Run it as: `go run ./cmd/apirefgen -out /tmp/api.ts` in `agenthub_go`, then match each §1 row's method+path against `/tmp/api.ts`.
+
+**CITATIONS.** `python3 scripts/CITATION-AUDIT.py` (checking mode) -> **exit 1, `rows 145  stale 28  unresolved 0`** — no row pointed at a file that had stopped carrying its method+route, and 28 line numbers had drifted, all in the family `42de79c2` edited (`seat_admin_mount.go` +5..+8 below the insertion, `mcp_routes.go` +2). **The rewrite ran outside any gate, as that tool's header requires** (`CI= python3 scripts/CITATION-AUDIT.py --write` -> `rewrote 28 citations`, touching only this file), after which the same command reports **`rows 145  stale 0  unresolved 0`**, exit 0. The `CI=` prefix is the tool's own documented escape: this shell inherits `CI=true` for unrelated reasons and the guard reads that as a gate marker.
 
 **CITATION RE-DERIVATION (2026-10-06, docs duty pass 3) — the `file:line` in every `§1.*` row was re-resolved against the tree rather than trusted.** The method: for each row, read the file's own `base` const, resolve the row's path, and match it to the registration that actually carries that method+path; then compare with the cited number. **21 of the 144 route rows cited a line that was no longer the registration** — `app.go` had drifted 10–11 lines and `seat_mount.go` 73, because **a `file:line` is a pointer that rots every time code is added above it, while the mount files that had not changed still matched exactly** (which is what distinguishes drift from a wrong method). All 21 now cite their registration line, and the check is repeatable: re-resolve, compare, report the set. **Scope: §1's route rows, §2's citations, §5's two quoted-report cites and §3's table citations were all re-derived in this pass (see §3.6 for the table half); §4's gone-list holds commands rather than citations and was NOT re-run.** **The audit is repeatable rather than a one-off: it is kept as `CITATION-AUDIT.py` beside the seat area, with the false-positive caveat in its docstring — its `loose` matches are hypotheses, and three of the first run's reports were exactly that.**
 
@@ -121,8 +127,8 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:74` |
-| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:139` |
+| POST | `/mcp` | JSON-RPC dispatcher (`handleJSONRPC`) | `mcp_routes.go:76` |
+| GET | `/mcp` | `mcpSSEHandler` (SSE) | `mcp_routes.go:141` |
 
 ### 1.7 WebSockets (`ws_mount.go`)
 
@@ -226,32 +232,33 @@ and the two auth `RegisterRoutes` methods.
 
 | Method | Path | Handler | Registration |
 |---|---|---|---|
-| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:312` |
-| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:315` |
-| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:318` |
-| PUT | `/api/v2/openrig/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:321` |
-| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:324` |
-| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:327` |
-| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:330` |
-| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:333` |
-| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:336` |
-| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:339` |
-| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:342` |
-| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:345` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:348` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:351` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:354` |
-| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:357` |
-| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:360` |
-| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:363` |
-| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:366` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:369` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:372` |
-| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:375` |
-| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:378` |
-| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:381` |
-| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:384` |
-| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:387` |
+| POST | `/api/v2/openrig/rooms` | `handleCreateRoom` | `seat_admin_mount.go:317` |
+| GET | `/api/v2/openrig/rooms` | `handleListRooms` | `seat_admin_mount.go:320` |
+| DELETE | `/api/v2/openrig/rooms/{room}` | `handleDeleteRoom` | `seat_admin_mount.go:323` |
+| PUT | `/api/v2/openrig/rooms/{room}/team` | `handleSetRoomTeam` | `seat_admin_mount.go:326` |
+| GET | `/api/v2/openrig/seat-types` | `handleListSeatTypes` | `seat_admin_mount.go:329` |
+| POST | `/api/v2/openrig/seat-types` | `handleCreateSeatType` | `seat_admin_mount.go:332` |
+| POST | `/api/v2/openrig/seat-types/{slug}/versions` | `handleCreateSeatTypeVersion` | `seat_admin_mount.go:335` |
+| GET | `/api/v2/openrig/modules` | `handleListModules` | `seat_admin_mount.go:338` |
+| GET | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handleGetModuleVersion` | `seat_admin_mount.go:341` |
+| PUT | `/api/v2/openrig/modules/{slug}/versions/{version}` | `handlePutModuleVersion` | `seat_admin_mount.go:344` |
+| POST | `/api/v2/openrig/rooms/{room}/seats` | `handleCreateSeat` | `seat_admin_mount.go:347` |
+| GET | `/api/v2/openrig/rooms/{room}/seats` | `handleListSeats` | `seat_admin_mount.go:350` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}` | `handleRemoveSeat` | `seat_admin_mount.go:353` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/occupant` | `handleSetSeatOccupant` | `seat_admin_mount.go:356` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/permission-policy` | `handleSetSeatPermissionPolicy` | `seat_admin_mount.go:359` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/pin` | `handleSetSeatPin` | `seat_admin_mount.go:362` |
+| PUT | `/api/v2/openrig/rooms/{room}/overlay` | `handleRoomOverlay` | `seat_admin_mount.go:365` |
+| GET | `/api/v2/openrig/overlay` | `handleGetCompanyOverlay` | `seat_admin_mount.go:368` |
+| PUT | `/api/v2/openrig/overlay` | `handleCompanyOverlay` | `seat_admin_mount.go:371` |
+| GET | `/api/v2/openrig/rooms/{room}/overlay` | `handleGetRoomOverlay` | `seat_admin_mount.go:374` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleSeatOverlay` | `seat_admin_mount.go:377` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/overlay` | `handleGetSeatOverlay` | `seat_admin_mount.go:380` |
+| PUT | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleUpsertSeatLink` | `seat_admin_mount.go:383` |
+| GET | `/api/v2/openrig/rooms/{room}/seats/{seat}/links` | `handleListSeatLinks` | `seat_admin_mount.go:386` |
+| DELETE | `/api/v2/openrig/rooms/{room}/seats/{seat}/links/{to}/{kind}` | `handleDeleteSeatLink` | `seat_admin_mount.go:389` |
+| GET | `/api/v2/openrig/settings` | `handleGetSettings` | `seat_admin_mount.go:392` |
+| PUT | `/api/v2/openrig/settings` | `handlePutSettings` | `seat_admin_mount.go:395` |
 
 **Update 2026-10-06 (D5 sharing).** `PUT /api/v2/openrig/rooms/{room}/team` (`handleSetRoomTeam`) is new — it is the route that shares one room, read-only, with one team's members, or makes it private again — and **every Registration line in this section was refreshed from the source in the same pass**, because that insertion shifted them all; all 26 rows were then re-checked one by one against the registrations they cite.
 
