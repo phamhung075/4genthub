@@ -2,6 +2,12 @@
 
 Track test suite changes, fixes, and improvements for agenthub.
 
+## 2026-10-10 - the unwired ledger is refused, and the unit tests that relied on the silent save pass one through
+
+- ADDED `agenthub_go/fastmcp/task_management/application/use_cases/status_ledger_unwired_test.go`: a use case built WITHOUT `.WithLedger(...)` refuses a status write with `ErrLedgerNotWired` instead of saving and reporting success — the acceptance for the optional-ledger defect, asserted with `errors.Is` so a different error cannot pass as the refusal. The file also carries `noopLedger()`, the pass-through seam (a recorder that reports the same status before and after the save) that the update and complete unit cases now use.
+- CHANGED `update_task_test.go` and `complete_task_test.go`: every construction now wires `noopLedger()`, because a status write with no ledger is no longer legal and those cases are about the use case's own behaviour rather than what the ledger records.
+- VERIFIED: `go test -count=1 ./fastmcp/task_management/application/use_cases/` ok; the MCP handler package ok; `httpapp` ok with the database present.
+
 ## 2026-10-10 - the broken-schema case: a status write whose ledger entry cannot be written leaves the row alone
 
 - ADDED `agenthub_go/fastmcp/task_management/infrastructure/database/status_write_failure_integration_test.go` (needs `AGENTHUB_TEST_PG_URL`; skips loudly without it): the incident's shape — `task_events` with the current columns MINUS `user_seq` — driven through the PRODUCTION seam (`StatusLedger.SaveStatus` over the wired recorder, the row written through the session manager exactly as the repository's `Save` does). It asserts BOTH halves: the status write fails naming `user_seq`, and the row still reads `todo` afterwards. The measured answer is that the shared transaction holds.

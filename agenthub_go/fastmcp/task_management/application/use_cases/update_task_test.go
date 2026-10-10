@@ -61,7 +61,7 @@ func TestUpdateTaskUseCaseUpdatesFields(t *testing.T) {
 	const idValue = "22222222-2222-2222-2222-222222222222"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	title := "New Title"
 	description := "New description"
@@ -150,7 +150,7 @@ func TestUpdateTaskUseCaseUpdatesFields(t *testing.T) {
 
 func TestUpdateTaskUseCaseTaskNotFound(t *testing.T) {
 	repo := &updateTaskFakeRepo{}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	const idValue = "11111111-1111-1111-1111-111111111111"
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue})
@@ -171,7 +171,7 @@ func TestUpdateTaskUseCaseUnchangedStatusIsSkipped(t *testing.T) {
 	const idValue = "33333333-3333-3333-3333-333333333333"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	status := "todo"
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue, Status: &status})
@@ -187,7 +187,7 @@ func TestUpdateTaskUseCaseNilFieldsAreNotChanged(t *testing.T) {
 	const idValue = "44444444-4444-4444-4444-444444444444"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue})
 	if err != nil {
@@ -206,7 +206,7 @@ func TestUpdateTaskUseCaseEmptySlicesClearFields(t *testing.T) {
 	const idValue = "55555555-5555-5555-5555-555555555555"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{
 		TaskID: idValue, Assignees: []string{}, Labels: []string{},
@@ -226,7 +226,7 @@ func TestUpdateTaskUseCaseContextIDWithoutDetails(t *testing.T) {
 	const idValue = "66666666-6666-6666-6666-666666666666"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	contextID := "ctx-2"
 	if _, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{
@@ -243,7 +243,7 @@ func TestUpdateTaskUseCaseInvalidStatusReturnsValueError(t *testing.T) {
 	const idValue = "77777777-7777-7777-7777-777777777777"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	bad := "bogus"
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue, Status: &bad})
@@ -260,7 +260,7 @@ func TestUpdateTaskUseCaseSaveErrorPropagates(t *testing.T) {
 	const idValue = "88888888-8888-8888-8888-888888888888"
 	entity := updateTaskNewEntity(t, idValue)
 	repo := &updateTaskFakeRepo{found: entity, saveErr: errors.New("db down")}
-	uc := NewUpdateTaskUseCase(repo, nil)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue})
 	if resp != nil {
@@ -275,7 +275,7 @@ func TestUpdateTaskUseCaseHooksSyncAndNotify(t *testing.T) {
 	const idValue = "33333333-3333-3333-3333-333333333333"
 	repo := &updateTaskFakeRepo{found: updateTaskNewEntity(t, idValue)}
 	hooks := &createTaskFakeHooks{}
-	uc := NewUpdateTaskUseCase(repo, nil).WithHooks(hooks)
+	uc := NewUpdateTaskUseCase(repo, nil).WithLedger(noopLedger()).WithHooks(hooks)
 	title := "Hooked"
 	if _, err := uc.Execute(context.Background(), dtotask.UpdateTaskRequest{TaskID: idValue, Title: &title}); err != nil {
 		t.Fatalf("Execute: %v", err)

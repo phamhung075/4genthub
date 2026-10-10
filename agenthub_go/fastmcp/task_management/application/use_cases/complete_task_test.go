@@ -70,7 +70,7 @@ func completeTaskAssertKeys(t *testing.T, got []string, want []string) {
 
 func TestCompleteTaskNotFound(t *testing.T) {
 	repo := &completeTaskFakeTaskRepository{task: nil}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), completeTaskTestID, nil, nil, nil)
 	if err == nil {
@@ -91,7 +91,7 @@ func TestCompleteTaskAlreadyCompletedUpdatesSummary(t *testing.T) {
 	task.Status = &done
 
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 	summary := "finished the work"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -129,7 +129,7 @@ func TestCompleteTaskAlreadyCompletedWithoutSummary(t *testing.T) {
 	task.Status = &done
 
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), id.Value, nil, nil, nil)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestCompleteTaskAlreadyCompletedWithoutSummary(t *testing.T) {
 func TestCompleteTaskMissingSummary(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
-	uc := NewCompleteTaskUseCase(repo, nil, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, nil, nil, nil).WithLedger(noopLedger())
 
 	resp, err := uc.Execute(context.Background(), id.Value, nil, nil, nil)
 	if err != nil {
@@ -176,7 +176,7 @@ func TestCompleteTaskSuccess(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
 	subRepo := &completeTaskFakeSubtaskRepository{} // no subtasks
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "all done"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -274,7 +274,7 @@ func TestCompleteTaskSuccessBroadcasts(t *testing.T) {
 	task, id := completeTaskNewTestTask(t)
 	repo := &completeTaskFakeTaskRepository{task: task}
 	hooks := &completeTaskFakeHooks{}
-	uc := NewCompleteTaskUseCase(repo, &completeTaskFakeSubtaskRepository{}, nil, nil).WithHooks(hooks)
+	uc := NewCompleteTaskUseCase(repo, &completeTaskFakeSubtaskRepository{}, nil, nil).WithHooks(hooks).WithLedger(noopLedger())
 	summary := "all done"
 
 	if _, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil); err != nil {
@@ -300,7 +300,7 @@ func TestCompleteTaskIncompleteSubtasks(t *testing.T) {
 
 	repo := &completeTaskFakeTaskRepository{task: task}
 	subRepo := &completeTaskFakeSubtaskRepository{subtasks: []*entities.Subtask{subtask}}
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "trying"
 
 	resp, err := uc.Execute(context.Background(), id.Value, &summary, nil, nil)
@@ -383,7 +383,7 @@ func TestCompleteTaskUnblocksDependentTask(t *testing.T) {
 
 	repo := &completeTaskFakeTaskRepository{task: taskA, allTasks: []*entities.Task{taskA, taskB}}
 	subRepo := &completeTaskFakeSubtaskRepository{}
-	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil)
+	uc := NewCompleteTaskUseCase(repo, subRepo, nil, nil).WithLedger(noopLedger())
 	summary := "done"
 
 	if _, err := uc.Execute(context.Background(), idA.Value, &summary, nil, nil); err != nil {

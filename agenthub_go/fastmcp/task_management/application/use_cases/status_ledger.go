@@ -2,6 +2,7 @@ package use_cases
 
 import (
 	"context"
+	"errors"
 
 	"agenthub/fastmcp/task_management/domain/entities"
 )
@@ -34,6 +35,15 @@ type StatusLedger struct {
 // Enabled reports whether both halves are wired.
 func (l StatusLedger) Enabled() bool { return l.Tx != nil && l.Ledger != nil }
 
+// ErrLedgerNotWired is returned when a status write reaches an unwired ledger. It is an error rather
+// than a quiet bare save because the quiet version was a lie: the status committed, NO entry was
+// written, the call returned success and the updated frame still went out - a clean success over an
+// event that does not exist, reachable by any composition site that forgot to wire the ledger, with
+// no database breakage and no error anywhere to notice. Wiring it is the composition root's job and
+// every production site does; a site that does not must fail where it is written, not where its
+// events are missed.
+var ErrLedgerNotWired = errors.New("status ledger is not wired: a status write must record its entry, and saving the status alone would be a silent success over a missing event")
+
 // SaveStatus runs save inside the one transaction that also carries the status_changed entry for
 // the transition save makes, so a failure of either leaves neither - which is the property the
 // negative case checks by forcing the entry's insert to fail.
@@ -46,7 +56,7 @@ func (l StatusLedger) Enabled() bool { return l.Tx != nil && l.Ledger != nil }
 func (l StatusLedger) SaveStatus(ctx context.Context, save func(context.Context) error,
 	taskID string) error {
 	if !l.Enabled() {
-		return save(ctx)
+		return ErrLedgerNotWired
 	}
 	return l.Tx.Transaction(ctx, func(ctx context.Context) error {
 		from, err := l.Ledger.StatusOf(ctx, taskID)
