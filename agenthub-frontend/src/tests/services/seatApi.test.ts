@@ -43,6 +43,19 @@ const rows: Row[] = [
     paths: [`${OPENRIG}/rooms/dev%20room`],
     call: () => seatApi.deleteRoom('dev room'),
   },
+  {
+    entry: 'setRoomTeam',
+    method: 'PUT',
+    paths: [`${OPENRIG}/rooms/dev%20room/team`],
+    call: () => seatApi.setRoomTeam('dev room', 'eng'),
+    body: JSON.stringify({ team: 'eng' }),
+  },
+  {
+    entry: 'listTeams',
+    method: 'GET',
+    paths: [`${OPENRIG}/teams`],
+    call: () => seatApi.listTeams(),
+  },
 
   // Seat types and modules
   {

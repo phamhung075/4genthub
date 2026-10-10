@@ -30,12 +30,14 @@ import type {
   SeatOverlays,
   SeatSettings,
   SeatType,
+  TeamMembership,
 } from '../types/seatTypes';
 
 export type { SeatOverlays };
 
 export const seatKeys = {
   rooms: ['seatRooms'] as const,
+  teams: ['seatTeams'] as const,
   seatTypes: ['seatTypes'] as const,
   settings: ['seatSettings'] as const,
   machines: ['seatMachines'] as const,
@@ -85,6 +87,43 @@ export function useDeleteRoom() {
       queryClient.removeQueries({ queryKey: seatKeys.seats(room) });
       queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
       showSuccess(`Room "${room}" deleted`);
+    },
+  });
+}
+
+/**
+ * The teams the caller belongs to - the sharing picker's options.
+ *
+ * `enabled` is the dialog's `open` flag: the list is fetched when the picker can be seen, and a page
+ * that never opens the sharing dialog never pays for the call.
+ */
+export function useTeams(enabled = true) {
+  const query = useQuery({
+    queryKey: seatKeys.teams,
+    enabled,
+    queryFn: async (): Promise<TeamMembership[]> => {
+      const response = await seatApi.listTeams();
+      return response.teams ?? [];
+    },
+  });
+  return { teams: query.data ?? [], isLoading: query.isLoading, error: query.error };
+}
+
+/**
+ * Set or clear one room's sharing.
+ *
+ * The mutation variable IS the team slug (empty string = private again), which is also what the
+ * success toast names, so the message describes the change the caller asked for rather than the id
+ * the server echoes back.
+ */
+export function useSetRoomTeam(room: string) {
+  const queryClient = useQueryClient();
+  const showSuccess = useSuccessToast();
+  return useMutation({
+    mutationFn: (team: string) => seatApi.setRoomTeam(room, team),
+    onSuccess: (_response, team) => {
+      queryClient.invalidateQueries({ queryKey: seatKeys.rooms });
+      showSuccess(team === '' ? `Room "${room}" is private again` : `Room "${room}" shared with ${team}`);
     },
   });
 }

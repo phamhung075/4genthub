@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowRight, DoorOpen, Loader2, Plus, Trash2, Users } from 'lucide-react';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { RoomSharingDialog } from '../components/seats/RoomSharingDialog';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
@@ -89,6 +90,10 @@ export const SeatsPage: React.FC = () => {
 
   const [seatToRemove, setSeatToRemove] = useState<Seat | null>(null);
   const [deleteRoomOpen, setDeleteRoomOpen] = useState(false);
+  const [sharingOpen, setSharingOpen] = useState(false);
+  // The sharing dialog is mounted only while it is open, so it always starts from the room's current
+  // state - the room object carries the `role` the wire reported, which is what gates the control.
+  const sharingRoom = rooms.find(room => room.slug === selectedRoom);
 
   // The server deletes an EMPTY room only (room_deletion_service.DeleteRoom refuses a room
   // that still holds seats with 409 and names how many remain), so what the dialog may claim
@@ -337,6 +342,9 @@ export const SeatsPage: React.FC = () => {
               <Users className="h-5 w-5 text-primary" /> Seats in {selectedRoom}
             </h2>
             <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setSharingOpen(true)}>
+                <Users className="h-4 w-4" /> Sharing
+              </Button>
               <Button variant="destructive" onClick={() => {
                   deleteRoom.reset();
                   setDeleteRoomOpen(true);
@@ -617,6 +625,10 @@ export const SeatsPage: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {sharingOpen && sharingRoom && (
+        <RoomSharingDialog room={sharingRoom} onClose={() => setSharingOpen(false)} />
+      )}
 
       {/* Delete room confirmation. An empty room only: the server refuses one that still holds
           seats with 409 and names how many remain, so the copy states that contract rather than

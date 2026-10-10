@@ -82,7 +82,24 @@ export interface Room {
   id: string;
   slug: string;
   name: string;
+  /** The team this room is shared with; empty while the room is private to its owner. */
+  team_id: string;
+  /**
+   * The caller's standing on THIS room, as the server computed it (`seatAdminRoomRole`): `owner` when
+   * the room is the caller's, `viewer` when it is shared with a team the caller belongs to. It exists
+   * so the page never reconstructs authorization from ids - a viewer is not offered a control the
+   * route would refuse. `GET /rooms` returns both the caller's own rooms AND the rooms shared with
+   * their teams, so without this field the two are indistinguishable.
+   */
+  role: OwnershipRole;
 }
+
+/**
+ * The owner/viewer vocabulary the server uses for a room's standing AND for a team membership
+ * (`team_management/domain/repositories/team_repository.go:19-20`), so the page and the wire agree on
+ * one spelling rather than two.
+ */
+export type OwnershipRole = 'owner' | 'viewer';
 
 export interface SeatTypeModuleRef {
   slug: string;
@@ -408,6 +425,30 @@ export interface RoomsResponse {
 export interface RoomResponse {
   success: boolean;
   room: Room;
+}
+
+/** One team the caller belongs to, as `GET /teams` reports it. */
+export interface TeamSummary {
+  id: string;
+  slug: string;
+  name: string;
+  owner_user_id: string;
+}
+
+export interface TeamMembership {
+  team: TeamSummary;
+  /** The caller's role IN THE TEAM, not on any room. The picker only needs the memberships. */
+  role: OwnershipRole;
+}
+
+export interface TeamsResponse {
+  success: boolean;
+  teams: TeamMembership[];
+}
+
+/** The whole sharing body: one team slug, or an empty string to make the room private again. */
+export interface SetRoomTeamRequest {
+  team: string;
 }
 
 export interface SeatTypesResponse {
