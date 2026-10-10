@@ -97,18 +97,30 @@ SEAT_TYPES = {
 # file is caught. A room-local instruction file with no band FAILS the guard rather than passing
 # unnoticed, and a band no file uses is stale. A file a room points at outside its own directory
 # (the Go seed library's blocks) only has to resolve here; its content is the Go seed's to check.
+#
+# HOW THE NUMBERS ARE SET, because three of these bands were once within three, four and five words
+# of their ceiling and a bound that close catches nothing - the file cannot grow and cannot be
+# truncated: the ceiling is a round number above the file's own length with room for about two
+# sentences of honest editing, and the floor is the truncation check rather than a style bound.
+# Both ends bite, which is the point: a band states the room a file is allowed, not what it happens
+# to weigh today.
+#
+# THE MIN ROOM'S TABLE IS EMPTY ON PURPOSE rather than unfilled: every instruction module it names
+# lives in the Go seed library, whose content the seed owns, so it has no room-local file to band
+# and an empty table is the honest form there. An empty table copied as a convention would be
+# copying an absence.
 ROOM_WORD_LIMITS = {
     "4genthub": {
         "project-4genthub": (350, 500),
         "delegate-deepseek": (100, 230),
         "area-go-backend": (120, 250),
         "area-web-frontend": (100, 200),
-        "area-quality": (100, 200),
-        "area-docs": (80, 150),
-        "mission-4genthub": (350, 520),
+        "area-quality": (100, 240),
+        "area-docs": (80, 190),
+        "mission-4genthub": (350, 560),
     },
     "4genthub-ab": {"ab-terse": (25, 60), "ab-verify": (30, 70)},
-    "4genthub-client": {"client-go-mission": (350, 520)},
+    "4genthub-client": {"client-go-mission": (350, 560)},
     "4genthub-min": {},  # every instruction module it names lives in the Go seed library
 }
 
